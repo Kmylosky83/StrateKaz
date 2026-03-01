@@ -21,6 +21,13 @@ import type {
   // Despachos
   CreateDespachoDTO,
   DespachoFilters,
+  // Additional DTOs
+  CreateCostoOperacionDTO,
+  CreateVerificacionDTO,
+  CreateManifiestoDTO,
+  CreateProgramacionDTO,
+  // Types
+  DetalleDespacho,
 } from '../types/logistics-fleet.types';
 
 // ==================== CATALOGOS FLOTA ====================
@@ -242,8 +249,7 @@ export function useCreateMantenimiento() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateMantenimientoDTO) =>
-      logisticsFleetAPI.createMantenimiento(data),
+    mutationFn: (data: CreateMantenimientoDTO) => logisticsFleetAPI.createMantenimiento(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mantenimientos'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-flota'] });
@@ -322,7 +328,7 @@ export function useCreateCostoOperacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => logisticsFleetAPI.createCostoOperacion(data),
+    mutationFn: (data: CreateCostoOperacionDTO) => logisticsFleetAPI.createCostoOperacion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['costos-operacion'] });
       queryClient.invalidateQueries({ queryKey: ['estadisticas-costos'] });
@@ -373,7 +379,7 @@ export function useCreateVerificacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => logisticsFleetAPI.createVerificacion(data),
+    mutationFn: (data: CreateVerificacionDTO) => logisticsFleetAPI.createVerificacion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['verificaciones'] });
     },
@@ -590,7 +596,7 @@ export function useCreateProgramacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => logisticsFleetAPI.createProgramacion(data),
+    mutationFn: (data: CreateProgramacionDTO) => logisticsFleetAPI.createProgramacion(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programaciones'] });
     },
@@ -604,7 +610,7 @@ export function useUpdateProgramacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<CreateProgramacionDTO> }) =>
       logisticsFleetAPI.updateProgramacion(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programaciones'] });
@@ -724,7 +730,12 @@ export function useAddDetalleDespacho() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => logisticsFleetAPI.addDetalleDespacho(data),
+    mutationFn: (
+      data: Omit<
+        DetalleDespacho,
+        'id' | 'empresa' | 'is_active' | 'deleted_at' | 'created_by' | 'updated_by'
+      >
+    ) => logisticsFleetAPI.addDetalleDespacho(data),
     onSuccess: (newDetalle) => {
       queryClient.invalidateQueries({ queryKey: ['detalles-despacho', newDetalle.despacho] });
       queryClient.invalidateQueries({ queryKey: ['despacho', newDetalle.despacho] });
@@ -768,7 +779,7 @@ export function useCreateManifiesto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: any) => logisticsFleetAPI.createManifiesto(data),
+    mutationFn: (data: CreateManifiestoDTO) => logisticsFleetAPI.createManifiesto(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manifiestos'] });
     },

@@ -10,15 +10,7 @@ export type { PaginatedResponse, SelectOption };
 
 // ==================== GESTION FLOTA - CATALOGOS ====================
 
-export type CategoriaLicencia =
-  | 'A1'
-  | 'A2'
-  | 'B1'
-  | 'B2'
-  | 'B3'
-  | 'C1'
-  | 'C2'
-  | 'C3';
+export type CategoriaLicencia = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'C1' | 'C2' | 'C3';
 
 export interface TipoVehiculo {
   id: number;
@@ -304,10 +296,7 @@ export type TipoVerificacion =
   | 'AUDITORIA_EXTERNA'
   | 'INSPECCION_ESPECIAL';
 
-export type ResultadoVerificacion =
-  | 'APROBADO'
-  | 'APROBADO_CON_OBSERVACIONES'
-  | 'RECHAZADO';
+export type ResultadoVerificacion = 'APROBADO' | 'APROBADO_CON_OBSERVACIONES' | 'RECHAZADO';
 
 export interface ChecklistItem {
   item: string;
@@ -368,7 +357,7 @@ export interface TipoRuta {
   es_entrega: boolean;
   es_transferencia: boolean;
   requiere_cadena_frio: boolean;
-  activo: boolean;
+  is_active: boolean;
   orden: number;
   created_at: string;
   updated_at: string;
@@ -383,7 +372,7 @@ export interface EstadoDespacho {
   en_transito: boolean;
   es_final: boolean;
   permite_edicion: boolean;
-  activo: boolean;
+  is_active: boolean;
   orden: number;
   created_at: string;
   updated_at: string;
@@ -440,15 +429,7 @@ export interface Ruta {
 
 export type TipoDocumentoConductor = 'CC' | 'CE' | 'PA';
 
-export type CategoriaLicenciaConductor =
-  | 'A1'
-  | 'A2'
-  | 'B1'
-  | 'B2'
-  | 'B3'
-  | 'C1'
-  | 'C2'
-  | 'C3';
+export type CategoriaLicenciaConductor = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'C1' | 'C2' | 'C3';
 
 export interface Conductor {
   id: number;
@@ -891,3 +872,136 @@ export const EstadoProgramacionColors: Record<EstadoProgramacion, string> = {
   COMPLETADA: 'green',
   CANCELADA: 'red',
 };
+
+export const TipoMantenimientoColors: Record<TipoMantenimiento, string> = {
+  PREVENTIVO: 'blue',
+  CORRECTIVO: 'red',
+  PREDICTIVO: 'purple',
+};
+
+export const EstadoMantenimientoColors: Record<EstadoMantenimiento, string> = {
+  PROGRAMADO: 'blue',
+  EN_EJECUCION: 'yellow',
+  COMPLETADO: 'green',
+  CANCELADO: 'red',
+};
+
+export const TipoCostoLabels: Record<TipoCostoOperacion, string> = {
+  COMBUSTIBLE: 'Combustible',
+  PEAJE: 'Peaje',
+  PARQUEADERO: 'Parqueadero',
+  LAVADO: 'Lavado',
+  LUBRICANTES: 'Lubricantes',
+  NEUMATICOS: 'Neumáticos',
+  MULTA: 'Multa',
+  OTRO: 'Otro',
+};
+
+export const TipoDocumentoLabels: Record<TipoDocumentoVehiculo, string> = {
+  SOAT: 'SOAT',
+  TECNOMECANICA: 'Tecnomecánica',
+  TARJETA_PROPIEDAD: 'Tarjeta de Propiedad',
+  POLIZA: 'Póliza',
+  OPERACION: 'Operación',
+  OTRO: 'Otro',
+};
+
+export const TipoVerificacionLabels: Record<TipoVerificacion, string> = {
+  PREOPERACIONAL_DIARIA: 'Preoperacional Diaria',
+  INSPECCION_MENSUAL: 'Inspección Mensual',
+  AUDITORIA_EXTERNA: 'Auditoría Externa',
+  INSPECCION_ESPECIAL: 'Inspección Especial',
+};
+
+export const ResultadoVerificacionLabels: Record<ResultadoVerificacion, string> = {
+  APROBADO: 'Aprobado',
+  APROBADO_CON_OBSERVACIONES: 'Aprobado con Observaciones',
+  RECHAZADO: 'Rechazado',
+};
+
+export const ResultadoVerificacionColors: Record<ResultadoVerificacion, string> = {
+  APROBADO: 'green',
+  APROBADO_CON_OBSERVACIONES: 'yellow',
+  RECHAZADO: 'red',
+};
+
+export const TipoEventoLabels: Record<TipoEventoVehiculo, string> = {
+  MANTENIMIENTO: 'Mantenimiento',
+  REPARACION: 'Reparación',
+  ACCIDENTE: 'Accidente',
+  INFRACCION: 'Infracción',
+  MODIFICACION: 'Modificación',
+  CAMBIO_PROPIETARIO: 'Cambio Propietario',
+  ADQUISICION: 'Adquisición',
+  BAJA: 'Baja',
+  OTRO: 'Otro',
+};
+
+// ==================== CREATE DTOs ADICIONALES ====================
+
+export interface CreateCostoOperacionDTO {
+  vehiculo: number;
+  fecha: string;
+  tipo_costo: TipoCostoOperacion;
+  valor: number;
+  cantidad?: number;
+  km_recorridos?: number;
+  factura_numero?: string;
+  observaciones?: string;
+}
+
+export interface CreateVerificacionDTO {
+  vehiculo: number;
+  fecha: string;
+  tipo: TipoVerificacion;
+  inspector?: number;
+  inspector_externo?: string;
+  checklist_items: ChecklistItem[];
+  resultado: ResultadoVerificacion;
+  kilometraje: number;
+  nivel_combustible?: string;
+  observaciones_generales?: string;
+  acciones_correctivas?: string;
+}
+
+export interface CreateManifiestoDTO {
+  programacion_ruta: number;
+  remitente_nombre: string;
+  remitente_nit: string;
+  remitente_direccion: string;
+  destinatario_nombre: string;
+  destinatario_nit: string;
+  destinatario_direccion: string;
+  origen_ciudad: string;
+  destino_ciudad: string;
+  descripcion_carga: string;
+  peso_kg: number;
+  unidades: number;
+  valor_flete: number;
+  valor_declarado: number;
+  vehiculo_placa: string;
+  vehiculo_tipo: string;
+  conductor_nombre: string;
+  conductor_documento: string;
+  observaciones?: string;
+}
+
+export interface CreateProgramacionDTO {
+  ruta: number;
+  vehiculo: number;
+  conductor: number;
+  fecha_programada: string;
+  hora_salida_programada: string;
+  hora_llegada_estimada: string;
+  observaciones?: string;
+}
+
+export interface CreateDocumentoVehiculoDTO {
+  vehiculo: number;
+  tipo_documento: TipoDocumentoVehiculo;
+  numero_documento?: string;
+  fecha_expedicion: string;
+  fecha_vencimiento: string;
+  entidad_emisora?: string;
+  observaciones?: string;
+}

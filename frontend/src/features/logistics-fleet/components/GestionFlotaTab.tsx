@@ -1,92 +1,129 @@
 /**
- * Tab de Gestion de Flota
- * Vehiculos, Documentos PESV, Costos y Mantenimientos
- *
- * Usa componentes del Design System (@/components/common)
+ * Tab de Gestión de Flota
+ * Sub-tabs: Vehículos, Mantenimientos
  */
 import { useState } from 'react';
-import { useVehiculos, useDashboardFlota, useVehiculosVencidos } from '../hooks/useLogisticsFleet';
-import { Card, Badge, Button, Alert } from '@/components/common';
+import { Truck, Wrench, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
 import {
-  Truck,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Wrench,
-  DollarSign,
-  FileText,
-  Plus,
-  Search,
-} from 'lucide-react';
+  Card,
+  Badge,
+  Button,
+  Alert,
+  Tabs,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  EmptyState,
+  ConfirmDialog,
+} from '@/components/common';
+import {
+  useVehiculos,
+  useDashboardFlota,
+  useVehiculosVencidos,
+  useMantenimientos,
+  useDeleteVehiculo,
+} from '../hooks/useLogisticsFleet';
+import {
+  TipoMantenimientoLabels,
+  TipoMantenimientoColors,
+  EstadoMantenimientoLabels,
+  EstadoMantenimientoColors,
+} from '../types/logistics-fleet.types';
+import type { Vehiculo, VehiculoList, MantenimientoVehiculo } from '../types/logistics-fleet.types';
+import VehiculoFormModal from './VehiculoFormModal';
+import MantenimientoFormModal from './MantenimientoFormModal';
+
+const colorToBadge = (color: string): 'success' | 'warning' | 'danger' | 'info' | 'gray' => {
+  const map: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'gray'> = {
+    green: 'success',
+    yellow: 'warning',
+    red: 'danger',
+    blue: 'info',
+    purple: 'info',
+  };
+  return map[color] || 'gray';
+};
 
 export function GestionFlotaTab() {
-  const [search, setSearch] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState('vehiculos');
 
   // Queries
   const { data: dashboard, isLoading: loadingDashboard } = useDashboardFlota();
-  const { data: vehiculosVencidos, isLoading: loadingVencidos } = useVehiculosVencidos();
-  const { data: vehiculosData, isLoading: loadingVehiculos } = useVehiculos({
-    search,
-    is_active: true,
-  });
+  const { data: vehiculosVencidos } = useVehiculosVencidos();
+  const { data: vehiculosData, isLoading: loadingVehiculos } = useVehiculos({ is_active: true });
+  const { data: mantenimientosData, isLoading: loadingMantenimientos } = useMantenimientos({});
 
-  const vehiculos = vehiculosData?.results || [];
+  const vehiculos = Array.isArray(vehiculosData) ? vehiculosData : (vehiculosData?.results ?? []);
+  const mantenimientos = Array.isArray(mantenimientosData)
+    ? mantenimientosData
+    : (mantenimientosData?.results ?? []);
+
+  // Delete
+  const deleteVehiculoMutation = useDeleteVehiculo();
+
+  // Modal state - Vehículos
+  const [vehiculoModalOpen, setVehiculoModalOpen] = useState(false);
+  const [selectedVehiculo, setSelectedVehiculo] = useState<Vehiculo | null>(null);
+  const [deleteVehiculoId, setDeleteVehiculoId] = useState<number | null>(null);
+
+  // Modal state - Mantenimientos
+  const [mantenimientoModalOpen, setMantenimientoModalOpen] = useState(false);
+  const [selectedMantenimiento, setSelectedMantenimiento] = useState<MantenimientoVehiculo | null>(
+    null
+  );
+
+  // Handlers - Vehículos
+  const handleNewVehiculo = () => {
+    setSelectedVehiculo(null);
+    setVehiculoModalOpen(true);
+  };
+  const handleEditVehiculo = (item: VehiculoList) => {
+    setSelectedVehiculo(item as unknown as Vehiculo);
+    setVehiculoModalOpen(true);
+  };
+  const handleCloseVehiculo = () => {
+    setSelectedVehiculo(null);
+    setVehiculoModalOpen(false);
+  };
+  const handleDeleteVehiculo = () => {
+    if (deleteVehiculoId)
+      deleteVehiculoMutation.mutate(deleteVehiculoId, {
+        onSuccess: () => setDeleteVehiculoId(null),
+      });
+  };
+
+  // Handlers - Mantenimientos
+  const handleNewMantenimiento = () => {
+    setSelectedMantenimiento(null);
+    setMantenimientoModalOpen(true);
+  };
+  const handleEditMantenimiento = (item: MantenimientoVehiculo) => {
+    setSelectedMantenimiento(item);
+    setMantenimientoModalOpen(true);
+  };
+  const handleCloseMantenimiento = () => {
+    setSelectedMantenimiento(null);
+    setMantenimientoModalOpen(false);
+  };
+
+  // KPIs
+  const dashboardStats = {
+    total: loadingDashboard ? 0 : (dashboard?.total_vehiculos ?? 0),
+    disponibles: loadingDashboard ? 0 : (dashboard?.vehiculos_disponibles ?? 0),
+    enMantenimiento: loadingDashboard ? 0 : (dashboard?.vehiculos_mantenimiento ?? 0),
+    docVencidos: loadingDashboard ? 0 : (dashboard?.documentos_vencidos ?? 0),
+  };
+
+  const subTabs = [
+    { id: 'vehiculos', label: 'Vehículos', icon: <Truck className="h-4 w-4" /> },
+    { id: 'mantenimientos', label: 'Mantenimientos', icon: <Wrench className="h-4 w-4" /> },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Vehículos</span>
-            <Truck className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {loadingDashboard ? '...' : dashboard?.total_vehiculos || 0}
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {loadingDashboard ? '...' : dashboard?.vehiculos_disponibles || 0} disponibles
-          </p>
-        </Card>
-
-        <Card>
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">En Mantenimiento</span>
-            <Wrench className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {loadingDashboard ? '...' : dashboard?.vehiculos_mantenimiento || 0}
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {loadingDashboard ? '...' : dashboard?.mantenimientos_pendientes || 0} programados
-          </p>
-        </Card>
-
-        <Card>
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos por Vencer</span>
-            <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-            {loadingDashboard ? '...' : dashboard?.documentos_por_vencer || 0}
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Próximos 30 días</p>
-        </Card>
-
-        <Card>
-          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Documentos Vencidos</span>
-            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </div>
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {loadingDashboard ? '...' : dashboard?.documentos_vencidos || 0}
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Requieren atención inmediata</p>
-        </Card>
-      </div>
-
-      {/* Alertas PESV - Documentos Vencidos */}
-      {!loadingVencidos && vehiculosVencidos && vehiculosVencidos.length > 0 && (
+      {/* PESV Alert - Documentos Vencidos */}
+      {vehiculosVencidos && vehiculosVencidos.length > 0 && (
         <Alert variant="error">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -95,226 +132,335 @@ export function GestionFlotaTab() {
                 Alerta PESV - Documentos Vencidos
               </h4>
               <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                {vehiculosVencidos.length} vehículo(s) con documentos vencidos. Estos vehículos NO
-                pueden operar según Resolución 40595/2022.
+                {vehiculosVencidos.length} vehículo(s) con documentos vencidos. NO pueden operar
+                según Resolución 40595/2022.
               </p>
-              <div className="mt-2 space-y-1">
-                {vehiculosVencidos.slice(0, 3).map((v) => (
-                  <div key={v.id} className="text-sm text-red-600 dark:text-red-300">
-                    <span className="font-medium">{v.placa}</span> - {v.marca} {v.modelo}
-                  </div>
-                ))}
-                {vehiculosVencidos.length > 3 && (
-                  <div className="text-sm text-red-500 dark:text-red-400">
-                    Y {vehiculosVencidos.length - 3} más...
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </Alert>
       )}
 
-      {/* Lista de Vehículos */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Vehículos de la Flota
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Gestión completa de vehículos y documentos PESV
-            </p>
-          </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Vehículo
-          </Button>
-        </div>
+      {/* KPIs */}
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Vehículos"
+          value={dashboardStats.total}
+          icon={<Truck className="w-6 h-6" />}
+          color="blue"
+        />
+        <KpiCard
+          label="Disponibles"
+          value={dashboardStats.disponibles}
+          icon={<CheckCircle className="w-6 h-6" />}
+          color="success"
+        />
+        <KpiCard
+          label="En Mantenimiento"
+          value={dashboardStats.enMantenimiento}
+          icon={<Wrench className="w-6 h-6" />}
+          color="warning"
+        />
+        <KpiCard
+          label="Docs. Vencidos"
+          value={dashboardStats.docVencidos}
+          icon={<AlertTriangle className="w-6 h-6" />}
+          color="danger"
+        />
+      </KpiCardGrid>
 
-        {/* Búsqueda */}
-        <div className="flex items-center space-x-2 mb-4">
-          <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por placa, marca, modelo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-sm flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+      {/* Sub-tabs */}
+      <Tabs tabs={subTabs} activeTab={activeSubTab} onChange={setActiveSubTab} variant="pills" />
+
+      {/* ===== Vehículos ===== */}
+      {activeSubTab === 'vehiculos' && (
+        <div className="space-y-4">
+          <SectionToolbar
+            title="Vehículos de la Flota"
+            subtitle="Gestión completa de vehículos y documentos PESV"
+            count={vehiculos.length}
+            primaryAction={{ label: 'Nuevo Vehículo', onClick: handleNewVehiculo }}
           />
-        </div>
 
-        {/* Tabla */}
-        <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Placa</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vehículo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">SOAT</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tecnomecánica</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Disponibilidad</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {loadingVehiculos ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    Cargando vehículos...
-                  </td>
-                </tr>
-              ) : vehiculos.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    No se encontraron vehículos
-                  </td>
-                </tr>
-              ) : (
-                vehiculos.map((vehiculo) => (
-                  <tr key={vehiculo.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{vehiculo.placa}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                      {vehiculo.marca} {vehiculo.modelo} ({vehiculo.anio})
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{vehiculo.tipo_nombre}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white"
-                        style={{ backgroundColor: vehiculo.estado_color || '#6c757d' }}
-                      >
-                        {vehiculo.estado_nombre}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {vehiculo.fecha_soat ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {new Date(vehiculo.fecha_soat).toLocaleDateString('es-CO')}
-                          </span>
-                          {vehiculo.dias_hasta_vencimiento_soat !== undefined && (
-                            <Badge
-                              variant={
-                                vehiculo.dias_hasta_vencimiento_soat < 0
+          {loadingVehiculos ? (
+            <div className="flex justify-center py-12">
+              <Spinner />
+            </div>
+          ) : vehiculos.length === 0 ? (
+            <EmptyState
+              icon={<Truck className="w-16 h-16" />}
+              title="No hay vehículos registrados"
+              description="Comience registrando los vehículos de su flota"
+              action={{ label: 'Nuevo Vehículo', onClick: handleNewVehiculo }}
+            />
+          ) : (
+            <Card variant="bordered" padding="none">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Placa
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Vehículo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Tipo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Estado
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        SOAT
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Tecnomecánica
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Disponible
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {vehiculos.map((v) => (
+                      <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {v.placa}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {v.marca} {v.modelo} ({v.anio})
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {v.tipo_nombre}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant={
+                              v.estado_color === 'green'
+                                ? 'success'
+                                : v.estado_color === 'red'
                                   ? 'danger'
-                                  : vehiculo.dias_hasta_vencimiento_soat <= 30
-                                  ? 'warning'
-                                  : 'gray'
-                              }
-                              size="sm"
-                            >
-                              {vehiculo.dias_hasta_vencimiento_soat < 0
-                                ? `Vencido ${Math.abs(vehiculo.dias_hasta_vencimiento_soat)}d`
-                                : `${vehiculo.dias_hasta_vencimiento_soat}d`}
+                                  : v.estado_color === 'yellow'
+                                    ? 'warning'
+                                    : 'gray'
+                            }
+                            size="sm"
+                          >
+                            {v.estado_nombre}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {v.fecha_soat ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {new Date(v.fecha_soat).toLocaleDateString('es-CO')}
+                              </span>
+                              {v.dias_hasta_vencimiento_soat !== undefined && (
+                                <Badge
+                                  variant={
+                                    v.dias_hasta_vencimiento_soat < 0
+                                      ? 'danger'
+                                      : v.dias_hasta_vencimiento_soat <= 30
+                                        ? 'warning'
+                                        : 'gray'
+                                  }
+                                  size="sm"
+                                >
+                                  {v.dias_hasta_vencimiento_soat < 0
+                                    ? `Vencido ${Math.abs(v.dias_hasta_vencimiento_soat)}d`
+                                    : `${v.dias_hasta_vencimiento_soat}d`}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">Sin registro</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {v.fecha_tecnomecanica ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {new Date(v.fecha_tecnomecanica).toLocaleDateString('es-CO')}
+                              </span>
+                              {v.dias_hasta_vencimiento_tecnomecanica !== undefined && (
+                                <Badge
+                                  variant={
+                                    v.dias_hasta_vencimiento_tecnomecanica < 0
+                                      ? 'danger'
+                                      : v.dias_hasta_vencimiento_tecnomecanica <= 30
+                                        ? 'warning'
+                                        : 'gray'
+                                  }
+                                  size="sm"
+                                >
+                                  {v.dias_hasta_vencimiento_tecnomecanica < 0
+                                    ? `Vencido ${Math.abs(v.dias_hasta_vencimiento_tecnomecanica)}d`
+                                    : `${v.dias_hasta_vencimiento_tecnomecanica}d`}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">Sin registro</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {v.disponible_para_operar ? (
+                            <Badge variant="success" size="sm">
+                              Disponible
+                            </Badge>
+                          ) : (
+                            <Badge variant="danger" size="sm">
+                              No Disponible
                             </Badge>
                           )}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">Sin registro</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {vehiculo.fecha_tecnomecanica ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {new Date(vehiculo.fecha_tecnomecanica).toLocaleDateString('es-CO')}
-                          </span>
-                          {vehiculo.dias_hasta_vencimiento_tecnomecanica !== undefined && (
-                            <Badge
-                              variant={
-                                vehiculo.dias_hasta_vencimiento_tecnomecanica < 0
-                                  ? 'danger'
-                                  : vehiculo.dias_hasta_vencimiento_tecnomecanica <= 30
-                                  ? 'warning'
-                                  : 'gray'
-                              }
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => handleEditVehiculo(v)}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
                               size="sm"
+                              onClick={() => setDeleteVehiculoId(v.id)}
                             >
-                              {vehiculo.dias_hasta_vencimiento_tecnomecanica < 0
-                                ? `Vencido ${Math.abs(vehiculo.dias_hasta_vencimiento_tecnomecanica)}d`
-                                : `${vehiculo.dias_hasta_vencimiento_tecnomecanica}d`}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">Sin registro</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {vehiculo.disponible_para_operar ? (
-                        <Badge variant="success" size="sm">
-                          <CheckCircle className="mr-1 h-3 w-3" />
-                          Disponible
-                        </Badge>
-                      ) : (
-                        <Badge variant="danger" size="sm">
-                          <AlertTriangle className="mr-1 h-3 w-3" />
-                          No Disponible
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm">
-                        Ver Detalles
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
         </div>
-      </Card>
+      )}
 
-      {/* Secciones adicionales */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <Wrench className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Mantenimientos
-            </h4>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Gestión de mantenimientos preventivos y correctivos
-          </p>
-          <Button variant="secondary" className="mt-4 w-full">
-            Ver Mantenimientos
-          </Button>
-        </Card>
+      {/* ===== Mantenimientos ===== */}
+      {activeSubTab === 'mantenimientos' && (
+        <div className="space-y-4">
+          <SectionToolbar
+            title="Mantenimientos"
+            subtitle="Gestión de mantenimientos preventivos y correctivos"
+            count={mantenimientos.length}
+            primaryAction={{ label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }}
+          />
 
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <DollarSign className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Costos de Operación
-            </h4>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Control de costos variables (combustible, peajes, etc.)
-          </p>
-          <Button variant="secondary" className="mt-4 w-full">
-            Ver Costos
-          </Button>
-        </Card>
+          {loadingMantenimientos ? (
+            <div className="flex justify-center py-12">
+              <Spinner />
+            </div>
+          ) : mantenimientos.length === 0 ? (
+            <EmptyState
+              icon={<Wrench className="w-16 h-16" />}
+              title="No hay mantenimientos registrados"
+              description="Programe mantenimientos para los vehículos de su flota"
+              action={{ label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }}
+            />
+          ) : (
+            <Card variant="bordered" padding="none">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Vehículo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Tipo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Descripción
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Fecha Prog.
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Estado
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Costo Total
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {mantenimientos.map((m) => (
+                      <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {m.vehiculo_placa}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={colorToBadge(TipoMantenimientoColors[m.tipo])} size="sm">
+                            {TipoMantenimientoLabels[m.tipo]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
+                          {m.descripcion}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {new Date(m.fecha_programada).toLocaleDateString('es-CO')}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant={colorToBadge(EstadoMantenimientoColors[m.estado])}
+                            size="sm"
+                          >
+                            {EstadoMantenimientoLabels[m.estado]}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          ${new Intl.NumberFormat('es-CO').format(m.costo_total)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditMantenimiento(m)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
 
-        <Card>
-          <div className="flex items-center gap-2 mb-3">
-            <FileText className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Verificaciones PESV
-            </h4>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Inspecciones preoperacionales diarias según Res. 40595/2022
-          </p>
-          <Button variant="secondary" className="mt-4 w-full">
-            Ver Verificaciones
-          </Button>
-        </Card>
-      </div>
+      {/* Modals */}
+      <VehiculoFormModal
+        item={selectedVehiculo}
+        isOpen={vehiculoModalOpen}
+        onClose={handleCloseVehiculo}
+      />
+      <MantenimientoFormModal
+        item={selectedMantenimiento}
+        isOpen={mantenimientoModalOpen}
+        onClose={handleCloseMantenimiento}
+      />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={deleteVehiculoId !== null}
+        onClose={() => setDeleteVehiculoId(null)}
+        onConfirm={handleDeleteVehiculo}
+        title="Eliminar Vehículo"
+        message="¿Está seguro de eliminar este vehículo? Se eliminarán también sus documentos y registros asociados."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteVehiculoMutation.isPending}
+      />
     </div>
   );
 }

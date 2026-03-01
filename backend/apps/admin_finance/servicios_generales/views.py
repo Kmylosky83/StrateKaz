@@ -55,7 +55,7 @@ class MantenimientoLocativoViewSet(viewsets.ModelViewSet):
     """
 
     queryset = MantenimientoLocativo.objects.select_related(
-        'empresa', 'responsable', 'proveedor'
+        'empresa', 'responsable'
     ).filter(is_active=True)
     serializer_class = MantenimientoLocativoSerializer
     filterset_fields = ['tipo', 'estado', 'responsable', 'proveedor']
@@ -337,7 +337,7 @@ class ContratoServicioViewSet(viewsets.ModelViewSet):
     """
 
     queryset = ContratoServicio.objects.select_related(
-        'empresa', 'proveedor'
+        'empresa'
     ).filter(is_active=True)
     serializer_class = ContratoServicioSerializer
     filterset_fields = ['tipo_servicio', 'estado', 'proveedor']

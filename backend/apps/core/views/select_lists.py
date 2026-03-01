@@ -41,7 +41,7 @@ def select_colaboradores(request):
     ).select_related('cargo').values(
         'id', 'primer_nombre', 'segundo_nombre',
         'primer_apellido', 'segundo_apellido',
-        'numero_documento', 'cargo__name'
+        'numero_identificacion', 'cargo__name'
     ).order_by('primer_apellido', 'primer_nombre')[:500]
 
     results = []
@@ -53,7 +53,7 @@ def select_colaboradores(request):
             'id': c['id'],
             'label': nombre,
             'extra': {
-                'documento': c.get('numero_documento', ''),
+                'documento': c.get('numero_identificacion', ''),
                 'cargo': c.get('cargo__name', ''),
             }
         })

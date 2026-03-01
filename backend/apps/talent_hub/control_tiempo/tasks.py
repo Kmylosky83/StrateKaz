@@ -31,8 +31,6 @@ def detectar_ausencias_diarias():
     Tenant = get_tenant_model()
     ayer = (timezone.now() - timedelta(days=1)).date()
 
-    tenants = Tenant.objects.filter(schema_name__ne='public') if hasattr(Tenant, 'schema_name') else []
-
     try:
         tenants = Tenant.objects.exclude(schema_name='public')
     except Exception:

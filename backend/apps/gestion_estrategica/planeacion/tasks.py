@@ -24,7 +24,7 @@ def _get_active_tenants():
     return Tenant.objects.exclude(
         schema_name='public'
     ).filter(
-        status='active'
+        is_active=True
     )
 
 

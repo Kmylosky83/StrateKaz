@@ -664,7 +664,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
         'empresa', 'tipo', 'tipo__grupo', 'nivel_influencia_pi', 'nivel_influencia_empresa',
-        'nivel_interes', 'responsable_empresa_id', 'cargo_responsable', 'area_responsable',
+        'nivel_interes', 'cargo_responsable', 'area_responsable',
         'relacionado_sst', 'relacionado_ambiental', 'relacionado_calidad', 'relacionado_pesv',
         'is_active'
     ]

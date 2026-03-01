@@ -37,7 +37,7 @@ def select_colaboradores(request):
         return Response([])
 
     qs = Colaborador.objects.filter(
-        is_active=True, is_deleted=False
+        is_active=True
     ).select_related('cargo').values(
         'id', 'primer_nombre', 'segundo_nombre',
         'primer_apellido', 'segundo_apellido',
@@ -92,7 +92,7 @@ def select_proveedores(request):
         return Response([])
 
     qs = Proveedor.objects.filter(
-        is_active=True, is_deleted=False
+        is_active=True
     ).values(
         'id', 'razon_social', 'nit', 'tipo_proveedor__nombre'
     ).order_by('razon_social')[:500]
@@ -122,7 +122,7 @@ def select_clientes(request):
         return Response([])
 
     qs = Cliente.objects.filter(
-        is_active=True, is_deleted=False
+        is_active=True
     ).values(
         'id', 'razon_social', 'nit'
     ).order_by('razon_social')[:500]

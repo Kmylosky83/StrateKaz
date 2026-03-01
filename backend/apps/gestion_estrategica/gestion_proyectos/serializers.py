@@ -110,6 +110,9 @@ class ActividadProyectoSerializer(serializers.ModelSerializer):
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     fase_nombre = serializers.CharField(source='fase.nombre', read_only=True)
+    kanban_column_display = serializers.CharField(
+        source='get_kanban_column_display', read_only=True
+    )
 
     class Meta:
         model = ActividadProyecto

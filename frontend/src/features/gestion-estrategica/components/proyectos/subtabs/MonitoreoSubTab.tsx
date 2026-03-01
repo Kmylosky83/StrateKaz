@@ -1,35 +1,213 @@
 /**
- * SubTab de Ejecución y Monitoreo
- * Gestión de proyectos en ejecución y monitoreo
+ * SubTab de Ejecucion y Monitoreo
+ * Gestion de proyectos en ejecucion y monitoreo
+ *
+ * Sprint PLANNER-1: Agrega vista Kanban de actividades.
+ * Toggle: Lista (proyectos) | Kanban (actividades del proyecto seleccionado)
  */
-import { Card, Badge, Button, EmptyState } from '@/components/common';
+import { useState } from 'react';
+import { Card, Badge, Button, EmptyState, ViewToggle, SectionHeader } from '@/components/common';
+import { Select } from '@/components/forms';
 import { useProyectos } from '../../../hooks/useProyectos';
+import { KanbanBoard } from '../kanban';
+import type { Proyecto } from '../../../types/proyectos.types';
 import {
   Activity,
   TrendingUp,
-  AlertCircle,
   CheckCircle2,
   Clock,
   DollarSign,
-  Target,
+  List,
+  KanbanSquare,
+  BarChart3,
 } from 'lucide-react';
 
+type ViewMode = 'list' | 'kanban' | 'timeline';
+
+const VIEW_OPTIONS = [
+  { value: 'list' as const, label: 'Lista', icon: List },
+  { value: 'kanban' as const, label: 'Kanban', icon: KanbanSquare },
+  { value: 'timeline' as const, label: 'Cronograma', icon: BarChart3 },
+];
+
+// ==================== LISTA DE PROYECTOS (vista existente) ====================
+
+interface ProyectoListViewProps {
+  proyectos: Proyecto[];
+  onSelectProject: (proyecto: Proyecto) => void;
+}
+
+const ProyectoListView = ({ proyectos, onSelectProject }: ProyectoListViewProps) => {
+  if (proyectos.length === 0) {
+    return (
+      <EmptyState
+        icon={<Activity className="h-12 w-12" />}
+        title="No hay proyectos en ejecucion"
+        description="Los proyectos pasaran a esta fase desde planificacion"
+      />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      {proyectos.map((proyecto) => (
+        <Card key={proyecto.id}>
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {proyecto.nombre}
+                  </h3>
+                  <Badge variant="info" size="sm">
+                    {proyecto.codigo}
+                  </Badge>
+                  <Badge
+                    variant={proyecto.estado === 'ejecucion' ? 'primary' : 'warning'}
+                    size="sm"
+                  >
+                    {proyecto.estado_display ?? proyecto.estado}
+                  </Badge>
+                </div>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => onSelectProject(proyecto)}>
+                Ver Kanban
+              </Button>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Progreso General
+                </span>
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                  {proyecto.porcentaje_avance ?? 0}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                <div
+                  className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${proyecto.porcentaje_avance ?? 0}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Footer info */}
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+              {proyecto.total_actividades !== undefined && (
+                <div className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>{proyecto.total_actividades} actividades</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                <span>
+                  Fin:{' '}
+                  {proyecto.fecha_fin_plan
+                    ? new Date(proyecto.fecha_fin_plan).toLocaleDateString('es-CO')
+                    : 'Sin definir'}
+                </span>
+              </div>
+              {proyecto.gerente_nombre && (
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  <span>{proyecto.gerente_nombre}</span>
+                </div>
+              )}
+              {(proyecto.presupuesto_aprobado ?? proyecto.costo_real) != null && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5" />
+                  <span>
+                    ${proyecto.costo_real ?? '0'} / ${proyecto.presupuesto_aprobado ?? '0'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// ==================== KANBAN VIEW CON SELECTOR ====================
+
+interface KanbanViewProps {
+  proyectos: Proyecto[];
+  selectedProjectId: number | null;
+  onSelectProject: (id: number | null) => void;
+}
+
+const KanbanView = ({ proyectos, selectedProjectId, onSelectProject }: KanbanViewProps) => {
+  const projectOptions = proyectos.map((p) => ({
+    value: String(p.id),
+    label: `${p.codigo} - ${p.nombre}`,
+  }));
+
+  return (
+    <div className="space-y-4">
+      {/* Project selector */}
+      <Card>
+        <div className="p-4">
+          <Select
+            label="Proyecto"
+            placeholder="Selecciona un proyecto para ver sus actividades..."
+            value={selectedProjectId ? String(selectedProjectId) : ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              onSelectProject(val ? Number(val) : null);
+            }}
+            options={[{ value: '', label: 'Seleccionar proyecto...' }, ...projectOptions]}
+          />
+        </div>
+      </Card>
+
+      {/* Kanban board */}
+      <KanbanBoard proyectoId={selectedProjectId} />
+    </div>
+  );
+};
+
+// ==================== TIMELINE PLACEHOLDER ====================
+
+const TimelineView = () => (
+  <EmptyState
+    icon={<BarChart3 className="h-12 w-12" />}
+    title="Vista de cronograma"
+    description="La vista de cronograma (Gantt) estara disponible proximamente."
+  />
+);
+
+// ==================== COMPONENTE PRINCIPAL ====================
+
 export const MonitoreoSubTab = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
   const { data: proyectosEjecucion, isLoading: loadingEjecucion } = useProyectos({
-    estado: 'EJECUCION',
+    estado: 'ejecucion',
     is_active: true,
   });
-
   const { data: proyectosMonitoreo, isLoading: loadingMonitoreo } = useProyectos({
-    estado: 'MONITOREO',
+    estado: 'monitoreo',
     is_active: true,
   });
 
   const isLoading = loadingEjecucion || loadingMonitoreo;
-  const proyectos = [
-    ...(proyectosEjecucion?.results || []),
-    ...(proyectosMonitoreo?.results || []),
-  ];
+
+  // Combinar proyectos de ambos estados
+  const rawEjecucion =
+    proyectosEjecucion?.results ?? (Array.isArray(proyectosEjecucion) ? proyectosEjecucion : []);
+  const rawMonitoreo =
+    proyectosMonitoreo?.results ?? (Array.isArray(proyectosMonitoreo) ? proyectosMonitoreo : []);
+  const proyectos: Proyecto[] = [...rawEjecucion, ...rawMonitoreo];
+
+  const handleSelectProject = (proyecto: Proyecto) => {
+    setSelectedProjectId(proyecto.id);
+    setViewMode('kanban');
+  };
 
   if (isLoading) {
     return (
@@ -46,215 +224,41 @@ export const MonitoreoSubTab = () => {
     );
   }
 
+  const totalProyectos = proyectos.length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Ejecución y Monitoreo
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Proyectos en ejecución y control - Seguimiento de KPIs y desempeño
-          </p>
-        </div>
-      </div>
-
-      {/* Métricas de Control */}
-      <Card>
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Métricas de Control (EVM)
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="flex items-start gap-3">
-              <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                  Planned Value (PV)
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Valor planificado</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-green-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                  Earned Value (EV)
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Valor ganado</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Activity className="h-5 w-5 text-purple-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">
-                  Actual Cost (AC)
-                </h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Costo real</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Target className="h-5 w-5 text-orange-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">CPI / SPI</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Índices de desempeño</p>
-              </div>
-            </div>
+      {/* Header con toggle de vista */}
+      <SectionHeader
+        icon={
+          <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+            <Activity className="h-5 w-5 text-orange-600 dark:text-orange-400" />
           </div>
-        </div>
-      </Card>
+        }
+        title="Ejecucion y Monitoreo"
+        description={`${totalProyectos} proyecto${totalProyectos !== 1 ? 's' : ''} en ejecucion o monitoreo`}
+        actions={
+          <ViewToggle
+            value={viewMode}
+            onChange={setViewMode}
+            options={VIEW_OPTIONS}
+            moduleColor="purple"
+          />
+        }
+      />
 
-      {/* Lista de Proyectos */}
-      {proyectos.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4">
-          {proyectos.map((proyecto) => (
-            <Card key={proyecto.id}>
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {proyecto.name}
-                      </h3>
-                      <Badge variant="info" size="sm">
-                        {proyecto.code}
-                      </Badge>
-                      <Badge
-                        variant={
-                          proyecto.health_status === 'VERDE'
-                            ? 'success'
-                            : proyecto.health_status === 'AMARILLO'
-                              ? 'warning'
-                              : 'danger'
-                        }
-                        size="sm"
-                      >
-                        {proyecto.health_status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Button variant="secondary" size="sm">
-                    Ver Dashboard
-                  </Button>
-                </div>
-
-                {/* Progreso General */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Progreso General
-                    </span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                      {proyecto.progreso_general || 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full transition-all duration-300 ${
-                        proyecto.health_status === 'VERDE'
-                          ? 'bg-green-600'
-                          : proyecto.health_status === 'AMARILLO'
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
-                      }`}
-                      style={{ width: `${proyecto.progreso_general || 0}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Dimensiones de Progreso */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Alcance:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                        <div
-                          className="bg-blue-600 h-1.5 rounded-full"
-                          style={{ width: `${proyecto.progreso_alcance || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium">{proyecto.progreso_alcance || 0}%</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Tiempo:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                        <div
-                          className="bg-green-600 h-1.5 rounded-full"
-                          style={{ width: `${proyecto.progreso_tiempo || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium">{proyecto.progreso_tiempo || 0}%</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Costo:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                        <div
-                          className="bg-purple-600 h-1.5 rounded-full"
-                          style={{ width: `${proyecto.progreso_costo || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium">{proyecto.progreso_costo || 0}%</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Calidad:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                        <div
-                          className="bg-orange-600 h-1.5 rounded-full"
-                          style={{ width: `${proyecto.progreso_calidad || 0}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium">{proyecto.progreso_calidad || 0}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>{proyecto.hitos_count || 0} hitos</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>
-                      Fin:{' '}
-                      {proyecto.fecha_fin_prevista
-                        ? new Date(proyecto.fecha_fin_prevista).toLocaleDateString('es-CO')
-                        : 'Sin definir'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3.5 w-3.5" />
-                    <span>
-                      ${proyecto.presupuesto_ejecutado || '0'} / $
-                      {proyecto.presupuesto_estimado || '0'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          icon={<Activity className="h-12 w-12" />}
-          title="No hay proyectos en ejecución"
-          description="Los proyectos pasarán a esta fase desde planificación"
+      {/* Contenido segun vista seleccionada */}
+      {viewMode === 'list' && (
+        <ProyectoListView proyectos={proyectos} onSelectProject={handleSelectProject} />
+      )}
+      {viewMode === 'kanban' && (
+        <KanbanView
+          proyectos={proyectos}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
         />
       )}
+      {viewMode === 'timeline' && <TimelineView />}
     </div>
   );
 };

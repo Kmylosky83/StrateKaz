@@ -466,7 +466,7 @@ class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     serializer_class = ActividadProyectoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['proyecto', 'fase', 'estado', 'responsable', 'is_active']
+    filterset_fields = ['proyecto', 'fase', 'estado', 'responsable', 'is_active', 'kanban_column']
     search_fields = ['codigo_wbs', 'nombre', 'descripcion']
     ordering = ['codigo_wbs', 'prioridad']
 
@@ -499,6 +499,70 @@ class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             })
 
         return Response(data)
+
+    @action(detail=False, methods=['get'], url_path='kanban')
+    def kanban_view(self, request):
+        """Retorna actividades para vista Kanban, agrupadas por columna."""
+        proyecto_id = request.query_params.get('proyecto_id')
+        if not proyecto_id:
+            return Response(
+                {'error': 'Se requiere el parámetro proyecto_id'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        qs = (
+            self.get_queryset()
+            .filter(proyecto_id=proyecto_id, is_active=True)
+            .order_by('kanban_order')
+        )
+        serializer = self.get_serializer(qs, many=True)
+
+        # Agrupar por columna
+        columns = {}
+        for item in serializer.data:
+            col = item.get('kanban_column', 'backlog')
+            if col not in columns:
+                columns[col] = []
+            columns[col].append(item)
+
+        return Response({
+            'columns': columns,
+            'column_order': ['backlog', 'todo', 'in_progress', 'review', 'done'],
+            'column_labels': {
+                'backlog': 'Backlog',
+                'todo': 'Por Hacer',
+                'in_progress': 'En Progreso',
+                'review': 'En Revisión',
+                'done': 'Completado',
+            },
+        })
+
+    @action(detail=False, methods=['post'], url_path='reorder')
+    def reorder(self, request):
+        """Reordena actividades dentro del tablero Kanban (columna y posición)."""
+        items = request.data.get('items', [])
+        if not items:
+            return Response(
+                {'error': 'Se requiere el parámetro items'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        valid_columns = {'backlog', 'todo', 'in_progress', 'review', 'done'}
+        for item in items:
+            if item.get('kanban_column') not in valid_columns:
+                return Response(
+                    {'error': f"Columna inválida: {item.get('kanban_column')}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            ActividadProyecto.objects.filter(
+                id=item['id'],
+                is_active=True,
+            ).update(
+                kanban_column=item['kanban_column'],
+                kanban_order=item['kanban_order'],
+            )
+
+        return Response({'status': 'ok'})
 
 
 class RecursoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):

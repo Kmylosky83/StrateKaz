@@ -40,13 +40,7 @@ export type RolProyecto =
 export type SaludProyecto = 'verde' | 'amarillo' | 'rojo';
 
 // Origen del proyecto (trazabilidad PMI/ISO)
-export type OrigenProyecto =
-  | 'manual'
-  | 'cambio'
-  | 'objetivo'
-  | 'auditoria'
-  | 'riesgo'
-  | 'mejora';
+export type OrigenProyecto = 'manual' | 'cambio' | 'objetivo' | 'auditoria' | 'riesgo' | 'mejora';
 
 // Estados para Portafolio
 export type EstadoPortafolio = 'activo' | 'en_revision' | 'archivado';
@@ -440,6 +434,52 @@ export interface HitoProyectoFilters {
   is_active?: boolean;
   fecha_desde?: string;
   fecha_hasta?: string;
+}
+
+// ==================== KANBAN ====================
+
+export type KanbanColumn = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
+
+export interface ActividadProyecto {
+  id: number;
+  proyecto: number;
+  fase?: number | null;
+  fase_nombre?: string | null;
+  codigo_wbs?: string;
+  nombre: string;
+  descripcion?: string | null;
+  estado: 'pendiente' | 'en_progreso' | 'completada' | 'bloqueada' | 'cancelada';
+  estado_display?: string;
+  fecha_inicio_plan?: string | null;
+  fecha_fin_plan?: string | null;
+  fecha_inicio_real?: string | null;
+  fecha_fin_real?: string | null;
+  duracion_estimada_dias?: number;
+  esfuerzo_estimado_horas?: string | null;
+  porcentaje_avance: number;
+  responsable?: number | null;
+  responsable_nombre?: string | null;
+  predecesoras?: number[];
+  prioridad: number;
+  notas?: string | null;
+  kanban_column: KanbanColumn;
+  kanban_column_display?: string;
+  kanban_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KanbanData {
+  columns: Record<KanbanColumn, ActividadProyecto[]>;
+  column_order: KanbanColumn[];
+  column_labels: Record<KanbanColumn, string>;
+}
+
+export interface KanbanReorderItem {
+  id: number;
+  kanban_column: KanbanColumn;
+  kanban_order: number;
 }
 
 // ==================== PAGINATION ====================

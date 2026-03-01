@@ -558,6 +558,28 @@ class ActividadProyecto(models.Model):
 
     prioridad = models.PositiveSmallIntegerField(default=5)
     notas = models.TextField(blank=True)
+
+    # Kanban board fields
+    kanban_column = models.CharField(
+        max_length=30,
+        choices=[
+            ('backlog', 'Backlog'),
+            ('todo', 'Por Hacer'),
+            ('in_progress', 'En Progreso'),
+            ('review', 'En Revisión'),
+            ('done', 'Completado'),
+        ],
+        default='backlog',
+        db_index=True,
+        verbose_name='Columna Kanban',
+        help_text='Columna actual en el tablero Kanban',
+    )
+    kanban_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden Kanban',
+        help_text='Orden dentro de la columna Kanban',
+    )
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -566,6 +588,9 @@ class ActividadProyecto(models.Model):
         verbose_name = 'Actividad del Proyecto'
         verbose_name_plural = 'Actividades del Proyecto'
         ordering = ['proyecto', 'codigo_wbs', 'prioridad']
+        indexes = [
+            models.Index(fields=['proyecto', 'kanban_column', 'kanban_order']),
+        ]
 
     def __str__(self):
         return f"{self.codigo_wbs} {self.nombre}" if self.codigo_wbs else self.nombre

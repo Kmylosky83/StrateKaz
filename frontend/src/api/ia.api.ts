@@ -46,6 +46,29 @@ export interface IAStatusResponse {
   available: boolean;
   provider: string;
   message: string;
+  quota_active?: boolean;
+  daily_remaining?: number;
+  daily_limit?: number;
+}
+
+export interface AIQuotaPeriod {
+  calls: number;
+  limit: number;
+  remaining: number;
+}
+
+export interface AIUsageStats {
+  today: AIQuotaPeriod;
+  month: AIQuotaPeriod;
+  by_action: Array<{ action: string; count: number }>;
+  by_provider: Array<{ provider: string; count: number }>;
+  recent: Array<{
+    action: string;
+    provider: string;
+    latency_ms: number;
+    success: boolean;
+    created_at: string;
+  }>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -75,5 +98,13 @@ export const getTextAssist = async (params: TextAssistRequest): Promise<TextAssi
  */
 export const getIAStatus = async (): Promise<IAStatusResponse> => {
   const { data } = await apiClient.get<IAStatusResponse>(`${BASE_URL}/status/`);
+  return data;
+};
+
+/**
+ * Obtiene estadísticas de uso de IA del usuario actual.
+ */
+export const getAIUsageStats = async (): Promise<AIUsageStats> => {
+  const { data } = await apiClient.get<AIUsageStats>(`${BASE_URL}/usage-stats/`);
   return data;
 };

@@ -83,3 +83,47 @@ class IAStatusResponseSerializer(serializers.Serializer):
     available = serializers.BooleanField()
     provider = serializers.CharField(allow_blank=True)
     message = serializers.CharField()
+    quota_active = serializers.BooleanField(required=False)
+    daily_remaining = serializers.IntegerField(required=False)
+    daily_limit = serializers.IntegerField(required=False)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ESTADÍSTICAS DE USO
+# ═══════════════════════════════════════════════════════════════════════════
+
+class _QuotaPeriodSerializer(serializers.Serializer):
+    """Cuota para un período (día/mes)."""
+    calls = serializers.IntegerField()
+    limit = serializers.IntegerField()
+    remaining = serializers.IntegerField()
+
+
+class _ActionCountSerializer(serializers.Serializer):
+    """Conteo por acción."""
+    action = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class _ProviderCountSerializer(serializers.Serializer):
+    """Conteo por proveedor."""
+    provider = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class _RecentCallSerializer(serializers.Serializer):
+    """Llamada reciente."""
+    action = serializers.CharField()
+    provider = serializers.CharField()
+    latency_ms = serializers.IntegerField()
+    success = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+
+
+class AIUsageStatsResponseSerializer(serializers.Serializer):
+    """Response de estadísticas de uso de IA."""
+    today = _QuotaPeriodSerializer()
+    month = _QuotaPeriodSerializer()
+    by_action = _ActionCountSerializer(many=True)
+    by_provider = _ProviderCountSerializer(many=True)
+    recent = _RecentCallSerializer(many=True)

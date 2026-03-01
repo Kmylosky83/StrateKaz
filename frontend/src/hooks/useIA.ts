@@ -2,15 +2,17 @@
  * Hooks para Inteligencia Artificial
  * Ayuda contextual y asistente de texto
  */
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   getContextHelp,
   getTextAssist,
   getIAStatus,
+  getAIUsageStats,
   type ContextHelpRequest,
   type TextAssistRequest,
   type TextAssistAction,
+  type AIUsageStats,
 } from '@/api/ia.api';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -39,8 +41,12 @@ export const useIAStatus = () => {
  * Usa mutation porque se dispara manualmente (click en botón).
  */
 export const useContextHelp = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (params: ContextHelpRequest) => getContextHelp(params),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['ia', 'usage-stats'] });
+    },
     onError: () => {
       toast.error('No se pudo cargar la ayuda. Intenta de nuevo.');
     },
@@ -56,8 +62,12 @@ export const useContextHelp = () => {
  * Usa mutation porque se dispara manualmente.
  */
 export const useTextAssist = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (params: TextAssistRequest) => getTextAssist(params),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['ia', 'usage-stats'] });
+    },
     onError: () => {
       toast.error('No se pudo procesar el texto. Intenta de nuevo.');
     },
@@ -105,4 +115,21 @@ export const TEXT_ASSIST_ACTIONS: {
   },
 ];
 
-export type { ContextHelpRequest, TextAssistRequest, TextAssistAction };
+// ═══════════════════════════════════════════════════════════════════════════
+// ESTADÍSTICAS DE USO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Hook para obtener estadísticas de uso de IA del usuario actual.
+ * Cachea por 1 minuto.
+ */
+export const useAIUsage = () => {
+  return useQuery({
+    queryKey: ['ia', 'usage-stats'],
+    queryFn: getAIUsageStats,
+    staleTime: 60_000, // 1 minuto
+    retry: 1,
+  });
+};
+
+export type { ContextHelpRequest, TextAssistRequest, TextAssistAction, AIUsageStats };

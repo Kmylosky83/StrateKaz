@@ -6,11 +6,12 @@
  */
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sparkles, BookOpen, Lightbulb } from 'lucide-react';
+import { Sparkles, BookOpen, Lightbulb, BarChart3 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from './Button';
 import { Spinner } from './Spinner';
-import { useContextHelp } from '@/hooks/useIA';
+import { cn } from '@/utils/cn';
+import { useContextHelp, useAIUsage } from '@/hooks/useIA';
 
 export interface AIHelpModalProps {
   isOpen: boolean;
@@ -77,6 +78,7 @@ export const AIHelpModal = ({
 }: AIHelpModalProps) => {
   const location = useLocation();
   const { mutate, data, isPending, reset } = useContextHelp();
+  const { data: usage } = useAIUsage();
 
   const moduleCode = propModuleCode || detectModuleFromPath(location.pathname);
   const tabCode = propTabCode || detectTabFromPath(location.pathname);
@@ -102,11 +104,28 @@ export const AIHelpModal = ({
       size="md"
       footer={
         <>
-          {data?.ai_enhanced && data?.tokens_used ? (
-            <span className="text-xs text-gray-400 mr-auto">
-              {data.tokens_used} tokens · Powered by AI
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2 mr-auto">
+            {data?.ai_enhanced && data?.tokens_used ? (
+              <span className="text-xs text-gray-400">{data.tokens_used} tokens</span>
+            ) : null}
+            {usage && (
+              <span
+                className={cn(
+                  'text-xs flex items-center gap-1',
+                  usage.today.remaining === 0
+                    ? 'text-red-500 font-medium'
+                    : usage.today.remaining <= 10
+                      ? 'text-amber-500'
+                      : 'text-gray-400'
+                )}
+              >
+                <BarChart3 className="h-3 w-3" />
+                {usage.today.remaining === 0
+                  ? 'Límite diario alcanzado'
+                  : `${usage.today.calls}/${usage.today.limit} llamadas IA hoy`}
+              </span>
+            )}
+          </div>
           <Button variant="secondary" onClick={onClose}>
             Cerrar
           </Button>

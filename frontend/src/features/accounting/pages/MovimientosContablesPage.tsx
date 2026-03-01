@@ -16,6 +16,10 @@ import {
   Clock,
   Printer,
   FileText,
+  TrendingUp,
+  TrendingDown,
+  Scale,
+  AlertCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import {
@@ -26,6 +30,9 @@ import {
   Spinner,
   SectionToolbar,
   EmptyState,
+  KpiCard,
+  KpiCardGrid,
+  KpiCardSkeleton,
 } from '@/components/common';
 import { Select } from '@/components/forms';
 import {
@@ -114,6 +121,18 @@ export default function MovimientosContablesPage() {
   const borradores = extractResults<ComprobanteContableList>(borradoresData);
   const plantillas = extractResults<AsientoPlantillaList>(plantillasData);
   const selected = comprobantes.find((c) => c.id === selectedId);
+
+  // KPIs calculados del período actual
+  const mesActual = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const { data: allComprobantesData, isLoading: loadingKpis } = useComprobantes({
+    ordering: '-fecha_comprobante',
+  });
+  const allComprobantes = extractResults<ComprobanteContableList>(allComprobantesData);
+  const compMes = allComprobantes.filter((c) => c.fecha_comprobante?.startsWith(mesActual));
+  const totalDebitosMes = compMes.reduce((sum, c) => sum + dec(c.total_debito), 0);
+  const totalCreditosMes = compMes.reduce((sum, c) => sum + dec(c.total_credito), 0);
+  const balanceMes = totalDebitosMes - totalCreditosMes;
+  const cuadrado = Math.abs(balanceMes) < 1; // tolerancia de 1 peso por redondeos
 
   const tabs = [
     {
@@ -567,6 +586,53 @@ export default function MovimientosContablesPage() {
         title="Movimientos Contables"
         description="Gestión de comprobantes y asientos contables"
       />
+
+      {/* KPIs del período actual */}
+      {loadingKpis ? (
+        <KpiCardSkeleton count={4} />
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            label="Total Débitos del Mes"
+            value={formatCurrency(totalDebitosMes)}
+            icon={<TrendingUp className="w-5 h-5" />}
+            color="blue"
+            description={`${compMes.length} comprobante${compMes.length !== 1 ? 's' : ''} en el período`}
+          />
+          <KpiCard
+            label="Total Créditos del Mes"
+            value={formatCurrency(totalCreditosMes)}
+            icon={<TrendingDown className="w-5 h-5" />}
+            color="green"
+            description="Créditos registrados"
+          />
+          <KpiCard
+            label="Balance del Período"
+            value={formatCurrency(Math.abs(balanceMes))}
+            icon={<Scale className="w-5 h-5" />}
+            color={cuadrado ? 'success' : 'danger'}
+            description={
+              cuadrado
+                ? 'Período cuadrado'
+                : balanceMes > 0
+                  ? 'Exceso en débitos'
+                  : 'Exceso en créditos'
+            }
+            valueColor={
+              cuadrado
+                ? 'text-success-600 dark:text-success-400'
+                : 'text-danger-600 dark:text-danger-400'
+            }
+          />
+          <KpiCard
+            label="Borradores Pendientes"
+            value={borradores.length}
+            icon={<AlertCircle className="w-5 h-5" />}
+            color={borradores.length > 0 ? 'warning' : 'gray'}
+            description={borradores.length > 0 ? 'Requieren contabilización' : 'Sin pendientes'}
+          />
+        </KpiCardGrid>
+      )}
 
       <Tabs tabs={tabs} defaultTab="comprobantes" />
 

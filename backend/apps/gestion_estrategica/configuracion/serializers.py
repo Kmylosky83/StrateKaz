@@ -388,7 +388,31 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
     - Credenciales enmascaradas para seguridad
     - Campos computados (is_healthy, status_indicator)
     - Display names para choices
+
+    tipo_servicio y proveedor aceptan tanto ID (int) como código (str).
     """
+
+    # Override FK: aceptar ID o código string desde el frontend
+    tipo_servicio = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    proveedor = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    # Credenciales: el frontend envía dict, se encripta vía property del modelo
+    credenciales = serializers.DictField(
+        child=serializers.CharField(allow_blank=True),
+        required=False, write_only=True, default=dict,
+    )
+
+    # Alias: el frontend envía url_base, el modelo usa endpoint_url
+    url_base = serializers.URLField(
+        required=False, allow_blank=True, allow_null=True, write_only=True
+    )
+    # Campos que van a configuracion_adicional (no existen como columnas)
+    timeout_segundos = serializers.IntegerField(
+        required=False, default=30, write_only=True
+    )
+    reintentos_max = serializers.IntegerField(
+        required=False, default=3, write_only=True
+    )
 
     # Campos computados de solo lectura
     is_healthy = serializers.BooleanField(read_only=True)
@@ -397,7 +421,7 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
     porcentaje_uso_limite = serializers.FloatField(read_only=True)
     requiere_alerta_limite = serializers.BooleanField(read_only=True)
 
-    # Display names - tipo_servicio y proveedor ahora son ForeignKey
+    # Display names
     tipo_servicio_display = serializers.SerializerMethodField()
     proveedor_display = serializers.SerializerMethodField()
     metodo_autenticacion_display = serializers.CharField(
@@ -429,8 +453,12 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
             'descripcion',
             # Configuración técnica
             'endpoint_url',
+            'url_base',          # alias write_only → endpoint_url
+            'timeout_segundos',  # write_only → configuracion_adicional
+            'reintentos_max',    # write_only → configuracion_adicional
             'metodo_autenticacion',
             'metodo_autenticacion_display',
+            'credenciales',       # write_only → encripta vía property
             'credenciales_masked',
             'configuracion_adicional',
             # Control y monitoreo
@@ -474,6 +502,60 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
             'porcentaje_uso_limite',
             'requiere_alerta_limite',
         ]
+
+    def validate_tipo_servicio(self, value):
+        """Resuelve tipo_servicio: acepta ID (int/str numérico) o código (str)."""
+        if not value:
+            return None
+        value_str = str(value).strip()
+        if not value_str:
+            return None
+        # Intentar como ID numérico
+        try:
+            pk = int(value_str)
+            try:
+                return TipoServicioIntegracion.objects.get(pk=pk, is_active=True)
+            except TipoServicioIntegracion.DoesNotExist:
+                raise serializers.ValidationError(
+                    f'No se encontró tipo de servicio con ID {pk}.'
+                )
+        except (ValueError, TypeError):
+            pass
+        # Intentar como código string
+        try:
+            return TipoServicioIntegracion.objects.get(code__iexact=value_str, is_active=True)
+        except TipoServicioIntegracion.DoesNotExist:
+            raise serializers.ValidationError(
+                f'No se encontró tipo de servicio "{value_str}". '
+                f'Verifique el código en los tipos disponibles.'
+            )
+
+    def validate_proveedor(self, value):
+        """Resuelve proveedor: acepta ID (int/str numérico) o código (str)."""
+        if not value:
+            return None
+        value_str = str(value).strip()
+        if not value_str:
+            return None
+        # Intentar como ID numérico
+        try:
+            pk = int(value_str)
+            try:
+                return ProveedorIntegracion.objects.get(pk=pk, is_active=True)
+            except ProveedorIntegracion.DoesNotExist:
+                raise serializers.ValidationError(
+                    f'No se encontró proveedor con ID {pk}.'
+                )
+        except (ValueError, TypeError):
+            pass
+        # Intentar como código string
+        try:
+            return ProveedorIntegracion.objects.get(code__iexact=value_str, is_active=True)
+        except ProveedorIntegracion.DoesNotExist:
+            raise serializers.ValidationError(
+                f'No se encontró proveedor "{value_str}". '
+                f'Verifique el código en los proveedores disponibles.'
+            )
 
     def get_tipo_servicio_display(self, obj):
         """Retorna el nombre del tipo de servicio"""
@@ -522,20 +604,70 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
 
         return masked
 
+    def _map_extra_fields(self, validated_data):
+        """Mapea alias de campos del frontend a los campos reales del modelo."""
+        # url_base → endpoint_url
+        url_base = validated_data.pop('url_base', None)
+        if url_base and not validated_data.get('endpoint_url'):
+            validated_data['endpoint_url'] = url_base
+
+        # timeout_segundos y reintentos_max → configuracion_adicional
+        timeout = validated_data.pop('timeout_segundos', None)
+        reintentos = validated_data.pop('reintentos_max', None)
+        config = validated_data.get('configuracion_adicional') or {}
+        if timeout is not None:
+            config['timeout_segundos'] = timeout
+        if reintentos is not None:
+            config['reintentos_max'] = reintentos
+        if config:
+            validated_data['configuracion_adicional'] = config
+
+        # credenciales se extraen para asignar vía property después del save
+        # (no es un campo de modelo, es un property con setter encriptado)
+        validated_data.pop('credenciales', None)
+
+        return validated_data
+
+    def to_representation(self, instance):
+        """Representar tipo_servicio y proveedor como código string (no PK int)."""
+        data = super().to_representation(instance)
+        data['tipo_servicio'] = instance.tipo_servicio.code if instance.tipo_servicio else None
+        data['proveedor'] = instance.proveedor.code if instance.proveedor else None
+        # Exponer timeout/reintentos desde configuracion_adicional
+        config = instance.configuracion_adicional or {}
+        data['url_base'] = instance.endpoint_url or ''
+        data['timeout_segundos'] = config.get('timeout_segundos', 30)
+        data['reintentos_max'] = config.get('reintentos_max', 3)
+        return data
+
     def create(self, validated_data):
-        """Override para registrar el usuario que crea"""
+        """Override para registrar el usuario que crea y encriptar credenciales."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
             validated_data['updated_by'] = request.user
-        return super().create(validated_data)
+        # Extraer credenciales antes del _map_extra_fields
+        credenciales = validated_data.get('credenciales') or {}
+        validated_data = self._map_extra_fields(validated_data)
+        instance = super().create(validated_data)
+        # Asignar credenciales vía property (encripta con Fernet)
+        if credenciales:
+            instance.credenciales = credenciales
+            instance.save(update_fields=['_credenciales_encrypted'])
+        return instance
 
     def update(self, instance, validated_data):
-        """Override para registrar el usuario que actualiza"""
+        """Override para registrar el usuario que actualiza."""
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['updated_by'] = request.user
-        return super().update(instance, validated_data)
+        credenciales = validated_data.get('credenciales') or {}
+        validated_data = self._map_extra_fields(validated_data)
+        instance = super().update(instance, validated_data)
+        if credenciales:
+            instance.credenciales = credenciales
+            instance.save(update_fields=['_credenciales_encrypted'])
+        return instance
 
 
 class IntegracionExternaListSerializer(serializers.ModelSerializer):
@@ -583,6 +715,13 @@ class IntegracionExternaListSerializer(serializers.ModelSerializer):
         if obj.proveedor:
             return obj.proveedor.name
         return None
+
+    def to_representation(self, instance):
+        """Representar tipo_servicio y proveedor como código string (no PK int)."""
+        data = super().to_representation(instance)
+        data['tipo_servicio'] = instance.tipo_servicio.code if instance.tipo_servicio else None
+        data['proveedor'] = instance.proveedor.code if instance.proveedor else None
+        return data
 
 
 class IntegracionExternaChoicesSerializer(serializers.Serializer):

@@ -11,11 +11,12 @@
  */
 import { useState, useMemo } from 'react';
 import { cn } from '@/utils/cn';
-import { formatDate, formatCurrency, formatPercentage } from '@/utils/formatters';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Tabs } from '@/components/common/Tabs';
-import { DataTableCard } from '@/components/layout/DataTableCard';
+import { Tooltip } from '@/components/common/Tooltip';
+import { EmptyState } from '@/components/common/EmptyState';
 import { MapaCalorRiesgos } from '@/features/riesgos/components/riesgos/MapaCalorRiesgos';
 import { RiesgoCard } from '@/features/riesgos/components/riesgos/RiesgoCard';
 import {
@@ -33,12 +34,9 @@ import {
   Filter,
   Download,
   Plus,
-  Eye,
-  Edit,
-  FileText,
   Zap,
-  Award,
   BarChart3,
+  HelpCircle,
 } from 'lucide-react';
 import type {
   RiesgoProceso,
@@ -409,20 +407,36 @@ function MapaCalorSection({ riesgos, onRiesgoClick }: {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={tipoMapa === 'inherente' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setTipoMapa('inherente')}
+            <Tooltip
+              content="Riesgo inherente: nivel de riesgo antes de aplicar controles. Representa el riesgo en su estado natural."
+              position="top"
             >
-              Inherente
-            </Button>
-            <Button
-              variant={tipoMapa === 'residual' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setTipoMapa('residual')}
+              <Button
+                variant={tipoMapa === 'inherente' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setTipoMapa('inherente')}
+              >
+                Inherente
+              </Button>
+            </Tooltip>
+            <Tooltip
+              content="Riesgo residual: nivel de riesgo que permanece después de aplicar los controles existentes."
+              position="top"
             >
-              Residual
-            </Button>
+              <Button
+                variant={tipoMapa === 'residual' ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => setTipoMapa('residual')}
+              >
+                Residual
+              </Button>
+            </Tooltip>
+            <Tooltip
+              content="Probabilidad (1=Raro, 5=Casi Seguro) × Impacto (1=Insignificante, 5=Catastrófico). Nivel Crítico ≥15, Alto ≥10, Moderado ≥5, Bajo <5."
+              position="left"
+            >
+              <HelpCircle className="h-4 w-4 text-gray-400 cursor-help" />
+            </Tooltip>
           </div>
         </div>
       </Card>
@@ -566,10 +580,20 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
 
       {riesgosFiltrados.length === 0 && (
         <Card>
-          <div className="text-center py-12">
-            <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No se encontraron riesgos</p>
-          </div>
+          <EmptyState
+            icon={<AlertTriangle className="w-12 h-12" />}
+            title={riesgos.length === 0 ? 'No hay riesgos registrados' : 'No se encontraron riesgos'}
+            description={
+              riesgos.length === 0
+                ? 'Comienza identificando los riesgos que pueden afectar los procesos de tu organización. Haz clic en "Nuevo Riesgo" para registrar el primero.'
+                : 'No hay riesgos que coincidan con los filtros aplicados. Intenta con otros criterios.'
+            }
+            action={
+              riesgos.length === 0 && onCreateRiesgo
+                ? { label: 'Nuevo Riesgo', onClick: onCreateRiesgo, icon: <Plus className="w-4 h-4" /> }
+                : undefined
+            }
+          />
         </Card>
       )}
     </div>
@@ -734,10 +758,20 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
 
       {oportunidadesFiltradas.length === 0 && (
         <Card>
-          <div className="text-center py-12">
-            <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No se encontraron oportunidades</p>
-          </div>
+          <EmptyState
+            icon={<Target className="w-12 h-12" />}
+            title={oportunidades.length === 0 ? 'No hay oportunidades registradas' : 'No se encontraron oportunidades'}
+            description={
+              oportunidades.length === 0
+                ? 'Las oportunidades son situaciones favorables que pueden mejorar los procesos. Identifica y registra oportunidades de mejora para tu organización.'
+                : 'No hay oportunidades que coincidan con el filtro seleccionado. Prueba con otro estado.'
+            }
+            action={
+              oportunidades.length === 0 && onCreateOportunidad
+                ? { label: 'Nueva Oportunidad', onClick: onCreateOportunidad, icon: <Plus className="w-4 h-4" /> }
+                : undefined
+            }
+          />
         </Card>
       )}
     </div>
@@ -953,10 +987,20 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
 
       {tratamientosFiltrados.length === 0 && (
         <Card>
-          <div className="text-center py-12">
-            <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No se encontraron tratamientos</p>
-          </div>
+          <EmptyState
+            icon={<Shield className="w-12 h-12" />}
+            title={tratamientos.length === 0 ? 'No hay planes de tratamiento registrados' : 'No se encontraron tratamientos'}
+            description={
+              tratamientos.length === 0
+                ? 'Los planes de tratamiento definen las acciones para mitigar, evitar, transferir o aceptar los riesgos identificados. Crea un plan para cada riesgo que requiera intervención.'
+                : 'No hay tratamientos que coincidan con el estado seleccionado. Prueba con otro filtro.'
+            }
+            action={
+              tratamientos.length === 0 && onCreateTratamiento
+                ? { label: 'Nuevo Tratamiento', onClick: onCreateTratamiento, icon: <Plus className="w-4 h-4" /> }
+                : undefined
+            }
+          />
         </Card>
       )}
     </div>

@@ -2,16 +2,26 @@
  * Dashboard Principal - Página de inicio post-login
  *
  * Muestra todos los módulos del sistema en un grid uniforme.
+ * Incluye: banner de bienvenida (dismissible), accesos rápidos y grid de módulos.
  * Usa componentes del Design System para animaciones.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useModulesTree } from '@/hooks/useModules';
-import { ModuleCard, ModuleCardSkeleton, ModuleGrid } from '@/components/common';
+import { ModuleCard, ModuleCardSkeleton, ModuleGrid, Alert, Card } from '@/components/common';
 import type { ModuleCardColor } from '@/components/common';
-import { Settings } from 'lucide-react';
+import {
+  Settings,
+  AlertTriangle,
+  FolderOpen,
+  CheckSquare,
+  BarChart3,
+  ShieldCheck,
+  ArrowRight,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 
@@ -137,6 +147,62 @@ const getModuleRoute = (module: {
 };
 
 // ============================================================================
+// ACCESOS RÁPIDOS
+// ============================================================================
+
+interface QuickAccessItem {
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  to: string;
+  moduleCode: string;
+  color: string;
+}
+
+const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
+  {
+    label: 'Gestión de Riesgos',
+    description: 'Ver y registrar riesgos del sistema',
+    icon: AlertTriangle,
+    to: '/riesgos/procesos',
+    moduleCode: 'motor_riesgos',
+    color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20',
+  },
+  {
+    label: 'Documentos',
+    description: 'Acceder al sistema documental',
+    icon: FolderOpen,
+    to: '/gestion-estrategica/gestion-documental',
+    moduleCode: 'gestion_estrategica',
+    color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
+  },
+  {
+    label: 'No Conformidades',
+    description: 'Registrar y hacer seguimiento',
+    icon: CheckSquare,
+    to: '/hseq/mejora-continua',
+    moduleCode: 'hseq_management',
+    color: 'text-red-600 bg-red-50 dark:bg-red-900/20',
+  },
+  {
+    label: 'Indicadores',
+    description: 'Ver KPIs y dashboards gerenciales',
+    icon: BarChart3,
+    to: '/analytics/indicadores',
+    moduleCode: 'analytics',
+    color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/20',
+  },
+  {
+    label: 'Cumplimiento Legal',
+    description: 'Matriz de requisitos legales',
+    icon: ShieldCheck,
+    to: '/cumplimiento/matriz-legal',
+    moduleCode: 'motor_cumplimiento',
+    color: 'text-green-600 bg-green-50 dark:bg-green-900/20',
+  },
+];
+
+// ============================================================================
 // PÁGINA PRINCIPAL
 // ============================================================================
 
@@ -146,10 +212,29 @@ export const DashboardPage = () => {
   const { companyName } = useBrandingConfig();
   const { data: modulesTree, isLoading } = useModulesTree();
 
+  const [showWelcome, setShowWelcome] = useState(
+    !localStorage.getItem('stratekaz_welcome_dismissed')
+  );
+
+  const dismissWelcome = () => {
+    localStorage.setItem('stratekaz_welcome_dismissed', 'true');
+    setShowWelcome(false);
+  };
+
   const enabledModules = useMemo(() => {
     if (!modulesTree?.modules) return [];
     return modulesTree.modules.filter((m) => m.is_enabled).sort((a, b) => a.order - b.order);
   }, [modulesTree]);
+
+  const enabledModuleCodes = useMemo(
+    () => new Set(enabledModules.map((m) => m.code)),
+    [enabledModules]
+  );
+
+  const visibleQuickAccess = useMemo(
+    () => QUICK_ACCESS_ITEMS.filter((item) => enabledModuleCodes.has(item.moduleCode)),
+    [enabledModuleCodes]
+  );
 
   const headerVariants: Variants = {
     hidden: { opacity: 0, y: -10 },
@@ -170,6 +255,19 @@ export const DashboardPage = () => {
         visible: { opacity: 1, transition: { duration: 0.25, staggerChildren: 0.03 } },
       }}
     >
+      {/* Banner de bienvenida (dismissible) */}
+      {showWelcome && (
+        <motion.div variants={headerVariants}>
+          <Alert
+            variant="info"
+            title="¡Bienvenido a StrateKaz!"
+            message="Tu sistema de gestión integral está listo. Comienza configurando tu empresa en Fundación → Configuración Organizacional, luego explora los módulos disponibles."
+            closable
+            onClose={dismissWelcome}
+          />
+        </motion.div>
+      )}
+
       {/* Header */}
       <motion.header variants={headerVariants}>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
@@ -182,28 +280,67 @@ export const DashboardPage = () => {
         </p>
       </motion.header>
 
-      {/* Grid de módulos */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ModuleCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <ModuleGrid>
-          {enabledModules.map((module) => (
-            <ModuleCard
-              key={module.code}
-              icon={getIconComponent(module.icon)}
-              title={module.name}
-              description={module.description}
-              color={module.color as ModuleCardColor}
-              sectionsCount={module.tabs?.filter((t) => t.is_enabled).length}
-              to={getModuleRoute(module)}
-            />
-          ))}
-        </ModuleGrid>
+      {/* Accesos rápidos */}
+      {visibleQuickAccess.length > 0 && (
+        <motion.section variants={headerVariants}>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Accesos Rápidos
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {visibleQuickAccess.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.to} to={item.to}>
+                  <Card className="group hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer h-full">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg flex-shrink-0 ${item.color}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                          {item.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-gray-300 dark:text-gray-600 flex-shrink-0 group-hover:text-primary-500 transition-colors mt-0.5" />
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </motion.section>
       )}
+
+      {/* Grid de módulos */}
+      <motion.section variants={headerVariants}>
+        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          Módulos del Sistema
+        </h2>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ModuleCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <ModuleGrid>
+            {enabledModules.map((module) => (
+              <ModuleCard
+                key={module.code}
+                icon={getIconComponent(module.icon)}
+                title={module.name}
+                description={module.description}
+                color={module.color as ModuleCardColor}
+                sectionsCount={module.tabs?.filter((t) => t.is_enabled).length}
+                to={getModuleRoute(module)}
+              />
+            ))}
+          </ModuleGrid>
+        )}
+      </motion.section>
     </motion.div>
   );
 };

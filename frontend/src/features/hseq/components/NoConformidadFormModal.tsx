@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { HelpCircle } from 'lucide-react';
+import { Modal, Button, Spinner, Tooltip } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCreateNoConformidad, useUpdateNoConformidad } from '../hooks/useCalidad';
 import type { NoConformidadList, CreateNoConformidadDTO } from '../types/calidad.types';
@@ -95,45 +96,81 @@ export default function NoConformidadFormModal({
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Fila 1: Tipo | Origen */}
-          <Select
-            label="Tipo *"
-            value={formData.tipo}
-            onChange={(e) => handleChange('tipo', e.target.value)}
-            required
-          >
-            {TIPO_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tipo *
+              </label>
+              <Tooltip
+                content="Real: incumplimiento que ya ocurrió. Potencial: riesgo de incumplimiento que aún no se ha materializado."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <Select
+              value={formData.tipo}
+              onChange={(e) => handleChange('tipo', e.target.value)}
+              required
+            >
+              {TIPO_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </Select>
+          </div>
 
-          <Select
-            label="Origen *"
-            value={formData.origen}
-            onChange={(e) => handleChange('origen', e.target.value)}
-            required
-          >
-            {ORIGEN_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Origen *
+              </label>
+              <Tooltip
+                content="Fuente donde se detectó la no conformidad: auditoría interna, queja de cliente, seguimiento de indicadores, revisión por la dirección, etc."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <Select
+              value={formData.origen}
+              onChange={(e) => handleChange('origen', e.target.value)}
+              required
+            >
+              {ORIGEN_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </Select>
+          </div>
 
           {/* Fila 2: Severidad | Fecha de Detección */}
-          <Select
-            label="Severidad *"
-            value={formData.severidad}
-            onChange={(e) => handleChange('severidad', e.target.value)}
-            required
-          >
-            {SEVERIDAD_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Severidad *
+              </label>
+              <Tooltip
+                content="Mayor: incumplimiento sistémico que afecta la capacidad del sistema. Menor: incumplimiento puntual sin efecto sistémico. Observación: situación que puede derivar en no conformidad."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <Select
+              value={formData.severidad}
+              onChange={(e) => handleChange('severidad', e.target.value)}
+              required
+            >
+              {SEVERIDAD_NO_CONFORMIDAD_OPCIONES.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </Select>
+          </div>
 
           <Input
             label="Fecha de Detección *"
@@ -182,9 +219,19 @@ export default function NoConformidadFormModal({
           />
 
           {/* Fila 6: Requisito Incumplido (ancho completo) */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Requisito Incumplido
+              </label>
+              <Tooltip
+                content="Cite el numeral o cláusula específica de la norma ISO (ej: ISO 9001:2015 Numeral 8.5.1) o del procedimiento interno que no se está cumpliendo."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
             <Textarea
-              label="Requisito Incumplido"
               value={formData.requisito_incumplido}
               onChange={(e) => handleChange('requisito_incumplido', e.target.value)}
               placeholder="Requisito de norma, procedimiento o política que no se cumple..."

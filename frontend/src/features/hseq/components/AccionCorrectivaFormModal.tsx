@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { HelpCircle } from 'lucide-react';
+import { Modal, Button, Spinner, Tooltip } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
 import {
   useCreateAccionCorrectiva,
@@ -87,18 +88,30 @@ export default function AccionCorrectivaFormModal({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Fila 1: Tipo | No Conformidad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label="Tipo de Acción *"
-            value={formData.tipo}
-            onChange={(e) => handleChange('tipo', e.target.value)}
-            required
-          >
-            {TIPO_ACCION_OPCIONES.map((opcion) => (
-              <option key={opcion.value} value={opcion.value}>
-                {opcion.label}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tipo de Acción *
+              </label>
+              <Tooltip
+                content="Correctiva: elimina la causa de una no conformidad detectada. Preventiva: elimina la causa de una no conformidad potencial. De mejora: incrementa el desempeño sin no conformidad previa."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <Select
+              value={formData.tipo}
+              onChange={(e) => handleChange('tipo', e.target.value)}
+              required
+            >
+              {TIPO_ACCION_OPCIONES.map((opcion) => (
+                <option key={opcion.value} value={opcion.value}>
+                  {opcion.label}
+                </option>
+              ))}
+            </Select>
+          </div>
 
           <Select
             label="No Conformidad *"
@@ -148,13 +161,25 @@ export default function AccionCorrectivaFormModal({
             required
           />
 
-          <Input
-            label="Fecha Límite *"
-            type="date"
-            value={formData.fecha_limite}
-            onChange={(e) => handleChange('fecha_limite', e.target.value)}
-            required
-          />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Fecha Límite *
+              </label>
+              <Tooltip
+                content="Fecha máxima para completar la acción. Según ISO 9001, las acciones correctivas deben cerrarse dentro de plazos razonables definidos por la organización."
+                position="top"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+              </Tooltip>
+            </div>
+            <Input
+              type="date"
+              value={formData.fecha_limite}
+              onChange={(e) => handleChange('fecha_limite', e.target.value)}
+              required
+            />
+          </div>
         </div>
 
         {/* Fila 5: Recursos y Costo */}

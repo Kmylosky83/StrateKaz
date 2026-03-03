@@ -176,7 +176,8 @@ def select_cargos(request):
     """
     Cargo = apps.get_model('core', 'Cargo')
     qs = Cargo.objects.filter(
-        is_system=False
+        is_system=False,
+        is_active=True,
     ).values(
         'id', 'name', 'code', 'rol_sistema__name', 'rol_sistema__code'
     ).order_by('name')[:200]

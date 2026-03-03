@@ -700,17 +700,69 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 }
             )
 
-        if User.objects.filter(email=email).exists():
-            return Response(
-                {'detail': 'Este email ya está registrado en el sistema.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Verificar si el email ya existe
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            # Si el usuario existente tiene proveedor eliminado → reasignar
+            old_prov = existing_user.proveedor
+            if old_prov and old_prov.is_deleted:
+                existing_user.proveedor = proveedor
+                existing_user.cargo = cargo
+                existing_user.is_active = True
+                existing_user.first_name = proveedor.nombre_comercial or proveedor.razon_social
+                # Regenerar token de setup password
+                setup_token = uuid.uuid4().hex
+                existing_user.password_setup_token = setup_token
+                existing_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+                existing_user.save()
+                # Re-enviar email de setup
+                try:
+                    from apps.core.tasks import send_setup_password_email_task
+                    from django.db import connection
+                    frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+                    setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+                    tenant_name = proveedor.nombre_comercial or proveedor.razon_social
+                    try:
+                        primary_color = connection.tenant.primary_color or '#3b82f6'
+                        secondary_color = connection.tenant.secondary_color or '#1e40af'
+                    except Exception:
+                        primary_color = '#3b82f6'
+                        secondary_color = '#1e40af'
+                    send_setup_password_email_task.delay(
+                        user_email=email,
+                        user_name=tenant_name,
+                        tenant_name=tenant_name,
+                        cargo_name=cargo.name if cargo else '',
+                        setup_url=setup_url,
+                        expiry_hours=72,
+                        primary_color=primary_color,
+                        secondary_color=secondary_color,
+                    )
+                except Exception as e:
+                    logger.error('Error re-enviando email de setup: %s', e, exc_info=True)
 
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {'detail': 'Este nombre de usuario ya existe.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                return Response({
+                    'detail': 'Acceso reasignado exitosamente. Se envió un correo para configurar la contraseña.',
+                })
+            else:
+                return Response(
+                    {'detail': 'Este email ya está registrado en el sistema.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Verificar username
+        existing_by_username = User.objects.filter(username=username).first()
+        if existing_by_username:
+            old_prov = existing_by_username.proveedor
+            if old_prov and old_prov.is_deleted:
+                # Username tomado por usuario de proveedor eliminado → liberar
+                existing_by_username.username = f'del_{existing_by_username.id}_{username}'
+                existing_by_username.save(update_fields=['username'])
+            else:
+                return Response(
+                    {'detail': 'Este nombre de usuario ya existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         self._create_user_for_proveedor(proveedor, email, username, cargo, request.user)
 

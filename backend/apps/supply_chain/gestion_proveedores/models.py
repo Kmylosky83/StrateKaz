@@ -613,6 +613,8 @@ class Proveedor(models.Model):
         self.save(update_fields=[
             'deleted_at', 'is_active', 'numero_documento', 'codigo_interno', 'updated_at',
         ])
+        # Desactivar todos los usuarios vinculados a este proveedor
+        self.usuarios_vinculados.filter(is_active=True).update(is_active=False)
 
     def restore(self):
         self.deleted_at = None

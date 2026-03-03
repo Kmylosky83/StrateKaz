@@ -20,13 +20,16 @@ import {
   ListChecks,
   List,
   KanbanSquare,
+  Calendar,
 } from 'lucide-react';
+import { CalendarView } from '../calendar';
 
-type ViewMode = 'list' | 'kanban';
+type ViewMode = 'list' | 'kanban' | 'calendario';
 
 const VIEW_OPTIONS = [
   { value: 'list' as const, label: 'Lista', icon: List },
   { value: 'kanban' as const, label: 'Kanban', icon: KanbanSquare },
+  { value: 'calendario' as const, label: 'Calendario', icon: Calendar },
 ];
 
 export const PlanificacionSubTab = () => {
@@ -106,6 +109,37 @@ export const PlanificacionSubTab = () => {
             </div>
           </Card>
           <KanbanBoard proyectoId={selectedProjectId} />
+        </div>
+      )}
+
+      {/* Vista Calendario */}
+      {viewMode === 'calendario' && (
+        <div className="space-y-4">
+          <Card>
+            <div className="p-4">
+              <Select
+                label="Proyecto"
+                placeholder="Selecciona un proyecto para ver sus actividades..."
+                value={selectedProjectId ? String(selectedProjectId) : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedProjectId(val ? Number(val) : null);
+                }}
+                options={[
+                  { value: '', label: 'Seleccionar proyecto...' },
+                  ...proyectos.map((p) => ({
+                    value: String(p.id),
+                    label: `${p.codigo} - ${p.nombre}`,
+                  })),
+                ]}
+              />
+            </div>
+          </Card>
+          <Card>
+            <div className="p-4">
+              <CalendarView proyectoId={selectedProjectId} />
+            </div>
+          </Card>
         </div>
       )}
 

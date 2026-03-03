@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import (
     CentroCosto, Rubro, PresupuestoPorArea,
     Aprobacion, Ejecucion
@@ -110,7 +111,7 @@ class RubroViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class PresupuestoPorAreaViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de presupuestos por área.
 
@@ -129,6 +130,58 @@ class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     search_fields = ['codigo']
     ordering_fields = ['anio', 'monto_asignado', 'monto_ejecutado', 'created_at']
     ordering = ['-anio', 'area']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'presupuesto'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de presupuesto para Revisión por la Dirección."""
+        anio_actual = timezone.now().year
+
+        # Presupuestos del año actual
+        presupuestos = PresupuestoPorArea.objects.filter(
+            anio=anio_actual, is_active=True
+        )
+
+        totales = presupuestos.aggregate(
+            total_asignado=Sum('monto_asignado'),
+            total_ejecutado=Sum('monto_ejecutado'),
+        )
+        total_asignado = totales['total_asignado'] or Decimal('0')
+        total_ejecutado = totales['total_ejecutado'] or Decimal('0')
+        saldo_disponible = total_asignado - total_ejecutado
+        pct_ejecucion = round(
+            (float(total_ejecutado) / float(total_asignado) * 100), 1
+        ) if total_asignado > 0 else 0
+
+        # Por estado
+        por_estado = list(
+            presupuestos.values('estado')
+            .annotate(cantidad=Count('id'))
+            .order_by('estado')
+        )
+
+        # Top áreas por ejecución
+        por_area = list(
+            presupuestos.filter(area__isnull=False)
+            .values('area__name')
+            .annotate(
+                asignado=Sum('monto_asignado'),
+                ejecutado=Sum('monto_ejecutado')
+            )
+            .order_by('-ejecutado')[:10]
+        )
+
+        return {
+            'anio': anio_actual,
+            'total_asignado': float(total_asignado),
+            'total_ejecutado': float(total_ejecutado),
+            'saldo_disponible': float(saldo_disponible),
+            'porcentaje_ejecucion': pct_ejecucion,
+            'por_estado': por_estado,
+            'por_area': por_area,
+        }
 
     def get_serializer_class(self):
         if self.action == 'list':

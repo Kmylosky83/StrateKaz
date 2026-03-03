@@ -16,9 +16,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django.db.models import Count, Avg
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin, OrderingMixin
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import (
     StrategicPlan, StrategicObjective, MapaEstrategico,
     CausaEfecto, KPIObjetivo, MedicionKPI, GestionCambio
@@ -175,7 +177,7 @@ class StrategicPlanViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return Response(choices)
 
 
-class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
+class StrategicObjectiveViewSet(ResumenRevisionMixin, StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Objetivos Estratégicos.
 
@@ -200,6 +202,56 @@ class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.Mo
     search_fields = ['code', 'name', 'description']
     ordering_fields = ['code', 'orden', 'due_date', 'progress', 'bsc_perspective']
     ordering = ['bsc_perspective', 'orden', 'code']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'planeacion_estrategica'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de planeación estratégica para Revisión por la Dirección."""
+        # Todos los objetivos activos
+        todos = StrategicObjective.objects.filter(is_active=True)
+        total = todos.count()
+
+        por_estado = list(
+            todos.values('status').annotate(cantidad=Count('id')).order_by('status')
+        )
+
+        # Avance global
+        avance_global = todos.aggregate(promedio=Avg('progress'))['promedio'] or 0
+
+        # En rojo (retrasados)
+        retrasados = todos.filter(status='RETRASADO').count()
+        en_progreso = todos.filter(status='EN_PROGRESO').count()
+        completados = todos.filter(status='COMPLETADO').count()
+
+        # Por perspectiva BSC
+        por_perspectiva = list(
+            todos.values('bsc_perspective').annotate(
+                cantidad=Count('id'),
+                avance_promedio=Avg('progress')
+            ).order_by('bsc_perspective')
+        )
+
+        # KPIs
+        total_kpis = KPIObjetivo.objects.filter(is_active=True).count()
+        kpis_con_meta = KPIObjetivo.objects.filter(
+            is_active=True, actual_value__isnull=False
+        ).count()
+
+        return {
+            'total_objetivos': total,
+            'por_estado': por_estado,
+            'avance_global': round(float(avance_global), 1),
+            'retrasados': retrasados,
+            'en_progreso': en_progreso,
+            'completados': completados,
+            'por_perspectiva_bsc': por_perspectiva,
+            'kpis': {
+                'total': total_kpis,
+                'con_medicion': kpis_con_meta,
+            },
+        }
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

@@ -20,13 +20,16 @@ import {
   List,
   KanbanSquare,
   BarChart3,
+  Calendar,
 } from 'lucide-react';
+import { CalendarView } from '../calendar';
 
-type ViewMode = 'list' | 'kanban' | 'timeline';
+type ViewMode = 'list' | 'kanban' | 'calendario' | 'timeline';
 
 const VIEW_OPTIONS = [
   { value: 'list' as const, label: 'Lista', icon: List },
   { value: 'kanban' as const, label: 'Kanban', icon: KanbanSquare },
+  { value: 'calendario' as const, label: 'Calendario', icon: Calendar },
   { value: 'timeline' as const, label: 'Cronograma', icon: BarChart3 },
 ];
 
@@ -170,6 +173,52 @@ const KanbanView = ({ proyectos, selectedProjectId, onSelectProject }: KanbanVie
   );
 };
 
+// ==================== CALENDAR VIEW CON SELECTOR ====================
+
+interface CalendarViewWithSelectorProps {
+  proyectos: Proyecto[];
+  selectedProjectId: number | null;
+  onSelectProject: (id: number | null) => void;
+}
+
+const CalendarViewWithSelector = ({
+  proyectos,
+  selectedProjectId,
+  onSelectProject,
+}: CalendarViewWithSelectorProps) => {
+  const projectOptions = proyectos.map((p) => ({
+    value: String(p.id),
+    label: `${p.codigo} - ${p.nombre}`,
+  }));
+
+  return (
+    <div className="space-y-4">
+      {/* Project selector */}
+      <Card>
+        <div className="p-4">
+          <Select
+            label="Proyecto"
+            placeholder="Selecciona un proyecto para ver sus actividades..."
+            value={selectedProjectId ? String(selectedProjectId) : ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              onSelectProject(val ? Number(val) : null);
+            }}
+            options={[{ value: '', label: 'Seleccionar proyecto...' }, ...projectOptions]}
+          />
+        </div>
+      </Card>
+
+      {/* Calendar view */}
+      <Card>
+        <div className="p-4">
+          <CalendarView proyectoId={selectedProjectId} />
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 // ==================== TIMELINE PLACEHOLDER ====================
 
 const TimelineView = () => (
@@ -253,6 +302,13 @@ export const MonitoreoSubTab = () => {
       )}
       {viewMode === 'kanban' && (
         <KanbanView
+          proyectos={proyectos}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={setSelectedProjectId}
+        />
+      )}
+      {viewMode === 'calendario' && (
+        <CalendarViewWithSelector
           proyectos={proyectos}
           selectedProjectId={selectedProjectId}
           onSelectProject={setSelectedProjectId}

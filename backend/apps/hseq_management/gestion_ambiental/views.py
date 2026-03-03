@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import uuid
 
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
+
 from .models import (
     TipoResiduo, GestorAmbiental, RegistroResiduo,
     Vertimiento, FuenteEmision, RegistroEmision,
@@ -103,7 +105,7 @@ class GestorAmbientalViewSet(viewsets.ModelViewSet):
         return Response(resultado)
 
 
-class RegistroResiduoViewSet(viewsets.ModelViewSet):
+class RegistroResiduoViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """ViewSet para registro de residuos"""
     queryset = RegistroResiduo.objects.select_related(
         'tipo_residuo', 'gestor'
@@ -112,6 +114,55 @@ class RegistroResiduoViewSet(viewsets.ModelViewSet):
     filterset_fields = ['empresa_id', 'tipo_movimiento', 'tipo_residuo', 'gestor']
     search_fields = ['area_generadora', 'numero_manifiesto']
     ordering_fields = ['fecha', 'cantidad']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha'
+    resumen_modulo_nombre = 'gestion_ambiental'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de gestión ambiental para Revisión por la Dirección."""
+        # Residuos generados en período
+        generados = queryset.filter(tipo_movimiento='GENERACION')
+        total_generado_kg = generados.aggregate(total=Sum('cantidad'))['total'] or 0
+
+        por_tipo_residuo = list(
+            generados.values('tipo_residuo__nombre', 'tipo_residuo__clase')
+            .annotate(cantidad_total=Sum('cantidad'))
+            .order_by('-cantidad_total')[:10]
+        )
+
+        # Disposición/Aprovechamiento
+        aprovechados = queryset.filter(tipo_movimiento='APROVECHAMIENTO')
+        total_aprovechado = aprovechados.aggregate(total=Sum('cantidad'))['total'] or 0
+        pct_aprovechamiento = round(
+            (float(total_aprovechado) / float(total_generado_kg) * 100), 1
+        ) if total_generado_kg > 0 else 0
+
+        # Consumos de recursos en período
+        consumos = ConsumoRecurso.objects.filter(
+            fecha__range=[fecha_desde, fecha_hasta]
+        )
+        consumos_por_recurso = list(
+            consumos.values('tipo_recurso__nombre')
+            .annotate(total_consumo=Sum('cantidad'))
+            .order_by('-total_consumo')
+        )
+
+        # Certificados ambientales vigentes
+        certificados_vigentes = CertificadoAmbiental.objects.filter(
+            estado='VIGENTE'
+        ).count()
+
+        return {
+            'residuos': {
+                'total_generado_kg': float(total_generado_kg),
+                'por_tipo': por_tipo_residuo,
+                'total_aprovechado_kg': float(total_aprovechado),
+                'porcentaje_aprovechamiento': pct_aprovechamiento,
+            },
+            'consumos_recursos': consumos_por_recurso,
+            'certificados_vigentes': certificados_vigentes,
+        }
 
     def get_serializer_class(self):
         """Usar serializer diferente para create"""

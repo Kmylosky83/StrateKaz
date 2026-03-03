@@ -9,16 +9,9 @@
  * - Próximas revisiones con countdown
  */
 import { useEffect, useState } from 'react';
-import {
-  RefreshCw,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  Calendar,
-  AlertCircle,
-} from 'lucide-react';
+import { RefreshCw, BookOpen, ChevronDown, ChevronUp, Calendar, AlertCircle } from 'lucide-react';
 import { Card, Button } from '@/components/common';
-import { ProgramacionTab, ActasTab } from './subtabs';
+import { ProgramacionTab, ActasTab, InformeGerencialTab } from './subtabs';
 import { CompromisosDashboard } from './CompromisosDashboard';
 import {
   useRevisionDireccionDashboard,
@@ -80,9 +73,12 @@ const ISO_SECTIONS = [
 
 const colorMap: Record<string, string> = {
   blue: 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
-  green: 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
-  yellow: 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300',
-  purple: 'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300',
+  green:
+    'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
+  yellow:
+    'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300',
+  purple:
+    'bg-purple-50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300',
 };
 
 const ISOPanel = () => {
@@ -117,10 +113,7 @@ const ISOPanel = () => {
         {expanded && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {ISO_SECTIONS.map((iso) => (
-              <div
-                key={iso.norma}
-                className={`rounded-lg border p-3 ${colorMap[iso.color]}`}
-              >
+              <div key={iso.norma} className={`rounded-lg border p-3 ${colorMap[iso.color]}`}>
                 <p className="text-xs font-bold mb-0.5">{iso.norma}</p>
                 <p className="text-xs font-medium mb-2">
                   {iso.clausula} — {iso.titulo}
@@ -130,8 +123,7 @@ const ISOPanel = () => {
                     <li key={el.code} className="flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-current flex-shrink-0" />
                       <span className="text-xs">
-                        <span className="font-mono font-medium">{el.code}</span>{' '}
-                        {el.label}
+                        <span className="font-mono font-medium">{el.code}</span> {el.label}
                       </span>
                     </li>
                   ))}
@@ -239,8 +231,8 @@ const RealTimeIndicator = () => {
       {isFetching
         ? 'Actualizando...'
         : lastUpdate
-        ? `Actualizado ${formatDistanceToNow(lastUpdate, { locale: es, addSuffix: true })}`
-        : 'En tiempo real'}
+          ? `Actualizado ${formatDistanceToNow(lastUpdate, { locale: es, addSuffix: true })}`
+          : 'En tiempo real'}
     </div>
   );
 };
@@ -255,6 +247,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   programacion: ProgramacionTab,
   actas: ActasTab,
   compromisos: CompromisosDashboard,
+  informe_gerencial: InformeGerencialTab,
 };
 
 export const RevisionDireccionTab = ({ activeSection }: RevisionDireccionTabProps) => {

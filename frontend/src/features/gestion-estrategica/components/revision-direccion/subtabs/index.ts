@@ -3,3 +3,4 @@
  */
 export { ProgramacionTab } from './ProgramacionTab';
 export { ActasTab } from './ActasTab';
+export { InformeGerencialTab } from './informe-gerencial';

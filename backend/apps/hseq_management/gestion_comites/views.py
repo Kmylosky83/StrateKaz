@@ -9,6 +9,8 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q, Count, Avg
 
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
+
 from .models import (
     TipoComite, Comite, MiembroComite, Reunion, AsistenciaReunion,
     ActaReunion, Compromiso, SeguimientoCompromiso, Votacion, VotoMiembro
@@ -210,7 +212,7 @@ class MiembroComiteViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ReunionViewSet(viewsets.ModelViewSet):
+class ReunionViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar reuniones de comités.
     """
@@ -221,6 +223,43 @@ class ReunionViewSet(viewsets.ModelViewSet):
     search_fields = ['numero_reunion', 'lugar', 'agenda']
     ordering_fields = ['fecha_programada', 'created_at']
     ordering = ['-fecha_programada']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_programada'
+    resumen_modulo_nombre = 'gestion_comites'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de comités para Revisión por la Dirección."""
+        total = queryset.count()
+        realizadas = queryset.filter(estado='REALIZADA').count()
+        canceladas = queryset.filter(estado='CANCELADA').count()
+        pct_cumplimiento = round(
+            (realizadas / total * 100), 1
+        ) if total > 0 else 0
+
+        # Asistencia promedio
+        reuniones_realizadas = queryset.filter(estado='REALIZADA')
+        asistencia_promedio = reuniones_realizadas.aggregate(
+            promedio=Avg('num_asistentes')
+        )['promedio'] or 0
+
+        # Compromisos derivados
+        reunion_ids = queryset.values_list('id', flat=True)
+        compromisos = Compromiso.objects.filter(reunion_id__in=reunion_ids)
+        total_compromisos = compromisos.count()
+        compromisos_cumplidos = compromisos.filter(estado='CUMPLIDO').count()
+
+        return {
+            'reuniones_programadas': total,
+            'reuniones_realizadas': realizadas,
+            'reuniones_canceladas': canceladas,
+            'porcentaje_cumplimiento': pct_cumplimiento,
+            'asistencia_promedio': round(float(asistencia_promedio), 1),
+            'compromisos': {
+                'total': total_compromisos,
+                'cumplidos': compromisos_cumplidos,
+            },
+        }
 
     def get_queryset(self):
         """Filtra reuniones por empresa."""

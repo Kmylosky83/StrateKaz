@@ -27,6 +27,7 @@ from django.db.models import Count, Q, Avg
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import (
     CategoriaRiesgo,
     RiesgoProceso,
@@ -110,7 +111,7 @@ class CategoriaRiesgoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class RiesgoProcesoViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de riesgos de procesos.
 
@@ -149,6 +150,59 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         'tratamientos': 'No se puede eliminar: tiene tratamientos asociados',
         'controles': 'No se puede eliminar: tiene controles operacionales asociados'
     }
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'riesgos_procesos'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de riesgos para Revisión por la Dirección."""
+        # Todos los riesgos activos (sin filtro de período para totales)
+        todos = RiesgoProceso.objects.all()
+        total = todos.count()
+
+        # Por nivel residual
+        niveles = {'BAJO': 0, 'MODERADO': 0, 'ALTO': 0, 'CRITICO': 0}
+        for riesgo in todos:
+            nivel = riesgo.interpretacion_residual
+            if nivel in niveles:
+                niveles[nivel] += 1
+
+        # Por estado
+        por_estado = list(
+            todos.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+        )
+
+        # Tratamientos activos
+        tratamientos_activos = TratamientoRiesgo.objects.filter(
+            estado__in=['pendiente', 'en_curso']
+        ).count()
+
+        # Nuevos en período
+        nuevos_periodo = queryset.count()
+
+        # Oportunidades
+        oportunidades_total = Oportunidad.objects.count()
+        oportunidades_por_estado = list(
+            Oportunidad.objects.values('estado')
+            .annotate(cantidad=Count('id'))
+            .order_by('estado')
+        )
+
+        return {
+            'total_riesgos': total,
+            'por_nivel_residual': [
+                {'nivel': k, 'cantidad': v} for k, v in niveles.items()
+            ],
+            'por_estado': por_estado,
+            'criticos_y_altos': niveles.get('CRITICO', 0) + niveles.get('ALTO', 0),
+            'tratamientos_activos': tratamientos_activos,
+            'nuevos_en_periodo': nuevos_periodo,
+            'oportunidades': {
+                'total': oportunidades_total,
+                'por_estado': oportunidades_por_estado,
+            },
+        }
 
     def get_queryset(self):
         """

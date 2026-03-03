@@ -32,8 +32,8 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Aumentar límite para vendor chunk grande (15MB)
-        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+        // Límite de cache por archivo (5MB — suficiente para vendor chunks post-splitting)
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
 
         // Estrategias de cache para API
         runtimeCaching: [
@@ -109,35 +109,88 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Solo aislamos paquetes grandes que NO dependen de React internamente.
-          // Todo lo demás (react, echarts, recharts, framer-motion, headlessui,
-          // tanstack, zustand, etc.) se deja a Rollup automático para evitar
-          // circular chunks que rompen el singleton de React en producción.
+          // ===================================================================
+          // PERF-1: Manual chunk splitting strategy
+          //
+          // React-dependent libs are safe to split into own chunks because
+          // Rollup deduplicates React — they import from the shared React chunk.
+          // The React singleton concern only applies if react/react-dom itself
+          // ends up duplicated, which Rollup prevents automatically.
+          //
+          // Strategy: isolate heavy libraries so they load ONLY when needed
+          // by lazy-loaded routes (analytics, workflows, organigrama, etc.)
+          // ===================================================================
 
-          // === 3D GRAPHICS (~500 KB, solo three.js core sin React bindings) ===
-          if (id.includes('node_modules/three/')) {
+          // === CHARTS: ECharts (~800 KB, loaded only by analytics/dashboard pages) ===
+          if (id.includes('node_modules/echarts') ||
+              id.includes('node_modules/zrender')) {
+            return 'vendor-echarts'
+          }
+
+          // === CHARTS: Recharts (~350 KB, loaded by contexto/stakeholder charts) ===
+          if (id.includes('node_modules/recharts') ||
+              id.includes('node_modules/victory-vendor') ||
+              id.includes('node_modules/d3-')) {
+            return 'vendor-recharts'
+          }
+
+          // === 3D GRAPHICS (~680 KB, only login NetworkBackground + rare 3D views) ===
+          if (id.includes('node_modules/three/') ||
+              id.includes('node_modules/@react-three/')) {
             return 'vendor-3d'
           }
-          // NOTA: @react-three/* usa React hooks internamente, NO separar del auto-chunk
 
-          // === RICH TEXT EDITOR (~250 KB, solo prosemirror core sin React) ===
+          // === FLOW DIAGRAMS (~250 KB, only organigrama + workflow designer) ===
+          if (id.includes('node_modules/@xyflow/') ||
+              id.includes('node_modules/@dagrejs/')) {
+            return 'vendor-flow'
+          }
+
+          // === RICH TEXT EDITOR (~250 KB, loaded when editing rich text) ===
           if (id.includes('node_modules/prosemirror-') ||
-              id.includes('node_modules/@prosemirror/')) {
+              id.includes('node_modules/@prosemirror/') ||
+              id.includes('node_modules/@tiptap/')) {
             return 'vendor-editor'
           }
-          // NOTA: @tiptap/react usa React hooks, NO separar del auto-chunk
 
-          // === PDF & EXPORT (~300 KB, solo librerías sin React) ===
+          // === PDF & EXPORT (~370 KB, loaded when exporting/printing) ===
           if (id.includes('node_modules/jspdf') ||
               id.includes('node_modules/html-to-image')) {
             return 'vendor-export'
           }
-          // NOTA: react-to-print usa React hooks, NO separar del auto-chunk
+
+          // === ANIMATIONS: Framer Motion (~180 KB, used widely but deferrable) ===
+          if (id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion'
+          }
+
+          // === DRAG & DROP (~50 KB, only kanban/form builder) ===
+          if (id.includes('node_modules/@dnd-kit/')) {
+            return 'vendor-dnd'
+          }
+
+          // === SENTRY (~150 KB, only loaded in production with DSN) ===
+          if (id.includes('node_modules/@sentry/')) {
+            return 'vendor-sentry'
+          }
+
+          // === DATA TABLE (~50 KB, used by many pages but cacheable separately) ===
+          if (id.includes('node_modules/@tanstack/react-table')) {
+            return 'vendor-table'
+          }
+
+          // === REACT QUERY (~40 KB, core infra — cached long-term) ===
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'vendor-query'
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 800,
     minify: 'esbuild',
-    target: 'es2015',
+    // PERF-1: Upgrade target from es2015 to es2020 — reduces polyfills/downlevel transforms.
+    // All modern browsers (Chrome 80+, Firefox 80+, Safari 14+, Edge 80+) support ES2020.
+    // This is consistent with tsconfig target and the Vite docs recommendation.
+    target: 'es2020',
   },
 })

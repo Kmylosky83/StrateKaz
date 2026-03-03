@@ -11,6 +11,7 @@ from django.db.models import Count, Sum, Avg, Q
 from datetime import timedelta
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     PlanFormacion, Capacitacion, ProgramacionCapacitacion,
@@ -56,12 +57,74 @@ class PlanFormacionViewSet(viewsets.ModelViewSet):
         return Response({'status': 'Plan aprobado'})
 
 
-class CapacitacionViewSet(viewsets.ModelViewSet):
+class CapacitacionViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """ViewSet para capacitaciones."""
     permission_classes = [IsAuthenticated]
     filterset_fields = ['tipo_capacitacion', 'modalidad', 'estado', 'plan_formacion']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['-created_at']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'formacion_capacitacion'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de formación para Revisión por la Dirección."""
+        # Programaciones en período
+        programaciones = ProgramacionCapacitacion.objects.filter(
+            fecha__range=[fecha_desde, fecha_hasta], is_active=True
+        )
+        total_programadas = programaciones.count()
+        completadas = programaciones.filter(estado='completada').count()
+        pct_ejecucion = round(
+            (completadas / total_programadas * 100), 1
+        ) if total_programadas > 0 else 0
+
+        # Horas de capacitación
+        total_horas = Capacitacion.objects.filter(
+            is_active=True,
+            programaciones__fecha__range=[fecha_desde, fecha_hasta],
+            programaciones__estado='completada',
+        ).aggregate(total=Sum('duracion_horas'))['total'] or 0
+
+        # Ejecuciones (participación)
+        ejecuciones = EjecucionCapacitacion.objects.filter(
+            programacion__fecha__range=[fecha_desde, fecha_hasta]
+        )
+        total_participaciones = ejecuciones.count()
+        asistieron = ejecuciones.filter(asistio=True).count()
+        aprobados = ejecuciones.filter(estado='aprobado').count()
+
+        # Cobertura: % asistencia
+        pct_asistencia = round(
+            (asistieron / total_participaciones * 100), 1
+        ) if total_participaciones > 0 else 0
+
+        # Por tipo de capacitación
+        por_tipo = list(
+            Capacitacion.objects.filter(
+                is_active=True,
+                programaciones__fecha__range=[fecha_desde, fecha_hasta],
+            ).values('tipo_capacitacion').annotate(
+                cantidad=Count('id', distinct=True)
+            ).order_by('-cantidad')
+        )
+
+        return {
+            'programaciones': {
+                'total': total_programadas,
+                'completadas': completadas,
+                'porcentaje_ejecucion': pct_ejecucion,
+            },
+            'total_horas_capacitacion': total_horas,
+            'participacion': {
+                'total_inscripciones': total_participaciones,
+                'asistieron': asistieron,
+                'aprobados': aprobados,
+                'porcentaje_asistencia': pct_asistencia,
+            },
+            'por_tipo': por_tipo,
+        }
 
     def get_queryset(self):
         return Capacitacion.objects.filter(is_active=True).select_related('plan_formacion', 'instructor_interno')

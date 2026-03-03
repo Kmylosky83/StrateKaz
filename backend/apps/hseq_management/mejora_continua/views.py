@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.db.models import Q, Count
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     ProgramaAuditoria,
@@ -139,7 +140,7 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
 # AUDITORIA
 # ============================================================================
 
-class AuditoriaViewSet(viewsets.ModelViewSet):
+class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """ViewSet para Auditorías"""
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -147,6 +148,47 @@ class AuditoriaViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'titulo', 'objetivo', 'alcance']
     ordering_fields = ['fecha_planificada_inicio', 'created_at', 'codigo']
     ordering = ['-fecha_planificada_inicio']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_planificada_inicio'
+    resumen_modulo_nombre = 'auditorias_internas'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de auditorías para Revisión por la Dirección."""
+        total = queryset.count()
+        por_estado = list(
+            queryset.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+        )
+        por_tipo = list(
+            queryset.values('tipo').annotate(cantidad=Count('id')).order_by('-cantidad')
+        )
+
+        cerradas = queryset.filter(estado='CERRADA').count()
+
+        # Hallazgos de estas auditorías
+        auditoria_ids = queryset.values_list('id', flat=True)
+        hallazgos = Hallazgo.objects.filter(auditoria_id__in=auditoria_ids)
+        total_hallazgos = hallazgos.count()
+        hallazgos_por_tipo = list(
+            hallazgos.values('tipo').annotate(cantidad=Count('id')).order_by('-cantidad')
+        )
+        hallazgos_cerrados = hallazgos.filter(estado='CERRADO').count()
+        pct_cierre = round(
+            (hallazgos_cerrados / total_hallazgos * 100), 1
+        ) if total_hallazgos > 0 else 0
+
+        return {
+            'total_auditorias': total,
+            'por_estado': por_estado,
+            'por_tipo': por_tipo,
+            'cerradas': cerradas,
+            'hallazgos': {
+                'total': total_hallazgos,
+                'por_tipo': hallazgos_por_tipo,
+                'cerrados': hallazgos_cerrados,
+                'porcentaje_cierre': pct_cierre,
+            },
+        }
 
     def get_queryset(self):
         queryset = Auditoria.objects.filter(is_active=True)

@@ -18,6 +18,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AxiosError } from 'axios';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   CheckCircle,
   AlertCircle,
@@ -35,7 +37,7 @@ import {
   Mail,
   Phone,
   CreditCard,
-  GraduationCap,
+  Search,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
@@ -270,7 +272,6 @@ function VacanteInfoCard({
   );
 }
 
-
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -353,6 +354,15 @@ export default function PostulacionPage() {
       { vacanteId, formData },
       {
         onSuccess: () => setSubmitted(true),
+        onError: (error) => {
+          const axiosErr = error as AxiosError<{ detail?: string }>;
+          if (axiosErr.response?.status === 409) {
+            toast.error(
+              axiosErr.response.data?.detail ||
+                'Ya existe una postulación con este documento para esta vacante.'
+            );
+          }
+        },
       }
     );
   };
@@ -413,26 +423,108 @@ export default function PostulacionPage() {
         logoUrl={logoUrl}
         primaryColor={primaryColor}
       >
-        <div className="max-w-lg mx-auto text-center py-16">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-            Postulacion enviada exitosamente
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-2">
-            Tu postulacion a <strong>{vacante.titulo}</strong> ha sido registrada.
-          </p>
-          <p className="text-sm text-gray-500 mb-8">
-            Nuestro equipo revisara tu perfil y te contactaremos pronto. Revisa tu correo
-            electronico para mas informacion.
-          </p>
-          <Link to="/vacantes">
-            <Button variant="outline" size="lg">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Ver mas vacantes
-            </Button>
-          </Link>
+        <div className="max-w-lg mx-auto text-center py-12">
+          {/* Animated checkmark */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+            className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.3 }}
+            >
+              <CheckCircle className="w-12 h-12" style={{ color: primaryColor }} />
+            </motion.div>
+          </motion.div>
+
+          {/* Title */}
+          <motion.h2
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-2xl font-bold text-gray-900 dark:text-white mb-3"
+          >
+            ¡Postulación enviada exitosamente!
+          </motion.h2>
+
+          {/* Description */}
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-gray-600 dark:text-gray-400 mb-6"
+          >
+            Tu postulación a <strong>{vacante.titulo}</strong> en{' '}
+            <strong style={{ color: primaryColor }}>{empresaNombre}</strong> ha sido registrada
+            correctamente.
+          </motion.p>
+
+          {/* Email notice card */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="mb-6">
+              <div className="p-5">
+                <div className="flex items-start gap-4">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
+                  >
+                    <Mail className="w-5 h-5" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+                      Revisa tu correo electrónico
+                    </h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Te enviamos una confirmación a tu email con los detalles de tu postulación.
+                      Nuestro equipo revisará tu perfil y te contactaremos si tu perfil se ajusta al
+                      cargo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Next steps */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <Alert
+              variant="info"
+              message="Nuestro equipo de selección evaluará tu hoja de vida. Si tu perfil se ajusta a los requerimientos, te contactaremos para continuar con el proceso."
+            />
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+          >
+            <Link to="/vacantes">
+              <Button variant="outline" size="lg">
+                <Search className="w-4 h-4 mr-2" />
+                Ver más vacantes
+              </Button>
+            </Link>
+            <Link to="/vacantes">
+              <Button size="lg" style={{ backgroundColor: primaryColor }}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver al portal
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </PublicPortalLayout>
     );
@@ -586,22 +678,30 @@ export default function PostulacionPage() {
             />
 
             {/* Error alert */}
-            {postulacionMutation.isError && (
-              <Alert
-                variant="error"
-                message={
-                  (
-                    postulacionMutation.error as AxiosError<{
-                      detail?: string;
-                      non_field_errors?: string[];
-                    }>
-                  )?.response?.data?.detail ||
-                  (postulacionMutation.error as AxiosError<{ non_field_errors?: string[] }>)
-                    ?.response?.data?.non_field_errors?.[0] ||
-                  'Error al enviar la postulacion. Intenta nuevamente.'
-                }
-              />
-            )}
+            {postulacionMutation.isError &&
+              (() => {
+                const axiosErr = postulacionMutation.error as AxiosError<{
+                  detail?: string;
+                  non_field_errors?: string[];
+                }>;
+                const is409 = axiosErr?.response?.status === 409;
+                const errorMsg =
+                  axiosErr?.response?.data?.detail ||
+                  axiosErr?.response?.data?.non_field_errors?.[0] ||
+                  'Error al enviar la postulación. Intenta nuevamente.';
+
+                return (
+                  <Alert
+                    variant={is409 ? 'warning' : 'error'}
+                    title={is409 ? 'Postulación duplicada' : undefined}
+                    message={
+                      is409
+                        ? 'Ya existe una postulación con este documento para esta vacante. Si crees que es un error, contacta al área de Talento Humano de la empresa.'
+                        : errorMsg
+                    }
+                  />
+                );
+              })()}
 
             {/* Submit */}
             <div className="pt-4 border-t border-gray-100 dark:border-gray-700">

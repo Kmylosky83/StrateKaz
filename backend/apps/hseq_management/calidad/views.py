@@ -12,6 +12,7 @@ from django.db.models import Q, Count, Avg
 from datetime import timedelta
 from apps.core.mixins import ExportMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -44,7 +45,7 @@ from .serializers import (
 # NO CONFORMIDADES
 # ============================================================================
 
-class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
+class NoConformidadViewSet(ResumenRevisionMixin, ExportMixin, viewsets.ModelViewSet):
     """ViewSet para No Conformidades"""
     permission_classes = [IsAuthenticated]
     export_fields = [('codigo', 'Código'), ('titulo', 'Título'), ('tipo', 'Tipo'), ('estado', 'Estado'), ('severidad', 'Severidad'), ('origen', 'Origen'), ('fecha_deteccion', 'Fecha Detección')]
@@ -54,6 +55,51 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
     search_fields = ['codigo', 'titulo', 'descripcion', 'ubicacion']
     ordering_fields = ['fecha_deteccion', 'created_at', 'codigo']
     ordering = ['-fecha_deteccion']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_deteccion'
+    resumen_modulo_nombre = 'calidad'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de calidad (NCs y acciones correctivas) para Revisión por la Dirección."""
+        total_ncs = queryset.count()
+
+        por_estado = list(
+            queryset.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+        )
+        por_tipo = list(
+            queryset.values('tipo').annotate(cantidad=Count('id')).order_by('-cantidad')
+        )
+        por_severidad = list(
+            queryset.values('severidad').annotate(cantidad=Count('id')).order_by('severidad')
+        )
+
+        abiertas = queryset.exclude(estado__in=['CERRADA', 'CANCELADA']).count()
+        cerradas = queryset.filter(estado='CERRADA').count()
+
+        # Acciones correctivas en período
+        acciones = AccionCorrectiva.objects.filter(
+            fecha_planificada__range=[fecha_desde, fecha_hasta]
+        )
+        total_acciones = acciones.count()
+        acciones_verificadas = acciones.filter(estado='VERIFICADA').count()
+        pct_efectividad = round(
+            (acciones_verificadas / total_acciones * 100), 1
+        ) if total_acciones > 0 else 0
+
+        return {
+            'total_no_conformidades': total_ncs,
+            'abiertas': abiertas,
+            'cerradas': cerradas,
+            'por_estado': por_estado,
+            'por_tipo': por_tipo,
+            'por_severidad': por_severidad,
+            'acciones_correctivas': {
+                'total': total_acciones,
+                'verificadas': acciones_verificadas,
+                'porcentaje_efectividad': pct_efectividad,
+            },
+        }
 
     def get_queryset(self):
         queryset = NoConformidad.objects.all()

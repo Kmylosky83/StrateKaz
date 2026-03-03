@@ -27,6 +27,11 @@ import type {
   AprobarActaDTO,
   RevisionDireccionStats,
   DashboardRevision,
+  InformeConsolidadoResponse,
+  EstadoFirmas,
+  FirmarActaDTO,
+  EnviarInformeDTO,
+  EnviarInformeResponse,
 } from '../types/revisionDireccion';
 import type { PaginatedResponse, SelectOption } from '../types/strategic.types';
 
@@ -416,6 +421,63 @@ export const statsApi = {
 
   getDashboard: async (): Promise<DashboardRevision> => {
     const response = await axiosInstance.get(`${BASE_URL}/dashboard/`);
+    return response.data;
+  },
+};
+
+// ==================== INFORME CONSOLIDADO (ISO 9.3) ====================
+
+export const informeConsolidadoApi = {
+  get: async (params?: {
+    fecha_desde?: string;
+    fecha_hasta?: string;
+  }): Promise<InformeConsolidadoResponse> => {
+    const response = await axiosInstance.get(`${BASE_URL}/informe-consolidado/`, {
+      params,
+    });
+    return response.data;
+  },
+};
+
+// ==================== FIRMA DIGITAL DEL ACTA ====================
+
+export const firmaActaApi = {
+  iniciar: async (actaId: number): Promise<{ message: string; firma_documento_id: number }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/actas/${actaId}/iniciar-firma/`);
+    return response.data;
+  },
+
+  firmar: async (actaId: number, data: FirmarActaDTO): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/actas/${actaId}/firmar/`, data);
+    return response.data;
+  },
+
+  estado: async (actaId: number): Promise<EstadoFirmas> => {
+    const response = await axiosInstance.get(`${BASE_URL}/actas/${actaId}/estado-firmas/`);
+    return response.data;
+  },
+};
+
+// ==================== ENVÍO DE INFORME POR CORREO ====================
+
+export const enviarInformeApi = {
+  send: async (actaId: number, data: EnviarInformeDTO): Promise<EnviarInformeResponse> => {
+    const response = await axiosInstance.post(`${BASE_URL}/actas/${actaId}/enviar-informe/`, data);
+    return response.data;
+  },
+};
+
+// ==================== EXPORT INFORME GERENCIAL PDF ====================
+
+export const exportInformeGerencialApi = {
+  pdf: async (
+    programacionId: number,
+    params?: { fecha_desde?: string; fecha_hasta?: string }
+  ): Promise<Blob> => {
+    const response = await axiosInstance.get(
+      `${BASE_URL}/export/informe-gerencial/${programacionId}/pdf/`,
+      { params, responseType: 'blob' }
+    );
     return response.data;
   },
 };

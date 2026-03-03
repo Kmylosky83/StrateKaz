@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -5,10 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from django.utils import timezone
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from apps.core.mixins import StandardViewSetMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import TipoRequisito, RequisitoLegal, EmpresaRequisito, AlertaVencimiento
 from .serializers import TipoRequisitoSerializer, RequisitoLegalSerializer, EmpresaRequisitoSerializer, AlertaVencimientoSerializer
 
@@ -47,7 +50,7 @@ class RequisitoLegalViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     search_fields = ["codigo", "nombre", "entidad_emisora"]
 
 
-class EmpresaRequisitoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class EmpresaRequisitoViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Requisitos de Empresa.
 
@@ -62,6 +65,50 @@ class EmpresaRequisitoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["empresa_id", "requisito", "estado", "is_active"]
     search_fields = ["numero_documento", "requisito__nombre"]
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'cumplimiento_legal'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de cumplimiento legal para Revisión por la Dirección."""
+        # Todos los requisitos activos (sin filtro de fecha para totales generales)
+        todos = EmpresaRequisito.objects.filter(is_active=True)
+        total = todos.count()
+
+        # Por estado
+        por_estado = list(
+            todos.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+        )
+
+        # Calcular porcentaje de cumplimiento
+        vigentes = todos.filter(estado='vigente').count()
+        pct_cumplimiento = round((vigentes / total * 100), 1) if total > 0 else 0
+
+        # Vencidos
+        hoy = timezone.now().date()
+        vencidos = todos.filter(
+            fecha_vencimiento__lt=hoy,
+            estado__in=['vigente', 'proximo_vencer', 'en_tramite']
+        ).count()
+
+        # Próximos a vencer (30 días)
+        proximos_vencer = todos.filter(
+            fecha_vencimiento__range=[hoy, hoy + timedelta(days=30)],
+        ).count()
+
+        # Nuevos en el período
+        nuevos_periodo = queryset.count()
+
+        return {
+            'total_requisitos': total,
+            'por_estado': por_estado,
+            'porcentaje_cumplimiento': pct_cumplimiento,
+            'vigentes': vigentes,
+            'vencidos': vencidos,
+            'proximos_vencer_30d': proximos_vencer,
+            'nuevos_en_periodo': nuevos_periodo,
+        }
 
     @action(detail=False, methods=["get"])
     def por_vencer(self, request):

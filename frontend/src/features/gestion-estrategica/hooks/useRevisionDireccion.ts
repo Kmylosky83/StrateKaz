@@ -13,6 +13,10 @@ import {
   participantesActaApi,
   compromisosApi,
   statsApi,
+  informeConsolidadoApi,
+  firmaActaApi,
+  enviarInformeApi,
+  exportInformeGerencialApi,
 } from '../api/revisionDireccionApi';
 import type {
   CreateProgramacionRevisionDTO,
@@ -29,6 +33,8 @@ import type {
   CreateElementoEntradaDTO,
   CreateDecisionResultadoDTO,
   AprobarActaDTO,
+  FirmarActaDTO,
+  EnviarInformeDTO,
 } from '../types/revisionDireccion';
 
 // ==================== QUERY KEYS ====================
@@ -56,6 +62,13 @@ export const revisionDireccionKeys = {
   // Estadísticas
   stats: ['revision-direccion-stats'] as const,
   dashboard: ['revision-direccion-dashboard'] as const,
+
+  // Informe Consolidado
+  informeConsolidado: (fechaDesde?: string, fechaHasta?: string) =>
+    ['revision-direccion', 'informe-consolidado', fechaDesde, fechaHasta] as const,
+
+  // Firma Digital
+  estadoFirmas: (actaId: number) => ['revision-direccion', 'estado-firmas', actaId] as const,
 };
 
 // ==================== PROGRAMACIÓN HOOKS ====================
@@ -157,8 +170,13 @@ export const useEnviarNotificaciones = () => {
 export const useReprogramarRevision = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { nueva_fecha: string; hora_inicio: string; motivo?: string } }) =>
-      programacionApi.reprogramar(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { nueva_fecha: string; hora_inicio: string; motivo?: string };
+    }) => programacionApi.reprogramar(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programaciones() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(id) });
@@ -174,7 +192,8 @@ export const useReprogramarRevision = () => {
 export const useCancelarProgramacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { motivo: string } }) => programacionApi.cancelar(id, data),
+    mutationFn: ({ id, data }: { id: number; data: { motivo: string } }) =>
+      programacionApi.cancelar(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programaciones() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(id) });
@@ -191,10 +210,17 @@ export const useCancelarProgramacion = () => {
 export const useAddParticipanteConvocado = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ programacionId, data }: { programacionId: number; data: CreateParticipanteConvocadoDTO }) =>
-      participantesConvocadosApi.addParticipante(programacionId, data),
+    mutationFn: ({
+      programacionId,
+      data,
+    }: {
+      programacionId: number;
+      data: CreateParticipanteConvocadoDTO;
+    }) => participantesConvocadosApi.addParticipante(programacionId, data),
     onSuccess: (_, { programacionId }) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(programacionId) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.programacion(programacionId),
+      });
       toast.success('Participante agregado');
     },
     onError: () => {
@@ -206,10 +232,17 @@ export const useAddParticipanteConvocado = () => {
 export const useRemoveParticipanteConvocado = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ programacionId, participanteId }: { programacionId: number; participanteId: number }) =>
-      participantesConvocadosApi.removeParticipante(programacionId, participanteId),
+    mutationFn: ({
+      programacionId,
+      participanteId,
+    }: {
+      programacionId: number;
+      participanteId: number;
+    }) => participantesConvocadosApi.removeParticipante(programacionId, participanteId),
     onSuccess: (_, { programacionId }) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(programacionId) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.programacion(programacionId),
+      });
       toast.success('Participante removido');
     },
     onError: () => {
@@ -231,7 +264,9 @@ export const useConfirmarAsistencia = () => {
       data: { confirmado: boolean; observaciones?: string };
     }) => participantesConvocadosApi.confirmarAsistencia(programacionId, participanteId, data),
     onSuccess: (_, { programacionId }) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(programacionId) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.programacion(programacionId),
+      });
       toast.success('Asistencia confirmada');
     },
     onError: () => {
@@ -280,8 +315,12 @@ export const useCreateActa = () => {
     mutationFn: (data: CreateActaRevisionDTO) => actasApi.create(data),
     onSuccess: (newActa) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actas() });
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actaByProgramacion(newActa.programacion) });
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.programacion(newActa.programacion) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.actaByProgramacion(newActa.programacion),
+      });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.programacion(newActa.programacion),
+      });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.stats });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.dashboard });
       toast.success('Acta de revisión creada exitosamente');
@@ -295,11 +334,14 @@ export const useCreateActa = () => {
 export const useUpdateActa = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateActaRevisionDTO }) => actasApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateActaRevisionDTO }) =>
+      actasApi.update(id, data),
     onSuccess: (updatedActa) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actas() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.acta(updatedActa.id) });
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actaByProgramacion(updatedActa.programacion) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.actaByProgramacion(updatedActa.programacion),
+      });
       toast.success('Acta actualizada exitosamente');
     },
     onError: () => {
@@ -343,7 +385,8 @@ export const useAprobarActa = () => {
 export const useCerrarActa = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { observaciones?: string } }) => actasApi.cerrar(id, data),
+    mutationFn: ({ id, data }: { id: number; data: { observaciones?: string } }) =>
+      actasApi.cerrar(id, data),
     onSuccess: (updatedActa) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actas() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.acta(updatedActa.id) });
@@ -584,11 +627,16 @@ export const useCreateCompromiso = () => {
 export const useUpdateCompromiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCompromisoDTO }) => compromisosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateCompromisoDTO }) =>
+      compromisosApi.update(id, data),
     onSuccess: (updatedCompromiso) => {
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromisos() });
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id) });
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.acta(updatedCompromiso.acta) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id),
+      });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.acta(updatedCompromiso.acta),
+      });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.stats });
       toast.success('Compromiso actualizado exitosamente');
     },
@@ -619,7 +667,9 @@ export const useUpdateProgresoCompromiso = () => {
     mutationFn: ({ id, progreso }: { id: number; progreso: number }) =>
       compromisosApi.updateProgreso(id, { progreso }),
     onSuccess: (updatedCompromiso) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id),
+      });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromisos() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.stats });
       toast.success('Progreso actualizado');
@@ -633,10 +683,17 @@ export const useUpdateProgresoCompromiso = () => {
 export const useMarcarCompromisoCompletado = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { evidencia_cumplimiento?: string; observaciones?: string } }) =>
-      compromisosApi.marcarCompletado(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { evidencia_cumplimiento?: string; observaciones?: string };
+    }) => compromisosApi.marcarCompletado(id, data),
     onSuccess: (updatedCompromiso) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id),
+      });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromisos() });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.stats });
       toast.success('Compromiso marcado como completado');
@@ -650,10 +707,17 @@ export const useMarcarCompromisoCompletado = () => {
 export const useVerificarCompromiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { es_eficaz: boolean; observaciones?: string } }) =>
-      compromisosApi.verificar(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { es_eficaz: boolean; observaciones?: string };
+    }) => compromisosApi.verificar(id, data),
     onSuccess: (updatedCompromiso) => {
-      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id) });
+      queryClient.invalidateQueries({
+        queryKey: revisionDireccionKeys.compromiso(updatedCompromiso.id),
+      });
       queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.compromisos() });
       toast.success('Compromiso verificado');
     },
@@ -677,5 +741,110 @@ export const useRevisionDireccionDashboard = () => {
     queryKey: revisionDireccionKeys.dashboard,
     queryFn: statsApi.getDashboard,
     refetchInterval: 60_000, // Refresca cada minuto para tiempo real
+  });
+};
+
+// ==================== INFORME CONSOLIDADO HOOKS ====================
+
+export const useInformeConsolidado = (fechaDesde?: string, fechaHasta?: string) => {
+  return useQuery({
+    queryKey: revisionDireccionKeys.informeConsolidado(fechaDesde, fechaHasta),
+    queryFn: () =>
+      informeConsolidadoApi.get({
+        fecha_desde: fechaDesde,
+        fecha_hasta: fechaHasta,
+      }),
+    staleTime: 5 * 60 * 1000, // 5 min cache
+  });
+};
+
+// ==================== FIRMA DIGITAL HOOKS ====================
+
+export const useEstadoFirmas = (actaId: number) => {
+  return useQuery({
+    queryKey: revisionDireccionKeys.estadoFirmas(actaId),
+    queryFn: () => firmaActaApi.estado(actaId),
+    enabled: !!actaId,
+  });
+};
+
+export const useIniciarFirma = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (actaId: number) => firmaActaApi.iniciar(actaId),
+    onSuccess: (_, actaId) => {
+      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.estadoFirmas(actaId) });
+      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.acta(actaId) });
+      toast.success('Proceso de firma iniciado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al iniciar el proceso de firma');
+    },
+  });
+};
+
+export const useFirmarActa = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ actaId, data }: { actaId: number; data: FirmarActaDTO }) =>
+      firmaActaApi.firmar(actaId, data),
+    onSuccess: (_, { actaId }) => {
+      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.estadoFirmas(actaId) });
+      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.acta(actaId) });
+      queryClient.invalidateQueries({ queryKey: revisionDireccionKeys.actas() });
+      toast.success('Firma registrada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al registrar la firma');
+    },
+  });
+};
+
+// ==================== ENVÍO DE INFORME HOOKS ====================
+
+export const useEnviarInforme = () => {
+  return useMutation({
+    mutationFn: ({ actaId, data }: { actaId: number; data: EnviarInformeDTO }) =>
+      enviarInformeApi.send(actaId, data),
+    onSuccess: (result) => {
+      toast.success(`Informe enviado a ${result.destinatarios.length} destinatario(s)`);
+    },
+    onError: () => {
+      toast.error('Error al enviar el informe por correo');
+    },
+  });
+};
+
+// ==================== EXPORT INFORME GERENCIAL PDF HOOKS ====================
+
+export const useExportInformeGerencialPDF = () => {
+  return useMutation({
+    mutationFn: ({
+      programacionId,
+      fechaDesde,
+      fechaHasta,
+    }: {
+      programacionId: number;
+      fechaDesde?: string;
+      fechaHasta?: string;
+    }) =>
+      exportInformeGerencialApi.pdf(programacionId, {
+        fecha_desde: fechaDesde,
+        fecha_hasta: fechaHasta,
+      }),
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Informe_Gerencial_Revision_Direccion.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF del informe gerencial generado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al generar el PDF del informe gerencial');
+    },
   });
 };

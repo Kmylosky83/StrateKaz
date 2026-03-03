@@ -237,6 +237,12 @@ class ActaRevision(AuditModel, SoftDeleteModel):
     )
     fecha_aprobacion = models.DateField(null=True, blank=True)
 
+    # Firma digital (cross-module: PositiveBigIntegerField, NO FK)
+    firma_documento_id = models.PositiveBigIntegerField(
+        null=True, blank=True, db_index=True,
+        help_text="ID de FirmaDocumento en workflow_engine.firma_digital"
+    )
+
     # Documento final
     documento_acta = models.FileField(
         upload_to='revisiones/actas/', blank=True, null=True

@@ -1,5 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -15,6 +14,9 @@ interface State {
 /**
  * Error Boundary global para capturar errores de React.
  * Evita pantallas blancas y muestra una UI de fallback.
+ *
+ * PERF-1: Sentry is dynamically imported to avoid pulling ~150 KB into the
+ * initial bundle. captureException is called asynchronously when an error occurs.
  */
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
@@ -32,9 +34,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
     console.error('Error capturado por ErrorBoundary:', error, errorInfo);
 
-    Sentry.captureException(error, {
-      extra: { componentStack: errorInfo?.componentStack },
-    });
+    // Lazy-load Sentry only when an error actually occurs
+    import('@sentry/react')
+      .then((Sentry) => {
+        Sentry.captureException(error, {
+          extra: { componentStack: errorInfo?.componentStack },
+        });
+      })
+      .catch(() => {
+        // Sentry not available (e.g., dev environment) — silently ignore
+      });
   }
 
   private handleReset = (): void => {

@@ -468,3 +468,252 @@ export interface DashboardRevision {
   compromisos_criticos: CompromisoAccion[];
   actas_recientes: ActaRevision[];
 }
+
+// ==================== INFORME CONSOLIDADO (ISO 9.3 Aggregator) ====================
+
+/** Estructura de un conteo por categoría genérica (estado, tipo, etc.) */
+export interface ConteoCategoria {
+  [key: string]: string | number;
+  cantidad: number;
+}
+
+/** Módulo: Cumplimiento Legal */
+export interface ResumenCumplimientoLegal {
+  total_requisitos: number;
+  vigentes: number;
+  vencidos: number;
+  proximos_vencer_30d: number;
+  porcentaje_cumplimiento: number;
+  por_estado: ConteoCategoria[];
+  nuevos_en_periodo: number;
+}
+
+/** Módulo: Riesgos y Oportunidades */
+export interface ResumenRiesgos {
+  total_riesgos: number;
+  por_nivel_residual: {
+    BAJO: number;
+    MODERADO: number;
+    ALTO: number;
+    CRITICO: number;
+  };
+  criticos_y_altos: number;
+  por_estado: ConteoCategoria[];
+  tratamientos_activos: number;
+  nuevos_en_periodo: number;
+  total_oportunidades: number;
+}
+
+/** Módulo: Accidentalidad SST */
+export interface ResumenAccidentalidad {
+  total_accidentes: number;
+  total_dias_incapacidad: number;
+  por_gravedad: {
+    leves: number;
+    moderados: number;
+    graves: number;
+    mortales: number;
+  };
+  total_incidentes: number;
+  total_enfermedades_laborales: number;
+}
+
+/** Módulo: Auditorías y Mejora Continua */
+export interface ResumenAuditorias {
+  total_auditorias: number;
+  por_estado: ConteoCategoria[];
+  por_tipo: ConteoCategoria[];
+  hallazgos: {
+    total: number;
+    por_tipo: ConteoCategoria[];
+    cerrados: number;
+    porcentaje_cierre: number;
+  };
+}
+
+/** Módulo: Gestión Ambiental */
+export interface ResumenAmbiental {
+  residuos_generados_kg: number;
+  residuos_aprovechados_kg: number;
+  porcentaje_aprovechamiento: number;
+  consumos_recursos: Array<{ tipo_recurso__nombre: string; total: number }>;
+  certificados_vigentes: number;
+}
+
+/** Módulo: Calidad / No Conformidades */
+export interface ResumenCalidad {
+  total_no_conformidades: number;
+  abiertas: number;
+  cerradas: number;
+  por_estado: ConteoCategoria[];
+  por_tipo: ConteoCategoria[];
+  por_severidad: ConteoCategoria[];
+  acciones_correctivas: {
+    total: number;
+    verificadas: number;
+    porcentaje_efectividad: number;
+  };
+}
+
+/** Módulo: Gestión de Comités */
+export interface ResumenComites {
+  reuniones_programadas: number;
+  reuniones_realizadas: number;
+  porcentaje_cumplimiento: number;
+  asistencia_promedio: number;
+  compromisos_total: number;
+  compromisos_cumplidos: number;
+}
+
+/** Módulo: Proveedores */
+export interface ResumenProveedores {
+  total_activos: number;
+  nuevos_en_periodo: number;
+  evaluaciones_total: number;
+  evaluaciones_completadas: number;
+  calificacion_promedio: number | null;
+}
+
+/** Módulo: Formación y Capacitación */
+export interface ResumenFormacion {
+  programaciones_total: number;
+  programaciones_completadas: number;
+  porcentaje_ejecucion: number;
+  total_horas: number;
+  participaciones: number;
+  porcentaje_asistencia: number;
+}
+
+/** Módulo: Talento Humano */
+export interface ResumenTalentoHumano {
+  total_activos: number;
+  nuevos_ingresos: number;
+  retiros: number;
+  tasa_rotacion: number;
+  por_tipo_contrato: ConteoCategoria[];
+}
+
+/** Módulo: Satisfacción del Cliente */
+export interface ResumenSatisfaccion {
+  total_pqrs: number;
+  por_tipo: ConteoCategoria[];
+  resueltas: number;
+  tiempo_promedio_respuesta: number;
+  encuestas_respondidas: number;
+  nps_promedio: number | null;
+}
+
+/** Módulo: Presupuesto y Recursos */
+export interface ResumenPresupuesto {
+  anio: number;
+  total_asignado: number;
+  total_ejecutado: number;
+  saldo_disponible: number;
+  porcentaje_ejecucion: number;
+  por_estado: ConteoCategoria[];
+}
+
+/** Módulo: Planeación Estratégica */
+export interface ResumenPlaneacion {
+  total_objetivos: number;
+  por_estado: ConteoCategoria[];
+  avance_global: number;
+  retrasados: number;
+  completados: number;
+  por_perspectiva_bsc: Array<{
+    bsc_perspective: string;
+    cantidad: number;
+    avance: number;
+  }>;
+  total_kpis: number;
+}
+
+/** Módulo: Contexto Organizacional */
+export interface ResumenContexto {
+  analisis_dofa: number;
+  factores_dofa: ConteoCategoria[];
+  analisis_pestel: number;
+  partes_interesadas_total: number;
+  partes_interesadas_nuevas: number;
+}
+
+/** Wrapper genérico para cada módulo en la respuesta */
+export interface ModuloConsolidado<T = Record<string, unknown>> {
+  disponible: boolean;
+  data: T;
+  error?: string;
+}
+
+/** Mapa de todos los módulos consolidados */
+export interface ModulosConsolidados {
+  cumplimiento_legal: ModuloConsolidado<ResumenCumplimientoLegal>;
+  riesgos_oportunidades: ModuloConsolidado<ResumenRiesgos>;
+  accidentalidad_sst: ModuloConsolidado<ResumenAccidentalidad>;
+  auditorias_mejora_continua: ModuloConsolidado<ResumenAuditorias>;
+  gestion_ambiental: ModuloConsolidado<ResumenAmbiental>;
+  calidad_no_conformidades: ModuloConsolidado<ResumenCalidad>;
+  gestion_comites: ModuloConsolidado<ResumenComites>;
+  proveedores: ModuloConsolidado<ResumenProveedores>;
+  formacion_capacitacion: ModuloConsolidado<ResumenFormacion>;
+  talento_humano: ModuloConsolidado<ResumenTalentoHumano>;
+  satisfaccion_cliente: ModuloConsolidado<ResumenSatisfaccion>;
+  presupuesto_recursos: ModuloConsolidado<ResumenPresupuesto>;
+  planeacion_estrategica: ModuloConsolidado<ResumenPlaneacion>;
+  contexto_organizacional: ModuloConsolidado<ResumenContexto>;
+}
+
+/** Resumen ejecutivo del informe */
+export interface ResumenEjecutivo {
+  total_modulos: number;
+  modulos_disponibles: number;
+  modulos_con_error: number;
+}
+
+/** Respuesta completa del endpoint informe-consolidado */
+export interface InformeConsolidadoResponse {
+  periodo: {
+    fecha_desde: string;
+    fecha_hasta: string;
+  };
+  modulos: ModulosConsolidados;
+  resumen_ejecutivo: ResumenEjecutivo;
+}
+
+// ==================== FIRMA DIGITAL DEL ACTA ====================
+
+export type RolFirma = 'ELABORO' | 'REVISO' | 'APROBO';
+
+export type EstadoFirmaGeneral = 'pendiente' | 'en_proceso' | 'completado';
+
+export interface FirmaSlot {
+  rol: RolFirma;
+  usuario_id: number | null;
+  usuario_nombre: string;
+  firmado: boolean;
+  fecha_firma: string | null;
+  firma_imagen_url: string | null;
+}
+
+export interface EstadoFirmas {
+  firma_documento_id: number | null;
+  estado: EstadoFirmaGeneral;
+  firmas: FirmaSlot[];
+}
+
+export interface FirmarActaDTO {
+  rol_firma: RolFirma;
+  firma_imagen: string; // base64
+  observaciones?: string;
+}
+
+// ==================== ENVÍO DE INFORME ====================
+
+export interface EnviarInformeDTO {
+  destinatarios: string[];
+  mensaje?: string;
+}
+
+export interface EnviarInformeResponse {
+  message: string;
+  destinatarios: string[];
+}

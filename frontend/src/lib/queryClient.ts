@@ -15,7 +15,12 @@ export const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutos
+      staleTime: 5 * 60 * 1000, // 5 minutos — datos se consideran frescos durante este tiempo
+      gcTime: 10 * 60 * 1000, // 10 minutos — datos inactivos permanecen en cache antes de GC
+      refetchOnReconnect: 'always', // Refrescar al reconectar (importante para SPA offline-first)
+    },
+    mutations: {
+      retry: 0, // Las mutaciones no se reintentan por defecto (evita duplicados)
     },
   },
 });

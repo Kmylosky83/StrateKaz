@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.throttling import AnonRateThrottle
 from django.db.models import Count, Avg, Q, F, Value, DecimalField
 from decimal import Decimal
 from django.utils import timezone
@@ -1848,6 +1849,7 @@ class VacantePublicaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle]
 
     def get_queryset(self):
         queryset = VacanteActiva.objects.filter(
@@ -1899,6 +1901,11 @@ class VacantePublicaViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(info)
 
 
+class PostulacionThrottle(AnonRateThrottle):
+    """Limita postulaciones a 5 por hora por IP para prevenir spam."""
+    rate = '5/hour'
+
+
 class PostulacionPublicaView(viewsets.ViewSet):
     """
     Permite a candidatos externos postularse a vacantes sin autenticación.
@@ -1908,9 +1915,24 @@ class PostulacionPublicaView(viewsets.ViewSet):
     permission_classes = [AllowAny]
     authentication_classes = []
     parser_classes = [MultiPartParser, FormParser]
+    throttle_classes = [PostulacionThrottle]
 
     def create(self, request, vacante_id=None):
         """Procesa la postulación pública de un candidato externo."""
+
+        # Verificar duplicado por numero_documento + vacante (409 Conflict)
+        numero_documento = request.data.get('numero_documento', '').strip()
+        if numero_documento and vacante_id:
+            existe_duplicado = Candidato.objects.filter(
+                vacante_id=vacante_id,
+                numero_documento=numero_documento,
+                is_active=True,
+            ).exists()
+            if existe_duplicado:
+                return Response(
+                    {'detail': 'Ya existe una postulación con este documento para esta vacante.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
 
         # Inyectar vacante_id en los datos
         data = request.data.copy()
@@ -1973,10 +1995,67 @@ class PostulacionPublicaView(viewsets.ViewSet):
         except Exception:
             pass  # No bloquear la postulación si falla la notificación
 
+        # Enviar email de confirmación al candidato
+        try:
+            self._enviar_email_confirmacion(candidato, vacante)
+        except Exception:
+            pass  # No bloquear la postulación si falla el email
+
         return Response(
             {
                 'detail': 'Postulación registrada exitosamente. Te contactaremos pronto.',
                 'candidato_id': candidato.id,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+    def _enviar_email_confirmacion(self, candidato, vacante):
+        """Envía email de confirmación de postulación al candidato."""
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+
+        # Obtener branding de la empresa
+        empresa_nombre = 'Empresa'
+        empresa_logo_url = None
+        primary_color = '#3B82F6'
+        try:
+            from django.apps import apps
+            EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
+            config = EmpresaConfig.objects.first()
+            if config:
+                empresa_nombre = config.razon_social or config.nombre_comercial or 'Empresa'
+                if hasattr(config, 'logo') and config.logo:
+                    empresa_logo_url = config.logo.url
+                if hasattr(config, 'color_primario') and config.color_primario:
+                    primary_color = config.color_primario
+        except Exception:
+            pass
+
+        context = {
+            'candidato_nombres': candidato.nombres,
+            'candidato_apellidos': candidato.apellidos,
+            'vacante_titulo': vacante.titulo,
+            'vacante_cargo': vacante.cargo_requerido,
+            'vacante_ubicacion': vacante.ubicacion,
+            'empresa_nombre': empresa_nombre,
+            'empresa_logo_url': empresa_logo_url,
+            'primary_color': primary_color,
+            'current_year': timezone.now().year,
+        }
+
+        html_message = render_to_string(
+            'emails/confirmacion_postulacion.html', context
+        )
+
+        send_mail(
+            subject=f'Confirmación de postulación - {empresa_nombre}',
+            message=(
+                f'Hola {candidato.nombres}, tu postulación a '
+                f'{vacante.titulo} en {empresa_nombre} fue recibida exitosamente. '
+                f'Nuestro equipo revisará tu perfil y te contactaremos pronto.'
+            ),
+            from_email=None,  # Usa DEFAULT_FROM_EMAIL
+            recipient_list=[candidato.email],
+            html_message=html_message,
+            fail_silently=False,
         )

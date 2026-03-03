@@ -9,7 +9,7 @@ from .views import (
     AnalisisTemaActaViewSet, CompromisoRevisionViewSet,
     SeguimientoCompromisoViewSet, RevisionDireccionStatsViewSet
 )
-from .views_export import export_acta_pdf
+from .views_export import export_acta_pdf, export_informe_gerencial_pdf
 
 router = DefaultRouter()
 
@@ -32,12 +32,16 @@ router.register(r'stats', RevisionDireccionStatsViewSet, basename='stats')
 # Crear instancia del ViewSet para usar en URLs manuales
 stats_view = RevisionDireccionStatsViewSet.as_view({'get': 'list'})
 dashboard_view = RevisionDireccionStatsViewSet.as_view({'get': 'dashboard'})
+informe_consolidado_view = RevisionDireccionStatsViewSet.as_view({'get': 'informe_consolidado'})
 
 urlpatterns = [
     # Export endpoints
     path('export/acta/<int:pk>/pdf/', export_acta_pdf, name='export-acta-pdf'),
+    path('export/informe-gerencial/<int:pk>/pdf/', export_informe_gerencial_pdf, name='export-informe-gerencial-pdf'),
     # Router
     path('', include(router.urls)),
     # URLs adicionales para compatibilidad con frontend
     path('dashboard/', dashboard_view, name='revision-dashboard'),
+    # Informe consolidado para Revisión por la Dirección (C3 aggregator)
+    path('informe-consolidado/', informe_consolidado_view, name='informe-consolidado'),
 ]

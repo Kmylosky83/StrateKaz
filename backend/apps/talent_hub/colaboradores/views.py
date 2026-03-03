@@ -21,6 +21,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from apps.core.base_models import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import Colaborador, HojaVida, InfoPersonal, HistorialLaboral
 from .serializers import (
     ColaboradorListSerializer,
@@ -42,7 +43,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-class ColaboradorViewSet(viewsets.ModelViewSet):
+class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de Colaboradores.
 
@@ -60,6 +61,57 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
     - GET /colaboradores/{id}/completo/ - Obtener perfil completo
     """
     permission_classes = [IsAuthenticated]
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_ingreso'
+    resumen_modulo_nombre = 'talento_humano'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de talento humano para Revisión por la Dirección."""
+        # Todos los colaboradores activos
+        todos = Colaborador.objects.filter(is_active=True)
+        total_activos = todos.filter(estado='activo').count()
+        total_inactivos = todos.filter(estado='inactivo').count()
+        total_retirados = todos.filter(estado='retirado').count()
+
+        # Nuevos ingresos en período
+        nuevos_ingresos = queryset.count()
+
+        # Retiros en período
+        retiros_periodo = Colaborador.objects.filter(
+            fecha_retiro__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        # Tasa de rotación
+        promedio_activos = (total_activos + total_activos + nuevos_ingresos - retiros_periodo) / 2
+        tasa_rotacion = round(
+            (retiros_periodo / promedio_activos * 100), 1
+        ) if promedio_activos > 0 else 0
+
+        # Por tipo de contrato
+        por_contrato = list(
+            todos.filter(estado='activo').values('tipo_contrato')
+            .annotate(cantidad=Count('id'))
+            .order_by('-cantidad')
+        )
+
+        # Por área
+        por_area = list(
+            todos.filter(estado='activo').values('area__name')
+            .annotate(cantidad=Count('id'))
+            .order_by('-cantidad')[:10]
+        )
+
+        return {
+            'total_activos': total_activos,
+            'total_inactivos': total_inactivos,
+            'total_retirados': total_retirados,
+            'nuevos_ingresos_periodo': nuevos_ingresos,
+            'retiros_periodo': retiros_periodo,
+            'tasa_rotacion': tasa_rotacion,
+            'por_tipo_contrato': por_contrato,
+            'por_area': por_area,
+        }
 
     def get_queryset(self):
         queryset = Colaborador.objects.filter(is_active=True)

@@ -10,6 +10,8 @@ from django.db.models import Q, Count, Avg, F, Case, When, IntegerField, Sum
 from django.utils import timezone
 from datetime import timedelta
 
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
+
 from .models import (
     TipoPQRS, EstadoPQRS, PrioridadPQRS, CanalRecepcion, NivelSatisfaccion,
     PQRS, SeguimientoPQRS,
@@ -122,13 +124,70 @@ class NivelSatisfaccionViewSet(viewsets.ModelViewSet):
 # VIEWSETS DE PQRS
 # ==============================================================================
 
-class PQRSViewSet(viewsets.ModelViewSet):
+class PQRSViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """ViewSet para PQRS"""
     permission_classes = [IsAuthenticated]
     filterset_fields = ['tipo', 'estado', 'prioridad', 'asignado_a', 'cliente', 'canal_recepcion']
     search_fields = ['codigo', 'asunto', 'descripcion', 'contacto_nombre']
     ordering_fields = ['fecha_radicacion', 'fecha_vencimiento_sla', 'prioridad__nivel']
     ordering = ['-fecha_radicacion']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_radicacion'
+    resumen_modulo_nombre = 'satisfaccion_cliente'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de satisfacción del cliente para Revisión por la Dirección."""
+        total_pqrs = queryset.count()
+
+        # Por tipo
+        por_tipo = list(
+            queryset.values('tipo__nombre').annotate(cantidad=Count('id')).order_by('-cantidad')
+        )
+
+        # Por estado
+        estados_finales = EstadoPQRS.objects.filter(es_final=True).values_list('id', flat=True)
+        resueltas = queryset.filter(estado_id__in=estados_finales).count()
+        pendientes = total_pqrs - resueltas
+
+        # Tiempo promedio de respuesta (días)
+        con_respuesta = queryset.filter(fecha_respuesta__isnull=False)
+        if con_respuesta.exists():
+            tiempo_promedio = con_respuesta.aggregate(
+                promedio=Avg('dias_respuesta')
+            )['promedio'] or 0
+        else:
+            tiempo_promedio = 0
+
+        # SLA cumplido
+        vencidas_sla = queryset.filter(
+            fecha_vencimiento_sla__lt=timezone.now(),
+            estado__es_final=False
+        ).count()
+
+        # Encuestas de satisfacción en período
+        encuestas = EncuestaSatisfaccion.objects.filter(
+            fecha_envio__date__range=[fecha_desde, fecha_hasta]
+        )
+        total_encuestas = encuestas.count()
+        respondidas = encuestas.filter(estado='RESPONDIDA').count()
+        nps_promedio = encuestas.filter(
+            nps_score__isnull=False
+        ).aggregate(promedio=Avg('nps_score'))['promedio']
+
+        return {
+            'total_pqrs': total_pqrs,
+            'por_tipo': por_tipo,
+            'resueltas': resueltas,
+            'pendientes': pendientes,
+            'tiempo_promedio_respuesta_dias': round(float(tiempo_promedio), 1),
+            'vencidas_sla': vencidas_sla,
+            'encuestas_satisfaccion': {
+                'total': total_encuestas,
+                'respondidas': respondidas,
+                'nps_promedio': round(float(nps_promedio), 1) if nps_promedio else None,
+            },
+        }
 
     def get_queryset(self):
         return PQRS.objects.select_related(

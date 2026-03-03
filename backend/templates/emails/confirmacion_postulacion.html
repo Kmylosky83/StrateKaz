@@ -1,0 +1,86 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Confirmación de postulación - {{ empresa_nombre }}{% endblock %}
+
+{% block header %}
+<div style="height: 4px; background: linear-gradient(90deg, {{ primary_color|default:'#3B82F6' }}, #1e40af);"></div>
+<div style="background-color: #1f2937; padding: 32px 24px; text-align: center;">
+    {% if empresa_logo_url %}
+    <img src="{{ empresa_logo_url }}" alt="{{ empresa_nombre }}" style="max-height: 48px; max-width: 200px; margin-bottom: 12px;" />
+    {% endif %}
+    <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">{{ empresa_nombre }}</h1>
+    <p style="color: #9ca3af; font-size: 13px; margin: 8px 0 0 0;">Portal de Empleo</p>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# Success icon + greeting #}
+<div style="text-align: center; padding: 8px 0 24px 0;">
+    <div style="display: inline-block; width: 64px; height: 64px; border-radius: 50%; background-color: #d1fae5; line-height: 64px; text-align: center; margin-bottom: 16px;">
+        <span style="font-size: 32px; color: #059669;">&#10003;</span>
+    </div>
+    <h2 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 8px 0;">¡Postulación recibida!</h2>
+    <p style="color: #6b7280; font-size: 16px; margin: 0;">
+        Hola <strong style="color: #111827;">{{ candidato_nombres }} {{ candidato_apellidos }}</strong>, tu postulación fue registrada exitosamente.
+    </p>
+</div>
+
+{# Vacancy details card #}
+<div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 0 0 24px 0;">
+    <p style="color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">Detalle de tu postulación</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                <span style="color: #6b7280; font-size: 14px;">Vacante:</span>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                <strong style="color: #111827; font-size: 14px;">{{ vacante_titulo }}</strong>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">
+                <span style="color: #6b7280; font-size: 14px;">Cargo:</span>
+            </td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                <span style="color: #374151; font-size: 14px;">{{ vacante_cargo }}</span>
+            </td>
+        </tr>
+        {% if vacante_ubicacion %}
+        <tr>
+            <td style="padding: 8px 0;">
+                <span style="color: #6b7280; font-size: 14px;">Ubicación:</span>
+            </td>
+            <td style="padding: 8px 0; text-align: right;">
+                <span style="color: #374151; font-size: 14px;">{{ vacante_ubicacion }}</span>
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+{# Next steps #}
+<div style="border-left: 4px solid {{ primary_color|default:'#3B82F6' }}; background-color: #f0f9ff; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+    <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #0c4a6e;">¿Qué sigue?</p>
+    <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.6;">
+        Nuestro equipo de selección revisará tu perfil y hoja de vida. Si tu perfil se ajusta a los requerimientos del cargo, nos pondremos en contacto contigo para continuar con el proceso.
+    </p>
+</div>
+
+<p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
+    Gracias por tu interés en hacer parte de <strong>{{ empresa_nombre }}</strong>.
+</p>
+<p style="color: #9ca3af; font-size: 13px; line-height: 1.5; margin: 0;">
+    Si no realizaste esta postulación, puedes ignorar este mensaje.
+</p>
+
+{% endblock %}
+
+{% block footer %}
+<p style="color: #6b7280; font-size: 14px; margin: 0 0 8px 0;">
+    Este es un mensaje automático de {{ empresa_nombre }}.
+</p>
+<p style="color: #9ca3af; font-size: 12px; margin: 0;">
+    Powered by StrateKaz &middot; &copy; {{ current_year|default:"2026" }}
+</p>
+{% endblock %}

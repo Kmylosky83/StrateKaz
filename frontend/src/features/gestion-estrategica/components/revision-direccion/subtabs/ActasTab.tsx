@@ -12,6 +12,8 @@ import {
   ThumbsUp,
   Lock,
   Download,
+  PenTool,
+  Mail,
 } from 'lucide-react';
 import { Card, Button, Badge, ConfirmDialog } from '@/components/common';
 import { DataTableCard } from '@/components/layout/DataTableCard';
@@ -25,6 +27,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ActaRevision } from '../../../types/revision-direccion.types';
 import { GeneradorActaModal } from '../GeneradorActaModal';
+import { FirmaActaModal } from '../FirmaActaModal';
+import { EnviarInformeModal } from '../EnviarInformeModal';
 
 export const ActasTab = () => {
   const [showGeneradorModal, setShowGeneradorModal] = useState(false);
@@ -32,13 +36,17 @@ export const ActasTab = () => {
   const [aprobarId, setAprobarId] = useState<number | null>(null);
   const [cerrarId, setCerrarId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [firmaActa, setFirmaActa] = useState<ActaRevision | null>(null);
+  const [enviarActa, setEnviarActa] = useState<ActaRevision | null>(null);
 
   const { data: actasData, isLoading } = useActasRevision({});
   const aprobarMutation = useAprobarActa();
   const cerrarMutation = useCerrarActa();
 
   const actas = actasData?.results || [];
-  const actasAprobadas = actas.filter((a) => a.estado === 'APROBADA' || a.estado === 'CERRADA').length;
+  const actasAprobadas = actas.filter(
+    (a) => a.estado === 'APROBADA' || a.estado === 'CERRADA'
+  ).length;
   const actasBorrador = actas.filter((a) => a.estado === 'BORRADOR').length;
 
   const handleNew = () => {
@@ -252,6 +260,32 @@ export const ActasTab = () => {
                           />
                         </Button>
                       )}
+
+                      {/* Firmar Acta: APROBADA */}
+                      {acta.estado === 'APROBADA' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFirmaActa(acta)}
+                          className="text-purple-600 hover:text-purple-700"
+                          title="Firma Digital"
+                        >
+                          <PenTool className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+
+                      {/* Enviar por correo: APROBADA o CERRADA */}
+                      {(acta.estado === 'APROBADA' || acta.estado === 'CERRADA') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEnviarActa(acta)}
+                          className="text-indigo-600 hover:text-indigo-700"
+                          title="Enviar por correo"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -276,10 +310,7 @@ export const ActasTab = () => {
           isOpen={!!aprobarId}
           onClose={() => setAprobarId(null)}
           onConfirm={() => {
-            aprobarMutation.mutate(
-              { id: aprobarId },
-              { onSuccess: () => setAprobarId(null) }
-            );
+            aprobarMutation.mutate({ id: aprobarId }, { onSuccess: () => setAprobarId(null) });
           }}
           title="Aprobar Acta"
           message="Esta seguro de aprobar esta acta de revision por la direccion? Una vez aprobada se podra exportar a PDF."
@@ -305,6 +336,21 @@ export const ActasTab = () => {
           confirmLabel="Si, Cerrar"
           variant="danger"
           isLoading={cerrarMutation.isPending}
+        />
+      )}
+
+      {/* Modal Firma Digital */}
+      {firmaActa && (
+        <FirmaActaModal isOpen={!!firmaActa} onClose={() => setFirmaActa(null)} acta={firmaActa} />
+      )}
+
+      {/* Modal Enviar por Correo */}
+      {enviarActa && (
+        <EnviarInformeModal
+          isOpen={!!enviarActa}
+          onClose={() => setEnviarActa(null)}
+          actaId={enviarActa.id}
+          actaNumero={enviarActa.numero_acta}
         />
       )}
     </div>

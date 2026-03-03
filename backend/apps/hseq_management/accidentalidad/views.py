@@ -8,9 +8,11 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Sum, Count
 from datetime import date, timedelta
 from apps.core.mixins import ExportMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     AccidenteTrabajo,
@@ -37,13 +39,14 @@ from .serializers import (
 )
 
 
-class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
+class AccidenteTrabajoViewSet(ResumenRevisionMixin, ExportMixin, viewsets.ModelViewSet):
     """
     ViewSet para Accidentes de Trabajo
 
     Incluye actions:
     - iniciar_investigacion: Crea una investigación para el accidente
     - estadisticas: Muestra estadísticas de accidentalidad
+    - resumen_revision: Resumen para Revisión por la Dirección
     """
     permission_classes = [IsAuthenticated]
     export_fields = [('fecha_evento', 'Fecha'), ('tipo_evento', 'Tipo Evento'), ('gravedad', 'Gravedad'), ('dias_incapacidad', 'Días Incapacidad'), ('mortal', 'Mortal'), ('reportado_arl', 'Reportado ARL')]
@@ -52,6 +55,54 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
     filterset_fields = ['gravedad', 'mortal', 'reportado_arl', 'requiere_investigacion']
     ordering_fields = ['fecha_evento', 'dias_incapacidad', 'fecha_reporte_interno']
     ordering = ['-fecha_evento']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_evento'
+    resumen_modulo_nombre = 'accidentalidad'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de accidentalidad para Revisión por la Dirección."""
+        total_accidentes = queryset.count()
+        total_dias = queryset.aggregate(
+            total=Sum('dias_incapacidad')
+        )['total'] or 0
+
+        por_gravedad = {
+            'leves': queryset.filter(gravedad='LEVE').count(),
+            'moderados': queryset.filter(gravedad='MODERADO').count(),
+            'graves': queryset.filter(gravedad='GRAVE').count(),
+            'mortales': queryset.filter(mortal=True).count(),
+        }
+
+        # Incidentes (casi-accidentes) en el período
+        incidentes = IncidenteTrabajo.objects.filter(
+            fecha_evento__date__range=[fecha_desde, fecha_hasta]
+        )
+        total_incidentes = incidentes.count()
+
+        # Enfermedades laborales en el período
+        enfermedades = EnfermedadLaboral.objects.filter(
+            fecha_diagnostico__range=[fecha_desde, fecha_hasta]
+        )
+        total_enfermedades = enfermedades.count()
+
+        # Investigaciones
+        investigaciones = InvestigacionATEL.objects.filter(
+            fecha_inicio__range=[fecha_desde, fecha_hasta]
+        )
+        investigaciones_cerradas = investigaciones.filter(estado='COMPLETADA').count()
+
+        return {
+            'total_accidentes': total_accidentes,
+            'total_dias_incapacidad': total_dias,
+            'por_gravedad': por_gravedad,
+            'total_incidentes': total_incidentes,
+            'total_enfermedades_laborales': total_enfermedades,
+            'investigaciones': {
+                'total': investigaciones.count(),
+                'cerradas': investigaciones_cerradas,
+            },
+        }
 
     def get_queryset(self):
         queryset = AccidenteTrabajo.objects.select_related(

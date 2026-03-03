@@ -6,6 +6,8 @@ Endpoints por subtab:
 - Actas de Revisión: /actas/, /analisis-temas/
 - Seguimiento Compromisos: /compromisos/, /seguimientos/
 """
+from datetime import date, timedelta
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,6 +19,8 @@ from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from .services.aggregator import RevisionDireccionAggregator
+from .services.firma_service import ActaFirmaService
 from .models import (
     ProgramaRevision, ParticipanteRevision, TemaRevision,
     ActaRevision, AnalisisTemaActa, CompromisoRevision,
@@ -279,6 +283,218 @@ class ActaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             programa.estado = 'realizada'
             programa.fecha_realizada = acta.fecha
             programa.save(update_fields=['estado', 'fecha_realizada'])
+
+    # ===================================================================
+    # FIRMA DIGITAL
+    # ===================================================================
+
+    @action(detail=True, methods=['post'], url_path='iniciar-firma')
+    def iniciar_firma(self, request, pk=None):
+        """
+        POST /api/revision-direccion/actas/{id}/iniciar-firma/
+        Inicia el proceso de firma digital para el acta.
+        Crea slots para ELABORO, REVISO y APROBO.
+        """
+        try:
+            resultado = ActaFirmaService.iniciar_proceso_firma(
+                acta_id=pk,
+                usuario=request.user,
+            )
+            return Response(resultado, status=status.HTTP_201_CREATED)
+        except ActaRevision.DoesNotExist:
+            return Response(
+                {'detail': 'Acta no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(detail=True, methods=['post'], url_path='firmar')
+    def firmar(self, request, pk=None):
+        """
+        POST /api/revision-direccion/actas/{id}/firmar/
+        Registra la firma digital de un usuario para su rol.
+
+        Body:
+        {
+            "rol_firma": "ELABORO|REVISO|APROBO",
+            "firma_imagen": "<base64>",
+            "observaciones": "texto opcional"
+        }
+        """
+        rol_firma = request.data.get('rol_firma')
+        firma_imagen = request.data.get('firma_imagen', '')
+        observaciones = request.data.get('observaciones', '')
+
+        if not rol_firma:
+            return Response(
+                {'detail': 'Se requiere el campo rol_firma.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not firma_imagen:
+            return Response(
+                {'detail': 'Se requiere la imagen de la firma (firma_imagen).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Obtener IP y user agent
+        ip_address = request.META.get('REMOTE_ADDR', '0.0.0.0')
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+        try:
+            resultado = ActaFirmaService.firmar_acta(
+                acta_id=pk,
+                usuario=request.user,
+                rol_firma=rol_firma,
+                firma_imagen_base64=firma_imagen,
+                observaciones=observaciones,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            return Response(resultado)
+        except ActaRevision.DoesNotExist:
+            return Response(
+                {'detail': 'Acta no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except PermissionError as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValueError as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {'detail': f'Error al firmar: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=['get'], url_path='estado-firmas')
+    def estado_firmas(self, request, pk=None):
+        """
+        GET /api/revision-direccion/actas/{id}/estado-firmas/
+        Retorna el estado actual de las firmas del acta.
+        """
+        try:
+            resultado = ActaFirmaService.get_estado_firmas(acta_id=pk)
+            return Response(resultado)
+        except ActaRevision.DoesNotExist:
+            return Response(
+                {'detail': 'Acta no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # ===================================================================
+    # ENVIAR INFORME POR CORREO
+    # ===================================================================
+
+    @action(detail=True, methods=['post'], url_path='enviar-informe')
+    def enviar_informe(self, request, pk=None):
+        """
+        POST /api/revision-direccion/actas/{id}/enviar-informe/
+        Genera el PDF del acta y lo envía por correo a los destinatarios.
+
+        Body:
+        {
+            "destinatarios": ["email1@ejemplo.com", "email2@ejemplo.com"],
+            "mensaje": "Mensaje opcional"
+        }
+        """
+        from django.core.mail import EmailMessage
+        from .exporters import ActaRevisionPDFGenerator
+
+        destinatarios = request.data.get('destinatarios', [])
+        mensaje = request.data.get('mensaje', '')
+
+        if not destinatarios or not isinstance(destinatarios, list):
+            return Response(
+                {'detail': 'Se requiere al menos un destinatario en la lista "destinatarios".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            acta = ActaRevision.objects.select_related(
+                'programa', 'elaborado_por', 'revisado_por', 'aprobado_por'
+            ).prefetch_related(
+                'programa__participantes__usuario',
+                'analisis_temas__tema',
+                'analisis_temas__presentado_por',
+                'compromisos__responsable',
+                'compromisos__tema_relacionado',
+            ).get(pk=pk)
+        except ActaRevision.DoesNotExist:
+            return Response(
+                {'detail': 'Acta no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        empresa = get_tenant_empresa()
+
+        try:
+            # Generar PDF
+            generator = ActaRevisionPDFGenerator(empresa=empresa)
+            pdf_buffer = generator.generate_acta_pdf(acta)
+            pdf_bytes = pdf_buffer.getvalue()
+
+            empresa_nombre = empresa.razon_social if empresa else 'StrateKaz'
+            subject = f'Acta de Revisión por la Dirección - {acta.numero_acta} | {empresa_nombre}'
+
+            body = f"""Estimado(a),
+
+Se adjunta el Acta de Revisión por la Dirección No. {acta.numero_acta} correspondiente al período {acta.programa.periodo}.
+
+{('Mensaje adicional: ' + mensaje) if mensaje else ''}
+
+Fecha de la revisión: {acta.fecha}
+Evaluación del sistema: {acta.get_evaluacion_sistema_display()}
+
+Este correo fue generado automáticamente desde StrateKaz SGI.
+
+Atentamente,
+{request.user.get_full_name()}
+{empresa_nombre}
+"""
+
+            email = EmailMessage(
+                subject=subject,
+                body=body,
+                to=destinatarios,
+            )
+            email.attach(
+                f'Acta-Revision-{acta.numero_acta}.pdf',
+                pdf_bytes,
+                'application/pdf',
+            )
+            email.send(fail_silently=False)
+
+            return Response({
+                'detail': f'Informe enviado exitosamente a {len(destinatarios)} destinatario(s).',
+                'destinatarios': destinatarios,
+            })
+
+        except ImportError:
+            return Response(
+                {'detail': 'WeasyPrint no está instalado en el servidor.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except Exception as e:
+            return Response(
+                {'detail': f'Error al enviar el informe: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class AnalisisTemaActaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -559,3 +775,40 @@ class RevisionDireccionStatsViewSet(viewsets.ViewSet):
             'proximas_revisiones': proximas_data,
             'compromisos_vencidos': vencidos_data,
         })
+
+    @action(detail=False, methods=['get'], url_path='informe-consolidado')
+    def informe_consolidado(self, request):
+        """
+        GET /api/revision-direccion/stats/informe-consolidado/
+
+        Consolida resúmenes de TODOS los módulos C2 para alimentar
+        la Revisión por la Dirección según ISO 9001/14001/45001.
+
+        Query params:
+        - fecha_desde (YYYY-MM-DD): Inicio del período (default: 6 meses atrás)
+        - fecha_hasta (YYYY-MM-DD): Fin del período (default: hoy)
+        """
+        hoy = timezone.now().date()
+        fecha_desde_str = request.query_params.get('fecha_desde')
+        fecha_hasta_str = request.query_params.get('fecha_hasta')
+
+        try:
+            fecha_desde = (
+                date.fromisoformat(fecha_desde_str)
+                if fecha_desde_str
+                else hoy - timedelta(days=180)
+            )
+        except (ValueError, TypeError):
+            fecha_desde = hoy - timedelta(days=180)
+
+        try:
+            fecha_hasta = (
+                date.fromisoformat(fecha_hasta_str)
+                if fecha_hasta_str
+                else hoy
+            )
+        except (ValueError, TypeError):
+            fecha_hasta = hoy
+
+        aggregator = RevisionDireccionAggregator(fecha_desde, fecha_hasta)
+        return Response(aggregator.consolidar())

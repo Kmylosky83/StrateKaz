@@ -13,6 +13,9 @@ export { ProyectosKanban } from './ProyectosKanban';
 // Kanban de actividades (Sprint PLANNER-1)
 export { KanbanBoard, KanbanColumn, KanbanCard } from './kanban';
 
+// Calendario de actividades (Sprint CALENDAR-1)
+export { CalendarView } from './calendar';
+
 // SubTabs
 export { PortafolioSubTab } from './subtabs/PortafolioSubTab';
 export { IniciacionSubTab } from './subtabs/IniciacionSubTab';

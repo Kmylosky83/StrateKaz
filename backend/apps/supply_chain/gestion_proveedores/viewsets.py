@@ -78,6 +78,8 @@ from .serializers import (
     DetalleEvaluacionSerializer,
 )
 
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
+
 logger = logging.getLogger(__name__)
 User = get_user_model()
 from .permissions import (
@@ -431,7 +433,7 @@ class UnidadNegocioViewSet(viewsets.ModelViewSet):
 # VIEWSET DE PROVEEDOR
 # ==============================================================================
 
-class ProveedorViewSet(viewsets.ModelViewSet):
+class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet completo para Proveedores (100% dinámico).
 
@@ -454,6 +456,47 @@ class ProveedorViewSet(viewsets.ModelViewSet):
     search_fields = ['nombre_comercial', 'razon_social', 'numero_documento', 'nit', 'codigo_interno']
     ordering_fields = ['nombre_comercial', 'created_at', 'codigo_interno']
     ordering = ['nombre_comercial']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'gestion_proveedores'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de proveedores para Revisión por la Dirección."""
+        # Total de proveedores activos
+        todos = Proveedor.objects.filter(is_active=True, deleted_at__isnull=True)
+        total_activos = todos.count()
+
+        # Nuevos en período
+        nuevos_periodo = queryset.count()
+
+        # Evaluaciones en período
+        evaluaciones = EvaluacionProveedor.objects.filter(
+            fecha_evaluacion__range=[fecha_desde, fecha_hasta]
+        )
+        total_evaluaciones = evaluaciones.count()
+        evaluaciones_completadas = evaluaciones.filter(estado='COMPLETADA').count()
+        calificacion_promedio = evaluaciones.filter(
+            calificacion_total__isnull=False
+        ).aggregate(promedio=Avg('calificacion_total'))['promedio']
+
+        # Proveedores por tipo
+        por_tipo = list(
+            todos.values('tipo_proveedor__nombre')
+            .annotate(cantidad=Count('id'))
+            .order_by('-cantidad')
+        )
+
+        return {
+            'total_proveedores_activos': total_activos,
+            'nuevos_en_periodo': nuevos_periodo,
+            'por_tipo': por_tipo,
+            'evaluaciones': {
+                'total': total_evaluaciones,
+                'completadas': evaluaciones_completadas,
+                'calificacion_promedio': round(float(calificacion_promedio), 1) if calificacion_promedio else None,
+            },
+        }
 
     def get_queryset(self):
         """Excluir proveedores eliminados por defecto."""

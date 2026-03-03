@@ -43,6 +43,7 @@ from openpyxl.utils import get_column_letter
 from io import BytesIO
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import (
     TipoAnalisisDOFA,
     AnalisisDOFA,
@@ -96,7 +97,7 @@ class TipoAnalisisDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['orden', 'nombre']
 
 
-class AnalisisDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de análisis DOFA.
 
@@ -130,6 +131,64 @@ class AnalisisDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     search_fields = ['nombre', 'periodo', 'observaciones']
     ordering_fields = ['fecha_analisis', 'created_at', 'periodo']
     ordering = ['-fecha_analisis']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_analisis'
+    resumen_modulo_nombre = 'contexto_organizacional'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de contexto organizacional para Revisión por la Dirección."""
+        # Análisis DOFA en período
+        total_dofa = queryset.count()
+        dofa_por_estado = list(
+            queryset.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+        )
+
+        # Factores DOFA (Debilidades, Oportunidades, Fortalezas, Amenazas)
+        factores = FactorDOFA.objects.filter(
+            analisis__in=queryset, is_active=True
+        )
+        factores_por_tipo = list(
+            factores.values('tipo_factor').annotate(cantidad=Count('id')).order_by('tipo_factor')
+        )
+
+        # Análisis PESTEL en período
+        pestel = AnalisisPESTEL.objects.filter(
+            fecha_analisis__range=[fecha_desde, fecha_hasta]
+        )
+        total_pestel = pestel.count()
+
+        # Factores PESTEL
+        factores_pestel = FactorPESTEL.objects.filter(
+            analisis__in=pestel, is_active=True
+        )
+        pestel_por_tipo = list(
+            factores_pestel.values('tipo_factor')
+            .annotate(cantidad=Count('id'))
+            .order_by('tipo_factor')
+        )
+
+        # Partes interesadas
+        total_partes_interesadas = ParteInteresada.objects.filter(is_active=True).count()
+        nuevas_pi = ParteInteresada.objects.filter(
+            created_at__date__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        return {
+            'analisis_dofa': {
+                'total': total_dofa,
+                'por_estado': dofa_por_estado,
+                'factores_por_tipo': factores_por_tipo,
+            },
+            'analisis_pestel': {
+                'total': total_pestel,
+                'factores_por_tipo': pestel_por_tipo,
+            },
+            'partes_interesadas': {
+                'total': total_partes_interesadas,
+                'nuevas_en_periodo': nuevas_pi,
+            },
+        }
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None) -> Response:

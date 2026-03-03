@@ -1,8 +1,8 @@
 /**
  * Componente: Formulario de Proveedor (Crear/Editar)
  *
- * Formulario completo con validación y secciones organizadas.
- * Usa componentes del design system (Input, Select, Textarea).
+ * Formulario alineado con ProveedorCreateSerializer del backend.
+ * Usa componentes del design system (Input, Select, Textarea, Checkbox).
  */
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner, Card } from '@/components/common';
@@ -14,7 +14,6 @@ import {
   useModalidadesLogistica,
   useTiposDocumento,
   useDepartamentos,
-  useCiudades,
   useFormasPago,
   useTiposCuentaBancaria,
 } from '../hooks/useCatalogos';
@@ -34,38 +33,26 @@ interface ProveedorFormProps {
 }
 
 const INITIAL_FORM: Partial<CreateProveedorDTO> = {
-  codigo: '',
   tipo_proveedor: 0,
   razon_social: '',
+  nombre_comercial: '',
   tipo_documento: 0,
   numero_documento: '',
-  digito_verificacion: '',
-  nombre_comercial: '',
+  nit: '',
   tipos_materia_prima: [],
   modalidad_logistica: 0,
   unidad_negocio: 0,
   telefono: '',
-  celular: '',
   email: '',
-  sitio_web: '',
   departamento: 0,
-  ciudad: 0,
+  ciudad: '',
   direccion: '',
-  barrio: '',
-  nombre_representante_legal: '',
-  tipo_documento_representante: 0,
-  documento_representante: '',
-  email_representante: '',
-  telefono_representante: '',
+  formas_pago: [],
+  dias_plazo_pago: 0,
   banco: '',
   tipo_cuenta: 0,
   numero_cuenta: '',
-  forma_pago_default: 0,
-  dias_pago_default: 0,
-  aplica_retencion_fuente: false,
-  porcentaje_retencion: 0,
-  estado: 'ACTIVO',
-  es_proveedor_critico: false,
+  titular_cuenta: '',
   observaciones: '',
   is_active: true,
 };
@@ -76,7 +63,6 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const isEdit = !!proveedor;
 
   const [formData, setFormData] = useState<Partial<CreateProveedorDTO>>(INITIAL_FORM);
-  const [selectedDepartamento, setSelectedDepartamento] = useState<number>(0);
 
   // ==================== QUERIES ====================
 
@@ -85,10 +71,6 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const { data: modalidadesLogistica } = useModalidadesLogistica({ is_active: true });
   const { data: tiposDocumento } = useTiposDocumento({ is_active: true });
   const { data: departamentos } = useDepartamentos({ is_active: true });
-  const { data: ciudades } = useCiudades({
-    departamento: selectedDepartamento || undefined,
-    is_active: true,
-  });
   const { data: formasPago } = useFormasPago({ is_active: true });
   const { data: tiposCuenta } = useTiposCuentaBancaria({ is_active: true });
   const { data: unidadesNegocio } = useUnidadesNegocio({ is_active: true });
@@ -100,47 +82,33 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   // ==================== EFECTOS ====================
 
   useEffect(() => {
-    if (proveedor) {
+    if (proveedor && isOpen) {
       setFormData({
-        codigo: proveedor.codigo,
         tipo_proveedor: proveedor.tipo_proveedor,
         unidad_negocio: proveedor.unidad_negocio || 0,
-        tipos_materia_prima: proveedor.tipos_materia_prima,
+        tipos_materia_prima: proveedor.tipos_materia_prima || [],
         modalidad_logistica: proveedor.modalidad_logistica || 0,
-        razon_social: proveedor.razon_social,
+        razon_social: proveedor.razon_social || '',
         nombre_comercial: proveedor.nombre_comercial || '',
         tipo_documento: proveedor.tipo_documento,
-        numero_documento: proveedor.numero_documento,
-        digito_verificacion: proveedor.digito_verificacion || '',
+        numero_documento: proveedor.numero_documento || '',
+        nit: proveedor.nit || '',
         telefono: proveedor.telefono || '',
-        celular: proveedor.celular || '',
         email: proveedor.email || '',
-        sitio_web: proveedor.sitio_web || '',
         departamento: proveedor.departamento || 0,
-        ciudad: proveedor.ciudad || 0,
+        ciudad: proveedor.ciudad || '',
         direccion: proveedor.direccion || '',
-        barrio: proveedor.barrio || '',
-        nombre_representante_legal: proveedor.nombre_representante_legal || '',
-        tipo_documento_representante: proveedor.tipo_documento_representante || 0,
-        documento_representante: proveedor.documento_representante || '',
-        email_representante: proveedor.email_representante || '',
-        telefono_representante: proveedor.telefono_representante || '',
+        formas_pago: proveedor.formas_pago || [],
+        dias_plazo_pago: proveedor.dias_plazo_pago || 0,
         banco: proveedor.banco || '',
         tipo_cuenta: proveedor.tipo_cuenta || 0,
         numero_cuenta: proveedor.numero_cuenta || '',
-        forma_pago_default: proveedor.forma_pago_default || 0,
-        dias_pago_default: proveedor.dias_pago_default || 0,
-        aplica_retencion_fuente: proveedor.aplica_retencion_fuente,
-        porcentaje_retencion: proveedor.porcentaje_retencion || 0,
-        estado: proveedor.estado,
-        es_proveedor_critico: proveedor.es_proveedor_critico,
+        titular_cuenta: proveedor.titular_cuenta || '',
         observaciones: proveedor.observaciones || '',
         is_active: proveedor.is_active,
       });
-      setSelectedDepartamento(proveedor.departamento || 0);
-    } else {
+    } else if (!proveedor && isOpen) {
       setFormData(INITIAL_FORM);
-      setSelectedDepartamento(0);
     }
   }, [proveedor, isOpen]);
 
@@ -158,13 +126,6 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
     handleChange(field, newValues);
   };
 
-  const handleDepartamentoChange = (value: string) => {
-    const numValue = value ? Number(value) : 0;
-    setSelectedDepartamento(numValue);
-    handleChange('departamento', numValue);
-    handleChange('ciudad', 0);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -175,10 +136,8 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
     if (!payload.unidad_negocio) delete payload.unidad_negocio;
     if (!payload.modalidad_logistica) delete payload.modalidad_logistica;
     if (!payload.departamento) delete payload.departamento;
-    if (!payload.ciudad) delete payload.ciudad;
-    if (!payload.tipo_documento_representante) delete payload.tipo_documento_representante;
     if (!payload.tipo_cuenta) delete payload.tipo_cuenta;
-    if (!payload.forma_pago_default) delete payload.forma_pago_default;
+    if (!payload.dias_plazo_pago) delete payload.dias_plazo_pago;
 
     try {
       if (isEdit && proveedor) {
@@ -207,7 +166,6 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const modalidadesList = Array.isArray(modalidadesLogistica) ? modalidadesLogistica : [];
   const tiposDocumentoList = Array.isArray(tiposDocumento) ? tiposDocumento : [];
   const departamentosList = Array.isArray(departamentos) ? departamentos : [];
-  const ciudadesList = Array.isArray(ciudades) ? ciudades : [];
   const formasPagoList = Array.isArray(formasPago) ? formasPago : [];
   const tiposCuentaList = Array.isArray(tiposCuenta) ? tiposCuenta : [];
   const unidadesList = Array.isArray(unidadesNegocio) ? unidadesNegocio : [];
@@ -222,17 +180,20 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Código interno (solo lectura en edición) */}
+        {isEdit && proveedor?.codigo_interno && (
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Código: </span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              {proveedor.codigo_interno}
+            </span>
+          </div>
+        )}
+
         {/* Información Básica */}
         <Card variant="bordered" padding="md">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Información Básica</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Código"
-              value={formData.codigo || ''}
-              onChange={(e) => handleChange('codigo', e.target.value)}
-              placeholder="Se genera automáticamente"
-            />
-
             <Select
               label="Tipo de Proveedor *"
               value={formData.tipo_proveedor || ''}
@@ -273,9 +234,10 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             </div>
 
             <Input
-              label="Nombre Comercial"
+              label="Nombre Comercial *"
               value={formData.nombre_comercial || ''}
               onChange={(e) => handleChange('nombre_comercial', e.target.value)}
+              required
             />
 
             <Select
@@ -300,35 +262,11 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             />
 
             <Input
-              label="Dígito de Verificación"
-              value={formData.digito_verificacion || ''}
-              onChange={(e) => handleChange('digito_verificacion', e.target.value)}
-              maxLength={1}
+              label="NIT"
+              value={formData.nit || ''}
+              onChange={(e) => handleChange('nit', e.target.value)}
+              placeholder="Ej: 900123456-1"
             />
-
-            <Select
-              label="Estado"
-              value={formData.estado || 'ACTIVO'}
-              onChange={(e) =>
-                handleChange(
-                  'estado',
-                  e.target.value as 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'BLOQUEADO'
-                )
-              }
-            >
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
-              <option value="SUSPENDIDO">Suspendido</option>
-              <option value="BLOQUEADO">Bloqueado</option>
-            </Select>
-
-            <div className="flex items-center gap-4 pt-6">
-              <Checkbox
-                label="Proveedor crítico"
-                checked={formData.es_proveedor_critico || false}
-                onChange={(e) => handleChange('es_proveedor_critico', e.target.checked)}
-              />
-            </div>
           </div>
         </Card>
 
@@ -375,11 +313,9 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
           </Card>
         )}
 
-        {/* Contacto */}
+        {/* Contacto y Ubicación */}
         <Card variant="bordered" padding="md">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-            Información de Contacto
-          </h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Contacto y Ubicación</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Teléfono"
@@ -389,30 +325,19 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             />
 
             <Input
-              label="Celular"
-              type="tel"
-              value={formData.celular || ''}
-              onChange={(e) => handleChange('celular', e.target.value)}
-            />
-
-            <Input
               label="Email"
               type="email"
               value={formData.email || ''}
               onChange={(e) => handleChange('email', e.target.value)}
             />
 
-            <Input
-              label="Sitio Web"
-              type="url"
-              value={formData.sitio_web || ''}
-              onChange={(e) => handleChange('sitio_web', e.target.value)}
-            />
-
             <Select
               label="Departamento"
-              value={selectedDepartamento || ''}
-              onChange={(e) => handleDepartamentoChange(e.target.value)}
+              value={formData.departamento || ''}
+              onChange={(e) => {
+                const val = e.target.value ? Number(e.target.value) : 0;
+                handleChange('departamento', val);
+              }}
             >
               <option value="">Seleccionar...</option>
               {departamentosList.map((depto) => (
@@ -422,19 +347,12 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
               ))}
             </Select>
 
-            <Select
+            <Input
               label="Ciudad"
               value={formData.ciudad || ''}
-              onChange={(e) => handleChange('ciudad', e.target.value ? Number(e.target.value) : 0)}
-              disabled={!selectedDepartamento}
-            >
-              <option value="">Seleccionar...</option>
-              {ciudadesList.map((ciudad) => (
-                <option key={ciudad.id} value={ciudad.id}>
-                  {ciudad.nombre}
-                </option>
-              ))}
-            </Select>
+              onChange={(e) => handleChange('ciudad', e.target.value)}
+              placeholder="Ej: Bogotá"
+            />
 
             <div className="md:col-span-2">
               <Input
@@ -443,57 +361,6 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
                 onChange={(e) => handleChange('direccion', e.target.value)}
               />
             </div>
-
-            <Input
-              label="Barrio"
-              value={formData.barrio || ''}
-              onChange={(e) => handleChange('barrio', e.target.value)}
-            />
-          </div>
-        </Card>
-
-        {/* Representante Legal */}
-        <Card variant="bordered" padding="md">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Representante Legal</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nombre"
-              value={formData.nombre_representante_legal || ''}
-              onChange={(e) => handleChange('nombre_representante_legal', e.target.value)}
-            />
-
-            <Select
-              label="Tipo de Documento"
-              value={formData.tipo_documento_representante || ''}
-              onChange={(e) => handleChange('tipo_documento_representante', Number(e.target.value))}
-            >
-              <option value="">Seleccionar...</option>
-              {tiposDocumentoList.map((tipo) => (
-                <option key={tipo.id} value={tipo.id}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </Select>
-
-            <Input
-              label="Documento"
-              value={formData.documento_representante || ''}
-              onChange={(e) => handleChange('documento_representante', e.target.value)}
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              value={formData.email_representante || ''}
-              onChange={(e) => handleChange('email_representante', e.target.value)}
-            />
-
-            <Input
-              label="Teléfono"
-              type="tel"
-              value={formData.telefono_representante || ''}
-              onChange={(e) => handleChange('telefono_representante', e.target.value)}
-            />
           </div>
         </Card>
 
@@ -525,55 +392,52 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
               value={formData.numero_cuenta || ''}
               onChange={(e) => handleChange('numero_cuenta', e.target.value)}
             />
+
+            <Input
+              label="Titular de la Cuenta"
+              value={formData.titular_cuenta || ''}
+              onChange={(e) => handleChange('titular_cuenta', e.target.value)}
+            />
           </div>
         </Card>
 
-        {/* Configuración Comercial */}
+        {/* Condiciones Comerciales */}
         <Card variant="bordered" padding="md">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-            Configuración Comercial
+            Condiciones Comerciales
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Forma de Pago"
-              value={formData.forma_pago_default || ''}
-              onChange={(e) => handleChange('forma_pago_default', Number(e.target.value))}
-            >
-              <option value="">Seleccionar...</option>
-              {formasPagoList.map((fp) => (
-                <option key={fp.id} value={fp.id}>
-                  {fp.nombre}
-                </option>
-              ))}
-            </Select>
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Formas de Pago
+              </p>
+              <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                {formasPagoList.map((fp) => (
+                  <Checkbox
+                    key={fp.id}
+                    label={fp.nombre}
+                    checked={formData.formas_pago?.includes(fp.id) || false}
+                    onChange={() => handleMultiSelectChange('formas_pago', fp.id)}
+                  />
+                ))}
+              </div>
+            </div>
 
             <Input
-              label="Días de Pago"
+              label="Días de Plazo de Pago"
               type="number"
-              value={formData.dias_pago_default || ''}
-              onChange={(e) => handleChange('dias_pago_default', Number(e.target.value))}
+              value={formData.dias_plazo_pago || ''}
+              onChange={(e) => handleChange('dias_plazo_pago', Number(e.target.value))}
               min={0}
             />
 
-            <div className="flex items-center gap-4 pt-6">
+            <div className="md:col-span-2">
               <Checkbox
-                label="Aplica retención en la fuente"
-                checked={formData.aplica_retencion_fuente || false}
-                onChange={(e) => handleChange('aplica_retencion_fuente', e.target.checked)}
+                label="Activo"
+                checked={formData.is_active ?? true}
+                onChange={(e) => handleChange('is_active', e.target.checked)}
               />
             </div>
-
-            {formData.aplica_retencion_fuente && (
-              <Input
-                label="Porcentaje de Retención (%)"
-                type="number"
-                value={formData.porcentaje_retencion || ''}
-                onChange={(e) => handleChange('porcentaje_retencion', Number(e.target.value))}
-                min={0}
-                max={100}
-                step={0.01}
-              />
-            )}
           </div>
         </Card>
 

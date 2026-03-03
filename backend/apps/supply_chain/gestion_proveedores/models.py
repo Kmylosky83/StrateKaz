@@ -638,23 +638,12 @@ class Proveedor(models.Model):
         """Genera código interno usando sistema de consecutivos."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
 
-        # Determinar tipo de documento según tipo de proveedor
-        if tipo_proveedor.codigo == 'PRODUCTO_SERVICIO':
-            document_type = 'PROVEEDOR_PS'
-        else:
-            document_type = 'PROVEEDOR_MP'
-
         try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo(document_type)
+            return ConsecutivoConfig.obtener_siguiente_consecutivo('PROVEEDOR')
         except ConsecutivoConfig.DoesNotExist:
-            # Fallback
-            if tipo_proveedor.codigo == 'PRODUCTO_SERVICIO':
-                prefijo = 'PS'
-            else:
-                prefijo = 'MP'
-
+            # Fallback manual
             ultimo = Proveedor.objects.filter(
-                codigo_interno__startswith=f'{prefijo}-'
+                codigo_interno__startswith='PROV-'
             ).order_by('-codigo_interno').first()
 
             if ultimo and ultimo.codigo_interno:
@@ -665,7 +654,7 @@ class Proveedor(models.Model):
             else:
                 numero = 1
 
-            return f'{prefijo}-{numero:04d}'
+            return f'PROV-{numero:05d}'
 
     @property
     def is_deleted(self):

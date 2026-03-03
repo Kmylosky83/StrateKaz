@@ -101,13 +101,9 @@ export const proveedorApi = {
     page_size?: number;
     search?: string;
     tipo_proveedor?: number;
-    estado?: string;
     tipos_materia_prima?: number[];
     modalidad_logistica?: number;
     departamento?: number;
-    ciudad?: number;
-    es_proveedor_critico?: boolean;
-    calificacion_min?: number;
     is_active?: boolean;
     ordering?: string;
   }): Promise<PaginatedResponse<ProveedorList>> => {

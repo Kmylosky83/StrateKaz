@@ -34,25 +34,18 @@ interface ProveedoresTableProps {
 interface Filtros {
   search?: string;
   tipo_proveedor?: number;
-  estado?: string;
+  is_active?: boolean;
   tipos_materia_prima?: number[];
 }
 
 // ==================== UTILIDADES ====================
 
-const getEstadoBadgeVariant = (estado: string): 'success' | 'warning' | 'danger' | 'gray' => {
-  const map: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
-    ACTIVO: 'success',
-    INACTIVO: 'gray',
-    SUSPENDIDO: 'warning',
-    BLOQUEADO: 'danger',
-  };
-  return map[estado] || 'gray';
+const getEstadoBadgeVariant = (isActive: boolean): 'success' | 'gray' => {
+  return isActive ? 'success' : 'gray';
 };
 
-const formatEstado = (estado: string | undefined): string => {
-  if (!estado) return 'Sin estado';
-  return estado.charAt(0) + estado.slice(1).toLowerCase();
+const formatEstado = (isActive: boolean): string => {
+  return isActive ? 'Activo' : 'Inactivo';
 };
 
 // ==================== COMPONENTE ====================
@@ -208,14 +201,17 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
 
               <Select
                 label="Estado"
-                value={filtros.estado || ''}
-                onChange={(e) => handleFilterChange('estado', e.target.value || undefined)}
+                value={filtros.is_active === undefined ? '' : filtros.is_active ? 'true' : 'false'}
+                onChange={(e) =>
+                  handleFilterChange(
+                    'is_active',
+                    e.target.value === '' ? undefined : e.target.value === 'true'
+                  )
+                }
               >
                 <option value="">Todos</option>
-                <option value="ACTIVO">Activo</option>
-                <option value="INACTIVO">Inactivo</option>
-                <option value="SUSPENDIDO">Suspendido</option>
-                <option value="BLOQUEADO">Bloqueado</option>
+                <option value="true">Activo</option>
+                <option value="false">Inactivo</option>
               </Select>
             </div>
           </div>
@@ -249,9 +245,6 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Calificación
-                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Acciones
                 </th>
@@ -261,7 +254,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
               {data.map((proveedor) => (
                 <tr key={proveedor.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {proveedor.codigo}
+                    {proveedor.codigo_interno}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium">{proveedor.razon_social}</p>
@@ -282,16 +275,16 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                     {proveedor.email && <p className="text-xs">{proveedor.email}</p>}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {proveedor.tipos_materia_prima_nombres?.length > 0 ? (
+                    {proveedor.tipos_materia_prima_display?.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
-                        {proveedor.tipos_materia_prima_nombres.slice(0, 2).map((tipo, idx) => (
+                        {proveedor.tipos_materia_prima_display.slice(0, 2).map((tipo, idx) => (
                           <Badge key={idx} variant="gray" size="sm">
                             {tipo}
                           </Badge>
                         ))}
-                        {proveedor.tipos_materia_prima_nombres.length > 2 && (
+                        {proveedor.tipos_materia_prima_display.length > 2 && (
                           <Badge variant="gray" size="sm">
-                            +{proveedor.tipos_materia_prima_nombres.length - 2}
+                            +{proveedor.tipos_materia_prima_display.length - 2}
                           </Badge>
                         )}
                       </div>
@@ -300,16 +293,9 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(proveedor.estado)} size="sm">
-                      {formatEstado(proveedor.estado)}
+                    <Badge variant={getEstadoBadgeVariant(proveedor.is_active)} size="sm">
+                      {formatEstado(proveedor.is_active)}
                     </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {proveedor.calificacion_actual ? (
-                      <span className="font-medium">{proveedor.calificacion_actual}/100</span>
-                    ) : (
-                      '-'
-                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
@@ -332,7 +318,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                         <span title="Ya tiene acceso al sistema">
                           <UserCheck className="w-4 h-4 text-success-600 dark:text-success-400" />
                         </span>
-                      ) : proveedor.estado === 'ACTIVO' ? (
+                      ) : proveedor.is_active ? (
                         <Button
                           variant="ghost"
                           size="sm"

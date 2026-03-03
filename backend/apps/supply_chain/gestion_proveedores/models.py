@@ -463,8 +463,8 @@ class Proveedor(models.Model):
     # Contacto
     telefono = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
-    direccion = models.TextField(verbose_name='Dirección')
-    ciudad = models.CharField(max_length=100)
+    direccion = models.TextField(blank=True, default='', verbose_name='Dirección')
+    ciudad = models.CharField(max_length=100, blank=True, default='')
     departamento = models.ForeignKey(
         Departamento,
         on_delete=models.PROTECT,

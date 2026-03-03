@@ -46,7 +46,7 @@ const proveedorSchema = z.object({
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   departamento: z.number().optional().default(0),
   ciudad: z.string().optional().default(''),
-  direccion: z.string().min(1, 'La dirección es obligatoria'),
+  direccion: z.string().optional().default(''),
   formas_pago: z.array(z.number()).optional().default([]),
   dias_plazo_pago: z.number().min(0).optional().default(0),
   banco: z.string().optional().default(''),
@@ -205,15 +205,40 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   };
 
   const handleSubmit = async (data: ProveedorFormValues) => {
-    // Limpiar FK con valor 0 (CRITICAL: evita error DRF "clave primaria '0' inválida")
+    // Limpiar payload antes de enviar al backend
     const payload: Record<string, unknown> = { ...data };
-    if (!payload.tipo_proveedor) delete payload.tipo_proveedor;
-    if (!payload.tipo_documento) delete payload.tipo_documento;
-    if (!payload.unidad_negocio) delete payload.unidad_negocio;
-    if (!payload.modalidad_logistica) delete payload.modalidad_logistica;
-    if (!payload.departamento) delete payload.departamento;
-    if (!payload.tipo_cuenta) delete payload.tipo_cuenta;
+
+    // FK con valor 0 → eliminar (evita DRF "clave primaria '0' inválida")
+    const fkFields = [
+      'tipo_proveedor',
+      'tipo_documento',
+      'unidad_negocio',
+      'modalidad_logistica',
+      'departamento',
+      'tipo_cuenta',
+    ];
+    for (const field of fkFields) {
+      if (!payload[field]) delete payload[field];
+    }
+
+    // Campos numéricos opcionales: 0 → eliminar
     if (!payload.dias_plazo_pago) delete payload.dias_plazo_pago;
+
+    // Strings opcionales vacíos → eliminar del payload (backend los deja blank/null)
+    const optionalStringFields = [
+      'nit',
+      'telefono',
+      'email',
+      'ciudad',
+      'banco',
+      'numero_cuenta',
+      'titular_cuenta',
+    ];
+    for (const field of optionalStringFields) {
+      if (payload[field] === '' || payload[field] === undefined) {
+        delete payload[field];
+      }
+    }
 
     try {
       if (isEdit && proveedor) {
@@ -421,8 +446,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             <Input
               label="Dirección"
               {...form.register('direccion')}
-              required
-              error={form.formState.errors.direccion?.message}
+              placeholder="Ej: Calle 123 #45-67"
             />
           </div>
         </div>

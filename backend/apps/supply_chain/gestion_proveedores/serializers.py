@@ -275,6 +275,17 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         help_text='Lista de precios: [{"tipo_materia_id": 1, "precio_kg": "5000.00"}, ...]'
     )
 
+    # Campos opcionales explícitos (evitar 400 por strings vacíos)
+    ciudad = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    direccion = serializers.CharField(required=False, allow_blank=True, default='')
+    nit = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    telefono = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    email = serializers.EmailField(required=False, allow_blank=True, default='')
+    banco = serializers.CharField(max_length=100, required=False, allow_blank=True, default='')
+    numero_cuenta = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
+    titular_cuenta = serializers.CharField(max_length=200, required=False, allow_blank=True, default='')
+    observaciones = serializers.CharField(required=False, allow_blank=True, default='')
+
     class Meta:
         model = Proveedor
         fields = [
@@ -440,10 +451,21 @@ class ProveedorUpdateSerializer(serializers.ModelSerializer):
     Incluye M2M: tipos_materia_prima, formas_pago, modalidad_logistica.
     """
 
+    # Campos opcionales explícitos (evitar 400 por strings vacíos)
+    ciudad = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    direccion = serializers.CharField(required=False, allow_blank=True)
+    nit = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    telefono = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    banco = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    numero_cuenta = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    titular_cuenta = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Proveedor
         fields = [
-            'nombre_comercial', 'razon_social', 'telefono', 'email',
+            'nombre_comercial', 'razon_social', 'nit', 'telefono', 'email',
             'direccion', 'ciudad', 'departamento',
             'tipos_materia_prima', 'modalidad_logistica',
             'unidad_negocio',

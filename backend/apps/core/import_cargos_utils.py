@@ -167,7 +167,7 @@ TEMPLATE_COLUMNS = [
     ('Reporta a (Cargo Padre)', 28, False, 'Gerente General', 'Nombre exacto del cargo superior'),
     ('Descripción', 40, False, 'Coordina el SG-SST', 'Descripción general del cargo'),
     ('Nivel Educativo', 20, False, 'PROFESIONAL', 'PRIMARIA, BACHILLER, TECNICO, TECNOLOGO, PROFESIONAL, ESPECIALIZACION, MAESTRIA, DOCTORADO'),
-    ('Experiencia Requerida', 22, False, '3_ANOS', 'SIN_EXPERIENCIA, 6_MESES, 1_ANO, 2_ANOS, 3_ANOS, 5_ANOS, 10_ANOS'),
+    ('Experiencia Requerida', 22, False, '3 años', 'Opciones: Sin experiencia, 6 meses, 1 año, 2 años, 3 años, 5 años, 10+ años (también acepta códigos: SIN_EXPERIENCIA, 6_MESES, 1_ANO, etc.)'),
     ('Cantidad Posiciones', 20, False, '1', 'Número de posiciones (default: 1)'),
     ('Es Jefatura', 16, False, 'No', 'Sí o No — Si tiene personal a cargo'),
 ]

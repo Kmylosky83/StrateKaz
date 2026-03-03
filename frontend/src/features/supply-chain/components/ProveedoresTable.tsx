@@ -50,7 +50,8 @@ const getEstadoBadgeVariant = (estado: string): 'success' | 'warning' | 'danger'
   return map[estado] || 'gray';
 };
 
-const formatEstado = (estado: string): string => {
+const formatEstado = (estado: string | undefined): string => {
+  if (!estado) return 'Sin estado';
   return estado.charAt(0) + estado.slice(1).toLowerCase();
 };
 

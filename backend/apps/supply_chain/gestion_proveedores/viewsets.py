@@ -804,6 +804,71 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         })
 
     # ==========================================================================
+    # ESTADÍSTICAS
+    # ==========================================================================
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='estadisticas',
+        permission_classes=[IsAuthenticated],
+    )
+    def estadisticas(self, request):
+        """
+        Estadísticas generales de proveedores.
+
+        GET /api/supply-chain/proveedores/estadisticas/
+        """
+        base_qs = Proveedor.objects.filter(deleted_at__isnull=True)
+
+        total = base_qs.count()
+        activos = base_qs.filter(estado='ACTIVO').count()
+        inactivos = base_qs.filter(estado='INACTIVO').count()
+        criticos = base_qs.filter(estado__in=['SUSPENDIDO', 'BLOQUEADO']).count()
+
+        # Por tipo
+        por_tipo = list(
+            base_qs.values('tipo_proveedor__nombre')
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
+        por_tipo_clean = [
+            {'tipo': item['tipo_proveedor__nombre'] or 'Sin tipo', 'count': item['count']}
+            for item in por_tipo
+        ]
+
+        # Por estado
+        por_estado = list(
+            base_qs.values('estado')
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
+        por_estado_clean = [
+            {'estado': item['estado'] or 'Sin estado', 'count': item['count']}
+            for item in por_estado
+        ]
+
+        # Calificación promedio (de evaluaciones completadas)
+        calificacion = EvaluacionProveedor.objects.filter(
+            estado='COMPLETADA',
+            calificacion_total__isnull=False,
+        ).aggregate(promedio=Avg('calificacion_total'))['promedio']
+
+        # Total materias primas únicas
+        total_materias = TipoMateriaPrima.objects.filter(is_active=True).count()
+
+        return Response({
+            'total_proveedores': total,
+            'proveedores_activos': activos,
+            'proveedores_inactivos': inactivos,
+            'proveedores_criticos': criticos,
+            'por_tipo': por_tipo_clean,
+            'por_estado': por_estado_clean,
+            'calificacion_promedio': round(float(calificacion), 1) if calificacion else None,
+            'total_materias_primas': total_materias,
+        })
+
+    # ==========================================================================
     # PORTAL PROVEEDOR — Endpoints para usuarios externos vinculados
     # ==========================================================================
 

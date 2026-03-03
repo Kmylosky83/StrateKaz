@@ -13,6 +13,11 @@ from django.core.exceptions import ValidationError
 from apps.core.models import TipoDocumentoIdentidad, Departamento, Ciudad
 
 
+# Stub para compatibilidad con migración 0001_initial (modelo movido a production_ops)
+def prueba_acidez_upload_path(instance, filename):
+    return f'pruebas_acidez/{filename}'
+
+
 # ==============================================================================
 # MODELOS DE CATÁLOGO DINÁMICO
 # ==============================================================================

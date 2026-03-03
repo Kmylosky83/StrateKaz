@@ -533,9 +533,13 @@ class Command(BaseCommand):
                             {'code': 'evaluacion', 'name': 'Evaluación', 'icon': 'ClipboardCheck', 'orden': 2, 'description': 'Evaluación de cumplimiento por norma'},
                         ]
                     },
-                    {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'route': 'requisitos-legales', 'orden': 2},
+                    {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'route': 'requisitos-legales', 'orden': 2, 'sections': [
+                        {'code': 'requisitos', 'name': 'Requisitos', 'icon': 'FileCheck', 'orden': 1, 'description': 'Gestión de requisitos legales aplicables'},
+                    ]},
                     # partes_interesadas ELIMINADO — fuente canónica en gestion_estrategica.contexto (ISO 9001:2015 §4.2)
-                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'route': 'reglamentos-internos', 'orden': 3},
+                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'route': 'reglamentos-internos', 'orden': 3, 'sections': [
+                        {'code': 'reglamentos', 'name': 'Reglamentos', 'icon': 'Gavel', 'orden': 1, 'description': 'Gestión de reglamentos internos de la organización'},
+                    ]},
                 ]
             },
             {
@@ -551,12 +555,25 @@ class Command(BaseCommand):
                 'orden': 26,
                 'tabs': [
                     # riesgos_oportunidades MOVIDO a gestion_estrategica (Tab 6)
-                    {'code': 'riesgos_procesos', 'name': 'Riesgos por Procesos', 'icon': 'AlertTriangle', 'route': 'procesos', 'orden': 1},
-                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 2},
-                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 3},
-                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 4},
-                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 5},
-                    {'code': 'seguridad_informacion', 'name': 'Seguridad de la Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 6},
+                    {'code': 'riesgos_procesos', 'name': 'Riesgos por Procesos', 'icon': 'AlertTriangle', 'route': 'procesos', 'orden': 1, 'sections': [
+                        {'code': 'matriz_riesgos', 'name': 'Matriz de Riesgos', 'icon': 'Grid3X3', 'orden': 1, 'description': 'Identificación y valoración de riesgos por proceso'},
+                        {'code': 'controles', 'name': 'Controles', 'icon': 'Shield', 'orden': 2, 'description': 'Gestión de controles asociados a riesgos'},
+                    ]},
+                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 2, 'sections': [
+                        {'code': 'identificacion_peligros', 'name': 'Identificación de Peligros', 'icon': 'ShieldAlert', 'orden': 1, 'description': 'Identificación, evaluación y valoración de riesgos en SST'},
+                    ]},
+                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 3, 'sections': [
+                        {'code': 'matriz_aspectos', 'name': 'Matriz de Aspectos', 'icon': 'Leaf', 'orden': 1, 'description': 'Aspectos e impactos ambientales significativos'},
+                    ]},
+                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 4, 'sections': [
+                        {'code': 'matriz_vial', 'name': 'Matriz Vial', 'icon': 'Car', 'orden': 1, 'description': 'Riesgos viales asociados al PESV'},
+                    ]},
+                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 5, 'sections': [
+                        {'code': 'riesgos_laft', 'name': 'Riesgos LAFT', 'icon': 'ShieldCheck', 'orden': 1, 'description': 'Gestión de riesgos de lavado de activos'},
+                    ]},
+                    {'code': 'seguridad_informacion', 'name': 'Seguridad de la Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 6, 'sections': [
+                        {'code': 'activos_info', 'name': 'Activos de Información', 'icon': 'Lock', 'orden': 1, 'description': 'Riesgos de seguridad de la información ISO 27001'},
+                    ]},
                 ]
             },
             {
@@ -571,9 +588,15 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 27,
                 'tabs': [
-                    {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'icon': 'PenTool', 'route': 'disenador', 'orden': 1},
-                    {'code': 'ejecucion', 'name': 'Ejecución', 'icon': 'Play', 'route': 'ejecucion', 'orden': 2},
-                    {'code': 'monitoreo', 'name': 'Monitoreo', 'icon': 'Activity', 'route': 'monitoreo', 'orden': 3},
+                    {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'icon': 'PenTool', 'route': 'disenador', 'orden': 1, 'sections': [
+                        {'code': 'flujos', 'name': 'Flujos', 'icon': 'PenTool', 'orden': 1, 'description': 'Diseño visual de flujos de trabajo BPMN'},
+                    ]},
+                    {'code': 'ejecucion', 'name': 'Ejecución', 'icon': 'Play', 'route': 'ejecucion', 'orden': 2, 'sections': [
+                        {'code': 'instancias', 'name': 'Instancias', 'icon': 'Play', 'orden': 1, 'description': 'Instancias de flujo en ejecución'},
+                    ]},
+                    {'code': 'monitoreo', 'name': 'Monitoreo', 'icon': 'Activity', 'route': 'monitoreo', 'orden': 3, 'sections': [
+                        {'code': 'metricas', 'name': 'Métricas', 'icon': 'Activity', 'orden': 1, 'description': 'Monitoreo y métricas de rendimiento de flujos'},
+                    ]},
                 ]
             },
 
@@ -593,14 +616,32 @@ class Command(BaseCommand):
                 'orden': 30,
                 'tabs': [
                     # NOTA: sistema_documental y planificacion_sistema movidos a sistema_gestion [15]
-                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'route': 'calidad', 'orden': 1},
-                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 2},
-                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 3},
-                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 4},
-                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 5},
-                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 6},
-                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 7},
-                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 8},
+                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'route': 'calidad', 'orden': 1, 'sections': [
+                        {'code': 'gestion_calidad', 'name': 'Gestión de Calidad', 'icon': 'CheckCircle', 'orden': 1, 'description': 'Control y aseguramiento de calidad'},
+                    ]},
+                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 2, 'sections': [
+                        {'code': 'examenes_medicos', 'name': 'Exámenes Médicos', 'icon': 'Heart', 'orden': 1, 'description': 'Gestión de exámenes médicos ocupacionales'},
+                        {'code': 'condiciones_salud', 'name': 'Condiciones de Salud', 'icon': 'Activity', 'orden': 2, 'description': 'Seguimiento de condiciones de salud'},
+                    ]},
+                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 3, 'sections': [
+                        {'code': 'inspecciones', 'name': 'Inspecciones', 'icon': 'HardHat', 'orden': 1, 'description': 'Inspecciones de seguridad industrial'},
+                    ]},
+                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 4, 'sections': [
+                        {'code': 'mediciones', 'name': 'Mediciones', 'icon': 'Thermometer', 'orden': 1, 'description': 'Mediciones higiénicas ambientales'},
+                    ]},
+                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 5, 'sections': [
+                        {'code': 'comites', 'name': 'Comités', 'icon': 'Users', 'orden': 1, 'description': 'Gestión de COPASST, Convivencia y otros comités'},
+                    ]},
+                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 6, 'sections': [
+                        {'code': 'registro_atel', 'name': 'Registro ATEL', 'icon': 'AlertCircle', 'orden': 1, 'description': 'Registro de accidentes de trabajo y enfermedades laborales'},
+                        {'code': 'investigacion', 'name': 'Investigación', 'icon': 'Search', 'orden': 2, 'description': 'Investigación de incidentes y accidentes'},
+                    ]},
+                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 7, 'sections': [
+                        {'code': 'plan_emergencias', 'name': 'Plan de Emergencias', 'icon': 'Siren', 'orden': 1, 'description': 'Plan de prevención, preparación y respuesta ante emergencias'},
+                    ]},
+                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 8, 'sections': [
+                        {'code': 'programas_ambientales', 'name': 'Programas Ambientales', 'icon': 'Leaf', 'orden': 1, 'description': 'Programas de gestión ambiental'},
+                    ]},
                     # NOTA: mejora_continua (auditorías + hallazgos) movido a sistema_gestion [20]
                 ]
             },
@@ -620,11 +661,23 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 40,
                 'tabs': [
-                    {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'List', 'route': 'catalogos', 'orden': 2},
-                    {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'icon': 'Calendar', 'route': 'programacion', 'orden': 3},
-                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 4},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5},
+                    {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [
+                        {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'orden': 1, 'description': 'Registro y gestión de proveedores'},
+                        {'code': 'evaluaciones_prov', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'orden': 2, 'description': 'Evaluación periódica de proveedores'},
+                        {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'orden': 3, 'description': 'Control de precios de materias primas'},
+                    ]},
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'List', 'route': 'catalogos', 'orden': 2, 'sections': [
+                        {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'List', 'orden': 1, 'description': 'Configuración de catálogos dinámicos'},
+                    ]},
+                    {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'icon': 'Calendar', 'route': 'programacion', 'orden': 3, 'sections': [
+                        {'code': 'programacion_sc', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Programación de abastecimiento'},
+                    ]},
+                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 4, 'sections': [
+                        {'code': 'ordenes_compra', 'name': 'Órdenes de Compra', 'icon': 'ShoppingCart', 'orden': 1, 'description': 'Gestión de órdenes de compra'},
+                    ]},
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5, 'sections': [
+                        {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
+                    ]},
                 ]
             },
             {
@@ -639,10 +692,18 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 41,
                 'tabs': [
-                    {'code': 'recepcion', 'name': 'Recepción', 'icon': 'Download', 'route': 'recepcion', 'orden': 1},
-                    {'code': 'procesamiento', 'name': 'Procesamiento', 'icon': 'Cog', 'route': 'procesamiento', 'orden': 2},
-                    {'code': 'mantenimiento_industrial', 'name': 'Mantenimiento Industrial', 'icon': 'Wrench', 'route': 'mantenimiento', 'orden': 3},
-                    {'code': 'producto_terminado', 'name': 'Producto Terminado', 'icon': 'PackageCheck', 'route': 'producto-terminado', 'orden': 4},
+                    {'code': 'recepcion', 'name': 'Recepción', 'icon': 'Download', 'route': 'recepcion', 'orden': 1, 'sections': [
+                        {'code': 'recepcion_mp', 'name': 'Recepción MP', 'icon': 'Download', 'orden': 1, 'description': 'Recepción de materia prima'},
+                    ]},
+                    {'code': 'procesamiento', 'name': 'Procesamiento', 'icon': 'Cog', 'route': 'procesamiento', 'orden': 2, 'sections': [
+                        {'code': 'ordenes_produccion', 'name': 'Órdenes de Producción', 'icon': 'Cog', 'orden': 1, 'description': 'Gestión de órdenes de producción'},
+                    ]},
+                    {'code': 'mantenimiento_industrial', 'name': 'Mantenimiento Industrial', 'icon': 'Wrench', 'route': 'mantenimiento', 'orden': 3, 'sections': [
+                        {'code': 'plan_mantenimiento', 'name': 'Plan de Mantenimiento', 'icon': 'Wrench', 'orden': 1, 'description': 'Mantenimiento preventivo y correctivo'},
+                    ]},
+                    {'code': 'producto_terminado', 'name': 'Producto Terminado', 'icon': 'PackageCheck', 'route': 'producto-terminado', 'orden': 4, 'sections': [
+                        {'code': 'lotes', 'name': 'Lotes', 'icon': 'PackageCheck', 'orden': 1, 'description': 'Control de producto terminado y lotes'},
+                    ]},
                 ]
             },
             {
@@ -657,10 +718,18 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 42,
                 'tabs': [
-                    {'code': 'gestion_transporte', 'name': 'Gestión Transporte', 'icon': 'Route', 'route': 'transporte', 'orden': 1},
-                    {'code': 'despachos', 'name': 'Despachos', 'icon': 'Send', 'route': 'despachos', 'orden': 2},
-                    {'code': 'gestion_flota', 'name': 'Gestión de Flota', 'icon': 'Car', 'route': 'flota', 'orden': 3},
-                    {'code': 'pesv_operativo', 'name': 'PESV Operativo', 'icon': 'Shield', 'route': 'pesv', 'orden': 4},
+                    {'code': 'gestion_transporte', 'name': 'Gestión Transporte', 'icon': 'Route', 'route': 'transporte', 'orden': 1, 'sections': [
+                        {'code': 'rutas', 'name': 'Rutas', 'icon': 'Route', 'orden': 1, 'description': 'Gestión de rutas de transporte'},
+                    ]},
+                    {'code': 'despachos', 'name': 'Despachos', 'icon': 'Send', 'route': 'despachos', 'orden': 2, 'sections': [
+                        {'code': 'ordenes_despacho', 'name': 'Órdenes de Despacho', 'icon': 'Send', 'orden': 1, 'description': 'Programación y seguimiento de despachos'},
+                    ]},
+                    {'code': 'gestion_flota', 'name': 'Gestión de Flota', 'icon': 'Car', 'route': 'flota', 'orden': 3, 'sections': [
+                        {'code': 'vehiculos', 'name': 'Vehículos', 'icon': 'Car', 'orden': 1, 'description': 'Registro y mantenimiento de vehículos'},
+                    ]},
+                    {'code': 'pesv_operativo', 'name': 'PESV Operativo', 'icon': 'Shield', 'route': 'pesv', 'orden': 4, 'sections': [
+                        {'code': 'pesv', 'name': 'PESV', 'icon': 'Shield', 'orden': 1, 'description': 'Plan Estratégico de Seguridad Vial operativo'},
+                    ]},
                 ]
             },
             {
@@ -675,10 +744,18 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 43,
                 'tabs': [
-                    {'code': 'gestion_clientes', 'name': 'Gestión de Clientes', 'icon': 'Users', 'route': 'clientes', 'orden': 1},
-                    {'code': 'pipeline_ventas', 'name': 'Pipeline Ventas', 'icon': 'Funnel', 'route': 'pipeline', 'orden': 2},
-                    {'code': 'pedidos_facturacion', 'name': 'Pedidos y Facturación', 'icon': 'FileText', 'route': 'pedidos', 'orden': 3},
-                    {'code': 'servicio_cliente', 'name': 'Servicio al Cliente', 'icon': 'Headphones', 'route': 'pqrs', 'orden': 4},
+                    {'code': 'gestion_clientes', 'name': 'Gestión de Clientes', 'icon': 'Users', 'route': 'clientes', 'orden': 1, 'sections': [
+                        {'code': 'clientes', 'name': 'Clientes', 'icon': 'Users', 'orden': 1, 'description': 'Registro y gestión de clientes'},
+                    ]},
+                    {'code': 'pipeline_ventas', 'name': 'Pipeline Ventas', 'icon': 'Funnel', 'route': 'pipeline', 'orden': 2, 'sections': [
+                        {'code': 'oportunidades_venta', 'name': 'Oportunidades', 'icon': 'Funnel', 'orden': 1, 'description': 'Pipeline y oportunidades de venta'},
+                    ]},
+                    {'code': 'pedidos_facturacion', 'name': 'Pedidos y Facturación', 'icon': 'FileText', 'route': 'pedidos', 'orden': 3, 'sections': [
+                        {'code': 'pedidos', 'name': 'Pedidos', 'icon': 'FileText', 'orden': 1, 'description': 'Gestión de pedidos y facturación'},
+                    ]},
+                    {'code': 'servicio_cliente', 'name': 'Servicio al Cliente', 'icon': 'Headphones', 'route': 'pqrs', 'orden': 4, 'sections': [
+                        {'code': 'pqrs', 'name': 'PQRS', 'icon': 'Headphones', 'orden': 1, 'description': 'Peticiones, quejas, reclamos y sugerencias'},
+                    ]},
                 ]
             },
 
@@ -704,16 +781,48 @@ class Command(BaseCommand):
                             {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 2, 'description': 'Visualización interactiva de la jerarquía de cargos'},
                         ]
                     },
-                    {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
-                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
-                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6},
-                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7},
-                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8},
-                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 9},
-                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 10},
-                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 11},
+                    {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2, 'sections': [
+                        {'code': 'vacantes', 'name': 'Vacantes', 'icon': 'Briefcase', 'orden': 1, 'description': 'Publicación y gestión de vacantes'},
+                        {'code': 'candidatos', 'name': 'Candidatos', 'icon': 'UserPlus', 'orden': 2, 'description': 'Evaluación y seguimiento de candidatos'},
+                        {'code': 'contratacion', 'name': 'Contratación', 'icon': 'FileSignature', 'orden': 3, 'description': 'Proceso de contratación y documentación'},
+                    ]},
+                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3, 'sections': [
+                        {'code': 'directorio', 'name': 'Directorio', 'icon': 'Users', 'orden': 1, 'description': 'Listado y gestión de colaboradores activos'},
+                        {'code': 'hoja_vida', 'name': 'Hoja de Vida', 'icon': 'FileText', 'orden': 2, 'description': 'Información personal, laboral y documentación'},
+                        {'code': 'contratos', 'name': 'Contratos', 'icon': 'FileSignature', 'orden': 3, 'description': 'Gestión de contratos laborales'},
+                    ]},
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4, 'sections': [
+                        {'code': 'programas_induccion', 'name': 'Programas de Inducción', 'icon': 'Rocket', 'orden': 1, 'description': 'Configuración y seguimiento de programas de inducción'},
+                        {'code': 'afiliaciones', 'name': 'Afiliaciones', 'icon': 'Shield', 'orden': 2, 'description': 'Gestión de afiliaciones a seguridad social'},
+                    ]},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5, 'sections': [
+                        {'code': 'plan_formacion', 'name': 'Plan de Formación', 'icon': 'BookOpen', 'orden': 1, 'description': 'Planificación y cronograma de capacitaciones'},
+                        {'code': 'capacitaciones', 'name': 'Capacitaciones', 'icon': 'GraduationCap', 'orden': 2, 'description': 'Registro y seguimiento de capacitaciones'},
+                        {'code': 'reinduccion', 'name': 'Reinducción', 'icon': 'RefreshCw', 'orden': 3, 'description': 'Programas de reinducción periódica'},
+                    ]},
+                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6, 'sections': [
+                        {'code': 'evaluaciones_desempeno', 'name': 'Evaluaciones', 'icon': 'Award', 'orden': 1, 'description': 'Evaluaciones de desempeño por período'},
+                        {'code': 'planes_desarrollo', 'name': 'Planes de Desarrollo', 'icon': 'TrendingUp', 'orden': 2, 'description': 'Planes individuales de desarrollo profesional'},
+                    ]},
+                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7, 'sections': [
+                        {'code': 'turnos', 'name': 'Turnos', 'icon': 'Clock', 'orden': 1, 'description': 'Configuración y asignación de turnos de trabajo'},
+                        {'code': 'marcajes', 'name': 'Marcajes', 'icon': 'Timer', 'orden': 2, 'description': 'Registro de marcajes de entrada y salida'},
+                        {'code': 'ausencias', 'name': 'Ausencias', 'icon': 'CalendarX', 'orden': 3, 'description': 'Gestión de ausencias e incapacidades'},
+                    ]},
+                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8, 'sections': [
+                        {'code': 'registro_novedades', 'name': 'Registro de Novedades', 'icon': 'Bell', 'orden': 1, 'description': 'Novedades de nómina y situaciones laborales'},
+                    ]},
+                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 9, 'sections': [
+                        {'code': 'casos_disciplinarios', 'name': 'Casos Disciplinarios', 'icon': 'Gavel', 'orden': 1, 'description': 'Gestión de procesos disciplinarios'},
+                    ]},
+                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 10, 'sections': [
+                        {'code': 'liquidacion_nomina', 'name': 'Liquidación de Nómina', 'icon': 'DollarSign', 'orden': 1, 'description': 'Cálculo y liquidación de nómina'},
+                        {'code': 'prestaciones', 'name': 'Prestaciones', 'icon': 'Gift', 'orden': 2, 'description': 'Gestión de prestaciones sociales'},
+                    ]},
+                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 11, 'sections': [
+                        {'code': 'proceso_retiro', 'name': 'Proceso de Retiro', 'icon': 'LogOut', 'orden': 1, 'description': 'Gestión del proceso de desvinculación'},
+                        {'code': 'liquidacion_final', 'name': 'Liquidación Final', 'icon': 'FileText', 'orden': 2, 'description': 'Cálculo de liquidación definitiva'},
+                    ]},
                 ]
             },
             {
@@ -728,10 +837,21 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 50,
                 'tabs': [
-                    {'code': 'tesoreria', 'name': 'Tesorería', 'icon': 'Landmark', 'route': 'tesoreria', 'orden': 1},
-                    {'code': 'presupuesto', 'name': 'Presupuesto', 'icon': 'PieChart', 'route': 'presupuesto', 'orden': 2},
-                    {'code': 'activos_fijos', 'name': 'Activos Fijos', 'icon': 'Building', 'route': 'activos-fijos', 'orden': 3},
-                    {'code': 'servicios_generales', 'name': 'Servicios Generales', 'icon': 'Wrench', 'route': 'servicios-generales', 'orden': 4},
+                    {'code': 'tesoreria', 'name': 'Tesorería', 'icon': 'Landmark', 'route': 'tesoreria', 'orden': 1, 'sections': [
+                        {'code': 'flujo_caja', 'name': 'Flujo de Caja', 'icon': 'Landmark', 'orden': 1, 'description': 'Control de ingresos, egresos y flujo de caja'},
+                        {'code': 'cuentas_bancarias', 'name': 'Cuentas Bancarias', 'icon': 'CreditCard', 'orden': 2, 'description': 'Gestión de cuentas bancarias y conciliaciones'},
+                    ]},
+                    {'code': 'presupuesto', 'name': 'Presupuesto', 'icon': 'PieChart', 'route': 'presupuesto', 'orden': 2, 'sections': [
+                        {'code': 'partidas_presupuestales', 'name': 'Partidas Presupuestales', 'icon': 'PieChart', 'orden': 1, 'description': 'Definición y control de partidas presupuestales'},
+                        {'code': 'ejecucion_presupuestal', 'name': 'Ejecución Presupuestal', 'icon': 'BarChart3', 'orden': 2, 'description': 'Seguimiento de ejecución vs presupuesto'},
+                    ]},
+                    {'code': 'activos_fijos', 'name': 'Activos Fijos', 'icon': 'Building', 'route': 'activos-fijos', 'orden': 3, 'sections': [
+                        {'code': 'inventario_activos', 'name': 'Inventario de Activos', 'icon': 'Building', 'orden': 1, 'description': 'Registro y control de activos fijos'},
+                        {'code': 'depreciacion', 'name': 'Depreciación', 'icon': 'TrendingDown', 'orden': 2, 'description': 'Cálculo y seguimiento de depreciación'},
+                    ]},
+                    {'code': 'servicios_generales', 'name': 'Servicios Generales', 'icon': 'Wrench', 'route': 'servicios-generales', 'orden': 4, 'sections': [
+                        {'code': 'gestion_servicios', 'name': 'Gestión de Servicios', 'icon': 'Wrench', 'orden': 1, 'description': 'Administración de servicios generales y mantenimiento'},
+                    ]},
                 ]
             },
             {
@@ -746,10 +866,22 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 51,
                 'tabs': [
-                    {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1},
-                    {'code': 'movimientos', 'name': 'Movimientos', 'icon': 'ArrowLeftRight', 'route': 'movimientos', 'orden': 2},
-                    {'code': 'informes_contables', 'name': 'Informes Contables', 'icon': 'FileText', 'route': 'informes', 'orden': 3},
-                    {'code': 'integracion', 'name': 'Integración', 'icon': 'Link', 'route': 'integracion', 'orden': 4},
+                    {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1, 'sections': [
+                        {'code': 'plan_cuentas', 'name': 'Plan de Cuentas', 'icon': 'List', 'orden': 1, 'description': 'Configuración del plan único de cuentas (PUC)'},
+                        {'code': 'centros_costo', 'name': 'Centros de Costo', 'icon': 'Target', 'orden': 2, 'description': 'Definición de centros de costo contable'},
+                        {'code': 'periodos_contables', 'name': 'Períodos Contables', 'icon': 'Calendar', 'orden': 3, 'description': 'Gestión de períodos contables'},
+                    ]},
+                    {'code': 'movimientos', 'name': 'Movimientos', 'icon': 'ArrowLeftRight', 'route': 'movimientos', 'orden': 2, 'sections': [
+                        {'code': 'comprobantes', 'name': 'Comprobantes', 'icon': 'ArrowLeftRight', 'orden': 1, 'description': 'Registro de comprobantes contables'},
+                        {'code': 'libro_diario', 'name': 'Libro Diario', 'icon': 'BookOpen', 'orden': 2, 'description': 'Libro diario de movimientos contables'},
+                    ]},
+                    {'code': 'informes_contables', 'name': 'Informes Contables', 'icon': 'FileText', 'route': 'informes', 'orden': 3, 'sections': [
+                        {'code': 'balance_general', 'name': 'Balance General', 'icon': 'FileText', 'orden': 1, 'description': 'Estado de situación financiera'},
+                        {'code': 'estado_resultados', 'name': 'Estado de Resultados', 'icon': 'BarChart3', 'orden': 2, 'description': 'Estado de resultados del período'},
+                    ]},
+                    {'code': 'integracion', 'name': 'Integración', 'icon': 'Link', 'route': 'integracion', 'orden': 4, 'sections': [
+                        {'code': 'integracion_contable', 'name': 'Integración Contable', 'icon': 'Link', 'orden': 1, 'description': 'Integración con otros módulos y sistemas externos'},
+                    ]},
                 ]
             },
 
@@ -768,13 +900,29 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 60,
                 'tabs': [
-                    {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1},
-                    {'code': 'dashboard_gerencial', 'name': 'Dashboard Gerencial', 'icon': 'LayoutDashboard', 'route': 'dashboards', 'orden': 2},
-                    {'code': 'indicadores_area', 'name': 'Indicadores por Área', 'icon': 'TrendingUp', 'route': 'indicadores', 'orden': 3},
-                    {'code': 'analisis_tendencias', 'name': 'Análisis y Tendencias', 'icon': 'LineChart', 'route': 'analisis', 'orden': 4},
-                    {'code': 'generador_informes', 'name': 'Generador Informes', 'icon': 'FileText', 'route': 'informes', 'orden': 5},
-                    {'code': 'acciones_indicador', 'name': 'Acciones x Indicador', 'icon': 'Zap', 'route': 'acciones', 'orden': 6},
-                    {'code': 'exportacion_integracion', 'name': 'Exportación/Integración', 'icon': 'Download', 'route': 'exportacion', 'orden': 7},
+                    {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1, 'sections': [
+                        {'code': 'tipos_indicador', 'name': 'Tipos de Indicador', 'icon': 'Settings', 'orden': 1, 'description': 'Configuración de tipos y categorías de indicadores'},
+                        {'code': 'fuentes_datos', 'name': 'Fuentes de Datos', 'icon': 'Database', 'orden': 2, 'description': 'Definición de fuentes de datos para indicadores'},
+                    ]},
+                    {'code': 'dashboard_gerencial', 'name': 'Dashboard Gerencial', 'icon': 'LayoutDashboard', 'route': 'dashboards', 'orden': 2, 'sections': [
+                        {'code': 'tableros', 'name': 'Tableros', 'icon': 'LayoutDashboard', 'orden': 1, 'description': 'Dashboards ejecutivos y gerenciales'},
+                    ]},
+                    {'code': 'indicadores_area', 'name': 'Indicadores por Área', 'icon': 'TrendingUp', 'route': 'indicadores', 'orden': 3, 'sections': [
+                        {'code': 'indicadores', 'name': 'Indicadores', 'icon': 'TrendingUp', 'orden': 1, 'description': 'Indicadores de gestión por área y proceso'},
+                        {'code': 'mediciones', 'name': 'Mediciones', 'icon': 'BarChart3', 'orden': 2, 'description': 'Registro de mediciones periódicas'},
+                    ]},
+                    {'code': 'analisis_tendencias', 'name': 'Análisis y Tendencias', 'icon': 'LineChart', 'route': 'analisis', 'orden': 4, 'sections': [
+                        {'code': 'tendencias', 'name': 'Tendencias', 'icon': 'LineChart', 'orden': 1, 'description': 'Análisis de tendencias y proyecciones'},
+                    ]},
+                    {'code': 'generador_informes', 'name': 'Generador Informes', 'icon': 'FileText', 'route': 'informes', 'orden': 5, 'sections': [
+                        {'code': 'plantillas_informe', 'name': 'Plantillas de Informe', 'icon': 'FileText', 'orden': 1, 'description': 'Plantillas y generación automática de informes'},
+                    ]},
+                    {'code': 'acciones_indicador', 'name': 'Acciones x Indicador', 'icon': 'Zap', 'route': 'acciones', 'orden': 6, 'sections': [
+                        {'code': 'acciones_mejora_ind', 'name': 'Acciones de Mejora', 'icon': 'Zap', 'orden': 1, 'description': 'Planes de acción por indicador fuera de meta'},
+                    ]},
+                    {'code': 'exportacion_integracion', 'name': 'Exportación/Integración', 'icon': 'Download', 'route': 'exportacion', 'orden': 7, 'sections': [
+                        {'code': 'exportacion', 'name': 'Exportación', 'icon': 'Download', 'orden': 1, 'description': 'Exportación de datos e integración con BI externo'},
+                    ]},
                 ]
             },
             {
@@ -815,10 +963,18 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 63,
                 'tabs': [
-                    {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'route': 'logs', 'orden': 1},
-                    {'code': 'centro_notificaciones', 'name': 'Centro Notificaciones', 'icon': 'Bell', 'route': 'notificaciones', 'orden': 2},
-                    {'code': 'config_alertas', 'name': 'Config. Alertas', 'icon': 'BellRing', 'route': 'alertas', 'orden': 3},
-                    {'code': 'tareas_recordatorios', 'name': 'Tareas/Recordatorios', 'icon': 'CheckSquare', 'route': 'tareas', 'orden': 4},
+                    {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'route': 'logs', 'orden': 1, 'sections': [
+                        {'code': 'logs_auditoria', 'name': 'Logs de Auditoría', 'icon': 'Terminal', 'orden': 1, 'description': 'Registro de actividad y trazabilidad del sistema'},
+                    ]},
+                    {'code': 'centro_notificaciones', 'name': 'Centro Notificaciones', 'icon': 'Bell', 'route': 'notificaciones', 'orden': 2, 'sections': [
+                        {'code': 'notificaciones', 'name': 'Notificaciones', 'icon': 'Bell', 'orden': 1, 'description': 'Centro de notificaciones y comunicaciones'},
+                    ]},
+                    {'code': 'config_alertas', 'name': 'Config. Alertas', 'icon': 'BellRing', 'route': 'alertas', 'orden': 3, 'sections': [
+                        {'code': 'reglas_alerta', 'name': 'Reglas de Alerta', 'icon': 'BellRing', 'orden': 1, 'description': 'Configuración de reglas y condiciones de alerta'},
+                    ]},
+                    {'code': 'tareas_recordatorios', 'name': 'Tareas/Recordatorios', 'icon': 'CheckSquare', 'route': 'tareas', 'orden': 4, 'sections': [
+                        {'code': 'tareas', 'name': 'Tareas', 'icon': 'CheckSquare', 'orden': 1, 'description': 'Gestión de tareas y recordatorios del sistema'},
+                    ]},
                 ]
             },
         ]

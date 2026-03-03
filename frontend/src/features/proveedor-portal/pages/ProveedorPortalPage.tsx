@@ -427,11 +427,36 @@ const PORTAL_TABS = [
 export default function ProveedorPortalPage() {
   const [activeTab, setActiveTab] = useState<PortalTab>('empresa');
   const user = useAuthStore((s) => s.user);
+  const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const { primaryColor } = useBrandingConfig();
   const { data: empresa, isLoading } = useMiEmpresa();
 
+  // Guard: esperar a que el perfil del User se cargue antes de decidir
+  // Sin esto, un usuario proveedor puede ser redirigido a /dashboard
+  // antes de que user.proveedor esté disponible.
+  if (isLoadingUser || !user) {
+    return (
+      <AnimatedPage>
+        <div className="space-y-6">
+          <Card padding="none" className="overflow-hidden">
+            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            <div className="p-6 md:p-8">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-14 w-14 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </AnimatedPage>
+    );
+  }
+
   // Guard: sin proveedor vinculado → dashboard
-  if (!user?.proveedor) {
+  if (!user.proveedor) {
     return <Navigate to="/dashboard" replace />;
   }
 

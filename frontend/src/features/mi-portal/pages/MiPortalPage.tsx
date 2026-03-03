@@ -225,6 +225,7 @@ export default function MiPortalPage() {
 
   // Auth store for quick name access (already loaded, no API call)
   const user = useAuthStore((s) => s.user);
+  const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const isSuperAdmin = useIsSuperAdmin();
 
   // Branding
@@ -308,17 +309,30 @@ export default function MiPortalPage() {
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
 
   // ── Redirect cuando no hay Colaborador vinculado ──────────────────────────
-  // Super admin sin Colaborador → vista informativa (no redirigir)
-  // Usuarios externos (consultores) auto-creados sin Colaborador:
-  //   → con proveedor: portal de proveedor
-  //   → sin proveedor: dashboard general
+  // IMPORTANTE: Esperar a que TANTO el perfil de colaborador como el User del
+  // authStore estén cargados antes de tomar decisiones de redirección.
+  // Sin esto, un usuario proveedor/consultor puede ser redirigido a /dashboard
+  // porque user?.proveedor es undefined mientras isLoadingUser === true.
   if (!perfilLoading && perfil == null) {
-    if (user?.proveedor) {
+    // Si el User aún no se ha cargado, mostrar skeleton (evitar redirect prematuro)
+    if (isLoadingUser || !user) {
+      return (
+        <AnimatedPage>
+          <div className="space-y-6">
+            <HeroSkeleton />
+          </div>
+        </AnimatedPage>
+      );
+    }
+    // Usuarios con proveedor vinculado → portal de proveedor
+    if (user.proveedor) {
       return <Navigate to="/proveedor-portal" replace />;
     }
+    // Super admin sin Colaborador → vista informativa
     if (isSuperAdmin) {
       return <AdminPortalView />;
     }
+    // Sin Colaborador ni proveedor → dashboard general
     return <Navigate to="/dashboard" replace />;
   }
 

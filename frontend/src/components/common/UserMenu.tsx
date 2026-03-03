@@ -202,14 +202,9 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
               label={USER_MENU_LABELS.PROFILE}
               onClick={() => handleNavigate(ROUTES.PROFILE)}
             />
-            {user?.proveedor && (
-              <MenuItem
-                icon={Building2}
-                label="Mi Empresa"
-                sublabel={user.proveedor_nombre ?? undefined}
-                onClick={() => handleNavigate(ROUTES.PROVEEDOR_PORTAL)}
-              />
-            )}
+            {/* "Mi Empresa" eliminado del UserMenu del DashboardLayout:
+                - Portal-only users tienen su propio PortalLayout con header dedicado
+                - Profesionales colocados no deben navegar al portal de la firma */}
             <MenuItem
               icon={Bell}
               label={USER_MENU_LABELS.NOTIFICATIONS}

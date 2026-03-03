@@ -46,6 +46,7 @@ import { ChangePasswordModal, TwoFactorModal, Disable2FAModal } from '@/componen
 import { use2FA } from '@/hooks/use2FA';
 import { TabPrecios } from '../components/TabPrecios';
 import { TabProfesionales } from '../components/TabProfesionales';
+import { isPortalOnlyUser } from '@/utils/portalUtils';
 import type { ContratoProveedor, EvaluacionProveedor, TipoProveedorCodigo } from '../types';
 
 // ============================================================================
@@ -482,7 +483,11 @@ interface TabDef {
   icon: React.ReactNode;
 }
 
-function buildTabs(tipoCodigo: TipoProveedorCodigo | string, requiereMP: boolean): TabDef[] {
+function buildTabs(
+  tipoCodigo: TipoProveedorCodigo | string,
+  requiereMP: boolean,
+  esRepresentanteFirma: boolean
+): TabDef[] {
   const tabs: TabDef[] = [
     { id: 'empresa', label: 'Mi Empresa', icon: <Building2 className="w-4 h-4" /> },
   ];
@@ -496,8 +501,9 @@ function buildTabs(tipoCodigo: TipoProveedorCodigo | string, requiereMP: boolean
     });
   }
 
-  // Mis Profesionales: solo para consultores
-  if (tipoCodigo === 'CONSULTOR') {
+  // Mis Profesionales: solo para REPRESENTANTES de firma consultora
+  // (portal-only + tipo CONSULTOR). Profesionales colocados con cargo real NO ven este tab.
+  if (tipoCodigo === 'CONSULTOR' && esRepresentanteFirma) {
     tabs.push({
       id: 'profesionales',
       label: 'Mis Profesionales',
@@ -532,8 +538,14 @@ export default function ProveedorPortalPage() {
   const tipoConfig = TIPO_CONFIG[tipoCodigo] || DEFAULT_CONFIG;
   const HeroIcon = tipoConfig.icon;
 
-  // Tabs dinámicos según tipo
-  const tabs = useMemo(() => buildTabs(tipoCodigo, requiereMP), [tipoCodigo, requiereMP]);
+  // Determinar si es representante de firma (portal-only) o profesional colocado
+  const esRepresentanteFirma = isPortalOnlyUser(user);
+
+  // Tabs dinámicos según tipo + perfil
+  const tabs = useMemo(
+    () => buildTabs(tipoCodigo, requiereMP, esRepresentanteFirma),
+    [tipoCodigo, requiereMP, esRepresentanteFirma]
+  );
 
   // Guard: esperar a que el perfil del User se cargue antes de decidir
   if (isLoadingUser || !user) {

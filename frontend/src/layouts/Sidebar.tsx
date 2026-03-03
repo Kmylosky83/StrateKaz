@@ -822,37 +822,9 @@ export const Sidebar = ({
           </div>
         )}
 
-        {/* Portal Proveedor - Solo visible cuando el usuario tiene proveedor FK (externo) */}
-        {!isAdminGlobalMode && user?.proveedor && (
-          <div className="px-2 mb-1">
-            <Link
-              to="/proveedor-portal"
-              className={cn(
-                'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
-                location.pathname === '/proveedor-portal' ||
-                  location.pathname.startsWith('/proveedor-portal/')
-                  ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-              )}
-            >
-              <Briefcase
-                className={cn(
-                  'h-5 w-5 flex-shrink-0',
-                  location.pathname === '/proveedor-portal' ||
-                    location.pathname.startsWith('/proveedor-portal/')
-                    ? 'text-orange-600 dark:text-orange-400'
-                    : 'text-gray-500 dark:text-gray-400'
-                )}
-              />
-              {!effectiveCollapsed && <span className="ml-3 font-medium">Portal Proveedor</span>}
-              {effectiveCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                  Portal Proveedor
-                </div>
-              )}
-            </Link>
-          </div>
-        )}
+        {/* Portal Proveedor ELIMINADO del sidebar:
+            - Portal-only users usan PortalLayout (sin sidebar)
+            - Profesionales colocados NO necesitan link al portal de la firma */}
 
         {/* Admin Global - Solo visible para superusuarios cuando NO están en contexto de empresa */}
         {showAdminGlobal && (

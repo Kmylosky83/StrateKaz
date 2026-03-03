@@ -16,6 +16,7 @@ import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { verifyTwoFactor } from '@/features/perfil/api/twoFactor.api';
 import { authAPI } from '@/api/auth.api';
+import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 // Lazy load NetworkBackground for better initial load performance
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
@@ -135,8 +136,10 @@ export const LoginPage = () => {
 
     if (accessibleTenants.length === 1) {
       // Solo un tenant - ya fue seleccionado automáticamente en el store
+      const { user: currentUser } = useAuthStore.getState();
+      const landing = isPortalOnlyUser(currentUser) ? '/proveedor-portal' : '/mi-portal';
       toast.success(`Bienvenido a ${currentTenant?.name || accessibleTenants[0].tenant.name}!`);
-      navigate('/mi-portal');
+      navigate(landing);
       return;
     }
 
@@ -218,10 +221,14 @@ export const LoginPage = () => {
     try {
       await selectTenant(tenantId);
       const tenant = accessibleTenants.find((t) => t.tenant.id === tenantId);
+      const { user: currentUser } = useAuthStore.getState();
+      const landing = isPortalOnlyUser(currentUser) ? '/proveedor-portal' : '/mi-portal';
       toast.success(`Bienvenido a ${tenant?.tenant.name || 'la empresa'}!`);
-      navigate('/mi-portal');
-    } catch (error: any) {
-      toast.error(error.message || 'Error al seleccionar empresa. Intenta de nuevo.');
+      navigate(landing);
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Error al seleccionar empresa. Intenta de nuevo.';
+      toast.error(msg);
     }
   };
 

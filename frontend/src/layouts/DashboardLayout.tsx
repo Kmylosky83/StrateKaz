@@ -37,17 +37,8 @@ export const DashboardLayout = () => {
   // Persistir ultima ruta visitada para landing inteligente
   useRouteTracker();
 
-  // Cargar perfil del User (core.User) cuando hay tenant pero no user
-  // Esto cubre: recarga de página (F5), navegación directa, primer acceso
-  const currentTenantId = useAuthStore((state) => state.currentTenantId);
-  const user = useAuthStore((state) => state.user);
-  const loadUserProfile = useAuthStore((state) => state.loadUserProfile);
-
-  useEffect(() => {
-    if (currentTenantId && !user) {
-      loadUserProfile();
-    }
-  }, [currentTenantId, user, loadUserProfile]);
+  // NOTA: loadUserProfile se ejecuta en AdaptiveLayout (upstream)
+  // para poder decidir el layout ANTES de renderizar.
 
   // Auto-collapse en tablet, auto-close en mobile cuando cambia el viewport
   useEffect(() => {

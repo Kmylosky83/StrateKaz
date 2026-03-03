@@ -692,14 +692,19 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             cargo = Cargo.objects.get(id=cargo_id)
         else:
             # Representante de firma o proveedor estándar → cargo portal
-            cargo, _ = Cargo.objects.get_or_create(
+            cargo, created = Cargo.objects.get_or_create(
                 code='PROVEEDOR_PORTAL',
                 defaults={
                     'name': 'Proveedor - Portal',
                     'is_system': True,
                     'is_active': True,
+                    'is_externo': True,
                 }
             )
+            # Fixup: si el cargo ya existía sin is_externo, corregirlo
+            if not created and not cargo.is_externo:
+                cargo.is_externo = True
+                cargo.save(update_fields=['is_externo'])
 
         # Verificar si el email ya existe
         existing_user = User.objects.filter(email=email).first()

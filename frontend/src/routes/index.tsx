@@ -14,7 +14,7 @@
 import { lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
-import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { AdaptiveLayout } from '@/layouts/AdaptiveLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
@@ -84,7 +84,7 @@ export const AppRoutes = () => {
       {/* RUTAS PROTEGIDAS */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
+        <Route element={<AdaptiveLayout />}>
           {/* Dashboard principal */}
           <Route path="/dashboard" element={<DashboardPage />} />
 

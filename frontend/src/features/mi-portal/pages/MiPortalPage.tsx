@@ -309,12 +309,11 @@ export default function MiPortalPage() {
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
 
   // ── Redirect cuando no hay Colaborador vinculado ──────────────────────────
-  // IMPORTANTE: Esperar a que TANTO el perfil de colaborador como el User del
-  // authStore estén cargados antes de tomar decisiones de redirección.
-  // Sin esto, un usuario proveedor/consultor puede ser redirigido a /dashboard
-  // porque user?.proveedor es undefined mientras isLoadingUser === true.
+  // NOTA: Usuarios portal-only (proveedor + PROVEEDOR_PORTAL cargo) NUNCA
+  // llegan aqui — AdaptiveLayout los redirige a /proveedor-portal antes.
+  // Los profesionales colocados (proveedor + cargo real) SI pueden llegar.
   if (!perfilLoading && perfil == null) {
-    // Si el User aún no se ha cargado, mostrar skeleton (evitar redirect prematuro)
+    // Si el User aun no se ha cargado, mostrar skeleton (evitar redirect prematuro)
     if (isLoadingUser || !user) {
       return (
         <AnimatedPage>
@@ -324,15 +323,12 @@ export default function MiPortalPage() {
         </AnimatedPage>
       );
     }
-    // Usuarios con proveedor vinculado → portal de proveedor
-    if (user.proveedor) {
-      return <Navigate to="/proveedor-portal" replace />;
-    }
     // Super admin sin Colaborador → vista informativa
     if (isSuperAdmin) {
       return <AdminPortalView />;
     }
-    // Sin Colaborador ni proveedor → dashboard general
+    // Sin Colaborador → dashboard general
+    // (profesionales colocados sin Colaborador, o usuarios sin perfil HR)
     return <Navigate to="/dashboard" replace />;
   }
 

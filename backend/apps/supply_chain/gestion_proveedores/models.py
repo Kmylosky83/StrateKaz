@@ -633,17 +633,40 @@ class Proveedor(models.Model):
     def __str__(self):
         return f"{self.nombre_comercial} ({self.tipo_proveedor.nombre})"
 
+    # Mapeo de código TipoProveedor → código ConsecutivoConfig
+    CONSECUTIVO_POR_TIPO = {
+        'MATERIA_PRIMA': 'PROVEEDOR_MP',
+        'PRODUCTOS_SERVICIOS': 'PROVEEDOR_PS',
+        'UNIDAD_NEGOCIO': 'PROVEEDOR_UN',
+        'TRANSPORTISTA': 'PROVEEDOR_TR',
+        'CONSULTOR': 'PROVEEDOR_CO',
+        'CONTRATISTA': 'PROVEEDOR_CT',
+    }
+
+    PREFIJO_POR_TIPO = {
+        'MATERIA_PRIMA': 'MP',
+        'PRODUCTOS_SERVICIOS': 'PS',
+        'UNIDAD_NEGOCIO': 'UN',
+        'TRANSPORTISTA': 'TR',
+        'CONSULTOR': 'CO',
+        'CONTRATISTA': 'CT',
+    }
+
     @staticmethod
     def generar_codigo_interno(tipo_proveedor):
-        """Genera código interno usando sistema de consecutivos."""
+        """Genera código interno usando consecutivo específico por tipo de proveedor."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
 
+        tipo_codigo = tipo_proveedor.codigo if tipo_proveedor else ''
+        consecutivo_code = Proveedor.CONSECUTIVO_POR_TIPO.get(tipo_codigo, 'PROVEEDOR_PS')
+        prefijo_fallback = Proveedor.PREFIJO_POR_TIPO.get(tipo_codigo, 'PROV')
+
         try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('PROVEEDOR')
+            return ConsecutivoConfig.obtener_siguiente_consecutivo(consecutivo_code)
         except ConsecutivoConfig.DoesNotExist:
-            # Fallback manual
+            # Fallback manual con prefijo del tipo
             ultimo = Proveedor.objects.filter(
-                codigo_interno__startswith='PROV-'
+                codigo_interno__startswith=f'{prefijo_fallback}-'
             ).order_by('-codigo_interno').first()
 
             if ultimo and ultimo.codigo_interno:
@@ -654,7 +677,7 @@ class Proveedor(models.Model):
             else:
                 numero = 1
 
-            return f'PROV-{numero:05d}'
+            return f'{prefijo_fallback}-{numero:05d}'
 
     @property
     def is_deleted(self):

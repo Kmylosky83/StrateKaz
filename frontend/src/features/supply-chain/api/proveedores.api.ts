@@ -1,6 +1,8 @@
 /**
  * API Client para Proveedores - Gestión de Proveedores
  * Backend: /api/supply-chain/proveedores/
+ *
+ * URLS alineadas con ViewSet url_path (kebab-case)
  */
 import { apiClient } from '@/lib/api-client';
 import type {
@@ -92,6 +94,14 @@ export const unidadNegocioApi = {
 
 // ==================== PROVEEDORES ====================
 
+/** Respuesta del endpoint historial-precio */
+interface HistorialPrecioResponse {
+  proveedor: string;
+  proveedor_id: number;
+  precios_actuales: PrecioMateriaPrima[];
+  historial: HistorialPrecioProveedor[];
+}
+
 export const proveedorApi = {
   /**
    * Listar proveedores con filtros
@@ -101,10 +111,14 @@ export const proveedorApi = {
     page_size?: number;
     search?: string;
     tipo_proveedor?: number;
-    tipos_materia_prima?: number[];
+    tipo_materia_prima?: number;
+    categoria_materia_prima?: number;
     modalidad_logistica?: number;
     departamento?: number;
+    forma_pago?: number;
+    unidad_negocio?: number;
     is_active?: boolean;
+    es_materia_prima?: boolean;
     ordering?: string;
   }): Promise<PaginatedResponse<ProveedorList>> => {
     const response = await apiClient.get<PaginatedResponse<ProveedorList>>(
@@ -131,7 +145,7 @@ export const proveedorApi = {
   },
 
   /**
-   * Actualizar proveedor
+   * Actualizar proveedor (PATCH)
    */
   update: async (id: number, data: UpdateProveedorDTO): Promise<Proveedor> => {
     const response = await apiClient.patch<Proveedor>(`${BASE_URL}/proveedores/${id}/`, data);
@@ -146,57 +160,88 @@ export const proveedorApi = {
   },
 
   /**
-   * Cambiar precio de materia prima (custom action)
+   * Restaurar proveedor eliminado
    */
-  cambiarPrecio: async (id: number, data: CambiarPrecioDTO): Promise<Proveedor> => {
-    const response = await apiClient.post<Proveedor>(
-      `${BASE_URL}/proveedores/${id}/cambiar_precio/`,
+  restore: async (id: number): Promise<Proveedor> => {
+    const response = await apiClient.post<Proveedor>(`${BASE_URL}/proveedores/${id}/restore/`);
+    return response.data;
+  },
+
+  /**
+   * Cambiar precio de materia prima (solo Gerente/SuperAdmin)
+   * Backend url_path: 'cambiar-precio'
+   */
+  cambiarPrecio: async (
+    id: number,
+    data: CambiarPrecioDTO
+  ): Promise<{
+    detail: string;
+    tipo_materia: string;
+    tipo_materia_id: number;
+    precio_nuevo: string;
+    modificado_por: string;
+    fecha_modificacion: string;
+  }> => {
+    const response = await apiClient.post(`${BASE_URL}/proveedores/${id}/cambiar-precio/`, data);
+    return response.data;
+  },
+
+  /**
+   * Obtener historial de precios y precios actuales
+   * Backend url_path: 'historial-precio'
+   * Retorna precios_actuales + historial completo
+   */
+  getHistorialPrecio: async (id: number): Promise<HistorialPrecioResponse> => {
+    const response = await apiClient.get<HistorialPrecioResponse>(
+      `${BASE_URL}/proveedores/${id}/historial-precio/`
+    );
+    return response.data;
+  },
+
+  /**
+   * Obtener condiciones comerciales de un proveedor
+   * Backend url_path: 'condiciones-comerciales'
+   */
+  getCondicionesComerciales: async (
+    id: number
+  ): Promise<{
+    proveedor: string;
+    proveedor_id: number;
+    condiciones: CondicionComercialProveedor[];
+  }> => {
+    const response = await apiClient.get(`${BASE_URL}/proveedores/${id}/condiciones-comerciales/`);
+    return response.data;
+  },
+
+  /**
+   * Crear condición comercial para un proveedor
+   * Backend url_path: 'condiciones-comerciales' (POST)
+   */
+  createCondicionComercial: async (
+    id: number,
+    data: CreateCondicionComercialDTO
+  ): Promise<CondicionComercialProveedor> => {
+    const response = await apiClient.post<CondicionComercialProveedor>(
+      `${BASE_URL}/proveedores/${id}/condiciones-comerciales/`,
       data
     );
     return response.data;
   },
 
   /**
-   * Obtener historial de precios de un proveedor
+   * Activar/Desactivar proveedor (via PATCH is_active)
+   * El modelo NO tiene campo 'estado', solo is_active boolean
    */
-  getHistorialPrecios: async (
-    id: number,
-    params?: { tipo_materia_prima?: number; limit?: number }
-  ): Promise<HistorialPrecioProveedor[]> => {
-    const response = await apiClient.get<HistorialPrecioProveedor[]>(
-      `${BASE_URL}/proveedores/${id}/historial_precios/`,
-      { params }
-    );
-    return response.data;
-  },
-
-  /**
-   * Obtener precios actuales del proveedor
-   */
-  getPreciosActuales: async (id: number): Promise<PrecioMateriaPrima[]> => {
-    const response = await apiClient.get<PrecioMateriaPrima[]>(
-      `${BASE_URL}/proveedores/${id}/precios_actuales/`
-    );
-    return response.data;
-  },
-
-  /**
-   * Cambiar estado del proveedor
-   */
-  cambiarEstado: async (
-    id: number,
-    estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'BLOQUEADO',
-    motivo?: string
-  ): Promise<Proveedor> => {
-    const response = await apiClient.post<Proveedor>(
-      `${BASE_URL}/proveedores/${id}/cambiar_estado/`,
-      { estado, motivo }
-    );
+  toggleActivo: async (id: number, is_active: boolean): Promise<Proveedor> => {
+    const response = await apiClient.patch<Proveedor>(`${BASE_URL}/proveedores/${id}/`, {
+      is_active,
+    });
     return response.data;
   },
 
   /**
    * Obtener estadísticas de proveedores
+   * Backend url_path: 'estadisticas'
    */
   getEstadisticas: async (): Promise<EstadisticasProveedores> => {
     const response = await apiClient.get<EstadisticasProveedores>(
@@ -206,18 +251,38 @@ export const proveedorApi = {
   },
 
   /**
-   * Exportar proveedores a Excel
+   * Descargar plantilla de importación Excel
+   * Backend url_path: 'plantilla-importacion'
    */
-  exportExcel: async (params?: Record<string, any>): Promise<Blob> => {
-    const response = await apiClient.get(`${BASE_URL}/proveedores/export_excel/`, {
-      params,
+  getPlantillaImportacion: async (): Promise<Blob> => {
+    const response = await apiClient.get(`${BASE_URL}/proveedores/plantilla-importacion/`, {
       responseType: 'blob',
     });
     return response.data;
   },
 
   /**
+   * Importar proveedores desde archivo Excel
+   * Backend url_path: 'importar'
+   */
+  importar: async (
+    file: File
+  ): Promise<{
+    detail: string;
+    importados: number;
+    errores: Array<{ fila: number; error: string }>;
+  }> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    const response = await apiClient.post(`${BASE_URL}/proveedores/importar/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
    * Crear acceso al sistema para un proveedor
+   * Backend url_path: 'crear-acceso'
    */
   crearAcceso: async (
     id: number,
@@ -229,21 +294,50 @@ export const proveedorApi = {
     );
     return response.data;
   },
+
+  /**
+   * Portal: Obtener mi empresa (proveedor vinculado al usuario)
+   * Backend url_path: 'mi-empresa'
+   */
+  getMiEmpresa: async (): Promise<Proveedor> => {
+    const response = await apiClient.get<Proveedor>(`${BASE_URL}/proveedores/mi-empresa/`);
+    return response.data;
+  },
+
+  /**
+   * Portal: Obtener contratos/condiciones de mi empresa
+   * Backend url_path: 'mi-empresa/contratos'
+   */
+  getMiEmpresaContratos: async (): Promise<CondicionComercialProveedor[]> => {
+    const response = await apiClient.get(`${BASE_URL}/proveedores/mi-empresa/contratos/`);
+    return response.data;
+  },
+
+  /**
+   * Portal: Obtener evaluaciones de mi empresa
+   * Backend url_path: 'mi-empresa/evaluaciones'
+   */
+  getMiEmpresaEvaluaciones: async (): Promise<unknown[]> => {
+    const response = await apiClient.get(`${BASE_URL}/proveedores/mi-empresa/evaluaciones/`);
+    return response.data;
+  },
 };
 
-// ==================== HISTORIAL DE PRECIOS ====================
+// ==================== HISTORIAL DE PRECIOS (ViewSet independiente) ====================
 
 export const historialPrecioApi = {
   /**
-   * Listar historial de precios (solo lectura)
+   * Listar historial de precios (solo lectura, ViewSet separado)
    */
   getAll: async (params?: {
     page?: number;
     page_size?: number;
     proveedor?: number;
-    tipo_materia_prima?: number;
+    tipo_materia?: number;
+    tipo_materia_codigo?: string;
     fecha_desde?: string;
     fecha_hasta?: string;
+    modificado_por?: number;
     ordering?: string;
   }): Promise<PaginatedResponse<HistorialPrecioProveedor>> => {
     const response = await apiClient.get<PaginatedResponse<HistorialPrecioProveedor>>(
@@ -264,7 +358,7 @@ export const historialPrecioApi = {
   },
 };
 
-// ==================== CONDICIONES COMERCIALES ====================
+// ==================== CONDICIONES COMERCIALES (ViewSet independiente) ====================
 
 export const condicionComercialApi = {
   /**

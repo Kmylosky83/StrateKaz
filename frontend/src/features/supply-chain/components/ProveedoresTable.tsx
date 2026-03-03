@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
-import { useProveedores, useDeleteProveedor, useExportProveedores } from '../hooks/useProveedores';
+import { useProveedores, useDeleteProveedor, useDescargarPlantilla } from '../hooks/useProveedores';
 import { useTiposProveedor } from '../hooks/useCatalogos';
 import { CrearAccesoProveedorModal } from './CrearAccesoProveedorModal';
 import type { ProveedorList, TipoProveedor } from '../types';
@@ -66,7 +66,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
 
   const { data: tiposProveedor } = useTiposProveedor({ is_active: true });
   const deleteMutation = useDeleteProveedor();
-  const exportMutation = useExportProveedores();
+  const exportMutation = useDescargarPlantilla();
 
   // ==================== HANDLERS ====================
 
@@ -77,7 +77,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
   };
 
   const handleExport = () => {
-    exportMutation.mutate(filtros);
+    exportMutation.mutate();
   };
 
   const handleFilterChange = (key: keyof Filtros, value: any) => {

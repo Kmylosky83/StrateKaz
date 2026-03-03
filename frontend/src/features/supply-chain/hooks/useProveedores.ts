@@ -1,20 +1,18 @@
 /**
  * Hooks React Query para Proveedores - Gestión de Proveedores
  * Sistema de gestión de proveedores y precios
+ *
+ * ALINEADO con backend ViewSet url_path (kebab-case)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import proveedoresApi from '../api/proveedores.api';
 import type {
-  Proveedor,
-  ProveedorList,
   CreateProveedorDTO,
   UpdateProveedorDTO,
-  UnidadNegocio,
   CreateUnidadNegocioDTO,
   UpdateUnidadNegocioDTO,
   CambiarPrecioDTO,
-  CondicionComercialProveedor,
   CreateCondicionComercialDTO,
   UpdateCondicionComercialDTO,
 } from '../types';
@@ -26,7 +24,7 @@ export const proveedoresKeys = {
 
   // Proveedores
   proveedores: () => [...proveedoresKeys.all, 'list'] as const,
-  proveedoresFiltered: (filters: Record<string, any>) =>
+  proveedoresFiltered: (filters: Record<string, unknown>) =>
     [...proveedoresKeys.proveedores(), 'filtered', filters] as const,
   proveedor: (id: number) => [...proveedoresKeys.all, 'detail', id] as const,
   estadisticas: () => [...proveedoresKeys.all, 'estadisticas'] as const,
@@ -35,10 +33,9 @@ export const proveedoresKeys = {
   unidades: () => [...proveedoresKeys.all, 'unidades-negocio'] as const,
   unidad: (id: number) => [...proveedoresKeys.unidades(), id] as const,
 
-  // Precios
-  precios: (proveedorId: number) => [...proveedoresKeys.all, 'precios', proveedorId] as const,
-  historialPrecios: (proveedorId: number) =>
-    [...proveedoresKeys.all, 'historial-precios', proveedorId] as const,
+  // Precios e Historial
+  historialPrecio: (proveedorId: number) =>
+    [...proveedoresKeys.all, 'historial-precio', proveedorId] as const,
 
   // Condiciones Comerciales
   condiciones: () => [...proveedoresKeys.all, 'condiciones-comerciales'] as const,
@@ -50,7 +47,7 @@ export const proveedoresKeys = {
 
 export function useUnidadesNegocio(params?: { is_active?: boolean }) {
   return useQuery({
-    queryKey: params ? proveedoresKeys.unidades() : proveedoresKeys.unidades(),
+    queryKey: proveedoresKeys.unidades(),
     queryFn: () =>
       params?.is_active
         ? proveedoresApi.unidadNegocio.getActivas()
@@ -74,8 +71,9 @@ export function useCreateUnidadNegocio() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidades() });
       toast.success('Unidad de negocio creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear unidad de negocio');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al crear unidad de negocio');
     },
   });
 }
@@ -90,8 +88,9 @@ export function useUpdateUnidadNegocio() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidad(id) });
       toast.success('Unidad de negocio actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar unidad de negocio');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al actualizar unidad de negocio');
     },
   });
 }
@@ -104,8 +103,9 @@ export function useDeleteUnidadNegocio() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidades() });
       toast.success('Unidad de negocio eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar unidad de negocio');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al eliminar unidad de negocio');
     },
   });
 }
@@ -117,9 +117,14 @@ export function useProveedores(params?: {
   page_size?: number;
   search?: string;
   tipo_proveedor?: number;
-  estado?: string;
-  tipos_materia_prima?: number[];
+  tipo_materia_prima?: number;
+  categoria_materia_prima?: number;
+  modalidad_logistica?: number;
+  departamento?: number;
+  forma_pago?: number;
   is_active?: boolean;
+  es_materia_prima?: boolean;
+  ordering?: string;
 }) {
   return useQuery({
     queryKey: params ? proveedoresKeys.proveedoresFiltered(params) : proveedoresKeys.proveedores(),
@@ -144,8 +149,9 @@ export function useCreateProveedor() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
       toast.success('Proveedor creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear proveedor');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al crear proveedor');
     },
   });
 }
@@ -160,8 +166,9 @@ export function useUpdateProveedor() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
       toast.success('Proveedor actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar proveedor');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al actualizar proveedor');
     },
   });
 }
@@ -175,8 +182,45 @@ export function useDeleteProveedor() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
       toast.success('Proveedor eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar proveedor');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al eliminar proveedor');
+    },
+  });
+}
+
+export function useRestoreProveedor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => proveedoresApi.proveedor.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
+      toast.success('Proveedor restaurado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al restaurar proveedor');
+    },
+  });
+}
+
+// ==================== ACTIVAR/DESACTIVAR ====================
+
+export function useToggleActivoProveedor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) =>
+      proveedoresApi.proveedor.toggleActivo(id, is_active),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
+      toast.success('Estado del proveedor actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al cambiar estado del proveedor');
     },
   });
 }
@@ -190,58 +234,25 @@ export function useCambiarPrecio() {
       proveedoresApi.proveedor.cambiarPrecio(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.precios(id) });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.historialPrecios(id) });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.historialPrecio(id) });
       toast.success('Precio actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cambiar precio');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al cambiar precio');
     },
   });
 }
 
-export function usePreciosActuales(proveedorId: number) {
+/**
+ * Obtener historial de precios + precios actuales de un proveedor
+ * Usa el endpoint /proveedores/{id}/historial-precio/
+ */
+export function useHistorialPrecio(proveedorId: number) {
   return useQuery({
-    queryKey: proveedoresKeys.precios(proveedorId),
-    queryFn: () => proveedoresApi.proveedor.getPreciosActuales(proveedorId),
+    queryKey: proveedoresKeys.historialPrecio(proveedorId),
+    queryFn: () => proveedoresApi.proveedor.getHistorialPrecio(proveedorId),
     enabled: !!proveedorId,
-  });
-}
-
-export function useHistorialPrecios(
-  proveedorId: number,
-  params?: { tipo_materia_prima?: number; limit?: number }
-) {
-  return useQuery({
-    queryKey: proveedoresKeys.historialPrecios(proveedorId),
-    queryFn: () => proveedoresApi.proveedor.getHistorialPrecios(proveedorId, params),
-    enabled: !!proveedorId,
-  });
-}
-
-// ==================== CAMBIAR ESTADO ====================
-
-export function useCambiarEstadoProveedor() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      estado,
-      motivo,
-    }: {
-      id: number;
-      estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'BLOQUEADO';
-      motivo?: string;
-    }) => proveedoresApi.proveedor.cambiarEstado(id, estado, motivo),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
-      toast.success('Estado del proveedor actualizado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cambiar estado del proveedor');
-    },
   });
 }
 
@@ -279,8 +290,9 @@ export function useCreateCondicionComercial() {
       });
       toast.success('Condición comercial creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear condición comercial');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al crear condición comercial');
     },
   });
 }
@@ -294,8 +306,9 @@ export function useUpdateCondicionComercial() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.condiciones() });
       toast.success('Condición comercial actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar condición comercial');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al actualizar condición comercial');
     },
   });
 }
@@ -308,8 +321,9 @@ export function useDeleteCondicionComercial() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.condiciones() });
       toast.success('Condición comercial eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar condición comercial');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al eliminar condición comercial');
     },
   });
 }
@@ -339,30 +353,47 @@ export function useCrearAccesoProveedor() {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
       toast.success('Acceso al sistema creado. Se envió un correo para configurar la contraseña.');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear acceso al sistema');
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al crear acceso al sistema');
     },
   });
 }
 
-// ==================== EXPORTAR ====================
+// ==================== PLANTILLA E IMPORTACIÓN ====================
 
-export function useExportProveedores() {
+export function useDescargarPlantilla() {
   return useMutation({
-    mutationFn: (params?: Record<string, any>) => proveedoresApi.proveedor.exportExcel(params),
+    mutationFn: () => proveedoresApi.proveedor.getPlantillaImportacion(),
     onSuccess: (blob) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `proveedores-${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.download = 'plantilla-proveedores.xlsx';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success('Archivo descargado exitosamente');
+      toast.success('Plantilla descargada exitosamente');
     },
     onError: () => {
-      toast.error('Error al exportar proveedores');
+      toast.error('Error al descargar plantilla');
+    },
+  });
+}
+
+export function useImportarProveedores() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => proveedoresApi.proveedor.importar(file),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.estadisticas() });
+      toast.success(`${result.importados} proveedores importados exitosamente`);
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError?.response?.data?.detail || 'Error al importar proveedores');
     },
   });
 }

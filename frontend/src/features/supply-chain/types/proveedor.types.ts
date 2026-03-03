@@ -286,15 +286,10 @@ export interface EstadisticasProveedores {
   total_proveedores: number;
   proveedores_activos: number;
   proveedores_inactivos: number;
-  proveedores_criticos: number;
   por_tipo: Array<{
     tipo: string;
     count: number;
   }>;
-  por_estado: Array<{
-    estado: string;
-    count: number;
-  }>;
-  calificacion_promedio: number;
+  calificacion_promedio: number | null;
   total_materias_primas: number;
 }

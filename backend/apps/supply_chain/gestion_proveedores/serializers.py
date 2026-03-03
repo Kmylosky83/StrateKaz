@@ -4,8 +4,12 @@ Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Serializers usan modelos de catálogo dinámicos.
 """
+import re
 from rest_framework import serializers
 from decimal import Decimal
+from django.core.validators import validate_email as django_validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 
 from .models import (
     # Catálogos dinámicos (los propios de Supply Chain)
@@ -283,15 +287,54 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_numero_documento(self, value):
-        """Validar número de documento único."""
+        """Validar número de documento único y formato."""
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('El número de documento es obligatorio')
         if Proveedor.objects.filter(numero_documento=value).exists():
             raise serializers.ValidationError('Ya existe un proveedor con este número de documento')
         return value
 
+    def validate_nit(self, value):
+        """
+        Validar NIT colombiano.
+        - Persona jurídica: 9 dígitos + dígito verificación (ej: 900123456-7)
+        - Persona natural: cédula = NIT, 5-12 dígitos (ej: 1234567890)
+        Acepta: 900.123.456-7, 900123456-7, 900123456, 1234567890
+        """
+        if not value:
+            return value
+        # Limpiar formato (quitar puntos y espacios)
+        nit_limpio = re.sub(r'[.\s]', '', value.strip())
+        if not nit_limpio:
+            return value
+        # Formato: dígitos con posible dígito de verificación separado por guión
+        if not re.match(r'^\d{5,12}(-\d)?$', nit_limpio):
+            raise serializers.ValidationError(
+                'NIT inválido. Formato: 900123456-7 (jurídica) o número de documento (natural)'
+            )
+        return value
+
     def validate_email(self, value):
-        """Validar email si se proporciona."""
-        if value and '@' not in value:
+        """Validar email con validación estándar Django."""
+        if not value:
+            return value
+        try:
+            django_validate_email(value)
+        except DjangoValidationError:
             raise serializers.ValidationError('Proporcione un email válido')
+        return value
+
+    def validate_telefono(self, value):
+        """Validar formato de teléfono colombiano."""
+        if not value:
+            return value
+        # Limpiar formato
+        tel_limpio = re.sub(r'[\s\-\(\)\+]', '', value.strip())
+        if tel_limpio and not re.match(r'^\d{7,15}$', tel_limpio):
+            raise serializers.ValidationError(
+                'Número de teléfono inválido. Use solo dígitos (7-15 caracteres)'
+            )
         return value
 
     def validate_precios(self, value):
@@ -341,8 +384,12 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
-        """Crear proveedor con precios."""
+        """
+        Crear proveedor con M2M y precios iniciales.
+        Transacción atómica: si falla cualquier paso, se revierte todo.
+        """
         precios_data = validated_data.pop('precios', [])
         tipos_mp = validated_data.pop('tipos_materia_prima', [])
         formas_pago = validated_data.pop('formas_pago', [])
@@ -363,23 +410,24 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
 
         # Crear precios de materia prima
         if precios_data and proveedor.es_proveedor_materia_prima:
+            usuario = request.user if request and hasattr(request, 'user') else None
             for precio_info in precios_data:
                 tipo_materia = TipoMateriaPrima.objects.get(id=precio_info['tipo_materia_id'])
                 PrecioMateriaPrima.objects.create(
                     proveedor=proveedor,
                     tipo_materia=tipo_materia,
                     precio_kg=Decimal(str(precio_info['precio_kg'])),
-                    modificado_por=request.user if request and hasattr(request, 'user') else None
+                    modificado_por=usuario
                 )
 
-                # Crear registro en historial
-                if request and hasattr(request, 'user'):
+                # Crear registro en historial (audit trail)
+                if usuario:
                     HistorialPrecioProveedor.objects.create(
                         proveedor=proveedor,
                         tipo_materia=tipo_materia,
                         precio_anterior=None,
                         precio_nuevo=Decimal(str(precio_info['precio_kg'])),
-                        modificado_por=request.user,
+                        modificado_por=usuario,
                         motivo=f'Precio inicial de {tipo_materia.nombre} al crear proveedor'
                     )
 
@@ -387,21 +435,42 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
 
 
 class ProveedorUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para actualizar proveedores (SIN modificar precio)."""
+    """
+    Serializer para actualizar proveedores (SIN modificar precio ni tipo_proveedor).
+    Incluye M2M: tipos_materia_prima, formas_pago, modalidad_logistica.
+    """
 
     class Meta:
         model = Proveedor
         fields = [
             'nombre_comercial', 'razon_social', 'telefono', 'email',
             'direccion', 'ciudad', 'departamento',
+            'tipos_materia_prima', 'modalidad_logistica',
+            'unidad_negocio',
             'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'observaciones', 'is_active'
         ]
 
     def validate_email(self, value):
-        if value and '@' not in value:
+        """Validar email con validación estándar Django."""
+        if not value:
+            return value
+        try:
+            django_validate_email(value)
+        except DjangoValidationError:
             raise serializers.ValidationError('Proporcione un email válido')
+        return value
+
+    def validate_telefono(self, value):
+        """Validar formato de teléfono."""
+        if not value:
+            return value
+        tel_limpio = re.sub(r'[\s\-\(\)\+]', '', value.strip())
+        if tel_limpio and not re.match(r'^\d{7,15}$', tel_limpio):
+            raise serializers.ValidationError(
+                'Número de teléfono inválido. Use solo dígitos (7-15 caracteres)'
+            )
         return value
 
 

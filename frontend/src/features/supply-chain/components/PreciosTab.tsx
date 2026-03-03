@@ -15,7 +15,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 
-import { useProveedores, useCambiarPrecio, useHistorialPrecios } from '../hooks/useProveedores';
+import { useProveedores, useCambiarPrecio, useHistorialPrecio } from '../hooks/useProveedores';
 import type { PrecioMateriaPrima, HistorialPrecioProveedor } from '../types';
 
 // ==================== UTILIDADES ====================
@@ -59,13 +59,11 @@ export function PreciosTab() {
   // Mutations
   const cambiarPrecioMutation = useCambiarPrecio();
 
-  // Historial
-  const { data: historialData, isLoading: isLoadingHistorial } = useHistorialPrecios(
+  // Historial (endpoint retorna { proveedor, proveedor_id, precios_actuales, historial })
+  const { data: historialResponse, isLoading: isLoadingHistorial } = useHistorialPrecio(
     selectedProveedorId || 0
   );
-  const historial: HistorialPrecioProveedor[] = Array.isArray(historialData)
-    ? historialData
-    : (historialData as any)?.results || [];
+  const historial: HistorialPrecioProveedor[] = historialResponse?.historial || [];
 
   // ==================== HANDLERS ====================
 

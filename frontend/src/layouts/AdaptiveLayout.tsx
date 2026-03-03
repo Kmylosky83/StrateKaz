@@ -52,17 +52,11 @@ export const AdaptiveLayout = () => {
   // Determinar si es portal-only
   const portalOnly = isPortalOnlyUser(user);
 
-  // DEBUG: Diagnóstico temporal — remover después de validar
-  console.log('[AdaptiveLayout] RENDER', {
-    path: location.pathname,
-    currentTenantId,
-    isLoadingUser,
-    hasUser: !!user,
-    proveedor: user?.proveedor,
-    proveedorType: typeof user?.proveedor,
-    cargoCode: user?.cargo?.code,
-    portalOnly,
-  });
+  // DEBUG: Usar alert porque Vite elimina console.log en producción
+   
+  alert(
+    `[DEBUG] path=${location.pathname} tenant=${currentTenantId} user=${!!user} proveedor=${user?.proveedor}(${typeof user?.proveedor}) cargo=${user?.cargo?.code} portalOnly=${portalOnly}`
+  );
 
   if (portalOnly) {
     // SEGURIDAD: Forzar redirect a /proveedor-portal si intenta acceder a otra ruta

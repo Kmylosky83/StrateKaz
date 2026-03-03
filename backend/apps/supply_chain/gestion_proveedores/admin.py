@@ -15,16 +15,12 @@ from .models import (
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
-    TipoDocumentoIdentidad,
-    Departamento,
-    Ciudad,
     # Modelos principales
     UnidadNegocio,
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
     CondicionComercialProveedor,
-    PruebaAcidez,
     # Evaluación
     CriterioEvaluacion,
     EvaluacionProveedor,
@@ -101,32 +97,6 @@ class FormaPagoAdmin(CatalogoBaseAdmin):
 class TipoCuentaBancariaAdmin(CatalogoBaseAdmin):
     """Admin para Tipos de Cuenta Bancaria."""
     list_display = ['codigo', 'nombre', 'orden', 'is_active']
-
-
-@admin.register(TipoDocumentoIdentidad)
-class TipoDocumentoIdentidadAdmin(CatalogoBaseAdmin):
-    """Admin para Tipos de Documento de Identidad."""
-    pass
-
-
-@admin.register(Departamento)
-class DepartamentoAdmin(CatalogoBaseAdmin):
-    """Admin para Departamentos."""
-    list_display = ['codigo', 'nombre', 'codigo_dane', 'orden', 'is_active', 'count_ciudades']
-
-    def count_ciudades(self, obj):
-        return obj.ciudades.count()
-    count_ciudades.short_description = 'Ciudades'
-
-
-@admin.register(Ciudad)
-class CiudadAdmin(admin.ModelAdmin):
-    """Admin para Ciudades."""
-    list_display = ['codigo', 'nombre', 'departamento', 'codigo_dane', 'es_capital', 'is_active']
-    list_filter = ['departamento', 'es_capital', 'is_active']
-    search_fields = ['codigo', 'nombre', 'departamento__nombre']
-    ordering = ['departamento__nombre', 'nombre']
-    raw_id_fields = ['departamento']
 
 
 # ==============================================================================
@@ -293,47 +263,6 @@ class CondicionComercialProveedorAdmin(admin.ModelAdmin):
             return format_html('<span style="color: green;">Vigente</span>')
         return format_html('<span style="color: red;">Vencida</span>')
     esta_vigente_display.short_description = 'Estado'
-
-
-@admin.register(PruebaAcidez)
-class PruebaAcidezAdmin(admin.ModelAdmin):
-    """Admin para Pruebas de Acidez."""
-    list_display = [
-        'codigo_voucher', 'proveedor', 'fecha_prueba',
-        'valor_acidez', 'calidad_resultante', 'tipo_materia_resultante',
-        'cantidad_kg', 'valor_total', 'realizado_por'
-    ]
-    list_filter = ['calidad_resultante', 'tipo_materia_resultante', 'realizado_por']
-    search_fields = ['codigo_voucher', 'proveedor__nombre_comercial', 'lote_numero']
-    ordering = ['-fecha_prueba']
-    raw_id_fields = ['proveedor', 'tipo_materia_resultante', 'realizado_por']
-    readonly_fields = [
-        'codigo_voucher', 'calidad_resultante', 'tipo_materia_resultante',
-        'precio_kg_aplicado', 'valor_total',
-        'created_at', 'updated_at', 'deleted_at'
-    ]
-
-    fieldsets = (
-        ('Identificación', {
-            'fields': ('codigo_voucher', 'proveedor', 'lote_numero')
-        }),
-        ('Prueba', {
-            'fields': ('fecha_prueba', 'valor_acidez', 'foto_prueba')
-        }),
-        ('Resultados', {
-            'fields': ('calidad_resultante', 'tipo_materia_resultante')
-        }),
-        ('Valores', {
-            'fields': ('cantidad_kg', 'precio_kg_aplicado', 'valor_total')
-        }),
-        ('Observaciones', {
-            'fields': ('observaciones',)
-        }),
-        ('Auditoría', {
-            'fields': ('realizado_por', 'created_at', 'updated_at', 'deleted_at'),
-            'classes': ('collapse',)
-        }),
-    )
 
 
 # ==============================================================================

@@ -9,7 +9,6 @@ from django.db.models import Q
 
 from .models import (
     Proveedor,
-    PruebaAcidez,
     EvaluacionProveedor,
     HistorialPrecioProveedor,
 )
@@ -139,70 +138,6 @@ class ProveedorFilter(django_filters.FilterSet):
         if value is None:
             return queryset
         return queryset.filter(tipo_proveedor__requiere_materia_prima=value)
-
-
-class PruebaAcidezFilter(django_filters.FilterSet):
-    """
-    Filtro personalizado para Pruebas de Acidez.
-    """
-
-    proveedor = django_filters.NumberFilter(
-        field_name='proveedor_id',
-        label='Proveedor (ID)'
-    )
-
-    proveedor_nombre = django_filters.CharFilter(
-        field_name='proveedor__nombre_comercial',
-        lookup_expr='icontains',
-        label='Nombre del proveedor'
-    )
-
-    calidad_resultante = django_filters.CharFilter(
-        field_name='calidad_resultante',
-        lookup_expr='exact',
-        label='Calidad resultante'
-    )
-
-    tipo_materia = django_filters.NumberFilter(
-        field_name='tipo_materia_resultante_id',
-        label='Tipo de materia prima resultante (ID)'
-    )
-
-    fecha_desde = django_filters.DateFilter(
-        field_name='fecha_prueba',
-        lookup_expr='gte',
-        label='Fecha desde'
-    )
-
-    fecha_hasta = django_filters.DateFilter(
-        field_name='fecha_prueba',
-        lookup_expr='lte',
-        label='Fecha hasta'
-    )
-
-    acidez_min = django_filters.NumberFilter(
-        field_name='valor_acidez',
-        lookup_expr='gte',
-        label='Acidez mínima (%)'
-    )
-
-    acidez_max = django_filters.NumberFilter(
-        field_name='valor_acidez',
-        lookup_expr='lte',
-        label='Acidez máxima (%)'
-    )
-
-    realizado_por = django_filters.NumberFilter(
-        field_name='realizado_por_id',
-        label='Realizado por (user ID)'
-    )
-
-    class Meta:
-        model = PruebaAcidez
-        fields = [
-            'proveedor', 'proveedor_nombre', 'calidad_resultante', 'tipo_materia',
-            'fecha_desde', 'fecha_hasta', 'acidez_min', 'acidez_max', 'realizado_por'
-        ]
 
 
 class EvaluacionProveedorFilter(django_filters.FilterSet):

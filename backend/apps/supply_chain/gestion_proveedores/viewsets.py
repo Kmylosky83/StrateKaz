@@ -527,6 +527,23 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Extraer número de documento original (quitar prefijo DEL-{id}-)
+        prefix = f'DEL-{proveedor.id}-'
+        doc_original = proveedor.numero_documento
+        if doc_original.startswith(prefix):
+            doc_original = doc_original[len(prefix):]
+
+        # Verificar que el número de documento no esté en uso por otro proveedor activo
+        if Proveedor.objects.filter(
+            numero_documento=doc_original,
+            deleted_at__isnull=True,
+        ).exclude(pk=proveedor.pk).exists():
+            return Response(
+                {'detail': f'Ya existe un proveedor activo con el documento {doc_original}. '
+                           'Elimina o modifica ese proveedor antes de restaurar este.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         proveedor.restore()
         serializer = self.get_serializer(proveedor)
         return Response(serializer.data)

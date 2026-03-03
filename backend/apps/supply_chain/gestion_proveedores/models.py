@@ -5,6 +5,7 @@ Sistema de Gestión StrateKaz
 100% DINÁMICO: Todos los catálogos se gestionan desde la base de datos.
 """
 from django.db import models
+from django.db.models import Q
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -398,8 +399,7 @@ class Proveedor(models.Model):
     """
     # Código interno autogenerado
     codigo_interno = models.CharField(
-        max_length=20,
-        unique=True,
+        max_length=50,
         editable=False,
         db_index=True,
         verbose_name='Código interno'
@@ -448,8 +448,7 @@ class Proveedor(models.Model):
         verbose_name='Tipo de documento'
     )
     numero_documento = models.CharField(
-        max_length=20,
-        unique=True,
+        max_length=50,
         db_index=True,
         verbose_name='Número de documento'
     )
@@ -531,6 +530,18 @@ class Proveedor(models.Model):
             models.Index(fields=['nombre_comercial']),
             models.Index(fields=['deleted_at']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['numero_documento'],
+                condition=Q(deleted_at__isnull=True),
+                name='unique_numero_documento_activo',
+            ),
+            models.UniqueConstraint(
+                fields=['codigo_interno'],
+                condition=Q(deleted_at__isnull=True),
+                name='unique_codigo_interno_activo',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.nombre_comercial} ({self.tipo_proveedor.nombre})"
@@ -566,9 +577,10 @@ class Proveedor(models.Model):
         try:
             return ConsecutivoConfig.obtener_siguiente_consecutivo(consecutivo_code)
         except ConsecutivoConfig.DoesNotExist:
-            # Fallback manual con prefijo del tipo
+            # Fallback manual con prefijo del tipo (excluir soft-deleted)
             ultimo = Proveedor.objects.filter(
-                codigo_interno__startswith=f'{prefijo_fallback}-'
+                codigo_interno__startswith=f'{prefijo_fallback}-',
+                deleted_at__isnull=True,
             ).order_by('-codigo_interno').first()
 
             if ultimo and ultimo.codigo_interno:
@@ -590,14 +602,30 @@ class Proveedor(models.Model):
         return self.tipo_proveedor.requiere_materia_prima
 
     def soft_delete(self):
+        """Soft delete: marca como eliminado y libera campos únicos."""
         self.deleted_at = timezone.now()
         self.is_active = False
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
+        # Manglar campos únicos para liberar valores y permitir recreación
+        if not self.numero_documento.startswith('DEL-'):
+            self.numero_documento = f'DEL-{self.id}-{self.numero_documento}'
+        if not self.codigo_interno.startswith('DEL-'):
+            self.codigo_interno = f'DEL-{self.id}-{self.codigo_interno}'
+        self.save(update_fields=[
+            'deleted_at', 'is_active', 'numero_documento', 'codigo_interno', 'updated_at',
+        ])
 
     def restore(self):
         self.deleted_at = None
         self.is_active = True
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
+        # Restaurar campos únicos originales (quitar prefijo DEL-{id}-)
+        prefix = f'DEL-{self.id}-'
+        if self.numero_documento.startswith(prefix):
+            self.numero_documento = self.numero_documento[len(prefix):]
+        if self.codigo_interno.startswith(prefix):
+            self.codigo_interno = self.codigo_interno[len(prefix):]
+        self.save(update_fields=[
+            'deleted_at', 'is_active', 'numero_documento', 'codigo_interno', 'updated_at',
+        ])
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo_interno:

@@ -1,8 +1,13 @@
 /**
  * CrearAccesoProveedorModal — Modal para crear acceso al sistema a un proveedor existente
  *
- * Se usa desde la tabla de proveedores cuando un proveedor no tiene usuario vinculado.
- * Envía email de configuración de contraseña al correo proporcionado.
+ * Lógica por tipo de proveedor:
+ * - CONSULTOR, CONTRATISTA (servicios profesionales): Pueden tener un cargo dentro de la empresa
+ *   con acceso a módulos internos del sistema.
+ * - Resto (MP, Productos, Transportista, Unidad Negocio): Solo acceso al Portal Proveedores.
+ *   No necesitan cargo — se asigna automáticamente "Proveedor - Portal".
+ *
+ * Permite múltiples usuarios por proveedor.
  */
 import { useState, useMemo, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -10,10 +15,13 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Alert } from '@/components/common/Alert';
-import { Shield, Mail, Check } from 'lucide-react';
+import { Shield, Mail, Check, Briefcase, Globe } from 'lucide-react';
 import { useCrearAccesoProveedor } from '../hooks/useProveedores';
 import { useSelectCargos } from '@/hooks/useSelectLists';
 import type { ProveedorList } from '../types';
+
+// Tipos de proveedor que pueden tener cargo interno en la empresa
+const TIPOS_CON_CARGO = ['CONSULTOR', 'CONTRATISTA'];
 
 interface CrearAccesoProveedorModalProps {
   proveedor: ProveedorList | null;
@@ -34,7 +42,13 @@ export function CrearAccesoProveedorModal({
 
   const cargos = cargosData || [];
 
-  // Auto-suggest based on proveedor name
+  // ¿Este tipo de proveedor necesita cargo interno?
+  const requiereCargo = useMemo(
+    () => proveedor && TIPOS_CON_CARGO.includes(proveedor.tipo_proveedor_codigo),
+    [proveedor]
+  );
+
+  // Auto-suggest username based on proveedor name
   const suggested = useMemo(() => {
     if (!proveedor) return { email: '', username: '' };
     const nombre = (proveedor.nombre_comercial || proveedor.razon_social || '')
@@ -60,28 +74,36 @@ export function CrearAccesoProveedorModal({
     }
   }, [isOpen, proveedor, suggested]);
 
-  const isValid =
-    email.trim().length > 0 && email.includes('@') && username.trim().length > 0 && cargoId !== '';
+  // Validación: cargo solo requerido para servicios profesionales
+  const isValid = useMemo(() => {
+    const baseValid = email.trim().length > 0 && email.includes('@') && username.trim().length > 0;
+    if (requiereCargo) {
+      return baseValid && cargoId !== '';
+    }
+    return baseValid;
+  }, [email, username, cargoId, requiereCargo]);
 
   const handleSubmit = async () => {
-    if (!proveedor || !isValid || cargoId === '') return;
+    if (!proveedor || !isValid) return;
     await crearAccesoMutation.mutateAsync({
       id: proveedor.id,
       email: email.trim(),
       username: username.trim(),
-      cargo_id: cargoId as number,
+      // Solo enviar cargo_id si es proveedor de servicios profesionales
+      cargo_id: requiereCargo && cargoId !== '' ? (cargoId as number) : undefined,
     });
     onClose();
   };
 
   const nombre = proveedor ? proveedor.nombre_comercial || proveedor.razon_social : '';
+  const tipoNombre = proveedor?.tipo_proveedor_nombre || '';
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title="Crear Acceso al Sistema"
-      subtitle={nombre}
+      subtitle={`${nombre} — ${tipoNombre}`}
       size="md"
       footer={
         <div className="flex items-center justify-end gap-2">
@@ -112,10 +134,35 @@ export function CrearAccesoProveedorModal({
       }
     >
       <div className="space-y-4">
-        <Alert
-          variant="info"
-          message={`Se creará una cuenta de acceso para el proveedor "${nombre}". Se enviará un correo electrónico para configurar la contraseña.`}
-        />
+        {/* Mensaje según tipo de acceso */}
+        {requiereCargo ? (
+          <Alert
+            variant="info"
+            message={
+              <div className="flex items-start gap-2">
+                <Briefcase size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>{tipoNombre}</strong> — Este proveedor puede tener un cargo dentro de la
+                  empresa con acceso a módulos internos del sistema. Seleccione el cargo
+                  correspondiente.
+                </span>
+              </div>
+            }
+          />
+        ) : (
+          <Alert
+            variant="info"
+            message={
+              <div className="flex items-start gap-2">
+                <Globe size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>{tipoNombre}</strong> — Se creará acceso al Portal de Proveedores donde
+                  podrá consultar sus órdenes, entregas y documentos.
+                </span>
+              </div>
+            }
+          />
+        )}
 
         <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <Shield size={16} className="text-gray-500 shrink-0" />
@@ -142,14 +189,14 @@ export function CrearAccesoProveedorModal({
           required
         />
 
-        {/* Cargo dropdown */}
-        <div>
+        {/* Cargo: solo visible para consultores/contratistas */}
+        {requiereCargo && (
           <Select
-            label="Cargo *"
+            label="Cargo en la Empresa *"
             value={cargoId}
             onChange={(e) => setCargoId(e.target.value ? Number(e.target.value) : '')}
             required
-            helperText="El cargo determina los permisos y acceso a módulos del usuario."
+            helperText="El cargo determina los permisos y acceso a módulos del sistema."
           >
             <option value="">Seleccionar cargo...</option>
             {cargos.map((cargo) => (
@@ -158,7 +205,7 @@ export function CrearAccesoProveedorModal({
               </option>
             ))}
           </Select>
-        </div>
+        )}
 
         {email && email.includes('@') && (
           <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">

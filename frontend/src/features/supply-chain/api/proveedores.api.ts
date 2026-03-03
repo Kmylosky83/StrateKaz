@@ -221,7 +221,7 @@ export const proveedorApi = {
    */
   crearAcceso: async (
     id: number,
-    data: { email: string; username: string; cargo_id: number }
+    data: { email: string; username: string; cargo_id?: number }
   ): Promise<{ detail: string }> => {
     const response = await apiClient.post<{ detail: string }>(
       `${BASE_URL}/proveedores/${id}/crear-acceso/`,

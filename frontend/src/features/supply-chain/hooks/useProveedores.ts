@@ -328,8 +328,12 @@ export function useCrearAccesoProveedor() {
       id: number;
       email: string;
       username: string;
-      cargo_id: number;
-    }) => proveedoresApi.proveedor.crearAcceso(id, { email, username, cargo_id }),
+      cargo_id?: number;
+    }) => {
+      const payload: { email: string; username: string; cargo_id?: number } = { email, username };
+      if (cargo_id) payload.cargo_id = cargo_id;
+      return proveedoresApi.proveedor.crearAcceso(id, payload);
+    },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });

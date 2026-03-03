@@ -2,13 +2,12 @@
  * Página Principal - Gestión de Proveedores (Supply Chain)
  * Sistema de Gestión StrateKaz
  *
- * Tabs:
+ * Tabs operativos:
  * 1. Proveedores - Lista, crear, editar proveedores + Importación masiva + KPIs
  * 2. Precios - Gestión de precios por tipo materia prima
- * 3. Pruebas Acidez - Registro de pruebas con cálculo automático de calidad
+ * 3. Pruebas de Acidez - Registro de pruebas con cálculo automático de calidad
  * 4. Evaluaciones - Evaluación periódica de proveedores
- * 5. Catálogos - Gestión de catálogos dinámicos (admin)
- * 6. Unidades Negocio - Gestión de plantas/sucursales
+ * 5. Configuración - Catálogos dinámicos + Unidades de Negocio (admin)
  */
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
@@ -23,6 +22,7 @@ import {
   ClipboardCheck,
   Settings,
   Building2,
+  BookOpen,
   Upload,
   UserCheck,
   UserX,
@@ -53,13 +53,13 @@ const tabs = [
     id: 'precios',
     label: 'Precios',
     icon: DollarSign,
-    description: 'Control de precios de materias primas',
+    description: 'Precios de materia prima por proveedor',
   },
   {
     id: 'pruebas-acidez',
     label: 'Pruebas de Acidez',
     icon: FlaskConical,
-    description: 'Registro y control de calidad de sebo',
+    description: 'Control de calidad de materia prima',
   },
   {
     id: 'evaluaciones',
@@ -68,20 +68,14 @@ const tabs = [
     description: 'Evaluación periódica de proveedores',
   },
   {
-    id: 'catalogos',
-    label: 'Catálogos',
+    id: 'configuracion',
+    label: 'Configuración',
     icon: Settings,
-    description: 'Configuración de catálogos dinámicos',
-  },
-  {
-    id: 'unidades-negocio',
-    label: 'Unidades de Negocio',
-    icon: Building2,
-    description: 'Plantas y centros de distribución',
+    description: 'Catálogos dinámicos y unidades de negocio',
   },
 ];
 
-// ==================== PRUEBAS ACIDEZ TAB (wrapper de componentes existentes) ====================
+// ==================== PRUEBAS ACIDEZ TAB ====================
 
 function PruebasAcidezTab() {
   const [showForm, setShowForm] = useState(false);
@@ -116,6 +110,38 @@ function PruebasAcidezTab() {
         setShowForm(true);
       }}
     />
+  );
+}
+
+// ==================== CONFIGURACIÓN TAB (Catálogos + Unidades) ====================
+
+function ConfiguracionTab() {
+  const [seccion, setSeccion] = useState<'catalogos' | 'unidades'>('catalogos');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Button
+          variant={seccion === 'catalogos' ? 'primary' : 'outline'}
+          size="sm"
+          leftIcon={<BookOpen className="w-4 h-4" />}
+          onClick={() => setSeccion('catalogos')}
+        >
+          Catálogos
+        </Button>
+        <Button
+          variant={seccion === 'unidades' ? 'primary' : 'outline'}
+          size="sm"
+          leftIcon={<Building2 className="w-4 h-4" />}
+          onClick={() => setSeccion('unidades')}
+        >
+          Unidades de Negocio
+        </Button>
+      </div>
+
+      {seccion === 'catalogos' && <CatalogosTab />}
+      {seccion === 'unidades' && <UnidadesNegocioTab />}
+    </div>
   );
 }
 
@@ -219,7 +245,7 @@ export default function GestionProveedoresPage() {
     <div className="space-y-6">
       <PageHeader
         title="Gestión de Proveedores"
-        description="Sistema de gestión de proveedores, precios, calidad y evaluación - Supply Chain"
+        description="Proveedores, precios, calidad y evaluaciones"
         tabs={
           <PageTabs
             tabs={tabs}
@@ -243,8 +269,7 @@ export default function GestionProveedoresPage() {
       {activeTab === 'precios' && <PreciosTab />}
       {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
       {activeTab === 'evaluaciones' && <EvaluacionesTab />}
-      {activeTab === 'catalogos' && <CatalogosTab />}
-      {activeTab === 'unidades-negocio' && <UnidadesNegocioTab />}
+      {activeTab === 'configuracion' && <ConfiguracionTab />}
 
       {/* Modal Crear/Editar Proveedor */}
       <ProveedorForm

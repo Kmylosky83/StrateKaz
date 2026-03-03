@@ -761,29 +761,49 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     @transaction.atomic
     def crear_acceso(self, request, pk=None):
         """
-        Crea cuenta de usuario para un proveedor existente sin acceso.
+        Crea cuenta de usuario para un proveedor existente.
 
         POST /api/supply-chain/proveedores/{id}/crear-acceso/
-        Body: { email, username, cargo_id }
+        Body: { email, username, cargo_id? }
+
+        Lógica por tipo:
+        - CONSULTOR, CONTRATISTA: cargo_id requerido (acceso a módulos internos)
+        - Otros: cargo_id omitido → se asigna cargo "Proveedor - Portal" automáticamente
+        Permite múltiples usuarios por proveedor.
         """
         proveedor = self.get_object()
-
-        if proveedor.usuarios_vinculados.filter(is_active=True).exists():
-            return Response(
-                {'detail': 'Este proveedor ya tiene un usuario activo vinculado.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         serializer = CrearAccesoProveedorSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
-        cargo_id = serializer.validated_data['cargo_id']
+        cargo_id = serializer.validated_data.get('cargo_id')
 
         from django.apps import apps
         Cargo = apps.get_model('core', 'Cargo')
-        cargo = Cargo.objects.get(id=cargo_id)
+
+        # Tipos que requieren cargo explícito (servicios profesionales)
+        tipos_con_cargo = ['CONSULTOR', 'CONTRATISTA']
+        tipo_codigo = proveedor.tipo_proveedor.codigo if proveedor.tipo_proveedor else ''
+
+        if cargo_id:
+            cargo = Cargo.objects.get(id=cargo_id)
+        elif tipo_codigo in tipos_con_cargo:
+            return Response(
+                {'detail': 'Consultores y contratistas requieren un cargo dentro de la empresa.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            # Auto-asignar cargo portal para proveedores no profesionales
+            cargo, _ = Cargo.objects.get_or_create(
+                code='PROVEEDOR_PORTAL',
+                defaults={
+                    'name': 'Proveedor - Portal',
+                    'is_system': True,
+                    'is_active': True,
+                }
+            )
 
         if User.objects.filter(email=email).exists():
             return Response(

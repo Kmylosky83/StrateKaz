@@ -314,20 +314,24 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
-                      {proveedor.tiene_acceso ? (
-                        <span title="Ya tiene acceso al sistema">
-                          <UserCheck className="w-4 h-4 text-success-600 dark:text-success-400" />
-                        </span>
-                      ) : proveedor.is_active ? (
+                      {proveedor.is_active && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setAccesoProveedor(proveedor)}
-                          title="Crear acceso al sistema"
+                          title={
+                            proveedor.tiene_acceso
+                              ? `Agregar otro usuario (${proveedor.usuarios_vinculados_count} activo${proveedor.usuarios_vinculados_count !== 1 ? 's' : ''})`
+                              : 'Crear acceso al sistema'
+                          }
                         >
-                          <Shield className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          {proveedor.tiene_acceso ? (
+                            <UserCheck className="w-4 h-4 text-success-600 dark:text-success-400" />
+                          ) : (
+                            <Shield className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          )}
                         </Button>
-                      ) : null}
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

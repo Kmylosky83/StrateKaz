@@ -538,20 +538,29 @@ class CambiarPrecioSerializer(serializers.Serializer):
 # ==============================================================================
 
 class CrearAccesoProveedorSerializer(serializers.Serializer):
-    """Serializer para crear acceso al sistema para un proveedor."""
+    """
+    Serializer para crear acceso al sistema para un proveedor.
+
+    - Consultores/Contratistas: cargo_id requerido (acceso a módulos internos)
+    - Otros tipos: cargo_id opcional (se asigna cargo portal automáticamente)
+    """
 
     email = serializers.EmailField(required=True)
     username = serializers.CharField(required=True, max_length=150)
     cargo_id = serializers.IntegerField(
-        required=True,
-        help_text='ID del cargo a asignar al usuario'
+        required=False,
+        allow_null=True,
+        default=None,
+        help_text='ID del cargo. Solo requerido para consultores/contratistas.'
     )
 
     def validate_cargo_id(self, value):
+        if value is None:
+            return value
         from django.apps import apps
         Cargo = apps.get_model('core', 'Cargo')
         try:
-            Cargo.objects.get(id=value, is_active=True, is_system=False)
+            Cargo.objects.get(id=value, is_active=True)
         except Cargo.DoesNotExist:
             raise serializers.ValidationError('Cargo no encontrado o no válido.')
         return value

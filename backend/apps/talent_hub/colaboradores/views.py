@@ -254,7 +254,8 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             from django.db import connection
 
             frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+            tenant_id = getattr(connection.tenant, 'id', '')
+            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
 
             tenant_name = str(empresa)
             if hasattr(empresa, 'razon_social') and empresa.razon_social:

@@ -621,7 +621,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             from django.db import connection
 
             frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+            tenant_id = getattr(connection.tenant, 'id', '')
+            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
 
             tenant_name = proveedor.nombre_comercial or proveedor.razon_social
 
@@ -720,7 +721,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                     from apps.core.tasks import send_setup_password_email_task
                     from django.db import connection
                     frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-                    setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+                    tenant_id = getattr(connection.tenant, 'id', '')
+                    setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
                     tenant_name = proveedor.nombre_comercial or proveedor.razon_social
                     try:
                         primary_color = connection.tenant.primary_color or '#3b82f6'

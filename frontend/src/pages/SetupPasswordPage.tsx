@@ -40,21 +40,32 @@ export const SetupPasswordPage = () => {
   const [setupSuccess, setSetupSuccess] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
 
-  // Leer token/email de URL params, con fallback a sessionStorage
+  // Leer token/email/tenant_id de URL params, con fallback a sessionStorage
   // (la PWA puede recargar la página y perder query params)
   const urlToken = searchParams.get('token');
   const urlEmail = searchParams.get('email');
+  const urlTenantId = searchParams.get('tenant_id');
 
   const token = urlToken || sessionStorage.getItem('setup_token');
   const email = urlEmail || sessionStorage.getItem('setup_email');
 
   // Guardar en sessionStorage como backup para sobrevivir reloads
+  // + guardar tenant_id en localStorage para que axios envíe X-Tenant-ID
   useEffect(() => {
     if (urlToken && urlEmail) {
       sessionStorage.setItem('setup_token', urlToken);
       sessionStorage.setItem('setup_email', urlEmail);
     }
-  }, [urlToken, urlEmail]);
+    if (urlTenantId) {
+      sessionStorage.setItem('setup_tenant_id', urlTenantId);
+      localStorage.setItem('current_tenant_id', urlTenantId);
+    } else {
+      const savedTenantId = sessionStorage.getItem('setup_tenant_id');
+      if (savedTenantId) {
+        localStorage.setItem('current_tenant_id', savedTenantId);
+      }
+    }
+  }, [urlToken, urlEmail, urlTenantId]);
 
   const { companyName, logoWhite, primaryColor, isLoading: brandingLoading } = useBrandingConfig();
 
@@ -101,6 +112,7 @@ export const SetupPasswordPage = () => {
       // Limpiar sessionStorage al completar exitosamente
       sessionStorage.removeItem('setup_token');
       sessionStorage.removeItem('setup_email');
+      sessionStorage.removeItem('setup_tenant_id');
       toast.success('Contraseña configurada exitosamente');
       // Redirigir al login despues de 3 segundos
       setTimeout(() => navigate('/login'), 3000);

@@ -73,6 +73,7 @@ class TenantAuthenticationMiddleware:
         # pero NO requieren JWT (acceso anónimo permitido)
         public_tenant_paths = [
             '/api/encuestas-dofa/publica/',  # Encuestas públicas (GET + POST)
+            '/api/core/setup-password/',     # Configurar contraseña (usuarios nuevos sin JWT)
         ]
 
         is_public_tenant_path = any(

@@ -57,10 +57,15 @@ function createCatalogoApiWithBase<T, CreateDTO, UpdateDTO>(baseUrl: string, end
       is_active?: boolean;
       ordering?: string;
     }): Promise<PaginatedResponse<T>> => {
-      const response = await apiClient.get<PaginatedResponse<T>>(`${baseUrl}/${endpoint}/`, {
+      const response = await apiClient.get(`${baseUrl}/${endpoint}/`, {
         params,
       });
-      return response.data;
+      const data = response.data;
+      // Manejar respuestas con y sin paginación (core no pagina)
+      if (Array.isArray(data)) {
+        return { count: data.length, next: null, previous: null, results: data };
+      }
+      return data;
     },
 
     getById: async (id: number): Promise<T> => {
@@ -83,10 +88,11 @@ function createCatalogoApiWithBase<T, CreateDTO, UpdateDTO>(baseUrl: string, end
     },
 
     getActivos: async (): Promise<T[]> => {
-      const response = await apiClient.get<PaginatedResponse<T>>(`${baseUrl}/${endpoint}/`, {
+      const response = await apiClient.get(`${baseUrl}/${endpoint}/`, {
         params: { is_active: true, page_size: 1000 },
       });
-      return response.data.results;
+      const data = response.data;
+      return Array.isArray(data) ? data : (data?.results ?? []);
     },
   };
 }

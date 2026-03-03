@@ -22,6 +22,7 @@ from .serializers_datos_maestros import (
 class DatosMaestrosBaseViewSet(viewsets.ModelViewSet):
     """ViewSet base para catálogos de datos maestros."""
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Catálogos pequeños, no necesitan paginación
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     ordering = ['orden', 'nombre']
 

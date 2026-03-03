@@ -53,12 +53,16 @@ export const AdaptiveLayout = () => {
   const portalOnly = isPortalOnlyUser(user);
 
   // DEBUG: Diagnóstico temporal — remover después de validar
-  if (user) {
-    console.log('[AdaptiveLayout] user.proveedor:', user.proveedor, typeof user.proveedor);
-    console.log('[AdaptiveLayout] user.cargo:', user.cargo);
-    console.log('[AdaptiveLayout] user.cargo?.code:', user.cargo?.code);
-    console.log('[AdaptiveLayout] isPortalOnlyUser:', portalOnly);
-  }
+  console.log('[AdaptiveLayout] RENDER', {
+    path: location.pathname,
+    currentTenantId,
+    isLoadingUser,
+    hasUser: !!user,
+    proveedor: user?.proveedor,
+    proveedorType: typeof user?.proveedor,
+    cargoCode: user?.cargo?.code,
+    portalOnly,
+  });
 
   if (portalOnly) {
     // SEGURIDAD: Forzar redirect a /proveedor-portal si intenta acceder a otra ruta

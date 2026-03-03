@@ -2,10 +2,11 @@
  * CrearAccesoProveedorModal — Modal para crear acceso al sistema a un proveedor existente
  *
  * Lógica por tipo de proveedor:
- * - CONSULTOR, CONTRATISTA (servicios profesionales): Pueden tener un cargo dentro de la empresa
- *   con acceso a módulos internos del sistema.
- * - Resto (MP, Productos, Transportista, Unidad Negocio): Solo acceso al Portal Proveedores.
- *   No necesitan cargo — se asigna automáticamente "Proveedor - Portal".
+ * - CONSULTOR, CONTRATISTA (servicios profesionales):
+ *   - Con cargo → profesional colocado (acceso a módulos internos)
+ *   - Sin cargo → representante de firma (solo Portal Proveedor + Mis Profesionales)
+ * - Resto (MP, Productos, Transportista, Unidad Negocio):
+ *   Solo acceso al Portal Proveedores. Cargo automático "Proveedor - Portal".
  *
  * Permite múltiples usuarios por proveedor.
  */
@@ -15,13 +16,13 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Alert } from '@/components/common/Alert';
-import { Shield, Mail, Check, Briefcase, Globe } from 'lucide-react';
+import { Shield, Mail, Check, Briefcase, Globe, Users } from 'lucide-react';
 import { useCrearAccesoProveedor } from '../hooks/useProveedores';
 import { useSelectCargos } from '@/hooks/useSelectLists';
 import type { ProveedorList } from '../types';
 
-// Tipos de proveedor que pueden tener cargo interno en la empresa
-const TIPOS_CON_CARGO = ['CONSULTOR', 'CONTRATISTA'];
+// Tipos de proveedor que pueden tener cargo interno (opcional)
+const TIPOS_PROFESIONALES = ['CONSULTOR', 'CONTRATISTA'];
 
 interface CrearAccesoProveedorModalProps {
   proveedor: ProveedorList | null;
@@ -42,9 +43,9 @@ export function CrearAccesoProveedorModal({
 
   const cargos = cargosData || [];
 
-  // ¿Este tipo de proveedor necesita cargo interno?
-  const requiereCargo = useMemo(
-    () => proveedor && TIPOS_CON_CARGO.includes(proveedor.tipo_proveedor_codigo),
+  // ¿Este tipo de proveedor puede tener cargo interno?
+  const esProfesional = useMemo(
+    () => proveedor && TIPOS_PROFESIONALES.includes(proveedor.tipo_proveedor_codigo),
     [proveedor]
   );
 
@@ -74,14 +75,10 @@ export function CrearAccesoProveedorModal({
     }
   }, [isOpen, proveedor, suggested]);
 
-  // Validación: cargo solo requerido para servicios profesionales
+  // Validación: email + username siempre requeridos. Cargo es OPCIONAL para profesionales.
   const isValid = useMemo(() => {
-    const baseValid = email.trim().length > 0 && email.includes('@') && username.trim().length > 0;
-    if (requiereCargo) {
-      return baseValid && cargoId !== '';
-    }
-    return baseValid;
-  }, [email, username, cargoId, requiereCargo]);
+    return email.trim().length > 0 && email.includes('@') && username.trim().length > 0;
+  }, [email, username]);
 
   const handleSubmit = async () => {
     if (!proveedor || !isValid) return;
@@ -89,8 +86,8 @@ export function CrearAccesoProveedorModal({
       id: proveedor.id,
       email: email.trim(),
       username: username.trim(),
-      // Solo enviar cargo_id si es proveedor de servicios profesionales
-      cargo_id: requiereCargo && cargoId !== '' ? (cargoId as number) : undefined,
+      // Solo enviar cargo_id si se seleccionó uno
+      cargo_id: cargoId !== '' ? (cargoId as number) : undefined,
     });
     onClose();
   };
@@ -135,16 +132,18 @@ export function CrearAccesoProveedorModal({
     >
       <div className="space-y-4">
         {/* Mensaje según tipo de acceso */}
-        {requiereCargo ? (
+        {esProfesional ? (
           <Alert
             variant="info"
             message={
               <div className="flex items-start gap-2">
                 <Briefcase size={16} className="mt-0.5 shrink-0" />
                 <span>
-                  <strong>{tipoNombre}</strong> — Este proveedor puede tener un cargo dentro de la
-                  empresa con acceso a módulos internos del sistema. Seleccione el cargo
-                  correspondiente.
+                  <strong>{tipoNombre}</strong> — Puedes crear dos tipos de acceso:
+                  <br />
+                  <strong>• Con cargo:</strong> Profesional colocado con acceso a módulos internos.
+                  <br />
+                  <strong>• Sin cargo:</strong> Representante de la firma con acceso solo al Portal.
                 </span>
               </div>
             }
@@ -157,7 +156,7 @@ export function CrearAccesoProveedorModal({
                 <Globe size={16} className="mt-0.5 shrink-0" />
                 <span>
                   <strong>{tipoNombre}</strong> — Se creará acceso al Portal de Proveedores donde
-                  podrá consultar sus órdenes, entregas y documentos.
+                  podrá consultar su información, contratos y evaluaciones.
                 </span>
               </div>
             }
@@ -189,22 +188,33 @@ export function CrearAccesoProveedorModal({
           required
         />
 
-        {/* Cargo: solo visible para consultores/contratistas */}
-        {requiereCargo && (
-          <Select
-            label="Cargo en la Empresa *"
-            value={cargoId}
-            onChange={(e) => setCargoId(e.target.value ? Number(e.target.value) : '')}
-            required
-            helperText="El cargo determina los permisos y acceso a módulos del sistema."
-          >
-            <option value="">Seleccionar cargo...</option>
-            {cargos.map((cargo) => (
-              <option key={cargo.id} value={cargo.id}>
-                {cargo.label}
-              </option>
-            ))}
-          </Select>
+        {/* Cargo: visible para consultores/contratistas (OPCIONAL) */}
+        {esProfesional && (
+          <>
+            <Select
+              label="Cargo en la Empresa (opcional)"
+              value={cargoId}
+              onChange={(e) => setCargoId(e.target.value ? Number(e.target.value) : '')}
+              helperText="Sin cargo = representante de firma (solo Portal). Con cargo = profesional con acceso a módulos."
+            >
+              <option value="">Sin cargo — Solo Portal Proveedor</option>
+              {cargos.map((cargo) => (
+                <option key={cargo.id} value={cargo.id}>
+                  {cargo.label}
+                </option>
+              ))}
+            </Select>
+
+            {cargoId === '' && (
+              <div className="flex items-start gap-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <Users size={16} className="text-purple-600 dark:text-purple-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-purple-700 dark:text-purple-300">
+                  Este usuario será <strong>representante de la firma</strong> y podrá gestionar los
+                  profesionales colocados desde el tab &quot;Mis Profesionales&quot; en su Portal.
+                </p>
+              </div>
+            )}
+          </>
         )}
 
         {email && email.includes('@') && (

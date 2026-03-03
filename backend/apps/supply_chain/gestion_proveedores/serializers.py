@@ -298,11 +298,13 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_numero_documento(self, value):
-        """Validar número de documento único y formato."""
+        """Validar número de documento único y formato (excluye soft-deleted)."""
         value = value.strip()
         if not value:
             raise serializers.ValidationError('El número de documento es obligatorio')
-        if Proveedor.objects.filter(numero_documento=value).exists():
+        if Proveedor.objects.filter(
+            numero_documento=value, deleted_at__isnull=True
+        ).exists():
             raise serializers.ValidationError('Ya existe un proveedor con este número de documento')
         return value
 

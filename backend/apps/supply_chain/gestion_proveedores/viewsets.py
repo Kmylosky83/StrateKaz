@@ -652,8 +652,9 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         Body: { email, username, cargo_id? }
 
         Lógica por tipo:
-        - CONSULTOR, CONTRATISTA: cargo_id requerido (acceso a módulos internos)
-        - Otros: cargo_id omitido → se asigna cargo "Proveedor - Portal" automáticamente
+        - CONSULTOR/CONTRATISTA con cargo_id: profesional colocado (acceso a módulos)
+        - CONSULTOR/CONTRATISTA sin cargo_id: representante de firma (solo Portal)
+        - Otros tipos: siempre cargo "Proveedor - Portal" (solo Portal)
         Permite múltiples usuarios por proveedor.
         """
         proveedor = self.get_object()
@@ -668,19 +669,11 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         from django.apps import apps
         Cargo = apps.get_model('core', 'Cargo')
 
-        # Tipos que requieren cargo explícito (servicios profesionales)
-        tipos_con_cargo = ['CONSULTOR', 'CONTRATISTA']
-        tipo_codigo = proveedor.tipo_proveedor.codigo if proveedor.tipo_proveedor else ''
-
         if cargo_id:
+            # Profesional con cargo específico (consultor/contratista colocado)
             cargo = Cargo.objects.get(id=cargo_id)
-        elif tipo_codigo in tipos_con_cargo:
-            return Response(
-                {'detail': 'Consultores y contratistas requieren un cargo dentro de la empresa.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
         else:
-            # Auto-asignar cargo portal para proveedores no profesionales
+            # Representante de firma o proveedor estándar → cargo portal
             cargo, _ = Cargo.objects.get_or_create(
                 code='PROVEEDOR_PORTAL',
                 defaults={

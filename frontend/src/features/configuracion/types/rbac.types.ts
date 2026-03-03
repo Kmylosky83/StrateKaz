@@ -615,32 +615,32 @@ export const NivelJerarquicoColors: Record<NivelJerarquico, string> = {
 export const NivelEducativoLabels: Record<NivelEducativo, string> = {
   PRIMARIA: 'Primaria',
   BACHILLER: 'Bachiller',
-  TECNICO: 'Tecnico',
-  TECNOLOGO: 'Tecnologo',
+  TECNICO: 'Técnico',
+  TECNOLOGO: 'Tecnólogo',
   PROFESIONAL: 'Profesional',
-  ESPECIALIZACION: 'Especializacion',
-  MAESTRIA: 'Maestria',
+  ESPECIALIZACION: 'Especialización',
+  MAESTRIA: 'Maestría',
   DOCTORADO: 'Doctorado',
 };
 
 export const ExperienciaLabels: Record<ExperienciaRequerida, string> = {
   SIN_EXPERIENCIA: 'Sin experiencia',
   '6_MESES': '6 meses',
-  '1_ANO': '1 ano',
-  '2_ANOS': '2 anos',
-  '3_ANOS': '3 anos',
-  '5_ANOS': '5 anos',
-  '10_ANOS': '10+ anos',
+  '1_ANO': '1 año',
+  '2_ANOS': '2 años',
+  '3_ANOS': '3 años',
+  '5_ANOS': '5 años',
+  '10_ANOS': '10+ años',
 };
 
 export const ClasificacionRiesgoLabels: Record<ClasificacionRiesgo, string> = {
-  BIOLOGICO: 'Biologico',
-  FISICO: 'Fisico',
-  QUIMICO: 'Quimico',
+  BIOLOGICO: 'Biológico',
+  FISICO: 'Físico',
+  QUIMICO: 'Químico',
   PSICOSOCIAL: 'Psicosocial',
-  BIOMECANICO: 'Biomecanico',
+  BIOMECANICO: 'Biomecánico',
   CONDICIONES_SEGURIDAD: 'Condiciones de Seguridad',
-  FENOMENOS_NATURALES: 'Fenomenos Naturales',
+  FENOMENOS_NATURALES: 'Fenómenos Naturales',
 };
 
 export const NivelRiesgoLabels: Record<NivelRiesgo, string> = {
@@ -676,32 +676,32 @@ export const NIVEL_JERARQUICO_OPTIONS: SelectOption[] = [
 export const NIVEL_EDUCATIVO_OPTIONS: SelectOption[] = [
   { value: 'PRIMARIA', label: 'Primaria' },
   { value: 'BACHILLER', label: 'Bachiller' },
-  { value: 'TECNICO', label: 'Tecnico' },
-  { value: 'TECNOLOGO', label: 'Tecnologo' },
+  { value: 'TECNICO', label: 'Técnico' },
+  { value: 'TECNOLOGO', label: 'Tecnólogo' },
   { value: 'PROFESIONAL', label: 'Profesional' },
-  { value: 'ESPECIALIZACION', label: 'Especializacion' },
-  { value: 'MAESTRIA', label: 'Maestria' },
+  { value: 'ESPECIALIZACION', label: 'Especialización' },
+  { value: 'MAESTRIA', label: 'Maestría' },
   { value: 'DOCTORADO', label: 'Doctorado' },
 ];
 
 export const EXPERIENCIA_OPTIONS: SelectOption[] = [
   { value: 'SIN_EXPERIENCIA', label: 'Sin experiencia' },
   { value: '6_MESES', label: '6 meses' },
-  { value: '1_ANO', label: '1 ano' },
-  { value: '2_ANOS', label: '2 anos' },
-  { value: '3_ANOS', label: '3 anos' },
-  { value: '5_ANOS', label: '5 anos' },
-  { value: '10_ANOS', label: '10+ anos' },
+  { value: '1_ANO', label: '1 año' },
+  { value: '2_ANOS', label: '2 años' },
+  { value: '3_ANOS', label: '3 años' },
+  { value: '5_ANOS', label: '5 años' },
+  { value: '10_ANOS', label: '10+ años' },
 ];
 
 export const CLASIFICACION_RIESGO_OPTIONS: SelectOption[] = [
-  { value: 'BIOLOGICO', label: 'Biologico' },
-  { value: 'FISICO', label: 'Fisico' },
-  { value: 'QUIMICO', label: 'Quimico' },
+  { value: 'BIOLOGICO', label: 'Biológico' },
+  { value: 'FISICO', label: 'Físico' },
+  { value: 'QUIMICO', label: 'Químico' },
   { value: 'PSICOSOCIAL', label: 'Psicosocial' },
-  { value: 'BIOMECANICO', label: 'Biomecanico' },
+  { value: 'BIOMECANICO', label: 'Biomecánico' },
   { value: 'CONDICIONES_SEGURIDAD', label: 'Condiciones de Seguridad' },
-  { value: 'FENOMENOS_NATURALES', label: 'Fenomenos Naturales' },
+  { value: 'FENOMENOS_NATURALES', label: 'Fenómenos Naturales' },
 ];
 
 export const SCOPE_OPTIONS: SelectOption[] = [

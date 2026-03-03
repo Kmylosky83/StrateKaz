@@ -6,22 +6,20 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .viewsets import (
-    # Catálogos dinámicos
+    # Catálogos dinámicos (propios de Supply Chain)
     CategoriaMateriaPrimaViewSet,
     TipoMateriaPrimaViewSet,
     TipoProveedorViewSet,
     ModalidadLogisticaViewSet,
     FormaPagoViewSet,
     TipoCuentaBancariaViewSet,
-    TipoDocumentoIdentidadViewSet,
-    DepartamentoViewSet,
-    CiudadViewSet,
+    # NOTA: TipoDocumentoIdentidad, Departamento, Ciudad → migrados a Core (C0)
+    # NOTA: PruebaAcidez → migrada a Production Ops Recepción
     # Modelos principales
     UnidadNegocioViewSet,
     ProveedorViewSet,
     HistorialPrecioViewSet,
     CondicionComercialViewSet,
-    PruebaAcidezViewSet,
     # Evaluación
     CriterioEvaluacionViewSet,
     EvaluacionProveedorViewSet,
@@ -76,24 +74,7 @@ router.register(
     basename='tipo-cuenta-bancaria'
 )
 
-# Tipos de Documento de Identidad
-router.register(
-    r'tipos-documento',
-    TipoDocumentoIdentidadViewSet,
-    basename='tipo-documento'
-)
-
-# Departamentos y Ciudades
-router.register(
-    r'departamentos',
-    DepartamentoViewSet,
-    basename='departamento'
-)
-router.register(
-    r'ciudades',
-    CiudadViewSet,
-    basename='ciudad'
-)
+# NOTA: tipos-documento, departamentos, ciudades → /api/core/ (migrados a C0)
 
 # ==============================================================================
 # RUTAS DE MODELOS PRINCIPALES
@@ -127,12 +108,7 @@ router.register(
     basename='condicion-comercial'
 )
 
-# Pruebas de Acidez
-router.register(
-    r'pruebas-acidez',
-    PruebaAcidezViewSet,
-    basename='prueba-acidez'
-)
+# NOTA: pruebas-acidez → /api/production-ops/recepcion/ (migrada a Production Ops)
 
 # ==============================================================================
 # RUTAS DE EVALUACIÓN DE PROVEEDORES

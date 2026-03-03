@@ -7,6 +7,11 @@ export { default as RecepcionTab } from './RecepcionTab';
 export { default as ProcesamientoTab } from './ProcesamientoTab';
 export { default as MantenimientoTab } from './MantenimientoTab';
 export { default as ProductoTerminadoTab } from './ProductoTerminadoTab';
+export { default as PruebasAcidezTab } from './PruebasAcidezTab';
+
+// Pruebas de Acidez components
+export { PruebaAcidezForm } from './PruebaAcidezForm';
+export { PruebaAcidezTable } from './PruebaAcidezTable';
 
 // Form modals
 export { default as RecepcionFormModal } from './RecepcionFormModal';

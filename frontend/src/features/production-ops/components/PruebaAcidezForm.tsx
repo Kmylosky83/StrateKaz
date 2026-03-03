@@ -1,5 +1,6 @@
 /**
  * Componente: Formulario de Prueba de Acidez
+ * NOTA: Migrado de Supply Chain a Production Ops
  *
  * Características:
  * - Registro de pruebas de acidez
@@ -17,10 +18,17 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 
-import { useCreatePruebaAcidez, useUpdatePruebaAcidez, useSimularPruebaAcidez } from '../hooks/usePruebasAcidez';
-import { useProveedores } from '../hooks/useProveedores';
-import { useTiposMateriaPrima } from '../hooks/useCatalogos';
-import type { PruebaAcidez, CreatePruebaAcidezDTO, SimularPruebaAcidezResponse } from '../types';
+import {
+  useCreatePruebaAcidez,
+  useUpdatePruebaAcidez,
+  useSimularPruebaAcidez,
+} from '../hooks/usePruebasAcidez';
+import { useSelectProveedores, useSelectTiposMateriaPrima } from '@/hooks/useSelectLists';
+import type {
+  PruebaAcidez,
+  CreatePruebaAcidezDTO,
+  SimularPruebaAcidezResponse,
+} from '../types/prueba-acidez.types';
 
 // ==================== TIPOS ====================
 
@@ -43,7 +51,12 @@ const ACCIONES_TOMADA = [
 
 // ==================== COMPONENTE ====================
 
-export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: PruebaAcidezFormProps) {
+export function PruebaAcidezForm({
+  prueba,
+  proveedorId,
+  onSuccess,
+  onCancel,
+}: PruebaAcidezFormProps) {
   const [simulacion, setSimulacion] = useState<SimularPruebaAcidezResponse | null>(null);
 
   const isEditing = !!prueba;
@@ -53,12 +66,9 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
   const updateMutation = useUpdatePruebaAcidez();
   const simularMutation = useSimularPruebaAcidez();
 
-  // Queries
-  const { data: proveedoresData } = useProveedores({ estado: 'ACTIVO' });
-  const { data: tiposMateriaPrimaData } = useTiposMateriaPrima({ is_active: true });
-
-  const proveedores = Array.isArray(proveedoresData) ? proveedoresData : proveedoresData?.results || [];
-  const tiposMateriaPrima = Array.isArray(tiposMateriaPrimaData) ? tiposMateriaPrimaData : tiposMateriaPrimaData?.results || [];
+  // Queries — Select Lists compartidos (C0)
+  const { data: proveedores = [] } = useSelectProveedores();
+  const { data: tiposMateriaPrima = [] } = useSelectTiposMateriaPrima();
 
   // Form
   const {
@@ -135,7 +145,7 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
         await createMutation.mutateAsync(data);
       }
       onSuccess?.();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };
@@ -174,11 +184,7 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
           error={errors.fecha_prueba?.message}
         />
 
-        <Input
-          label="Hora de Prueba"
-          type="time"
-          {...register('hora_prueba')}
-        />
+        <Input label="Hora de Prueba" type="time" {...register('hora_prueba')} />
 
         {!proveedorId && (
           <Select
@@ -187,9 +193,9 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
             error={errors.proveedor?.message}
           >
             <option value="">Seleccione...</option>
-            {proveedores.map((prov: any) => (
+            {proveedores.map((prov) => (
               <option key={prov.id} value={prov.id}>
-                {prov.razon_social}
+                {prov.label}
               </option>
             ))}
           </Select>
@@ -204,13 +210,15 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
 
         <Select
           label="Tipo Materia Prima Original *"
-          {...register('tipo_materia_prima_original', { required: 'El tipo de materia prima es requerido' })}
+          {...register('tipo_materia_prima_original', {
+            required: 'El tipo de materia prima es requerido',
+          })}
           error={errors.tipo_materia_prima_original?.message}
         >
           <option value="">Seleccione...</option>
-          {tiposMateriaPrima.map((tipo: any) => (
+          {tiposMateriaPrima.map((tipo) => (
             <option key={tipo.id} value={tipo.id}>
-              {tipo.nombre} ({tipo.codigo})
+              {tipo.label}
             </option>
           ))}
         </Select>
@@ -270,7 +278,9 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
         {/* Resultado de simulación */}
         {simulacion && (
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <h5 className="font-medium text-gray-900 dark:text-white mb-2">Resultado de Clasificación</h5>
+            <h5 className="font-medium text-gray-900 dark:text-white mb-2">
+              Resultado de Clasificación
+            </h5>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <span className="text-sm text-gray-500">Clasificación Resultante:</span>
@@ -297,10 +307,7 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
 
       {/* Acción y observaciones */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Select
-          label="Acción Tomada"
-          {...register('accion_tomada')}
-        >
+        <Select label="Acción Tomada" {...register('accion_tomada')}>
           {ACCIONES_TOMADA.map((accion) => (
             <option key={accion.value} value={accion.value}>
               {accion.label}
@@ -328,7 +335,12 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
       {/* Botones */}
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} leftIcon={<X className="w-4 h-4" />}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            leftIcon={<X className="w-4 h-4" />}
+          >
             Cancelar
           </Button>
         )}

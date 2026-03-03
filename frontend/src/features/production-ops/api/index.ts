@@ -7,3 +7,6 @@
 
 export { default as productionOpsApi } from './productionOpsApi';
 export * from './productionOpsApi';
+
+export { default as pruebaAcidezApi } from './pruebas-acidez.api';
+export * from './pruebas-acidez.api';

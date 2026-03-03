@@ -34,9 +34,7 @@ export {
   detalleEvaluacionApi,
 } from './evaluaciones.api';
 
-// ==================== PRUEBAS DE ACIDEZ ====================
-export { default as pruebaAcidezApi } from './pruebas-acidez.api';
-export { pruebaAcidezApi as pruebasAcidezApi } from './pruebas-acidez.api';
+// NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/api/)
 
 // ==================== PROGRAMACIÓN DE ABASTECIMIENTO ====================
 export { default as programacionAbastecimientoApi } from './programacionApi';

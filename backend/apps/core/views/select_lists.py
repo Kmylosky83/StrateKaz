@@ -219,3 +219,122 @@ def select_roles(request):
         }
         for r in qs
     ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_departamentos(request):
+    """
+    Lista de departamentos activos para dropdowns.
+    Usado por: Supply Chain (proveedores), Talent Hub (colaboradores)
+    """
+    Departamento = apps.get_model('core', 'Departamento')
+    qs = Departamento.objects.filter(
+        is_active=True
+    ).values(
+        'id', 'codigo', 'nombre', 'codigo_dane'
+    ).order_by('nombre')[:200]
+
+    return Response([
+        {
+            'id': d['id'],
+            'label': d['nombre'],
+            'extra': {
+                'codigo': d.get('codigo', ''),
+                'codigo_dane': d.get('codigo_dane', ''),
+            }
+        }
+        for d in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_ciudades(request):
+    """
+    Lista de ciudades activas para dropdowns.
+    Soporta filtro por departamento: ?departamento_id=X
+    Usado por: Supply Chain (proveedores), Talent Hub (colaboradores)
+    """
+    Ciudad = apps.get_model('core', 'Ciudad')
+    qs = Ciudad.objects.filter(
+        is_active=True
+    ).select_related('departamento').values(
+        'id', 'codigo', 'nombre', 'departamento__nombre', 'departamento_id'
+    ).order_by('nombre')
+
+    departamento_id = request.query_params.get('departamento_id')
+    if departamento_id:
+        qs = qs.filter(departamento_id=departamento_id)
+
+    qs = qs[:500]
+
+    return Response([
+        {
+            'id': c['id'],
+            'label': c['nombre'],
+            'extra': {
+                'codigo': c.get('codigo', ''),
+                'departamento': c.get('departamento__nombre', ''),
+                'departamento_id': c.get('departamento_id'),
+            }
+        }
+        for c in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_tipos_materia_prima(request):
+    """
+    Lista de tipos de materia prima activos para dropdowns.
+    Usado por: Production Ops (pruebas de acidez, recepción)
+    """
+    TipoMateriaPrima = _safe_get_model('gestion_proveedores', 'TipoMateriaPrima')
+    if not TipoMateriaPrima:
+        return Response([])
+
+    qs = TipoMateriaPrima.objects.filter(
+        is_active=True
+    ).values(
+        'id', 'codigo', 'nombre', 'acidez_min', 'acidez_max',
+        'categoria__nombre'
+    ).order_by('categoria__nombre', 'nombre')[:200]
+
+    return Response([
+        {
+            'id': t['id'],
+            'label': f"{t['nombre']} ({t['codigo']})",
+            'extra': {
+                'codigo': t.get('codigo', ''),
+                'categoria': t.get('categoria__nombre', ''),
+                'acidez_min': str(t['acidez_min']) if t.get('acidez_min') is not None else '',
+                'acidez_max': str(t['acidez_max']) if t.get('acidez_max') is not None else '',
+            }
+        }
+        for t in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_tipos_documento(request):
+    """
+    Lista de tipos de documento de identidad activos para dropdowns.
+    Usado por: Supply Chain (proveedores), Talent Hub (colaboradores)
+    """
+    TipoDocumento = apps.get_model('core', 'TipoDocumentoIdentidad')
+    qs = TipoDocumento.objects.filter(
+        is_active=True
+    ).values(
+        'id', 'codigo', 'nombre'
+    ).order_by('orden', 'nombre')[:50]
+
+    return Response([
+        {
+            'id': t['id'],
+            'label': f"{t['codigo']} - {t['nombre']}",
+            'extra': {'codigo': t.get('codigo', '')}
+        }
+        for t in qs
+    ])

@@ -20,23 +20,20 @@ from django.utils import timezone
 from django.conf import settings
 
 from .models import (
-    # Catálogos dinámicos
+    # Catálogos dinámicos (propios de Supply Chain)
     CategoriaMateriaPrima,
     TipoMateriaPrima,
     TipoProveedor,
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
-    TipoDocumentoIdentidad,
-    Departamento,
-    Ciudad,
+    # NOTA: TipoDocumentoIdentidad, Departamento, Ciudad → migrados a Core (C0)
     # Modelos principales
     UnidadNegocio,
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
     CondicionComercialProveedor,
-    PruebaAcidez,
     # Evaluación
     CriterioEvaluacion,
     EvaluacionProveedor,
@@ -51,9 +48,7 @@ from .serializers import (
     ModalidadLogisticaSerializer,
     FormaPagoSerializer,
     TipoCuentaBancariaSerializer,
-    TipoDocumentoIdentidadSerializer,
-    DepartamentoSerializer,
-    CiudadSerializer,
+    # NOTA: TipoDocumentoIdentidad/Departamento/Ciudad serializers → Core (C0)
     # Unidad de Negocio
     UnidadNegocioSerializer,
     # Proveedor
@@ -67,16 +62,12 @@ from .serializers import (
     # Historial y Condiciones
     HistorialPrecioSerializer,
     CondicionComercialSerializer,
-    # Prueba de Acidez
-    PruebaAcidezListSerializer,
-    PruebaAcidezDetailSerializer,
-    PruebaAcidezCreateSerializer,
-    SimularPruebaAcidezSerializer,
     # Evaluación
     CriterioEvaluacionSerializer,
     EvaluacionProveedorSerializer,
     DetalleEvaluacionSerializer,
 )
+# PruebaAcidez → Movido a production_ops.recepcion
 
 from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
@@ -262,115 +253,9 @@ class TipoCuentaBancariaViewSet(CatalogoBaseViewSet):
     ordering_fields = ['orden', 'nombre']
 
 
-class TipoDocumentoIdentidadViewSet(CatalogoBaseViewSet):
-    """ViewSet para Tipos de Documento de Identidad (dinámico)."""
-
-    queryset = TipoDocumentoIdentidad.objects.all()
-    serializer_class = TipoDocumentoIdentidadSerializer
-    search_fields = ['codigo', 'nombre']
-    filterset_fields = ['is_active']
-    ordering_fields = ['orden', 'nombre']
-
-
-class DepartamentoViewSet(CatalogoBaseViewSet):
-    """
-    ViewSet para Departamentos de Colombia (dinámico).
-
-    Endpoints adicionales:
-    - GET /api/supply-chain/departamentos/{id}/ciudades/ - Ciudades del departamento
-    """
-
-    queryset = Departamento.objects.all()
-    serializer_class = DepartamentoSerializer
-    search_fields = ['codigo', 'nombre', 'codigo_dane']
-    filterset_fields = ['is_active']
-    ordering_fields = ['orden', 'nombre']
-
-    @action(detail=True, methods=['get'])
-    def ciudades(self, request, pk=None):
-        """Listar ciudades de este departamento."""
-        departamento = self.get_object()
-        ciudades = departamento.ciudades.filter(is_active=True).order_by('nombre')
-        serializer = CiudadSerializer(ciudades, many=True)
-        return Response({
-            'departamento': departamento.nombre,
-            'ciudades': serializer.data
-        })
-
-
-class CiudadViewSet(CatalogoBaseViewSet):
-    """
-    ViewSet para Ciudades de Colombia (dinámico).
-
-    Endpoints adicionales:
-    - GET /api/supply-chain/ciudades/autocomplete/?q=&departamento_id=
-    """
-
-    queryset = Ciudad.objects.all()
-    serializer_class = CiudadSerializer
-    search_fields = ['codigo', 'nombre', 'codigo_dane']
-    filterset_fields = ['departamento', 'is_active', 'es_capital']
-    ordering_fields = ['nombre', 'departamento__nombre']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.select_related('departamento')
-
-    @action(detail=False, methods=['get'])
-    def autocomplete(self, request):
-        """
-        ME-002: Endpoint de autocompletado para ciudades.
-
-        GET /api/supply-chain/ciudades/autocomplete/
-
-        Query params:
-        - q: Texto de búsqueda (mínimo 2 caracteres)
-        - departamento_id: Filtrar por departamento (opcional)
-        - limit: Límite de resultados (default 10, max 50)
-
-        Retorna lista de ciudades con departamento para select/combobox.
-        """
-        query = request.query_params.get('q', '').strip()
-        departamento_id = request.query_params.get('departamento_id')
-        limit = min(int(request.query_params.get('limit', 10)), 50)
-
-        # Base queryset: solo activas
-        queryset = Ciudad.objects.filter(is_active=True).select_related('departamento')
-
-        # Filtrar por departamento si se especifica
-        if departamento_id:
-            queryset = queryset.filter(departamento_id=departamento_id)
-
-        # Búsqueda por texto (mínimo 2 caracteres)
-        if len(query) >= 2:
-            queryset = queryset.filter(
-                Q(nombre__icontains=query) |
-                Q(codigo__icontains=query) |
-                Q(codigo_dane__icontains=query)
-            )
-
-        # Ordenar: capitales primero, luego alfabético
-        queryset = queryset.order_by('-es_capital', 'nombre')[:limit]
-
-        # Formato optimizado para autocompletado
-        results = [
-            {
-                'id': ciudad.id,
-                'nombre': ciudad.nombre,
-                'departamento_id': ciudad.departamento_id,
-                'departamento_nombre': ciudad.departamento.nombre,
-                'es_capital': ciudad.es_capital,
-                'label': f"{ciudad.nombre}, {ciudad.departamento.nombre}"
-            }
-            for ciudad in queryset
-        ]
-
-        return Response({
-            'results': results,
-            'count': len(results),
-            'query': query,
-            'departamento_id': departamento_id
-        })
+# TipoDocumentoIdentidadViewSet, DepartamentoViewSet, CiudadViewSet
+# → Migrados a Core (C0): apps.core.viewsets_datos_maestros
+# Endpoints ahora: /api/core/tipos-documento/, /api/core/departamentos/, /api/core/ciudades/
 
 
 # ==============================================================================
@@ -1227,202 +1112,7 @@ class CondicionComercialViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
-# ==============================================================================
-# VIEWSET DE PRUEBA DE ACIDEZ
-# ==============================================================================
-
-class PruebaAcidezViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Pruebas de Acidez de Sebo Procesado (dinámico).
-
-    Endpoints:
-    - GET /api/supply-chain/pruebas-acidez/ - Lista de pruebas
-    - POST /api/supply-chain/pruebas-acidez/ - Crear prueba
-    - GET /api/supply-chain/pruebas-acidez/{id}/ - Detalle de prueba
-    - DELETE /api/supply-chain/pruebas-acidez/{id}/ - Soft delete (Admin+)
-    - POST /api/supply-chain/pruebas-acidez/simular/ - Simular resultado sin crear
-    - POST /api/supply-chain/pruebas-acidez/{id}/restore/ - Restaurar eliminada
-    - GET /api/supply-chain/pruebas-acidez/por-proveedor/{id}/ - Pruebas de un proveedor
-    - GET /api/supply-chain/pruebas-acidez/estadisticas/ - Estadísticas
-    """
-
-    queryset = PruebaAcidez.objects.all()
-    permission_classes = [IsAuthenticated, CanManageProveedores]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['proveedor', 'calidad_resultante', 'realizado_por', 'tipo_materia_resultante']
-    search_fields = ['codigo_voucher', 'proveedor__nombre_comercial', 'lote_numero']
-    ordering_fields = ['fecha_prueba', 'created_at', 'valor_acidez', 'cantidad_kg']
-    ordering = ['-fecha_prueba']
-
-    def get_queryset(self):
-        """Excluir pruebas eliminadas por defecto."""
-        queryset = super().get_queryset()
-
-        include_deleted = self.request.query_params.get('include_deleted', 'false')
-        if include_deleted.lower() != 'true':
-            queryset = queryset.filter(deleted_at__isnull=True)
-
-        # Filtrar por rango de fechas
-        fecha_desde = self.request.query_params.get('fecha_desde')
-        fecha_hasta = self.request.query_params.get('fecha_hasta')
-
-        if fecha_desde:
-            queryset = queryset.filter(fecha_prueba__gte=fecha_desde)
-        if fecha_hasta:
-            queryset = queryset.filter(fecha_prueba__lte=fecha_hasta)
-
-        return queryset.select_related(
-            'proveedor',
-            'tipo_materia_resultante',
-            'tipo_materia_resultante__categoria',
-            'realizado_por'
-        )
-
-    def get_serializer_class(self):
-        """Retornar serializer según la acción."""
-        if self.action == 'list':
-            return PruebaAcidezListSerializer
-        elif self.action == 'create':
-            return PruebaAcidezCreateSerializer
-        elif self.action == 'simular':
-            return SimularPruebaAcidezSerializer
-        else:
-            return PruebaAcidezDetailSerializer
-
-    def perform_create(self, serializer):
-        """Guardar quién realizó la prueba."""
-        serializer.save(realizado_por=self.request.user)
-
-    def perform_destroy(self, instance):
-        """Soft delete de prueba de acidez."""
-        instance.soft_delete()
-
-    @action(detail=False, methods=['post'])
-    def simular(self, request):
-        """
-        Simular resultado de prueba de acidez sin crear registro.
-
-        Útil para mostrar al usuario qué calidad obtendrá antes de confirmar.
-
-        Body:
-        {
-            "valor_acidez": 4.5,
-            "proveedor_id": 123,
-            "cantidad_kg": 500  (opcional)
-        }
-        """
-        serializer = SimularPruebaAcidezSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        resultado = serializer.simulate()
-        return Response(resultado)
-
-    @action(detail=True, methods=['post'])
-    def restore(self, request, pk=None):
-        """Restaurar prueba de acidez eliminada."""
-        prueba = self.get_object()
-
-        if not prueba.is_deleted:
-            return Response(
-                {'detail': 'La prueba no está eliminada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        prueba.restore()
-        serializer = self.get_serializer(prueba)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='por-proveedor/(?P<proveedor_id>[^/.]+)')
-    def por_proveedor(self, request, proveedor_id=None):
-        """
-        Lista pruebas de acidez de un proveedor específico.
-
-        GET /api/supply-chain/pruebas-acidez/por-proveedor/{proveedor_id}/
-        """
-        try:
-            proveedor = Proveedor.objects.get(pk=proveedor_id)
-        except Proveedor.DoesNotExist:
-            return Response(
-                {'detail': 'Proveedor no encontrado'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Validar que maneja SEBO (buscar por categoría dinámica)
-        tipos_sebo = TipoMateriaPrima.objects.filter(
-            categoria__codigo__icontains='SEBO',
-            is_active=True
-        )
-        if not proveedor.tipos_materia_prima.filter(id__in=tipos_sebo.values_list('id', flat=True)).exists():
-            return Response(
-                {'detail': 'El proveedor no maneja SEBO'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        pruebas = PruebaAcidez.objects.filter(
-            proveedor=proveedor,
-            deleted_at__isnull=True
-        ).select_related('tipo_materia_resultante', 'realizado_por').order_by('-fecha_prueba')
-
-        serializer = PruebaAcidezListSerializer(pruebas, many=True)
-
-        return Response({
-            'proveedor': proveedor.nombre_comercial,
-            'proveedor_id': proveedor.id,
-            'total_pruebas': pruebas.count(),
-            'pruebas': serializer.data
-        })
-
-    @action(detail=False, methods=['get'])
-    def estadisticas(self, request):
-        """
-        Estadísticas de pruebas de acidez.
-
-        GET /api/supply-chain/pruebas-acidez/estadisticas/
-        """
-        queryset = PruebaAcidez.objects.filter(deleted_at__isnull=True)
-
-        fecha_desde = request.query_params.get('fecha_desde')
-        fecha_hasta = request.query_params.get('fecha_hasta')
-
-        if fecha_desde:
-            queryset = queryset.filter(fecha_prueba__gte=fecha_desde)
-        if fecha_hasta:
-            queryset = queryset.filter(fecha_prueba__lte=fecha_hasta)
-
-        # Estadísticas por calidad
-        por_calidad = queryset.values('calidad_resultante').annotate(
-            cantidad=Count('id'),
-            total_kg=Sum('cantidad_kg'),
-            total_valor=Sum('valor_total'),
-            acidez_promedio=Avg('valor_acidez')
-        ).order_by('calidad_resultante')
-
-        # Estadísticas por tipo de materia (dinámico)
-        por_tipo = queryset.values(
-            'tipo_materia_resultante__nombre'
-        ).annotate(
-            cantidad=Count('id'),
-            total_kg=Sum('cantidad_kg'),
-            total_valor=Sum('valor_total'),
-            acidez_promedio=Avg('valor_acidez')
-        ).order_by('tipo_materia_resultante__nombre')
-
-        # Estadísticas generales
-        totales = queryset.aggregate(
-            total_pruebas=Count('id'),
-            total_kg=Sum('cantidad_kg'),
-            total_valor=Sum('valor_total'),
-            acidez_promedio=Avg('valor_acidez')
-        )
-
-        return Response({
-            'por_calidad': list(por_calidad),
-            'por_tipo_materia': list(por_tipo),
-            'totales': totales,
-            'filtros': {
-                'fecha_desde': fecha_desde,
-                'fecha_hasta': fecha_hasta
-            }
-        })
+# PruebaAcidezViewSet → Movido a production_ops.recepcion.views
 
 
 # ==============================================================================

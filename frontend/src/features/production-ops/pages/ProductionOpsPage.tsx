@@ -6,15 +6,11 @@
  */
 import React, { useState } from 'react';
 import { Card, Tabs } from '@/components/common';
-import {
-  Package,
-  Factory,
-  Wrench,
-  CheckCircle,
-} from 'lucide-react';
+import { Package, Factory, Wrench, CheckCircle, FlaskConical } from 'lucide-react';
 
 // Importar tabs
 import RecepcionTab from '../components/RecepcionTab';
+import PruebasAcidezTab from '../components/PruebasAcidezTab';
 import ProcesamientoTab from '../components/ProcesamientoTab';
 import MantenimientoTab from '../components/MantenimientoTab';
 import ProductoTerminadoTab from '../components/ProductoTerminadoTab';
@@ -24,9 +20,18 @@ const ProductionOpsPage: React.FC = () => {
 
   const tabs = [
     { id: 'recepcion', label: 'Recepción', icon: <Package className="h-4 w-4" /> },
+    {
+      id: 'pruebas-acidez',
+      label: 'Pruebas de Acidez',
+      icon: <FlaskConical className="h-4 w-4" />,
+    },
     { id: 'procesamiento', label: 'Procesamiento', icon: <Factory className="h-4 w-4" /> },
     { id: 'mantenimiento', label: 'Mantenimiento', icon: <Wrench className="h-4 w-4" /> },
-    { id: 'producto-terminado', label: 'Producto Terminado', icon: <CheckCircle className="h-4 w-4" /> },
+    {
+      id: 'producto-terminado',
+      label: 'Producto Terminado',
+      icon: <CheckCircle className="h-4 w-4" />,
+    },
   ];
 
   return (
@@ -43,15 +48,11 @@ const ProductionOpsPage: React.FC = () => {
       </div>
 
       <Card>
-        <Tabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          variant="pills"
-        />
+        <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
         <div className="mt-6">
           {activeTab === 'recepcion' && <RecepcionTab />}
+          {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
           {activeTab === 'procesamiento' && <ProcesamientoTab />}
           {activeTab === 'mantenimiento' && <MantenimientoTab />}
           {activeTab === 'producto-terminado' && <ProductoTerminadoTab />}

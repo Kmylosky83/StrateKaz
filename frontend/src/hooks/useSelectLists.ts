@@ -23,6 +23,11 @@ export const selectListKeys = {
   proveedores: () => [...selectListKeys.all, 'proveedores'] as const,
   clientes: () => [...selectListKeys.all, 'clientes'] as const,
   roles: () => [...selectListKeys.all, 'roles'] as const,
+  departamentos: () => [...selectListKeys.all, 'departamentos'] as const,
+  ciudades: (departamentoId?: number) =>
+    [...selectListKeys.all, 'ciudades', departamentoId] as const,
+  tiposDocumento: () => [...selectListKeys.all, 'tipos-documento'] as const,
+  tiposMateriaPrima: () => [...selectListKeys.all, 'tipos-materia-prima'] as const,
 };
 
 // ============================================================================
@@ -94,6 +99,46 @@ export const useSelectRoles = (enabled = true) => {
   return useQuery<SelectListItem[]>({
     queryKey: selectListKeys.roles(),
     queryFn: selectListsAPI.getRoles,
+    staleTime: 1000 * 60 * 5,
+    enabled,
+  });
+};
+
+/** Departamentos de Colombia */
+export const useSelectDepartamentos = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.departamentos(),
+    queryFn: selectListsAPI.getDepartamentos,
+    staleTime: 1000 * 60 * 10, // 10 min (datos estáticos)
+    enabled,
+  });
+};
+
+/** Ciudades de Colombia (filtrar por departamento_id opcional) */
+export const useSelectCiudades = (departamentoId?: number, enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.ciudades(departamentoId),
+    queryFn: () => selectListsAPI.getCiudades(departamentoId),
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+};
+
+/** Tipos de documento de identidad */
+export const useSelectTiposDocumento = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.tiposDocumento(),
+    queryFn: selectListsAPI.getTiposDocumento,
+    staleTime: 1000 * 60 * 10,
+    enabled,
+  });
+};
+
+/** Tipos de materia prima (para pruebas de acidez, recepción) */
+export const useSelectTiposMateriaPrima = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.tiposMateriaPrima(),
+    queryFn: selectListsAPI.getTiposMateriaPrima,
     staleTime: 1000 * 60 * 5,
     enabled,
   });

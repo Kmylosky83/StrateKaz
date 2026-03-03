@@ -6,3 +6,4 @@
  */
 
 export * from './production-ops.types';
+export * from './prueba-acidez.types';

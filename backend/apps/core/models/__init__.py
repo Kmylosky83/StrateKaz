@@ -8,6 +8,7 @@ Este paquete contiene los modelos del módulo Core organizados por dominio:
 - models_rbac_adicionales: RolAdicional, UserRolAdicional, CargoSectionAccess
 - models_system_modules: SystemModule, ModuleTab, TabSection
 - models_menu: MenuItem
+- models_datos_maestros: TipoDocumentoIdentidad, Departamento, Ciudad
 """
 
 # =============================================================================
@@ -107,6 +108,15 @@ from apps.core.models.models_user_preferences import (
 )
 
 # =============================================================================
+# DATOS MAESTROS COMPARTIDOS (C0) — Migrados desde Supply Chain
+# =============================================================================
+from apps.core.models.models_datos_maestros import (
+    TipoDocumentoIdentidad,
+    Departamento,
+    Ciudad,
+)
+
+# =============================================================================
 # ADD DYNAMIC RELATIONS (after all models are loaded)
 # =============================================================================
 
@@ -178,4 +188,8 @@ __all__ = [
     'TwoFactorAuth',
     # User Preferences (MS-003)
     'UserPreferences',
+    # Datos Maestros Compartidos (C0)
+    'TipoDocumentoIdentidad',
+    'Departamento',
+    'Ciudad',
 ]

@@ -212,6 +212,7 @@ export interface PrecioMateriaPrima {
 
 /**
  * Historial de cambios de precio
+ * Backend: HistorialPrecioSerializer
  */
 export interface HistorialPrecioProveedor {
   id: number;
@@ -219,19 +220,24 @@ export interface HistorialPrecioProveedor {
   proveedor_nombre?: string;
   tipo_materia: number;
   tipo_materia_nombre?: string;
-  precio_anterior: string;
+  precio_anterior: string | null;
   precio_nuevo: string;
-  fecha_cambio: string;
-  motivo_cambio?: string;
-  usuario_cambio?: number;
-  usuario_cambio_nombre?: string;
+  variacion_precio?: string;
+  tipo_cambio?: string;
+  modificado_por?: number;
+  modificado_por_nombre?: string;
+  motivo?: string;
+  fecha_modificacion: string;
   created_at: string;
 }
 
+/**
+ * Backend: CambiarPrecioSerializer
+ */
 export interface CambiarPrecioDTO {
-  tipo_materia_prima: number;
+  tipo_materia_id: number;
   precio_nuevo: number;
-  motivo_cambio?: string;
+  motivo: string;
 }
 
 // ==================== CONDICIONES COMERCIALES ====================

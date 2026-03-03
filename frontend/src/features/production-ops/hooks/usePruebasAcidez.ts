@@ -1,24 +1,26 @@
 /**
  * Hooks React Query para Pruebas de Acidez
+ * NOTA: Migrado de Supply Chain a Production Ops
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import pruebaAcidezApi from '../api/pruebas-acidez.api';
 import type {
-  PruebaAcidez,
   CreatePruebaAcidezDTO,
   UpdatePruebaAcidezDTO,
   SimularPruebaAcidezDTO,
-} from '../types';
+} from '../types/prueba-acidez.types';
 
 // ==================== QUERY KEYS ====================
 
 export const pruebasAcidezKeys = {
-  all: ['supply-chain', 'pruebas-acidez'] as const,
+  all: ['production-ops', 'pruebas-acidez'] as const,
   pruebas: () => [...pruebasAcidezKeys.all, 'list'] as const,
-  pruebasFiltered: (filters: Record<string, any>) => [...pruebasAcidezKeys.pruebas(), 'filtered', filters] as const,
+  pruebasFiltered: (filters: Record<string, unknown>) =>
+    [...pruebasAcidezKeys.pruebas(), 'filtered', filters] as const,
   prueba: (id: number) => [...pruebasAcidezKeys.all, 'detail', id] as const,
-  pruebasPorProveedor: (proveedorId: number) => [...pruebasAcidezKeys.all, 'proveedor', proveedorId] as const,
+  pruebasPorProveedor: (proveedorId: number) =>
+    [...pruebasAcidezKeys.all, 'proveedor', proveedorId] as const,
   pruebasPendientes: () => [...pruebasAcidezKeys.all, 'pendientes'] as const,
   estadisticas: () => [...pruebasAcidezKeys.all, 'estadisticas'] as const,
 };
@@ -54,8 +56,9 @@ export function useCreatePruebaAcidez() {
       queryClient.invalidateQueries({ queryKey: pruebasAcidezKeys.estadisticas() });
       toast.success('Prueba de acidez registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar prueba de acidez');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || 'Error al registrar prueba de acidez');
     },
   });
 }
@@ -70,8 +73,9 @@ export function useUpdatePruebaAcidez() {
       queryClient.invalidateQueries({ queryKey: pruebasAcidezKeys.prueba(id) });
       toast.success('Prueba de acidez actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar prueba de acidez');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || 'Error al actualizar prueba de acidez');
     },
   });
 }
@@ -85,8 +89,9 @@ export function useDeletePruebaAcidez() {
       queryClient.invalidateQueries({ queryKey: pruebasAcidezKeys.estadisticas() });
       toast.success('Prueba de acidez eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar prueba de acidez');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || 'Error al eliminar prueba de acidez');
     },
   });
 }
@@ -96,8 +101,9 @@ export function useDeletePruebaAcidez() {
 export function useSimularPruebaAcidez() {
   return useMutation({
     mutationFn: (data: SimularPruebaAcidezDTO) => pruebaAcidezApi.simular(data),
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al simular prueba de acidez');
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || 'Error al simular prueba de acidez');
     },
   });
 }
@@ -122,6 +128,6 @@ export function usePruebasPendientes() {
   return useQuery({
     queryKey: pruebasAcidezKeys.pruebasPendientes(),
     queryFn: () => pruebaAcidezApi.getPendientes(),
-    refetchInterval: 60000, // Refetch cada minuto
+    refetchInterval: 60000,
   });
 }

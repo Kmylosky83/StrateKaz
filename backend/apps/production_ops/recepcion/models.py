@@ -860,3 +860,212 @@ def actualizar_inventario_recepcion(sender, instance, created, **kwargs):
         # TODO: Implementar lógica de actualización de inventario
         pass
 """
+
+
+# ==============================================================================
+# PRUEBA DE ACIDEZ — Migrado desde Supply Chain (M1 pattern)
+# ==============================================================================
+
+def prueba_acidez_upload_path(instance, filename):
+    import os
+    from datetime import date
+    ext = filename.split('.')[-1]
+    today = date.today()
+    new_filename = f"foto_{today.strftime('%Y%m%d')}_{instance.proveedor_id or 'temp'}.{ext}"
+    return os.path.join('pruebas_acidez', str(today.year), str(today.month).zfill(2), new_filename)
+
+
+class PruebaAcidez(models.Model):
+    """
+    Prueba de Acidez — Control de calidad en recepción de sebo procesado.
+
+    Migrado desde supply_chain.gestion_proveedores.
+    Usa patrón M1 (PositiveBigIntegerField + CharField cache) para
+    referencias cross-C2 a Proveedor y TipoMateriaPrima.
+    """
+    CALIDAD_SEBO_CHOICES = [
+        ('A', 'Calidad A (Acidez < 3%)'),
+        ('B', 'Calidad B (Acidez 3-5%)'),
+        ('B1', 'Calidad B1 (Acidez 5-8%)'),
+        ('B2', 'Calidad B2 (Acidez 8-12%)'),
+        ('B4', 'Calidad B4 (Acidez 12-15%)'),
+        ('C', 'Calidad C (Acidez > 15%)'),
+    ]
+
+    # M1 pattern: referencia cross-C2 a Proveedor (Supply Chain)
+    proveedor_id = models.PositiveBigIntegerField(
+        db_index=True,
+        verbose_name='Proveedor'
+    )
+    proveedor_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre del proveedor'
+    )
+
+    fecha_prueba = models.DateTimeField(verbose_name='Fecha de prueba')
+    valor_acidez = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        verbose_name='Valor de acidez (%)'
+    )
+    calidad_resultante = models.CharField(
+        max_length=2,
+        choices=CALIDAD_SEBO_CHOICES,
+        verbose_name='Calidad resultante'
+    )
+
+    # M1 pattern: referencia cross-C2 a TipoMateriaPrima (Supply Chain)
+    tipo_materia_resultante_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Tipo materia resultante'
+    )
+    tipo_materia_resultante_nombre = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name='Nombre tipo materia resultante'
+    )
+
+    foto_prueba = models.ImageField(
+        upload_to=prueba_acidez_upload_path,
+        verbose_name='Foto de la prueba'
+    )
+    cantidad_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name='Cantidad (kg)'
+    )
+    precio_kg_aplicado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Precio por kg aplicado'
+    )
+    valor_total = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor total'
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    lote_numero = models.CharField(max_length=50, blank=True, null=True)
+    codigo_voucher = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='Código de voucher'
+    )
+    realizado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='po_pruebas_acidez_realizadas',
+        verbose_name='Realizado por'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'supply_chain_prueba_acidez'
+        verbose_name = 'Prueba de Acidez'
+        verbose_name_plural = 'Pruebas de Acidez'
+        ordering = ['-fecha_prueba', '-created_at']
+        indexes = [
+            models.Index(fields=['proveedor_id', '-fecha_prueba']),
+            models.Index(fields=['calidad_resultante', '-fecha_prueba']),
+            models.Index(fields=['codigo_voucher']),
+            models.Index(fields=['deleted_at']),
+        ]
+
+    def __str__(self):
+        return f"Prueba {self.codigo_voucher} - {self.proveedor_nombre}"
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
+
+    def determinar_calidad_y_tipo(self):
+        """
+        Determina la calidad y tipo de materia prima según acidez.
+        Usa apps.get_model() para acceder a TipoMateriaPrima (Supply Chain).
+        """
+        from django.apps import apps
+        try:
+            TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
+        except LookupError:
+            return 'C', None, ''
+
+        tipo = TipoMateriaPrima.obtener_por_acidez(self.valor_acidez)
+        if tipo:
+            calidad_map = {
+                'SEBO_PROCESADO_A': 'A',
+                'SEBO_PROCESADO_B': 'B',
+                'SEBO_PROCESADO_B1': 'B1',
+                'SEBO_PROCESADO_B2': 'B2',
+                'SEBO_PROCESADO_B4': 'B4',
+                'SEBO_PROCESADO_C': 'C',
+            }
+            calidad = calidad_map.get(tipo.codigo, 'C')
+            return calidad, tipo.id, tipo.nombre
+        return 'C', None, ''
+
+    @classmethod
+    def generar_codigo_voucher(cls):
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        try:
+            return ConsecutivoConfig.obtener_siguiente_consecutivo('PRUEBA_ACIDEZ')
+        except ConsecutivoConfig.DoesNotExist:
+            from datetime import date
+            hoy = date.today()
+            prefijo = f"ACID-{hoy.strftime('%Y%m%d')}-"
+            ultimo = cls.objects.filter(
+                codigo_voucher__startswith=prefijo
+            ).order_by('-codigo_voucher').first()
+            if ultimo:
+                try:
+                    numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    numero = 1
+            else:
+                numero = 1
+            return f"{prefijo}{numero:04d}"
+
+    def soft_delete(self):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['deleted_at', 'updated_at'])
+
+    def restore(self):
+        self.deleted_at = None
+        self.save(update_fields=['deleted_at', 'updated_at'])
+
+    def save(self, *args, **kwargs):
+        # Determinar calidad y tipo automáticamente
+        if self.valor_acidez is not None:
+            calidad, tipo_id, tipo_nombre = self.determinar_calidad_y_tipo()
+            self.calidad_resultante = calidad
+            self.tipo_materia_resultante_id = tipo_id
+            self.tipo_materia_resultante_nombre = tipo_nombre
+
+        # Generar código de voucher
+        if not self.codigo_voucher:
+            self.codigo_voucher = self.generar_codigo_voucher()
+
+        # Calcular valor total
+        if self.cantidad_kg and self.precio_kg_aplicado:
+            self.valor_total = Decimal(str(self.cantidad_kg)) * Decimal(str(self.precio_kg_aplicado))
+
+        # Cache nombre del proveedor
+        if self.proveedor_id and not self.proveedor_nombre:
+            from django.apps import apps
+            try:
+                Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+                prov = Proveedor.objects.filter(id=self.proveedor_id).values_list('nombre_comercial', flat=True).first()
+                if prov:
+                    self.proveedor_nombre = prov
+            except LookupError:
+                pass
+
+        super().save(*args, **kwargs)

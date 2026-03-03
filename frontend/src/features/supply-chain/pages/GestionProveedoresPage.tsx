@@ -5,20 +5,19 @@
  * Tabs operativos:
  * 1. Proveedores - Lista, crear, editar proveedores + Importación masiva + KPIs
  * 2. Precios - Gestión de precios por tipo materia prima
- * 3. Pruebas de Acidez - Registro de pruebas con cálculo automático de calidad
- * 4. Evaluaciones - Evaluación periódica de proveedores
- * 5. Configuración - Catálogos dinámicos + Unidades de Negocio (admin)
+ * 3. Evaluaciones - Evaluación periódica de proveedores
+ * 4. Configuración - Catálogos dinámicos + Unidades de Negocio (admin)
+ *
+ * NOTA: Pruebas de Acidez → migradas a Production Ops Recepción
  */
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
 import { PageTabs } from '@/components/layout';
 import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import { Button } from '@/components/common/Button';
-import { Card } from '@/components/common/Card';
 import {
   Users,
   DollarSign,
-  FlaskConical,
   ClipboardCheck,
   Settings,
   Building2,
@@ -32,13 +31,11 @@ import { ProveedoresTable } from '../components/ProveedoresTable';
 import { ProveedorForm } from '../components/ProveedorForm';
 import ImportProveedoresModal from '../components/ImportProveedoresModal';
 import { PreciosTab } from '../components/PreciosTab';
-import { PruebaAcidezTable } from '../components/PruebaAcidezTable';
-import { PruebaAcidezForm } from '../components/PruebaAcidezForm';
 import { EvaluacionesTab } from '../components/EvaluacionesTab';
 import { CatalogosTab } from '../components/CatalogosTab';
 import { UnidadesNegocioTab } from '../components/UnidadesNegocioTab';
 import { useProveedor, useEstadisticasProveedores } from '../hooks/useProveedores';
-import type { ProveedorList, PruebaAcidez } from '../types';
+import type { ProveedorList } from '../types';
 
 // ==================== TABS CONFIGURATION ====================
 
@@ -56,12 +53,6 @@ const tabs = [
     description: 'Precios de materia prima por proveedor',
   },
   {
-    id: 'pruebas-acidez',
-    label: 'Pruebas de Acidez',
-    icon: FlaskConical,
-    description: 'Control de calidad de materia prima',
-  },
-  {
     id: 'evaluaciones',
     label: 'Evaluaciones',
     icon: ClipboardCheck,
@@ -74,44 +65,6 @@ const tabs = [
     description: 'Catálogos dinámicos y unidades de negocio',
   },
 ];
-
-// ==================== PRUEBAS ACIDEZ TAB ====================
-
-function PruebasAcidezTab() {
-  const [showForm, setShowForm] = useState(false);
-  const [editPrueba, setEditPrueba] = useState<PruebaAcidez | null>(null);
-
-  if (showForm) {
-    return (
-      <Card variant="bordered" padding="lg">
-        <PruebaAcidezForm
-          prueba={editPrueba}
-          onSuccess={() => {
-            setShowForm(false);
-            setEditPrueba(null);
-          }}
-          onCancel={() => {
-            setShowForm(false);
-            setEditPrueba(null);
-          }}
-        />
-      </Card>
-    );
-  }
-
-  return (
-    <PruebaAcidezTable
-      onNew={() => {
-        setEditPrueba(null);
-        setShowForm(true);
-      }}
-      onEdit={(prueba) => {
-        setEditPrueba(prueba);
-        setShowForm(true);
-      }}
-    />
-  );
-}
 
 // ==================== CONFIGURACIÓN TAB (Catálogos + Unidades) ====================
 
@@ -267,7 +220,6 @@ export default function GestionProveedoresPage() {
         />
       )}
       {activeTab === 'precios' && <PreciosTab />}
-      {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
       {activeTab === 'evaluaciones' && <EvaluacionesTab />}
       {activeTab === 'configuracion' && <ConfiguracionTab />}
 

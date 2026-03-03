@@ -1,5 +1,6 @@
 /**
  * Componente: Tabla de Pruebas de Acidez con filtros
+ * NOTA: Migrado de Supply Chain a Production Ops
  *
  * Características:
  * - Filtros por proveedor, fecha, estado
@@ -8,7 +9,7 @@
  * - Paginación
  */
 import { useState } from 'react';
-import { Edit, Eye, Trash2, Filter, Plus, FlaskConical, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Edit, Eye, Trash2, Filter, Plus, FlaskConical, CheckCircle, XCircle } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -19,8 +20,8 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
 import { usePruebasAcidez, useDeletePruebaAcidez } from '../hooks/usePruebasAcidez';
-import { useProveedores } from '../hooks/useProveedores';
-import type { PruebaAcidez } from '../types';
+import { useSelectProveedores } from '@/hooks/useSelectLists';
+import type { PruebaAcidez } from '../types/prueba-acidez.types';
 
 // ==================== TIPOS ====================
 
@@ -41,7 +42,9 @@ interface Filtros {
 
 // ==================== UTILIDADES ====================
 
-const getAccionBadgeVariant = (accion: string | undefined): 'success' | 'warning' | 'danger' | 'gray' | 'info' => {
+const getAccionBadgeVariant = (
+  accion: string | undefined
+): 'success' | 'warning' | 'danger' | 'gray' | 'info' => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'gray' | 'info'> = {
     ACEPTADO: 'success',
     RECHAZADO: 'danger',
@@ -68,9 +71,7 @@ const formatDate = (dateString: string): string => {
 // ==================== COMPONENTE ====================
 
 export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: PruebaAcidezTableProps) {
-  const [filtros, setFiltros] = useState<Filtros>(
-    proveedorId ? { proveedor: proveedorId } : {}
-  );
+  const [filtros, setFiltros] = useState<Filtros>(proveedorId ? { proveedor: proveedorId } : {});
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -80,13 +81,12 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
     ...filtros,
   });
 
-  const { data: proveedoresData } = useProveedores({ estado: 'ACTIVO' });
+  const { data: proveedores = [] } = useSelectProveedores();
   const deleteMutation = useDeletePruebaAcidez();
 
   // Manejar datos con o sin paginación
   const pruebas = Array.isArray(pruebasData) ? pruebasData : pruebasData?.results || [];
   const totalCount = Array.isArray(pruebasData) ? pruebasData.length : pruebasData?.count || 0;
-  const proveedores = Array.isArray(proveedoresData) ? proveedoresData : proveedoresData?.results || [];
 
   // ==================== HANDLERS ====================
 
@@ -96,7 +96,7 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
     }
   };
 
-  const handleFilterChange = (key: keyof Filtros, value: any) => {
+  const handleFilterChange = (key: keyof Filtros, value: unknown) => {
     setFiltros((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };
@@ -158,7 +158,12 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
             </Button>
           )}
           {onNew && (
-            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onNew}
+            >
               Nueva Prueba
             </Button>
           )}
@@ -181,13 +186,16 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
                 label="Proveedor"
                 value={filtros.proveedor || ''}
                 onChange={(e) =>
-                  handleFilterChange('proveedor', e.target.value ? Number(e.target.value) : undefined)
+                  handleFilterChange(
+                    'proveedor',
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
                 }
               >
                 <option value="">Todos</option>
-                {proveedores.map((prov: any) => (
+                {proveedores.map((prov) => (
                   <option key={prov.id} value={prov.id}>
-                    {prov.razon_social}
+                    {prov.label}
                   </option>
                 ))}
               </Select>
@@ -208,7 +216,11 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
 
               <Select
                 label="Cumplimiento"
-                value={filtros.cumple_especificacion === undefined ? '' : String(filtros.cumple_especificacion)}
+                value={
+                  filtros.cumple_especificacion === undefined
+                    ? ''
+                    : String(filtros.cumple_especificacion)
+                }
                 onChange={(e) =>
                   handleFilterChange(
                     'cumple_especificacion',
@@ -343,8 +355,8 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, totalCount)} de {totalCount}{' '}
-            pruebas
+            Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, totalCount)} de{' '}
+            {totalCount} pruebas
           </div>
           <div className="flex items-center gap-2">
             <Button

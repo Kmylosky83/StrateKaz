@@ -25,6 +25,7 @@ from .models import (
     Recepcion,
     DetalleRecepcion,
     ControlCalidadRecepcion,
+    PruebaAcidez,
 )
 from .serializers import (
     # Catálogos
@@ -44,6 +45,11 @@ from .serializers import (
     DetalleRecepcionSerializer,
     ControlCalidadRecepcionSerializer,
     RegistrarControlCalidadSerializer,
+    # Pruebas de Acidez
+    PruebaAcidezListSerializer,
+    PruebaAcidezDetailSerializer,
+    PruebaAcidezCreateSerializer,
+    SimularPruebaAcidezSerializer,
 )
 
 
@@ -782,5 +788,152 @@ class ControlCalidadRecepcionViewSet(viewsets.ModelViewSet):
                 'empresa_id': empresa_id,
                 'fecha_desde': fecha_desde,
                 'fecha_hasta': fecha_hasta,
+            }
+        })
+
+
+# ==============================================================================
+# VIEWSET DE PRUEBA DE ACIDEZ (Migrado desde Supply Chain)
+# ==============================================================================
+
+class PruebaAcidezViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para Pruebas de Acidez de Sebo Procesado.
+
+    Endpoints:
+    - GET /api/production-ops/recepcion/pruebas-acidez/
+    - POST /api/production-ops/recepcion/pruebas-acidez/
+    - GET /api/production-ops/recepcion/pruebas-acidez/{id}/
+    - DELETE /api/production-ops/recepcion/pruebas-acidez/{id}/
+    - POST /api/production-ops/recepcion/pruebas-acidez/simular/
+    - POST /api/production-ops/recepcion/pruebas-acidez/{id}/restore/
+    - GET /api/production-ops/recepcion/pruebas-acidez/por-proveedor/{id}/
+    - GET /api/production-ops/recepcion/pruebas-acidez/estadisticas/
+    """
+
+    queryset = PruebaAcidez.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['proveedor_id', 'calidad_resultante', 'realizado_por']
+    search_fields = ['codigo_voucher', 'proveedor_nombre', 'lote_numero']
+    ordering_fields = ['fecha_prueba', 'created_at', 'valor_acidez', 'cantidad_kg']
+    ordering = ['-fecha_prueba']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        include_deleted = self.request.query_params.get('include_deleted', 'false')
+        if include_deleted.lower() != 'true':
+            queryset = queryset.filter(deleted_at__isnull=True)
+
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_prueba__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_prueba__lte=fecha_hasta)
+
+        return queryset.select_related('realizado_por')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PruebaAcidezListSerializer
+        elif self.action == 'create':
+            return PruebaAcidezCreateSerializer
+        elif self.action == 'simular':
+            return SimularPruebaAcidezSerializer
+        return PruebaAcidezDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(realizado_por=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=False, methods=['post'])
+    def simular(self, request):
+        serializer = SimularPruebaAcidezSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resultado = serializer.simulate()
+        return Response(resultado)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        prueba = self.get_object()
+        if not prueba.is_deleted:
+            return Response(
+                {'detail': 'La prueba no está eliminada'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        prueba.restore()
+        serializer = self.get_serializer(prueba)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='por-proveedor/(?P<proveedor_id>[^/.]+)')
+    def por_proveedor(self, request, proveedor_id=None):
+        from django.apps import apps
+        try:
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            proveedor = Proveedor.objects.get(pk=proveedor_id)
+        except Exception:
+            return Response(
+                {'detail': 'Proveedor no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        pruebas = PruebaAcidez.objects.filter(
+            proveedor_id=proveedor_id,
+            deleted_at__isnull=True
+        ).select_related('realizado_por').order_by('-fecha_prueba')
+
+        serializer = PruebaAcidezListSerializer(pruebas, many=True)
+        return Response({
+            'proveedor': proveedor.nombre_comercial,
+            'proveedor_id': proveedor.id,
+            'total_pruebas': pruebas.count(),
+            'pruebas': serializer.data
+        })
+
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        queryset = PruebaAcidez.objects.filter(deleted_at__isnull=True)
+
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_prueba__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_prueba__lte=fecha_hasta)
+
+        por_calidad = queryset.values('calidad_resultante').annotate(
+            cantidad=Count('id'),
+            total_kg=Sum('cantidad_kg'),
+            total_valor=Sum('valor_total'),
+            acidez_promedio=Avg('valor_acidez')
+        ).order_by('calidad_resultante')
+
+        por_tipo = queryset.values(
+            'tipo_materia_resultante_nombre'
+        ).annotate(
+            cantidad=Count('id'),
+            total_kg=Sum('cantidad_kg'),
+            total_valor=Sum('valor_total'),
+            acidez_promedio=Avg('valor_acidez')
+        ).order_by('tipo_materia_resultante_nombre')
+
+        totales = queryset.aggregate(
+            total_pruebas=Count('id'),
+            total_kg=Sum('cantidad_kg'),
+            total_valor=Sum('valor_total'),
+            acidez_promedio=Avg('valor_acidez')
+        )
+
+        return Response({
+            'por_calidad': list(por_calidad),
+            'por_tipo_materia': list(por_tipo),
+            'totales': totales,
+            'filtros': {
+                'fecha_desde': fecha_desde,
+                'fecha_hasta': fecha_hasta
             }
         })

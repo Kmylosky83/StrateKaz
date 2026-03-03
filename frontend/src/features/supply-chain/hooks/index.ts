@@ -12,8 +12,7 @@ export * from './useProveedores';
 // ==================== EVALUACIONES ====================
 export * from './useEvaluaciones';
 
-// ==================== PRUEBAS DE ACIDEZ ====================
-export * from './usePruebasAcidez';
+// NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/hooks/)
 
 // ==================== PROGRAMACIÓN DE ABASTECIMIENTO ====================
 export * from './useProgramacion';

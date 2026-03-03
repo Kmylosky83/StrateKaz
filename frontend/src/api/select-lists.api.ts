@@ -53,4 +53,25 @@ export const selectListsAPI = {
     const response = await apiClient.get<SelectListItem[]>(`${BASE}/roles/`);
     return response.data;
   },
+
+  getDepartamentos: async (): Promise<SelectListItem[]> => {
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/departamentos/`);
+    return response.data;
+  },
+
+  getCiudades: async (departamentoId?: number): Promise<SelectListItem[]> => {
+    const params = departamentoId ? { departamento_id: departamentoId } : undefined;
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/ciudades/`, { params });
+    return response.data;
+  },
+
+  getTiposDocumento: async (): Promise<SelectListItem[]> => {
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/tipos-documento/`);
+    return response.data;
+  },
+
+  getTiposMateriaPrima: async (): Promise<SelectListItem[]> => {
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/tipos-materia-prima/`);
+    return response.data;
+  },
 };

@@ -95,9 +95,9 @@ export function PreciosTab() {
     await cambiarPrecioMutation.mutateAsync({
       id: selectedProveedorId,
       data: {
-        tipo_materia_prima: precioSeleccionado.tipo_materia_prima,
+        tipo_materia_id: precioSeleccionado.tipo_materia,
         precio_nuevo: Number(formData.get('precio_nuevo')),
-        motivo_cambio: String(formData.get('motivo_cambio') || ''),
+        motivo: String(formData.get('motivo') || ''),
       },
     });
     setShowCambiarPrecio(false);
@@ -174,13 +174,10 @@ export function PreciosTab() {
                       </td>
                     )}
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {precio.tipo_materia_prima_nombre || `MP #${precio.tipo_materia_prima}`}
+                      {precio.tipo_materia_nombre || `MP #${precio.tipo_materia}`}
                     </td>
                     <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(precio.precio_unitario)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {precio.fecha_vigencia ? formatDate(precio.fecha_vigencia) : '-'}
+                      {formatCurrency(precio.precio_kg)}
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
                       <div className="flex items-center justify-end gap-1">

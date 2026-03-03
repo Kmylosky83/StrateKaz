@@ -8,27 +8,28 @@ from rest_framework import serializers
 from decimal import Decimal
 
 from .models import (
-    # Catálogos dinámicos
+    # Catálogos dinámicos (los propios de Supply Chain)
     CategoriaMateriaPrima,
     TipoMateriaPrima,
     TipoProveedor,
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
-    TipoDocumentoIdentidad,
-    Departamento,
-    Ciudad,
     # Modelos principales
     UnidadNegocio,
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
     CondicionComercialProveedor,
-    PruebaAcidez,
     # Evaluación
     CriterioEvaluacion,
     EvaluacionProveedor,
     DetalleEvaluacion,
+)
+# Datos Maestros Compartidos — migrados a Core (C0)
+from apps.core.serializers_datos_maestros import (
+    TipoDocumentoIdentidadSerializer,
+    DepartamentoSerializer,
 )
 
 
@@ -108,36 +109,8 @@ class TipoCuentaBancariaSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class TipoDocumentoIdentidadSerializer(serializers.ModelSerializer):
-    """Serializer para tipos de documento."""
-
-    class Meta:
-        model = TipoDocumentoIdentidad
-        fields = ['id', 'codigo', 'nombre', 'orden', 'is_active']
-        read_only_fields = ['id']
-
-
-class DepartamentoSerializer(serializers.ModelSerializer):
-    """Serializer para departamentos."""
-
-    class Meta:
-        model = Departamento
-        fields = ['id', 'codigo', 'nombre', 'codigo_dane', 'orden', 'is_active']
-        read_only_fields = ['id']
-
-
-class CiudadSerializer(serializers.ModelSerializer):
-    """Serializer para ciudades."""
-
-    departamento_nombre = serializers.CharField(source='departamento.nombre', read_only=True)
-
-    class Meta:
-        model = Ciudad
-        fields = [
-            'id', 'departamento', 'departamento_nombre', 'codigo', 'nombre',
-            'codigo_dane', 'es_capital', 'orden', 'is_active'
-        ]
-        read_only_fields = ['id']
+# TipoDocumentoIdentidadSerializer, DepartamentoSerializer, CiudadSerializer
+# → Migrados a Core (C0): apps.core.serializers_datos_maestros
 
 
 # ==============================================================================
@@ -642,191 +615,7 @@ class CondicionComercialSerializer(serializers.ModelSerializer):
         return CondicionComercialProveedor.objects.create(**validated_data)
 
 
-# ==============================================================================
-# SERIALIZERS DE PRUEBA DE ACIDEZ
-# ==============================================================================
-
-class PruebaAcidezListSerializer(serializers.ModelSerializer):
-    """Serializer para listado de pruebas de acidez."""
-
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    calidad_resultante_display = serializers.CharField(source='get_calidad_resultante_display', read_only=True)
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia_resultante.nombre', read_only=True)
-    realizado_por_nombre = serializers.CharField(source='realizado_por.get_full_name', read_only=True)
-    is_deleted = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = PruebaAcidez
-        fields = [
-            'id', 'codigo_voucher', 'proveedor', 'proveedor_nombre',
-            'fecha_prueba', 'valor_acidez', 'calidad_resultante', 'calidad_resultante_display',
-            'tipo_materia_resultante', 'tipo_materia_nombre',
-            'cantidad_kg', 'precio_kg_aplicado', 'valor_total',
-            'realizado_por_nombre', 'created_at', 'is_deleted'
-        ]
-
-
-class PruebaAcidezDetailSerializer(serializers.ModelSerializer):
-    """Serializer para detalle de prueba de acidez."""
-
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    proveedor_documento = serializers.CharField(source='proveedor.numero_documento', read_only=True)
-    calidad_resultante_display = serializers.CharField(source='get_calidad_resultante_display', read_only=True)
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia_resultante.nombre', read_only=True)
-    realizado_por_nombre = serializers.CharField(source='realizado_por.get_full_name', read_only=True)
-    is_deleted = serializers.BooleanField(read_only=True)
-    foto_prueba_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = PruebaAcidez
-        fields = '__all__'
-        read_only_fields = [
-            'calidad_resultante', 'tipo_materia_resultante', 'codigo_voucher',
-            'precio_kg_aplicado', 'valor_total', 'created_at', 'updated_at', 'deleted_at'
-        ]
-
-    def get_foto_prueba_url(self, obj):
-        request = self.context.get('request')
-        if obj.foto_prueba and hasattr(obj.foto_prueba, 'url'):
-            if request:
-                return request.build_absolute_uri(obj.foto_prueba.url)
-            return obj.foto_prueba.url
-        return None
-
-
-class PruebaAcidezCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear pruebas de acidez."""
-
-    class Meta:
-        model = PruebaAcidez
-        fields = [
-            'proveedor', 'fecha_prueba', 'valor_acidez', 'foto_prueba',
-            'cantidad_kg', 'observaciones', 'lote_numero'
-        ]
-
-    def validate_proveedor(self, value):
-        # Validar que el proveedor maneje SEBO (buscar por categoría)
-        tipos_sebo = TipoMateriaPrima.objects.filter(
-            categoria__codigo__icontains='SEBO',
-            is_active=True
-        )
-        if not value.tipos_materia_prima.filter(id__in=tipos_sebo.values_list('id', flat=True)).exists():
-            raise serializers.ValidationError(
-                'Solo se pueden registrar pruebas de acidez para proveedores de SEBO'
-            )
-        return value
-
-    def validate_valor_acidez(self, value):
-        if value < 0:
-            raise serializers.ValidationError('El valor de acidez no puede ser negativo')
-        if value > 100:
-            raise serializers.ValidationError('El valor de acidez no puede ser mayor a 100%')
-        return value
-
-    def validate_cantidad_kg(self, value):
-        if value <= 0:
-            raise serializers.ValidationError('La cantidad debe ser mayor a 0')
-        return value
-
-    def create(self, validated_data):
-        request = self.context.get('request')
-        if request and hasattr(request, 'user'):
-            validated_data['realizado_por'] = request.user
-        return PruebaAcidez.objects.create(**validated_data)
-
-
-class SimularPruebaAcidezSerializer(serializers.Serializer):
-    """Serializer para simular resultado de prueba de acidez sin crear registro."""
-
-    valor_acidez = serializers.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        required=True,
-        help_text='Valor de acidez a simular (%)'
-    )
-    proveedor_id = serializers.IntegerField(
-        required=True,
-        help_text='ID del proveedor para obtener precio'
-    )
-    cantidad_kg = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        required=False,
-        default=0,
-        help_text='Cantidad para calcular valor total (opcional)'
-    )
-
-    def validate_valor_acidez(self, value):
-        if value < 0:
-            raise serializers.ValidationError('El valor de acidez no puede ser negativo')
-        if value > 100:
-            raise serializers.ValidationError('El valor de acidez no puede ser mayor a 100%')
-        return value
-
-    def validate_proveedor_id(self, value):
-        try:
-            proveedor = Proveedor.objects.get(id=value)
-            # Validar que maneja SEBO
-            tipos_sebo = TipoMateriaPrima.objects.filter(
-                categoria__codigo__icontains='SEBO',
-                is_active=True
-            )
-            if not proveedor.tipos_materia_prima.filter(id__in=tipos_sebo.values_list('id', flat=True)).exists():
-                raise serializers.ValidationError('El proveedor no maneja SEBO')
-            self.context['proveedor'] = proveedor
-        except Proveedor.DoesNotExist:
-            raise serializers.ValidationError('Proveedor no encontrado')
-        return value
-
-    def simulate(self):
-        valor_acidez = self.validated_data['valor_acidez']
-        cantidad_kg = self.validated_data.get('cantidad_kg', 0)
-        proveedor = self.context.get('proveedor')
-
-        # Determinar tipo de materia prima según acidez
-        tipo_materia = TipoMateriaPrima.obtener_por_acidez(float(valor_acidez))
-
-        precio_kg = None
-        valor_total = None
-        precio_existe = False
-
-        if proveedor and tipo_materia:
-            precio_obj = proveedor.precios_materia_prima.filter(
-                tipo_materia=tipo_materia
-            ).first()
-            if precio_obj:
-                precio_kg = float(precio_obj.precio_kg)
-                precio_existe = True
-                if cantidad_kg > 0:
-                    valor_total = float(cantidad_kg) * precio_kg
-
-        # Determinar calidad
-        calidad_map = {
-            'SEBO_PROCESADO_A': ('A', 'Calidad A'),
-            'SEBO_PROCESADO_B': ('B', 'Calidad B'),
-            'SEBO_PROCESADO_B1': ('B1', 'Calidad B1'),
-            'SEBO_PROCESADO_B2': ('B2', 'Calidad B2'),
-            'SEBO_PROCESADO_B4': ('B4', 'Calidad B4'),
-            'SEBO_PROCESADO_C': ('C', 'Calidad C'),
-        }
-
-        calidad = 'C'
-        calidad_display = 'Calidad C'
-        if tipo_materia and tipo_materia.codigo in calidad_map:
-            calidad, calidad_display = calidad_map[tipo_materia.codigo]
-
-        return {
-            'valor_acidez': float(valor_acidez),
-            'calidad_resultante': calidad,
-            'calidad_resultante_display': calidad_display,
-            'tipo_materia': tipo_materia.nombre if tipo_materia else None,
-            'tipo_materia_id': tipo_materia.id if tipo_materia else None,
-            'precio_kg': precio_kg,
-            'precio_existe': precio_existe,
-            'cantidad_kg': float(cantidad_kg) if cantidad_kg else None,
-            'valor_total': valor_total,
-            'mensaje': f'Con {valor_acidez}% de acidez, la calidad es {calidad_display}'
-        }
+# PruebaAcidez serializers → Movidos a production_ops.recepcion.serializers
 
 
 # ==============================================================================

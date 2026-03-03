@@ -95,21 +95,7 @@ export type {
   EstadisticasEvaluacion,
 } from './evaluacion.types';
 
-// ==================== PRUEBAS DE ACIDEZ ====================
-
-export type {
-  // Pruebas
-  PruebaAcidez,
-  CreatePruebaAcidezDTO,
-  UpdatePruebaAcidezDTO,
-
-  // Simulación
-  SimularPruebaAcidezDTO,
-  SimularPruebaAcidezResponse,
-
-  // Estadísticas
-  EstadisticasPruebasAcidez,
-} from './prueba-acidez.types';
+// NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/types/)
 
 // ==================== PROGRAMACIÓN DE ABASTECIMIENTO ====================
 

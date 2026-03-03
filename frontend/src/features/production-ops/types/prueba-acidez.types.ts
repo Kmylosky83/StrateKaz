@@ -1,9 +1,15 @@
 /**
  * Tipos para Pruebas de Acidez de Sebo
- * Backend: backend/apps/supply_chain/gestion_proveedores/models.py
+ * Backend: backend/apps/production_ops/recepcion/models.py
+ * NOTA: Migrado de Supply Chain a Production Ops Recepción
  */
 
-import type { BaseTimestamped } from './catalogos.types';
+// ==================== BASE ====================
+
+interface BaseTimestamped {
+  created_at: string;
+  updated_at: string;
+}
 
 // ==================== PRUEBA DE ACIDEZ ====================
 

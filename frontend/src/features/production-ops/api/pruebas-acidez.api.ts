@@ -1,6 +1,7 @@
 /**
  * API Client para Pruebas de Acidez de Sebo
- * Backend: /api/supply-chain/pruebas-acidez/
+ * Backend: /api/production-ops/recepcion/pruebas-acidez/
+ * NOTA: Migrado de Supply Chain a Production Ops Recepción
  */
 import { apiClient } from '@/lib/api-client';
 import type {
@@ -10,10 +11,11 @@ import type {
   SimularPruebaAcidezDTO,
   SimularPruebaAcidezResponse,
   EstadisticasPruebasAcidez,
-  PaginatedResponse,
-} from '../types';
+} from '../types/prueba-acidez.types';
 
-const BASE_URL = '/supply-chain/pruebas-acidez';
+import type { PaginatedResponse } from '@/types';
+
+const BASE_URL = '/production-ops/recepcion/pruebas-acidez';
 
 // ==================== PRUEBAS DE ACIDEZ ====================
 
@@ -75,7 +77,6 @@ export const pruebaAcidezApi = {
 
   /**
    * Simular clasificación por acidez (custom action)
-   * Permite simular qué tipo de sebo resultaría según el valor de acidez
    */
   simular: async (data: SimularPruebaAcidezDTO): Promise<SimularPruebaAcidezResponse> => {
     const response = await apiClient.post<SimularPruebaAcidezResponse>(
@@ -138,7 +139,7 @@ export const pruebaAcidezApi = {
   /**
    * Exportar pruebas a Excel
    */
-  exportExcel: async (params?: Record<string, any>): Promise<Blob> => {
+  exportExcel: async (params?: Record<string, unknown>): Promise<Blob> => {
     const response = await apiClient.get(`${BASE_URL}/export_excel/`, {
       params,
       responseType: 'blob',
@@ -161,7 +162,5 @@ export const pruebaAcidezApi = {
     return response.data;
   },
 };
-
-// ==================== EXPORT DEFAULT ====================
 
 export default pruebaAcidezApi;

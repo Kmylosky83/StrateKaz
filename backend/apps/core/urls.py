@@ -64,6 +64,16 @@ from .views.select_lists import (
     select_users,
     select_cargos,
     select_roles,
+    select_departamentos,
+    select_ciudades,
+    select_tipos_documento,
+    select_tipos_materia_prima,
+)
+# Datos Maestros Compartidos (C0) — Departamentos, Ciudades, Tipos Documento
+from .viewsets_datos_maestros import (
+    TipoDocumentoIdentidadViewSet as CoreTipoDocumentoViewSet,
+    DepartamentoViewSet as CoreDepartamentoViewSet,
+    CiudadViewSet as CoreCiudadViewSet,
 )
 
 app_name = 'core'
@@ -96,6 +106,11 @@ router.register(r'tab-sections', TabSectionViewSet, basename='tab-section')
 
 # Endpoints Sesiones de Usuario (MS-002-A)
 router.register(r'sessions', UserSessionViewSet, basename='session')
+
+# Datos Maestros Compartidos (C0) — Migrados de Supply Chain
+router.register(r'tipos-documento', CoreTipoDocumentoViewSet, basename='tipo-documento')
+router.register(r'departamentos', CoreDepartamentoViewSet, basename='departamento')
+router.register(r'ciudades', CoreCiudadViewSet, basename='ciudad')
 
 urlpatterns = [
     # Endpoints funcionales
@@ -139,6 +154,10 @@ urlpatterns = [
     path('select-lists/users/', select_users, name='select-users'),
     path('select-lists/cargos/', select_cargos, name='select-cargos'),
     path('select-lists/roles/', select_roles, name='select-roles'),
+    path('select-lists/departamentos/', select_departamentos, name='select-departamentos'),
+    path('select-lists/ciudades/', select_ciudades, name='select-ciudades'),
+    path('select-lists/tipos-documento/', select_tipos_documento, name='select-tipos-documento'),
+    path('select-lists/tipos-materia-prima/', select_tipos_materia_prima, name='select-tipos-materia-prima'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

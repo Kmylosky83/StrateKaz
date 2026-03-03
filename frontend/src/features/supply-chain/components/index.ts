@@ -10,9 +10,7 @@ export { default as ImportProveedoresModal } from './ImportProveedoresModal';
 // Evaluaciones
 export { EvaluacionProveedorForm } from './EvaluacionProveedorForm';
 
-// Pruebas de Acidez
-export { PruebaAcidezTable } from './PruebaAcidezTable';
-export { PruebaAcidezForm } from './PruebaAcidezForm';
+// NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/components/)
 
 // Tabs - Gestión de Proveedores
 export { PreciosTab } from './PreciosTab';

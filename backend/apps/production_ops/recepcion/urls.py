@@ -19,6 +19,8 @@ from .views import (
     RecepcionViewSet,
     DetalleRecepcionViewSet,
     ControlCalidadRecepcionViewSet,
+    # Pruebas de Acidez (migrado desde Supply Chain)
+    PruebaAcidezViewSet,
 )
 
 app_name = 'recepcion'
@@ -57,6 +59,13 @@ router.register(
     r'controles-calidad',
     ControlCalidadRecepcionViewSet,
     basename='control-calidad'
+)
+
+# Pruebas de Acidez (migrado desde Supply Chain)
+router.register(
+    r'pruebas-acidez',
+    PruebaAcidezViewSet,
+    basename='prueba-acidez'
 )
 
 urlpatterns = [

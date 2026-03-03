@@ -727,9 +727,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         base_qs = Proveedor.objects.filter(deleted_at__isnull=True)
 
         total = base_qs.count()
-        activos = base_qs.filter(estado='ACTIVO').count()
-        inactivos = base_qs.filter(estado='INACTIVO').count()
-        criticos = base_qs.filter(estado__in=['SUSPENDIDO', 'BLOQUEADO']).count()
+        activos = base_qs.filter(is_active=True).count()
+        inactivos = base_qs.filter(is_active=False).count()
 
         # Por tipo
         por_tipo = list(
@@ -740,17 +739,6 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         por_tipo_clean = [
             {'tipo': item['tipo_proveedor__nombre'] or 'Sin tipo', 'count': item['count']}
             for item in por_tipo
-        ]
-
-        # Por estado
-        por_estado = list(
-            base_qs.values('estado')
-            .annotate(count=Count('id'))
-            .order_by('-count')
-        )
-        por_estado_clean = [
-            {'estado': item['estado'] or 'Sin estado', 'count': item['count']}
-            for item in por_estado
         ]
 
         # Calificación promedio (de evaluaciones completadas)
@@ -766,9 +754,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             'total_proveedores': total,
             'proveedores_activos': activos,
             'proveedores_inactivos': inactivos,
-            'proveedores_criticos': criticos,
             'por_tipo': por_tipo_clean,
-            'por_estado': por_estado_clean,
             'calificacion_promedio': round(float(calificacion), 1) if calificacion else None,
             'total_materias_primas': total_materias,
         })

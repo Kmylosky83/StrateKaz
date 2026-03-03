@@ -496,21 +496,38 @@ class ForgotPasswordView(APIView):
         return Response({'message': success_message})
 
     def _send_reset_email(self, user, token):
-        """Envia email de restablecimiento de contrasena."""
+        """Envia email de restablecimiento de contrasena con branding del tenant."""
         try:
             from apps.audit_system.centro_notificaciones.email_service import EmailService
 
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
             reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
+
+            # Obtener branding del primer tenant del usuario
+            tenant_name = 'StrateKaz'
+            primary_color = '#3b82f6'
+            secondary_color = '#1e40af'
+            try:
+                tenant_access = user.tenant_accesses.filter(is_active=True).select_related('tenant').first()
+                if tenant_access and tenant_access.tenant:
+                    tenant = tenant_access.tenant
+                    tenant_name = tenant.company_name or tenant.name or 'StrateKaz'
+                    primary_color = tenant.primary_color or '#3b82f6'
+                    secondary_color = tenant.secondary_color or '#1e40af'
+            except Exception:
+                pass
 
             EmailService.send_email(
                 to_email=user.email,
-                subject='Restablecer contrasena',
+                subject=f'Restablecer contraseña — {tenant_name}',
                 template_name='password_reset',
                 context={
                     'user_name': user.full_name,
                     'reset_url': reset_url,
                     'expiry_hours': 1,
+                    'tenant_name': tenant_name,
+                    'primary_color': primary_color,
+                    'secondary_color': secondary_color,
                 }
             )
         except Exception as e:
@@ -518,19 +535,19 @@ class ForgotPasswordView(APIView):
             # Fallback: enviar email simple con Django
             try:
                 from django.core.mail import send_mail
-                frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+                frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
                 reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
                 send_mail(
-                    subject='[StrateKaz] Restablecer contrasena',
+                    subject='Restablecer contraseña — StrateKaz',
                     message=(
                         f'Hola {user.full_name},\n\n'
-                        f'Recibimos una solicitud para restablecer tu contrasena.\n\n'
+                        f'Recibimos una solicitud para restablecer tu contraseña.\n\n'
                         f'Haz clic en el siguiente enlace:\n{reset_url}\n\n'
                         f'Este enlace expira en 1 hora.\n\n'
                         f'Si no solicitaste esto, ignora este correo.\n\n'
                         f'Equipo StrateKaz'
                     ),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@stratekaz.com'),
                     recipient_list=[user.email],
                     fail_silently=True,
                 )

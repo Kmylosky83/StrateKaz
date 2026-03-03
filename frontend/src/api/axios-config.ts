@@ -38,9 +38,10 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // Si el error es 401 y no hemos reintentado aún
-    // IMPORTANTE: No intentar refresh si estamos en /login (evita loops con tokens viejos)
-    const isLoginPage = window.location.pathname.startsWith('/login');
-    if (error.response?.status === 401 && !originalRequest._retry && !isLoginPage) {
+    // IMPORTANTE: No intentar refresh en páginas públicas (evita loops/logouts inesperados)
+    const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
+    const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
+    if (error.response?.status === 401 && !originalRequest._retry && !isPublicPage) {
       originalRequest._retry = true;
 
       try {

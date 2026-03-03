@@ -40,8 +40,21 @@ export const SetupPasswordPage = () => {
   const [setupSuccess, setSetupSuccess] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
 
-  const token = searchParams.get('token');
-  const email = searchParams.get('email');
+  // Leer token/email de URL params, con fallback a sessionStorage
+  // (la PWA puede recargar la página y perder query params)
+  const urlToken = searchParams.get('token');
+  const urlEmail = searchParams.get('email');
+
+  const token = urlToken || sessionStorage.getItem('setup_token');
+  const email = urlEmail || sessionStorage.getItem('setup_email');
+
+  // Guardar en sessionStorage como backup para sobrevivir reloads
+  useEffect(() => {
+    if (urlToken && urlEmail) {
+      sessionStorage.setItem('setup_token', urlToken);
+      sessionStorage.setItem('setup_email', urlEmail);
+    }
+  }, [urlToken, urlEmail]);
 
   const { companyName, logoWhite, primaryColor, isLoading: brandingLoading } = useBrandingConfig();
 
@@ -54,7 +67,7 @@ export const SetupPasswordPage = () => {
     resolver: zodResolver(setupPasswordSchema),
   });
 
-  // Verificar que tenemos token y email
+  // Verificar que tenemos token y email (de URL o sessionStorage)
   useEffect(() => {
     if (!token || !email) {
       setInvalidLink(true);
@@ -85,6 +98,9 @@ export const SetupPasswordPage = () => {
         new_password_confirm: data.confirm_password,
       });
       setSetupSuccess(true);
+      // Limpiar sessionStorage al completar exitosamente
+      sessionStorage.removeItem('setup_token');
+      sessionStorage.removeItem('setup_email');
       toast.success('Contraseña configurada exitosamente');
       // Redirigir al login despues de 3 segundos
       setTimeout(() => navigate('/login'), 3000);

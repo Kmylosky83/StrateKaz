@@ -1,8 +1,15 @@
 /**
  * Hooks React Query para el Portal Proveedor — Mi Empresa
  */
-import { useQuery } from '@tanstack/react-query';
-import { fetchMiEmpresa, fetchMisContratos, fetchMisEvaluaciones } from '../api/miEmpresa.api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  fetchMiEmpresa,
+  fetchMisContratos,
+  fetchMisEvaluaciones,
+  fetchMisPrecios,
+  fetchMisProfesionales,
+  toggleEstadoProfesional,
+} from '../api/miEmpresa.api';
 import { useAuthStore } from '@/store/authStore';
 
 // ============================================================================
@@ -14,10 +21,12 @@ export const miEmpresaKeys = {
   empresa: () => [...miEmpresaKeys.all, 'detalle'] as const,
   contratos: () => [...miEmpresaKeys.all, 'contratos'] as const,
   evaluaciones: () => [...miEmpresaKeys.all, 'evaluaciones'] as const,
+  precios: () => [...miEmpresaKeys.all, 'precios'] as const,
+  profesionales: () => [...miEmpresaKeys.all, 'profesionales'] as const,
 };
 
 // ============================================================================
-// HOOKS
+// HOOKS — QUERIES
 // ============================================================================
 
 /** Datos del proveedor vinculado al usuario */
@@ -56,5 +65,47 @@ export function useMisEvaluaciones() {
     enabled: hasProveedor,
     staleTime: 10 * 60 * 1000,
     retry: false,
+  });
+}
+
+/** Precios de materia prima del proveedor vinculado */
+export function useMisPrecios() {
+  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+
+  return useQuery({
+    queryKey: miEmpresaKeys.precios(),
+    queryFn: fetchMisPrecios,
+    enabled: hasProveedor,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+}
+
+/** Profesionales vinculados al mismo proveedor (solo CONSULTOR) */
+export function useMisProfesionales() {
+  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+
+  return useQuery({
+    queryKey: miEmpresaKeys.profesionales(),
+    queryFn: fetchMisProfesionales,
+    enabled: hasProveedor,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
+// ============================================================================
+// HOOKS — MUTATIONS
+// ============================================================================
+
+/** Toggle activo/inactivo de un profesional */
+export function useToggleEstadoProfesional() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: toggleEstadoProfesional,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: miEmpresaKeys.profesionales() });
+    },
   });
 }

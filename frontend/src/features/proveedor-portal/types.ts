@@ -3,7 +3,7 @@
  */
 
 // ============================================================================
-// PROVEEDOR
+// CATÁLOGOS
 // ============================================================================
 
 export interface TipoDocumentoData {
@@ -15,12 +15,19 @@ export interface TipoDocumentoData {
 export interface TipoProveedorData {
   id: number;
   nombre: string;
+  codigo: string;
+  requiere_materia_prima: boolean;
+  requiere_modalidad_logistica: boolean;
 }
 
 export interface DepartamentoData {
   id: number;
   nombre: string;
 }
+
+// ============================================================================
+// PROVEEDOR (Mi Empresa)
+// ============================================================================
 
 /** Datos del Proveedor vinculado al usuario externo */
 export interface MiEmpresaData {
@@ -45,6 +52,15 @@ export interface MiEmpresaData {
   created_at: string;
   updated_at: string;
 }
+
+/** Código del tipo de proveedor */
+export type TipoProveedorCodigo =
+  | 'MATERIA_PRIMA'
+  | 'PRODUCTOS_SERVICIOS'
+  | 'UNIDAD_NEGOCIO'
+  | 'TRANSPORTISTA'
+  | 'CONSULTOR'
+  | 'CONTRATISTA';
 
 // ============================================================================
 // CONTRATOS (CondicionComercialProveedor)
@@ -89,4 +105,41 @@ export interface EvaluacionProveedor {
   fecha_aprobacion: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// PRECIOS DE MATERIA PRIMA (Portal)
+// ============================================================================
+
+export interface PrecioMateriaPrimaPortal {
+  id: number;
+  proveedor: number;
+  tipo_materia: number;
+  tipo_materia_nombre: string;
+  tipo_materia_codigo: string;
+  categoria_nombre: string;
+  precio_kg: string;
+  modificado_por: number;
+  modificado_por_nombre: string;
+  modificado_fecha: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================================================
+// PROFESIONALES (Consultoras — Mis Profesionales)
+// ============================================================================
+
+export interface ProfesionalProveedor {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  cargo_name: string | null;
+  is_active: boolean;
+  last_login: string | null;
+  date_joined: string | null;
+  es_yo: boolean;
 }

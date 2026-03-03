@@ -1,13 +1,20 @@
 /**
- * ProveedorPortalPage — Portal del Consultor / Proveedor Externo
+ * ProveedorPortalPage — Portal diferenciado por tipo de proveedor
  *
- * Página de solo lectura para usuarios externos vinculados a un Proveedor.
- * Muestra 3 tabs: Empresa | Contratos | Evaluaciones
+ * Tabs condicionales según tipo_proveedor:
  *
- * Accesible desde: UserMenu → "Mi Empresa"
+ * | Tipo               | Empresa | Precios MP | Profesionales | Contratos | Evaluaciones | Mi Cuenta |
+ * |--------------------|---------|------------|---------------|-----------|-------------|-----------|
+ * | MATERIA_PRIMA      |    ✓    |     ✓      |       —       |     ✓     |      ✓      |     ✓     |
+ * | PRODUCTOS_SERVICIOS|    ✓    |     —      |       —       |     ✓     |      ✓      |     ✓     |
+ * | UNIDAD_NEGOCIO     |    ✓    |     ✓      |       —       |     ✓     |      ✓      |     ✓     |
+ * | TRANSPORTISTA      |    ✓    |     —      |       —       |     ✓     |      ✓      |     ✓     |
+ * | CONSULTOR          |    ✓    |     —      |       ✓       |     ✓     |      ✓      |     ✓     |
+ * | CONTRATISTA        |    ✓    |     —      |       —       |     ✓     |      ✓      |     ✓     |
+ *
  * Guard: redirige a /dashboard si el usuario no tiene proveedor vinculado
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
   Building2,
@@ -17,12 +24,19 @@ import {
   Phone,
   Mail,
   Hash,
-  Badge as BadgeIcon,
   Settings,
   Key,
   Smartphone,
   CheckCircle,
   XCircle,
+  DollarSign,
+  Users,
+  Package,
+  ShoppingBag,
+  Truck,
+  Building,
+  Briefcase,
+  Wrench,
 } from 'lucide-react';
 import { AnimatedPage, Badge, Button, Card, Skeleton, Tabs } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
@@ -30,7 +44,58 @@ import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useMiEmpresa, useMisContratos, useMisEvaluaciones } from '../hooks/useMiEmpresa';
 import { ChangePasswordModal, TwoFactorModal, Disable2FAModal } from '@/components/common/auth';
 import { use2FA } from '@/hooks/use2FA';
-import type { ContratoProveedor, EvaluacionProveedor } from '../types';
+import { TabPrecios } from '../components/TabPrecios';
+import { TabProfesionales } from '../components/TabProfesionales';
+import type { ContratoProveedor, EvaluacionProveedor, TipoProveedorCodigo } from '../types';
+
+// ============================================================================
+// CONFIGURACIÓN POR TIPO DE PROVEEDOR
+// ============================================================================
+
+interface TipoConfig {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  label: string;
+  description: string;
+}
+
+const TIPO_CONFIG: Record<string, TipoConfig> = {
+  MATERIA_PRIMA: {
+    icon: Package,
+    label: 'Materia Prima',
+    description: 'Consulta tu información, precios de materia prima, contratos y evaluaciones.',
+  },
+  PRODUCTOS_SERVICIOS: {
+    icon: ShoppingBag,
+    label: 'Productos y Servicios',
+    description: 'Consulta tu información, condiciones comerciales y evaluaciones.',
+  },
+  UNIDAD_NEGOCIO: {
+    icon: Building,
+    label: 'Unidad de Negocio',
+    description: 'Consulta tu información, precios, contratos y evaluaciones.',
+  },
+  TRANSPORTISTA: {
+    icon: Truck,
+    label: 'Transportista',
+    description: 'Consulta tu información, condiciones de servicio y evaluaciones.',
+  },
+  CONSULTOR: {
+    icon: Briefcase,
+    label: 'Consultoría',
+    description: 'Gestiona tus profesionales, consulta contratos y evaluaciones de tu firma.',
+  },
+  CONTRATISTA: {
+    icon: Wrench,
+    label: 'Contratista',
+    description: 'Consulta tu información, contratos y evaluaciones.',
+  },
+};
+
+const DEFAULT_CONFIG: TipoConfig = {
+  icon: Building2,
+  label: 'Proveedor',
+  description: 'Consulta tu información, contratos y evaluaciones.',
+};
 
 // ============================================================================
 // HELPERS
@@ -64,7 +129,7 @@ const ESTADO_MAP: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
 };
 
 // ============================================================================
-// SUB-COMPONENTS
+// SUB-COMPONENTS — TAB INTERNOS (existentes)
 // ============================================================================
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -408,32 +473,69 @@ function TabMiCuenta() {
 }
 
 // ============================================================================
-// PAGE TABS
+// TABS BUILDER — Construye tabs según tipo de proveedor
 // ============================================================================
 
-type PortalTab = 'empresa' | 'contratos' | 'evaluaciones' | 'mi-cuenta';
+interface TabDef {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+}
 
-const PORTAL_TABS = [
-  { id: 'empresa' as const, label: 'Mi Empresa', icon: <Building2 className="w-4 h-4" /> },
-  { id: 'contratos' as const, label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
-  { id: 'evaluaciones' as const, label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
-  { id: 'mi-cuenta' as const, label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> },
-];
+function buildTabs(tipoCodigo: TipoProveedorCodigo | string, requiereMP: boolean): TabDef[] {
+  const tabs: TabDef[] = [
+    { id: 'empresa', label: 'Mi Empresa', icon: <Building2 className="w-4 h-4" /> },
+  ];
+
+  // Precios MP: para tipos que manejan materia prima
+  if (requiereMP) {
+    tabs.push({
+      id: 'precios',
+      label: 'Precios MP',
+      icon: <DollarSign className="w-4 h-4" />,
+    });
+  }
+
+  // Mis Profesionales: solo para consultores
+  if (tipoCodigo === 'CONSULTOR') {
+    tabs.push({
+      id: 'profesionales',
+      label: 'Mis Profesionales',
+      icon: <Users className="w-4 h-4" />,
+    });
+  }
+
+  // Tabs comunes
+  tabs.push(
+    { id: 'contratos', label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
+    { id: 'evaluaciones', label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'mi-cuenta', label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> }
+  );
+
+  return tabs;
+}
 
 // ============================================================================
 // MAIN PAGE
 // ============================================================================
 
 export default function ProveedorPortalPage() {
-  const [activeTab, setActiveTab] = useState<PortalTab>('empresa');
+  const [activeTab, setActiveTab] = useState('empresa');
   const user = useAuthStore((s) => s.user);
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const { primaryColor } = useBrandingConfig();
   const { data: empresa, isLoading } = useMiEmpresa();
 
+  // Derivar tipo y configuración
+  const tipoCodigo = empresa?.tipo_proveedor_data?.codigo || '';
+  const requiereMP = empresa?.tipo_proveedor_data?.requiere_materia_prima ?? false;
+  const tipoConfig = TIPO_CONFIG[tipoCodigo] || DEFAULT_CONFIG;
+  const HeroIcon = tipoConfig.icon;
+
+  // Tabs dinámicos según tipo
+  const tabs = useMemo(() => buildTabs(tipoCodigo, requiereMP), [tipoCodigo, requiereMP]);
+
   // Guard: esperar a que el perfil del User se cargue antes de decidir
-  // Sin esto, un usuario proveedor puede ser redirigido a /dashboard
-  // antes de que user.proveedor esté disponible.
   if (isLoadingUser || !user) {
     return (
       <AnimatedPage>
@@ -466,7 +568,7 @@ export default function ProveedorPortalPage() {
     <AnimatedPage>
       <div className="space-y-6">
         {/* ================================================================
-            HERO HEADER
+            HERO HEADER — diferenciado por tipo
             ================================================================ */}
         <Card padding="none" className="overflow-hidden">
           {/* Gradient bar */}
@@ -476,12 +578,16 @@ export default function ProveedorPortalPage() {
           />
           <div className="p-6 md:p-8">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* Icon */}
+              {/* Icon — cambia según tipo */}
               <div
                 className="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: `${primaryColor}15` }}
               >
-                <Building2 className="w-7 h-7" style={{ color: primaryColor }} />
+                {isLoading ? (
+                  <Skeleton className="h-7 w-7 rounded" />
+                ) : (
+                  <HeroIcon className="w-7 h-7" style={{ color: primaryColor }} />
+                )}
               </div>
 
               {/* Info */}
@@ -489,7 +595,7 @@ export default function ProveedorPortalPage() {
                 {isLoading ? (
                   <>
                     <Skeleton className="h-6 w-48 mb-1" />
-                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-64" />
                   </>
                 ) : (
                   <>
@@ -509,6 +615,10 @@ export default function ProveedorPortalPage() {
                         </Badge>
                       )}
                     </div>
+                    {/* Descripción contextual */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      {tipoConfig.description}
+                    </p>
                   </>
                 )}
               </div>
@@ -524,20 +634,26 @@ export default function ProveedorPortalPage() {
         </Card>
 
         {/* ================================================================
-            TABS
+            TABS — dinámicos según tipo de proveedor
             ================================================================ */}
-        <Tabs
-          tabs={PORTAL_TABS}
-          activeTab={activeTab}
-          onChange={(tab) => setActiveTab(tab as PortalTab)}
-          variant="underline"
-        />
+        {isLoading ? (
+          <Skeleton className="h-10 w-full rounded-lg" />
+        ) : (
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onChange={(tab) => setActiveTab(tab)}
+            variant="underline"
+          />
+        )}
 
         {/* ================================================================
             TAB CONTENT
             ================================================================ */}
         <div>
           {activeTab === 'empresa' && <TabEmpresa />}
+          {activeTab === 'precios' && <TabPrecios />}
+          {activeTab === 'profesionales' && <TabProfesionales />}
           {activeTab === 'contratos' && <TabContratos />}
           {activeTab === 'evaluaciones' && <TabEvaluaciones />}
           {activeTab === 'mi-cuenta' && <TabMiCuenta />}

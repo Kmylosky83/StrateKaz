@@ -845,6 +845,152 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         serializer = EvaluacionProveedorSerializer(evaluaciones, many=True)
         return Response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-empresa/precios',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa_precios(self, request):
+        """
+        Retorna los precios de materia prima del proveedor vinculado.
+
+        GET /api/supply-chain/proveedores/mi-empresa/precios/
+
+        Solo disponible para proveedores que manejan materia prima.
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        precios = PrecioMateriaPrima.objects.filter(
+            proveedor=proveedor
+        ).select_related(
+            'tipo_materia__categoria', 'modificado_por'
+        ).order_by('tipo_materia__categoria__orden', 'tipo_materia__orden')
+
+        serializer = PrecioMateriaPrimaSerializer(precios, many=True)
+        return Response(serializer.data)
+
+    # ==========================================================================
+    # PORTAL PROVEEDOR — Gestión de Profesionales (Consultoras)
+    # ==========================================================================
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-empresa/profesionales',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa_profesionales(self, request):
+        """
+        Lista usuarios vinculados al mismo proveedor.
+
+        GET /api/supply-chain/proveedores/mi-empresa/profesionales/
+
+        Permite a la firma consultora ver y gestionar los profesionales
+        que ha colocado en la empresa cliente.
+        Solo disponible para proveedores tipo CONSULTOR.
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        tipo_codigo = proveedor.tipo_proveedor.codigo if proveedor.tipo_proveedor else ''
+        if tipo_codigo != 'CONSULTOR':
+            return Response(
+                {'detail': 'Esta funcionalidad solo está disponible para consultores.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        usuarios = User.objects.filter(
+            proveedor=proveedor
+        ).select_related('cargo').order_by('-date_joined')
+
+        data = []
+        for u in usuarios:
+            data.append({
+                'id': u.id,
+                'username': u.username,
+                'email': u.email,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'full_name': u.get_full_name(),
+                'cargo_name': u.cargo.name if u.cargo else None,
+                'is_active': u.is_active,
+                'last_login': u.last_login.isoformat() if u.last_login else None,
+                'date_joined': u.date_joined.isoformat() if u.date_joined else None,
+                'es_yo': u.id == request.user.id,
+            })
+
+        return Response(data)
+
+    @action(
+        detail=False,
+        methods=['patch'],
+        url_path=r'mi-empresa/profesionales/(?P<user_id>[^/.]+)/toggle-estado',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa_profesionales_toggle(self, request, user_id=None):
+        """
+        Activa/desactiva un profesional vinculado al mismo proveedor.
+
+        PATCH /api/supply-chain/proveedores/mi-empresa/profesionales/{user_id}/toggle-estado/
+
+        Seguridad:
+        - Solo disponible para proveedores tipo CONSULTOR
+        - Solo puede gestionar usuarios del MISMO proveedor
+        - No puede desactivar su propia cuenta
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        tipo_codigo = proveedor.tipo_proveedor.codigo if proveedor.tipo_proveedor else ''
+        if tipo_codigo != 'CONSULTOR':
+            return Response(
+                {'detail': 'Esta funcionalidad solo está disponible para consultores.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            target_user = User.objects.get(id=user_id, proveedor=proveedor)
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Usuario no encontrado o no pertenece a tu empresa.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if target_user.id == request.user.id:
+            return Response(
+                {'detail': 'No puedes desactivar tu propia cuenta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        target_user.is_active = not target_user.is_active
+        target_user.save(update_fields=['is_active'])
+
+        accion = 'activado' if target_user.is_active else 'desactivado'
+        logger.info(
+            'Profesional %s (User %d) %s por User %d (Proveedor %d)',
+            target_user.email, target_user.id, accion,
+            request.user.id, proveedor.id
+        )
+
+        return Response({
+            'detail': f'Usuario {accion} exitosamente.',
+            'is_active': target_user.is_active,
+        })
+
     # ── Importación masiva ────────────────────────────────────────────────
 
     @action(detail=False, methods=['get'], url_path='plantilla-importacion')

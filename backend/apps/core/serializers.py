@@ -99,6 +99,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
 
     # Proveedor vinculado (para usuarios externos: consultores, auditores)
+    # IntegerField directo para evitar cross-module PrimaryKeyRelatedField
+    proveedor = serializers.IntegerField(source='proveedor_id', read_only=True, allow_null=True)
     proveedor_nombre = serializers.SerializerMethodField()
 
     class Meta:

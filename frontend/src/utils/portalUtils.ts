@@ -14,15 +14,16 @@ export const CARGO_PORTAL_CODE = 'PROVEEDOR_PORTAL';
 /**
  * Determina si un usuario es "portal-only" (solo acceso al portal de proveedor).
  *
- * Un usuario es portal-only cuando:
- * - Tiene proveedor vinculado (user.proveedor !== null)
- * - Y su cargo es el de sistema PROVEEDOR_PORTAL (o no tiene cargo)
+ * Detección primaria: cargo.code === 'PROVEEDOR_PORTAL'
+ * Detección secundaria: proveedor vinculado sin cargo asignado
  *
  * Profesionales colocados con cargo real (Coord SST, Admin TH, etc.)
  * NO son portal-only — tienen acceso completo al sistema via DashboardLayout.
  */
 export function isPortalOnlyUser(user: User | null | undefined): boolean {
-  if (!user?.proveedor) return false;
-  if (!user.cargo) return true;
-  return user.cargo.code === CARGO_PORTAL_CODE;
+  // Primaria: cargo PROVEEDOR_PORTAL es la señal autoritativa
+  if (user?.cargo?.code === CARGO_PORTAL_CODE) return true;
+  // Secundaria: proveedor sin cargo (edge case de setup incompleto)
+  if (user?.proveedor && !user.cargo) return true;
+  return false;
 }

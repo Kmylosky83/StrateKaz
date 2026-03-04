@@ -16,7 +16,7 @@ import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { verifyTwoFactor } from '@/features/perfil/api/twoFactor.api';
 import { authAPI } from '@/api/auth.api';
-import { isPortalOnlyUser } from '@/utils/portalUtils';
+import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 
 // Lazy load NetworkBackground for better initial load performance
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
@@ -113,7 +113,7 @@ export const LoginPage = () => {
    * El store ya tiene los tenants accesibles después del login
    */
   const handlePostLoginFlow = async () => {
-    const { tenantUser, accessibleTenants, isSuperadmin, currentTenant } = useAuthStore.getState();
+    const { accessibleTenants, isSuperadmin, currentTenant } = useAuthStore.getState();
 
     if (accessibleTenants.length === 0) {
       // Usuario sin tenants
@@ -137,7 +137,11 @@ export const LoginPage = () => {
     if (accessibleTenants.length === 1) {
       // Solo un tenant - ya fue seleccionado automáticamente en el store
       const { user: currentUser } = useAuthStore.getState();
-      const landing = isPortalOnlyUser(currentUser) ? '/proveedor-portal' : '/mi-portal';
+      const landing = isClientePortalUser(currentUser)
+        ? '/cliente-portal'
+        : isPortalOnlyUser(currentUser)
+          ? '/proveedor-portal'
+          : '/mi-portal';
       toast.success(`Bienvenido a ${currentTenant?.name || accessibleTenants[0].tenant.name}!`);
       navigate(landing);
       return;
@@ -160,8 +164,9 @@ export const LoginPage = () => {
 
       // Login exitoso - procesar flujo de tenants
       await handlePostLoginFlow();
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Error al iniciar sesión');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      toast.error(apiError.response?.data?.detail || 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -201,8 +206,9 @@ export const LoginPage = () => {
 
       // Verificar tenants después de 2FA exitoso
       await handlePostLoginFlow();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Código inválido');
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { error?: string } } };
+      toast.error(apiError.response?.data?.error || 'Código inválido');
     } finally {
       setIsLoading(false);
     }
@@ -222,7 +228,11 @@ export const LoginPage = () => {
       await selectTenant(tenantId);
       const tenant = accessibleTenants.find((t) => t.tenant.id === tenantId);
       const { user: currentUser } = useAuthStore.getState();
-      const landing = isPortalOnlyUser(currentUser) ? '/proveedor-portal' : '/mi-portal';
+      const landing = isClientePortalUser(currentUser)
+        ? '/cliente-portal'
+        : isPortalOnlyUser(currentUser)
+          ? '/proveedor-portal'
+          : '/mi-portal';
       toast.success(`Bienvenido a ${tenant?.tenant.name || 'la empresa'}!`);
       navigate(landing);
     } catch (error: unknown) {

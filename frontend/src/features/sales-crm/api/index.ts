@@ -117,6 +117,14 @@ export const clientesApi = {
     const response = await apiClient.get(`${BASE_URL}/clientes/dashboard/`, { params });
     return response.data;
   },
+
+  crearAcceso: async (
+    id: number,
+    data: { email: string; username: string }
+  ): Promise<{ detail: string }> => {
+    const response = await apiClient.post(`${BASE_URL}/clientes/${id}/crear-acceso/`, data);
+    return response.data;
+  },
 };
 
 // ==================== CONTACTOS DE CLIENTE ====================

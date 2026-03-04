@@ -4,7 +4,16 @@
  */
 import { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { Users, Star, AlertTriangle, TrendingUp, Upload, Edit, Trash2 } from 'lucide-react';
+import {
+  Users,
+  Star,
+  AlertTriangle,
+  TrendingUp,
+  Upload,
+  Edit,
+  Trash2,
+  KeyRound,
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { KpiCard, KpiCardGrid, KpiCardSkeleton } from '@/components/common/KpiCard';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
@@ -16,6 +25,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ScoringBadge } from '../components/ScoringBadge';
 import ClienteFormModal from '../components/ClienteFormModal';
 import ImportClientesModal from '../components/ImportClientesModal';
+import { CrearAccesoClienteModal } from '../components/CrearAccesoClienteModal';
 import { useClientes, useDeleteCliente, useClienteDashboard } from '../hooks';
 import type { ClienteList, Cliente } from '../types';
 
@@ -24,6 +34,7 @@ export default function ClientesPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Cliente | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [accesoCliente, setAccesoCliente] = useState<ClienteList | null>(null);
 
   const { data: clientesData, isLoading: isLoadingClientes } = useClientes();
   const { data: dashboard, isLoading: isLoadingDashboard } = useClienteDashboard();
@@ -137,6 +148,14 @@ export default function ClientesPage() {
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setAccesoCliente(row.original)}
+              title="Crear Acceso Portal"
+            >
+              <KeyRound className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => handleEdit(row.original)}
               title="Editar"
             >
@@ -152,7 +171,7 @@ export default function ClientesPage() {
             </Button>
           </div>
         ),
-        size: 100,
+        size: 130,
       },
     ],
     []
@@ -243,6 +262,13 @@ export default function ClientesPage() {
 
       {/* Import Modal */}
       <ImportClientesModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} />
+
+      {/* Crear Acceso Portal Modal */}
+      <CrearAccesoClienteModal
+        cliente={accesoCliente}
+        isOpen={!!accesoCliente}
+        onClose={() => setAccesoCliente(null)}
+      />
 
       {/* Confirm Delete */}
       <ConfirmDialog

@@ -152,6 +152,30 @@ export function useActualizarScoring() {
   });
 }
 
+// ==================== CREAR ACCESO PORTAL ====================
+
+export function useCrearAccesoCliente() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, email, username }: { id: number; email: string; username: string }) =>
+      clientesApi.crearAcceso(id, { email, username }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.clientes() });
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.clienteById(id) });
+      toast.success('Acceso al portal creado. Se envió un correo para configurar la contraseña.');
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: Record<string, unknown> } };
+      const data = apiError?.response?.data;
+      if (data?.detail) {
+        toast.error(String(data.detail));
+      } else {
+        toast.error('Error al crear acceso al portal');
+      }
+    },
+  });
+}
+
 // ==================== CONTACTOS ====================
 
 export function useContactos(params?: ContactosFilterParams) {

@@ -40,6 +40,10 @@ PROVEEDOR_COLUMNAS = [
     'titular_cuenta',
     'dias_plazo_pago',
     'observaciones',
+    # Acceso al portal (opcionales)
+    'crear_acceso',
+    'email_portal',
+    'username',
 ]
 
 
@@ -80,6 +84,11 @@ def normalizar_valor(valor) -> str:
     if valor is None:
         return ''
     return str(valor).strip().upper()
+
+
+def parsear_bool(valor) -> bool:
+    """Parsea un valor de celda a booleano usando SI_NO_MAP."""
+    return SI_NO_MAP.get(normalizar_valor(valor), False)
 
 
 def parsear_entero(valor, default: int = 0) -> int:
@@ -128,6 +137,10 @@ TEMPLATE_COLUMNS = [
     ('Titular Cuenta', 25, False, 'Lácteos del Valle S.A.S.', 'Nombre del titular de la cuenta'),
     ('Días Plazo Pago', 18, False, '30', 'Días de plazo para pago (default: 0)'),
     ('Observaciones', 35, False, 'Proveedor principal de leche', 'Notas adicionales'),
+    # Acceso al portal
+    ('Crear Acceso Portal', 22, False, 'Si', 'Si = crea cuenta y envía email de configuración'),
+    ('Email Portal', 28, False, 'portal@lacteos.com', 'Requerido si Crear Acceso = Si'),
+    ('Username', 22, False, 'lacteos.valle', 'Sin espacios. Requerido si Crear Acceso = Si'),
 ]
 
 

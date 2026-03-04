@@ -31,12 +31,13 @@ interface ImportProveedoresModalProps {
 interface ImportResult {
   creados: number;
   actualizados: number;
+  con_acceso: number;
   errores: Array<{
     fila: number;
-    campo?: string;
-    mensaje: string;
+    nombre?: string;
+    errores: string[];
   }>;
-  total_procesados: number;
+  total_filas: number;
 }
 
 type Step = 'upload' | 'processing' | 'results';
@@ -367,12 +368,18 @@ export default function ImportProveedoresModal({ isOpen, onClose }: ImportProvee
         {step === 'results' && result && (
           <div className="space-y-4">
             {/* Summary */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="p-4 bg-success-50 dark:bg-success-900/20 rounded-lg text-center">
                 <p className="text-2xl font-bold text-success-700 dark:text-success-400">
                   {result.creados}
                 </p>
                 <p className="text-sm text-success-600 dark:text-success-300">Creados</p>
+              </div>
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+                  {result.con_acceso}
+                </p>
+                <p className="text-sm text-blue-600 dark:text-blue-300">Con Acceso Portal</p>
               </div>
               <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg text-center">
                 <p className="text-2xl font-bold text-primary-700 dark:text-primary-400">
@@ -403,10 +410,10 @@ export default function ImportProveedoresModal({ isOpen, onClose }: ImportProvee
                       <Badge variant="danger" size="sm">
                         Fila {err.fila}
                       </Badge>
-                      <span className="text-danger-700 dark:text-danger-300">
-                        {err.campo ? `${err.campo}: ` : ''}
-                        {err.mensaje}
-                      </span>
+                      <div className="text-danger-700 dark:text-danger-300">
+                        {err.nombre && <span className="font-medium">{err.nombre}: </span>}
+                        {Array.isArray(err.errores) ? err.errores.join('; ') : String(err.errores)}
+                      </div>
                     </div>
                   ))}
                 </div>

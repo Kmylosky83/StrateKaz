@@ -1174,6 +1174,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         user = request.user
         creados = 0
         actualizados = 0
+        con_acceso = 0
         errores = []
 
         from .import_proveedores_serializer import ProveedorImportRowSerializer
@@ -1204,8 +1205,16 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             tipo_documento = vdata.pop('_tipo_documento')
             departamento_obj = vdata.pop('_departamento')
 
+            # Extraer campos de acceso al portal
+            crear_acceso = vdata.pop('_crear_acceso', False)
+            email_portal = vdata.pop('_email_portal', None)
+            username_portal = vdata.pop('_username', None)
+
             # Limpiar campos auxiliares
-            for key in ['tipo_proveedor_nombre', 'tipo_documento_nombre', 'departamento_nombre']:
+            for key in [
+                'tipo_proveedor_nombre', 'tipo_documento_nombre', 'departamento_nombre',
+                'crear_acceso', 'email_portal', 'username',
+            ]:
                 vdata.pop(key, None)
 
             proveedor_data = {
@@ -1235,6 +1244,25 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                     prov.save()
                     creados += 1
 
+                    # Crear acceso al portal si se solicitó
+                    if crear_acceso and email_portal and username_portal:
+                        from django.apps import apps as django_apps
+                        Cargo = django_apps.get_model('core', 'Cargo')
+                        cargo_portal, _ = Cargo.objects.get_or_create(
+                            code='PROVEEDOR_PORTAL',
+                            defaults={
+                                'name': 'Proveedor - Portal',
+                                'is_system': True,
+                                'is_active': True,
+                                'is_externo': True,
+                            }
+                        )
+                        self._create_user_for_proveedor(
+                            prov, email_portal, username_portal,
+                            cargo_portal, user
+                        )
+                        con_acceso += 1
+
             except Exception as e:
                 logger.error(
                     'Error importando proveedor fila %s (%s): %s',
@@ -1249,6 +1277,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         return Response({
             'creados': creados,
             'actualizados': actualizados,
+            'con_acceso': con_acceso,
             'errores': errores,
             'total_filas': creados + actualizados + len(errores),
         }, status=status.HTTP_200_OK if creados > 0 else status.HTTP_400_BAD_REQUEST)

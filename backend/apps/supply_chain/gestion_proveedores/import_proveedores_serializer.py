@@ -2,9 +2,12 @@
 Serializer de importación masiva de Proveedores desde Excel.
 Valida y normaliza una fila del archivo antes de crear el Proveedor.
 """
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .import_proveedores_utils import normalizar_valor, parsear_entero
+from .import_proveedores_utils import normalizar_valor, parsear_bool, parsear_entero
+
+User = get_user_model()
 
 
 class ProveedorImportRowSerializer(serializers.Serializer):
@@ -36,6 +39,11 @@ class ProveedorImportRowSerializer(serializers.Serializer):
     titular_cuenta = serializers.CharField(required=False, allow_blank=True, default='')
     dias_plazo_pago = serializers.CharField(required=False, default='0')
     observaciones = serializers.CharField(required=False, allow_blank=True, default='')
+
+    # Acceso al portal (opcionales)
+    crear_acceso = serializers.CharField(required=False, allow_blank=True, default='No')
+    email_portal = serializers.CharField(required=False, allow_blank=True, default='')
+    username = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_nombre_comercial(self, value):
         val = str(value).strip()
@@ -131,5 +139,45 @@ class ProveedorImportRowSerializer(serializers.Serializer):
                 })
         else:
             attrs['_departamento'] = None
+
+        # ── Validar acceso al portal ─────────────────────────────────────
+        crear_acceso = parsear_bool(attrs.get('crear_acceso', 'No'))
+        attrs['_crear_acceso'] = crear_acceso
+
+        if crear_acceso:
+            email_portal = str(attrs.get('email_portal', '')).strip()
+            username_val = str(attrs.get('username', '')).strip()
+
+            if not email_portal:
+                raise serializers.ValidationError({
+                    'email_portal': 'El email de portal es requerido cuando Crear Acceso = Si.'
+                })
+            if '@' not in email_portal:
+                raise serializers.ValidationError({
+                    'email_portal': f'Email de portal inválido: "{email_portal}".'
+                })
+            if not username_val:
+                raise serializers.ValidationError({
+                    'username': 'El username es requerido cuando Crear Acceso = Si.'
+                })
+            if ' ' in username_val:
+                raise serializers.ValidationError({
+                    'username': 'El username no puede contener espacios.'
+                })
+            if len(username_val) > 150:
+                raise serializers.ValidationError({
+                    'username': 'El username no puede exceder 150 caracteres.'
+                })
+            if User.objects.filter(email=email_portal).exists():
+                raise serializers.ValidationError({
+                    'email_portal': f'El email "{email_portal}" ya está registrado en el sistema.'
+                })
+            if User.objects.filter(username=username_val).exists():
+                raise serializers.ValidationError({
+                    'username': f'El username "{username_val}" ya existe en el sistema.'
+                })
+
+            attrs['_email_portal'] = email_portal
+            attrs['_username'] = username_val
 
         return attrs

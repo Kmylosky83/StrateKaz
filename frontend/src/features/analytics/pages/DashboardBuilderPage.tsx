@@ -7,7 +7,24 @@
  * CRUD de vistas y widgets conectado a API real.
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Star, Grid3x3, LayoutDashboard, Settings, Eye } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Star,
+  Grid3x3,
+  LayoutDashboard,
+  Settings,
+  Eye,
+  TrendingUp,
+  Minus,
+  BarChart3,
+  LineChart,
+  PieChart,
+  Table2,
+  Gauge,
+  Activity,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -53,29 +70,122 @@ import {
 } from '../hooks/useAnalytics';
 import type { VistaDashboard, WidgetDashboard, TipoWidget } from '../types';
 
-// ==================== WIDGET COMPONENTS (Placeholder) ====================
-// TODO: Implement actual widget rendering components in Sprint 10
+// ==================== WIDGET TYPE LABELS & ICONS ====================
+
+const WIDGET_TYPE_CONFIG: Record<
+  TipoWidget,
+  { label: string; icon: typeof TrendingUp; color: string }
+> = {
+  kpi_card: { label: 'Tarjeta KPI', icon: Activity, color: 'text-blue-500' },
+  grafico_linea: { label: 'Gráfico de Línea', icon: LineChart, color: 'text-emerald-500' },
+  grafico_barra: { label: 'Gráfico de Barras', icon: BarChart3, color: 'text-violet-500' },
+  grafico_pie: { label: 'Gráfico Circular', icon: PieChart, color: 'text-amber-500' },
+  tabla: { label: 'Tabla', icon: Table2, color: 'text-gray-500' },
+  gauge: { label: 'Gauge', icon: Gauge, color: 'text-rose-500' },
+  mapa_calor: { label: 'Mapa de Calor', icon: Grid3x3, color: 'text-orange-500' },
+};
+
+// ==================== WIDGET RENDERER ====================
 
 const WidgetRenderer = ({ widget }: { widget: WidgetDashboard }) => {
   const { data: catalogos } = useCatalogosKPI();
   const kpi = catalogos?.find((k) => k.id === widget.kpi);
+  const typeConfig = WIDGET_TYPE_CONFIG[widget.tipo_widget] || WIDGET_TYPE_CONFIG.kpi_card;
+  const TypeIcon = typeConfig.icon;
+  const kpiName = widget.kpi_nombre || kpi?.nombre || `KPI #${widget.kpi}`;
+  const kpiCode = kpi?.codigo || '';
+  const unit = kpi?.unidad_medida || '%';
 
+  if (widget.tipo_widget === 'kpi_card') {
+    return (
+      <div className="h-full flex flex-col justify-between">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">
+              {kpiCode}
+            </p>
+            <h4 className="font-semibold text-sm text-gray-900 dark:text-white mt-1 line-clamp-2">
+              {kpiName}
+            </h4>
+          </div>
+          {widget.mostrar_semaforo && (
+            <div className="ml-2 flex-shrink-0 w-3 h-3 rounded-full bg-green-500 ring-2 ring-green-200 dark:ring-green-800" />
+          )}
+        </div>
+        <div className="mt-3">
+          <div className="flex items-end gap-2">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">—</span>
+            <span className="text-sm text-gray-500 mb-0.5">{unit}</span>
+          </div>
+          {widget.mostrar_meta && <p className="text-xs text-gray-400 mt-1">Meta: Sin definir</p>}
+        </div>
+        {widget.mostrar_tendencia && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+            <Minus className="w-3 h-3" />
+            <span>Sin datos de tendencia</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (widget.tipo_widget === 'gauge') {
+    return (
+      <div className="h-full flex flex-col items-center justify-center">
+        <div className="relative w-24 h-12 overflow-hidden">
+          <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-t-full" />
+          <div className="absolute inset-0 border-4 border-t-emerald-500 border-l-emerald-500 border-r-transparent border-b-transparent rounded-t-full origin-bottom rotate-0" />
+        </div>
+        <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">—</p>
+        <p className="text-xs text-gray-500 truncate max-w-full mt-1">{kpiName}</p>
+        {widget.mostrar_semaforo && <div className="w-2.5 h-2.5 rounded-full bg-green-500 mt-2" />}
+      </div>
+    );
+  }
+
+  if (widget.tipo_widget === 'tabla') {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          <Table2 className="w-4 h-4 text-gray-400" />
+          <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">{kpiName}</h4>
+        </div>
+        <div className="flex-1 space-y-1.5">
+          {['Ene', 'Feb', 'Mar'].map((m) => (
+            <div
+              key={m}
+              className="flex items-center justify-between text-xs py-1 px-2 bg-gray-50 dark:bg-gray-800 rounded"
+            >
+              <span className="text-gray-600 dark:text-gray-400">{m}</span>
+              <span className="text-gray-400">—</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Gráficos (línea, barra, pie, mapa_calor) — visual placeholder con icono de tipo
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h4 className="font-medium text-sm text-gray-900 dark:text-white">
-            {widget.kpi_nombre || kpi?.nombre || `KPI #${widget.kpi}`}
-          </h4>
-          <p className="text-xs text-gray-500">{widget.tipo_widget}</p>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-sm text-gray-900 dark:text-white truncate">{kpiName}</h4>
+          <p className="text-xs text-gray-500">{typeConfig.label}</p>
         </div>
-        {widget.mostrar_semaforo && <div className="w-3 h-3 rounded-full bg-green-500" />}
+        {widget.mostrar_semaforo && (
+          <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+        )}
       </div>
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded border border-dashed border-gray-300 dark:border-gray-600">
-        <p className="text-sm text-gray-500">Widget Preview</p>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <TypeIcon className={cn('w-8 h-8 mb-2', typeConfig.color)} />
+        <p className="text-xs text-gray-400">Registra mediciones para visualizar</p>
       </div>
       {widget.mostrar_tendencia && (
-        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">Tendencia: +5.2%</div>
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <Minus className="w-3 h-3" />
+          <span>Sin tendencia</span>
+        </div>
       )}
     </div>
   );

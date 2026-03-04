@@ -121,6 +121,15 @@ export const useCuentasPorCobrarEstadisticas = () =>
     queryFn: () => cuentasPorCobrarApi.getEstadisticas().then((r) => r.data),
   });
 
+export const useCreateCuentaPorCobrar = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof cuentasPorCobrarApi.create>[0]) =>
+      cuentasPorCobrarApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'cuentas-por-cobrar'] }),
+  });
+};
+
 // Flujo de Caja
 export const useFlujoCaja = (params?: Record<string, unknown>) =>
   useQuery({

@@ -2,8 +2,10 @@
  * Modal CRUD para Cuentas por Cobrar
  */
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { Modal, Button } from '@/components/common';
 import { Input, Textarea } from '@/components/forms';
+import { toast } from 'sonner';
+import { useCreateCuentaPorCobrar } from '../hooks';
 import type { CuentaPorCobrar } from '../types';
 
 interface Props {
@@ -23,6 +25,7 @@ const INITIAL: Partial<CuentaPorCobrar> = {
 
 export default function CuentaPorCobrarFormModal({ item, isOpen, onClose }: Props) {
   const [form, setForm] = useState<Partial<CuentaPorCobrar>>(INITIAL);
+  const createMutation = useCreateCuentaPorCobrar();
 
   useEffect(() => {
     if (item) {
@@ -42,10 +45,19 @@ export default function CuentaPorCobrarFormModal({ item, isOpen, onClose }: Prop
   const set = (field: string, value: string | number) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: wire create mutation when hook available
-    onClose();
+    if (item) {
+      onClose();
+      return;
+    }
+    try {
+      await createMutation.mutateAsync(form);
+      toast.success('Cuenta por cobrar creada exitosamente');
+      onClose();
+    } catch {
+      toast.error('Error al crear la cuenta por cobrar');
+    }
   };
 
   return (
@@ -100,7 +112,11 @@ export default function CuentaPorCobrarFormModal({ item, isOpen, onClose }: Prop
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          {!item && <Button type="submit">Crear</Button>}
+          {!item && (
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Creando...' : 'Crear'}
+            </Button>
+          )}
         </div>
       </form>
     </Modal>

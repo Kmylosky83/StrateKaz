@@ -53,7 +53,123 @@ import {
 } from '../hooks/useNotificaciones';
 import { useSelectCargos, useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
 import { TipoNotificacionModal } from '../components';
+import { Modal } from '@/components/common/Modal';
 import type { Notificacion, TipoNotificacion } from '../types/notificaciones.types';
+
+// ==================== NOTIFICATION DETAIL MODAL ====================
+
+function NotificacionDetailModal({
+  notificacion,
+  isOpen,
+  onClose,
+}: {
+  notificacion: Notificacion | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!notificacion) return null;
+
+  const categoria = notificacion.categoria || 'sistema';
+  const prioridadColor =
+    notificacion.prioridad === 'urgente'
+      ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
+      : notificacion.prioridad === 'alta'
+        ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20'
+        : 'text-gray-600 bg-gray-50 dark:bg-gray-800';
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de Notificación" size="lg">
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-start gap-3">
+          <div className={cn('p-2 rounded-lg flex-shrink-0', getCategoriaColor(categoria))}>
+            {(() => {
+              const Icon = getCategoriaIcon(categoria);
+              return <Icon className="h-5 w-5" />;
+            })()}
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {notificacion.titulo}
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="gray" size="sm">
+                {categoria}
+              </Badge>
+              <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', prioridadColor)}>
+                {notificacion.prioridad}
+              </span>
+              <Badge variant={notificacion.esta_leida ? 'gray' : 'success'} size="sm">
+                {notificacion.esta_leida ? 'Leída' : 'Nueva'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Mensaje */}
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+            {notificacion.mensaje}
+          </p>
+        </div>
+
+        {/* Metadata */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500 dark:text-gray-400">Fecha:</span>
+            <p className="font-medium text-gray-900 dark:text-white">
+              {new Date(notificacion.created_at).toLocaleDateString('es-CO', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          </div>
+          {notificacion.tipo_nombre && (
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Tipo:</span>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {notificacion.tipo_nombre}
+              </p>
+            </div>
+          )}
+          {notificacion.fecha_lectura && (
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Leída el:</span>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {new Date(notificacion.fecha_lectura).toLocaleDateString('es-CO', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+          )}
+          {notificacion.esta_archivada && (
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Estado:</span>
+              <p className="font-medium text-orange-600">Archivada</p>
+            </div>
+          )}
+        </div>
+
+        {/* URL link */}
+        {notificacion.url && (
+          <a
+            href={notificacion.url}
+            className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            <Eye className="w-4 h-4" />
+            Ver recurso relacionado
+          </a>
+        )}
+      </div>
+    </Modal>
+  );
+}
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -97,6 +213,7 @@ function BandejaTab() {
   const marcarLeida = useMarcarLeida();
   const marcarTodasLeidas = useMarcarTodasLeidas();
   const archivar = useArchivarNotificacion();
+  const [selectedNotif, setSelectedNotif] = useState<Notificacion | null>(null);
 
   const countNoLeidas = noLeidas?.length || 0;
   const notifList = notificaciones || [];
@@ -214,8 +331,12 @@ function BandejaTab() {
                   return (
                     <tr
                       key={notif.id}
+                      onClick={() => {
+                        setSelectedNotif(notif);
+                        if (!isLeida) marcarLeida.mutate(notif.id);
+                      }}
                       className={cn(
-                        'border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                        'border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer',
                         !isLeida && 'bg-primary-50/30 dark:bg-primary-900/10'
                       )}
                     >
@@ -341,6 +462,13 @@ function BandejaTab() {
           </div>
         </Card>
       )}
+
+      {/* Detail Modal */}
+      <NotificacionDetailModal
+        notificacion={selectedNotif}
+        isOpen={!!selectedNotif}
+        onClose={() => setSelectedNotif(null)}
+      />
     </div>
   );
 }
@@ -377,10 +505,11 @@ function TiposTab() {
     setShowEditModal(true);
   };
 
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
   const handleView = (tipo: TipoNotificacion) => {
     setSelectedTipo(tipo);
-    // TODO: Implementar modal de vista detallada o navegar a página de detalle
-    alert(`Ver detalle de: ${tipo.nombre}`);
+    setShowDetailModal(true);
   };
 
   // Loading state
@@ -624,6 +753,72 @@ function TiposTab() {
         }}
         isLoading={updateTipo.isPending}
       />
+
+      {/* Modal de Detalle de Tipo */}
+      {selectedTipo && showDetailModal && (
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedTipo(null);
+          }}
+          title="Detalle del Tipo de Notificación"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Código</span>
+                <p className="font-medium text-gray-900 dark:text-white">{selectedTipo.codigo}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Nombre</span>
+                <p className="font-medium text-gray-900 dark:text-white">{selectedTipo.nombre}</p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Categoría</span>
+                <Badge variant="gray" size="sm">
+                  {selectedTipo.categoria}
+                </Badge>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Estado</span>
+                <Badge variant={selectedTipo.is_active ? 'success' : 'gray'} size="sm">
+                  {selectedTipo.is_active ? 'Activo' : 'Inactivo'}
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Descripción</span>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                {selectedTipo.descripcion || 'Sin descripción'}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Plantilla Título</span>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {selectedTipo.plantilla_titulo}
+                </p>
+              </div>
+              <div>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Plantilla Mensaje</span>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                  {selectedTipo.plantilla_mensaje}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 pt-2">
+              <Badge variant={selectedTipo.es_email ? 'success' : 'gray'} size="sm">
+                {selectedTipo.es_email ? '✓ Email' : '✗ Email'}
+              </Badge>
+              <Badge variant={selectedTipo.es_push ? 'success' : 'gray'} size="sm">
+                {selectedTipo.es_push ? '✓ Push' : '✗ Push'}
+              </Badge>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -879,9 +1074,7 @@ function PreferenciasTab() {
               type="time"
               label="Hora de fin"
               value={formValues.horario_fin}
-              onChange={(e) =>
-                setFormValues((prev) => ({ ...prev, horario_fin: e.target.value }))
-              }
+              onChange={(e) => setFormValues((prev) => ({ ...prev, horario_fin: e.target.value }))}
             />
           </div>
 
@@ -1133,7 +1326,11 @@ function MasivasTab() {
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    destinatarios_tipo: e.target.value as 'todos' | 'rol' | 'area' | 'usuarios_especificos',
+                    destinatarios_tipo: e.target.value as
+                      | 'todos'
+                      | 'rol'
+                      | 'area'
+                      | 'usuarios_especificos',
                     cargo_id: '',
                     area_id: '',
                     usuarios_ids: [],

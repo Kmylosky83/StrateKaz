@@ -14,8 +14,16 @@ import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
-import { FolderOpen, Calendar, ShoppingCart, Package, FlaskConical } from 'lucide-react';
-import { ProgramacionTab, ComprasTab, AlmacenamientoTab } from '../components';
+import {
+  FolderOpen,
+  Calendar,
+  ShoppingCart,
+  Package,
+  FlaskConical,
+  ExternalLink,
+} from 'lucide-react';
+import { ProgramacionTab, ComprasTab, AlmacenamientoTab, CatalogosTab } from '../components';
+import { Button } from '@/components/common';
 
 // ==================== ROUTE → TAB MAPPING ====================
 
@@ -27,35 +35,28 @@ const ROUTE_TO_TAB: Record<string, string> = {
   'pruebas-acidez': 'pruebas-acidez',
 };
 
-// ==================== PLACEHOLDER TABS ====================
+// ==================== PRUEBAS ACIDEZ REDIRECT ====================
+// Pruebas de Acidez vive en Production Ops → Recepción
 
-const CatalogosTab = () => (
-  <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-    <FolderOpen className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
-      Catalogos Dinamicos
-    </h3>
-    <p className="text-gray-600 dark:text-gray-400 text-center">
-      Tipos de Materia Prima, Tipos de Proveedor, Modalidades Logisticas, etc.
-      <br />
-      <span className="text-sm italic">Disponible en un proximo sprint.</span>
-    </p>
-  </div>
-);
-
-const PruebasAcidezTab = () => (
-  <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-    <FlaskConical className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-    <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
-      Pruebas de Acidez
-    </h3>
-    <p className="text-gray-600 dark:text-gray-400 text-center">
-      Registro y control de calidad de sebo con clasificacion automatica.
-      <br />
-      <span className="text-sm italic">Disponible en un proximo sprint.</span>
-    </p>
-  </div>
-);
+const PruebasAcidezTab = () => {
+  const nav = useNavigate();
+  return (
+    <div className="p-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+      <FlaskConical className="w-12 h-12 mx-auto mb-3 text-amber-500" />
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        Pruebas de Acidez
+      </h3>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        El registro y control de calidad de sebo se gestiona desde
+        <strong> Operaciones de Producción → Recepción</strong>.
+      </p>
+      <Button onClick={() => nav('/production-ops/recepcion')} variant="primary">
+        <ExternalLink className="w-4 h-4 mr-2" />
+        Ir a Producción - Recepción
+      </Button>
+    </div>
+  );
+};
 
 // ==================== MAIN PAGE COMPONENT ====================
 

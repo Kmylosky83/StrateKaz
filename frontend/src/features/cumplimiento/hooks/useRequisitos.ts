@@ -97,6 +97,23 @@ export const useRenovarRequisito = () => {
   });
 };
 
+// ==================== DELETE EMPRESA-REQUISITO ====================
+
+export const useDeleteEmpresaRequisito = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => empresaRequisitosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: requisitosKeys.empresaRequisitos() });
+      toast.success('Requisito eliminado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar el requisito');
+    },
+  });
+};
+
 // Hook especializado para crear/actualizar con archivos
 export const useCreateEmpresaRequisitoWithFile = () => {
   const queryClient = useQueryClient();

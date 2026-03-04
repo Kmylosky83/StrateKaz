@@ -30,7 +30,11 @@ import { Select, Input } from '@/components/forms';
 import { VencimientosCard } from './VencimientosCard';
 import { RequisitosTable } from './RequisitosTable';
 import { RequisitoFormModal } from './RequisitoFormModal';
-import { useEmpresaRequisitos, useVencimientos } from '../../hooks/useRequisitos';
+import {
+  useEmpresaRequisitos,
+  useVencimientos,
+  useDeleteEmpresaRequisito,
+} from '../../hooks/useRequisitos';
 import type { EmpresaRequisito, EstadoRequisito } from '../../types/requisitosLegales';
 import { useAuthStore } from '@/store/authStore';
 
@@ -76,6 +80,9 @@ export const RequisitosLegalesTab = ({
     ...filters,
   } as any);
 
+  // Mutation para eliminar requisito
+  const deleteMutation = useDeleteEmpresaRequisito();
+
   // Query de vencimientos (próximos 30 días)
   const { data: vencimientosData } = useVencimientos(empresaId, 30);
 
@@ -98,21 +105,39 @@ export const RequisitosLegalesTab = ({
 
   const handleDeleteConfirm = async () => {
     if (!requisitoToDelete) return;
-
-    try {
-      // TODO: Implementar delete mutation cuando esté disponible
-      setRequisitoToDelete(null);
-    } catch {
-      // Error al eliminar requisito
-    }
+    deleteMutation.mutate(requisitoToDelete.id, {
+      onSettled: () => setRequisitoToDelete(null),
+    });
   };
 
-  const handleExport = async () => {
-    try {
-      // TODO: Implementar exportación cuando esté disponible
-    } catch {
-      // Error al exportar
-    }
+  const handleExport = () => {
+    if (!requisitos.length) return;
+    const headers = [
+      'Requisito',
+      'Tipo',
+      'Estado',
+      'Fecha Vigencia',
+      'Fecha Vencimiento',
+      'Días para Vencer',
+    ];
+    const rows = requisitos.map((r) => [
+      r.requisito_nombre || '',
+      r.tipo_requisito_nombre || '',
+      r.estado || '',
+      r.fecha_vigencia || '',
+      r.fecha_vencimiento || '',
+      r.dias_para_vencer?.toString() || '',
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join(
+      '\n'
+    );
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `requisitos_legales_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFiltersChange = (newFilters: Partial<FilterState>) => {
@@ -246,7 +271,11 @@ export const RequisitosLegalesTab = ({
             variant="outline"
             size="sm"
             onClick={() => handleFiltersChange({ estado: undefined })}
-            className={!filters.estado ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-300' : ''}
+            className={
+              !filters.estado
+                ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-300'
+                : ''
+            }
           >
             Todos ({totalCount})
           </Button>
@@ -256,7 +285,11 @@ export const RequisitosLegalesTab = ({
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'vigente' })}
             leftIcon={<CheckCircle2 className="h-3 w-3" />}
-            className={filters.estado === 'vigente' ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400 border-success-300' : ''}
+            className={
+              filters.estado === 'vigente'
+                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400 border-success-300'
+                : ''
+            }
           >
             Vigentes ({stats.vigentes})
           </Button>
@@ -266,7 +299,11 @@ export const RequisitosLegalesTab = ({
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'proximo_vencer' })}
             leftIcon={<AlertTriangle className="h-3 w-3" />}
-            className={filters.estado === 'proximo_vencer' ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400 border-warning-300' : ''}
+            className={
+              filters.estado === 'proximo_vencer'
+                ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400 border-warning-300'
+                : ''
+            }
           >
             Próximos a Vencer ({stats.proximosVencer})
           </Button>
@@ -276,7 +313,11 @@ export const RequisitosLegalesTab = ({
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'vencido' })}
             leftIcon={<XCircle className="h-3 w-3" />}
-            className={filters.estado === 'vencido' ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400 border-danger-300' : ''}
+            className={
+              filters.estado === 'vencido'
+                ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400 border-danger-300'
+                : ''
+            }
           >
             Vencidos ({stats.vencidos})
           </Button>
@@ -325,7 +366,7 @@ export const RequisitosLegalesTab = ({
         message={`¿Estás seguro de eliminar el requisito ${requisitoToDelete?.requisito_nombre}? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
-        isLoading={false}
+        isLoading={deleteMutation.isPending}
       />
     </>
   );

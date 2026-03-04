@@ -11,6 +11,12 @@ import {
   toggleEstadoProfesional,
 } from '../api/miEmpresa.api';
 import { useAuthStore } from '@/store/authStore';
+import { isPortalOnlyUser } from '@/utils/portalUtils';
+
+/** El usuario tiene proveedor vinculado (por ID o por cargo portal) */
+function useHasProveedor(): boolean {
+  return useAuthStore((s) => Boolean(s.user?.proveedor) || isPortalOnlyUser(s.user));
+}
 
 // ============================================================================
 // QUERY KEYS
@@ -31,7 +37,7 @@ export const miEmpresaKeys = {
 
 /** Datos del proveedor vinculado al usuario */
 export function useMiEmpresa() {
-  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+  const hasProveedor = useHasProveedor();
 
   return useQuery({
     queryKey: miEmpresaKeys.empresa(),
@@ -44,7 +50,7 @@ export function useMiEmpresa() {
 
 /** Condiciones comerciales del proveedor vinculado */
 export function useMisContratos() {
-  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+  const hasProveedor = useHasProveedor();
 
   return useQuery({
     queryKey: miEmpresaKeys.contratos(),
@@ -57,7 +63,7 @@ export function useMisContratos() {
 
 /** Evaluaciones del proveedor vinculado */
 export function useMisEvaluaciones() {
-  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+  const hasProveedor = useHasProveedor();
 
   return useQuery({
     queryKey: miEmpresaKeys.evaluaciones(),
@@ -70,7 +76,7 @@ export function useMisEvaluaciones() {
 
 /** Precios de materia prima del proveedor vinculado */
 export function useMisPrecios() {
-  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+  const hasProveedor = useHasProveedor();
 
   return useQuery({
     queryKey: miEmpresaKeys.precios(),
@@ -83,7 +89,7 @@ export function useMisPrecios() {
 
 /** Profesionales vinculados al mismo proveedor (solo CONSULTOR) */
 export function useMisProfesionales() {
-  const hasProveedor = useAuthStore((s) => Boolean(s.user?.proveedor));
+  const hasProveedor = useHasProveedor();
 
   return useQuery({
     queryKey: miEmpresaKeys.profesionales(),

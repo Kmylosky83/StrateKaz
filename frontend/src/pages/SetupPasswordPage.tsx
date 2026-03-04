@@ -8,7 +8,7 @@ import { motion, type Variants } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { Lock, ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Lock, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { authAPI } from '@/api/auth.api';
@@ -39,6 +39,8 @@ export const SetupPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [setupSuccess, setSetupSuccess] = useState(false);
   const [invalidLink, setInvalidLink] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   // Leer token/email/tenant_id de URL params, con fallback a sessionStorage
   // (la PWA puede recargar la página y perder query params)
@@ -125,6 +127,23 @@ export const SetupPasswordPage = () => {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendLink = async () => {
+    if (!email) {
+      toast.error('No se encontró el correo electrónico.');
+      return;
+    }
+    setIsResending(true);
+    try {
+      await authAPI.resendSetupPassword(email);
+      setResendSuccess(true);
+      toast.success('Se ha enviado un nuevo enlace a tu correo.');
+    } catch {
+      toast.error('No se pudo reenviar el enlace. Intenta de nuevo más tarde.');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -247,20 +266,43 @@ export const SetupPasswordPage = () => {
             </motion.div>
           ) : invalidLink ? (
             /* Estado: Enlace invalido */
-            <motion.div className="space-y-5" variants={itemVariants} key="invalid-state">
+            <motion.div className="space-y-4" variants={itemVariants} key="invalid-state">
               <div className="rounded-lg p-4 bg-amber-900/30 border border-amber-700/50">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0 text-amber-400" />
                   <div className="text-sm text-amber-200">
                     <p className="font-medium mb-1">Enlace expirado</p>
                     <p className="text-xs text-amber-300/80">
-                      Este enlace de configuración ya no es válido. Los enlaces expiran después de
-                      72 horas o al ser usados. Solicita un nuevo enlace a tu administrador de
-                      Recursos Humanos.
+                      Este enlace de configuración ya no es válido. Los enlaces expiran después de 7
+                      días o al ser usados.
                     </p>
                   </div>
                 </div>
               </div>
+
+              {resendSuccess ? (
+                <div className="rounded-lg p-4 bg-emerald-900/30 border border-emerald-700/50">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0 text-emerald-400" />
+                    <div className="text-sm text-emerald-200">
+                      <p className="font-medium mb-1">Enlace reenviado</p>
+                      <p className="text-xs text-emerald-300/80">
+                        Revisa tu bandeja de entrada. El nuevo enlace es válido por 7 días.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : email ? (
+                <Button
+                  type="button"
+                  onClick={handleResendLink}
+                  isLoading={isResending}
+                  className="w-full shadow-lg"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  {isResending ? 'Reenviando...' : 'Reenviar enlace de configuración'}
+                </Button>
+              ) : null}
 
               <Link to="/login">
                 <Button

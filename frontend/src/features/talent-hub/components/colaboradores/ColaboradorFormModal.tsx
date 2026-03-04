@@ -682,7 +682,7 @@ export const ColaboradorFormModal = ({
                   <Mail size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                   <p className="text-xs text-blue-700 dark:text-blue-300">
                     Se enviará un correo a <strong>{formData.email_corporativo || '...'}</strong>{' '}
-                    con un enlace para configurar la contraseña. El enlace expira en 72 horas.
+                    con un enlace para configurar la contraseña. El enlace expira en 7 días.
                   </p>
                 </div>
               </div>

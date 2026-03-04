@@ -34,6 +34,7 @@ from .user_preferences_views import (
 
 from .setup_password_views import (
     SetupPasswordView,
+    ResendSetupPasswordView,
 )
 
 __all__ = [
@@ -63,4 +64,5 @@ __all__ = [
     'UserPreferencesView',
     # Setup Password view (Talent Hub)
     'SetupPasswordView',
+    'ResendSetupPasswordView',
 ]

@@ -238,10 +238,10 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         new_user._from_contratacion = True
         new_user.set_password(temp_password)
 
-        # Generar token de setup de contraseña (72 horas)
+        # Generar token de setup de contraseña
         setup_token = uuid.uuid4().hex
         new_user.password_setup_token = setup_token
-        new_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+        new_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
         new_user.save()
 
         # Vincular Colaborador al User
@@ -275,7 +275,7 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 tenant_name=tenant_name,
                 cargo_name=colaborador.cargo.name if colaborador.cargo else '',
                 setup_url=setup_url,
-                expiry_hours=72,
+                expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
                 primary_color=primary_color,
                 secondary_color=secondary_color,
             )

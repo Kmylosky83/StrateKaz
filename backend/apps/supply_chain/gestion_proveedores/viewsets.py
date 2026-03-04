@@ -620,7 +620,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         setup_token = uuid.uuid4().hex
         new_user.password_setup_token = setup_token
-        new_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+        new_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
         new_user.save()
 
         try:
@@ -646,7 +646,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 tenant_name=tenant_name,
                 cargo_name=cargo.name if cargo else '',
                 setup_url=setup_url,
-                expiry_hours=72,
+                expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
                 primary_color=primary_color,
                 secondary_color=secondary_color,
             )
@@ -726,7 +726,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 # Regenerar token de setup password
                 setup_token = uuid.uuid4().hex
                 existing_user.password_setup_token = setup_token
-                existing_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+                existing_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
                 existing_user.save()
                 # Re-enviar email de setup
                 try:
@@ -748,7 +748,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                         tenant_name=tenant_name,
                         cargo_name=cargo.name if cargo else '',
                         setup_url=setup_url,
-                        expiry_hours=72,
+                        expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
                         primary_color=primary_color,
                         secondary_color=secondary_color,
                     )

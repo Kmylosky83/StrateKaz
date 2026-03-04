@@ -187,6 +187,11 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
     - Cargo asignado
     - Link para ingresar al portal
     - Password temporal (si viene del flujo de contratacion)
+
+    NOTA: Si el usuario tiene password_setup_token, NO se envia welcome email.
+    En ese caso ya se envio el email de setup de contraseña desde el viewset
+    que creo el usuario (Colaboradores o Proveedores). Enviar ambos causa
+    confusion porque el welcome NO tiene link de setup.
     """
     if not created:
         return
@@ -198,6 +203,16 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
         return
 
     if not user.email:
+        return
+
+    # Si tiene token de setup de contraseña, el email de setup ya se envía
+    # desde el viewset que creó el usuario. No enviar welcome duplicado.
+    if user.password_setup_token:
+        logger.info(
+            'Welcome email omitido para User %s (%s): '
+            'tiene password_setup_token, se enviará email de setup en su lugar.',
+            user.id, user.email
+        )
         return
 
     # Obtener datos del tenant (nombre + colores para branding del email)

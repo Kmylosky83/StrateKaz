@@ -171,7 +171,7 @@ def send_setup_password_email_task(
     tenant_name: str,
     cargo_name: str = '',
     setup_url: str = '',
-    expiry_hours: int = 72,
+    expiry_hours: int = 168,
     primary_color: str = '#3b82f6',
     secondary_color: str = '#1e40af',
 ) -> Dict[str, Any]:
@@ -190,6 +190,7 @@ def send_setup_password_email_task(
             'cargo_name': cargo_name,
             'setup_url': setup_url,
             'expiry_hours': expiry_hours,
+            'expiry_days': max(1, expiry_hours // 24),
             'primary_color': primary_color,
             'secondary_color': secondary_color,
             'current_year': datetime.now().year,

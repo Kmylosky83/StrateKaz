@@ -136,6 +136,18 @@ export const authAPI = {
   },
 
   /**
+   * Reenviar enlace de configuración de contraseña.
+   * Endpoint público sin autenticación.
+   * Genera nuevo token y envía email de setup nuevamente.
+   */
+  resendSetupPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await axios.post<{ message: string }>('/core/setup-password/resend/', {
+      email,
+    });
+    return response.data;
+  },
+
+  /**
    * Obtener perfil de un usuario para impersonación (solo superadmins).
    * Retorna el mismo formato que getProfile() pero para el usuario especificado.
    */

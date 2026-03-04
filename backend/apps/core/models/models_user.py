@@ -747,6 +747,8 @@ class User(AbstractUser):
     # ==========================================================================
     # PASSWORD SETUP (para usuarios creados desde Talent Hub sin contraseña)
     # ==========================================================================
+    PASSWORD_SETUP_EXPIRY_HOURS = 168  # 7 días
+
     password_setup_token = models.CharField(
         max_length=64,
         null=True,

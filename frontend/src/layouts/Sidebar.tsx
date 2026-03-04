@@ -29,6 +29,8 @@ import {
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
 import { useAuthStore } from '@/store/authStore';
+import type { ModuleColor } from '@/utils/moduleColors';
+import { getMappedColor } from '@/utils/moduleColors';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -42,56 +44,7 @@ interface SidebarProps {
   impersonationOffset?: boolean;
 }
 
-// Colores por módulo - Sincronizado con backend CATEGORY_DEFAULT_COLORS
-type ModuleColor =
-  | 'purple'
-  | 'blue'
-  | 'green'
-  | 'orange'
-  | 'gray'
-  | 'teal'
-  | 'red'
-  | 'yellow'
-  | 'pink'
-  | 'indigo';
-
-/**
- * Mapea colores extendidos de Tailwind a los 10 colores soportados
- * Permite que la BD use cualquier color y el frontend lo convierta
- */
-const colorMapping: Record<string, ModuleColor> = {
-  // Colores directos (ya soportados)
-  purple: 'purple',
-  blue: 'blue',
-  green: 'green',
-  orange: 'orange',
-  gray: 'gray',
-  teal: 'teal',
-  red: 'red',
-  yellow: 'yellow',
-  pink: 'pink',
-  indigo: 'indigo',
-  // Colores extendidos → mapeados al más cercano
-  amber: 'orange',
-  cyan: 'teal',
-  rose: 'pink',
-  violet: 'purple',
-  emerald: 'green',
-  lime: 'green',
-  slate: 'gray',
-  stone: 'gray',
-  zinc: 'gray',
-  neutral: 'gray',
-  fuchsia: 'pink',
-  sky: 'blue',
-};
-
-/** Obtiene el color mapeado o null si no hay color */
-const getMappedColor = (color: string | undefined | null): ModuleColor | null => {
-  if (!color) return null;
-  return colorMapping[color] || null;
-};
-
+// Colores del sidebar por módulo (clases Tailwind específicas para navegación)
 const moduleColors: Record<
   ModuleColor,
   {

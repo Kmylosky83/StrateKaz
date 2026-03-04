@@ -16,40 +16,10 @@
 import { useMemo } from 'react';
 import { useModulesTree } from '@/hooks/useModules';
 import type { ModuleColor } from '@/hooks/useModules';
+import { colorMapping } from '@/utils/moduleColors';
 
 // Re-export ModuleColor para uso externo
 export type { ModuleColor };
-
-/**
- * Mapeo de colores extendidos de Tailwind a los 10 colores soportados
- * Sincronizado con Sidebar.tsx (líneas 30-55)
- */
-const colorMapping: Record<string, ModuleColor> = {
-  // Colores directos (ya soportados)
-  purple: 'purple',
-  blue: 'blue',
-  green: 'green',
-  orange: 'orange',
-  gray: 'gray',
-  teal: 'teal',
-  red: 'red',
-  yellow: 'yellow',
-  pink: 'pink',
-  indigo: 'indigo',
-  // Colores extendidos → mapeados al más cercano
-  amber: 'orange',
-  cyan: 'teal',
-  rose: 'pink',
-  violet: 'purple',
-  emerald: 'green',
-  lime: 'green',
-  slate: 'gray',
-  stone: 'gray',
-  zinc: 'gray',
-  neutral: 'gray',
-  fuchsia: 'pink',
-  sky: 'blue',
-};
 
 /**
  * Valor de retorno del hook useModuleColor

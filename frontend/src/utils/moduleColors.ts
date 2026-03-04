@@ -1,18 +1,79 @@
 /**
- * Design System - Colores de Módulos
+ * Design System - Colores de Módulos (FUENTE ÚNICA)
  *
- * Archivo centralizado para todas las clases de color de los módulos.
- * Usar estas constantes en lugar de hardcodear colores en componentes.
+ * Archivo centralizado para colores de módulos del sistema.
+ * TODOS los componentes que necesiten colores de módulo deben importar de aquí:
+ * - colorMapping: mapea colores extendidos de Tailwind a los 10 soportados
+ * - getMappedColor(): aplica el mapping con fallback
+ * - getModuleColorClasses(): clases de color para tabs/secciones
  *
- * Uso:
- * ```tsx
- * import { getModuleColorClasses } from '@/utils/moduleColors';
- *
- * const colors = getModuleColorClasses('purple');
- * <div className={colors.container}>...</div>
- * ```
+ * Consumidores:
+ * - Sidebar.tsx (nav colors)
+ * - ModuleCard.tsx (dashboard cards)
+ * - useModuleColor.ts (hook reutilizable)
+ * - PageTabs, SectionGuard, etc.
  */
 import type { ModuleColor } from '@/hooks/useModules';
+
+// ============================================================================
+// MAPPING CENTRALIZADO (antes duplicado en Sidebar, ModuleCard, useModuleColor)
+// ============================================================================
+
+/**
+ * Mapea colores extendidos de Tailwind a los 10 colores soportados.
+ * Sincronizado con backend COLOR_CHOICES en SystemModule.
+ */
+export const colorMapping: Record<string, ModuleColor> = {
+  // Colores directos (ya soportados)
+  purple: 'purple',
+  blue: 'blue',
+  green: 'green',
+  orange: 'orange',
+  gray: 'gray',
+  teal: 'teal',
+  red: 'red',
+  yellow: 'yellow',
+  pink: 'pink',
+  indigo: 'indigo',
+  // Colores extendidos → mapeados al más cercano
+  amber: 'orange',
+  cyan: 'teal',
+  rose: 'pink',
+  violet: 'purple',
+  emerald: 'green',
+  lime: 'green',
+  slate: 'gray',
+  stone: 'gray',
+  zinc: 'gray',
+  neutral: 'gray',
+  fuchsia: 'pink',
+  sky: 'blue',
+};
+
+/**
+ * Aplica el mapping de color con fallback.
+ * @returns Color mapeado o null si no hay color de entrada.
+ */
+export const getMappedColor = (color: string | undefined | null): ModuleColor | null => {
+  if (!color) return null;
+  return colorMapping[color] || null;
+};
+
+/**
+ * Aplica el mapping de color con fallback garantizado (nunca null).
+ * @returns Color mapeado, o fallback ('blue' por defecto).
+ */
+export const getMappedColorSafe = (
+  color: string | undefined | null,
+  fallback: ModuleColor = 'blue'
+): ModuleColor => {
+  if (!color) return fallback;
+  return colorMapping[color] || fallback;
+};
+
+// ============================================================================
+// CLASES DE COLOR PARA TABS/SECCIONES
+// ============================================================================
 
 /**
  * Clases de color para contenedores de secciones/tabs

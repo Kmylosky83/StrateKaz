@@ -16,12 +16,14 @@ import {
   moduleChevronVariants,
   moduleBadgeVariants,
 } from '@/lib/animations';
+import type { ModuleColor } from '@/utils/moduleColors';
+import { getMappedColorSafe } from '@/utils/moduleColors';
 
 // ============================================================================
 // TIPOS
 // ============================================================================
 
-export type ModuleCardColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
+export type ModuleCardColor = ModuleColor;
 
 export interface ModuleCardProps {
   /** Componente de icono de Lucide */
@@ -44,13 +46,16 @@ export interface ModuleCardProps {
 // CONFIGURACIÓN DE COLORES
 // ============================================================================
 
-const colorConfig: Record<ModuleCardColor, {
-  bg: string;
-  icon: string;
-  border: string;
-  badge: string;
-  ring: string;
-}> = {
+const colorConfig: Record<
+  ModuleCardColor,
+  {
+    bg: string;
+    icon: string;
+    border: string;
+    badge: string;
+    ring: string;
+  }
+> = {
   purple: {
     bg: 'bg-purple-50 dark:bg-purple-900/20',
     icon: 'text-purple-600 dark:text-purple-400',
@@ -124,49 +129,12 @@ const colorConfig: Record<ModuleCardColor, {
 };
 
 // ============================================================================
-// MAPEO DE COLORES
-// ============================================================================
-
-/**
- * Mapea colores extendidos de Tailwind a los 10 colores soportados
- * Esto permite que la BD use cualquier color de Tailwind y el frontend
- * lo convierta al color más cercano soportado
- */
-const colorMapping: Record<string, ModuleCardColor> = {
-  // Colores directos (ya soportados)
-  purple: 'purple',
-  blue: 'blue',
-  green: 'green',
-  orange: 'orange',
-  gray: 'gray',
-  teal: 'teal',
-  red: 'red',
-  yellow: 'yellow',
-  pink: 'pink',
-  indigo: 'indigo',
-  // Colores extendidos → mapeados al más cercano
-  amber: 'orange',
-  cyan: 'teal',
-  rose: 'pink',
-  violet: 'purple',
-  emerald: 'green',
-  lime: 'green',
-  slate: 'gray',
-  stone: 'gray',
-  zinc: 'gray',
-  neutral: 'gray',
-  fuchsia: 'pink',
-  sky: 'blue',
-};
-
-// ============================================================================
 // COMPONENTE
 // ============================================================================
 
-// Helper para obtener color con fallback y mapeo
+// Helper para obtener color con fallback y mapeo (usa colorMapping centralizado)
 const getColors = (color: string | undefined | null) => {
-  if (!color) return colorConfig['blue'];
-  const mappedColor = colorMapping[color] || 'blue';
+  const mappedColor = getMappedColorSafe(color);
   return colorConfig[mappedColor];
 };
 
@@ -241,10 +209,7 @@ export function ModuleCard({
                 </p>
               )}
             </div>
-            <motion.div
-              variants={moduleChevronVariants}
-              animate={isHovered ? 'hover' : 'idle'}
-            >
+            <motion.div variants={moduleChevronVariants} animate={isHovered ? 'hover' : 'idle'}>
               <ChevronRight
                 className={cn(
                   'flex-shrink-0 w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5',

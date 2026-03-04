@@ -597,13 +597,20 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         """Crea cuenta de usuario vinculada al proveedor y envía email de setup."""
         temp_password = uuid.uuid4().hex
 
+        # Generar document_number único por usuario (no por proveedor)
+        # Cada persona tiene su propio documento; placeholder hasta que lo actualice
+        base_doc = proveedor.numero_documento or f'PROV-{proveedor.id}'
+        doc_number = base_doc
+        if User.objects.filter(document_number=base_doc).exists():
+            doc_number = f'{base_doc}-{uuid.uuid4().hex[:6]}'
+
         new_user = User(
             username=username,
             email=email,
             first_name=proveedor.nombre_comercial or proveedor.razon_social,
             last_name='',
             cargo=cargo,
-            document_number=proveedor.numero_documento or f'PROV-{proveedor.id}',
+            document_number=doc_number,
             proveedor=proveedor,
             is_active=True,
             created_by=created_by,

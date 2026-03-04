@@ -354,8 +354,21 @@ export function useCrearAccesoProveedor() {
       toast.success('Acceso al sistema creado. Se envió un correo para configurar la contraseña.');
     },
     onError: (error: unknown) => {
-      const apiError = error as { response?: { data?: { detail?: string } } };
-      toast.error(apiError?.response?.data?.detail || 'Error al crear acceso al sistema');
+      const apiError = error as {
+        response?: { data?: Record<string, unknown> };
+      };
+      const data = apiError?.response?.data;
+      // Extraer detail o errores de campo (DRF devuelve {"campo": ["error"]})
+      if (data?.detail) {
+        toast.error(String(data.detail));
+      } else if (data) {
+        const msgs = Object.entries(data)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+          .join(' | ');
+        toast.error(msgs || 'Error al crear acceso al sistema');
+      } else {
+        toast.error('Error al crear acceso al sistema');
+      }
     },
   });
 }

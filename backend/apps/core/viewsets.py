@@ -372,6 +372,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 'cargo', 'cargo__area', 'proveedor'
             ).get(pk=pk, deleted_at__isnull=True)
         except User.DoesNotExist:
+            from apps.core.utils.audit_logging import log_impersonation_failed
+            log_impersonation_failed(request, f'pk={pk}', reason='user_not_found')
             return Response(
                 {'error': 'Usuario no encontrado'},
                 status=status.HTTP_404_NOT_FOUND
@@ -379,6 +381,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # No permitir impersonarse a sí mismo
         if target_user.id == request.user.id:
+            from apps.core.utils.audit_logging import log_impersonation_failed
+            log_impersonation_failed(request, target_user.username, reason='self_impersonation')
             return Response(
                 {'error': 'No puedes impersonarte a ti mismo'},
                 status=status.HTTP_400_BAD_REQUEST

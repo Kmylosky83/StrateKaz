@@ -9,6 +9,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Search, User as UserIcon, Briefcase, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
@@ -27,6 +28,9 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
   const [loading, setLoading] = useState<number | null>(null);
   const startUserImpersonation = useAuthStore((state) => state.startUserImpersonation);
   const currentTenant = useAuthStore((state) => state.currentTenant);
+  const originalUser = useAuthStore((state) => state.originalUser);
+  const currentUser = useAuthStore((state) => state.user);
+  const superadminId = originalUser?.id ?? currentUser?.id;
 
   // Obtener usuarios del tenant actual
   const { data, isLoading } = useQuery({
@@ -35,12 +39,14 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     enabled: isOpen && !!currentTenant,
   });
 
-  // Filtrar por búsqueda
+  // Filtrar por búsqueda y excluir al superadmin
   const users = useMemo(() => {
     const results = Array.isArray(data) ? data : (data?.results ?? []);
-    if (!search.trim()) return results;
+    // Excluir al superadmin de la lista (no puede impersonarse a sí mismo)
+    const filtered = results.filter((u) => u.id !== superadminId);
+    if (!search.trim()) return filtered;
     const term = search.toLowerCase();
-    return results.filter(
+    return filtered.filter(
       (u) =>
         u.full_name?.toLowerCase().includes(term) ||
         u.email?.toLowerCase().includes(term) ||
@@ -48,7 +54,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
         u.last_name?.toLowerCase().includes(term) ||
         u.cargo?.name?.toLowerCase().includes(term)
     );
-  }, [data, search]);
+  }, [data, search, superadminId]);
 
   const handleImpersonate = async (userId: number, hasProveedor: boolean) => {
     try {
@@ -61,8 +67,9 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
       } else {
         navigate('/dashboard');
       }
-    } catch (error) {
-      console.error('Error al impersonar usuario:', error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err?.response?.data?.error || 'No se pudo ver como este usuario');
     } finally {
       setLoading(null);
     }

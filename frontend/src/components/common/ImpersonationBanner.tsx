@@ -38,9 +38,10 @@ export const ImpersonationBanner = () => {
     navigate('/admin-global');
   };
 
-  /** Cambiar usuario: sale de impersonación de usuario pero se queda en el tenant */
+  /** Cambiar usuario: sale de impersonación y abre modal para elegir otro */
   const handleChangeUser = () => {
     stopUserImpersonation();
+    setPendingUserSelection(true);
     navigate('/dashboard');
   };
 

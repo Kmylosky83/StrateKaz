@@ -135,6 +135,15 @@ def log_impersonation(request, target_user):
     )
 
 
+def log_impersonation_failed(request, target_info, reason='unknown'):
+    """Log cuando un intento de impersonación falla"""
+    security_logger.warning(
+        f"IMPERSONATE_FAILED: superadmin '{_user_str(request.user)}' (ID:{request.user.id}) "
+        f"target='{target_info}' reason='{reason}' "
+        f"- IP: {get_client_ip(request)}"
+    )
+
+
 # USER PREFERENCES OPERATIONS (MS-003)
 def log_preferences_updated(user, updated_fields):
     """

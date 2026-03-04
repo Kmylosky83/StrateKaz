@@ -570,7 +570,8 @@ export default function ProveedorPortalPage() {
   }
 
   // Guard: sin proveedor vinculado → dashboard
-  if (!user.proveedor) {
+  // Usar isPortalOnlyUser (cargo.code) como check primario + user.proveedor como secundario
+  if (!user.proveedor && !isPortalOnlyUser(user)) {
     return <Navigate to="/dashboard" replace />;
   }
 

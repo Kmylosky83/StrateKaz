@@ -31,7 +31,37 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Interceptor para refresh token automático
+// ── Refresh Token Queue ─────────────────────────────────────────────────────
+// Previene race conditions cuando múltiples requests obtienen 401 simultáneamente.
+// Solo el PRIMER 401 dispara el refresh; los demás esperan el resultado.
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+
+function doRefreshToken(): Promise<string> {
+  const refreshToken = localStorage.getItem('refresh_token');
+
+  if (!refreshToken) {
+    return Promise.reject(new Error('No refresh token available'));
+  }
+
+  return axios
+    .post(`${API_URL}/tenant/auth/refresh/`, { refresh: refreshToken })
+    .then((response) => {
+      const { access, refresh: newRefreshToken } = response.data;
+      localStorage.setItem('access_token', access);
+
+      // Guardar nuevo refresh token (sliding expiration)
+      // Con ROTATE_REFRESH_TOKENS=True, el servidor envía un nuevo refresh token
+      // que extiende la sesión otros 7 días desde este momento
+      if (newRefreshToken) {
+        localStorage.setItem('refresh_token', newRefreshToken);
+      }
+
+      return access;
+    });
+}
+
+// Interceptor para refresh token automático con cola serializada
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -41,41 +71,49 @@ axiosInstance.interceptors.response.use(
     // IMPORTANTE: No intentar refresh en páginas públicas (evita loops/logouts inesperados)
     const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
     const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
+
     if (error.response?.status === 401 && !originalRequest._retry && !isPublicPage) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-
-        if (!refreshToken) {
-          throw new Error('No refresh token available');
+        // Si ya hay un refresh en curso, esperar su resultado en vez de disparar otro
+        if (isRefreshing && refreshPromise) {
+          const newToken = await refreshPromise;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          }
+          return axiosInstance(originalRequest);
         }
 
-        const response = await axios.post(`${API_URL}/tenant/auth/refresh/`, {
-          refresh: refreshToken,
-        });
+        // Primer request que detecta 401 → iniciar refresh
+        isRefreshing = true;
+        refreshPromise = doRefreshToken();
 
-        const { access, refresh: newRefreshToken } = response.data;
-        localStorage.setItem('access_token', access);
-
-        // Guardar nuevo refresh token (sliding expiration)
-        // Con ROTATE_REFRESH_TOKENS=True, el servidor envía un nuevo refresh token
-        // que extiende la sesión otros 7 días desde este momento
-        if (newRefreshToken) {
-          localStorage.setItem('refresh_token', newRefreshToken);
-        }
+        const newToken = await refreshPromise;
 
         // Reintentar la petición original con el nuevo token
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${access}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
         }
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // forceLogout limpia localStorage + Zustand + RQ cache.
-        // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
-        // NO usar window.location.href: causa hard reload que borra estado y hace loop.
-        useAuthStore.getState().forceLogout();
+        // Solo hacer logout si el refresh REALMENTE falló (no error de red transitorio)
+        const refreshStatus = (refreshError as { response?: { status?: number } })?.response
+          ?.status;
+
+        if (refreshStatus === 401 || refreshStatus === 400) {
+          // Token realmente inválido → logout
+          // forceLogout limpia localStorage + Zustand + RQ cache.
+          // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
+          // NO usar window.location.href: causa hard reload que borra estado y hace loop.
+          useAuthStore.getState().forceLogout();
+        }
+        // Para otros errores (network, 5xx), no hacer logout — el usuario puede reintentar
         return Promise.reject(refreshError);
+      } finally {
+        // Liberar la cola para que futuros 401 puedan reintentar
+        isRefreshing = false;
+        refreshPromise = null;
       }
     }
 

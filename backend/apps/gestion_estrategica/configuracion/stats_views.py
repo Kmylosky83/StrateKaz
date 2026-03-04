@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Secciones validas para estadisticas
-VALID_SECTIONS = ['empresa', 'sedes', 'integraciones', 'modulos', 'consecutivos', 'unidades_medida']
+VALID_SECTIONS = ['empresa', 'sedes', 'integraciones', 'modulos', 'consecutivos', 'unidades_medida', 'normas_iso']
 
 
 @api_view(['GET'])
@@ -58,6 +58,7 @@ def config_stats_view(request):
             'modulos': calculate_modulos_stats,
             'consecutivos': calculate_consecutivos_stats,
             'unidades_medida': calculate_unidades_medida_stats,
+            'normas_iso': calculate_normas_iso_stats,
         }
 
         stats = calculators[section]()
@@ -414,6 +415,36 @@ def calculate_consecutivos_stats():
         'value': str(categorias_en_uso),
         'icon': 'Layers',
         'iconColor': 'primary',
+    })
+
+    return stats
+
+
+def calculate_normas_iso_stats():
+    """Calcula estadisticas de la seccion Normas ISO"""
+    from .models import NormaISO
+
+    stats = []
+    normas = NormaISO.objects.filter(deleted_at__isnull=True)
+
+    # Total de normas
+    total = normas.count()
+    stats.append({
+        'key': 'total',
+        'label': 'Total Normas',
+        'value': str(total),
+        'icon': 'Shield',
+        'iconColor': 'primary',
+    })
+
+    # Activas
+    activas = normas.filter(is_active=True).count()
+    stats.append({
+        'key': 'activas',
+        'label': 'Activas',
+        'value': str(activas),
+        'icon': 'Activity',
+        'iconColor': 'success' if activas > 0 else 'warning',
     })
 
     return stats

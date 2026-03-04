@@ -19,7 +19,7 @@
  * - Sin hardcoding de unidades
  */
 import { useState, useEffect, useCallback } from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Alert } from '@/components/common/Alert';
@@ -175,12 +175,11 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       });
     } else if (!isEditing) {
       // Para nuevo registro, usar unidad por defecto de la empresa si existe
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const defaultUnit = (choices as any)?.unidad_capacidad_default?.value?.toString() || '';
+      const choicesRecord = choices as Record<string, { value?: number }> | undefined;
+      const defaultUnit = choicesRecord?.unidad_capacidad_default?.value?.toString() || '';
       setFormData({ ...defaultFormData, unidad_capacidad: defaultUnit });
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  }, [sedeDetail, isEditing, (choices as any)?.unidad_capacidad_default]);
+  }, [sedeDetail, isEditing, choices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,7 +237,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   // Incluye opción "Otro tipo..." para crear nuevos tipos
 
   const tipoSedeOptions = [
-    ...(choices?.tipos_sede?.map((t: any) => ({
+    ...(choices?.tipos_sede?.map((t: { value: number; label: string }) => ({
       value: t.value.toString(),
       label: t.label,
     })) || []),
@@ -252,9 +251,9 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const departamentoOptions = choices?.departamentos || [];
 
   // Unidades de capacidad dinámicas (multi-industria)
-
+  const choicesExt = choices as (typeof choices & { unidades_capacidad?: { value: number; label: string }[] }) | undefined;
   const unidadesCapacidadOptions =
-    (choices as any)?.unidades_capacidad?.map((u: any) => ({
+    choicesExt?.unidades_capacidad?.map((u) => ({
       value: u.value.toString(),
       label: u.label,
     })) || [];
@@ -300,9 +299,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Sección: Identificación */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Identificación
-          </h4>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Identificación
+            </h4>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -355,9 +359,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
         {/* Sección: Ubicación */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Ubicación
-          </h4>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <Navigation className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Ubicación
+            </h4>
+          </div>
 
           <Textarea
             label="Dirección *"
@@ -448,9 +457,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
         {/* Sección: Administración */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Administración
-          </h4>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <UserCog className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Administración
+            </h4>
+          </div>
 
           <div className="grid grid-cols-3 gap-4">
             <Select
@@ -477,9 +491,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
         {/* Sección: Control */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Control
-          </h4>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <Settings2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Control
+            </h4>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -518,7 +537,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
             <div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sede Principal</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -532,7 +551,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
           </div>
 
           {isEditing && (
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sede Activa</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

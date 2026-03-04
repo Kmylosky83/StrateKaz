@@ -17,6 +17,9 @@ const MiEquipoPage = lazy(() =>
 const ProveedorPortalPage = lazy(() =>
   import('@/features/proveedor-portal').then((m) => ({ default: m.ProveedorPortalPage }))
 );
+const ClientePortalPage = lazy(() =>
+  import('@/features/cliente-portal').then((m) => ({ default: m.ClientePortalPage }))
+);
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
 
 export const portalsRoutes = (
@@ -24,6 +27,7 @@ export const portalsRoutes = (
     <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
     <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
     <Route path="/proveedor-portal" element={withSuspense(ProveedorPortalPage)} />
+    <Route path="/cliente-portal" element={withSuspense(ClientePortalPage)} />
 
     {/* Usuarios - Modulo transversal (requiere acceso RBAC) */}
     <Route

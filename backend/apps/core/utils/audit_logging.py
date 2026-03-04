@@ -144,6 +144,16 @@ def log_impersonation_failed(request, target_info, reason='unknown'):
     )
 
 
+# CLIENTE PORTAL OPERATIONS
+def log_cliente_access_created(request, cliente, target_user):
+    """Log cuando se crea acceso portal para un cliente"""
+    security_logger.info(
+        f"CLIENTE_ACCESS_CREATED: cliente '{cliente.razon_social}' (ID:{cliente.id}) "
+        f"user '{target_user.username}' by {_user_str(request.user)} "
+        f"- IP: {get_client_ip(request)}"
+    )
+
+
 # USER PREFERENCES OPERATIONS (MS-003)
 def log_preferences_updated(user, updated_fields):
     """

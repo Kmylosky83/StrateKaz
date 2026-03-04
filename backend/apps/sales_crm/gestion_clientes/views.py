@@ -34,7 +34,8 @@ from .serializers import (
     SegmentoClienteSerializer, ClienteSegmentoSerializer,
     InteraccionClienteListSerializer, InteraccionClienteSerializer,
     ScoringClienteSerializer, ActualizarScoringSerializer,
-    AsignarSegmentoSerializer
+    AsignarSegmentoSerializer,
+    CrearAccesoClienteSerializer, MiClienteSerializer,
 )
 
 
@@ -410,6 +411,254 @@ class ClienteViewSet(viewsets.ModelViewSet):
             'top_clientes': top_clientes,
             'scoring': scorings
         })
+
+    # ── Portal de clientes ──────────────────────────────────────────────
+
+    @extend_schema(
+        summary='Crear acceso portal para cliente',
+        description='Crea una cuenta de usuario con cargo CLIENTE_PORTAL vinculada al cliente',
+        tags=['Sales CRM - Portal']
+    )
+    @action(detail=True, methods=['post'], url_path='crear-acceso')
+    def crear_acceso(self, request, pk=None):
+        """
+        Crea cuenta de usuario portal para un cliente existente.
+
+        POST /api/sales-crm/clientes/{id}/crear-acceso/
+        Body: { email, username }
+
+        - Crea User con cargo CLIENTE_PORTAL
+        - Vincula User.cliente = cliente
+        - Envía email de setup de contraseña
+        """
+        from django.db import transaction, connection
+        from django.apps import apps
+        from django.conf import settings as django_settings
+        from django.utils import timezone as tz
+        from datetime import timedelta
+        import uuid
+
+        cliente = self.get_object()
+
+        serializer = CrearAccesoClienteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+
+        User = apps.get_model('core', 'User')
+        Cargo = apps.get_model('core', 'Cargo')
+
+        # Obtener o crear cargo CLIENTE_PORTAL
+        cargo, created = Cargo.objects.get_or_create(
+            code='CLIENTE_PORTAL',
+            defaults={
+                'name': 'Cliente - Portal',
+                'is_system': True,
+                'is_active': True,
+                'is_externo': True,
+            }
+        )
+        if not created and not cargo.is_externo:
+            cargo.is_externo = True
+            cargo.save(update_fields=['is_externo'])
+
+        # Verificar si el email ya existe
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            # Si el usuario tiene un cliente eliminado → reasignar
+            old_cliente = existing_user.cliente
+            if old_cliente and old_cliente.is_deleted:
+                with transaction.atomic():
+                    existing_user.cliente = cliente
+                    existing_user.cargo = cargo
+                    existing_user.is_active = True
+                    existing_user.first_name = cliente.nombre_comercial or cliente.razon_social
+                    setup_token = uuid.uuid4().hex
+                    existing_user.password_setup_token = setup_token
+                    existing_user.password_setup_expires = tz.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
+                    existing_user.save()
+
+                self._send_setup_email(existing_user, cliente, setup_token)
+
+                from apps.core.utils.audit_logging import log_cliente_access_created
+                log_cliente_access_created(request, cliente, existing_user)
+
+                return Response({
+                    'detail': 'Acceso reasignado exitosamente. Se envió un correo para configurar la contraseña.',
+                })
+            else:
+                return Response(
+                    {'detail': 'Este email ya está registrado en el sistema.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Verificar username
+        existing_by_username = User.objects.filter(username=username).first()
+        if existing_by_username:
+            old_cliente = existing_by_username.cliente
+            if old_cliente and old_cliente.is_deleted:
+                existing_by_username.username = f'del_{existing_by_username.id}_{username}'
+                existing_by_username.save(update_fields=['username'])
+            else:
+                return Response(
+                    {'detail': 'Este nombre de usuario ya existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Crear usuario
+        with transaction.atomic():
+            temp_password = uuid.uuid4().hex
+            base_doc = cliente.numero_documento or f'CLI-{cliente.id}'
+            doc_number = base_doc
+            if User.objects.filter(document_number=base_doc).exists():
+                doc_number = f'{base_doc}-{uuid.uuid4().hex[:6]}'
+
+            new_user = User(
+                username=username,
+                email=email,
+                first_name=cliente.nombre_comercial or cliente.razon_social,
+                last_name='',
+                cargo=cargo,
+                document_number=doc_number,
+                cliente=cliente,
+                is_active=True,
+                created_by=request.user,
+            )
+            new_user._from_contratacion = True
+            new_user.set_password(temp_password)
+
+            setup_token = uuid.uuid4().hex
+            new_user.password_setup_token = setup_token
+            new_user.password_setup_expires = tz.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
+            new_user.save()
+
+        self._send_setup_email(new_user, cliente, setup_token)
+
+        from apps.core.utils.audit_logging import log_cliente_access_created
+        log_cliente_access_created(request, cliente, new_user)
+
+        return Response({
+            'detail': 'Acceso al portal creado exitosamente. Se envió un correo para configurar la contraseña.',
+        })
+
+    def _send_setup_email(self, user, cliente, setup_token):
+        """Envía email de setup de contraseña para usuario de portal de clientes."""
+        import logging
+        from django.db import connection
+        from django.conf import settings as django_settings
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            from apps.core.tasks import send_setup_password_email_task
+
+            frontend_url = getattr(django_settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+            tenant_id = getattr(connection.tenant, 'id', '')
+            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={user.email}&tenant_id={tenant_id}"
+
+            tenant_name = cliente.nombre_comercial or cliente.razon_social
+
+            try:
+                primary_color = connection.tenant.primary_color or '#3b82f6'
+                secondary_color = connection.tenant.secondary_color or '#1e40af'
+            except Exception:
+                primary_color = '#3b82f6'
+                secondary_color = '#1e40af'
+
+            send_setup_password_email_task.delay(
+                user_email=user.email,
+                user_name=tenant_name,
+                tenant_name=tenant_name,
+                cargo_name='Portal de Clientes',
+                setup_url=setup_url,
+                expiry_hours=user.PASSWORD_SETUP_EXPIRY_HOURS,
+                primary_color=primary_color,
+                secondary_color=secondary_color,
+            )
+            logger.info(
+                'User %s creado para Cliente %s, email de setup enviado a %s',
+                user.id, cliente.id, user.email
+            )
+        except Exception as e:
+            logger.error(
+                'Error enviando email de setup para User %s (Cliente %s): %s',
+                user.id, cliente.id, e, exc_info=True
+            )
+
+    @extend_schema(
+        summary='Mi cliente (portal)',
+        description='Retorna la información del cliente vinculado al usuario autenticado',
+        tags=['Sales CRM - Portal']
+    )
+    @action(detail=False, methods=['get'], url_path='mi-cliente')
+    def mi_cliente(self, request):
+        """
+        Información del cliente vinculado al usuario actual.
+
+        GET /api/sales-crm/clientes/mi-cliente/
+        """
+        cliente = getattr(request.user, 'cliente', None)
+        if not cliente:
+            return Response(
+                {'error': 'No tiene cliente vinculado'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = MiClienteSerializer(cliente)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary='Contactos de mi cliente (portal)',
+        description='Retorna los contactos del cliente vinculado al usuario autenticado',
+        tags=['Sales CRM - Portal']
+    )
+    @action(detail=False, methods=['get'], url_path='mi-cliente/contactos')
+    def mi_cliente_contactos(self, request):
+        """
+        Contactos del cliente vinculado.
+
+        GET /api/sales-crm/clientes/mi-cliente/contactos/
+        """
+        cliente = getattr(request.user, 'cliente', None)
+        if not cliente:
+            return Response(
+                {'error': 'No tiene cliente vinculado'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        contactos = ContactoCliente.objects.filter(
+            cliente=cliente, is_active=True
+        ).order_by('-es_principal', 'nombre_completo')
+        serializer = ContactoClienteSerializer(contactos, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        summary='Scoring de mi cliente (portal)',
+        description='Retorna el scoring del cliente vinculado al usuario autenticado',
+        tags=['Sales CRM - Portal']
+    )
+    @action(detail=False, methods=['get'], url_path='mi-cliente/scoring')
+    def mi_cliente_scoring(self, request):
+        """
+        Scoring del cliente vinculado.
+
+        GET /api/sales-crm/clientes/mi-cliente/scoring/
+        """
+        cliente = getattr(request.user, 'cliente', None)
+        if not cliente:
+            return Response(
+                {'error': 'No tiene cliente vinculado'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            scoring = ScoringCliente.objects.get(cliente=cliente)
+            serializer = ScoringClienteSerializer(scoring)
+            return Response(serializer.data)
+        except ScoringCliente.DoesNotExist:
+            return Response({
+                'puntuacion_total': 0,
+                'nivel_scoring': 'Sin evaluar',
+                'color_nivel': 'gray',
+            })
 
     # ── Importación masiva ────────────────────────────────────────────────
 

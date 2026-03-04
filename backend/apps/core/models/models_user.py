@@ -777,6 +777,19 @@ class User(AbstractUser):
     )
 
     # ==========================================================================
+    # CLIENTE VINCULADO (para usuarios del portal de clientes)
+    # ==========================================================================
+    cliente = models.ForeignKey(
+        'gestion_clientes.Cliente',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios_vinculados',
+        verbose_name='Cliente vinculado',
+        help_text='Solo para usuarios del portal de clientes',
+    )
+
+    # ==========================================================================
     # RBAC HÍBRIDO - ROLES ADICIONALES
     # ==========================================================================
     roles_adicionales = models.ManyToManyField(

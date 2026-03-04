@@ -64,6 +64,10 @@ export interface User {
   proveedor?: number | null;
   /** Nombre comercial del proveedor vinculado */
   proveedor_nombre?: string | null;
+  /** ID del cliente vinculado (para usuarios del portal de clientes) */
+  cliente?: number | null;
+  /** Nombre comercial del cliente vinculado */
+  cliente_nombre?: string | null;
 }
 
 export interface LoginCredentials {

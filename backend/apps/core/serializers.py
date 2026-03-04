@@ -103,6 +103,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
     proveedor = serializers.IntegerField(source='proveedor_id', read_only=True, allow_null=True)
     proveedor_nombre = serializers.SerializerMethodField()
 
+    # Cliente vinculado (para usuarios del portal de clientes)
+    cliente = serializers.IntegerField(source='cliente_id', read_only=True, allow_null=True)
+    cliente_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -141,6 +145,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Proveedor vinculado
             'proveedor',
             'proveedor_nombre',
+            # Cliente vinculado
+            'cliente',
+            'cliente_nombre',
         ]
         read_only_fields = [
             'id',
@@ -189,6 +196,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
         proveedor = getattr(obj, 'proveedor', None)
         if proveedor:
             return proveedor.nombre_comercial
+        return None
+
+    def get_cliente_nombre(self, obj):
+        """Retorna el nombre comercial del cliente vinculado (None si no tiene)"""
+        cliente = getattr(obj, 'cliente', None)
+        if cliente:
+            return cliente.nombre_comercial or cliente.razon_social
         return None
 
     def get_section_ids(self, obj):

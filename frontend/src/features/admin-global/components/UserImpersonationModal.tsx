@@ -56,13 +56,15 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     );
   }, [data, search, superadminId]);
 
-  const handleImpersonate = async (userId: number, hasProveedor: boolean) => {
+  const handleImpersonate = async (userId: number, hasProveedor: boolean, hasCliente: boolean) => {
     try {
       setLoading(userId);
       await startUserImpersonation(userId);
       onClose();
       // Navegar según tipo de usuario
-      if (hasProveedor) {
+      if (hasCliente) {
+        navigate('/cliente-portal');
+      } else if (hasProveedor) {
         navigate('/proveedor-portal');
       } else {
         navigate('/dashboard');
@@ -108,6 +110,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
           ) : (
             users.map((user) => {
               const isExterno = (user as { proveedor?: number | null }).proveedor != null;
+              const isCliente = (user as { cliente?: number | null }).cliente != null;
               const isLoading = loading === user.id;
 
               return (
@@ -169,7 +172,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleImpersonate(user.id, isExterno)}
+                    onClick={() => handleImpersonate(user.id, isExterno, isCliente)}
                     disabled={isLoading}
                     className="flex-shrink-0 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
                     isLoading={isLoading}

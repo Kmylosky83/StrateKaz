@@ -396,3 +396,66 @@ class AsignarSegmentoSerializer(serializers.Serializer):
         except SegmentoCliente.DoesNotExist:
             raise serializers.ValidationError("El segmento no existe o está inactivo.")
         return value
+
+
+# ==============================================================================
+# SERIALIZERS DE PORTAL DE CLIENTES
+# ==============================================================================
+
+class CrearAccesoClienteSerializer(serializers.Serializer):
+    """
+    Serializer para crear acceso al portal de clientes.
+
+    Crea un usuario con cargo CLIENTE_PORTAL vinculado al cliente.
+    """
+
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(required=True, max_length=150)
+
+    def validate_username(self, value):
+        """Valida que el username no contenga caracteres inválidos."""
+        if not value.replace('_', '').replace('-', '').replace('.', '').isalnum():
+            raise serializers.ValidationError(
+                "El nombre de usuario solo puede contener letras, números, guiones, puntos y guiones bajos."
+            )
+        return value
+
+
+class MiClienteSerializer(serializers.ModelSerializer):
+    """
+    Serializer read-only para el portal de clientes (mi-cliente/).
+    Muestra datos del cliente sin información interna (vendedor, scoring).
+    """
+
+    tipo_cliente_nombre = serializers.CharField(source='tipo_cliente.nombre', read_only=True)
+    estado_cliente_nombre = serializers.CharField(source='estado_cliente.nombre', read_only=True)
+    estado_cliente_color = serializers.CharField(source='estado_cliente.color', read_only=True)
+    contactos = ContactoClienteSerializer(many=True, read_only=True)
+    nombre_completo = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Cliente
+        fields = [
+            'id',
+            'codigo_cliente',
+            'tipo_documento',
+            'numero_documento',
+            'razon_social',
+            'nombre_comercial',
+            'tipo_cliente_nombre',
+            'estado_cliente_nombre',
+            'estado_cliente_color',
+            'telefono',
+            'email',
+            'direccion',
+            'ciudad',
+            'departamento',
+            'pais',
+            'plazo_pago_dias',
+            'cupo_credito',
+            'descuento_comercial',
+            'contactos',
+            'nombre_completo',
+            'is_active',
+            'created_at',
+        ]

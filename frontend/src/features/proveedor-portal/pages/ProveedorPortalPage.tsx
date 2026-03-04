@@ -14,8 +14,8 @@
  *
  * Guard: redirige a /dashboard si el usuario no tiene proveedor vinculado
  */
-import { useState, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import {
   Building2,
   FileText,
@@ -37,6 +37,7 @@ import {
   Building,
   Briefcase,
   Wrench,
+  BellRing,
 } from 'lucide-react';
 import { AnimatedPage, Badge, Button, Card, Skeleton, Tabs } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
@@ -47,6 +48,12 @@ import { use2FA } from '@/hooks/use2FA';
 import { TabPrecios } from '../components/TabPrecios';
 import { TabProfesionales } from '../components/TabProfesionales';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
+import {
+  useNotificaciones,
+  useMarcarLeida,
+  useMarcarTodasLeidas,
+} from '@/features/audit-system/hooks/useNotificaciones';
+import { cn } from '@/utils/cn';
 import type { ContratoProveedor, EvaluacionProveedor, TipoProveedorCodigo } from '../types';
 
 // ============================================================================
@@ -515,6 +522,7 @@ function buildTabs(
   tabs.push(
     { id: 'contratos', label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
     { id: 'evaluaciones', label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'notificaciones', label: 'Notificaciones', icon: <BellRing className="w-4 h-4" /> },
     { id: 'mi-cuenta', label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> }
   );
 
@@ -526,7 +534,8 @@ function buildTabs(
 // ============================================================================
 
 export default function ProveedorPortalPage() {
-  const [activeTab, setActiveTab] = useState('empresa');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'empresa');
   const user = useAuthStore((s) => s.user);
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const { primaryColor } = useBrandingConfig();
@@ -540,6 +549,14 @@ export default function ProveedorPortalPage() {
 
   // Determinar si es representante de firma (portal-only) o profesional colocado
   const esRepresentanteFirma = isPortalOnlyUser(user);
+
+  // Sincronizar tab desde URL (para deep-link desde campana de notificaciones)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tabs dinámicos según tipo + perfil
   const tabs = useMemo(
@@ -655,7 +672,10 @@ export default function ProveedorPortalPage() {
           <Tabs
             tabs={tabs}
             activeTab={activeTab}
-            onChange={(tab) => setActiveTab(tab)}
+            onChange={(tab) => {
+              setActiveTab(tab);
+              setSearchParams(tab === 'empresa' ? {} : { tab }, { replace: true });
+            }}
             variant="underline"
           />
         )}
@@ -669,9 +689,129 @@ export default function ProveedorPortalPage() {
           {activeTab === 'profesionales' && <TabProfesionales />}
           {activeTab === 'contratos' && <TabContratos />}
           {activeTab === 'evaluaciones' && <TabEvaluaciones />}
+          {activeTab === 'notificaciones' && <TabNotificaciones />}
           {activeTab === 'mi-cuenta' && <TabMiCuenta />}
         </div>
       </div>
     </AnimatedPage>
+  );
+}
+
+// ============================================================================
+// TAB NOTIFICACIONES
+// ============================================================================
+
+function TabNotificaciones() {
+  const { data: notificaciones, isLoading } = useNotificaciones();
+  const marcarLeida = useMarcarLeida();
+  const marcarTodasLeidas = useMarcarTodasLeidas();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  const lista = Array.isArray(notificaciones) ? notificaciones : (notificaciones?.results ?? []);
+
+  if (lista.length === 0) {
+    return (
+      <Card>
+        <div className="text-center py-12">
+          <BellRing className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            No tienes notificaciones
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Aquí verás las alertas y avisos del sistema.
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  const noLeidas = lista.filter((n: Record<string, unknown>) => !n.esta_leida && !n.is_read);
+
+  return (
+    <Card>
+      <div className="space-y-4">
+        {/* Header */}
+        {noLeidas.length > 0 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500 dark:text-gray-400">{noLeidas.length} sin leer</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => marcarTodasLeidas.mutate()}
+              disabled={marcarTodasLeidas.isPending}
+            >
+              Marcar todas como leídas
+            </Button>
+          </div>
+        )}
+
+        {/* Lista */}
+        <div className="space-y-2">
+          {lista.map((notif: Record<string, unknown>) => {
+            const leida = Boolean(notif.esta_leida || notif.is_read);
+            const titulo = String(notif.titulo || notif.title || '');
+            const mensaje = String(notif.mensaje || notif.message || '');
+            const fecha = String(notif.created_at || '');
+            const id = Number(notif.id);
+
+            return (
+              <div
+                key={id}
+                onClick={() => {
+                  if (!leida) marcarLeida.mutate(id);
+                }}
+                className={cn(
+                  'rounded-xl border p-4 cursor-pointer transition-colors',
+                  leida
+                    ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                    : 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/10'
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn(
+                        'text-sm',
+                        leida
+                          ? 'text-gray-700 dark:text-gray-300'
+                          : 'font-semibold text-gray-900 dark:text-white'
+                      )}
+                    >
+                      {titulo}
+                    </p>
+                    {mensaje && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                        {mensaje}
+                      </p>
+                    )}
+                  </div>
+                  {fecha && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 whitespace-nowrap">
+                      {new Date(fecha).toLocaleDateString('es-CO', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
   );
 }

@@ -245,11 +245,13 @@ export interface CreateEstadoLiquidacionDTO {
 }
 
 export interface CreateProgramacionDTO {
+  empresa: number;
   sede: number;
   tipo_operacion: number;
   fecha_programada: string;
   proveedor: number;
   responsable: number;
+  estado?: number;
   observaciones?: string;
 }
 
@@ -268,7 +270,7 @@ export interface CreateEjecucionDTO {
   kilometraje_final?: number;
   cantidad_recolectada: number;
   unidad_medida: number;
-  ejecutado_por: number;
+  estado?: number;
   observaciones?: string;
 }
 
@@ -278,6 +280,8 @@ export interface CreateLiquidacionDTO {
   cantidad: number;
   deducciones?: number;
   detalle_deducciones?: string;
+  estado?: number;
+  genera_cxp?: boolean;
   observaciones?: string;
 }
 
@@ -300,12 +304,12 @@ export interface UpdateEjecucionDTO extends Partial<CreateEjecucionDTO> {
   estado?: number;
 }
 
-export interface UpdateLiquidacionDTO extends Partial<CreateLiquidacionDTO> {
-  estado?: number;
-  aprobado_por?: number;
-  fecha_aprobacion?: string;
-  genera_cxp?: boolean;
-  numero_cxp?: string;
+export interface UpdateLiquidacionDTO {
+  precio_unitario?: number;
+  cantidad?: number;
+  deducciones?: number;
+  detalle_deducciones?: string;
+  observaciones?: string;
 }
 
 // ==================== RESPONSE TYPES ====================

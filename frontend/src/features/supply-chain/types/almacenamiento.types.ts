@@ -73,9 +73,11 @@ export interface UnidadMedida {
   id: number;
   codigo: string;
   nombre: string;
+  simbolo: string;
   abreviatura: string;
   tipo: TipoMedida;
-  factor_conversion_base: number;
+  tipo_display?: string;
+  factor_conversion_kg: number;
   orden: number;
   is_active: boolean;
   created_at: string;
@@ -296,9 +298,9 @@ export interface CreateTipoAlertaDTO {
 export interface CreateUnidadMedidaDTO {
   codigo: string;
   nombre: string;
-  abreviatura: string;
+  simbolo: string;
   tipo?: TipoMedida;
-  factor_conversion_base?: number;
+  factor_conversion_kg?: number;
   orden?: number;
 }
 

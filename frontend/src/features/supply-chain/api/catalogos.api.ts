@@ -128,7 +128,7 @@ export const tipoMateriaPrimaApi = {
    */
   porAcidez: async (valorAcidez: number): Promise<TipoMateriaPrima | null> => {
     const response = await apiClient.get<TipoMateriaPrima[]>(
-      `${BASE_URL}/tipos-materia-prima/por_acidez/`,
+      `${BASE_URL}/tipos-materia-prima/por-acidez/`,
       {
         params: { valor_acidez: valorAcidez },
       }

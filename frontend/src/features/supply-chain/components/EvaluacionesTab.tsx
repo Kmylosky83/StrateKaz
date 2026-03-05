@@ -36,24 +36,11 @@ const getEstadoBadgeVariant = (
 ): 'success' | 'warning' | 'danger' | 'gray' | 'info' | 'primary' => {
   const map: Record<string, 'success' | 'warning' | 'danger' | 'gray' | 'info' | 'primary'> = {
     BORRADOR: 'gray',
-    COMPLETADA: 'info',
+    EN_PROCESO: 'info',
+    COMPLETADA: 'primary',
     APROBADA: 'success',
-    RECHAZADA: 'danger',
   };
   return map[estado] || 'gray';
-};
-
-const getCalificacionBadgeVariant = (
-  calificacion: string
-): 'success' | 'warning' | 'danger' | 'primary' => {
-  const map: Record<string, 'success' | 'warning' | 'danger' | 'primary'> = {
-    EXCELENTE: 'success',
-    BUENO: 'primary',
-    ACEPTABLE: 'warning',
-    DEFICIENTE: 'danger',
-    RECHAZADO: 'danger',
-  };
-  return map[calificacion] || 'primary';
 };
 
 const formatDate = (dateString: string) =>
@@ -79,12 +66,12 @@ export function EvaluacionesTab() {
   );
   const evaluaciones: EvaluacionProveedor[] = Array.isArray(evaluacionesData)
     ? evaluacionesData
-    : (evaluacionesData as any)?.results || [];
+    : ((evaluacionesData as Record<string, unknown>)?.results as EvaluacionProveedor[]) || [];
 
   const { data: criteriosData, isLoading: isLoadingCriterios } = useCriterios();
   const criterios: CriterioEvaluacion[] = Array.isArray(criteriosData)
     ? criteriosData
-    : (criteriosData as any)?.results || [];
+    : ((criteriosData as Record<string, unknown>)?.results as CriterioEvaluacion[]) || [];
 
   // Mutations
   const aprobarMutation = useAprobarEvaluacion();
@@ -126,12 +113,8 @@ export function EvaluacionesTab() {
       codigo: String(fd.get('codigo')),
       nombre: String(fd.get('nombre')),
       descripcion: String(fd.get('descripcion') || ''),
-      categoria: String(fd.get('categoria')) as any,
-      peso_porcentaje: Number(fd.get('peso_porcentaje')),
-      es_eliminatorio: fd.get('es_eliminatorio') === 'true',
-      puntaje_minimo_aceptable: fd.get('puntaje_minimo')
-        ? Number(fd.get('puntaje_minimo'))
-        : undefined,
+      peso: Number(fd.get('peso')),
+      orden: fd.get('orden') ? Number(fd.get('orden')) : undefined,
       is_active: true,
     };
 
@@ -169,15 +152,12 @@ export function EvaluacionesTab() {
         </h3>
         <div className="flex items-center gap-2">
           {/* Filtro estado */}
-          <Select
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value)}
-          >
+          <Select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
             <option value="">Todos los estados</option>
             <option value="BORRADOR">Borrador</option>
+            <option value="EN_PROCESO">En Proceso</option>
             <option value="COMPLETADA">Completada</option>
             <option value="APROBADA">Aprobada</option>
-            <option value="RECHAZADA">Rechazada</option>
           </Select>
 
           <Button
@@ -219,9 +199,6 @@ export function EvaluacionesTab() {
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Código
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Proveedor
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -229,9 +206,6 @@ export function EvaluacionesTab() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Fecha
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Puntaje
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Calificación
@@ -247,9 +221,6 @@ export function EvaluacionesTab() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {evaluaciones.map((ev) => (
                   <tr key={ev.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                      {ev.codigo}
-                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                       {ev.proveedor_nombre || `#${ev.proveedor}`}
                     </td>
@@ -261,17 +232,14 @@ export function EvaluacionesTab() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className="text-lg font-bold text-gray-900 dark:text-white">
-                        {Number(ev.puntaje_total).toFixed(1)}
+                        {ev.calificacion_total != null
+                          ? Number(ev.calificacion_total).toFixed(1)
+                          : '-'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant={getCalificacionBadgeVariant(ev.calificacion)} size="sm">
-                        {ev.calificacion}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-center">
                       <Badge variant={getEstadoBadgeVariant(ev.estado)} size="sm">
-                        {ev.estado}
+                        {ev.estado_display || ev.estado}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -329,7 +297,7 @@ export function EvaluacionesTab() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Configure los criterios y su peso porcentual para evaluar proveedores
+              Configure los criterios y su peso para evaluar proveedores
             </p>
             <Button
               variant="primary"
@@ -358,14 +326,14 @@ export function EvaluacionesTab() {
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                       Criterio
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                      Categoría
+                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                      Peso
                     </th>
                     <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                      Peso (%)
+                      Orden
                     </th>
                     <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                      Eliminatorio
+                      Estado
                     </th>
                     <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                       Acciones
@@ -379,20 +347,12 @@ export function EvaluacionesTab() {
                         <p className="font-medium text-gray-900 dark:text-white">{c.nombre}</p>
                         {c.descripcion && <p className="text-xs text-gray-500">{c.descripcion}</p>}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">
-                        {c.categoria}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-center font-medium">
-                        {c.peso_porcentaje}%
-                      </td>
+                      <td className="px-4 py-2 text-sm text-center font-medium">{c.peso}</td>
+                      <td className="px-4 py-2 text-sm text-center text-gray-500">{c.orden}</td>
                       <td className="px-4 py-2 text-center">
-                        {c.es_eliminatorio ? (
-                          <Badge variant="danger" size="sm">
-                            Sí
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400 text-sm">No</span>
-                        )}
+                        <Badge variant={c.is_active ? 'success' : 'gray'} size="sm">
+                          {c.is_active ? 'Activo' : 'Inactivo'}
+                        </Badge>
                       </td>
                       <td className="px-4 py-2 text-right">
                         <div className="flex items-center justify-end gap-1">
@@ -435,7 +395,7 @@ export function EvaluacionesTab() {
         size="md"
       >
         <form onSubmit={handleSaveCriterio} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Código *"
               type="text"
@@ -443,29 +403,14 @@ export function EvaluacionesTab() {
               required
               defaultValue={editCriterio?.codigo || ''}
             />
-            <Select
-              label="Categoría *"
-              name="categoria"
+            <Input
+              label="Nombre *"
+              type="text"
+              name="nombre"
               required
-              defaultValue={editCriterio?.categoria || ''}
-            >
-              <option value="">Seleccione...</option>
-              <option value="CALIDAD">Calidad</option>
-              <option value="ENTREGA">Entrega</option>
-              <option value="SERVICIO">Servicio</option>
-              <option value="PRECIO">Precio</option>
-              <option value="DOCUMENTACION">Documentación</option>
-              <option value="OTRO">Otro</option>
-            </Select>
+              defaultValue={editCriterio?.nombre || ''}
+            />
           </div>
-
-          <Input
-            label="Nombre *"
-            type="text"
-            name="nombre"
-            required
-            defaultValue={editCriterio?.nombre || ''}
-          />
 
           <Textarea
             label="Descripción"
@@ -474,31 +419,22 @@ export function EvaluacionesTab() {
             defaultValue={editCriterio?.descripcion || ''}
           />
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Peso (%) *"
+              label="Peso *"
               type="number"
-              name="peso_porcentaje"
+              name="peso"
               min="1"
               max="100"
               required
-              defaultValue={editCriterio?.peso_porcentaje || ''}
+              defaultValue={editCriterio?.peso || ''}
             />
-            <Select
-              label="Eliminatorio"
-              name="es_eliminatorio"
-              defaultValue={editCriterio?.es_eliminatorio ? 'true' : 'false'}
-            >
-              <option value="false">No</option>
-              <option value="true">Sí</option>
-            </Select>
             <Input
-              label="Puntaje Mínimo"
+              label="Orden"
               type="number"
-              name="puntaje_minimo"
+              name="orden"
               min="0"
-              max="100"
-              defaultValue={editCriterio?.puntaje_minimo_aceptable || ''}
+              defaultValue={editCriterio?.orden || ''}
             />
           </div>
 

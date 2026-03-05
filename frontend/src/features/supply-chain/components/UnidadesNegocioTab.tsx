@@ -1,8 +1,8 @@
 /**
- * Tab Unidades de Negocio - CRUD de plantas y centros de distribución
+ * Tab Unidades de Negocio - CRUD de sedes, plantas y centros
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Building2, Factory, Warehouse } from 'lucide-react';
+import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -12,7 +12,6 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import { Textarea } from '@/components/forms/Textarea';
 
 import {
   useUnidadesNegocio,
@@ -21,6 +20,17 @@ import {
   useDeleteUnidadNegocio,
 } from '../hooks/useProveedores';
 import type { UnidadNegocio } from '../types';
+
+// ==================== CONSTANTES ====================
+
+const TIPOS_UNIDAD = [
+  { value: 'SEDE', label: 'Sede' },
+  { value: 'SUCURSAL', label: 'Sucursal' },
+  { value: 'PLANTA', label: 'Planta' },
+  { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
+  { value: 'ALMACEN', label: 'Almacén' },
+  { value: 'OTRO', label: 'Otro' },
+];
 
 // ==================== COMPONENTE ====================
 
@@ -32,7 +42,7 @@ export function UnidadesNegocioTab() {
   const { data: unidadesData, isLoading } = useUnidadesNegocio();
   const unidades: UnidadNegocio[] = Array.isArray(unidadesData)
     ? unidadesData
-    : (unidadesData as any)?.results || [];
+    : ((unidadesData as Record<string, unknown>)?.results as UnidadNegocio[]) || [];
 
   // Mutations
   const createMutation = useCreateUnidadNegocio();
@@ -45,16 +55,16 @@ export function UnidadesNegocioTab() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
+    const responsableVal = fd.get('responsable') ? Number(fd.get('responsable')) : undefined;
+    const departamentoVal = fd.get('departamento') ? Number(fd.get('departamento')) : undefined;
     const data = {
       codigo: String(fd.get('codigo')),
       nombre: String(fd.get('nombre')),
-      descripcion: String(fd.get('descripcion') || ''),
+      tipo_unidad: String(fd.get('tipo_unidad')) as UnidadNegocio['tipo_unidad'],
       direccion: String(fd.get('direccion') || ''),
-      telefono: String(fd.get('telefono') || ''),
-      email: String(fd.get('email') || ''),
-      responsable: String(fd.get('responsable') || ''),
-      es_planta_produccion: fd.get('es_planta_produccion') === 'true',
-      es_centro_distribucion: fd.get('es_centro_distribucion') === 'true',
+      ciudad: String(fd.get('ciudad') || ''),
+      ...(departamentoVal ? { departamento: departamentoVal } : {}),
+      ...(responsableVal ? { responsable: responsableVal } : {}),
       is_active: true,
     };
 
@@ -108,7 +118,7 @@ export function UnidadesNegocioTab() {
         <EmptyState
           icon={<Building2 className="w-16 h-16" />}
           title="No hay unidades de negocio"
-          description="Registre plantas de producción y centros de distribución"
+          description="Registre sedes, plantas y centros de acopio"
           action={{
             label: 'Nueva Unidad',
             onClick: () => setShowForm(true),
@@ -127,14 +137,17 @@ export function UnidadesNegocioTab() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Nombre
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Tipo
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Dirección
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Responsable
+                    Ciudad
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Tipo
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Responsable
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
@@ -151,45 +164,21 @@ export function UnidadesNegocioTab() {
                       {un.codigo}
                     </td>
                     <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                      <div>
-                        <p>{un.nombre}</p>
-                        {un.descripcion && (
-                          <p className="text-xs text-gray-500 truncate max-w-xs">
-                            {un.descripcion}
-                          </p>
-                        )}
-                      </div>
+                      {un.nombre}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <Badge variant="info" size="sm">
+                        {un.tipo_unidad_display || un.tipo_unidad}
+                      </Badge>
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
                       {un.direccion || '-'}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {un.responsable || '-'}
+                      {un.ciudad || '-'}
                     </td>
-                    <td className="px-6 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {un.es_planta_produccion && (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-teal-700 dark:text-teal-400"
-                            title="Planta de Producción"
-                          >
-                            <Factory className="w-3.5 h-3.5" />
-                            Planta
-                          </span>
-                        )}
-                        {un.es_centro_distribucion && (
-                          <span
-                            className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-400"
-                            title="Centro de Distribución"
-                          >
-                            <Warehouse className="w-3.5 h-3.5" />
-                            Centro
-                          </span>
-                        )}
-                        {!un.es_planta_produccion && !un.es_centro_distribucion && (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
-                      </div>
+                    <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
+                      {un.responsable_nombre || '-'}
                     </td>
                     <td className="px-6 py-3 text-center">
                       <Badge variant={un.is_active ? 'success' : 'gray'} size="sm">
@@ -237,7 +226,7 @@ export function UnidadesNegocioTab() {
         size="lg"
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Código *"
               type="text"
@@ -256,59 +245,35 @@ export function UnidadesNegocioTab() {
             />
           </div>
 
-          <Textarea
-            label="Descripción"
-            name="descripcion"
-            rows={2}
-            defaultValue={editItem?.descripcion || ''}
-          />
+          <Select
+            label="Tipo de Unidad *"
+            name="tipo_unidad"
+            required
+            defaultValue={editItem?.tipo_unidad || ''}
+          >
+            <option value="">Seleccione...</option>
+            {TIPOS_UNIDAD.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </Select>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Dirección"
+              label="Dirección *"
               type="text"
               name="direccion"
+              required
               defaultValue={editItem?.direccion || ''}
             />
             <Input
-              label="Responsable"
+              label="Ciudad *"
               type="text"
-              name="responsable"
-              defaultValue={editItem?.responsable || ''}
+              name="ciudad"
+              required
+              defaultValue={editItem?.ciudad || ''}
             />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="Teléfono"
-              type="tel"
-              name="telefono"
-              defaultValue={editItem?.telefono || ''}
-            />
-            <Input
-              label="Email"
-              type="email"
-              name="email"
-              defaultValue={editItem?.email || ''}
-            />
-            <div className="space-y-3">
-              <Select
-                label="Planta de Producción"
-                name="es_planta_produccion"
-                defaultValue={editItem?.es_planta_produccion ? 'true' : 'false'}
-              >
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </Select>
-              <Select
-                label="Centro de Distribución"
-                name="es_centro_distribucion"
-                defaultValue={editItem?.es_centro_distribucion ? 'true' : 'false'}
-              >
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </Select>
-            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

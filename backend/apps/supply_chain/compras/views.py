@@ -367,7 +367,7 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-recepcion')
     def registrar_recepcion(self, request, pk=None):
         """Registrar recepción de materiales para esta orden"""
         orden = self.get_object()
@@ -459,7 +459,7 @@ class ContratoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(contratos, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Listar contratos próximos a vencer (30 días)"""
         from datetime import date, timedelta
@@ -494,7 +494,7 @@ class RecepcionCompraViewSet(viewsets.ModelViewSet):
             return RecepcionCompraListSerializer
         return RecepcionCompraSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-conformes')
     def no_conformes(self, request):
         """Listar recepciones con material no conforme"""
         recepciones = self.get_queryset().exclude(

@@ -410,10 +410,12 @@ export interface CreateEstadoRequisicionDTO {
 }
 
 export interface CreateRequisicionDTO {
+  empresa: number;
   sede: number;
   area_solicitante: string;
   fecha_requerida: string;
   justificacion: string;
+  estado?: number;
   prioridad: number;
   observaciones?: string;
   detalles?: CreateDetalleRequisicionDTO[];
@@ -450,12 +452,17 @@ export interface CreateEvaluacionCotizacionDTO {
 }
 
 export interface CreateOrdenCompraDTO {
+  empresa: number;
   sede: number;
   requisicion?: number;
   cotizacion?: number;
   proveedor: number;
   fecha_entrega_esperada: string;
+  estado?: number;
   moneda: number;
+  subtotal?: number;
+  impuestos?: number;
+  descuento?: number;
   condiciones_pago: string;
   lugar_entrega: string;
   observaciones?: string;
@@ -471,6 +478,7 @@ export interface CreateDetalleOrdenCompraDTO {
 }
 
 export interface CreateContratoDTO {
+  empresa: number;
   proveedor: number;
   tipo_contrato: number;
   numero_contrato: string;
@@ -480,6 +488,7 @@ export interface CreateContratoDTO {
   valor_total: number;
   moneda: number;
   condiciones: string;
+  estado?: number;
   responsable: number;
   observaciones?: string;
 }

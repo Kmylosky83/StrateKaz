@@ -28,8 +28,6 @@ export const criterioEvaluacionApi = {
     page?: number;
     page_size?: number;
     search?: string;
-    categoria?: string;
-    es_eliminatorio?: boolean;
     is_active?: boolean;
     ordering?: string;
   }): Promise<PaginatedResponse<CriterioEvaluacion>> => {
@@ -91,14 +89,20 @@ export const criterioEvaluacionApi = {
   },
 
   /**
-   * Obtener criterios por categoría
+   * Obtener criterios por tipo de proveedor
+   * Backend url_path: 'por-tipo-proveedor'
    */
-  porCategoria: async (categoria: string): Promise<CriterioEvaluacion[]> => {
-    const response = await apiClient.get<PaginatedResponse<CriterioEvaluacion>>(
-      `${BASE_URL}/criterios-evaluacion/`,
-      { params: { categoria, is_active: true, page_size: 1000 } }
-    );
-    return response.data.results;
+  porTipoProveedor: async (
+    tipoId: number
+  ): Promise<{
+    tipo_proveedor: string;
+    tipo_proveedor_id: number;
+    criterios: CriterioEvaluacion[];
+  }> => {
+    const response = await apiClient.get(`${BASE_URL}/criterios-evaluacion/por-tipo-proveedor/`, {
+      params: { tipo_id: tipoId },
+    });
+    return response.data;
   },
 };
 
@@ -115,10 +119,7 @@ export const evaluacionProveedorApi = {
     proveedor?: number;
     periodo?: string;
     estado?: string;
-    calificacion?: string;
-    fecha_desde?: string;
-    fecha_hasta?: string;
-    evaluador?: number;
+    evaluado_por?: number;
     ordering?: string;
   }): Promise<PaginatedResponse<EvaluacionProveedor>> => {
     const response = await apiClient.get<PaginatedResponse<EvaluacionProveedor>>(
@@ -194,7 +195,7 @@ export const evaluacionProveedorApi = {
    */
   calcularPuntaje: async (id: number): Promise<EvaluacionProveedor> => {
     const response = await apiClient.post<EvaluacionProveedor>(
-      `${BASE_URL}/evaluaciones-proveedor/${id}/calcular_puntaje/`
+      `${BASE_URL}/evaluaciones-proveedor/${id}/calcular/`
     );
     return response.data;
   },
@@ -231,8 +232,8 @@ export const evaluacionProveedorApi = {
   /**
    * Exportar evaluaciones a Excel
    */
-  exportExcel: async (params?: Record<string, any>): Promise<Blob> => {
-    const response = await apiClient.get(`${BASE_URL}/evaluaciones-proveedor/export_excel/`, {
+  exportExcel: async (params?: Record<string, unknown>): Promise<Blob> => {
+    const response = await apiClient.get(`${BASE_URL}/evaluaciones-proveedor/export-excel/`, {
       params,
       responseType: 'blob',
     });
@@ -274,7 +275,7 @@ export const detalleEvaluacionApi = {
    */
   update: async (
     id: number,
-    data: { puntaje_obtenido: number; observaciones?: string; evidencias?: string }
+    data: { calificacion: number; observaciones?: string }
   ): Promise<DetalleEvaluacion> => {
     const response = await apiClient.patch<DetalleEvaluacion>(
       `${BASE_URL}/detalles-evaluacion/${id}/`,

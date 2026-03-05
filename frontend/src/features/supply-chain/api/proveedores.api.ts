@@ -36,8 +36,7 @@ export const unidadNegocioApi = {
     page_size?: number;
     search?: string;
     is_active?: boolean;
-    es_planta_produccion?: boolean;
-    es_centro_distribucion?: boolean;
+    tipo_unidad?: string;
   }): Promise<PaginatedResponse<UnidadNegocio>> => {
     const response = await apiClient.get<PaginatedResponse<UnidadNegocio>>(
       `${BASE_URL}/unidades-negocio/`,

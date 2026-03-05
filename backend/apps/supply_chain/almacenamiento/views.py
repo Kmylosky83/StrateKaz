@@ -233,7 +233,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
 
         return queryset.filter(id__in=inventarios_bajos)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-por-almacen')
     def resumen_por_almacen(self, request):
         """
         Resumen de inventario por almacén.
@@ -253,7 +253,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
 
         return Response(resumen)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='productos-criticos')
     def productos_criticos(self, request):
         """
         Lista de productos críticos (bajo stock, vencidos, etc.).
@@ -341,7 +341,7 @@ class InventarioViewSet(viewsets.ModelViewSet):
             'cantidad_reservada': float(inventario.cantidad_reservada),
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='liberar-reserva')
     def liberar_reserva(self, request, pk=None):
         """
         Libera cantidad reservada.
@@ -402,7 +402,7 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
         """Registra el usuario que crea el movimiento."""
         serializer.save(registrado_por=self.request.user)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='registrar-movimiento')
     @transaction.atomic
     def registrar_movimiento(self, request):
         """
@@ -599,7 +599,7 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
                     }
                 )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='ultimos-movimientos')
     def ultimos_movimientos(self, request):
         """
         Últimos movimientos registrados.
@@ -693,7 +693,7 @@ class AlertaStockViewSet(viewsets.ModelViewSet):
             return AlertaStockListSerializer
         return AlertaStockSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-leida')
     def marcar_leida(self, request, pk=None):
         """
         Marca una alerta como leída.
@@ -753,7 +753,7 @@ class ConfiguracionStockViewSet(viewsets.ModelViewSet):
             return ConfiguracionStockListSerializer
         return ConfiguracionStockSerializer
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='generar-alertas')
     def generar_alertas(self, request):
         """
         Genera alertas automáticas basadas en configuración.

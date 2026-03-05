@@ -15,10 +15,9 @@ export interface CriterioEvaluacion extends BaseTimestamped {
   codigo: string;
   nombre: string;
   descripcion?: string;
-  categoria: 'CALIDAD' | 'ENTREGA' | 'SERVICIO' | 'PRECIO' | 'DOCUMENTACION' | 'OTRO';
-  peso_porcentaje: number;
-  es_eliminatorio: boolean;
-  puntaje_minimo_aceptable?: number;
+  peso: number;
+  aplica_a_tipo: number[];
+  aplica_a_tipos?: Array<{ id: number; nombre: string }>;
   orden: number;
   is_active: boolean;
 }
@@ -27,10 +26,8 @@ export interface CreateCriterioEvaluacionDTO {
   codigo: string;
   nombre: string;
   descripcion?: string;
-  categoria: 'CALIDAD' | 'ENTREGA' | 'SERVICIO' | 'PRECIO' | 'DOCUMENTACION' | 'OTRO';
-  peso_porcentaje: number;
-  es_eliminatorio?: boolean;
-  puntaje_minimo_aceptable?: number;
+  peso: number;
+  aplica_a_tipo?: number[];
   orden?: number;
   is_active?: boolean;
 }
@@ -44,32 +41,27 @@ export type UpdateCriterioEvaluacionDTO = Partial<CreateCriterioEvaluacionDTO>;
  */
 export interface EvaluacionProveedor extends BaseTimestamped {
   id: number;
-  codigo: string;
   proveedor: number;
   proveedor_nombre?: string;
   periodo: string;
   fecha_evaluacion: string;
-  evaluador?: number;
-  evaluador_nombre?: string;
+  evaluado_por?: number;
+  evaluado_por_nombre?: string;
 
   // Resultados
-  puntaje_total: number;
-  calificacion: 'EXCELENTE' | 'BUENO' | 'ACEPTABLE' | 'DEFICIENTE' | 'RECHAZADO';
-  cumple_criterios_eliminatorios: boolean;
+  calificacion_total?: number;
+  estado_display?: string;
 
-  // Observaciones y acciones
+  // Observaciones
   observaciones?: string;
-  fortalezas?: string;
-  debilidades?: string;
-  plan_mejora?: string;
 
   // Estado
-  estado: 'BORRADOR' | 'COMPLETADA' | 'APROBADA' | 'RECHAZADA';
+  estado: 'BORRADOR' | 'EN_PROCESO' | 'COMPLETADA' | 'APROBADA';
   fecha_aprobacion?: string;
   aprobado_por?: number;
   aprobado_por_nombre?: string;
 
-  // Detalles de evaluación
+  // Detalles de evaluacion
   detalles?: DetalleEvaluacion[];
 }
 
@@ -82,42 +74,19 @@ export interface DetalleEvaluacion extends BaseTimestamped {
   criterio: number;
   criterio_nombre?: string;
   criterio_peso?: number;
-  criterio_es_eliminatorio?: boolean;
-  puntaje_obtenido: number;
-  puntaje_ponderado: number;
+  calificacion: number;
   observaciones?: string;
-  evidencias?: string;
 }
 
 export interface CreateEvaluacionProveedorDTO {
-  codigo: string;
   proveedor: number;
   periodo: string;
   fecha_evaluacion: string;
-  evaluador?: number;
   observaciones?: string;
-  fortalezas?: string;
-  debilidades?: string;
-  plan_mejora?: string;
-  estado?: 'BORRADOR' | 'COMPLETADA' | 'APROBADA' | 'RECHAZADA';
-  detalles: Array<{
-    criterio: number;
-    puntaje_obtenido: number;
-    observaciones?: string;
-    evidencias?: string;
-  }>;
+  estado?: 'BORRADOR' | 'EN_PROCESO' | 'COMPLETADA' | 'APROBADA';
 }
 
-export interface UpdateEvaluacionProveedorDTO {
-  periodo?: string;
-  fecha_evaluacion?: string;
-  evaluador?: number;
-  observaciones?: string;
-  fortalezas?: string;
-  debilidades?: string;
-  plan_mejora?: string;
-  estado?: 'BORRADOR' | 'COMPLETADA' | 'APROBADA' | 'RECHAZADA';
-}
+export type UpdateEvaluacionProveedorDTO = Partial<CreateEvaluacionProveedorDTO>;
 
 export interface AprobarEvaluacionDTO {
   fecha_aprobacion?: string;

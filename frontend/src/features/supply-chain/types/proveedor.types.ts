@@ -13,28 +13,28 @@ export interface UnidadNegocio {
   id: number;
   codigo: string;
   nombre: string;
-  descripcion?: string;
-  direccion?: string;
-  telefono?: string;
-  email?: string;
-  responsable?: string;
-  es_planta_produccion: boolean;
-  es_centro_distribucion: boolean;
+  tipo_unidad: 'SEDE' | 'SUCURSAL' | 'PLANTA' | 'CENTRO_ACOPIO' | 'ALMACEN' | 'OTRO';
+  tipo_unidad_display?: string;
+  direccion: string;
+  ciudad: string;
+  departamento?: number;
+  departamento_nombre?: string;
+  responsable?: number;
+  responsable_nombre?: string;
   is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  is_deleted?: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateUnidadNegocioDTO {
   codigo: string;
   nombre: string;
-  descripcion?: string;
-  direccion?: string;
-  telefono?: string;
-  email?: string;
-  responsable?: string;
-  es_planta_produccion?: boolean;
-  es_centro_distribucion?: boolean;
+  tipo_unidad: 'SEDE' | 'SUCURSAL' | 'PLANTA' | 'CENTRO_ACOPIO' | 'ALMACEN' | 'OTRO';
+  direccion: string;
+  ciudad: string;
+  departamento?: number;
+  responsable?: number;
   is_active?: boolean;
 }
 
@@ -249,33 +249,29 @@ export interface CondicionComercialProveedor {
   id: number;
   proveedor: number;
   proveedor_nombre?: string;
-  forma_pago: number;
-  forma_pago_nombre?: string;
-  dias_pago: number;
-  descuento_pronto_pago?: number;
-  monto_minimo_compra?: number;
-  aplica_flete: boolean;
-  valor_flete?: number;
-  fecha_vigencia_desde: string;
-  fecha_vigencia_hasta?: string;
-  observaciones?: string;
-  is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  descripcion: string;
+  valor_acordado: string;
+  forma_pago?: string;
+  plazo_entrega?: string;
+  garantias?: string;
+  vigencia_desde: string;
+  vigencia_hasta?: string;
+  esta_vigente?: boolean;
+  created_by?: number;
+  created_by_nombre?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CreateCondicionComercialDTO {
   proveedor: number;
-  forma_pago: number;
-  dias_pago: number;
-  descuento_pronto_pago?: number;
-  monto_minimo_compra?: number;
-  aplica_flete?: boolean;
-  valor_flete?: number;
-  fecha_vigencia_desde: string;
-  fecha_vigencia_hasta?: string;
-  observaciones?: string;
-  is_active?: boolean;
+  descripcion: string;
+  valor_acordado: string;
+  forma_pago?: string;
+  plazo_entrega?: string;
+  garantias?: string;
+  vigencia_desde: string;
+  vigencia_hasta?: string;
 }
 
 export type UpdateCondicionComercialDTO = Partial<CreateCondicionComercialDTO>;

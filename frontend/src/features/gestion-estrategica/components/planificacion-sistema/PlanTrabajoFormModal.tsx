@@ -3,7 +3,8 @@
  * Planificación del Sistema - Gestión Estratégica
  */
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
+import { Button } from '@/components/common';
 import { Input, Textarea, Select } from '@/components/forms';
 import { useSelectUsers } from '@/hooks/useSelectLists';
 import { useCreatePlanTrabajo, useUpdatePlanTrabajo } from '../../hooks/usePlanificacionSistema';
@@ -127,12 +128,30 @@ export function PlanTrabajoFormModal({ item, isOpen, onClose }: PlanTrabajoFormM
 
   const userOptions = users.map((u) => ({ value: String(u.id), label: u.label }));
 
+  const footer = (
+    <>
+      <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        variant="primary"
+        onClick={handleSubmit}
+        disabled={isLoading}
+        isLoading={isLoading}
+      >
+        {item ? 'Actualizar' : 'Crear'} Plan
+      </Button>
+    </>
+  );
+
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={item ? 'Editar Plan de Trabajo' : 'Nuevo Plan de Trabajo Anual'}
-      size="large"
+      size="lg"
+      footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,24 +239,8 @@ export function PlanTrabajoFormModal({ item, isOpen, onClose }: PlanTrabajoFormM
             />
           </div>
         </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner size="small" className="mr-2" />
-                Guardando...
-              </>
-            ) : (
-              <>{item ? 'Actualizar' : 'Crear'} Plan</>
-            )}
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }
 

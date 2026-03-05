@@ -8,7 +8,8 @@
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { Modal, Button, Spinner } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { DynamicFormRenderer, validateDynamicForm } from '@/components/common/DynamicFormRenderer';
 import {
@@ -35,7 +36,7 @@ interface DocumentoFormModalProps {
 }
 
 const CLASIFICACION_OPTIONS: { value: ClasificacionDocumento; label: string }[] = [
-  { value: 'PUBLICO', label: 'Publico' },
+  { value: 'PUBLICO', label: 'Público' },
   { value: 'INTERNO', label: 'Interno' },
   { value: 'CONFIDENCIAL', label: 'Confidencial' },
   { value: 'RESTRINGIDO', label: 'Restringido' },
@@ -212,27 +213,37 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
 
   if (isEdit && isLoadingExisting) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Cargando...">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Cargando...">
         <div className="flex justify-center py-8">
           <Spinner size="lg" />
         </div>
-      </Modal>
+      </BaseModal>
     );
   }
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? 'Editar Documento' : 'Crear Documento'}
-      size={isFormulario ? '5xl' : '3xl'}
+      size={isFormulario ? 'full' : '3xl'}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button type="button" disabled={isPending} onClick={handleSubmit(onSubmit)}>
+            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear Borrador'}
+          </Button>
+        </>
+      }
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
       >
         <Input
-          label="Titulo *"
+          label="Título *"
           {...register('titulo', { required: 'Titulo es requerido' })}
           placeholder="Procedimiento de Control de Documentos"
           error={errors.titulo?.message}
@@ -258,10 +269,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
           </div>
 
           <div>
-            <Select
-              label="Plantilla"
-              {...register('plantilla')}
-            >
+            <Select label="Plantilla" {...register('plantilla')}>
               <option value="">Sin plantilla</option>
               {filteredPlantillas.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -273,7 +281,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
           </div>
 
           <Select
-            label="Clasificacion"
+            label="Clasificación"
             {...register('clasificacion')}
             options={CLASIFICACION_OPTIONS}
           />
@@ -316,34 +324,17 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            label="Fecha de Vigencia"
-            type="date"
-            {...register('fecha_vigencia')}
-          />
+          <Input label="Fecha de Vigencia" type="date" {...register('fecha_vigencia')} />
 
           <Input
-            label="Revision Programada"
+            label="Revisión Programada"
             type="date"
             {...register('fecha_revision_programada')}
           />
         </div>
 
-        <Textarea
-          label="Observaciones"
-          {...register('observaciones')}
-          rows={2}
-        />
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="outline" onClick={onClose} type="button">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear Borrador'}
-          </Button>
-        </div>
+        <Textarea label="Observaciones" {...register('observaciones')} rows={2} />
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

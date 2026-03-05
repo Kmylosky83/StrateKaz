@@ -173,7 +173,7 @@ export function FirmaActaModal({ isOpen, onClose, acta }: FirmaActaModalProps) {
               onSignature={handleSignature}
               required
               height={160}
-              placeholder="Firme aqui con el mouse o toque la pantalla"
+              placeholder="Firme aquí con el mouse o toque la pantalla"
             />
 
             <Textarea

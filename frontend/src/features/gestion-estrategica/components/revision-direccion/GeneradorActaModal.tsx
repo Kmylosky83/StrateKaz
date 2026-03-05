@@ -17,7 +17,6 @@ import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
-import { Checkbox } from '@/components/forms/Checkbox';
 import { Badge } from '@/components/common/Badge';
 import { toast } from 'sonner';
 import {
@@ -49,7 +48,13 @@ interface GeneradorActaModalProps {
   onClose: () => void;
 }
 
-type TabType = 'general' | 'participantes' | 'elementos' | 'analisis' | 'decisiones' | 'compromisos';
+type TabType =
+  | 'general'
+  | 'participantes'
+  | 'elementos'
+  | 'analisis'
+  | 'decisiones'
+  | 'compromisos';
 
 const TABS: Tab[] = [
   { id: 'general', label: 'General', icon: <FileText className="w-4 h-4" /> },
@@ -311,7 +316,8 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
       presidente: formData.presidente,
       secretario: formData.secretario,
       participantes: formData.participantes.length > 0 ? formData.participantes : undefined,
-      elementos_entrada: formData.elementos_entrada.length > 0 ? formData.elementos_entrada : undefined,
+      elementos_entrada:
+        formData.elementos_entrada.length > 0 ? formData.elementos_entrada : undefined,
       analisis_discusion: formData.analisis_discusion || undefined,
       puntos_discutidos: formData.puntos_discutidos || undefined,
       decisiones: formData.decisiones.length > 0 ? formData.decisiones : undefined,
@@ -360,7 +366,11 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Acta de Revisión por Dirección' : 'Generar Acta de Revisión por Dirección'}
+      title={
+        isEditing
+          ? 'Editar Acta de Revisión por Dirección'
+          : 'Generar Acta de Revisión por Dirección'
+      }
       subtitle="ISO 9.3 - Revisión por la Dirección"
       size="4xl"
       footer={footer}
@@ -394,7 +404,7 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                 helpText="Seleccione la programación de revisión existente"
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Fecha de Revisión *"
                   type="date"
@@ -410,7 +420,7 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Hora de Inicio *"
                   type="time"
@@ -456,8 +466,8 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                           participante.asistencia === 'ASISTIO'
                             ? 'success'
                             : participante.asistencia === 'NO_ASISTIO'
-                            ? 'danger'
-                            : 'warning'
+                              ? 'danger'
+                              : 'warning'
                         }
                       >
                         {participante.asistencia}
@@ -468,7 +478,10 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
               </div>
 
               {formData.participantes.length === 0 && (
-                <Alert variant="warning" message="Seleccione una programación para cargar participantes" />
+                <Alert
+                  variant="warning"
+                  message="Seleccione una programación para cargar participantes"
+                />
               )}
             </div>
           )}
@@ -496,7 +509,11 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                         label="Categoría"
                         value={elemento.categoria}
                         onChange={(e) =>
-                          updateElementoEntrada(index, 'categoria', e.target.value as EntradaCategoria)
+                          updateElementoEntrada(
+                            index,
+                            'categoria',
+                            e.target.value as EntradaCategoria
+                          )
                         }
                         options={categoriaOptions}
                         required
@@ -531,7 +548,9 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                     <Input
                       label="Fuente de Información"
                       value={elemento.fuente_informacion || ''}
-                      onChange={(e) => updateElementoEntrada(index, 'fuente_informacion', e.target.value)}
+                      onChange={(e) =>
+                        updateElementoEntrada(index, 'fuente_informacion', e.target.value)
+                      }
                       placeholder="Ej: Informe de auditoría IA-2025-001"
                     />
                   </div>
@@ -589,7 +608,9 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                       <Select
                         label="Tipo de Decisión"
                         value={decision.tipo_decision}
-                        onChange={(e) => updateDecision(index, 'tipo_decision', e.target.value as TipoDecision)}
+                        onChange={(e) =>
+                          updateDecision(index, 'tipo_decision', e.target.value as TipoDecision)
+                        }
                         options={tipoDecisionOptions}
                         required
                       />
@@ -672,7 +693,7 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                       required
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Input
                         label="Fecha Límite *"
                         type="date"
@@ -684,7 +705,11 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
                         label="Prioridad *"
                         value={compromiso.prioridad}
                         onChange={(e) =>
-                          updateCompromiso(index, 'prioridad', e.target.value as PrioridadCompromiso)
+                          updateCompromiso(
+                            index,
+                            'prioridad',
+                            e.target.value as PrioridadCompromiso
+                          )
                         }
                         options={prioridadOptions}
                         required

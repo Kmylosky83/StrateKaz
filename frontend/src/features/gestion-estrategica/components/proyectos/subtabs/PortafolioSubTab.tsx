@@ -8,13 +8,28 @@
  * El toggle Dashboard/Kanban está integrado en el SectionHeader (no como tabs separados)
  */
 import { useState } from 'react';
-import { Briefcase, LayoutDashboard, KanbanSquare, Plus, User, Calendar, Target, TrendingUp } from 'lucide-react';
-import { SectionHeader, Button, ViewToggle, Modal, Badge, Spinner } from '@/components/common';
+import {
+  Briefcase,
+  LayoutDashboard,
+  KanbanSquare,
+  Plus,
+  User,
+  Calendar,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
+import { SectionHeader, Button, ViewToggle, Badge, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { PortafolioDashboard } from '../PortafolioDashboard';
 import { ProyectosKanban } from '../ProyectosKanban';
 import { useProyecto, useProyectosDashboard, useCreateProyecto } from '../../../hooks/useProyectos';
-import type { Proyecto, CreateProyectoDTO, TipoProyecto, PrioridadProyecto } from '../../../types/proyectos.types';
+import type {
+  Proyecto,
+  CreateProyectoDTO,
+  TipoProyecto,
+  PrioridadProyecto,
+} from '../../../types/proyectos.types';
 
 type ViewMode = 'dashboard' | 'kanban';
 
@@ -34,7 +49,9 @@ interface ProyectoDetailModalProps {
 const ProyectoDetailModal = ({ proyectoId, isOpen, onClose }: ProyectoDetailModalProps) => {
   const { data: proyecto, isLoading } = useProyecto(proyectoId);
 
-  const estadoBadgeVariant = (estado: string): 'primary' | 'success' | 'warning' | 'danger' | 'gray' => {
+  const estadoBadgeVariant = (
+    estado: string
+  ): 'primary' | 'success' | 'warning' | 'danger' | 'gray' => {
     const map: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'gray'> = {
       completado: 'success',
       ejecucion: 'primary',
@@ -57,7 +74,17 @@ const ProyectoDetailModal = ({ proyectoId, isOpen, onClose }: ProyectoDetailModa
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle del Proyecto" size="2xl">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Detalle del Proyecto"
+      size="2xl"
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          Cerrar
+        </Button>
+      }
+    >
       {isLoading ? (
         <div className="flex justify-center py-10">
           <Spinner size="lg" />
@@ -68,9 +95,13 @@ const ProyectoDetailModal = ({ proyectoId, isOpen, onClose }: ProyectoDetailModa
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-gray-500 font-mono mb-1">{proyecto.codigo}</p>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{proyecto.nombre}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                {proyecto.nombre}
+              </h3>
               {proyecto.descripcion && (
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{proyecto.descripcion}</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {proyecto.descripcion}
+                </p>
               )}
             </div>
             <Badge variant={estadoBadgeVariant(proyecto.estado)}>
@@ -214,18 +245,11 @@ const ProyectoDetailModal = ({ proyectoId, isOpen, onClose }: ProyectoDetailModa
               )}
             </div>
           )}
-
-          {/* Footer */}
-          <div className="flex justify-end border-t border-gray-200 dark:border-gray-700 pt-4">
-            <Button variant="secondary" onClick={onClose}>
-              Cerrar
-            </Button>
-          </div>
         </div>
       ) : (
         <p className="text-center text-gray-500 py-8">No se encontró el proyecto</p>
       )}
-    </Modal>
+    </BaseModal>
   );
 };
 
@@ -299,7 +323,27 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Nuevo Proyecto" size="xl">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Nuevo Proyecto"
+      size="xl"
+      footer={
+        <>
+          <Button variant="secondary" onClick={handleClose} disabled={createMutation.isPending}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={createMutation.isPending}
+            isLoading={createMutation.isPending}
+          >
+            Crear Proyecto
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         {/* Código y Nombre */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -374,28 +418,8 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
           value={form.justificacion ?? ''}
           onChange={(e) => handleChange('justificacion', e.target.value)}
         />
-
-        {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
-          <Button variant="secondary" onClick={handleClose} disabled={createMutation.isPending}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? (
-              <span className="flex items-center gap-2">
-                <Spinner size="sm" /> Creando...
-              </span>
-            ) : (
-              'Crear Proyecto'
-            )}
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };
 
@@ -461,10 +485,7 @@ export const PortafolioSubTab = () => {
       )}
 
       {/* Modal Crear Proyecto */}
-      <ProyectoCreateModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-      />
+      <ProyectoCreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </div>
   );
 };

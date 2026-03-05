@@ -324,7 +324,7 @@ export const ConvertirObjetivoModal = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Perspectiva del Balanced Scorecard
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {BSC_PERSPECTIVES.map((perspective) => {
                 const Icon = perspective.icon;
                 const isSelected = selectedPerspective === perspective.value;
@@ -373,7 +373,7 @@ export const ConvertirObjetivoModal = ({
           </div>
 
           {/* Valores Meta (Opcionales) */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Valor Meta (Opcional)"
               type="number"

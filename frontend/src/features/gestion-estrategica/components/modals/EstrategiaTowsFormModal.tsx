@@ -275,7 +275,7 @@ export const EstrategiaTowsFormModal = ({
             Tipo de Estrategia
           </h4>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {TIPO_ESTRATEGIA_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_ESTRATEGIA_TOWS_CONFIG[value];
               const isSelected = formData.tipo === value;
@@ -287,24 +287,26 @@ export const EstrategiaTowsFormModal = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setFormData({ ...formData, tipo: value })}
-                  className={`!p-4 !min-h-0 rounded-lg border-2 !justify-start text-left transition-all w-full ${
+                  className={`!p-3 !min-h-0 rounded-lg border-2 !justify-start text-left transition-all w-full overflow-hidden ${
                     isSelected
                       ? `${config.bgClass} ${config.borderClass}`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <div className="flex flex-col items-start w-full">
-                    <div className="flex items-center gap-2 mb-2">
+                  <div className="flex flex-col items-start w-full min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
                       <Icon
-                        className={`h-5 w-5 ${isSelected ? config.textClass : 'text-gray-500'}`}
+                        className={`h-4 w-4 shrink-0 ${isSelected ? config.textClass : 'text-gray-500'}`}
                       />
                       <span
-                        className={`text-sm font-semibold ${isSelected ? config.textClass : ''}`}
+                        className={`text-sm font-semibold truncate ${isSelected ? config.textClass : ''}`}
                       >
                         {label}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 break-words">
+                      {config.description}
+                    </p>
                   </div>
                 </Button>
               );

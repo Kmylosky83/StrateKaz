@@ -142,10 +142,10 @@ export const GestionDocumentalPage = () => {
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Gestion Documental"
+        title="Gestión Documental"
         description={
           activeSectionData.description ||
-          'Control documental ISO: tipos, documentos, versiones, firmas y distribucion'
+          'Control documental ISO: tipos, documentos, versiones, firmas y distribución'
         }
       />
 

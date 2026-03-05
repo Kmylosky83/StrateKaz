@@ -432,7 +432,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
           {gpsError && <Alert variant="warning" message={gpsError} className="mb-3" />}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Latitud"
               type="number"

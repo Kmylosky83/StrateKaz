@@ -626,10 +626,10 @@ const ParteInteresadaFormModalComponent = ({
 
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Canales de Comunicaci&oacute;n
+              Canales de Comunicación
             </label>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              Seleccione todos los canales aplicables. El primero seleccionado ser&aacute; el canal
+              Seleccione todos los canales aplicables. El primero seleccionado será el canal
               principal.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -693,14 +693,14 @@ const ParteInteresadaFormModalComponent = ({
             </div>
           </div>
           <Select
-            label="Frecuencia de Comunicaci&oacute;n"
+            label="Frecuencia de Comunicación"
             value={formData.frecuencia_comunicacion}
             onChange={(e) => handleFieldChange('frecuencia_comunicacion', e.target.value)}
             options={FRECUENCIAS_COMUNICACION}
             helperText="Periodicidad recomendada"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               id="pi-email"
               type="email"
@@ -721,7 +721,7 @@ const ParteInteresadaFormModalComponent = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               id="pi-direccion"
               label="Dirección"
@@ -745,7 +745,7 @@ const ParteInteresadaFormModalComponent = ({
             <summary className="cursor-pointer text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
               Agregar contacto especifico (opcional)
             </summary>
-            <div className="grid grid-cols-2 gap-4 mt-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
               <Input
                 id="pi-representante"
                 label="Nombre del Contacto"
@@ -776,7 +776,7 @@ const ParteInteresadaFormModalComponent = ({
             message="Evalúa el impacto en AMBAS direcciones: ¿Cuánto poder tiene la PI sobre la empresa? ¿Cuánto poder tiene la empresa sobre la PI?"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Impacto PI → Empresa (PODER de la PI) *"
               value={formData.nivel_influencia_pi}
@@ -901,7 +901,7 @@ const ParteInteresadaFormModalComponent = ({
             helperText="Persona asignada para gestionar esta PI"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Cargo Responsable"
               value={formData.cargo_responsable?.toString() || ''}
@@ -1000,7 +1000,7 @@ const ParteInteresadaFormModalComponent = ({
               message="No hay normas o sistemas de gestion configurados. Configure las normas en Configuracion > Normas ISO."
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {normasDisponibles.map((norma) => {
                 const isSelected = formData.normas_relacionadas.includes(norma.id);
                 return (

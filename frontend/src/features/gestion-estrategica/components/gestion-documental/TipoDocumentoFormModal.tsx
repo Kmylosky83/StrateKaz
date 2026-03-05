@@ -2,9 +2,10 @@
  * TipoDocumentoFormModal - Modal CRUD para Tipos de Documento.
  */
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { useForm, Controller } from 'react-hook-form';
+import { Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
+import { Input, Select, Textarea, Switch } from '@/components/forms';
 import {
   useCreateTipoDocumento,
   useUpdateTipoDocumento,
@@ -40,6 +41,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
     handleSubmit,
     reset,
     watch,
+    control,
     formState: { errors },
   } = useForm<CreateTipoDocumentoDTO>({
     defaultValues: {
@@ -97,20 +99,30 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
 
   if (isEdit && isLoadingExisting) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Cargando...">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Cargando...">
         <div className="flex justify-center py-8">
           <Spinner size="lg" />
         </div>
-      </Modal>
+      </BaseModal>
     );
   }
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? 'Editar Tipo de Documento' : 'Nuevo Tipo de Documento'}
       size="lg"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button type="button" disabled={isPending} onClick={handleSubmit(onSubmit)}>
+            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
+          </Button>
+        </>
+      }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -138,11 +150,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Select
-            label="Nivel"
-            {...register('nivel_documento')}
-            options={NIVEL_OPTIONS}
-          />
+          <Select label="Nivel" {...register('nivel_documento')} options={NIVEL_OPTIONS} />
 
           <Input
             label="Prefijo Código"
@@ -173,26 +181,31 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
             <span className="text-xs text-gray-500">{colorValue}</span>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" {...register('requiere_aprobacion')} className="rounded" />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Requiere aprobación</span>
-          </label>
+          <Controller
+            name="requiere_aprobacion"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                label="Requiere aprobación"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked)}
+              />
+            )}
+          />
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" {...register('requiere_firma')} className="rounded" />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Requiere firma digital</span>
-          </label>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="outline" onClick={onClose} type="button">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
-          </Button>
+          <Controller
+            name="requiere_firma"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                label="Requiere firma digital"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked)}
+              />
+            )}
+          />
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

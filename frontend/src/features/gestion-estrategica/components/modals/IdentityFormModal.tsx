@@ -26,7 +26,11 @@ import { RichTextEditor } from '@/components/forms/RichTextEditor';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateIdentity, useUpdateIdentity } from '../../hooks/useStrategic';
 import { useAreas } from '../../hooks/useAreas';
-import type { CorporateIdentity, CreateCorporateIdentityDTO, UpdateCorporateIdentityDTO } from '../../types/strategic.types';
+import type {
+  CorporateIdentity,
+  CreateCorporateIdentityDTO,
+  UpdateCorporateIdentityDTO,
+} from '../../types/strategic.types';
 import { cn } from '@/utils/cn';
 
 interface IdentityFormModalProps {
@@ -74,7 +78,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         alcance_procesos: identity.alcance_procesos ?? '',
         alcance_exclusiones: identity.alcance_exclusiones ?? '',
         // Procesos cubiertos - extraer IDs de las áreas (v4.2)
-        procesos_cubiertos_ids: identity.procesos_cubiertos?.map(p => p.id) || [],
+        procesos_cubiertos_ids: identity.procesos_cubiertos?.map((p) => p.id) || [],
       });
     } else {
       setFormData({
@@ -127,7 +131,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
   const handleAreaToggle = (areaId: number) => {
     const current = formData.procesos_cubiertos_ids;
     const updated = current.includes(areaId)
-      ? current.filter(id => id !== areaId)
+      ? current.filter((id) => id !== areaId)
       : [...current, areaId];
     setFormData({ ...formData, procesos_cubiertos_ids: updated });
   };
@@ -174,7 +178,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Fecha de Vigencia *"
             type="date"
@@ -258,7 +262,11 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                 onChange={(e) => setFormData({ ...formData, alcance_general: e.target.value })}
                 placeholder="Describa el alcance general del Sistema Integrado de Gestión. Ejemplo: 'Diseño, desarrollo, implementación y mantenimiento de soluciones tecnológicas...'"
                 rows={3}
-                error={formData.declara_alcance && !formData.alcance_general.trim() ? 'Campo requerido' : undefined}
+                error={
+                  formData.declara_alcance && !formData.alcance_general.trim()
+                    ? 'Campo requerido'
+                    : undefined
+                }
               />
             </div>
 
@@ -284,7 +292,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                   <span className="font-medium">Procesos Cubiertos</span>
                 </div>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {formData.procesos_cubiertos_ids.length} seleccionado{formData.procesos_cubiertos_ids.length !== 1 ? 's' : ''}
+                  {formData.procesos_cubiertos_ids.length} seleccionado
+                  {formData.procesos_cubiertos_ids.length !== 1 ? 's' : ''}
                 </span>
               </div>
 
@@ -300,12 +309,14 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                           : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
                       )}
                     >
-                      <div className={cn(
-                        'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
-                        formData.procesos_cubiertos_ids.includes(area.id)
-                          ? 'bg-purple-600 border-purple-600'
-                          : 'border-gray-300 dark:border-gray-600'
-                      )}>
+                      <div
+                        className={cn(
+                          'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
+                          formData.procesos_cubiertos_ids.includes(area.id)
+                            ? 'bg-purple-600 border-purple-600'
+                            : 'border-gray-300 dark:border-gray-600'
+                        )}
+                      >
                         {formData.procesos_cubiertos_ids.includes(area.id) && (
                           <Check className="w-3 h-3 text-white" />
                         )}
@@ -316,7 +327,10 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                         checked={formData.procesos_cubiertos_ids.includes(area.id)}
                         onChange={() => handleAreaToggle(area.id)}
                       />
-                      <span className="text-sm text-gray-900 dark:text-white truncate" title={area.name}>
+                      <span
+                        className="text-sm text-gray-900 dark:text-white truncate"
+                        title={area.name}
+                      >
                         {area.name}
                       </span>
                     </label>
@@ -334,8 +348,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
               )}
 
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Seleccione las áreas/procesos cubiertos por el Sistema Integrado de Gestión.
-                Las áreas se administran en Dirección Estratégica → Organización → Áreas.
+                Seleccione las áreas/procesos cubiertos por el Sistema Integrado de Gestión. Las
+                áreas se administran en Dirección Estratégica → Organización → Áreas.
               </p>
             </div>
 
@@ -353,7 +367,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                 rows={2}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Las exclusiones específicas por norma ISO se configuran en la sección "Alcances del Sistema"
+                Las exclusiones específicas por norma ISO se configuran en la sección "Alcances del
+                Sistema"
               </p>
             </div>
           </div>

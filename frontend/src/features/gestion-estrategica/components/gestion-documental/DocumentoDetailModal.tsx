@@ -19,7 +19,6 @@ import {
   FileDown,
 } from 'lucide-react';
 import {
-  Modal,
   Button,
   Badge,
   Spinner,
@@ -28,6 +27,7 @@ import {
   EvidenceGallery,
   EvidenceUploader,
 } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Textarea } from '@/components/forms';
 import {
   useDocumento,
@@ -116,7 +116,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="Detalle del Documento" size="4xl">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Detalle del Documento" size="4xl">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner size="lg" />
@@ -244,7 +244,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <InfoItem
                       icon={<Calendar className="w-4 h-4" />}
                       label="Creado"
@@ -402,7 +402,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
             </div>
           </div>
         )}
-      </Modal>
+      </BaseModal>
 
       {/* Confirm Dialogs */}
       <ConfirmDialog

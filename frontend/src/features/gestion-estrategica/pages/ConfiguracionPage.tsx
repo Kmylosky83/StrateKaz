@@ -121,7 +121,7 @@ export const ConfiguracionPage = () => {
   return (
     <div className="space-y-4">
       {/* PageHeader solo titulo y descripcion */}
-      <PageHeader title="Configuracion" description={activeSectionData.description} />
+      <PageHeader title="Configuración" description={activeSectionData.description} />
 
       {/* Sub-tabs debajo del header (underline, color dinamico) */}
       <DynamicSections

@@ -26,8 +26,7 @@ import {
   type Area,
   type CreateAreaDTO,
 } from '../../hooks/useAreas';
-import { usersAPI } from '@/api/users.api';
-import { useQuery } from '@tanstack/react-query';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 
 // ==================== TYPES ====================
 
@@ -83,10 +82,7 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
   const { data: areasData } = useAreas({ is_active: true });
 
   // Query para obtener usuarios (para selector de responsable)
-  const { data: usersData } = useQuery({
-    queryKey: ['users', 'active'],
-    queryFn: () => usersAPI.getUsers({ is_active: true }),
-  });
+  const { data: usersData } = useSelectUsers();
 
   // Formulario
   const {
@@ -165,15 +161,15 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
 
   // Opciones de responsables
   const managerOptions = useMemo(() => {
-    const users = usersData?.results || [];
+    const users = usersData || [];
     return [
       { value: '', label: 'Sin responsable asignado' },
       ...users.map((u) => ({
-        value: u.id.toString(),
-        label: `${u.first_name} ${u.last_name}`.trim() || u.username,
+        value: String(u.value),
+        label: u.label,
       })),
     ];
-  }, [usersData?.results]);
+  }, [usersData]);
 
   // Submit handler
   const onSubmit = async (data: AreaFormData) => {

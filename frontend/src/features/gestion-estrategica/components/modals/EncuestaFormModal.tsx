@@ -469,7 +469,7 @@ export const EncuestaFormModal = ({
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
             Tipo de Encuesta
           </h4>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               {
                 value: 'libre' as TipoEncuesta,
@@ -647,7 +647,7 @@ export const EncuestaFormModal = ({
           Vigencia
         </h4>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             type="date"
             label="Fecha de Inicio *"
@@ -879,7 +879,7 @@ export const EncuestaFormModal = ({
                 <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Agregar Nuevo Tema
                 </h5>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Titulo del Tema"
                     value={newTema.titulo}

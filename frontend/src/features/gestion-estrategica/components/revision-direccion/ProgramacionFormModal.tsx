@@ -7,6 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Switch } from '@/components/forms/Switch';
 import { useCreateProgramacion, useUpdateProgramacion } from '../../hooks/useRevisionDireccion';
 import type {
   ProgramacionRevision,
@@ -152,6 +153,20 @@ export const ProgramacionFormModal = ({
       onClose={onClose}
       title={isEditing ? 'Editar Programación' : 'Nueva Programación de Revisión'}
       size="lg"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={isPending || !form.periodo.trim() || !form.fecha_programada}
+          >
+            {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Programación'}
+          </Button>
+        </>
+      }
     >
       <div className="space-y-4">
         <Input
@@ -170,7 +185,7 @@ export const ProgramacionFormModal = ({
           rows={2}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Frecuencia"
             value={form.frecuencia}
@@ -185,7 +200,7 @@ export const ProgramacionFormModal = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Fecha Programada"
             type="date"
@@ -201,7 +216,7 @@ export const ProgramacionFormModal = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Duración Estimada (horas)"
             type="number"
@@ -223,7 +238,7 @@ export const ProgramacionFormModal = ({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Sistemas de Gestión a Revisar
           </label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { key: 'incluye_calidad' as const, label: 'ISO 9001 (Calidad)' },
               { key: 'incluye_ambiental' as const, label: 'ISO 14001 (Ambiental)' },
@@ -231,35 +246,15 @@ export const ProgramacionFormModal = ({
               { key: 'incluye_seguridad_info' as const, label: 'ISO 27001 (Seguridad Info)' },
               { key: 'incluye_pesv' as const, label: 'PESV (Seguridad Vial)' },
             ].map(({ key, label }) => (
-              <label
+              <Switch
                 key={key}
-                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
-              >
-                <input
-                  type="checkbox"
-                  checked={form[key]}
-                  onChange={(e) => handleChange(key, e.target.checked)}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
-                {label}
-              </label>
+                label={label}
+                checked={form[key]}
+                onCheckedChange={(checked) => handleChange(key, checked)}
+              />
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button variant="outline" onClick={onClose} disabled={isPending}>
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          onClick={handleSubmit}
-          disabled={isPending || !form.periodo.trim() || !form.fecha_programada}
-        >
-          {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Programación'}
-        </Button>
       </div>
     </BaseModal>
   );

@@ -371,7 +371,7 @@ export const AnalisisDofaFormModal = ({
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             type="date"
             label="Fecha de Analisis *"
@@ -429,7 +429,7 @@ export const AnalisisDofaFormModal = ({
   const renderFactoresTab = () => (
     <div className="space-y-6">
       {/* Estadisticas por tipo */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
           const config = TIPO_FACTOR_DOFA_CONFIG[value];
           const count = factoresPorTipo[value] || 0;
@@ -584,7 +584,7 @@ export const AnalisisDofaFormModal = ({
             rows={2}
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Nivel de Impacto *"
               value={factorForm.impacto}

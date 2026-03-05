@@ -10,7 +10,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { PenTool, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms';
 import { useSelectColaboradores } from '@/hooks/useSelectLists';
@@ -160,7 +160,36 @@ export function AsignarFirmantesModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Asignar Firmantes" size="2xl">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Asignar Firmantes"
+      size="2xl"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            disabled={isAsignandoFirmantes}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={isAsignandoFirmantes}
+            isLoading={isAsignandoFirmantes}
+            onClick={handleSubmit(onSubmit)}
+          >
+            <PenTool className="mr-1.5 h-4 w-4" />
+            Asignar Firmantes ({fields.length})
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-4">
         {/* Info banner */}
         <div className="flex items-start gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-800 dark:bg-indigo-900/20">
@@ -282,31 +311,8 @@ export function AsignarFirmantesModal({
             <Plus className="h-4 w-4" />
             Agregar Firmante
           </Button>
-
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onClose}
-              disabled={isAsignandoFirmantes}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" size="sm" disabled={isAsignandoFirmantes}>
-              {isAsignandoFirmantes ? (
-                'Asignando...'
-              ) : (
-                <>
-                  <PenTool className="mr-1.5 h-4 w-4" />
-                  Asignar Firmantes ({fields.length})
-                </>
-              )}
-            </Button>
-          </div>
         </form>
       </div>
-    </Modal>
+    </BaseModal>
   );
 }

@@ -7,7 +7,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Modal, Button, Badge, Spinner } from '@/components/common';
+import { Button, Badge, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { FormBuilder } from '@/components/common/FormBuilder';
 import type { CampoFormulario } from '@/components/common/FormBuilder/types';
@@ -36,7 +37,7 @@ interface PlantillaFormModalProps {
 const TIPO_PLANTILLA_OPTIONS: { value: TipoPlantilla; label: string }[] = [
   { value: 'HTML', label: 'HTML' },
   { value: 'MARKDOWN', label: 'Markdown' },
-  { value: 'FORMULARIO', label: 'Formulario Dinamico' },
+  { value: 'FORMULARIO', label: 'Formulario Dinámico' },
 ];
 
 export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFormModalProps) {
@@ -192,20 +193,30 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
 
   if (isEdit && isLoadingExisting) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Cargando...">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Cargando...">
         <div className="flex justify-center py-8">
           <Spinner size="lg" />
         </div>
-      </Modal>
+      </BaseModal>
     );
   }
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? 'Editar Plantilla' : 'Nueva Plantilla'}
-      size={isFormulario ? '6xl' : '2xl'}
+      size={isFormulario ? 'full' : '2xl'}
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose} type="button">
+            Cancelar
+          </Button>
+          <Button type="button" disabled={isPending} onClick={handleSubmit(onSubmit)}>
+            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
+          </Button>
+        </>
+      }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -225,11 +236,7 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
           />
         </div>
 
-        <Textarea
-          label="Descripcion"
-          {...register('descripcion')}
-          rows={2}
-        />
+        <Textarea label="Descripción" {...register('descripcion')} rows={2} />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
@@ -255,20 +262,12 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
               name="tipo_plantilla"
               control={control}
               render={({ field }) => (
-                <Select
-                  label="Tipo de Plantilla"
-                  {...field}
-                  options={TIPO_PLANTILLA_OPTIONS}
-                />
+                <Select label="Tipo de Plantilla" {...field} options={TIPO_PLANTILLA_OPTIONS} />
               )}
             />
           </div>
 
-          <Input
-            label="Version"
-            {...register('version')}
-            placeholder="1.0"
-          />
+          <Input label="Versión" {...register('version')} placeholder="1.0" />
         </div>
 
         {/* Content area: FormBuilder for FORMULARIO, Textarea otherwise */}
@@ -308,16 +307,7 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
             </Badge>
           </div>
         )}
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="outline" onClick={onClose} type="button">
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isPending}>
-            {isPending ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear'}
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

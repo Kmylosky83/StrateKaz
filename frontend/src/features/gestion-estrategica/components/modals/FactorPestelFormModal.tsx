@@ -279,7 +279,7 @@ export const FactorPestelFormModal = ({
             Tipo de Factor PESTEL *
           </h4>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FACTOR_PESTEL_CONFIG[value];
               const isSelected = selectedTipo === value;
@@ -347,7 +347,7 @@ export const FactorPestelFormModal = ({
             Evaluación del Factor
           </h4>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Tendencia */}
             <div>
               <Select

@@ -127,7 +127,7 @@ export const CompromisoDetailModal = ({
   if (!compromiso) {
     return (
       <BaseModal isOpen={isOpen} onClose={onClose} title="Detalle del Compromiso" size="lg">
-        <p className="text-center text-gray-500 py-8">No se encontro el compromiso.</p>
+        <p className="text-center text-gray-500 py-8">No se encontró el compromiso.</p>
       </BaseModal>
     );
   }
@@ -142,8 +142,41 @@ export const CompromisoDetailModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={`Compromiso ${compromiso.codigo}`}
-      subtitle="Revision por la Direccion"
+      subtitle="Revisión por la Dirección"
       size="lg"
+      footer={
+        <>
+          {canCompletar && !showCompletarForm && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCompletarForm(true);
+                setShowVerificarForm(false);
+              }}
+              className="text-green-600 border-green-300 hover:bg-green-50"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Marcar Completado
+            </Button>
+          )}
+          {canVerificar && !showVerificarForm && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowVerificarForm(true);
+                setShowCompletarForm(false);
+              }}
+              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+            >
+              <ShieldCheck className="h-4 w-4 mr-2" />
+              Verificar
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
+        </>
+      }
     >
       <div className="space-y-6">
         {/* Estado y Prioridad */}
@@ -158,7 +191,7 @@ export const CompromisoDetailModal = ({
 
         {/* Descripcion */}
         <div>
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Descripcion</h4>
+          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Descripción</h4>
           <p className="text-gray-900 dark:text-gray-100">{compromiso.descripcion}</p>
           {compromiso.objetivo && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -169,7 +202,7 @@ export const CompromisoDetailModal = ({
         </div>
 
         {/* Info Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex items-start gap-2">
             <User className="h-4 w-4 text-gray-400 mt-0.5" />
             <div>
@@ -186,7 +219,7 @@ export const CompromisoDetailModal = ({
           <div className="flex items-start gap-2">
             <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Limite</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Límite</p>
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {format(new Date(compromiso.fecha_limite), 'dd/MM/yyyy', { locale: es })}
               </p>
@@ -257,7 +290,7 @@ export const CompromisoDetailModal = ({
               </p>
             )}
             <p className="text-sm mt-1 text-green-700 dark:text-green-300">
-              {compromiso.es_eficaz ? 'Accion eficaz' : 'Accion no eficaz - requiere seguimiento'}
+              {compromiso.es_eficaz ? 'Acción eficaz' : 'Acción no eficaz - requiere seguimiento'}
             </p>
           </div>
         )}
@@ -365,7 +398,7 @@ export const CompromisoDetailModal = ({
                   onChange={() => setEsEficaz(true)}
                   className="text-blue-600"
                 />
-                <span className="text-gray-700 dark:text-gray-300">Accion Eficaz</span>
+                <span className="text-gray-700 dark:text-gray-300">Acción Eficaz</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -400,41 +433,6 @@ export const CompromisoDetailModal = ({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Footer Actions */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-        {canCompletar && !showCompletarForm && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowCompletarForm(true);
-              setShowVerificarForm(false);
-            }}
-            className="text-green-600 border-green-300 hover:bg-green-50"
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Marcar Completado
-          </Button>
-        )}
-
-        {canVerificar && !showVerificarForm && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowVerificarForm(true);
-              setShowCompletarForm(false);
-            }}
-            className="text-blue-600 border-blue-300 hover:bg-blue-50"
-          >
-            <ShieldCheck className="h-4 w-4 mr-2" />
-            Verificar
-          </Button>
-        )}
-
-        <Button variant="outline" onClick={onClose}>
-          Cerrar
-        </Button>
       </div>
     </BaseModal>
   );

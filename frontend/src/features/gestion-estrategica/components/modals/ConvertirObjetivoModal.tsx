@@ -65,10 +65,7 @@ const convertirObjetivoSchema = z.object({
     .min(10, 'El nombre debe tener al menos 10 caracteres')
     .max(200, 'El nombre no puede exceder 200 caracteres'),
   bsc_perspective: z.enum(['FINANCIERA', 'CLIENTES', 'PROCESOS', 'APRENDIZAJE']),
-  target_value: z
-    .number()
-    .min(0, 'El valor meta debe ser positivo')
-    .optional(),
+  target_value: z.number().min(0, 'El valor meta debe ser positivo').optional(),
   unit: z.string().max(20).optional(),
 });
 
@@ -205,7 +202,7 @@ export const ConvertirObjetivoModal = ({
 
   const yaConvertida = !!estrategia.objetivo_estrategico;
 
-  const onSubmit = (data: ConvertirObjetivoFormData) => {
+  const onSubmitHandler = (data: ConvertirObjetivoFormData) => {
     convertirMutation.mutate(
       {
         id: estrategia.id,
@@ -220,21 +217,45 @@ export const ConvertirObjetivoModal = ({
     );
   };
 
+  const footer = (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={onClose}
+        disabled={convertirMutation.isPending}
+      >
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        onClick={handleSubmit(onSubmitHandler)}
+        disabled={!isValid || yaConvertida || convertirMutation.isPending}
+        isLoading={convertirMutation.isPending}
+      >
+        <Target className="w-4 h-4 mr-2" />
+        Convertir a Objetivo BSC
+      </Button>
+    </>
+  );
+
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title="Convertir Estrategia en Objetivo Estratégico"
       size="xl"
+      footer={footer}
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-6">
         {/* Ya convertida - Alert */}
         {yaConvertida && (
           <Alert variant="info" icon={CheckCircle2}>
             <div>
               <p className="font-semibold">Esta estrategia ya fue convertida</p>
               <p className="text-sm mt-1">
-                Objetivo: <span className="font-mono">{estrategia.objetivo_estrategico_code}</span> - {estrategia.objetivo_estrategico_name}
+                Objetivo: <span className="font-mono">{estrategia.objetivo_estrategico_code}</span>{' '}
+                - {estrategia.objetivo_estrategico_name}
               </p>
             </div>
           </Alert>
@@ -245,7 +266,9 @@ export const ConvertirObjetivoModal = ({
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Estrategia TOWS Origen
           </h3>
-          <div className={cn('p-4 rounded-lg border-2', towsConfig.bgClass, towsConfig.borderClass)}>
+          <div
+            className={cn('p-4 rounded-lg border-2', towsConfig.bgClass, towsConfig.borderClass)}
+          >
             <div className="flex items-start justify-between mb-2">
               <Badge variant={towsConfig.color as any} size="lg">
                 {towsConfig.label}
@@ -256,15 +279,14 @@ export const ConvertirObjetivoModal = ({
                 </Badge>
               )}
             </div>
-            <p className={cn('font-medium mb-2', towsConfig.textClass)}>
-              {estrategia.descripcion}
-            </p>
+            <p className={cn('font-medium mb-2', towsConfig.textClass)}>{estrategia.descripcion}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               <span className="font-semibold">Objetivo esperado:</span> {estrategia.objetivo}
             </p>
             {estrategia.area_responsable && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                <span className="font-semibold">Área responsable:</span> {estrategia.area_responsable.nombre}
+                <span className="font-semibold">Área responsable:</span>{' '}
+                {estrategia.area_responsable.nombre}
               </p>
             )}
           </div>
@@ -312,7 +334,9 @@ export const ConvertirObjetivoModal = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setValue('bsc_perspective', perspective.value, { shouldValidate: true })}
+                    onClick={() =>
+                      setValue('bsc_perspective', perspective.value, { shouldValidate: true })
+                    }
                     disabled={yaConvertida}
                     className={cn(
                       '!p-3 !min-h-0 rounded-lg border-2 !justify-start text-left transition-all w-full',
@@ -322,9 +346,19 @@ export const ConvertirObjetivoModal = ({
                     )}
                   >
                     <div className="flex items-start gap-2">
-                      <Icon className={cn('w-5 h-5 mt-0.5', isSelected ? perspective.color : 'text-gray-400')} />
+                      <Icon
+                        className={cn(
+                          'w-5 h-5 mt-0.5',
+                          isSelected ? perspective.color : 'text-gray-400'
+                        )}
+                      />
                       <div className="flex-1 min-w-0">
-                        <p className={cn('font-semibold text-sm', isSelected ? perspective.color : 'text-gray-700 dark:text-gray-300')}>
+                        <p
+                          className={cn(
+                            'font-semibold text-sm',
+                            isSelected ? perspective.color : 'text-gray-700 dark:text-gray-300'
+                          )}
+                        >
                           {perspective.label.replace('Perspectiva de ', '')}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -365,7 +399,13 @@ export const ConvertirObjetivoModal = ({
               <Sparkles className="w-4 h-4" />
               Vista Previa del Objetivo
             </h3>
-            <div className={cn('p-4 rounded-lg border-2', perspectiveConfig?.bgClass, 'border-current')}>
+            <div
+              className={cn(
+                'p-4 rounded-lg border-2',
+                perspectiveConfig?.bgClass,
+                'border-current'
+              )}
+            >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <PerspectiveIcon className={cn('w-5 h-5', perspectiveConfig?.color)} />
@@ -375,37 +415,19 @@ export const ConvertirObjetivoModal = ({
                 </div>
                 <Badge variant="secondary">{perspectiveConfig?.label}</Badge>
               </div>
-              <p className={cn('font-medium', perspectiveConfig?.color)}>
-                {currentName}
-              </p>
+              <p className={cn('font-medium', perspectiveConfig?.color)}>{currentName}</p>
               {watch('target_value') && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  Meta: <span className="font-semibold">{watch('target_value')}{watch('unit')}</span>
+                  Meta:{' '}
+                  <span className="font-semibold">
+                    {watch('target_value')}
+                    {watch('unit')}
+                  </span>
                 </p>
               )}
             </div>
           </div>
         )}
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-            disabled={convertirMutation.isPending}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            disabled={!isValid || yaConvertida || convertirMutation.isPending}
-            isLoading={convertirMutation.isPending}
-          >
-            <Target className="w-4 h-4 mr-2" />
-            Convertir a Objetivo BSC
-          </Button>
-        </div>
       </form>
     </BaseModal>
   );

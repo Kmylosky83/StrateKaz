@@ -30,7 +30,6 @@ import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Slider } from '@/components/forms/Slider';
 import {
   useCreateEstrategiaTows,
   useUpdateEstrategiaTows,
@@ -276,7 +275,7 @@ export const EstrategiaTowsFormModal = ({
             Tipo de Estrategia
           </h4>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {TIPO_ESTRATEGIA_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_ESTRATEGIA_TOWS_CONFIG[value];
               const isSelected = formData.tipo === value;
@@ -318,16 +317,16 @@ export const EstrategiaTowsFormModal = ({
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
               <Target className="h-4 w-4" />
-              Analisis DOFA Asociado
+              Análisis DOFA Asociado
             </h4>
 
             <Select
-              label="Analisis DOFA *"
+              label="Análisis DOFA *"
               value={formData.analisis}
               onChange={(e) => setFormData({ ...formData, analisis: e.target.value })}
-              options={[{ value: '', label: 'Seleccione un analisis...' }, ...analisisOptions]}
+              options={[{ value: '', label: 'Seleccione un análisis...' }, ...analisisOptions]}
               required
-              helperText="Esta estrategia se derivara de los factores del analisis DOFA seleccionado"
+              helperText="Esta estrategia se derivará de los factores del análisis DOFA seleccionado"
             />
           </div>
         )}
@@ -335,7 +334,7 @@ export const EstrategiaTowsFormModal = ({
         {/* Seccion: Descripcion y Objetivo */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Descripcion de la Estrategia
+            Descripción de la Estrategia
           </h4>
 
           <Textarea
@@ -351,7 +350,7 @@ export const EstrategiaTowsFormModal = ({
             label="Objetivo"
             value={formData.objetivo}
             onChange={(e) => setFormData({ ...formData, objetivo: e.target.value })}
-            placeholder="Objetivo especifico que se busca alcanzar..."
+            placeholder="Objetivo específico que se busca alcanzar..."
             rows={2}
           />
         </div>
@@ -360,10 +359,10 @@ export const EstrategiaTowsFormModal = ({
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Planificacion
+            Planificación
           </h4>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Cargo Responsable"
               value={formData.responsable}
@@ -371,14 +370,14 @@ export const EstrategiaTowsFormModal = ({
               options={[{ value: '', label: 'Sin asignar' }, ...cargoOptions]}
             />
             <Select
-              label="Area Responsable"
+              label="Área Responsable"
               value={formData.area_responsable}
               onChange={(e) => setFormData({ ...formData, area_responsable: e.target.value })}
               options={[{ value: '', label: 'Sin asignar' }, ...areaOptions]}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Prioridad"
               value={formData.prioridad}
@@ -387,16 +386,16 @@ export const EstrategiaTowsFormModal = ({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="date"
-              label="Fecha de Implementacion"
+              label="Fecha de Implementación"
               value={formData.fecha_implementacion}
               onChange={(e) => setFormData({ ...formData, fecha_implementacion: e.target.value })}
             />
             <Input
               type="date"
-              label="Fecha Limite"
+              label="Fecha Límite"
               value={formData.fecha_limite}
               onChange={(e) => setFormData({ ...formData, fecha_limite: e.target.value })}
               min={formData.fecha_implementacion}
@@ -412,7 +411,7 @@ export const EstrategiaTowsFormModal = ({
               Estado y Progreso
             </h4>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
                 label="Estado"
                 value={formData.estado}
@@ -454,7 +453,7 @@ export const EstrategiaTowsFormModal = ({
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
               <Target className="h-4 w-4" />
-              Alineacion Estrategica
+              Alineación Estratégica
             </h4>
 
             {estrategiaDetail.objetivo_estrategico ? (
@@ -463,7 +462,7 @@ export const EstrategiaTowsFormModal = ({
                   <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                      Vinculada a Objetivo Estrategico
+                      Vinculada a Objetivo Estratégico
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300">
                       <span className="font-mono">
@@ -496,7 +495,7 @@ export const EstrategiaTowsFormModal = ({
                   <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      Sin Objetivo Estrategico
+                      Sin Objetivo Estratégico
                     </p>
                     <p className="text-sm text-amber-700 dark:text-amber-300">
                       Convierte esta estrategia en un objetivo para monitorear KPIs
@@ -532,10 +531,10 @@ export const EstrategiaTowsFormModal = ({
           />
 
           <Textarea
-            label="Indicadores de Exito"
+            label="Indicadores de Éxito"
             value={formData.indicadores_exito}
             onChange={(e) => setFormData({ ...formData, indicadores_exito: e.target.value })}
-            placeholder="KPIs o metricas para medir el exito de la estrategia..."
+            placeholder="KPIs o métricas para medir el éxito de la estrategia..."
             rows={2}
           />
         </div>

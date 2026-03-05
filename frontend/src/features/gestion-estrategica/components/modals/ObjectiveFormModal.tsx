@@ -62,7 +62,12 @@ const BSC_COLORS: Record<BSCPerspective, string> = {
   APRENDIZAJE: 'text-purple-600',
 };
 
-export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: ObjectiveFormModalProps) => {
+export const ObjectiveFormModal = ({
+  objective,
+  planId,
+  isOpen,
+  onClose,
+}: ObjectiveFormModalProps) => {
   const isEditing = objective !== null;
 
   const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -91,9 +96,10 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
   useEffect(() => {
     if (objective) {
       // Extraer IDs de normas_iso (ManyToMany viene como array de objetos o IDs)
-      const normaIds = objective.normas_iso?.map((n: number | { id: number }) =>
-        typeof n === 'number' ? n : n.id
-      ) || [];
+      const normaIds =
+        objective.normas_iso?.map((n: number | { id: number }) =>
+          typeof n === 'number' ? n : n.id
+        ) || [];
 
       setFormData({
         code: objective.code,
@@ -233,7 +239,7 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === 'general' && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Código *"
                   value={formData.code}
@@ -245,7 +251,9 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                 <Select
                   label="Perspectiva BSC *"
                   value={formData.bsc_perspective}
-                  onChange={(e) => setFormData({ ...formData, bsc_perspective: e.target.value as BSCPerspective })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bsc_perspective: e.target.value as BSCPerspective })
+                  }
                   options={perspectiveOptions}
                   required
                 />
@@ -271,7 +279,9 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                 <Select
                   label="Estado"
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as ObjectiveStatus })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value as ObjectiveStatus })
+                  }
                   options={statusOptions}
                 />
               )}
@@ -285,9 +295,12 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                 message="Selecciona las normas ISO a las que aporta este objetivo estratégico"
               />
 
-              <div className={`p-3 rounded-lg border-l-4 ${BSC_COLORS[formData.bsc_perspective]} bg-gray-50 dark:bg-gray-800`}>
+              <div
+                className={`p-3 rounded-lg border-l-4 ${BSC_COLORS[formData.bsc_perspective]} bg-gray-50 dark:bg-gray-800`}
+              >
                 <p className="text-sm font-medium">
-                  Perspectiva BSC: {perspectiveOptions.find((p) => p.value === formData.bsc_perspective)?.label}
+                  Perspectiva BSC:{' '}
+                  {perspectiveOptions.find((p) => p.value === formData.bsc_perspective)?.label}
                 </p>
               </div>
 
@@ -314,9 +327,10 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                         className={`
                           flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer
                           transition-all duration-200
-                          ${formData.normas_iso_ids.includes(norma.id)
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          ${
+                            formData.normas_iso_ids.includes(norma.id)
+                              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }
                         `}
                         onClick={() => handleNormaISOToggle(norma.id)}
@@ -325,9 +339,10 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                         <div
                           className={`
                             p-2 rounded-lg
-                            ${formData.normas_iso_ids.includes(norma.id)
-                              ? 'bg-primary-100 dark:bg-primary-800'
-                              : 'bg-gray-100 dark:bg-gray-800'
+                            ${
+                              formData.normas_iso_ids.includes(norma.id)
+                                ? 'bg-primary-100 dark:bg-primary-800'
+                                : 'bg-gray-100 dark:bg-gray-800'
                             }
                           `}
                         >
@@ -343,11 +358,13 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
 
                         {/* Info de la norma */}
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${
-                            formData.normas_iso_ids.includes(norma.id)
-                              ? 'text-primary-700 dark:text-primary-300'
-                              : 'text-gray-900 dark:text-gray-100'
-                          }`}>
+                          <p
+                            className={`text-sm font-medium truncate ${
+                              formData.normas_iso_ids.includes(norma.id)
+                                ? 'text-primary-700 dark:text-primary-300'
+                                : 'text-gray-900 dark:text-gray-100'
+                            }`}
+                          >
                             {norma.code}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -369,7 +386,9 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                 {/* Contador de seleccionados */}
                 {formData.normas_iso_ids.length > 0 && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    {formData.normas_iso_ids.length} norma{formData.normas_iso_ids.length !== 1 ? 's' : ''} seleccionada{formData.normas_iso_ids.length !== 1 ? 's' : ''}
+                    {formData.normas_iso_ids.length} norma
+                    {formData.normas_iso_ids.length !== 1 ? 's' : ''} seleccionada
+                    {formData.normas_iso_ids.length !== 1 ? 's' : ''}
                   </p>
                 )}
               </div>
@@ -378,12 +397,14 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
 
           {activeTab === 'medicion' && (
             <>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
                   label="Meta *"
                   type="number"
                   value={formData.target_value.toString()}
-                  onChange={(e) => setFormData({ ...formData, target_value: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, target_value: parseFloat(e.target.value) || 0 })
+                  }
                   required
                 />
                 {isEditing && (
@@ -391,7 +412,9 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                     label="Valor Actual"
                     type="number"
                     value={formData.current_value.toString()}
-                    onChange={(e) => setFormData({ ...formData, current_value: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, current_value: parseFloat(e.target.value) || 0 })
+                    }
                   />
                 )}
                 <Input
@@ -402,7 +425,7 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Fecha de Inicio"
                   type="date"
@@ -428,7 +451,9 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-green-600 h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min((formData.current_value / formData.target_value) * 100, 100)}%` }}
+                      style={{
+                        width: `${Math.min((formData.current_value / formData.target_value) * 100, 100)}%`,
+                      }}
                     />
                   </div>
                 </div>

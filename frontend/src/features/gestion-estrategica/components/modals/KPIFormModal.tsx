@@ -5,13 +5,18 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Button, Spinner, Alert, Card, Badge } from '@/components/common';
+import { Button, Alert, Card, Badge } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { useCreateKPI, useUpdateKPI } from '../../hooks/useKPIs';
 import type { KPIObjetivo } from '../../types/kpi.types';
-import { FREQUENCY_CONFIG, TREND_TYPE_CONFIG, UNIT_OPTIONS, SEMAFORO_CONFIG } from '../../types/kpi.types';
+import {
+  FREQUENCY_CONFIG,
+  TREND_TYPE_CONFIG,
+  UNIT_OPTIONS,
+  SEMAFORO_CONFIG,
+} from '../../types/kpi.types';
 import { TrendingUp, AlertTriangle, XCircle } from 'lucide-react';
 
 interface KPIFormModalProps {
@@ -22,29 +27,40 @@ interface KPIFormModalProps {
 }
 
 // Schema de validación
-const kpiSchema = z.object({
-  name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  formula: z.string().min(1, 'La fórmula es requerida'),
-  unit: z.string().min(1, 'La unidad es requerida'),
-  frequency: z.string().min(1, 'La frecuencia es requerida'),
-  trend_type: z.string().min(1, 'El tipo de tendencia es requerido'),
-  target_value: z.number().positive('Debe ser mayor a 0'),
-  warning_threshold: z.number(),
-  critical_threshold: z.number(),
-  min_value: z.number().optional(),
-  max_value: z.number().optional(),
-}).refine((data) => {
-  // Validar umbrales según tipo de tendencia
-  if (data.trend_type === 'MAYOR_MEJOR') {
-    return data.warning_threshold < data.target_value && data.critical_threshold < data.warning_threshold;
-  } else if (data.trend_type === 'MENOR_MEJOR') {
-    return data.warning_threshold > data.target_value && data.critical_threshold > data.warning_threshold;
-  }
-  return true;
-}, {
-  message: 'Los umbrales no son válidos para el tipo de tendencia seleccionado',
-  path: ['warning_threshold'],
-});
+const kpiSchema = z
+  .object({
+    name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
+    formula: z.string().min(1, 'La fórmula es requerida'),
+    unit: z.string().min(1, 'La unidad es requerida'),
+    frequency: z.string().min(1, 'La frecuencia es requerida'),
+    trend_type: z.string().min(1, 'El tipo de tendencia es requerido'),
+    target_value: z.number().positive('Debe ser mayor a 0'),
+    warning_threshold: z.number(),
+    critical_threshold: z.number(),
+    min_value: z.number().optional(),
+    max_value: z.number().optional(),
+  })
+  .refine(
+    (data) => {
+      // Validar umbrales según tipo de tendencia
+      if (data.trend_type === 'MAYOR_MEJOR') {
+        return (
+          data.warning_threshold < data.target_value &&
+          data.critical_threshold < data.warning_threshold
+        );
+      } else if (data.trend_type === 'MENOR_MEJOR') {
+        return (
+          data.warning_threshold > data.target_value &&
+          data.critical_threshold > data.warning_threshold
+        );
+      }
+      return true;
+    },
+    {
+      message: 'Los umbrales no son válidos para el tipo de tendencia seleccionado',
+      path: ['warning_threshold'],
+    }
+  );
 
 export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModalProps) {
   const isEditing = kpi !== null;
@@ -130,10 +146,31 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
   const isEnRango = formData.trend_type === 'EN_RANGO';
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  const footer = (
+    <>
+      <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        variant="primary"
+        onClick={handleSubmit}
+        disabled={isLoading}
+        isLoading={isLoading}
+      >
+        {isEditing ? 'Actualizar KPI' : 'Crear KPI'}
+      </Button>
+    </>
+  );
+
   // Preview de semáforo simulado
   const previewValue = formData.target_value * 0.85; // 85% de la meta
-  const previewStatus = previewValue >= formData.warning_threshold ? 'VERDE' :
-                        previewValue >= formData.critical_threshold ? 'AMARILLO' : 'ROJO';
+  const previewStatus =
+    previewValue >= formData.warning_threshold
+      ? 'VERDE'
+      : previewValue >= formData.critical_threshold
+        ? 'AMARILLO'
+        : 'ROJO';
   const previewConfig = SEMAFORO_CONFIG[previewStatus];
 
   return (
@@ -142,6 +179,7 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
       onClose={onClose}
       title={isEditing ? 'Editar KPI' : 'Nuevo KPI'}
       size="xl"
+      footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información General */}
@@ -223,9 +261,7 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
             ))}
           </Select>
 
-          {errors.warning_threshold && (
-            <Alert variant="danger">{errors.warning_threshold}</Alert>
-          )}
+          {errors.warning_threshold && <Alert variant="danger">{errors.warning_threshold}</Alert>}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
@@ -240,14 +276,18 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
               type="number"
               label="Umbral de Alerta *"
               value={formData.warning_threshold}
-              onChange={(e) => setFormData({ ...formData, warning_threshold: Number(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, warning_threshold: Number(e.target.value) })
+              }
             />
 
             <Input
               type="number"
               label="Umbral Crítico *"
               value={formData.critical_threshold}
-              onChange={(e) => setFormData({ ...formData, critical_threshold: Number(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, critical_threshold: Number(e.target.value) })
+              }
             />
           </div>
 
@@ -257,14 +297,18 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
                 type="number"
                 label="Valor Mínimo"
                 value={formData.min_value || ''}
-                onChange={(e) => setFormData({ ...formData, min_value: Number(e.target.value) || undefined })}
+                onChange={(e) =>
+                  setFormData({ ...formData, min_value: Number(e.target.value) || undefined })
+                }
               />
 
               <Input
                 type="number"
                 label="Valor Máximo"
                 value={formData.max_value || ''}
-                onChange={(e) => setFormData({ ...formData, max_value: Number(e.target.value) || undefined })}
+                onChange={(e) =>
+                  setFormData({ ...formData, max_value: Number(e.target.value) || undefined })
+                }
               />
             </div>
           )}
@@ -303,25 +347,6 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
               </Badge>
             </div>
           </Card>
-        </div>
-
-        {/* Acciones */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Guardando...
-              </>
-            ) : isEditing ? (
-              'Actualizar KPI'
-            ) : (
-              'Crear KPI'
-            )}
-          </Button>
         </div>
       </form>
     </BaseModal>

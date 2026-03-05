@@ -16,7 +16,11 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
 import { useCreatePlan, useUpdatePlan, usePeriodTypes } from '../../hooks/useStrategic';
-import type { StrategicPlan, CreateStrategicPlanDTO, UpdateStrategicPlanDTO } from '../../types/strategic.types';
+import type {
+  StrategicPlan,
+  CreateStrategicPlanDTO,
+  UpdateStrategicPlanDTO,
+} from '../../types/strategic.types';
 
 interface PlanFormModalProps {
   plan: StrategicPlan | null;
@@ -147,12 +151,17 @@ export const PlanFormModal = ({ plan, isOpen, onClose }: PlanFormModalProps) => 
         <Select
           label="Tipo de Período *"
           value={formData.period_type}
-          onChange={(e) => setFormData({ ...formData, period_type: e.target.value as CreateStrategicPlanDTO['period_type'] })}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              period_type: e.target.value as CreateStrategicPlanDTO['period_type'],
+            })
+          }
           options={periodOptions}
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Fecha de Inicio *"
             type="date"

@@ -251,7 +251,9 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const departamentoOptions = choices?.departamentos || [];
 
   // Unidades de capacidad dinámicas (multi-industria)
-  const choicesExt = choices as (typeof choices & { unidades_capacidad?: { value: number; label: string }[] }) | undefined;
+  const choicesExt = choices as
+    | (typeof choices & { unidades_capacidad?: { value: number; label: string }[] })
+    | undefined;
   const unidadesCapacidadOptions =
     choicesExt?.unidades_capacidad?.map((u) => ({
       value: u.value.toString(),
@@ -308,7 +310,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             </h4>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Código *"
               value={formData.codigo}
@@ -377,7 +379,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             required
           />
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
               label="Ciudad *"
               value={formData.ciudad}
@@ -466,7 +468,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             </h4>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select
               label="Responsable"
               value={formData.responsable}
@@ -500,7 +502,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             </h4>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Fecha de Apertura"
               type="date"
@@ -516,7 +518,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
           </div>
 
           {/* Capacidad con unidades dinámicas */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Capacidad de Almacenamiento"
               type="number"
@@ -546,7 +548,9 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             </div>
             <Switch
               checked={formData.es_sede_principal}
-              onChange={(e) => setFormData({ ...formData, es_sede_principal: e.target.checked })}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, es_sede_principal: checked })
+              }
             />
           </div>
 
@@ -560,7 +564,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               </div>
               <Switch
                 checked={formData.is_active}
-                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
             </div>
           )}

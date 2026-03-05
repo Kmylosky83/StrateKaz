@@ -276,7 +276,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === 'general' && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Código *"
                   value={formData.code}
@@ -315,7 +315,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                 rows={3}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Select
                   label="Prioridad *"
                   value={formData.priority}
@@ -410,7 +410,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                 rows={4}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Fecha de Inicio"
                   type="date"

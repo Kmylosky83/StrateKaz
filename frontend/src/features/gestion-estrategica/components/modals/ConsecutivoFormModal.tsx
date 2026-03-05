@@ -248,12 +248,30 @@ export const ConsecutivoFormModal = ({
     }
   };
 
+  const footer = (
+    <>
+      <Button type="button" variant="outline" onClick={onClose}>
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        variant="primary"
+        onClick={handleSubmit(onSubmit)}
+        disabled={isPending}
+        isLoading={isPending}
+      >
+        {isEditing ? 'Actualizar' : 'Crear'}
+      </Button>
+    </>
+  );
+
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar Consecutivo' : 'Nuevo Consecutivo'}
       size="lg"
+      footer={footer}
     >
       {isLoading ? (
         <div className="p-6 animate-pulse-subtle space-y-4">
@@ -292,7 +310,7 @@ export const ConsecutivoFormModal = ({
               Identificación
             </h4>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Código"
                 placeholder="FACTURA, OC, REQ"
@@ -335,7 +353,7 @@ export const ConsecutivoFormModal = ({
                 Formato
               </h4>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
                   label="Prefijo"
                   placeholder="FAC"
@@ -369,7 +387,7 @@ export const ConsecutivoFormModal = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Dígitos de Relleno"
                   type="number"
@@ -399,9 +417,7 @@ export const ConsecutivoFormModal = ({
                       onCheckedChange={(checked) => setValue('include_year', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Año (YYYY)
-                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Año (YYYY)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
@@ -409,9 +425,7 @@ export const ConsecutivoFormModal = ({
                       onCheckedChange={(checked) => setValue('include_month', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Mes (MM)
-                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Mes (MM)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
@@ -419,9 +433,7 @@ export const ConsecutivoFormModal = ({
                       onCheckedChange={(checked) => setValue('include_day', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      Día (DD)
-                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Día (DD)</span>
                   </div>
                 </div>
               </div>
@@ -483,29 +495,8 @@ export const ConsecutivoFormModal = ({
                 onCheckedChange={(checked) => setValue('is_active', checked)}
                 size="sm"
               />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Consecutivo activo
-              </span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Consecutivo activo</span>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isPending}
-              isLoading={isPending}
-            >
-              {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-            </Button>
           </div>
         </form>
       )}

@@ -10,11 +10,10 @@
  * API: /gestion-estrategica/contexto/grupos-parte-interesada/
  */
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { TextArea } from '@/components/forms/TextArea';
+import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { Alert } from '@/components/common/Alert';
 import {
@@ -147,29 +146,38 @@ export const GrupoParteInteresadaFormModal = ({
       }
       onSuccess?.();
       onClose();
-    } catch (error: any) {
+    } catch {
       // Los hooks ya manejan el toast de error
-      console.error('Error al guardar grupo:', error);
     }
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-          {isEditing ? 'Editar Grupo' : 'Nuevo Grupo'}
-        </h2>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="!min-h-0 !p-1"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+  const isLoading = isCreating || isUpdating;
 
+  const footer = (
+    <>
+      <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        variant="primary"
+        onClick={handleSubmit}
+        disabled={isLoading}
+        isLoading={isLoading}
+      >
+        {isEditing ? 'Actualizar' : 'Crear'}
+      </Button>
+    </>
+  );
+
+  return (
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? 'Editar Grupo' : 'Nuevo Grupo'}
+      size="md"
+      footer={footer}
+    >
       {grupo?.es_sistema && (
         <Alert
           variant="warning"
@@ -201,7 +209,7 @@ export const GrupoParteInteresadaFormModal = ({
         />
 
         {/* Descripción */}
-        <TextArea
+        <Textarea
           label="Descripción"
           placeholder="Breve descripción del grupo..."
           value={formData.descripcion}
@@ -244,18 +252,8 @@ export const GrupoParteInteresadaFormModal = ({
             Color seleccionado: {COLOR_OPTIONS.find((c) => c.value === formData.color)?.label}
           </p>
         </div>
-
-        {/* Botones */}
-        <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" disabled={isCreating || isUpdating}>
-            {isCreating || isUpdating ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear'}
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };
 

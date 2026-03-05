@@ -237,7 +237,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
             Identificación
           </h4>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Código *"
               value={formData.code}
@@ -308,7 +308,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
             Apariencia
           </h4>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Orden de Visualización"
               type="number"
@@ -414,7 +414,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
           </div>
           <Switch
             checked={formData.is_active}
-            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
           />
         </div>
 

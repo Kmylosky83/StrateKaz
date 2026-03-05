@@ -114,11 +114,11 @@ const defaultFactorForm: FactorForm = {
 };
 
 const TIPO_FACTOR_OPTIONS: { value: TipoFactorPESTEL; label: string; icon: React.ElementType }[] = [
-  { value: 'politico', label: 'Politico', icon: Landmark },
-  { value: 'economico', label: 'Economico', icon: DollarSign },
+  { value: 'politico', label: 'Político', icon: Landmark },
+  { value: 'economico', label: 'Económico', icon: DollarSign },
   { value: 'social', label: 'Social', icon: Users },
   { value: 'tecnologico', label: 'Tecnologico', icon: Cpu },
-  { value: 'ecologico', label: 'Ecologico', icon: Leaf },
+  { value: 'ecologico', label: 'Ecológico', icon: Leaf },
   { value: 'legal', label: 'Legal', icon: Scale },
 ];
 
@@ -323,7 +323,7 @@ export const AnalisisPestelFormModal = ({
         disabled={isLoading || !formData.nombre}
         isLoading={isLoading}
       >
-        {isEditing ? 'Guardar Cambios' : 'Crear Analisis'}
+        {isEditing ? 'Guardar Cambios' : 'Crear Análisis'}
       </Button>
     </>
   );
@@ -332,7 +332,7 @@ export const AnalisisPestelFormModal = ({
   const renderTabs = () => (
     <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
       {[
-        { key: 'datos', label: 'Datos Basicos', disabled: false },
+        { key: 'datos', label: 'Datos Básicos', disabled: false },
         { key: 'factores', label: `Factores (${factores.length})`, disabled: !isEditing },
       ].map((tab) => (
         <Button
@@ -363,28 +363,28 @@ export const AnalisisPestelFormModal = ({
       <div className="space-y-4">
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
           <FileText className="h-4 w-4" />
-          Informacion General
+          Información General
         </h4>
 
         <Select
-          label="Tipo de Analisis"
+          label="Tipo de Análisis"
           value={formData.tipo_analisis}
           onChange={(e) => setFormData({ ...formData, tipo_analisis: e.target.value })}
           options={[{ value: '', label: 'Seleccionar tipo...' }, ...tipoAnalisisOptions]}
         />
 
         <Input
-          label="Nombre del Analisis *"
+          label="Nombre del Análisis *"
           value={formData.nombre}
           onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-          placeholder="Ej: Analisis PESTEL 2026"
+          placeholder="Ej: Análisis PESTEL 2026"
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             type="date"
-            label="Fecha de Analisis *"
+            label="Fecha de Análisis *"
             value={formData.fecha_analisis}
             onChange={(e) => setFormData({ ...formData, fecha_analisis: e.target.value })}
             required
@@ -413,10 +413,10 @@ export const AnalisisPestelFormModal = ({
         </h4>
 
         <Textarea
-          label="Conclusiones del Analisis"
+          label="Conclusiones del Análisis"
           value={formData.conclusiones}
           onChange={(e) => setFormData({ ...formData, conclusiones: e.target.value })}
-          placeholder="Conclusiones generales del analisis PESTEL..."
+          placeholder="Conclusiones generales del análisis PESTEL..."
           rows={5}
         />
       </div>
@@ -427,7 +427,7 @@ export const AnalisisPestelFormModal = ({
   const renderFactoresTab = () => (
     <div className="space-y-6">
       {/* Estadisticas por tipo */}
-      <div className="grid grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
           const config = TIPO_FACTOR_PESTEL_CONFIG[value];
           const count = factoresPorTipo[value] || 0;
@@ -678,7 +678,7 @@ export const AnalisisPestelFormModal = ({
       {analisis?.estado !== 'borrador' && (
         <Alert
           variant="warning"
-          message="Los factores solo pueden modificarse mientras el analisis esta en estado Borrador."
+          message="Los factores solo pueden modificarse mientras el análisis está en estado Borrador."
         />
       )}
     </div>
@@ -700,8 +700,8 @@ export const AnalisisPestelFormModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Analisis PESTEL' : 'Nuevo Analisis PESTEL'}
-      subtitle="Politico, Economico, Social, Tecnologico, Ecologico y Legal"
+      title={isEditing ? 'Editar Análisis PESTEL' : 'Nuevo Análisis PESTEL'}
+      subtitle="Político, Económico, Social, Tecnológico, Ecológico y Legal"
       size="3xl"
       footer={footer}
     >

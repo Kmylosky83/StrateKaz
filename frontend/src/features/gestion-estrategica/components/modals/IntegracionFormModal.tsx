@@ -442,7 +442,7 @@ export const IntegracionFormModal = ({
             helperText="Nombre descriptivo para identificar esta integración"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
               label="Tipo de Servicio *"
               value={formData.tipo_servicio}
@@ -478,7 +478,7 @@ export const IntegracionFormModal = ({
             Configuración de Conexión
           </h4>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select
               label="Ambiente *"
               value={formData.ambiente}
@@ -553,7 +553,7 @@ export const IntegracionFormModal = ({
               </p>
 
               {formData.metodo_autenticacion === 'API_KEY' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="API Key *"
                     type="password"
@@ -573,7 +573,7 @@ export const IntegracionFormModal = ({
               )}
 
               {formData.metodo_autenticacion === 'BASIC_AUTH' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="Usuario *"
                     value={formData.username}
@@ -593,7 +593,7 @@ export const IntegracionFormModal = ({
               )}
 
               {formData.metodo_autenticacion === 'OAUTH2' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="Client ID *"
                     value={formData.api_key}
@@ -645,7 +645,7 @@ export const IntegracionFormModal = ({
           </div>
           <Switch
             checked={formData.is_active}
-            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
           />
         </div>
 

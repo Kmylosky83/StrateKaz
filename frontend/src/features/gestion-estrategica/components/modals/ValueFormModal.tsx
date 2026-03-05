@@ -14,7 +14,11 @@ import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { useCreateValue, useUpdateValue } from '../../hooks/useStrategic';
-import type { CorporateValue, CreateCorporateValueDTO, UpdateCorporateValueDTO } from '../../types/strategic.types';
+import type {
+  CorporateValue,
+  CreateCorporateValueDTO,
+  UpdateCorporateValueDTO,
+} from '../../types/strategic.types';
 
 interface ValueFormModalProps {
   value: CorporateValue | null;
@@ -139,7 +143,7 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Icono"
             value={formData.icon}

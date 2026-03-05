@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Button, Spinner, Card, Badge, Alert } from '@/components/common';
+import { Button, Card, Badge, Alert } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { useCreateMeasurement } from '../../hooks/useKPIs';
@@ -101,11 +101,33 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
   const previewConfig = SEMAFORO_CONFIG[previewStatus];
   const progressColor = getProgressColor(previewStatus);
 
-  const SemaforoIcon = previewStatus === 'VERDE' ? TrendingUp :
-                       previewStatus === 'AMARILLO' ? AlertTriangle :
-                       previewStatus === 'ROJO' ? XCircle : HelpCircle;
+  const SemaforoIcon =
+    previewStatus === 'VERDE'
+      ? TrendingUp
+      : previewStatus === 'AMARILLO'
+        ? AlertTriangle
+        : previewStatus === 'ROJO'
+          ? XCircle
+          : HelpCircle;
 
   const isLoading = createMutation.isPending;
+
+  const footer = (
+    <>
+      <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+        Cancelar
+      </Button>
+      <Button
+        type="submit"
+        variant="primary"
+        onClick={handleSubmit}
+        disabled={isLoading}
+        isLoading={isLoading}
+      >
+        Guardar Medición
+      </Button>
+    </>
+  );
 
   return (
     <BaseModal
@@ -113,13 +135,18 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
       onClose={onClose}
       title={`Nueva Medición - ${kpi.name}`}
       size="lg"
+      footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información del KPI */}
         <Alert variant="info">
           <div className="text-sm">
-            <p><strong>Meta:</strong> {kpi.target_value} {kpi.unit}</p>
-            <p><strong>Fórmula:</strong> {kpi.formula}</p>
+            <p>
+              <strong>Meta:</strong> {kpi.target_value} {kpi.unit}
+            </p>
+            <p>
+              <strong>Fórmula:</strong> {kpi.formula}
+            </p>
           </div>
         </Alert>
 
@@ -204,7 +231,7 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
                 <div
                   className={`h-full ${progressColor} transition-all duration-300`}
                   style={{
-                    width: `${Math.min((formData.value / kpi.target_value) * 100, 100)}%`
+                    width: `${Math.min((formData.value / kpi.target_value) * 100, 100)}%`,
                   }}
                 />
               </div>
@@ -222,23 +249,6 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
               Esta medición requiere atención. Está por debajo del umbral de alerta.
             </Alert>
           )}
-        </div>
-
-        {/* Acciones */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button type="submit" variant="primary" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Guardando...
-              </>
-            ) : (
-              'Guardar Medición'
-            )}
-          </Button>
         </div>
       </form>
     </BaseModal>

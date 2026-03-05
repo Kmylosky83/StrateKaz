@@ -214,7 +214,7 @@ export const FuerzaPorterFormModal = ({
             Tipo de Fuerza
           </h4>
 
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
             {TIPO_FUERZA_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FUERZA_PORTER_CONFIG[value];
               const isSelected = formData.tipo === value;
@@ -282,9 +282,9 @@ export const FuerzaPorterFormModal = ({
                     {label}
                   </Badge>
                   <p className={`text-xs ${isSelected ? config.textClass : 'text-gray-500'}`}>
-                    {value === 'alto' && 'Fuerte presion competitiva'}
-                    {value === 'medio' && 'Presion moderada'}
-                    {value === 'bajo' && 'Baja presion'}
+                    {value === 'alto' && 'Fuerte presión competitiva'}
+                    {value === 'medio' && 'Presión moderada'}
+                    {value === 'bajo' && 'Baja presión'}
                   </p>
                 </Button>
               );
@@ -296,13 +296,13 @@ export const FuerzaPorterFormModal = ({
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Informacion del Analisis
+            Información del Análisis
           </h4>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               type="date"
-              label="Fecha de Analisis *"
+              label="Fecha de Análisis *"
               value={formData.fecha_analisis}
               onChange={(e) => setFormData({ ...formData, fecha_analisis: e.target.value })}
               required
@@ -379,7 +379,7 @@ export const FuerzaPorterFormModal = ({
         {/* Implicaciones Estrategicas */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Implicaciones Estrategicas
+            Implicaciones Estratégicas
           </h4>
 
           <Textarea
@@ -388,7 +388,7 @@ export const FuerzaPorterFormModal = ({
             onChange={(e) =>
               setFormData({ ...formData, implicaciones_estrategicas: e.target.value })
             }
-            placeholder="Que implica este nivel de fuerza para la estrategia de la organizacion..."
+            placeholder="Qué implica este nivel de fuerza para la estrategia de la organización..."
             rows={3}
           />
         </div>

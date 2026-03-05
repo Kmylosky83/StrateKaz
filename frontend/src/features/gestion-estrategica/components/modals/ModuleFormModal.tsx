@@ -196,7 +196,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
           />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Código *"
             value={formData.code}
@@ -237,7 +237,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
           disabled={isSystemModule}
         />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="Icono (Lucide)"
             value={formData.icon}
@@ -277,7 +277,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
             <p className="text-xs text-gray-500 mb-2">
               Selecciona los módulos que deben estar activos para que este funcione
             </p>
-            <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
               {availableModules.map((m) => (
                 <Checkbox
                   key={m.id}

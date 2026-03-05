@@ -9,7 +9,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Alert } from '@/components/common/Alert';
-import { Shield, Mail, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useCrearAccesoColaborador } from '../../hooks/useColaboradores';
 import type { Colaborador } from '../../types';
 
@@ -102,13 +102,10 @@ export function CrearAccesoModal({ colaborador, isOpen, onClose }: CrearAccesoMo
           message={`Se creará una cuenta de acceso para ${nombre}. Se enviará un correo electrónico para configurar la contraseña.`}
         />
 
-        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <Shield size={16} className="text-gray-500 shrink-0" />
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            El colaborador recibirá un enlace para configurar su contraseña. El enlace expira en 72
-            horas.
-          </p>
-        </div>
+        <Alert
+          variant="info"
+          message="El colaborador recibirá un enlace para configurar su contraseña. El enlace expira en 7 días."
+        />
 
         <Input
           label="Email Corporativo"
@@ -128,13 +125,10 @@ export function CrearAccesoModal({ colaborador, isOpen, onClose }: CrearAccesoMo
         />
 
         {email && email.includes('@') && (
-          <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <Mail size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              Se enviará un correo a <strong>{email}</strong> con un enlace para configurar la
-              contraseña.
-            </p>
-          </div>
+          <Alert
+            variant="info"
+            message={`Se enviará un correo a ${email} con un enlace para configurar la contraseña.`}
+          />
         )}
       </div>
     </BaseModal>

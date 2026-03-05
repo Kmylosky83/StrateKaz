@@ -12,7 +12,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { Checkbox } from '@/components/forms/Checkbox';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { cn } from '@/utils/cn';
 import { FileText, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
 import { useCreateHistorialContrato, useTiposContrato } from '../../hooks/useSeleccionContratacion';
@@ -94,7 +95,40 @@ export const ContratoFormModal = ({ isOpen, onClose }: Props) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nuevo Contrato" size="lg">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Nuevo Contrato"
+      size="lg"
+      footer={
+        <div className="flex justify-between w-full">
+          <div>
+            {step > 0 && (
+              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
+                <ChevronLeft size={14} className="mr-1" />
+                Anterior
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancelar
+            </Button>
+            {step < STEPS.length - 1 ? (
+              <Button type="button" onClick={() => setStep(step + 1)} disabled={!canProceed()}>
+                Siguiente
+                <ChevronRight size={14} className="ml-1" />
+              </Button>
+            ) : (
+              <Button type="submit" form="contrato-form" isLoading={createMutation.isPending}>
+                <FileText size={16} className="mr-1" />
+                Registrar Contrato
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6 px-1">
         {STEPS.map((s, i) => (
@@ -126,7 +160,7 @@ export const ContratoFormModal = ({ isOpen, onClose }: Props) => {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="contrato-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Step 1: Datos del Contrato */}
         {step === 0 && (
           <>
@@ -280,15 +314,13 @@ export const ContratoFormModal = ({ isOpen, onClose }: Props) => {
                 Preaviso de Terminacion
               </h4>
 
-              <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.preaviso_entregado || false}
-                  onChange={(e) => handleChange('preaviso_entregado', e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                Preaviso entregado
-              </label>
+              <Checkbox
+                label="Preaviso entregado"
+                checked={formData.preaviso_entregado || false}
+                onChange={(e) =>
+                  handleChange('preaviso_entregado', (e.target as HTMLInputElement).checked)
+                }
+              />
 
               {formData.preaviso_entregado && (
                 <Input
@@ -343,35 +375,7 @@ export const ContratoFormModal = ({ isOpen, onClose }: Props) => {
             </div>
           </>
         )}
-
-        {/* Acciones */}
-        <div className="flex justify-between pt-4 border-t">
-          <div>
-            {step > 0 && (
-              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
-                <ChevronLeft size={14} className="mr-1" />
-                Anterior
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Cancelar
-            </Button>
-            {step < STEPS.length - 1 ? (
-              <Button type="button" onClick={() => setStep(step + 1)} disabled={!canProceed()}>
-                Siguiente
-                <ChevronRight size={14} className="ml-1" />
-              </Button>
-            ) : (
-              <Button type="submit" isLoading={createMutation.isPending}>
-                <FileText size={16} className="mr-1" />
-                Registrar Contrato
-              </Button>
-            )}
-          </div>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

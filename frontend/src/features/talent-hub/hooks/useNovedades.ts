@@ -2,43 +2,44 @@
  * Hooks para Novedades - Talent Hub
  * Sistema de Gestion StrateKaz
  *
+ * Refactored to use createCrudHooks / createApiClient / thKeys factories.
  * Aligned with backend endpoints (2026-02-13)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import { createCrudHooks } from '@/lib/crud-hooks-factory';
+import {
+  tipoIncapacidadApi,
+  incapacidadApi,
+  tipoLicenciaApi,
+  licenciaApi,
+  permisoApi,
+  periodoVacacionesApi,
+  solicitudVacacionesApi,
+  dotacionConfigApi,
+  entregaDotacionApi,
+} from '../api/talentHubApi';
+import { thKeys } from '../api/queryKeys';
 import type {
-  TipoIncapacidad,
-  TipoIncapacidadFormData,
-  Incapacidad,
-  IncapacidadFormData,
   IncapacidadFilter,
-  TipoLicencia,
-  TipoLicenciaFormData,
-  Licencia,
-  LicenciaFormData,
+  Incapacidad,
   LicenciaFilter,
   AprobacionLicenciaData,
+  Licencia,
   Permiso,
-  PermisoFormData,
   PermisoFilter,
   PeriodoVacaciones,
-  PeriodoVacacionesFormData,
   PeriodoVacacionesFilter,
   SolicitudVacaciones,
-  SolicitudVacacionesFormData,
   SolicitudVacacionesFilter,
-  ConfiguracionDotacion,
-  ConfiguracionDotacionFormData,
-  EntregaDotacion,
-  EntregaDotacionFormData,
   EntregaDotacionFilter,
 } from '../types';
 
 const BASE_URL = '/talent-hub/novedades';
 
-// ============== QUERY KEYS ==============
+// ============== LEGACY QUERY KEYS (backward compat) ==============
 
 export const novedadesKeys = {
   all: ['novedades'] as const,
@@ -94,149 +95,42 @@ export const novedadesKeys = {
   },
 };
 
-// ============== TIPOS INCAPACIDAD ==============
+// ============== TIPOS INCAPACIDAD (factory CRUD) ==============
 
-export const useTiposIncapacidad = () => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposIncapacidad.list(),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/tipos-incapacidad/`);
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoIncapacidad[];
-    },
-  });
-};
+const tipoIncapacidadHooks = createCrudHooks(
+  tipoIncapacidadApi,
+  thKeys.tiposIncapacidad,
+  'Tipo de incapacidad'
+);
 
-export const useCreateTipoIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: TipoIncapacidadFormData) => {
-      const { data: response } = await api.post<TipoIncapacidad>(
-        `${BASE_URL}/tipos-incapacidad/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.all() });
-      toast.success('Tipo de incapacidad creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el tipo de incapacidad'),
-  });
-};
+export const useTiposIncapacidad = tipoIncapacidadHooks.useList;
+export const useCreateTipoIncapacidad = tipoIncapacidadHooks.useCreate;
+export const useUpdateTipoIncapacidad = tipoIncapacidadHooks.useUpdate;
+export const useDeleteTipoIncapacidad = tipoIncapacidadHooks.useDelete;
 
-export const useUpdateTipoIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<TipoIncapacidadFormData> }) => {
-      const { data: response } = await api.patch<TipoIncapacidad>(
-        `${BASE_URL}/tipos-incapacidad/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.all() });
-      toast.success('Tipo de incapacidad actualizado');
-    },
-    onError: () => toast.error('Error al actualizar el tipo de incapacidad'),
-  });
-};
+// ============== INCAPACIDADES (factory CRUD + custom actions) ==============
 
-export const useDeleteTipoIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/tipos-incapacidad/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.all() });
-      toast.success('Tipo de incapacidad eliminado');
-    },
-    onError: () => toast.error('Error al eliminar el tipo de incapacidad'),
-  });
-};
+const incapacidadHooks = createCrudHooks(incapacidadApi, thKeys.incapacidades, 'Incapacidad', {
+  isFeminine: true,
+});
 
-// ============== INCAPACIDADES ==============
-
-export const useIncapacidades = (filters?: IncapacidadFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.incapacidades.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/incapacidades/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as Incapacidad[];
-    },
-  });
-};
-
-export const useIncapacidad = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.incapacidades.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<Incapacidad>(`${BASE_URL}/incapacidades/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
-
-export const useCreateIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: IncapacidadFormData) => {
-      const { data: response } = await api.post<Incapacidad>(`${BASE_URL}/incapacidades/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
-      toast.success('Incapacidad registrada exitosamente');
-    },
-    onError: () => toast.error('Error al registrar la incapacidad'),
-  });
-};
-
-export const useUpdateIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<IncapacidadFormData> }) => {
-      const { data: response } = await api.patch<Incapacidad>(
-        `${BASE_URL}/incapacidades/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
-      toast.success('Incapacidad actualizada');
-    },
-    onError: () => toast.error('Error al actualizar la incapacidad'),
-  });
-};
-
-export const useDeleteIncapacidad = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/incapacidades/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
-      toast.success('Incapacidad eliminada');
-    },
-    onError: () => toast.error('Error al eliminar la incapacidad'),
-  });
-};
+export const useIncapacidades = incapacidadHooks.useList;
+export const useIncapacidad = incapacidadHooks.useDetail;
+export const useCreateIncapacidad = incapacidadHooks.useCreate;
+export const useUpdateIncapacidad = incapacidadHooks.useUpdate;
+export const useDeleteIncapacidad = incapacidadHooks.useDelete;
 
 export const useAprobarIncapacidad = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post<Incapacidad>(`${BASE_URL}/incapacidades/${id}/aprobar/`);
+      const { data } = await apiClient.post<Incapacidad>(
+        `${BASE_URL}/incapacidades/${id}/aprobar/`
+      );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.incapacidades.lists() });
       toast.success('Incapacidad aprobada');
     },
     onError: () => toast.error('Error al aprobar la incapacidad'),
@@ -247,13 +141,14 @@ export const useRechazarIncapacidad = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data } = await api.post<Incapacidad>(`${BASE_URL}/incapacidades/${id}/rechazar/`, {
-        observaciones,
-      });
+      const { data } = await apiClient.post<Incapacidad>(
+        `${BASE_URL}/incapacidades/${id}/rechazar/`,
+        { observaciones }
+      );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.incapacidades.lists() });
       toast.success('Incapacidad rechazada');
     },
     onError: () => toast.error('Error al rechazar la incapacidad'),
@@ -270,14 +165,14 @@ export const useRadicarCobroIncapacidad = () => {
       id: number;
       fecha_radicacion_cobro: string;
     }) => {
-      const { data } = await api.post<Incapacidad>(
+      const { data } = await apiClient.post<Incapacidad>(
         `${BASE_URL}/incapacidades/${id}/radicar_cobro/`,
         { fecha_radicacion_cobro }
       );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.incapacidades.lists() });
       toast.success('Cobro radicado exitosamente');
     },
     onError: () => toast.error('Error al radicar el cobro'),
@@ -286,9 +181,9 @@ export const useRadicarCobroIncapacidad = () => {
 
 export const useEstadisticasIncapacidades = () => {
   return useQuery({
-    queryKey: novedadesKeys.incapacidades.estadisticas(),
+    queryKey: thKeys.incapacidades.custom('estadisticas'),
     queryFn: async () => {
-      const { data } = await api.get<{
+      const { data } = await apiClient.get<{
         total: number;
         por_estado: Record<string, number>;
         pendientes: number;
@@ -301,135 +196,42 @@ export const useEstadisticasIncapacidades = () => {
   });
 };
 
-// ============== TIPOS LICENCIA ==============
+// ============== TIPOS LICENCIA (factory CRUD) ==============
 
-export const useTiposLicencia = () => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposLicencia.list(),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/tipos-licencia/`);
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoLicencia[];
-    },
-  });
-};
+const tipoLicenciaHooks = createCrudHooks(
+  tipoLicenciaApi,
+  thKeys.tiposLicencia,
+  'Tipo de licencia'
+);
 
-export const useCreateTipoLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: TipoLicenciaFormData) => {
-      const { data: response } = await api.post<TipoLicencia>(`${BASE_URL}/tipos-licencia/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.all() });
-      toast.success('Tipo de licencia creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el tipo de licencia'),
-  });
-};
+export const useTiposLicencia = tipoLicenciaHooks.useList;
+export const useCreateTipoLicencia = tipoLicenciaHooks.useCreate;
+export const useUpdateTipoLicencia = tipoLicenciaHooks.useUpdate;
+export const useDeleteTipoLicencia = tipoLicenciaHooks.useDelete;
 
-export const useUpdateTipoLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<TipoLicenciaFormData> }) => {
-      const { data: response } = await api.patch<TipoLicencia>(
-        `${BASE_URL}/tipos-licencia/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.all() });
-      toast.success('Tipo de licencia actualizado');
-    },
-    onError: () => toast.error('Error al actualizar el tipo de licencia'),
-  });
-};
+// ============== LICENCIAS (factory CRUD + custom actions) ==============
 
-export const useDeleteTipoLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/tipos-licencia/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.all() });
-      toast.success('Tipo de licencia eliminado');
-    },
-    onError: () => toast.error('Error al eliminar el tipo de licencia'),
-  });
-};
+const licenciaHooks = createCrudHooks(licenciaApi, thKeys.licencias, 'Licencia', {
+  isFeminine: true,
+});
 
-// ============== LICENCIAS ==============
-
-export const useLicencias = (filters?: LicenciaFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.licencias.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/licencias/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as Licencia[];
-    },
-  });
-};
-
-export const useCreateLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: LicenciaFormData) => {
-      const { data: response } = await api.post<Licencia>(`${BASE_URL}/licencias/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      toast.success('Licencia solicitada exitosamente');
-    },
-    onError: () => toast.error('Error al solicitar la licencia'),
-  });
-};
-
-export const useUpdateLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<LicenciaFormData> }) => {
-      const { data: response } = await api.patch<Licencia>(`${BASE_URL}/licencias/${id}/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      toast.success('Licencia actualizada');
-    },
-    onError: () => toast.error('Error al actualizar la licencia'),
-  });
-};
-
-export const useDeleteLicencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/licencias/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      toast.success('Licencia eliminada');
-    },
-    onError: () => toast.error('Error al eliminar la licencia'),
-  });
-};
+export const useLicencias = licenciaHooks.useList;
+export const useCreateLicencia = licenciaHooks.useCreate;
+export const useUpdateLicencia = licenciaHooks.useUpdate;
+export const useDeleteLicencia = licenciaHooks.useDelete;
 
 export const useAprobarLicencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data?: AprobacionLicenciaData }) => {
-      const { data: response } = await api.post<Licencia>(
+      const { data: response } = await apiClient.post<Licencia>(
         `${BASE_URL}/licencias/${id}/aprobar/`,
         data
       );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.licencias.lists() });
       toast.success('Licencia aprobada');
     },
     onError: () => toast.error('Error al aprobar la licencia'),
@@ -440,85 +242,38 @@ export const useRechazarLicencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await api.post<Licencia>(`${BASE_URL}/licencias/${id}/rechazar/`, {
-        observaciones,
-      });
+      const { data: response } = await apiClient.post<Licencia>(
+        `${BASE_URL}/licencias/${id}/rechazar/`,
+        { observaciones }
+      );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.licencias.lists() });
       toast.success('Licencia rechazada');
     },
     onError: () => toast.error('Error al rechazar la licencia'),
   });
 };
 
-// ============== PERMISOS ==============
+// ============== PERMISOS (factory CRUD + custom actions) ==============
 
-export const usePermisos = (filters?: PermisoFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.permisos.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/permisos/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as Permiso[];
-    },
-  });
-};
+const permisoHooks = createCrudHooks(permisoApi, thKeys.permisos, 'Permiso');
 
-export const useCreatePermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: PermisoFormData) => {
-      const { data: response } = await api.post<Permiso>(`${BASE_URL}/permisos/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      toast.success('Permiso solicitado exitosamente');
-    },
-    onError: () => toast.error('Error al solicitar el permiso'),
-  });
-};
-
-export const useUpdatePermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<PermisoFormData> }) => {
-      const { data: response } = await api.patch<Permiso>(`${BASE_URL}/permisos/${id}/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      toast.success('Permiso actualizado');
-    },
-    onError: () => toast.error('Error al actualizar el permiso'),
-  });
-};
-
-export const useDeletePermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/permisos/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      toast.success('Permiso eliminado');
-    },
-    onError: () => toast.error('Error al eliminar el permiso'),
-  });
-};
+export const usePermisos = permisoHooks.useList;
+export const useCreatePermiso = permisoHooks.useCreate;
+export const useUpdatePermiso = permisoHooks.useUpdate;
+export const useDeletePermiso = permisoHooks.useDelete;
 
 export const useAprobarPermiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/aprobar/`);
+      const { data } = await apiClient.post<Permiso>(`${BASE_URL}/permisos/${id}/aprobar/`);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.permisos.lists() });
       toast.success('Permiso aprobado');
     },
     onError: () => toast.error('Error al aprobar el permiso'),
@@ -529,134 +284,73 @@ export const useRechazarPermiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/rechazar/`, {
+      const { data } = await apiClient.post<Permiso>(`${BASE_URL}/permisos/${id}/rechazar/`, {
         observaciones,
       });
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.permisos.lists() });
       toast.success('Permiso rechazado');
     },
     onError: () => toast.error('Error al rechazar el permiso'),
   });
 };
 
-// ============== PERIODOS VACACIONES ==============
+// ============== PERIODOS VACACIONES (factory + custom action) ==============
 
-export const usePeriodosVacaciones = (filters?: PeriodoVacacionesFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.periodosVacaciones.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/periodos-vacaciones/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as PeriodoVacaciones[];
-    },
-  });
-};
+const periodoVacacionesHooks = createCrudHooks(
+  periodoVacacionesApi,
+  thKeys.periodosVacaciones,
+  'Periodo de vacaciones'
+);
 
-export const useCreatePeriodoVacaciones = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: PeriodoVacacionesFormData) => {
-      const { data: response } = await api.post<PeriodoVacaciones>(
-        `${BASE_URL}/periodos-vacaciones/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
-      toast.success('Periodo de vacaciones creado');
-    },
-    onError: () => toast.error('Error al crear el periodo de vacaciones'),
-  });
-};
+export const usePeriodosVacaciones = periodoVacacionesHooks.useList;
+export const useCreatePeriodoVacaciones = periodoVacacionesHooks.useCreate;
 
 export const useActualizarAcumulacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post<PeriodoVacaciones>(
+      const { data } = await apiClient.post<PeriodoVacaciones>(
         `${BASE_URL}/periodos-vacaciones/${id}/actualizar_acumulacion/`
       );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.periodosVacaciones.lists() });
       toast.success('Acumulacion actualizada');
     },
     onError: () => toast.error('Error al actualizar la acumulacion'),
   });
 };
 
-// ============== SOLICITUDES VACACIONES ==============
+// ============== SOLICITUDES VACACIONES (factory CRUD + custom actions) ==============
 
-export const useSolicitudesVacaciones = (filters?: SolicitudVacacionesFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.solicitudesVacaciones.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/solicitudes-vacaciones/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as SolicitudVacaciones[];
-    },
-  });
-};
+const solicitudVacacionesHooks = createCrudHooks(
+  solicitudVacacionesApi,
+  thKeys.solicitudesVacaciones,
+  'Solicitud de vacaciones',
+  { isFeminine: true }
+);
+
+export const useSolicitudesVacaciones = solicitudVacacionesHooks.useList;
+export const useUpdateSolicitudVacaciones = solicitudVacacionesHooks.useUpdate;
+export const useDeleteSolicitudVacaciones = solicitudVacacionesHooks.useDelete;
 
 export const useCreateSolicitudVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: SolicitudVacacionesFormData) => {
-      const { data: response } = await api.post<SolicitudVacaciones>(
-        `${BASE_URL}/solicitudes-vacaciones/`,
-        data
-      );
+    mutationFn: async (data: import('../types').SolicitudVacacionesFormData) => {
+      const response = await solicitudVacacionesApi.create(data);
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.solicitudesVacaciones.lists() });
+      queryClient.invalidateQueries({ queryKey: thKeys.periodosVacaciones.lists() });
       toast.success('Solicitud de vacaciones creada');
     },
     onError: () => toast.error('Error al crear la solicitud'),
-  });
-};
-
-export const useUpdateSolicitudVacaciones = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<SolicitudVacacionesFormData>;
-    }) => {
-      const { data: response } = await api.patch<SolicitudVacaciones>(
-        `${BASE_URL}/solicitudes-vacaciones/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      toast.success('Solicitud actualizada');
-    },
-    onError: () => toast.error('Error al actualizar la solicitud'),
-  });
-};
-
-export const useDeleteSolicitudVacaciones = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/solicitudes-vacaciones/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      toast.success('Solicitud eliminada');
-    },
-    onError: () => toast.error('Error al eliminar la solicitud'),
   });
 };
 
@@ -664,14 +358,14 @@ export const useAprobarVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post<SolicitudVacaciones>(
+      const { data } = await apiClient.post<SolicitudVacaciones>(
         `${BASE_URL}/solicitudes-vacaciones/${id}/aprobar/`
       );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.solicitudesVacaciones.lists() });
+      queryClient.invalidateQueries({ queryKey: thKeys.periodosVacaciones.lists() });
       toast.success('Vacaciones aprobadas');
     },
     onError: () => toast.error('Error al aprobar las vacaciones'),
@@ -682,134 +376,43 @@ export const useRechazarVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data } = await api.post<SolicitudVacaciones>(
+      const { data } = await apiClient.post<SolicitudVacaciones>(
         `${BASE_URL}/solicitudes-vacaciones/${id}/rechazar/`,
         { observaciones }
       );
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.solicitudesVacaciones.lists() });
       toast.success('Vacaciones rechazadas');
     },
     onError: () => toast.error('Error al rechazar las vacaciones'),
   });
 };
 
-// ============== CONFIGURACION DOTACION ==============
+// ============== CONFIGURACION DOTACION (factory CRUD) ==============
 
-export const useConfiguracionDotacion = () => {
-  return useQuery({
-    queryKey: novedadesKeys.dotacionConfig.list(),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/dotacion-config/`);
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConfiguracionDotacion[];
-    },
-  });
-};
+const dotacionConfigHooks = createCrudHooks(
+  dotacionConfigApi,
+  thKeys.dotacionConfig,
+  'Configuracion de dotacion',
+  { isFeminine: true }
+);
 
-export const useCreateConfiguracionDotacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: ConfiguracionDotacionFormData) => {
-      const { data: response } = await api.post<ConfiguracionDotacion>(
-        `${BASE_URL}/dotacion-config/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.dotacionConfig.all() });
-      toast.success('Configuracion de dotacion creada');
-    },
-    onError: () => toast.error('Error al crear la configuracion'),
-  });
-};
+export const useConfiguracionDotacion = dotacionConfigHooks.useList;
+export const useCreateConfiguracionDotacion = dotacionConfigHooks.useCreate;
+export const useUpdateConfiguracionDotacion = dotacionConfigHooks.useUpdate;
 
-export const useUpdateConfiguracionDotacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<ConfiguracionDotacionFormData>;
-    }) => {
-      const { data: response } = await api.patch<ConfiguracionDotacion>(
-        `${BASE_URL}/dotacion-config/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.dotacionConfig.all() });
-      toast.success('Configuracion actualizada');
-    },
-    onError: () => toast.error('Error al actualizar la configuracion'),
-  });
-};
+// ============== ENTREGAS DOTACION (factory CRUD) ==============
 
-// ============== ENTREGAS DOTACION ==============
+const entregaDotacionHooks = createCrudHooks(
+  entregaDotacionApi,
+  thKeys.entregasDotacion,
+  'Entrega de dotacion',
+  { isFeminine: true }
+);
 
-export const useEntregasDotacion = (filters?: EntregaDotacionFilter) => {
-  return useQuery({
-    queryKey: novedadesKeys.entregasDotacion.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/entregas-dotacion/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaDotacion[];
-    },
-  });
-};
-
-export const useCreateEntregaDotacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: EntregaDotacionFormData) => {
-      const { data: response } = await api.post<EntregaDotacion>(
-        `${BASE_URL}/entregas-dotacion/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
-      toast.success('Entrega de dotacion registrada');
-    },
-    onError: () => toast.error('Error al registrar la entrega'),
-  });
-};
-
-export const useUpdateEntregaDotacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<EntregaDotacionFormData> }) => {
-      const { data: response } = await api.patch<EntregaDotacion>(
-        `${BASE_URL}/entregas-dotacion/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
-      toast.success('Entrega actualizada');
-    },
-    onError: () => toast.error('Error al actualizar la entrega'),
-  });
-};
-
-export const useDeleteEntregaDotacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/entregas-dotacion/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
-      toast.success('Entrega eliminada');
-    },
-    onError: () => toast.error('Error al eliminar la entrega'),
-  });
-};
+export const useEntregasDotacion = entregaDotacionHooks.useList;
+export const useCreateEntregaDotacion = entregaDotacionHooks.useCreate;
+export const useUpdateEntregaDotacion = entregaDotacionHooks.useUpdate;
+export const useDeleteEntregaDotacion = entregaDotacionHooks.useDelete;

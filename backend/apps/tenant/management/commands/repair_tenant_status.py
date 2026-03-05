@@ -16,8 +16,8 @@ from apps.tenant.models import Tenant
 
 logger = logging.getLogger(__name__)
 
-# Número esperado de tablas en un schema completo (aproximado)
-EXPECTED_TABLE_COUNT = 600
+# Fallback si no hay tenant de referencia con status 'ready'
+FALLBACK_TABLE_COUNT = 600
 
 
 class Command(BaseCommand):
@@ -37,12 +37,49 @@ class Command(BaseCommand):
             help='Verificar todos los tenants, no solo los que tienen status != ready',
         )
 
+    def _get_reference_table_count(self):
+        """
+        Obtener el conteo de tablas de un tenant 'ready' como referencia.
+        Usa un tenant existente con schema_status='ready' para determinar
+        dinámicamente cuántas tablas debe tener un schema completo.
+        Fallback a FALLBACK_TABLE_COUNT si no hay referencia.
+        """
+        reference_count = FALLBACK_TABLE_COUNT
+        ready_tenant = Tenant.objects.filter(
+            schema_status='ready'
+        ).exclude(schema_name='public').first()
+
+        if ready_tenant:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE table_schema = %s
+                """, [ready_tenant.schema_name])
+                reference_count = cursor.fetchone()[0]
+                self.stdout.write(
+                    f'  Referencia: {ready_tenant.name} '
+                    f'({reference_count} tablas)\n'
+                )
+        else:
+            self.stdout.write(
+                f'  Sin tenant de referencia, usando fallback: '
+                f'{FALLBACK_TABLE_COUNT} tablas\n'
+            )
+
+        return reference_count
+
     def handle(self, *args, **options):
         confirm = options['confirm']
         check_all = options['all']
 
         self.stdout.write(self.style.MIGRATE_HEADING('=== Reparación de Estado de Tenants ==='))
         self.stdout.write('')
+
+        # Obtener conteo de referencia dinámico
+        expected_table_count = self._get_reference_table_count()
+        # Umbral: 90% del conteo de referencia
+        threshold = int(expected_table_count * 0.9)
 
         # Obtener tenants a verificar
         if check_all:
@@ -82,18 +119,18 @@ class Command(BaseCommand):
                     """, [schema])
                     table_count = cursor.fetchone()[0]
 
-            # Determinar estado correcto
+            # Determinar estado correcto usando umbral dinámico (90% de referencia)
             current_status = tenant.schema_status
 
             if not schema_exists:
                 correct_status = 'failed'
                 reason = 'Schema no existe en PostgreSQL'
-            elif table_count >= EXPECTED_TABLE_COUNT:
+            elif table_count >= threshold:
                 correct_status = 'ready'
-                reason = f'Schema completo ({table_count} tablas)'
+                reason = f'Schema completo ({table_count}/{expected_table_count} tablas)'
             elif table_count > 0:
                 correct_status = 'failed'
-                reason = f'Schema incompleto ({table_count}/{EXPECTED_TABLE_COUNT} tablas)'
+                reason = f'Schema incompleto ({table_count}/{expected_table_count} tablas, mínimo {threshold})'
             else:
                 correct_status = 'failed'
                 reason = 'Schema existe pero sin tablas'

@@ -10,13 +10,7 @@ import {
   fetchMisProfesionales,
   toggleEstadoProfesional,
 } from '../api/miEmpresa.api';
-import { useAuthStore } from '@/store/authStore';
-import { isPortalOnlyUser } from '@/utils/portalUtils';
-
-/** El usuario tiene proveedor vinculado (por ID o por cargo portal) */
-function useHasProveedor(): boolean {
-  return useAuthStore((s) => Boolean(s.user?.proveedor) || isPortalOnlyUser(s.user));
-}
+import { useHasProveedor } from '@/hooks/useHasProveedor';
 
 // ============================================================================
 // QUERY KEYS

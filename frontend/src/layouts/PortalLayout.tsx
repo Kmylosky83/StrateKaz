@@ -10,13 +10,13 @@
  * productos, transportistas, contratistas, representantes de firma consultora).
  */
 import { useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Moon, Sun, LogOut, Key, ChevronDown, Rocket, Bell } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
-import { Avatar, Button } from '@/components/common';
+import { Avatar } from '@/components/common';
 import { ChangePasswordModal } from '@/components/common/auth';
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
 import { cn } from '@/utils/cn';
@@ -24,6 +24,7 @@ import { BRAND } from '@/constants/brand';
 
 export const PortalLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useThemeStore();
   const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();
   const user = useAuthStore((s) => s.user);
@@ -99,7 +100,12 @@ export const PortalLayout = () => {
 
             {/* Notificaciones */}
             <button
-              onClick={() => navigate('/proveedor-portal?tab=notificaciones')}
+              onClick={() => {
+                const basePath = location.pathname.startsWith('/cliente-portal')
+                  ? '/cliente-portal'
+                  : '/proveedor-portal';
+                navigate(`${basePath}?tab=notificaciones`);
+              }}
               className="relative p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
               title={unreadCount > 0 ? `${unreadCount} notificaciones sin leer` : 'Notificaciones'}
             >

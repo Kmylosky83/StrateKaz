@@ -188,18 +188,16 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
           </label>
           <div className="grid grid-cols-4 gap-3">
             {diasSemanaOptions.map((option) => (
-              <label
+              <div
                 key={option.value}
-                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-700"
+                className="p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:border-gray-700"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
+                  label={option.label}
                   checked={diasSeleccionados.includes(option.value as DiaSemana)}
                   onChange={() => toggleDia(option.value)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
-                <span className="text-sm text-gray-700 dark:text-gray-300">{option.label}</span>
-              </label>
+              </div>
             ))}
           </div>
         </div>

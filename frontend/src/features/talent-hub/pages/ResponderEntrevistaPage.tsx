@@ -26,32 +26,71 @@ import {
   useEntrevistaPublica,
   useResponderEntrevistaAsync,
 } from '../hooks/useSeleccionContratacion';
+import { useBrandingPublicoHelpers } from '../hooks/useVacantesPublicas';
 import type { PreguntaEntrevistaAsync } from '../types';
 
 // ============================================================================
 // Public Layout
 // ============================================================================
 
-function PublicLayout({ children }: { children: React.ReactNode }) {
+function PublicLayout({
+  children,
+  empresaNombre,
+  logoUrl,
+  primaryColor,
+}: {
+  children: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
+}) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="h-1" style={{ backgroundColor: primaryColor }} />
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
-          <span className="text-lg font-semibold text-gray-800 dark:text-white">StrateKaz</span>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={empresaNombre}
+              className="h-8 w-auto max-w-[140px] object-contain"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <MessageSquare className="w-4 h-4 text-white" />
+            </div>
+          )}
+          <span className="text-lg font-semibold text-gray-800 dark:text-white">
+            {empresaNombre}
+          </span>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
       <footer className="text-center py-6 text-xs text-gray-400">
-        StrateKaz ERP &middot; Entrevista confidencial
+        {empresaNombre} &middot; Entrevista confidencial &middot; Powered by StrateKaz
       </footer>
     </div>
   );
 }
 
-function ErrorLayout({ message, icon }: { message: string; icon?: React.ReactNode }) {
+function ErrorLayout({
+  message,
+  icon,
+  empresaNombre,
+  logoUrl,
+  primaryColor,
+}: {
+  message: string;
+  icon?: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
+}) {
   return (
-    <PublicLayout>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
@@ -74,13 +113,22 @@ interface PreguntaRendererProps {
   value: string;
   onChange: (value: string) => void;
   index: number;
+  primaryColor: string;
 }
 
-function PreguntaRenderer({ pregunta, value, onChange, index }: PreguntaRendererProps) {
+function PreguntaRenderer({
+  pregunta,
+  value,
+  onChange,
+  index,
+  primaryColor,
+}: PreguntaRendererProps) {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-900 dark:text-white">
-        <span className="text-indigo-600 dark:text-indigo-400 mr-1">{index + 1}.</span>
+        <span className="mr-1" style={{ color: primaryColor }}>
+          {index + 1}.
+        </span>
         {pregunta.pregunta}
         {pregunta.obligatoria && <span className="text-red-500 ml-1">*</span>}
       </label>
@@ -115,9 +163,14 @@ function PreguntaRenderer({ pregunta, value, onChange, index }: PreguntaRenderer
               className={cn(
                 'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all',
                 value === opcion
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                  ? 'border-2'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
               )}
+              style={
+                value === opcion
+                  ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` }
+                  : undefined
+              }
             >
               <input
                 type="radio"
@@ -125,7 +178,7 @@ function PreguntaRenderer({ pregunta, value, onChange, index }: PreguntaRenderer
                 value={opcion}
                 checked={value === opcion}
                 onChange={() => onChange(opcion)}
-                className="text-indigo-600 focus:ring-indigo-500"
+                style={{ accentColor: primaryColor }}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">{opcion}</span>
             </label>
@@ -165,6 +218,7 @@ export default function ResponderEntrevistaPage() {
   const { token } = useParams<{ token: string }>();
   const { data: entrevista, isLoading, error } = useEntrevistaPublica(token || '');
   const responderMutation = useResponderEntrevistaAsync();
+  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const [respuestas, setRespuestas] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -200,10 +254,12 @@ export default function ResponderEntrevistaPage() {
     );
   };
 
+  const brandingProps = { empresaNombre: empresaNombre || 'StrateKaz', logoUrl, primaryColor };
+
   // Loading
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout {...brandingProps}>
         <div className="flex justify-center py-16">
           <Spinner size="lg" />
         </div>
@@ -223,6 +279,7 @@ export default function ResponderEntrevistaPage() {
         <ErrorLayout
           message="Ya completaste esta entrevista. Gracias por tu participacion."
           icon={<CheckCircle className="w-8 h-8 text-green-500" />}
+          {...brandingProps}
         />
       );
     }
@@ -231,20 +288,23 @@ export default function ResponderEntrevistaPage() {
         <ErrorLayout
           message="El plazo para responder esta entrevista ha vencido."
           icon={<Clock className="w-8 h-8 text-amber-500" />}
+          {...brandingProps}
         />
       );
     }
-    return <ErrorLayout message={errorData?.detail || 'Entrevista no encontrada.'} />;
+    return (
+      <ErrorLayout message={errorData?.detail || 'Entrevista no encontrada.'} {...brandingProps} />
+    );
   }
 
   if (!entrevista) {
-    return <ErrorLayout message="Entrevista no encontrada." />;
+    return <ErrorLayout message="Entrevista no encontrada." {...brandingProps} />;
   }
 
   // Success
   if (submitted) {
     return (
-      <PublicLayout>
+      <PublicLayout {...brandingProps}>
         <div className="max-w-md mx-auto text-center py-16">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-500" />
@@ -263,12 +323,15 @@ export default function ResponderEntrevistaPage() {
 
   // Main form
   return (
-    <PublicLayout>
+    <PublicLayout {...brandingProps}>
       {/* Header card */}
       <Card className="mb-6 p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center shrink-0">
-            <MessageSquare className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
+            <MessageSquare className="w-6 h-6" style={{ color: primaryColor }} />
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
@@ -316,8 +379,8 @@ export default function ResponderEntrevistaPage() {
           </div>
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-indigo-600 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-300"
+              style={{ width: `${progress}%`, backgroundColor: primaryColor }}
             />
           </div>
         </div>
@@ -332,6 +395,7 @@ export default function ResponderEntrevistaPage() {
               value={respuestas[pregunta.id] || ''}
               onChange={(value) => handleRespuestaChange(pregunta.id, value)}
               index={index}
+              primaryColor={primaryColor}
             />
           </Card>
         ))}

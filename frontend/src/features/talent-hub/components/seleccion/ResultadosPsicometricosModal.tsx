@@ -8,7 +8,7 @@
  * Soporta modelos: DISC, Big Five (OCEAN), y cualquier modelo con escalas definidas.
  */
 import { useMemo } from 'react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
 import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -292,7 +292,7 @@ export const ResultadosPsicometricosModal = ({
   if (!asignacion || !scoringConfig || !respuestas) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Perfil ${modeloNombre}`} size="lg">
+    <BaseModal isOpen={isOpen} onClose={onClose} title={`Perfil ${modeloNombre}`} size="lg">
       <div className="space-y-6">
         {/* Header info */}
         <div className="flex items-center justify-between bg-violet-50 dark:bg-violet-900/20 rounded-lg p-3">
@@ -427,6 +427,6 @@ export const ResultadosPsicometricosModal = ({
             : 'N/A'}
         </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

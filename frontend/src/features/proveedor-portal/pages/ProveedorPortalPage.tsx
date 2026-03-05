@@ -48,6 +48,7 @@ import { use2FA } from '@/hooks/use2FA';
 import { TabPrecios } from '../components/TabPrecios';
 import { TabProfesionales } from '../components/TabProfesionales';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
+import { useHasProveedor } from '@/hooks/useHasProveedor';
 import {
   useNotificaciones,
   useMarcarLeida,
@@ -538,6 +539,7 @@ export default function ProveedorPortalPage() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'empresa');
   const user = useAuthStore((s) => s.user);
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
+  const hasProveedor = useHasProveedor();
   const { primaryColor } = useBrandingConfig();
   const { data: empresa, isLoading } = useMiEmpresa();
 
@@ -587,8 +589,7 @@ export default function ProveedorPortalPage() {
   }
 
   // Guard: sin proveedor vinculado → dashboard
-  // Usar isPortalOnlyUser (cargo.code) como check primario + user.proveedor como secundario
-  if (!user.proveedor && !isPortalOnlyUser(user)) {
+  if (!hasProveedor) {
     return <Navigate to="/dashboard" replace />;
   }
 

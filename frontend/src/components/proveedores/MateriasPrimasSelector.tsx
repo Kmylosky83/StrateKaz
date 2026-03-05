@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Package, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Package, HelpCircle, Check, Minus } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import {
   JERARQUIA_MATERIA_PRIMA,
@@ -14,7 +14,12 @@ interface MateriasPrimasSelectorProps {
   disabled?: boolean;
 }
 
-const CATEGORIAS_ORDER: CategoriaMateriaPrima[] = ['HUESO', 'SEBO_CRUDO', 'SEBO_PROCESADO', 'OTROS'];
+const CATEGORIAS_ORDER: CategoriaMateriaPrima[] = [
+  'HUESO',
+  'SEBO_CRUDO',
+  'SEBO_PROCESADO',
+  'OTROS',
+];
 
 export const MateriasPrimasSelector = ({
   value = [],
@@ -22,13 +27,14 @@ export const MateriasPrimasSelector = ({
   error,
   disabled = false,
 }: MateriasPrimasSelectorProps) => {
-  const [expandedCategories, setExpandedCategories] = useState<CategoriaMateriaPrima[]>(['HUESO', 'SEBO_CRUDO']);
+  const [expandedCategories, setExpandedCategories] = useState<CategoriaMateriaPrima[]>([
+    'HUESO',
+    'SEBO_CRUDO',
+  ]);
 
   const toggleCategory = (categoria: CategoriaMateriaPrima) => {
     setExpandedCategories((prev) =>
-      prev.includes(categoria)
-        ? prev.filter((c) => c !== categoria)
-        : [...prev, categoria]
+      prev.includes(categoria) ? prev.filter((c) => c !== categoria) : [...prev, categoria]
     );
   };
 
@@ -63,7 +69,9 @@ export const MateriasPrimasSelector = ({
     }
   };
 
-  const getCategorySelectionState = (categoria: CategoriaMateriaPrima): 'none' | 'partial' | 'all' => {
+  const getCategorySelectionState = (
+    categoria: CategoriaMateriaPrima
+  ): 'none' | 'partial' | 'all' => {
     const items = JERARQUIA_MATERIA_PRIMA[categoria].items.map((i) => i.codigo);
     const selectedCount = items.filter((codigo) => value.includes(codigo)).length;
 
@@ -87,31 +95,36 @@ export const MateriasPrimasSelector = ({
               ¿Qué debo seleccionar?
             </p>
             <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-              Seleccione <strong>únicamente</strong> los tipos de materia prima que este proveedor le vende.
-              Por ejemplo: si solo le compra "Hueso Crudo" y "Sebo Crudo Carnicería", seleccione solo esos dos.
-              NO necesita seleccionar todos.
+              Seleccione <strong>únicamente</strong> los tipos de materia prima que este proveedor
+              le vende. Por ejemplo: si solo le compra "Hueso Crudo" y "Sebo Crudo Carnicería",
+              seleccione solo esos dos. NO necesita seleccionar todos.
             </p>
           </div>
         </div>
       </div>
 
-      <div className={cn(
-        "border rounded-lg overflow-hidden",
-        error ? "border-red-500" : "border-gray-300 dark:border-gray-600",
-        disabled && "opacity-60 cursor-not-allowed"
-      )}>
+      <div
+        className={cn(
+          'border rounded-lg overflow-hidden',
+          error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600',
+          disabled && 'opacity-60 cursor-not-allowed'
+        )}
+      >
         {CATEGORIAS_ORDER.map((categoriaKey) => {
           const categoria = JERARQUIA_MATERIA_PRIMA[categoriaKey];
           const isExpanded = expandedCategories.includes(categoriaKey);
           const selectionState = getCategorySelectionState(categoriaKey);
 
           return (
-            <div key={categoriaKey} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+            <div
+              key={categoriaKey}
+              className="border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+            >
               {/* Header de categoría */}
               <div
                 className={cn(
-                  "flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
-                  disabled && "cursor-not-allowed"
+                  'flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
+                  disabled && 'cursor-not-allowed'
                 )}
                 onClick={() => !disabled && toggleCategory(categoriaKey)}
               >
@@ -137,19 +150,42 @@ export const MateriasPrimasSelector = ({
                       {categoria.items.filter((i) => value.includes(i.codigo)).length} seleccionados
                     </span>
                   )}
-                  <input
-                    type="checkbox"
-                    checked={selectionState === 'all'}
-                    ref={(el) => {
-                      if (el) el.indeterminate = selectionState === 'partial';
-                    }}
-                    onChange={(e) => {
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={
+                      selectionState === 'all'
+                        ? true
+                        : selectionState === 'partial'
+                          ? 'mixed'
+                          : false
+                    }
+                    onClick={(e) => {
                       e.stopPropagation();
                       toggleAllInCategory(categoriaKey);
                     }}
                     disabled={disabled}
-                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
-                  />
+                    className={cn(
+                      'relative h-5 w-5 rounded border transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900',
+                      selectionState === 'none'
+                        ? 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800'
+                        : 'border-primary-600 bg-primary-600 dark:border-primary-500 dark:bg-primary-500',
+                      disabled && 'cursor-not-allowed opacity-50'
+                    )}
+                  >
+                    {selectionState === 'all' && (
+                      <Check
+                        className="absolute left-0.5 top-0.5 h-4 w-4 text-white"
+                        strokeWidth={3}
+                      />
+                    )}
+                    {selectionState === 'partial' && (
+                      <Minus
+                        className="absolute left-0.5 top-0.5 h-4 w-4 text-white"
+                        strokeWidth={3}
+                      />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -160,30 +196,44 @@ export const MateriasPrimasSelector = ({
                     const isSelected = value.includes(item.codigo);
 
                     return (
-                      <label
+                      <div
                         key={item.codigo}
+                        onClick={() => toggleItem(item.codigo)}
                         className={cn(
-                          "flex items-center justify-between px-4 py-2.5 pl-12 cursor-pointer transition-colors",
+                          'flex items-center justify-between px-4 py-2.5 pl-12 cursor-pointer transition-colors',
                           isSelected
-                            ? "bg-primary-50 dark:bg-primary-900/20"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-800",
-                          disabled && "cursor-not-allowed"
+                            ? 'bg-primary-50 dark:bg-primary-900/20'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+                          disabled && 'cursor-not-allowed'
                         )}
                       >
                         <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleItem(item.codigo)}
-                            disabled={disabled}
-                            className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
-                          />
-                          <span className={cn(
-                            "text-sm",
-                            isSelected
-                              ? "text-primary-700 dark:text-primary-300 font-medium"
-                              : "text-gray-700 dark:text-gray-300"
-                          )}>
+                          <div
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            className={cn(
+                              'relative h-5 w-5 rounded border transition-colors flex-shrink-0',
+                              isSelected
+                                ? 'border-primary-600 bg-primary-600 dark:border-primary-500 dark:bg-primary-500'
+                                : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800',
+                              disabled && 'cursor-not-allowed opacity-50'
+                            )}
+                          >
+                            {isSelected && (
+                              <Check
+                                className="absolute left-0.5 top-0.5 h-4 w-4 text-white"
+                                strokeWidth={3}
+                              />
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              'text-sm',
+                              isSelected
+                                ? 'text-primary-700 dark:text-primary-300 font-medium'
+                                : 'text-gray-700 dark:text-gray-300'
+                            )}
+                          >
                             {item.nombre}
                           </span>
                         </div>
@@ -191,10 +241,11 @@ export const MateriasPrimasSelector = ({
                         {/* Badge de acidez para sebo procesado */}
                         {item.acidez_min !== undefined && (
                           <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                            Acidez: {item.acidez_min}% - {item.acidez_max === 100 ? '>' : item.acidez_max + '%'}
+                            Acidez: {item.acidez_min}% -{' '}
+                            {item.acidez_max === 100 ? '>' : item.acidez_max + '%'}
                           </span>
                         )}
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
@@ -208,17 +259,17 @@ export const MateriasPrimasSelector = ({
       {value.length > 0 && (
         <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
           <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-            {value.length} materia{value.length !== 1 ? 's' : ''} prima{value.length !== 1 ? 's' : ''} seleccionada{value.length !== 1 ? 's' : ''}
+            {value.length} materia{value.length !== 1 ? 's' : ''} prima
+            {value.length !== 1 ? 's' : ''} seleccionada{value.length !== 1 ? 's' : ''}
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            Después de crear el proveedor, el Gerente podrá asignar precios a cada tipo de materia prima.
+            Después de crear el proveedor, el Gerente podrá asignar precios a cada tipo de materia
+            prima.
           </p>
         </div>
       )}
 
-      {error && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   );
 };

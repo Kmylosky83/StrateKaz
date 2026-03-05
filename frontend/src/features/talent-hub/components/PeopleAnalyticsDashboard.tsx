@@ -3,14 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  Users,
-  UserMinus,
-  UserPlus,
-  Clock,
-  TrendingDown,
-  GraduationCap,
-} from 'lucide-react';
+import { Users, UserMinus, UserPlus, Clock, TrendingDown, GraduationCap } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -25,7 +18,11 @@ import {
   Legend,
 } from 'recharts';
 import { Card, Skeleton } from '@/components/common';
-import { api } from '@/lib/api-client';
+import { StatsGrid, StatsGridSkeleton } from '@/components/layout/StatsGrid';
+import type { StatItem } from '@/components/layout/StatsGrid';
+import apiClient from '@/api/axios-config';
+import { CHART_COLORS } from '@/constants/chart-colors';
+import { queryKeys } from '@/lib/query-keys';
 
 interface PeopleAnalyticsData {
   headcount_activo: number;
@@ -40,11 +37,6 @@ interface PeopleAnalyticsData {
   cumplimiento_formacion: number | null;
 }
 
-const COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#06b6d4', '#ec4899', '#f97316',
-];
-
 const GENERO_LABELS: Record<string, string> = {
   masculino: 'Masculino',
   femenino: 'Femenino',
@@ -54,11 +46,9 @@ const GENERO_LABELS: Record<string, string> = {
 
 function usePeopleAnalytics() {
   return useQuery({
-    queryKey: ['people-analytics'],
+    queryKey: queryKeys.peopleAnalytics.all,
     queryFn: async () => {
-      const response = await api.get<PeopleAnalyticsData>(
-        '/talent-hub/people-analytics/'
-      );
+      const response = await apiClient.get<PeopleAnalyticsData>('/talent-hub/people-analytics/');
       return response.data;
     },
     staleTime: 10 * 60 * 1000,
@@ -71,17 +61,14 @@ export function PeopleAnalyticsDashboard() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i} className="p-4">
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-8 w-16" />
-            </Card>
-          ))}
-        </div>
+        <StatsGridSkeleton count={6} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6"><Skeleton className="h-64" /></Card>
-          <Card className="p-6"><Skeleton className="h-64" /></Card>
+          <Card className="p-6">
+            <Skeleton className="h-64" />
+          </Card>
+          <Card className="p-6">
+            <Skeleton className="h-64" />
+          </Card>
         </div>
       </div>
     );
@@ -97,61 +84,49 @@ export function PeopleAnalyticsDashboard() {
 
   const areaData = data.por_area.slice(0, 10); // Top 10 areas
 
+  const kpiStats: StatItem[] = [
+    {
+      label: 'Activos',
+      value: data.headcount_activo,
+      icon: Users,
+      iconColor: 'info',
+    },
+    {
+      label: 'Ingresos 12m',
+      value: data.ingresos_12m,
+      icon: UserPlus,
+      iconColor: 'success',
+    },
+    {
+      label: 'Retiros 12m',
+      value: data.retiros_12m,
+      icon: UserMinus,
+      iconColor: 'danger',
+    },
+    {
+      label: 'Rotacion',
+      value: `${data.rotacion_12m}%`,
+      icon: TrendingDown,
+      iconColor: 'warning',
+    },
+    {
+      label: 'Antiguedad prom.',
+      value: data.antiguedad_promedio_meses != null ? `${data.antiguedad_promedio_meses}m` : '-',
+      icon: Clock,
+      iconColor: 'primary',
+    },
+    {
+      label: 'Formacion',
+      value: data.cumplimiento_formacion != null ? `${data.cumplimiento_formacion}%` : '-',
+      icon: GraduationCap,
+      iconColor: 'info',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KPICard
-          icon={<Users className="w-5 h-5" />}
-          iconBg="bg-blue-100 dark:bg-blue-900/30"
-          iconColor="text-blue-600 dark:text-blue-400"
-          label="Activos"
-          value={data.headcount_activo}
-        />
-        <KPICard
-          icon={<UserPlus className="w-5 h-5" />}
-          iconBg="bg-green-100 dark:bg-green-900/30"
-          iconColor="text-green-600 dark:text-green-400"
-          label="Ingresos 12m"
-          value={data.ingresos_12m}
-        />
-        <KPICard
-          icon={<UserMinus className="w-5 h-5" />}
-          iconBg="bg-red-100 dark:bg-red-900/30"
-          iconColor="text-red-600 dark:text-red-400"
-          label="Retiros 12m"
-          value={data.retiros_12m}
-        />
-        <KPICard
-          icon={<TrendingDown className="w-5 h-5" />}
-          iconBg="bg-amber-100 dark:bg-amber-900/30"
-          iconColor="text-amber-600 dark:text-amber-400"
-          label="Rotacion"
-          value={`${data.rotacion_12m}%`}
-        />
-        <KPICard
-          icon={<Clock className="w-5 h-5" />}
-          iconBg="bg-purple-100 dark:bg-purple-900/30"
-          iconColor="text-purple-600 dark:text-purple-400"
-          label="Antiguedad prom."
-          value={
-            data.antiguedad_promedio_meses != null
-              ? `${data.antiguedad_promedio_meses}m`
-              : '-'
-          }
-        />
-        <KPICard
-          icon={<GraduationCap className="w-5 h-5" />}
-          iconBg="bg-teal-100 dark:bg-teal-900/30"
-          iconColor="text-teal-600 dark:text-teal-400"
-          label="Formacion"
-          value={
-            data.cumplimiento_formacion != null
-              ? `${data.cumplimiento_formacion}%`
-              : '-'
-          }
-        />
-      </div>
+      <StatsGrid stats={kpiStats} columns={3} variant="compact" moduleColor="green" />
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -165,20 +140,13 @@ export function PeopleAnalyticsDashboard() {
               <BarChart data={areaData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis
-                  type="category"
-                  dataKey="area"
-                  width={120}
-                  tick={{ fontSize: 12 }}
-                />
+                <YAxis type="category" dataKey="area" width={120} tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-8">
-              Sin datos de areas
-            </p>
+            <p className="text-sm text-gray-500 text-center py-8">Sin datos de areas</p>
           )}
         </Card>
 
@@ -195,17 +163,12 @@ export function PeopleAnalyticsDashboard() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={100}
                   dataKey="value"
                 >
                   {generoData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -213,40 +176,10 @@ export function PeopleAnalyticsDashboard() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-8">
-              Sin datos de genero
-            </p>
+            <p className="text-sm text-gray-500 text-center py-8">Sin datos de genero</p>
           )}
         </Card>
       </div>
     </div>
-  );
-}
-
-function KPICard({
-  icon,
-  iconBg,
-  iconColor,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${iconBg}`}>
-          <div className={iconColor}>{icon}</div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-        </div>
-      </div>
-    </Card>
   );
 }

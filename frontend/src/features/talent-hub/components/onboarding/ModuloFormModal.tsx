@@ -16,24 +16,24 @@ import {
 import type { ModuloInduccion, ModuloInduccionFormData } from '../../types';
 
 const TIPO_OPTIONS = [
-  { value: 'induccion_general', label: 'Induccion General' },
-  { value: 'induccion_especifica', label: 'Induccion Especifica' },
-  { value: 'reinduccion', label: 'Reinduccion' },
+  { value: 'induccion_general', label: 'Inducción General' },
+  { value: 'induccion_especifica', label: 'Inducción Específica' },
+  { value: 'reinduccion', label: 'Reinducción' },
   { value: 'sst', label: 'Seguridad y Salud en el Trabajo' },
   { value: 'calidad', label: 'Sistema de Calidad' },
-  { value: 'ambiente', label: 'Gestion Ambiental' },
-  { value: 'etica', label: 'Codigo de Etica' },
+  { value: 'ambiente', label: 'Gestión Ambiental' },
+  { value: 'etica', label: 'Código de Ética' },
   { value: 'pesv', label: 'Seguridad Vial' },
   { value: 'otro', label: 'Otro' },
 ];
 
 const FORMATO_OPTIONS = [
   { value: 'video', label: 'Video' },
-  { value: 'presentacion', label: 'Presentacion' },
+  { value: 'presentacion', label: 'Presentación' },
   { value: 'documento', label: 'Documento PDF' },
   { value: 'quiz', label: 'Cuestionario' },
-  { value: 'actividad', label: 'Actividad Practica' },
-  { value: 'presencial', label: 'Sesion Presencial' },
+  { value: 'actividad', label: 'Actividad Práctica' },
+  { value: 'presencial', label: 'Sesión Presencial' },
   { value: 'mixto', label: 'Mixto' },
 ];
 
@@ -123,7 +123,7 @@ export const ModuloFormModal = ({ modulo, isOpen, onClose }: Props) => {
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Modulo' : 'Nuevo Modulo de Induccion'}
+      title={isEditing ? 'Editar Módulo' : 'Nuevo Módulo de Inducción'}
       size="2xl"
       footer={
         <div className="flex justify-end gap-3">
@@ -131,7 +131,7 @@ export const ModuloFormModal = ({ modulo, isOpen, onClose }: Props) => {
             Cancelar
           </Button>
           <Button variant="primary" onClick={handleSubmit(onSubmit)} disabled={isPending}>
-            {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Modulo'}
+            {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Módulo'}
           </Button>
         </div>
       }
@@ -146,22 +146,22 @@ export const ModuloFormModal = ({ modulo, isOpen, onClose }: Props) => {
           />
           <Input
             label="Nombre"
-            placeholder="Induccion corporativa"
+            placeholder="Inducción corporativa"
             error={errors.nombre?.message}
             {...register('nombre', { required: 'El nombre es obligatorio' })}
           />
         </div>
 
         <Textarea
-          label="Descripcion"
-          placeholder="Descripcion del modulo..."
+          label="Descripción"
+          placeholder="Descripción del módulo..."
           rows={2}
           {...register('descripcion')}
         />
 
         <div className="grid grid-cols-2 gap-4">
           <Select
-            label="Tipo de Modulo"
+            label="Tipo de Módulo"
             options={TIPO_OPTIONS}
             error={errors.tipo_modulo?.message}
             {...register('tipo_modulo', { required: 'Selecciona el tipo' })}
@@ -171,7 +171,7 @@ export const ModuloFormModal = ({ modulo, isOpen, onClose }: Props) => {
 
         <div className="grid grid-cols-3 gap-4">
           <Input
-            label="Duracion (min)"
+            label="Duración (min)"
             type="number"
             {...register('duracion_minutos', { valueAsNumber: true, min: 1 })}
           />
@@ -185,13 +185,13 @@ export const ModuloFormModal = ({ modulo, isOpen, onClose }: Props) => {
 
         <div className="flex items-center gap-6 pt-2">
           <Checkbox label="Es obligatorio" {...register('es_obligatorio')} />
-          <Checkbox label="Requiere evaluacion" {...register('requiere_evaluacion')} />
+          <Checkbox label="Requiere evaluación" {...register('requiere_evaluacion')} />
         </div>
 
         {requiereEval && (
           <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <Input
-              label="Nota minima aprobacion (%)"
+              label="Nota mínima aprobación (%)"
               type="number"
               {...register('nota_minima_aprobacion', { valueAsNumber: true, min: 0, max: 100 })}
             />

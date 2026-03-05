@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { CheckCircle } from 'lucide-react';
 import { useRealizarEntrevista } from '../../hooks/useSeleccionContratacion';
@@ -69,13 +69,30 @@ export const RealizarEntrevistaModal = ({ isOpen, onClose, entrevista }: Props) 
   };
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isReadOnly ? 'Detalle de Entrevista' : 'Registrar Resultado'}
       size="lg"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            {isReadOnly ? 'Cerrar' : 'Cancelar'}
+          </Button>
+          {!isReadOnly && (
+            <Button
+              type="submit"
+              form="realizar-entrevista-form"
+              isLoading={realizarMutation.isPending}
+            >
+              <CheckCircle size={16} className="mr-1" />
+              Registrar Resultado
+            </Button>
+          )}
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="realizar-entrevista-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Info header */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-2">
           <div className="flex items-center justify-between">
@@ -188,20 +205,7 @@ export const RealizarEntrevistaModal = ({ isOpen, onClose, entrevista }: Props) 
             </option>
           ))}
         </Select>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            {isReadOnly ? 'Cerrar' : 'Cancelar'}
-          </Button>
-          {!isReadOnly && (
-            <Button type="submit" isLoading={realizarMutation.isPending}>
-              <CheckCircle size={16} className="mr-1" />
-              Registrar Resultado
-            </Button>
-          )}
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

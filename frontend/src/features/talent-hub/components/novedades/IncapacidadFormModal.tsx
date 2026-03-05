@@ -133,18 +133,14 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'El colaborador es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Colaborador *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={colaboradoresOptions}
-                  error={errors.colaborador?.message}
-                />
-              </div>
+              <Select
+                label="Colaborador *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={colaboradoresOptions}
+                error={errors.colaborador?.message}
+              />
             )}
           />
 
@@ -153,18 +149,14 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'El tipo de incapacidad es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de Incapacidad *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={tiposOptions}
-                  error={errors.tipo_incapacidad?.message}
-                />
-              </div>
+              <Select
+                label="Tipo de Incapacidad *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={tiposOptions}
+                error={errors.tipo_incapacidad?.message}
+              />
             )}
           />
 
@@ -173,12 +165,12 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'La fecha de inicio es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Inicio *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_inicio?.message} />
-              </div>
+              <Input
+                label="Fecha Inicio *"
+                type="date"
+                {...field}
+                error={errors.fecha_inicio?.message}
+              />
             )}
           />
 
@@ -187,12 +179,7 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'La fecha de fin es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Fin *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_fin?.message} />
-              </div>
+              <Input label="Fecha Fin *" type="date" {...field} error={errors.fecha_fin?.message} />
             )}
           />
 
@@ -201,12 +188,11 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'El numero de incapacidad es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Numero de Incapacidad *
-                </label>
-                <Input {...field} error={errors.numero_incapacidad?.message} />
-              </div>
+              <Input
+                label="Numero de Incapacidad *"
+                {...field}
+                error={errors.numero_incapacidad?.message}
+              />
             )}
           />
 
@@ -215,43 +201,27 @@ export const IncapacidadFormModal = ({
             control={control}
             rules={{ required: 'La EPS/ARL es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  EPS/ARL *
-                </label>
-                <Input {...field} error={errors.eps_arl?.message} />
-              </div>
+              <Input label="EPS/ARL *" {...field} error={errors.eps_arl?.message} />
             )}
           />
 
           <Controller
             name="codigo_cie10"
             control={control}
-            render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Codigo CIE-10
-                </label>
-                <Input {...field} />
-              </div>
-            )}
+            render={({ field }) => <Input label="Codigo CIE-10" {...field} />}
           />
 
           <Controller
             name="prorroga_de"
             control={control}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Es Prorroga De
-                </label>
-                <Select
-                  {...field}
-                  value={field.value ? String(field.value) : ''}
-                  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                  options={prorrogasOptions}
-                />
-              </div>
+              <Select
+                label="Es Prorroga De"
+                {...field}
+                value={field.value ? String(field.value) : ''}
+                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                options={prorrogasOptions}
+              />
             )}
           />
         </div>
@@ -273,13 +243,7 @@ export const IncapacidadFormModal = ({
         <Controller
           name="observaciones"
           control={control}
-          render={({ field }) => (
-            <Textarea
-              label="Observaciones"
-              {...field}
-              rows={3}
-            />
-          )}
+          render={({ field }) => <Textarea label="Observaciones" {...field} rows={3} />}
         />
 
         <div className="flex justify-end gap-3">

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
+import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -122,19 +123,17 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
       }
     >
       <form className="space-y-4">
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
-            <strong>Ley 2466/2025:</strong> La citacion a descargos debe realizarse con minimo 5
-            dias habiles de anticipacion.
-          </p>
-        </div>
+        <Alert
+          variant="info"
+          title="Ley 2466/2025"
+          message="La citación a descargos debe realizarse con mínimo 5 días hábiles de anticipación."
+          className="mb-4"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Colaborador *
-            </label>
             <Select
+              label="Colaborador *"
               {...register('colaborador', { required: true, valueAsNumber: true })}
               options={colaboradorOptions}
               error={errors.colaborador?.message}
@@ -142,10 +141,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Falta *
-            </label>
             <Select
+              label="Tipo de Falta *"
               {...register('tipo_falta', { required: true, valueAsNumber: true })}
               options={tipoFaltaOptions}
               error={errors.tipo_falta?.message}
@@ -153,10 +150,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha de los Hechos *
-            </label>
             <Input
+              label="Fecha de los Hechos *"
               type="date"
               {...register('fecha_hechos', { required: true })}
               error={errors.fecha_hechos?.message}
@@ -165,10 +160,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripcion de los Hechos (Cargos) *
-          </label>
           <Textarea
+            label="Descripcion de los Hechos (Cargos) *"
             {...register('descripcion_hechos', { required: true })}
             placeholder="Descripcion detallada de los hechos que constituyen la falta..."
             rows={4}
@@ -177,10 +170,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Pruebas de la Empresa
-          </label>
           <Textarea
+            label="Pruebas de la Empresa"
             {...register('pruebas_empresa')}
             placeholder="Pruebas documentales, fotograficas, testimoniales que soportan los cargos..."
             rows={3}
@@ -189,10 +180,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Testigos de la Empresa
-          </label>
           <Textarea
+            label="Testigos de la Empresa"
             {...register('testigos_empresa')}
             placeholder="Nombres de testigos de la empresa"
             rows={2}
@@ -207,10 +196,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fecha Citacion *
-              </label>
               <Input
+                label="Fecha Citacion *"
                 type="date"
                 {...register('fecha_citacion', { required: true })}
                 min={minDate.toISOString().split('T')[0]}
@@ -220,10 +207,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Hora *
-              </label>
               <Input
+                label="Hora *"
                 type="time"
                 {...register('hora_citacion', { required: true })}
                 error={errors.hora_citacion?.message}
@@ -231,10 +216,8 @@ export const DescargoFormModal = ({ descargo, isOpen, onClose }: Props) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Lugar *
-              </label>
               <Input
+                label="Lugar *"
                 {...register('lugar_citacion', { required: true })}
                 placeholder="Ej: Sala de juntas"
                 error={errors.lugar_citacion?.message}

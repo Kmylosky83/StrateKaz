@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Button } from '@/components/common/Button';
 import {
   useCreateSolicitudVacaciones,
@@ -114,18 +115,14 @@ export const SolicitudVacacionesFormModal = ({
             control={control}
             rules={{ required: 'El colaborador es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Colaborador *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={colaboradoresOptions}
-                  error={errors.colaborador?.message}
-                />
-              </div>
+              <Select
+                label="Colaborador *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={colaboradoresOptions}
+                error={errors.colaborador?.message}
+              />
             )}
           />
 
@@ -134,19 +131,15 @@ export const SolicitudVacacionesFormModal = ({
             control={control}
             rules={{ required: 'El periodo es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Periodo *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={periodosOptions}
-                  error={errors.periodo?.message}
-                  disabled={!selectedColaborador}
-                />
-              </div>
+              <Select
+                label="Periodo *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={periodosOptions}
+                error={errors.periodo?.message}
+                disabled={!selectedColaborador}
+              />
             )}
           />
 
@@ -155,12 +148,12 @@ export const SolicitudVacacionesFormModal = ({
             control={control}
             rules={{ required: 'La fecha de inicio es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Inicio *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_inicio?.message} />
-              </div>
+              <Input
+                label="Fecha Inicio *"
+                type="date"
+                {...field}
+                error={errors.fecha_inicio?.message}
+              />
             )}
           />
 
@@ -169,12 +162,7 @@ export const SolicitudVacacionesFormModal = ({
             control={control}
             rules={{ required: 'La fecha de fin es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Fin *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_fin?.message} />
-              </div>
+              <Input label="Fecha Fin *" type="date" {...field} error={errors.fecha_fin?.message} />
             )}
           />
 
@@ -183,17 +171,11 @@ export const SolicitudVacacionesFormModal = ({
             control={control}
             render={({ field }) => (
               <div className="flex items-center h-full pt-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Incluye prima de vacaciones
-                  </span>
-                </label>
+                <Checkbox
+                  label="Incluye prima de vacaciones"
+                  checked={field.value}
+                  onChange={field.onChange}
+                />
               </div>
             )}
           />

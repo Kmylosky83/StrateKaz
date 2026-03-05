@@ -8,6 +8,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Button } from '@/components/common/Button';
 import { useCreateEntrevistaRetiro } from '../../hooks/useOffBoarding';
 import type { EntrevistaRetiroFormData } from '../../types';
@@ -146,27 +147,14 @@ export function EntrevistaFormModal({ isOpen, onClose, procesoId }: EntrevistaFo
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('recomendaria_empresa')}
-                className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
-              />
-              <label className="text-sm text-gray-700 dark:text-gray-300">
-                Recomendaría la empresa a otros
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('volveria_trabajar')}
-                className="h-4 w-4 text-violet-600 focus:ring-violet-500 border-gray-300 rounded"
-              />
-              <label className="text-sm text-gray-700 dark:text-gray-300">
-                Volvería a trabajar en la empresa
-              </label>
-            </div>
+            <Checkbox
+              label="Recomendaría la empresa a otros"
+              {...register('recomendaria_empresa')}
+            />
+            <Checkbox
+              label="Volvería a trabajar en la empresa"
+              {...register('volveria_trabajar')}
+            />
           </div>
 
           <Textarea

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { CheckCircle, Building2, User, Calendar } from 'lucide-react';
 import { useConfirmarAfiliacion } from '../../hooks/useSeleccionContratacion';
@@ -36,8 +36,28 @@ export const ConfirmarAfiliacionModal = ({ isOpen, onClose, afiliacion }: Props)
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Confirmar Afiliacion" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Confirmar Afiliacion"
+      size="md"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="confirmar-afiliacion-form"
+            isLoading={confirmarMutation.isPending}
+          >
+            <CheckCircle size={16} className="mr-1" />
+            Confirmar Afiliacion
+          </Button>
+        </>
+      }
+    >
+      <form id="confirmar-afiliacion-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Info de la afiliacion */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
           <div className="space-y-2">
@@ -85,18 +105,7 @@ export const ConfirmarAfiliacionModal = ({ isOpen, onClose, afiliacion }: Props)
           onChange={(e) => setNumeroAfiliacion(e.target.value)}
           placeholder="Ej: 123456789"
         />
-
-        {/* Acciones */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={confirmarMutation.isPending}>
-            <CheckCircle size={16} className="mr-1" />
-            Confirmar Afiliacion
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

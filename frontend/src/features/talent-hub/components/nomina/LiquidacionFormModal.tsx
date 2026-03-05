@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
+import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -79,12 +80,11 @@ export const LiquidacionFormModal = ({ isOpen, onClose, periodoId }: Liquidacion
             error={errors.colaborador?.message}
           />
           {selectedColaborador && (
-            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                <span className="font-medium">Cargo:</span>{' '}
-                {selectedColaborador.cargo_nombre || 'N/A'}
-              </p>
-            </div>
+            <Alert
+              variant="info"
+              message={`Cargo: ${selectedColaborador.cargo_nombre || 'N/A'}`}
+              className="mt-2"
+            />
           )}
         </div>
 

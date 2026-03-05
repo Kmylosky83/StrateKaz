@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Calendar } from 'lucide-react';
 import {
   useCreateEntrevista,
@@ -64,8 +64,24 @@ export const EntrevistaFormModal = ({ isOpen, onClose }: Props) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Programar Entrevista" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Programar Entrevista"
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="entrevista-form" isLoading={createMutation.isPending}>
+            <Calendar size={16} className="mr-1" />
+            Programar Entrevista
+          </Button>
+        </>
+      }
+    >
+      <form id="entrevista-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Filtro por vacante */}
         <Select
           label="Filtrar por vacante"
@@ -165,18 +181,7 @@ export const EntrevistaFormModal = ({ isOpen, onClose }: Props) => {
           placeholder="Notas adicionales para la entrevista..."
           rows={3}
         />
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" isLoading={createMutation.isPending}>
-            <Calendar size={16} className="mr-1" />
-            Programar Entrevista
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

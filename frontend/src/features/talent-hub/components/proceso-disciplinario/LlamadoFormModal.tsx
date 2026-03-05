@@ -111,7 +111,7 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Llamado de Atencion' : 'Registrar Llamado de Atencion'}
+      title={isEditing ? 'Editar Llamado de Atención' : 'Registrar Llamado de Atención'}
       size="2xl"
       footer={
         <div className="flex justify-end gap-3">
@@ -127,10 +127,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
       <form className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Colaborador *
-            </label>
             <Select
+              label="Colaborador *"
               {...register('colaborador', { required: true, valueAsNumber: true })}
               options={colaboradorOptions}
               error={errors.colaborador?.message}
@@ -138,10 +136,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo *
-            </label>
             <Select
+              label="Tipo *"
               {...register('tipo', { required: true })}
               options={tipoLlamadoOptions}
               error={errors.tipo?.message}
@@ -149,10 +145,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Falta
-            </label>
             <Select
+              label="Tipo de Falta"
               {...register('tipo_falta', { valueAsNumber: true })}
               options={tipoFaltaOptions}
               error={errors.tipo_falta?.message}
@@ -160,10 +154,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha del Llamado *
-            </label>
             <Input
+              label="Fecha del Llamado *"
               type="date"
               {...register('fecha_llamado', { required: true })}
               error={errors.fecha_llamado?.message}
@@ -171,10 +163,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha de los Hechos *
-            </label>
             <Input
+              label="Fecha de los Hechos *"
               type="date"
               {...register('fecha_hechos', { required: true })}
               error={errors.fecha_hechos?.message}
@@ -182,34 +172,28 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Lugar de los Hechos
-            </label>
             <Input
+              label="Lugar de los Hechos"
               {...register('lugar_hechos')}
-              placeholder="Ej: Area de produccion"
+              placeholder="Ej: Área de producción"
               error={errors.lugar_hechos?.message}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripcion de los Hechos *
-          </label>
           <Textarea
+            label="Descripción de los Hechos *"
             {...register('descripcion_hechos', { required: true })}
-            placeholder="Describa detalladamente los hechos que motivan este llamado de atencion..."
+            placeholder="Describa detalladamente los hechos que motivan este llamado de atención..."
             rows={4}
             error={errors.descripcion_hechos?.message}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Testigos
-          </label>
           <Textarea
+            label="Testigos"
             {...register('testigos')}
             placeholder="Nombres de testigos (si aplica)"
             rows={2}
@@ -218,10 +202,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Compromiso del Colaborador
-          </label>
           <Textarea
+            label="Compromiso del Colaborador"
             {...register('compromiso_colaborador')}
             placeholder="Compromiso adquirido por el colaborador para evitar reincidencia..."
             rows={3}
@@ -230,10 +212,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Observaciones
-          </label>
           <Textarea
+            label="Observaciones"
             {...register('observaciones')}
             placeholder="Observaciones adicionales"
             rows={2}

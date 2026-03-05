@@ -98,18 +98,14 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
             control={control}
             rules={{ required: 'El colaborador es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Colaborador *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={colaboradoresOptions}
-                  error={errors.colaborador?.message}
-                />
-              </div>
+              <Select
+                label="Colaborador *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={colaboradoresOptions}
+                error={errors.colaborador?.message}
+              />
             )}
           />
 
@@ -118,18 +114,14 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
             control={control}
             rules={{ required: 'El tipo de licencia es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de Licencia *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={tiposOptions}
-                  error={errors.tipo_licencia?.message}
-                />
-              </div>
+              <Select
+                label="Tipo de Licencia *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={tiposOptions}
+                error={errors.tipo_licencia?.message}
+              />
             )}
           />
 
@@ -138,12 +130,12 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
             control={control}
             rules={{ required: 'La fecha de inicio es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Inicio *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_inicio?.message} />
-              </div>
+              <Input
+                label="Fecha Inicio *"
+                type="date"
+                {...field}
+                error={errors.fecha_inicio?.message}
+              />
             )}
           />
 
@@ -152,12 +144,7 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
             control={control}
             rules={{ required: 'La fecha de fin es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Fin *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_fin?.message} />
-              </div>
+              <Input label="Fecha Fin *" type="date" {...field} error={errors.fecha_fin?.message} />
             )}
           />
         </div>

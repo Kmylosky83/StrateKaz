@@ -7,7 +7,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { Checkbox } from '@/components/forms/Checkbox';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
 import { Plus, Trash2, ChevronRight, ChevronLeft, Send, ArrowUp, ArrowDown } from 'lucide-react';
@@ -123,7 +124,45 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
   const isStep2Valid = formData.preguntas.some((p) => p.pregunta.trim() !== '');
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nueva Entrevista Asincronica" size="xl">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Nueva Entrevista Asincronica"
+      size="xl"
+      footer={
+        <div className="flex justify-between w-full">
+          <div>
+            {step > 1 && (
+              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
+                <ChevronLeft size={16} className="mr-1" />
+                Anterior
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancelar
+            </Button>
+            {step < 2 ? (
+              <Button type="button" onClick={() => setStep(2)} disabled={!isStep1Valid}>
+                Siguiente
+                <ChevronRight size={16} className="ml-1" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                form="entrevista-async-form"
+                disabled={!isStep2Valid}
+                isLoading={createMutation.isPending}
+              >
+                <Send size={16} className="mr-1" />
+                Crear y Enviar
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
       {/* Step indicator */}
       <div className="flex items-center gap-4 mb-6">
         {[1, 2].map((s) => (
@@ -132,7 +171,7 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
               className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium',
                 step >= s
-                  ? 'bg-violet-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-200 text-gray-500 dark:bg-gray-700'
               )}
             >
@@ -151,7 +190,7 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="entrevista-async-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Step 1: Datos basicos */}
         {step === 1 && (
           <div className="space-y-4">
@@ -213,17 +252,13 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
               />
 
               <div className="flex items-end pb-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.enviar_email ?? true}
-                    onChange={(e) => handleChange('enviar_email', e.target.checked)}
-                    className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Enviar email al candidato
-                  </span>
-                </label>
+                <Checkbox
+                  label="Enviar email al candidato"
+                  checked={formData.enviar_email ?? true}
+                  onChange={(e) =>
+                    handleChange('enviar_email', (e.target as HTMLInputElement).checked)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -313,15 +348,19 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
                       ))}
                     </Select>
 
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center">
+                      <Checkbox
+                        label="Obligatoria"
                         checked={pregunta.obligatoria}
-                        onChange={(e) => updatePregunta(index, 'obligatoria', e.target.checked)}
-                        className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                        onChange={(e) =>
+                          updatePregunta(
+                            index,
+                            'obligatoria',
+                            (e.target as HTMLInputElement).checked
+                          )
+                        }
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Obligatoria</span>
-                    </label>
+                    </div>
                   </div>
 
                   {/* Opciones para opcion_multiple */}
@@ -369,35 +408,7 @@ export const EntrevistaAsyncFormModal = ({ isOpen, onClose }: Props) => {
             </div>
           </div>
         )}
-
-        {/* Navigation */}
-        <div className="flex justify-between pt-4 border-t">
-          <div>
-            {step > 1 && (
-              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
-                <ChevronLeft size={16} className="mr-1" />
-                Anterior
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Cancelar
-            </Button>
-            {step < 2 ? (
-              <Button type="button" onClick={() => setStep(2)} disabled={!isStep1Valid}>
-                Siguiente
-                <ChevronRight size={16} className="ml-1" />
-              </Button>
-            ) : (
-              <Button type="submit" disabled={!isStep2Valid} isLoading={createMutation.isPending}>
-                <Send size={16} className="mr-1" />
-                Crear y Enviar
-              </Button>
-            )}
-          </div>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

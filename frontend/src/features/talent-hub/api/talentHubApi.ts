@@ -79,6 +79,103 @@ import type {
   FirmaDocumento,
   FirmaDocumentoFormData,
   OnboardingEstadisticas,
+  // Control de Tiempo
+  Turno,
+  TurnoFormData,
+  AsignacionTurno,
+  AsignacionTurnoFormData,
+  RegistroAsistencia,
+  RegistroAsistenciaFormData,
+  HoraExtra,
+  HoraExtraFormData,
+  ConsolidadoAsistencia,
+  ConfiguracionRecargo,
+  ConfiguracionRecargoFormData,
+  // Novedades
+  TipoIncapacidad,
+  TipoIncapacidadFormData,
+  Incapacidad,
+  IncapacidadFormData,
+  TipoLicencia,
+  TipoLicenciaFormData,
+  Licencia,
+  LicenciaFormData,
+  Permiso,
+  PermisoFormData,
+  PeriodoVacaciones,
+  PeriodoVacacionesFormData,
+  SolicitudVacaciones,
+  SolicitudVacacionesFormData,
+  ConfiguracionDotacion,
+  ConfiguracionDotacionFormData,
+  EntregaDotacion,
+  EntregaDotacionFormData,
+  // Nomina
+  ConfiguracionNomina,
+  ConfiguracionNominaList,
+  ConfiguracionNominaFormData,
+  ConceptoNomina,
+  ConceptoNominaFormData,
+  PeriodoNomina,
+  PeriodoNominaFormData,
+  LiquidacionNomina,
+  LiquidacionNominaFormData,
+  DetalleLiquidacion,
+  DetalleLiquidacionFormData,
+  Prestacion,
+  PrestacionFormData,
+  PagoNomina,
+  PagoNominaFormData,
+  // Proceso Disciplinario
+  TipoFalta,
+  TipoFaltaFormData,
+  LlamadoAtencion,
+  LlamadoAtencionFormData,
+  Descargo,
+  DescargoFormData,
+  Memorando,
+  MemorandoFormData,
+  HistorialDisciplinario,
+  // Estructura de Cargos
+  Profesiograma,
+  ProfesiogramaFormData,
+  Vacante,
+  VacanteFormData,
+  // Desempeno
+  CicloEvaluacion,
+  CicloEvaluacionFormData,
+  EvaluacionDesempeno,
+  EvaluacionCreateFormData,
+  PlanMejora,
+  PlanMejoraFormData,
+  ActividadPlanMejora,
+  ActividadMejoraFormData,
+  Reconocimiento,
+  ReconocimientoFormData,
+  // Formacion y Reinduccion
+  PlanFormacion,
+  PlanFormacionFormData,
+  Capacitacion,
+  CapacitacionFormData,
+  ProgramacionCapacitacion,
+  ProgramacionFormData,
+  EjecucionCapacitacion,
+  EvaluacionEficacia,
+  Certificado,
+  // Off-Boarding
+  TipoRetiro,
+  TipoRetiroFormData,
+  ProcesoRetiro,
+  ProcesoRetiroFormData,
+  ChecklistRetiro,
+  ChecklistRetiroFormData,
+  PazSalvo,
+  PazSalvoFormData,
+  ExamenEgreso,
+  ExamenEgresoFormData,
+  EntrevistaRetiro,
+  EntrevistaRetiroFormData,
+  LiquidacionFinal,
 } from '../types';
 
 // =============================================================================
@@ -88,6 +185,14 @@ import type {
 const SELECCION_URL = '/talent-hub/seleccion';
 const EMPLEADOS_URL = '/talent-hub/empleados';
 const ONBOARDING_URL = '/talent-hub/onboarding';
+const CONTROL_TIEMPO_URL = '/talent-hub/control-tiempo';
+const NOVEDADES_URL = '/talent-hub/novedades';
+const NOMINA_URL = '/talent-hub/nomina';
+const DISCIPLINARIO_URL = '/talent-hub/proceso-disciplinario';
+const ESTRUCTURA_CARGOS_URL = '/talent-hub/estructura-cargos';
+const DESEMPENO_URL = '/talent-hub/desempeno';
+const FORMACION_URL = '/talent-hub/formacion';
+const OFF_BOARDING_URL = '/talent-hub/off-boarding';
 
 // =============================================================================
 // SELECCION Y CONTRATACION — Catalogos
@@ -526,6 +631,318 @@ export const onboardingEstadisticasApi = {
 };
 
 // =============================================================================
+// CONTROL DE TIEMPO
+// =============================================================================
+
+export const turnoApi = createApiClient<Turno, TurnoFormData, Partial<TurnoFormData>>(
+  CONTROL_TIEMPO_URL,
+  'turnos'
+);
+
+export const asignacionTurnoApi = createApiClient<
+  AsignacionTurno,
+  AsignacionTurnoFormData,
+  Partial<AsignacionTurnoFormData>
+>(CONTROL_TIEMPO_URL, 'asignaciones');
+
+export const registroAsistenciaApi = createApiClient<
+  RegistroAsistencia,
+  RegistroAsistenciaFormData,
+  Partial<RegistroAsistenciaFormData>
+>(CONTROL_TIEMPO_URL, 'asistencias');
+
+export const marcajeApi = {
+  getAll: async (params?: Record<string, unknown>) => {
+    const response = await apiClient.get(`${CONTROL_TIEMPO_URL}/marcajes/`, { params });
+    return response.data;
+  },
+};
+
+export const horaExtraApi = createApiClient<
+  HoraExtra,
+  HoraExtraFormData,
+  Partial<HoraExtraFormData>
+>(CONTROL_TIEMPO_URL, 'horas-extras');
+
+export const consolidadoApi = {
+  ...createApiClient<ConsolidadoAsistencia>(CONTROL_TIEMPO_URL, 'consolidados'),
+};
+
+export const configuracionRecargoApi = createApiClient<
+  ConfiguracionRecargo,
+  ConfiguracionRecargoFormData
+>(CONTROL_TIEMPO_URL, 'configuracion-recargos');
+
+// =============================================================================
+// NOVEDADES
+// =============================================================================
+
+export const tipoIncapacidadApi = createApiClient<
+  TipoIncapacidad,
+  TipoIncapacidadFormData,
+  Partial<TipoIncapacidadFormData>
+>(NOVEDADES_URL, 'tipos-incapacidad');
+
+export const incapacidadApi = createApiClient<
+  Incapacidad,
+  IncapacidadFormData,
+  Partial<IncapacidadFormData>
+>(NOVEDADES_URL, 'incapacidades');
+
+export const tipoLicenciaApi = createApiClient<
+  TipoLicencia,
+  TipoLicenciaFormData,
+  Partial<TipoLicenciaFormData>
+>(NOVEDADES_URL, 'tipos-licencia');
+
+export const licenciaApi = createApiClient<Licencia, LicenciaFormData, Partial<LicenciaFormData>>(
+  NOVEDADES_URL,
+  'licencias'
+);
+
+export const permisoApi = createApiClient<Permiso, PermisoFormData, Partial<PermisoFormData>>(
+  NOVEDADES_URL,
+  'permisos'
+);
+
+export const periodoVacacionesApi = createApiClient<PeriodoVacaciones, PeriodoVacacionesFormData>(
+  NOVEDADES_URL,
+  'periodos-vacaciones'
+);
+
+export const solicitudVacacionesApi = createApiClient<
+  SolicitudVacaciones,
+  SolicitudVacacionesFormData,
+  Partial<SolicitudVacacionesFormData>
+>(NOVEDADES_URL, 'solicitudes-vacaciones');
+
+export const dotacionConfigApi = createApiClient<
+  ConfiguracionDotacion,
+  ConfiguracionDotacionFormData,
+  Partial<ConfiguracionDotacionFormData>
+>(NOVEDADES_URL, 'dotacion-config');
+
+export const entregaDotacionApi = createApiClient<
+  EntregaDotacion,
+  EntregaDotacionFormData,
+  Partial<EntregaDotacionFormData>
+>(NOVEDADES_URL, 'entregas-dotacion');
+
+// =============================================================================
+// NOMINA
+// =============================================================================
+
+export const configuracionNominaApi = createApiClient<
+  ConfiguracionNomina,
+  ConfiguracionNominaFormData,
+  Partial<ConfiguracionNominaFormData>
+>(NOMINA_URL, 'configuraciones');
+
+/** List type differs from detail type for configuraciones */
+export const configuracionNominaListApi = createApiClient<
+  ConfiguracionNominaList,
+  ConfiguracionNominaFormData
+>(NOMINA_URL, 'configuraciones');
+
+export const conceptoNominaApi = createApiClient<
+  ConceptoNomina,
+  ConceptoNominaFormData,
+  Partial<ConceptoNominaFormData>
+>(NOMINA_URL, 'conceptos');
+
+export const periodoNominaApi = createApiClient<
+  PeriodoNomina,
+  PeriodoNominaFormData,
+  Partial<PeriodoNominaFormData>
+>(NOMINA_URL, 'periodos');
+
+export const liquidacionNominaApi = createApiClient<LiquidacionNomina, LiquidacionNominaFormData>(
+  NOMINA_URL,
+  'liquidaciones'
+);
+
+export const detalleLiquidacionApi = createApiClient<
+  DetalleLiquidacion,
+  DetalleLiquidacionFormData
+>(NOMINA_URL, 'detalles');
+
+export const prestacionApi = createApiClient<
+  Prestacion,
+  PrestacionFormData,
+  Partial<PrestacionFormData>
+>(NOMINA_URL, 'prestaciones');
+
+export const pagoNominaApi = createApiClient<PagoNomina, PagoNominaFormData>(NOMINA_URL, 'pagos');
+
+// =============================================================================
+// PROCESO DISCIPLINARIO
+// =============================================================================
+
+export const tipoFaltaApi = createApiClient<
+  TipoFalta,
+  TipoFaltaFormData,
+  Partial<TipoFaltaFormData>
+>(DISCIPLINARIO_URL, 'tipos-falta');
+
+export const llamadoAtencionApi = createApiClient<
+  LlamadoAtencion,
+  LlamadoAtencionFormData,
+  Partial<LlamadoAtencionFormData>
+>(DISCIPLINARIO_URL, 'llamados-atencion');
+
+export const descargoApi = createApiClient<Descargo, DescargoFormData, Partial<DescargoFormData>>(
+  DISCIPLINARIO_URL,
+  'descargos'
+);
+
+export const memorandoApi = createApiClient<
+  Memorando,
+  MemorandoFormData,
+  Partial<MemorandoFormData>
+>(DISCIPLINARIO_URL, 'memorandos');
+
+export const historialDisciplinarioApi = {
+  getAll: async (params?: Record<string, unknown>) => {
+    const response = await apiClient.get(`${DISCIPLINARIO_URL}/historial/`, { params });
+    return response.data;
+  },
+  getById: async (id: number): Promise<HistorialDisciplinario> => {
+    const response = await apiClient.get(`${DISCIPLINARIO_URL}/historial/${id}/`);
+    return response.data;
+  },
+};
+
+// =============================================================================
+// ESTRUCTURA DE CARGOS
+// =============================================================================
+
+export const profesiogramaApi = createApiClient<
+  Profesiograma,
+  ProfesiogramaFormData,
+  Partial<ProfesiogramaFormData>
+>(ESTRUCTURA_CARGOS_URL, 'profesiogramas');
+
+export const vacanteECApi = {
+  ...createApiClient<Vacante, VacanteFormData, Partial<VacanteFormData>>(
+    ESTRUCTURA_CARGOS_URL,
+    'vacantes'
+  ),
+  cerrar: async (id: string, motivo?: string): Promise<Vacante> => {
+    const response = await apiClient.post(`${ESTRUCTURA_CARGOS_URL}/vacantes/${id}/cerrar/`, {
+      motivo_cierre: motivo,
+    });
+    return response.data;
+  },
+};
+
+// =============================================================================
+// DESEMPENO
+// =============================================================================
+
+export const cicloEvaluacionApi = createApiClient<
+  CicloEvaluacion,
+  CicloEvaluacionFormData,
+  Partial<CicloEvaluacionFormData>
+>(DESEMPENO_URL, 'ciclos');
+
+export const evaluacionDesempenoApi = createApiClient<
+  EvaluacionDesempeno,
+  EvaluacionCreateFormData
+>(DESEMPENO_URL, 'evaluaciones');
+
+export const planMejoraApi = createApiClient<PlanMejora, PlanMejoraFormData>(
+  DESEMPENO_URL,
+  'planes-mejora'
+);
+
+export const actividadPlanMejoraApi = createApiClient<ActividadPlanMejora, ActividadMejoraFormData>(
+  DESEMPENO_URL,
+  'actividades-plan'
+);
+
+export const reconocimientoApi = createApiClient<Reconocimiento, ReconocimientoFormData>(
+  DESEMPENO_URL,
+  'reconocimientos'
+);
+
+// =============================================================================
+// FORMACION Y REINDUCCION
+// =============================================================================
+
+export const planFormacionApi = createApiClient<
+  PlanFormacion,
+  PlanFormacionFormData,
+  Partial<PlanFormacionFormData>
+>(FORMACION_URL, 'planes-formacion');
+
+export const capacitacionApi = createApiClient<
+  Capacitacion,
+  CapacitacionFormData,
+  Partial<CapacitacionFormData>
+>(FORMACION_URL, 'capacitaciones');
+
+export const programacionApi = createApiClient<ProgramacionCapacitacion, ProgramacionFormData>(
+  FORMACION_URL,
+  'programaciones'
+);
+
+export const ejecucionFormacionApi = createApiClient<
+  EjecucionCapacitacion,
+  { programacion: number; colaborador: number }
+>(FORMACION_URL, 'ejecuciones');
+
+export const evaluacionEficaciaApi = createApiClient<
+  EvaluacionEficacia,
+  Partial<EvaluacionEficacia>
+>(FORMACION_URL, 'evaluaciones-eficacia');
+
+export const certificadoApi = createApiClient<Certificado>(FORMACION_URL, 'certificados');
+
+// =============================================================================
+// OFF-BOARDING
+// =============================================================================
+
+export const tipoRetiroApi = createApiClient<
+  TipoRetiro,
+  TipoRetiroFormData,
+  Partial<TipoRetiroFormData>
+>(OFF_BOARDING_URL, 'tipos-retiro');
+
+export const procesoRetiroApi = createApiClient<
+  ProcesoRetiro,
+  ProcesoRetiroFormData,
+  Partial<ProcesoRetiroFormData>
+>(OFF_BOARDING_URL, 'procesos');
+
+export const checklistRetiroApi = createApiClient<
+  ChecklistRetiro,
+  ChecklistRetiroFormData,
+  Partial<ChecklistRetiroFormData>
+>(OFF_BOARDING_URL, 'checklist');
+
+export const pazSalvoApi = createApiClient<PazSalvo, PazSalvoFormData, Partial<PazSalvoFormData>>(
+  OFF_BOARDING_URL,
+  'paz-salvos'
+);
+
+export const examenEgresoApi = createApiClient<
+  ExamenEgreso,
+  ExamenEgresoFormData,
+  Partial<ExamenEgresoFormData>
+>(OFF_BOARDING_URL, 'examenes-egreso');
+
+export const entrevistaRetiroApi = createApiClient<
+  EntrevistaRetiro,
+  EntrevistaRetiroFormData,
+  Partial<EntrevistaRetiroFormData>
+>(OFF_BOARDING_URL, 'entrevistas');
+
+export const liquidacionFinalApi = createApiClient<LiquidacionFinal>(
+  OFF_BOARDING_URL,
+  'liquidaciones'
+);
+
+// =============================================================================
 // EXPORTACION POR DEFECTO
 // =============================================================================
 
@@ -561,6 +978,62 @@ const talentHubApi = {
   entregaActivo: entregaActivoApi,
   firmaDocumento: firmaDocumentoApi,
   estadisticasOnboarding: onboardingEstadisticasApi,
+  // Control de Tiempo
+  turno: turnoApi,
+  asignacionTurno: asignacionTurnoApi,
+  registroAsistencia: registroAsistenciaApi,
+  marcaje: marcajeApi,
+  horaExtra: horaExtraApi,
+  consolidado: consolidadoApi,
+  configuracionRecargo: configuracionRecargoApi,
+  // Novedades
+  tipoIncapacidad: tipoIncapacidadApi,
+  incapacidad: incapacidadApi,
+  tipoLicencia: tipoLicenciaApi,
+  licencia: licenciaApi,
+  permiso: permisoApi,
+  periodoVacaciones: periodoVacacionesApi,
+  solicitudVacaciones: solicitudVacacionesApi,
+  dotacionConfig: dotacionConfigApi,
+  entregaDotacion: entregaDotacionApi,
+  // Nomina
+  configuracionNomina: configuracionNominaApi,
+  conceptoNomina: conceptoNominaApi,
+  periodoNomina: periodoNominaApi,
+  liquidacionNomina: liquidacionNominaApi,
+  detalleLiquidacion: detalleLiquidacionApi,
+  prestacion: prestacionApi,
+  pagoNomina: pagoNominaApi,
+  // Proceso Disciplinario
+  tipoFalta: tipoFaltaApi,
+  llamadoAtencion: llamadoAtencionApi,
+  descargo: descargoApi,
+  memorando: memorandoApi,
+  historialDisciplinario: historialDisciplinarioApi,
+  // Estructura de Cargos
+  profesiograma: profesiogramaApi,
+  vacanteEC: vacanteECApi,
+  // Desempeno
+  cicloEvaluacion: cicloEvaluacionApi,
+  evaluacionDesempeno: evaluacionDesempenoApi,
+  planMejora: planMejoraApi,
+  actividadPlanMejora: actividadPlanMejoraApi,
+  reconocimiento: reconocimientoApi,
+  // Formacion
+  planFormacion: planFormacionApi,
+  capacitacion: capacitacionApi,
+  programacion: programacionApi,
+  ejecucionFormacion: ejecucionFormacionApi,
+  evaluacionEficacia: evaluacionEficaciaApi,
+  certificado: certificadoApi,
+  // Off-Boarding
+  tipoRetiro: tipoRetiroApi,
+  procesoRetiro: procesoRetiroApi,
+  checklistRetiro: checklistRetiroApi,
+  pazSalvo: pazSalvoApi,
+  examenEgreso: examenEgresoApi,
+  entrevistaRetiro: entrevistaRetiroApi,
+  liquidacionFinal: liquidacionFinalApi,
 };
 
 export default talentHubApi;

@@ -14,6 +14,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Alert } from '@/components/common/Alert';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
@@ -284,15 +285,13 @@ const CampoEditor = ({
             />
           )}
           <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={campo.es_obligatorio || false}
-                onChange={(e) => updateField('es_obligatorio', e.target.checked)}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              Obligatoria
-            </label>
+            <Checkbox
+              label="Obligatoria"
+              checked={campo.es_obligatorio || false}
+              onChange={(e) =>
+                updateField('es_obligatorio', (e.target as HTMLInputElement).checked)
+              }
+            />
           </div>
         </div>
       </div>

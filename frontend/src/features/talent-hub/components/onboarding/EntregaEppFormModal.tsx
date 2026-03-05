@@ -14,7 +14,7 @@ import type { EntregaEPPFormData } from '../../types';
 
 const TIPO_EPP_OPTIONS = [
   { value: 'casco', label: 'Casco de Seguridad' },
-  { value: 'gafas', label: 'Gafas de Proteccion' },
+  { value: 'gafas', label: 'Gafas de Protección' },
   { value: 'guantes', label: 'Guantes' },
   { value: 'botas', label: 'Botas de Seguridad' },
   { value: 'overol', label: 'Overol' },
@@ -125,10 +125,10 @@ export const EntregaEppFormModal = ({ isOpen, onClose }: Props) => {
             {...register('tipo_epp', { required: 'Selecciona el tipo' })}
           />
           <Input
-            label="Descripcion"
-            placeholder="Descripcion del EPP..."
+            label="Descripción"
+            placeholder="Descripción del EPP..."
             error={errors.descripcion?.message}
-            {...register('descripcion', { required: 'La descripcion es obligatoria' })}
+            {...register('descripcion', { required: 'La descripción es obligatoria' })}
           />
         </div>
 

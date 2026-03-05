@@ -2,7 +2,7 @@
  * RechazarHoraExtraModal - Modal para rechazar una solicitud de hora extra con motivo
  */
 import { useState } from 'react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Textarea } from '@/components/forms/Textarea';
 
@@ -32,11 +32,21 @@ export const RechazarHoraExtraModal = ({
   };
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
       title="Rechazar solicitud de horas extras"
       size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={handleClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleConfirm} isLoading={isLoading}>
+            Rechazar solicitud
+          </Button>
+        </>
+      }
     >
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -50,16 +60,7 @@ export const RechazarHoraExtraModal = ({
           placeholder="Ej: Horas no autorizadas por el área, presupuesto agotado..."
           rows={3}
         />
-
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="ghost" onClick={handleClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button variant="danger" onClick={handleConfirm} isLoading={isLoading}>
-            Rechazar solicitud
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

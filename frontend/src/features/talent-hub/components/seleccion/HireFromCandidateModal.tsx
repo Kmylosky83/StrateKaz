@@ -11,7 +11,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { Checkbox } from '@/components/forms/Checkbox';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { cn } from '@/utils/cn';
 import {
   UserCheck,
@@ -159,7 +160,45 @@ export const HireFromCandidateModal = ({ candidato, isOpen, onClose }: Props) =>
   if (!candidato) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Contratar Candidato" size="lg">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Contratar Candidato"
+      size="lg"
+      footer={
+        <div className="flex justify-between w-full">
+          <div>
+            {step > 0 && (
+              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
+                <ChevronLeft size={14} className="mr-1" />
+                Anterior
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button type="button" variant="ghost" onClick={handleClose}>
+              Cancelar
+            </Button>
+            {step < STEPS.length - 1 ? (
+              <Button type="button" onClick={() => setStep(step + 1)} disabled={!canProceed()}>
+                Siguiente
+                <ChevronRight size={14} className="ml-1" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                form="hire-candidate-form"
+                disabled={!canProceed()}
+                isLoading={contratarMutation.isPending}
+              >
+                <FileText size={16} className="mr-1" />
+                Contratar
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
       {/* Candidato info card */}
       <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3 mb-4">
         <div className="flex items-center gap-3">
@@ -208,7 +247,7 @@ export const HireFromCandidateModal = ({ candidato, isOpen, onClose }: Props) =>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="hire-candidate-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Step 1: Datos del Contrato */}
         {step === 0 && (
           <>
@@ -321,15 +360,16 @@ export const HireFromCandidateModal = ({ candidato, isOpen, onClose }: Props) =>
             )}
 
             {/* Generar documento checkbox */}
-            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.datos_contrato.generar_documento}
-                onChange={(e) => handleChange('datos_contrato.generar_documento', e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              Generar documento de contrato en Gestión Documental
-            </label>
+            <Checkbox
+              label="Generar documento de contrato en Gestión Documental"
+              checked={formData.datos_contrato.generar_documento}
+              onChange={(e) =>
+                handleChange(
+                  'datos_contrato.generar_documento',
+                  (e.target as HTMLInputElement).checked
+                )
+              }
+            />
 
             {/* Resumen */}
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mt-4">
@@ -379,39 +419,7 @@ export const HireFromCandidateModal = ({ candidato, isOpen, onClose }: Props) =>
             </div>
           </>
         )}
-
-        {/* Acciones */}
-        <div className="flex justify-between pt-4 border-t">
-          <div>
-            {step > 0 && (
-              <Button type="button" variant="ghost" onClick={() => setStep(step - 1)}>
-                <ChevronLeft size={14} className="mr-1" />
-                Anterior
-              </Button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="ghost" onClick={handleClose}>
-              Cancelar
-            </Button>
-            {step < STEPS.length - 1 ? (
-              <Button type="button" onClick={() => setStep(step + 1)} disabled={!canProceed()}>
-                Siguiente
-                <ChevronRight size={14} className="ml-1" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                disabled={!canProceed()}
-                isLoading={contratarMutation.isPending}
-              >
-                <FileText size={16} className="mr-1" />
-                Contratar
-              </Button>
-            )}
-          </div>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

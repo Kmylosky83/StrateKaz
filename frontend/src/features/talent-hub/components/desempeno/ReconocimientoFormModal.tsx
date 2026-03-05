@@ -79,6 +79,9 @@ export const ReconocimientoFormModal = ({ isOpen, onClose }: Props) => {
   }, [isOpen, reset]);
 
   const onSubmit = async (data: ReconocimientoFormData) => {
+    // Clean FK value 0 to avoid "Clave primaria '0' inválida"
+    if (!data.colaborador) delete data.colaborador;
+    if (!data.tipo_reconocimiento) delete data.tipo_reconocimiento;
     await createMutation.mutateAsync(data);
     onClose();
   };

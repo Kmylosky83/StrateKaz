@@ -1,20 +1,26 @@
 /**
  * Hooks para Control de Tiempo - Talent Hub
  * Sistema de Gestión StrateKaz
+ *
+ * Refactored to use createCrudHooks / createApiClient / thKeys factories.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import { createCrudHooks } from '@/lib/crud-hooks-factory';
+import {
+  turnoApi,
+  asignacionTurnoApi,
+  registroAsistenciaApi,
+  horaExtraApi,
+  consolidadoApi,
+  configuracionRecargoApi,
+} from '../api/talentHubApi';
+import { thKeys } from '../api/queryKeys';
 import type {
-  Turno,
-  TurnoFormData,
   TurnoFilter,
-  AsignacionTurno,
-  AsignacionTurnoFormData,
   AsignacionTurnoFilter,
-  RegistroAsistencia,
-  RegistroAsistenciaFormData,
   RegistroAsistenciaFilter,
   RegistrarEntradaData,
   RegistrarSalidaData,
@@ -25,20 +31,17 @@ import type {
   MarcajeQRData,
   MarcajeFilter,
   HoraExtra,
-  HoraExtraFormData,
   HoraExtraFilter,
   RechazarHoraExtraData,
   ConsolidadoAsistencia,
   ConsolidadoFilter,
   GenerarConsolidadoData,
-  ConfiguracionRecargo,
-  ConfiguracionRecargoFormData,
+  RegistroAsistencia,
 } from '../types';
 
 const BASE_URL = '/talent-hub/control-tiempo';
 
-// ============== QUERY KEYS ==============
-
+// ============== LEGACY QUERY KEYS (backward compat) ==============
 export const controlTiempoKeys = {
   all: ['control-tiempo'] as const,
   turnos: {
@@ -85,176 +88,49 @@ export const controlTiempoKeys = {
   },
 };
 
-// ============== TURNOS ==============
+// ============== TURNOS (factory CRUD) ==============
 
-export const useTurnos = (filters?: TurnoFilter) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.turnos.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/turnos/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as Turno[];
-    },
-  });
-};
+const turnoHooks = createCrudHooks(turnoApi, thKeys.turnos, 'Turno');
 
-export const useTurno = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.turnos.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<Turno>(`${BASE_URL}/turnos/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
+export const useTurnos = turnoHooks.useList;
+export const useTurno = turnoHooks.useDetail;
+export const useCreateTurno = turnoHooks.useCreate;
+export const useUpdateTurno = turnoHooks.useUpdate;
+export const useDeleteTurno = turnoHooks.useDelete;
 
-export const useCreateTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: TurnoFormData) => {
-      const { data: response } = await api.post<Turno>(`${BASE_URL}/turnos/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.turnos.all() });
-      toast.success('Turno creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el turno'),
-  });
-};
+// ============== ASIGNACIONES TURNO (factory CRUD) ==============
 
-export const useUpdateTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<TurnoFormData> }) => {
-      const { data: response } = await api.patch<Turno>(`${BASE_URL}/turnos/${id}/`, data);
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.turnos.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.turnos.detail(id) });
-      toast.success('Turno actualizado exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar el turno'),
-  });
-};
+const asignacionTurnoHooks = createCrudHooks(
+  asignacionTurnoApi,
+  thKeys.asignacionesTurno,
+  'Asignación de turno',
+  { isFeminine: true }
+);
 
-export const useDeleteTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/turnos/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.turnos.all() });
-      toast.success('Turno eliminado exitosamente');
-    },
-    onError: () => toast.error('Error al eliminar el turno'),
-  });
-};
+export const useAsignacionesTurno = asignacionTurnoHooks.useList;
+export const useAsignacionTurno = asignacionTurnoHooks.useDetail;
+export const useCreateAsignacionTurno = asignacionTurnoHooks.useCreate;
+export const useUpdateAsignacionTurno = asignacionTurnoHooks.useUpdate;
+export const useDeleteAsignacionTurno = asignacionTurnoHooks.useDelete;
 
-// ============== ASIGNACIONES TURNO ==============
+// ============== REGISTROS ASISTENCIA (factory CRUD + custom actions) ==============
 
-export const useAsignacionesTurno = (filters?: AsignacionTurnoFilter) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.asignaciones.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/asignaciones/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as AsignacionTurno[];
-    },
-  });
-};
+const asistenciaHooks = createCrudHooks(
+  registroAsistenciaApi,
+  thKeys.asistencias,
+  'Registro de asistencia'
+);
 
-export const useAsignacionTurno = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.asignaciones.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<AsignacionTurno>(`${BASE_URL}/asignaciones/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
-
-export const useCreateAsignacionTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: AsignacionTurnoFormData) => {
-      const { data: response } = await api.post<AsignacionTurno>(`${BASE_URL}/asignaciones/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asignaciones.all() });
-      toast.success('Asignación de turno creada exitosamente');
-    },
-    onError: () => toast.error('Error al crear la asignación de turno'),
-  });
-};
-
-export const useUpdateAsignacionTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<AsignacionTurnoFormData> }) => {
-      const { data: response } = await api.patch<AsignacionTurno>(
-        `${BASE_URL}/asignaciones/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asignaciones.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asignaciones.detail(id) });
-      toast.success('Asignación de turno actualizada exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar la asignación de turno'),
-  });
-};
-
-export const useDeleteAsignacionTurno = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/asignaciones/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asignaciones.all() });
-      toast.success('Asignación de turno eliminada exitosamente');
-    },
-    onError: () => toast.error('Error al eliminar la asignación de turno'),
-  });
-};
-
-// ============== REGISTROS ASISTENCIA ==============
-
-export const useRegistrosAsistencia = (filters?: RegistroAsistenciaFilter) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.asistencias.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/asistencias/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as RegistroAsistencia[];
-    },
-  });
-};
-
-export const useRegistroAsistencia = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.asistencias.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<RegistroAsistencia>(`${BASE_URL}/asistencias/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
+export const useRegistrosAsistencia = asistenciaHooks.useList;
+export const useRegistroAsistencia = asistenciaHooks.useDetail;
+export const useCreateRegistroAsistencia = asistenciaHooks.useCreate;
+export const useUpdateRegistroAsistencia = asistenciaHooks.useUpdate;
 
 export const useEstadisticasAsistencia = (filters?: RegistroAsistenciaFilter) => {
   return useQuery({
-    queryKey: controlTiempoKeys.asistencias.estadisticas(filters),
+    queryKey: thKeys.asistencias.custom('estadisticas', filters),
     queryFn: async () => {
-      const { data } = await api.get<EstadisticasAsistencia>(
+      const { data } = await apiClient.get<EstadisticasAsistencia>(
         `${BASE_URL}/asistencias/estadisticas/`,
         { params: filters }
       );
@@ -263,55 +139,18 @@ export const useEstadisticasAsistencia = (filters?: RegistroAsistenciaFilter) =>
   });
 };
 
-export const useCreateRegistroAsistencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: RegistroAsistenciaFormData) => {
-      const { data: response } = await api.post<RegistroAsistencia>(
-        `${BASE_URL}/asistencias/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
-      toast.success('Registro de asistencia creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el registro de asistencia'),
-  });
-};
-
-export const useUpdateRegistroAsistencia = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<RegistroAsistenciaFormData> }) => {
-      const { data: response } = await api.patch<RegistroAsistencia>(
-        `${BASE_URL}/asistencias/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.detail(id) });
-      toast.success('Registro de asistencia actualizado exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar el registro de asistencia'),
-  });
-};
-
 export const useRegistrarEntrada = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: RegistrarEntradaData) => {
-      const { data: response } = await api.post<RegistroAsistencia>(
+      const { data: response } = await apiClient.post<RegistroAsistencia>(
         `${BASE_URL}/asistencias/registrar-entrada/`,
         data
       );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.asistencias.lists() });
       toast.success('Entrada registrada exitosamente');
     },
     onError: () => toast.error('Error al registrar la entrada'),
@@ -322,14 +161,14 @@ export const useRegistrarSalida = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: RegistrarSalidaData }) => {
-      const { data: response } = await api.post<RegistroAsistencia>(
+      const { data: response } = await apiClient.post<RegistroAsistencia>(
         `${BASE_URL}/asistencias/${id}/registrar-salida/`,
         data
       );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.asistencias.lists() });
       toast.success('Salida registrada exitosamente');
     },
     onError: () => toast.error('Error al registrar la salida'),
@@ -340,28 +179,27 @@ export const useJustificarAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: JustificarAsistenciaData }) => {
-      const { data: response } = await api.post<RegistroAsistencia>(
+      const { data: response } = await apiClient.post<RegistroAsistencia>(
         `${BASE_URL}/asistencias/${id}/justificar/`,
         data
       );
       return response;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.asistencias.lists() });
       toast.success('Asistencia justificada exitosamente');
     },
     onError: () => toast.error('Error al justificar la asistencia'),
   });
 };
 
-// ============== MARCAJES ==============
+// ============== MARCAJES (custom — no standard CRUD) ==============
 
 export const useMarcajes = (filters?: MarcajeFilter) => {
   return useQuery({
-    queryKey: controlTiempoKeys.marcajes.list(filters),
+    queryKey: thKeys.marcajes.list(filters),
     queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/marcajes/`, { params: filters });
+      const response = await apiClient.get(`${BASE_URL}/marcajes/`, { params: filters });
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as MarcajeTiempo[];
     },
@@ -370,9 +208,9 @@ export const useMarcajes = (filters?: MarcajeFilter) => {
 
 export const useMisMarcajes = (fecha?: string) => {
   return useQuery({
-    queryKey: controlTiempoKeys.marcajes.misMarcajes(fecha),
+    queryKey: thKeys.marcajes.custom('mis-marcajes', fecha),
     queryFn: async () => {
-      const { data } = await api.get<MarcajeTiempo[]>(`${BASE_URL}/marcajes/mis-marcajes/`, {
+      const { data } = await apiClient.get<MarcajeTiempo[]>(`${BASE_URL}/marcajes/mis-marcajes/`, {
         params: fecha ? { fecha } : undefined,
       });
       return data;
@@ -384,15 +222,15 @@ export const useRegistrarMarcaje = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: MarcajeData) => {
-      const { data: response } = await api.post<MarcajeTiempo>(
+      const { data: response } = await apiClient.post<MarcajeTiempo>(
         `${BASE_URL}/marcajes/marcar/`,
         data
       );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.marcajes.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.marcajes.lists() });
+      queryClient.invalidateQueries({ queryKey: thKeys.asistencias.lists() });
       toast.success('Marcaje registrado exitosamente');
     },
     onError: () => toast.error('Error al registrar el marcaje'),
@@ -403,7 +241,7 @@ export const useMarcarQR = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: MarcajeQRData) => {
-      const { data: response } = await api.post<{
+      const { data: response } = await apiClient.post<{
         marcaje: MarcajeTiempo;
         turno: string;
         mensaje: string;
@@ -411,98 +249,40 @@ export const useMarcarQR = () => {
       return response;
     },
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.marcajes.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.marcajes.lists() });
+      queryClient.invalidateQueries({ queryKey: thKeys.asistencias.lists() });
       toast.success(response.mensaje || 'Marcaje QR registrado exitosamente');
     },
     onError: () => toast.error('Error al registrar el marcaje QR'),
   });
 };
 
-// ============== HORAS EXTRAS ==============
+// ============== HORAS EXTRAS (factory CRUD + custom actions) ==============
 
-export const useHorasExtras = (filters?: HoraExtraFilter) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.horasExtras.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/horas-extras/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as HoraExtra[];
-    },
-  });
-};
+const horaExtraHooks = createCrudHooks(
+  horaExtraApi,
+  thKeys.horasExtras,
+  'Solicitud de horas extras',
+  { isFeminine: true }
+);
 
-export const useHoraExtra = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.horasExtras.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<HoraExtra>(`${BASE_URL}/horas-extras/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
-
-export const useCreateHoraExtra = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: HoraExtraFormData) => {
-      const { data: response } = await api.post<HoraExtra>(`${BASE_URL}/horas-extras/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
-      toast.success('Solicitud de horas extras creada exitosamente');
-    },
-    onError: () => toast.error('Error al crear la solicitud de horas extras'),
-  });
-};
-
-export const useUpdateHoraExtra = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<HoraExtraFormData> }) => {
-      const { data: response } = await api.patch<HoraExtra>(
-        `${BASE_URL}/horas-extras/${id}/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.detail(id) });
-      toast.success('Solicitud de horas extras actualizada exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar la solicitud de horas extras'),
-  });
-};
-
-export const useDeleteHoraExtra = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/horas-extras/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
-      toast.success('Solicitud de horas extras eliminada exitosamente');
-    },
-    onError: () => toast.error('Error al eliminar la solicitud de horas extras'),
-  });
-};
+export const useHorasExtras = horaExtraHooks.useList;
+export const useHoraExtra = horaExtraHooks.useDetail;
+export const useCreateHoraExtra = horaExtraHooks.useCreate;
+export const useUpdateHoraExtra = horaExtraHooks.useUpdate;
+export const useDeleteHoraExtra = horaExtraHooks.useDelete;
 
 export const useAprobarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<HoraExtra>(
+      const { data: response } = await apiClient.post<HoraExtra>(
         `${BASE_URL}/horas-extras/${id}/aprobar/`
       );
       return response;
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.horasExtras.lists() });
       toast.success('Horas extras aprobadas exitosamente');
     },
     onError: () => toast.error('Error al aprobar las horas extras'),
@@ -513,57 +293,38 @@ export const useRechazarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: RechazarHoraExtraData }) => {
-      const { data: response } = await api.post<HoraExtra>(
+      const { data: response } = await apiClient.post<HoraExtra>(
         `${BASE_URL}/horas-extras/${id}/rechazar/`,
         data
       );
       return response;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.horasExtras.lists() });
       toast.success('Horas extras rechazadas');
     },
     onError: () => toast.error('Error al rechazar las horas extras'),
   });
 };
 
-// ============== CONSOLIDADOS ASISTENCIA ==============
+// ============== CONSOLIDADOS ASISTENCIA (factory list/detail + custom actions) ==============
 
-export const useConsolidadosAsistencia = (filters?: ConsolidadoFilter) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.consolidados.list(filters),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/consolidados/`, { params: filters });
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConsolidadoAsistencia[];
-    },
-  });
-};
+const consolidadoHooks = createCrudHooks(consolidadoApi, thKeys.consolidados, 'Consolidado');
 
-export const useConsolidadoAsistencia = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: controlTiempoKeys.consolidados.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<ConsolidadoAsistencia>(`${BASE_URL}/consolidados/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
+export const useConsolidadosAsistencia = consolidadoHooks.useList;
+export const useConsolidadoAsistencia = consolidadoHooks.useDetail;
 
 export const useGenerarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: GenerarConsolidadoData) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia | ConsolidadoAsistencia[]>(
-        `${BASE_URL}/consolidados/generar/`,
-        data
-      );
+      const { data: response } = await apiClient.post<
+        ConsolidadoAsistencia | ConsolidadoAsistencia[]
+      >(`${BASE_URL}/consolidados/generar/`, data);
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.all() });
+      queryClient.invalidateQueries({ queryKey: thKeys.consolidados.lists() });
       toast.success('Consolidado generado exitosamente');
     },
     onError: () => toast.error('Error al generar el consolidado'),
@@ -574,14 +335,13 @@ export const useCerrarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(
+      const { data: response } = await apiClient.post<ConsolidadoAsistencia>(
         `${BASE_URL}/consolidados/${id}/cerrar-mes/`
       );
       return response;
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.consolidados.lists() });
       toast.success('Consolidado cerrado exitosamente');
     },
     onError: () => toast.error('Error al cerrar el consolidado'),
@@ -592,47 +352,27 @@ export const useReabrirConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(
+      const { data: response } = await apiClient.post<ConsolidadoAsistencia>(
         `${BASE_URL}/consolidados/${id}/reabrir-mes/`
       );
       return response;
     },
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.all() });
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.detail(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.consolidados.lists() });
       toast.success('Consolidado reabierto exitosamente');
     },
     onError: () => toast.error('Error al reabrir el consolidado'),
   });
 };
 
-// ============== CONFIGURACION RECARGOS ==============
+// ============== CONFIGURACION RECARGOS (factory CRUD) ==============
 
-export const useConfiguracionesRecargo = () => {
-  return useQuery({
-    queryKey: controlTiempoKeys.recargos.list(),
-    queryFn: async () => {
-      const response = await api.get(`${BASE_URL}/configuracion-recargos/`);
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConfiguracionRecargo[];
-    },
-  });
-};
+const recargoHooks = createCrudHooks(
+  configuracionRecargoApi,
+  thKeys.recargos,
+  'Configuración de recargo',
+  { isFeminine: true }
+);
 
-export const useCreateConfiguracionRecargo = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: ConfiguracionRecargoFormData) => {
-      const { data: response } = await api.post<ConfiguracionRecargo>(
-        `${BASE_URL}/configuracion-recargos/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.recargos.all() });
-      toast.success('Configuración de recargo creada');
-    },
-    onError: () => toast.error('Error al crear la configuración'),
-  });
-};
+export const useConfiguracionesRecargo = recargoHooks.useList;
+export const useCreateConfiguracionRecargo = recargoHooks.useCreate;

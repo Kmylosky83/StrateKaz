@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Shield } from 'lucide-react';
 import {
   useCreateAfiliacion,
@@ -63,8 +63,29 @@ export const AfiliacionFormModal = ({ isOpen, onClose }: Props) => {
     formData.candidato > 0 && formData.entidad > 0 && formData.responsable_tramite > 0;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Nueva Afiliacion SS" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Nueva Afiliacion SS"
+      size="lg"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form="afiliacion-form"
+            disabled={!isValid}
+            isLoading={createMutation.isPending}
+          >
+            <Shield size={16} className="mr-1" />
+            Registrar Afiliacion
+          </Button>
+        </>
+      }
+    >
+      <form id="afiliacion-form" onSubmit={handleSubmit} className="space-y-4">
         {/* Info */}
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
           <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
@@ -155,18 +176,7 @@ export const AfiliacionFormModal = ({ isOpen, onClose }: Props) => {
           placeholder="Notas adicionales sobre la afiliacion..."
           rows={2}
         />
-
-        {/* Acciones */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={!isValid} isLoading={createMutation.isPending}>
-            <Shield size={16} className="mr-1" />
-            Registrar Afiliacion
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

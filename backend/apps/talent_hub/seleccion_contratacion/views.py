@@ -1185,6 +1185,19 @@ class FirmarContratoPublicView(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Validar formato y tamaño de firma Base64
+        if not isinstance(firma_imagen, str) or not firma_imagen.startswith('data:image/'):
+            return Response(
+                {'detail': 'Formato de firma inválido. Se espera una imagen Base64.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Limitar tamaño (~2MB en Base64 ≈ 2.7M caracteres)
+        if len(firma_imagen) > 3_000_000:
+            return Response(
+                {'detail': 'La imagen de firma excede el tamaño máximo permitido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Obtener IP del firmante
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -1739,6 +1752,8 @@ class ResponderEntrevistaAsincronicaViewSet(viewsets.ViewSet):
     PUT /responder-entrevista/{token}/ - Enviar respuestas
     """
     permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = [AnonRateThrottle]
     lookup_field = 'token'
 
     def retrieve(self, request, pk=None):

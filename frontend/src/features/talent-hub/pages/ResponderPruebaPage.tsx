@@ -35,32 +35,71 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { cn } from '@/utils/cn';
 import { usePruebaPublica, useResponderPrueba } from '../hooks/useSeleccionContratacion';
+import { useBrandingPublicoHelpers } from '../hooks/useVacantesPublicas';
 import type { CampoPruebaDinamica } from '../types';
 
 // ============================================================================
 // Public Layout (same pattern as EncuestaPublicaPage)
 // ============================================================================
 
-function PublicLayout({ children }: { children: React.ReactNode }) {
+function PublicLayout({
+  children,
+  empresaNombre,
+  logoUrl,
+  primaryColor,
+}: {
+  children: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
+}) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="h-1" style={{ backgroundColor: primaryColor }} />
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
-          <span className="text-lg font-semibold text-gray-800 dark:text-white">StrateKaz</span>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={empresaNombre}
+              className="h-8 w-auto max-w-[140px] object-contain"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <ClipboardCheck className="w-4 h-4 text-white" />
+            </div>
+          )}
+          <span className="text-lg font-semibold text-gray-800 dark:text-white">
+            {empresaNombre}
+          </span>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
       <footer className="text-center py-6 text-xs text-gray-400">
-        StrateKaz ERP &middot; Prueba tecnica confidencial
+        {empresaNombre} &middot; Prueba tecnica confidencial &middot; Powered by StrateKaz
       </footer>
     </div>
   );
 }
 
-function ErrorLayout({ message, icon }: { message: string; icon?: React.ReactNode }) {
+function ErrorLayout({
+  message,
+  icon,
+  empresaNombre,
+  logoUrl,
+  primaryColor,
+}: {
+  message: string;
+  icon?: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
+}) {
   return (
-    <PublicLayout>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
@@ -82,9 +121,10 @@ interface CampoRendererProps {
   campo: CampoPruebaDinamica;
   value: unknown;
   onChange: (value: unknown) => void;
+  primaryColor: string;
 }
 
-function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
+function CampoRenderer({ campo, value, onChange, primaryColor }: CampoRendererProps) {
   const tipo = campo.tipo_campo.toUpperCase();
 
   // TEXT
@@ -160,10 +200,14 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
             key={opt.valor}
             className={cn(
               'flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all',
-              value === opt.valor
-                ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              value !== opt.valor &&
+                'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             )}
+            style={
+              value === opt.valor
+                ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` }
+                : undefined
+            }
           >
             <input
               type="radio"
@@ -171,7 +215,8 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
               value={opt.valor}
               checked={value === opt.valor}
               onChange={() => onChange(opt.valor)}
-              className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+              className="w-4 h-4"
+              style={{ accentColor: primaryColor }}
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">{opt.etiqueta}</span>
           </label>
@@ -192,10 +237,14 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
               key={opt.valor}
               className={cn(
                 'flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all',
-                isChecked
-                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                !isChecked &&
+                  'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               )}
+              style={
+                isChecked
+                  ? { borderColor: primaryColor, backgroundColor: `${primaryColor}10` }
+                  : undefined
+              }
             >
               <input
                 type="checkbox"
@@ -206,7 +255,8 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
                     : [...selectedValues, opt.valor];
                   onChange(newValues);
                 }}
-                className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500"
+                className="w-4 h-4 rounded"
+                style={{ accentColor: primaryColor }}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">{opt.etiqueta}</span>
             </label>
@@ -235,6 +285,7 @@ export default function ResponderPruebaPage() {
   const { token } = useParams<{ token: string }>();
   const { data: prueba, isLoading, error } = usePruebaPublica(token || '');
   const responderMutation = useResponderPrueba();
+  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const [respuestas, setRespuestas] = useState<Record<string, unknown>>({});
   const [enviado, setEnviado] = useState(false);
@@ -278,14 +329,16 @@ export default function ResponderPruebaPage() {
       })
     : null;
 
+  const brandingProps = { empresaNombre: empresaNombre || 'StrateKaz', logoUrl, primaryColor };
+
   // Error states
   if (!token) {
-    return <ErrorLayout message="Token de prueba no proporcionado." />;
+    return <ErrorLayout message="Token de prueba no proporcionado." {...brandingProps} />;
   }
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout {...brandingProps}>
         <div className="flex flex-col items-center justify-center py-20">
           <Spinner size="lg" />
           <p className="mt-4 text-gray-500">Cargando prueba...</p>
@@ -297,13 +350,16 @@ export default function ResponderPruebaPage() {
   if (error || !prueba) {
     const errorMsg = (error as Error)?.message || '';
     if (errorMsg.includes('404') || errorMsg.includes('no encontrada')) {
-      return <ErrorLayout message="Esta prueba no existe o el enlace ha expirado." />;
+      return (
+        <ErrorLayout message="Esta prueba no existe o el enlace ha expirado." {...brandingProps} />
+      );
     }
     if (errorMsg.includes('vencida') || errorMsg.includes('expired')) {
       return (
         <ErrorLayout
           message="El plazo para responder esta prueba ha expirado."
           icon={<Clock className="w-8 h-8 text-amber-400" />}
+          {...brandingProps}
         />
       );
     }
@@ -312,16 +368,19 @@ export default function ResponderPruebaPage() {
         <ErrorLayout
           message="Esta prueba ya fue respondida."
           icon={<CheckCircle className="w-8 h-8 text-green-400" />}
+          {...brandingProps}
         />
       );
     }
-    return <ErrorLayout message="No se pudo cargar la prueba. Intente nuevamente." />;
+    return (
+      <ErrorLayout message="No se pudo cargar la prueba. Intente nuevamente." {...brandingProps} />
+    );
   }
 
   // Success state
   if (enviado) {
     return (
-      <PublicLayout>
+      <PublicLayout {...brandingProps}>
         <div className="max-w-lg mx-auto text-center py-16">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -364,12 +423,15 @@ export default function ResponderPruebaPage() {
   const currentCampo = campos[currentQuestion];
 
   return (
-    <PublicLayout>
+    <PublicLayout {...brandingProps}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ClipboardCheck className="w-7 h-7 text-violet-600" />
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
+            <ClipboardCheck className="w-7 h-7" style={{ color: primaryColor }} />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {prueba.prueba_nombre}
@@ -412,9 +474,10 @@ export default function ResponderPruebaPage() {
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
-              className="bg-violet-600 h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${campos.length > 0 ? (answeredCount / campos.length) * 100 : 0}%`,
+                backgroundColor: primaryColor,
               }}
             />
           </div>
@@ -436,15 +499,20 @@ export default function ResponderPruebaPage() {
                 key={campo.nombre_campo}
                 className={cn(
                   'transition-all cursor-pointer',
-                  isActive ? 'ring-2 ring-violet-500 shadow-lg' : 'opacity-80 hover:opacity-100'
+                  isActive ? 'ring-2 shadow-lg' : 'opacity-80 hover:opacity-100'
                 )}
+                style={
+                  isActive
+                    ? ({ '--tw-ring-color': primaryColor } as React.CSSProperties)
+                    : undefined
+                }
                 onClick={() => setCurrentQuestion(index)}
               >
                 <div className="p-5 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium text-violet-600 dark:text-violet-400">
+                        <span className="text-xs font-medium" style={{ color: primaryColor }}>
                           Pregunta {index + 1} de {campos.length}
                         </span>
                         {campo.es_obligatorio && (
@@ -478,6 +546,7 @@ export default function ResponderPruebaPage() {
                       campo={campo}
                       value={respuestas[campo.nombre_campo]}
                       onChange={(val) => updateRespuesta(campo.nombre_campo, val)}
+                      primaryColor={primaryColor}
                     />
                   </div>
 

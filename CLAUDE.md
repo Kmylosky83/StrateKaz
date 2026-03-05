@@ -62,7 +62,7 @@ StrateKaz/
 │   │   ├── celery.py        # Celery app configuration (17.9 KB)
 │   │   ├── wsgi.py
 │   │   └── asgi.py
-│   ├── apps/                # 16 modulos Django (~92 apps)
+│   ├── apps/                # 16 modulos Django (~84 apps)
 │   │   ├── core/            # N0: Users, RBAC, Menu, Middleware, Permissions
 │   │   ├── tenant/          # N0: Multi-Tenant System (public schema)
 │   │   ├── gestion_estrategica/  # N1: Direccion Estrategica (10 apps)
@@ -137,9 +137,9 @@ El sistema se organiza en 6 niveles de apps Django registradas condicionalmente:
 |-------|--------|-------------|------|
 | N0 | Core Base | Users, RBAC, Menu, Config, Multi-Tenant | 2 |
 | N1 | Estrategico | Direccion Estrategica, Contexto, Planeacion, Docs | 10 |
-| N2 | Cumplimiento | Compliance, Riesgos, Workflows, Firma Digital | 15 |
+| N2 | Cumplimiento | Compliance, Riesgos, Workflows, Firma Digital | 14 |
 | N3 | Torre Control | HSEQ: Calidad, SST, Ambiental, Comites | 9 |
-| N4 | Cadena Valor | Supply Chain, Production, Logistics, Sales | 17 |
+| N4 | Cadena Valor | Supply Chain, Production, Logistics, Sales | 15 |
 | N5 | Habilitadores | Talent Hub, Finance, Accounting | 19 |
 | N6 | Inteligencia | Analytics, KPIs, Audit System, Notifications | 11 |
 
@@ -150,7 +150,7 @@ Las apps se dividen en SHARED_APPS (schema public) y TENANT_APPS (schema por ten
 **N1 - Gestion Estrategica (10 apps):**
 configuracion, organizacion, identidad, planeacion, contexto, encuestas, gestion_proyectos, revision_direccion, gestion_documental, planificacion_sistema
 
-**N2 - Motor Cumplimiento (5):** matriz_legal, requisitos_legales, partes_interesadas, reglamentos_internos, evidencias
+**N2 - Motor Cumplimiento (4):** matriz_legal, requisitos_legales, reglamentos_internos, evidencias
 **N2 - Motor Riesgos (6):** riesgos_procesos, ipevr, aspectos_ambientales, riesgos_viales, seguridad_informacion, sagrilaft_ptee
 **N2 - Workflow Engine (4):** disenador_flujos, ejecucion, monitoreo, firma_digital
 
@@ -159,7 +159,7 @@ accidentalidad, seguridad_industrial, higiene_industrial, medicina_laboral, emer
 
 **N4 - Supply Chain (5):** catalogos, gestion_proveedores, compras, almacenamiento, programacion_abastecimiento
 **N4 - Production Ops (4):** recepcion, procesamiento, producto_terminado, mantenimiento
-**N4 - Logistics Fleet (4):** gestion_flota, gestion_transporte, despachos, pesv_operativo
+**N4 - Logistics Fleet (2):** gestion_flota, gestion_transporte
 **N4 - Sales CRM (4):** gestion_clientes, pipeline_ventas, pedidos_facturacion, servicio_cliente
 
 **N5 - Talent Hub (11):** estructura_cargos, seleccion_contratacion, colaboradores, onboarding_induccion, formacion_reinduccion, desempeno, control_tiempo, novedades, proceso_disciplinario, nomina, off_boarding

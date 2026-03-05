@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { Star, CheckCircle, MessageSquare, User, Clock } from 'lucide-react';
@@ -78,19 +78,19 @@ export const EvaluarEntrevistaAsyncModal = ({ isOpen, onClose, entrevistaId }: P
 
   if (isLoading) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Evaluando..." size="xl">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Evaluando..." size="xl">
         <div className="flex justify-center py-12">
           <Spinner size="lg" />
         </div>
-      </Modal>
+      </BaseModal>
     );
   }
 
   if (!entrevista) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="Error" size="md">
+      <BaseModal isOpen={isOpen} onClose={onClose} title="Error" size="md">
         <p className="text-gray-500 py-8 text-center">Entrevista no encontrada.</p>
-      </Modal>
+      </BaseModal>
     );
   }
 
@@ -98,13 +98,26 @@ export const EvaluarEntrevistaAsyncModal = ({ isOpen, onClose, entrevistaId }: P
   const respuestas = entrevista.respuestas || {};
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isReadOnly ? 'Evaluacion de Entrevista' : 'Evaluar Respuestas'}
       size="xl"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            {isReadOnly ? 'Cerrar' : 'Cancelar'}
+          </Button>
+          {!isReadOnly && (
+            <Button type="submit" form="evaluar-async-form" isLoading={evaluarMutation.isPending}>
+              <CheckCircle size={16} className="mr-1" />
+              Guardar Evaluacion
+            </Button>
+          )}
+        </>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="evaluar-async-form" onSubmit={handleSubmit} className="space-y-5">
         {/* Header info */}
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
@@ -236,20 +249,7 @@ export const EvaluarEntrevistaAsyncModal = ({ isOpen, onClose, entrevistaId }: P
             disabled={isReadOnly}
           />
         </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            {isReadOnly ? 'Cerrar' : 'Cancelar'}
-          </Button>
-          {!isReadOnly && (
-            <Button type="submit" isLoading={evaluarMutation.isPending}>
-              <CheckCircle size={16} className="mr-1" />
-              Guardar Evaluacion
-            </Button>
-          )}
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

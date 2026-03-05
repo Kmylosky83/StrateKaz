@@ -8,6 +8,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { useCreateConceptoNomina, useUpdateConceptoNomina } from '../../hooks/useNomina';
 import type { ConceptoNominaFormData, ConceptoNomina } from '../../types';
 import { tipoConceptoOptions, categoriaConceptoOptions } from '../../types';
@@ -148,46 +149,19 @@ export const ConceptoFormModal = ({ isOpen, onClose, concepto }: ConceptoFormMod
             Configuración
           </h3>
           <div className="space-y-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_fijo')}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Es un concepto fijo (se aplica automáticamente)
-              </span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_base_seguridad_social')}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Es base para Seguridad Social
-              </span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_base_parafiscales')}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Es base para Parafiscales
-              </span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_base_prestaciones')}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Es base para Prestaciones Sociales
-              </span>
-            </label>
+            <Checkbox
+              label="Es un concepto fijo (se aplica automáticamente)"
+              {...register('es_fijo')}
+            />
+            <Checkbox
+              label="Es base para Seguridad Social"
+              {...register('es_base_seguridad_social')}
+            />
+            <Checkbox label="Es base para Parafiscales" {...register('es_base_parafiscales')} />
+            <Checkbox
+              label="Es base para Prestaciones Sociales"
+              {...register('es_base_prestaciones')}
+            />
           </div>
         </div>
 

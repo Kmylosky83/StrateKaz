@@ -53,4 +53,75 @@ export const thKeys = {
   entregasActivos: createQueryKeys('th-entregas-activos'),
   firmasDocumentos: createQueryKeys('th-firmas-documentos'),
   estadisticasOnboarding: createQueryKeys('th-estadisticas-onboarding'),
+
+  // Control de Tiempo
+  turnos: createQueryKeys('th-turnos'),
+  asignacionesTurno: createQueryKeys('th-asignaciones-turno'),
+  asistencias: createQueryKeys('th-asistencias'),
+  marcajes: createQueryKeys('th-marcajes'),
+  horasExtras: createQueryKeys('th-horas-extras'),
+  consolidados: createQueryKeys('th-consolidados'),
+  recargos: createQueryKeys('th-recargos'),
+
+  // Novedades
+  tiposIncapacidad: createQueryKeys('th-tipos-incapacidad'),
+  incapacidades: createQueryKeys('th-incapacidades'),
+  tiposLicencia: createQueryKeys('th-tipos-licencia'),
+  licencias: createQueryKeys('th-licencias'),
+  permisos: createQueryKeys('th-permisos'),
+  periodosVacaciones: createQueryKeys('th-periodos-vacaciones'),
+  solicitudesVacaciones: createQueryKeys('th-solicitudes-vacaciones'),
+  dotacionConfig: createQueryKeys('th-dotacion-config'),
+  entregasDotacion: createQueryKeys('th-entregas-dotacion'),
+
+  // Nomina
+  configuracionesNomina: createQueryKeys('th-configuraciones-nomina'),
+  conceptosNomina: createQueryKeys('th-conceptos-nomina'),
+  periodosNomina: createQueryKeys('th-periodos-nomina'),
+  liquidaciones: createQueryKeys('th-liquidaciones'),
+  detallesLiquidacion: createQueryKeys('th-detalles-liquidacion'),
+  prestaciones: createQueryKeys('th-prestaciones'),
+  pagosNomina: createQueryKeys('th-pagos-nomina'),
+
+  // Proceso Disciplinario
+  tiposFalta: createQueryKeys('th-tipos-falta'),
+  llamadosAtencion: createQueryKeys('th-llamados-atencion'),
+  descargos: createQueryKeys('th-descargos'),
+  memorandos: createQueryKeys('th-memorandos'),
+  historialDisciplinario: createQueryKeys('th-historial-disciplinario'),
+
+  // Estructura de Cargos
+  profesiogramas: createQueryKeys('th-profesiogramas'),
+  vacantesEC: createQueryKeys('th-vacantes-ec'),
+
+  // Desempeno
+  ciclosEvaluacion: createQueryKeys('th-ciclos-evaluacion'),
+  competenciasEvaluacion: createQueryKeys('th-competencias-evaluacion'),
+  evaluacionesDesempeno: createQueryKeys('th-evaluaciones-desempeno'),
+  planesMejora: createQueryKeys('th-planes-mejora'),
+  actividadesPlanMejora: createQueryKeys('th-actividades-plan-mejora'),
+  tiposReconocimiento: createQueryKeys('th-tipos-reconocimiento'),
+  reconocimientos: createQueryKeys('th-reconocimientos'),
+  muroReconocimientos: createQueryKeys('th-muro-reconocimientos'),
+  estadisticasDesempeno: createQueryKeys('th-estadisticas-desempeno'),
+
+  // Formacion y Reinduccion
+  planesFormacion: createQueryKeys('th-planes-formacion'),
+  capacitaciones: createQueryKeys('th-capacitaciones'),
+  programaciones: createQueryKeys('th-programaciones'),
+  ejecucionesFormacion: createQueryKeys('th-ejecuciones-formacion'),
+  badges: createQueryKeys('th-badges'),
+  evaluacionesEficacia: createQueryKeys('th-evaluaciones-eficacia'),
+  certificados: createQueryKeys('th-certificados'),
+  gamificacion: createQueryKeys('th-gamificacion'),
+  estadisticasFormacion: createQueryKeys('th-estadisticas-formacion'),
+
+  // Off-Boarding
+  tiposRetiro: createQueryKeys('th-tipos-retiro'),
+  procesosRetiro: createQueryKeys('th-procesos-retiro'),
+  checklistRetiro: createQueryKeys('th-checklist-retiro'),
+  pazSalvos: createQueryKeys('th-paz-salvos'),
+  examenesEgreso: createQueryKeys('th-examenes-egreso'),
+  entrevistasRetiro: createQueryKeys('th-entrevistas-retiro'),
+  liquidacionesFinales: createQueryKeys('th-liquidaciones-finales'),
 } as const;

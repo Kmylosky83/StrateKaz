@@ -12,3 +12,4 @@ export { TenantFormModal } from './TenantFormModal';
 export { TenantCreationProgress } from './TenantCreationProgress';
 export { PlanFormModal } from './PlanFormModal';
 export { TenantUserFormModal } from './TenantUserFormModal';
+export { UserImpersonationModal } from './UserImpersonationModal';

@@ -29,7 +29,6 @@ import {
   ChevronRight,
   Check,
   Plus,
-  Mail,
   Info,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -678,13 +677,10 @@ export const ColaboradorFormModal = ({
                   required
                 />
 
-                <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <Mail size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Se enviará un correo a <strong>{formData.email_corporativo || '...'}</strong>{' '}
-                    con un enlace para configurar la contraseña. El enlace expira en 7 días.
-                  </p>
-                </div>
+                <Alert
+                  variant="info"
+                  message={`Se enviará un correo a ${formData.email_corporativo || '...'} con un enlace para configurar la contraseña. El enlace expira en 7 días.`}
+                />
               </div>
             )}
 

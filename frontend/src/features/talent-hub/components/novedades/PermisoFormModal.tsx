@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Button } from '@/components/common/Button';
 import { useCreatePermiso, useUpdatePermiso } from '../../hooks/useNovedades';
 import { useColaboradores } from '../../hooks/useColaboradores';
@@ -99,18 +100,14 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             rules={{ required: 'El colaborador es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Colaborador *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={colaboradoresOptions}
-                  error={errors.colaborador?.message}
-                />
-              </div>
+              <Select
+                label="Colaborador *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={colaboradoresOptions}
+                error={errors.colaborador?.message}
+              />
             )}
           />
 
@@ -119,12 +116,7 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             rules={{ required: 'La fecha es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha *
-                </label>
-                <Input type="date" {...field} error={errors.fecha?.message} />
-              </div>
+              <Input label="Fecha *" type="date" {...field} error={errors.fecha?.message} />
             )}
           />
 
@@ -133,12 +125,12 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             rules={{ required: 'La hora de salida es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Hora Salida *
-                </label>
-                <Input type="time" {...field} error={errors.hora_salida?.message} />
-              </div>
+              <Input
+                label="Hora Salida *"
+                type="time"
+                {...field}
+                error={errors.hora_salida?.message}
+              />
             )}
           />
 
@@ -147,12 +139,12 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             rules={{ required: 'La hora de regreso es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Hora Regreso *
-                </label>
-                <Input type="time" {...field} error={errors.hora_regreso?.message} />
-              </div>
+              <Input
+                label="Hora Regreso *"
+                type="time"
+                {...field}
+                error={errors.hora_regreso?.message}
+              />
             )}
           />
 
@@ -161,12 +153,12 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             rules={{ required: 'El tipo es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de Permiso *
-                </label>
-                <Select {...field} options={tipoPermisoOptions} error={errors.tipo?.message} />
-              </div>
+              <Select
+                label="Tipo de Permiso *"
+                {...field}
+                options={tipoPermisoOptions}
+                error={errors.tipo?.message}
+              />
             )}
           />
 
@@ -175,17 +167,7 @@ export const PermisoFormModal = ({ permiso, isOpen, onClose }: PermisoFormModalP
             control={control}
             render={({ field }) => (
               <div className="flex items-center h-full pt-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Compensable
-                  </span>
-                </label>
+                <Checkbox label="Compensable" checked={field.value} onChange={field.onChange} />
               </div>
             )}
           />

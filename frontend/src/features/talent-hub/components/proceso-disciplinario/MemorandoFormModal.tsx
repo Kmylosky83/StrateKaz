@@ -146,10 +146,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
       <form className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Colaborador *
-            </label>
             <Select
+              label="Colaborador *"
               {...register('colaborador', { required: true, valueAsNumber: true })}
               options={colaboradorOptions}
               error={errors.colaborador?.message}
@@ -157,10 +155,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Falta *
-            </label>
             <Select
+              label="Tipo de Falta *"
               {...register('tipo_falta', { required: true, valueAsNumber: true })}
               options={tipoFaltaOptions}
               error={errors.tipo_falta?.message}
@@ -168,10 +164,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha Memorando *
-            </label>
             <Input
+              label="Fecha Memorando *"
               type="date"
               {...register('fecha_memorando', { required: true })}
               error={errors.fecha_memorando?.message}
@@ -180,10 +174,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descargo Relacionado
-          </label>
           <Select
+            label="Descargo Relacionado"
             {...register('descargo_relacionado', { valueAsNumber: true })}
             options={descargoOptions}
             error={errors.descargo_relacionado?.message}
@@ -191,10 +183,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Antecedentes
-          </label>
           <Textarea
+            label="Antecedentes"
             {...register('antecedentes')}
             placeholder="Llamados de atencion previos, reincidencia, etc."
             rows={2}
@@ -203,10 +193,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Hechos *
-          </label>
           <Textarea
+            label="Hechos *"
             {...register('hechos', { required: true })}
             placeholder="Descripcion detallada de los hechos que constituyen la falta..."
             rows={4}
@@ -215,10 +203,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Normas Infringidas
-          </label>
           <Textarea
+            label="Normas Infringidas"
             {...register('normas_infringidas')}
             placeholder="Articulos del reglamento interno, leyes, decretos aplicables..."
             rows={2}
@@ -227,10 +213,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descargos Considerados
-          </label>
           <Textarea
+            label="Descargos Considerados"
             {...register('descargos_considerados')}
             placeholder="Resumen de los descargos presentados por el colaborador"
             rows={2}
@@ -239,10 +223,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Consideraciones
-          </label>
           <Textarea
+            label="Consideraciones"
             {...register('consideraciones')}
             placeholder="Analisis juridico y valoracion de pruebas que fundamentan la decision..."
             rows={3}
@@ -257,10 +239,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Sancion *
-              </label>
               <Select
+                label="Tipo de Sancion *"
                 {...register('sancion_aplicada', { required: true })}
                 options={tipoSancionOptions}
                 error={errors.sancion_aplicada?.message}
@@ -270,10 +250,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
             {sancionAplicada === 'suspension' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Dias de Suspension *
-                  </label>
                   <Input
+                    label="Dias de Suspension *"
                     type="number"
                     {...register('dias_suspension', { valueAsNumber: true })}
                     min={1}
@@ -282,10 +260,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha Inicio Suspension
-                  </label>
                   <Input
+                    label="Fecha Inicio Suspension"
                     type="date"
                     {...register('fecha_inicio_sancion')}
                     error={errors.fecha_inicio_sancion?.message}
@@ -293,10 +269,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha Fin Suspension
-                  </label>
                   <Input
+                    label="Fecha Fin Suspension"
                     type="date"
                     {...register('fecha_fin_sancion')}
                     error={errors.fecha_fin_sancion?.message}
@@ -307,10 +281,8 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
 
             {sancionAplicada === 'multa' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Valor Multa (COP)
-                </label>
                 <Input
+                  label="Valor Multa (COP)"
                   type="number"
                   {...register('valor_multa', { valueAsNumber: true })}
                   min={0}

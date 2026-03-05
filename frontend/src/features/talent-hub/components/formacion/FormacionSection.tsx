@@ -11,89 +11,40 @@
  */
 import { useState } from 'react';
 import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { BarChart3, GraduationCap, CalendarDays, Trophy, Award } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import { PageTabs, type TabItem } from '@/components/layout/PageTabs';
 import { DashboardTab } from './DashboardTab';
 import { CapacitacionesTab } from './CapacitacionesTab';
 import { ProgramacionTab } from './ProgramacionTab';
 import { GamificacionTab } from './GamificacionTab';
 import { CertificadosTab } from './CertificadosTab';
 
-interface SubTab {
-  key: string;
-  label: string;
-  icon: React.ReactNode;
-  component: React.ComponentType | null;
-}
-
-const SUB_TABS: SubTab[] = [
-  {
-    key: 'dashboard',
-    label: 'Dashboard',
-    icon: <BarChart3 size={16} />,
-    component: DashboardTab,
-  },
-  {
-    key: 'capacitaciones',
-    label: 'Capacitaciones',
-    icon: <GraduationCap size={16} />,
-    component: CapacitacionesTab,
-  },
-  {
-    key: 'programacion',
-    label: 'Programacion',
-    icon: <CalendarDays size={16} />,
-    component: ProgramacionTab,
-  },
-  {
-    key: 'gamificacion',
-    label: 'Gamificacion',
-    icon: <Trophy size={16} />,
-    component: GamificacionTab,
-  },
-  {
-    key: 'certificados',
-    label: 'Certificados',
-    icon: <Award size={16} />,
-    component: CertificadosTab,
-  },
+const TABS: TabItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { id: 'capacitaciones', label: 'Capacitaciones', icon: GraduationCap },
+  { id: 'programacion', label: 'Programación', icon: CalendarDays },
+  { id: 'gamificacion', label: 'Gamificación', icon: Trophy },
+  { id: 'certificados', label: 'Certificados', icon: Award },
 ];
+
+const TAB_COMPONENTS: Record<string, React.ComponentType | null> = {
+  dashboard: DashboardTab,
+  capacitaciones: CapacitacionesTab,
+  programacion: ProgramacionTab,
+  gamificacion: GamificacionTab,
+  certificados: CertificadosTab,
+};
 
 export const FormacionSection = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const currentTab = SUB_TABS.find((t) => t.key === activeTab) || SUB_TABS[0];
-  const TabComponent = currentTab.component;
+  const currentTab = TABS.find((t) => t.id === activeTab) || TABS[0];
+  const TabComponent = TAB_COMPONENTS[activeTab] ?? null;
 
   return (
     <div className="space-y-4">
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Sub-tabs de formacion">
-          {SUB_TABS.map((tab) => {
-            const isActive = tab.key === activeTab;
-            return (
-              <Button
-                key={tab.key}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'flex items-center gap-2 !px-4 !py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap rounded-none',
-                  isActive
-                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
+      <PageTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} variant="underline" />
 
       {TabComponent ? (
         <TabComponent />
@@ -102,11 +53,11 @@ export const FormacionSection = () => {
           <EmptyState
             icon={
               <div className="p-3 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
-                {currentTab.icon}
+                {currentTab.icon && <currentTab.icon size={16} />}
               </div>
             }
             title={currentTab.label}
-            description="Seccion en desarrollo."
+            description="Sección en desarrollo."
           />
         </Card>
       )}

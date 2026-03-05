@@ -10,13 +10,14 @@
  * - Toggle envio de email automatico
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
 import { Select } from '@/components/forms/Select';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Spinner } from '@/components/common/Spinner';
 import { Send, ClipboardCheck, Mail, Calendar } from 'lucide-react';
 import {
@@ -130,7 +131,28 @@ export const AsignarPruebaModal = ({ isOpen, onClose, candidatoId }: AsignarPrue
   const isLoading = createMutation.isPending;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Asignar Prueba" size="md">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Asignar Prueba"
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isLoading}
+            isLoading={isLoading}
+          >
+            <Send size={16} className="mr-1" />
+            Asignar Prueba
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-5">
         {/* Info */}
         <Alert
@@ -225,19 +247,12 @@ export const AsignarPruebaModal = ({ isOpen, onClose, candidatoId }: AsignarPrue
             min={1}
             max={90}
           />
-          <div className="flex flex-col justify-end">
-            <label className="flex items-center gap-2 cursor-pointer select-none py-2">
-              <input
-                type="checkbox"
-                checked={enviarEmail}
-                onChange={(e) => setEnviarEmail(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                <Mail size={14} />
-                Enviar email al candidato
-              </span>
-            </label>
+          <div className="flex flex-col justify-end pb-2">
+            <Checkbox
+              label="Enviar email al candidato"
+              checked={enviarEmail}
+              onChange={(e) => setEnviarEmail((e.target as HTMLInputElement).checked)}
+            />
           </div>
         </div>
 
@@ -249,23 +264,7 @@ export const AsignarPruebaModal = ({ isOpen, onClose, candidatoId }: AsignarPrue
           placeholder="Instrucciones adicionales para el candidato..."
           rows={2}
         />
-
-        {/* Actions */}
-        <div className="flex gap-3 justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={!canSubmit || isLoading}
-            isLoading={isLoading}
-          >
-            <Send size={16} className="mr-1" />
-            Asignar Prueba
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

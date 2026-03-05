@@ -11,97 +11,39 @@
  */
 import { useState } from 'react';
 import { LayoutDashboard, Clock, UserCheck, Timer, FileText } from 'lucide-react';
-import { cn } from '@/utils/cn';
-import { Button } from '@/components/common/Button';
+import { PageTabs, type TabItem } from '@/components/layout/PageTabs';
 import { DashboardTiempo } from './DashboardTiempo';
 import { TurnosTab } from './TurnosTab';
 import { AsistenciaTab } from './AsistenciaTab';
 import { HorasExtrasTab } from './HorasExtrasTab';
 import { ConsolidadosTab } from './ConsolidadosTab';
 
-interface SubTab {
-  key: string;
-  label: string;
-  icon: React.ReactNode;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  component: React.ComponentType<any>;
-}
-
-const SUB_TABS: SubTab[] = [
-  {
-    key: 'dashboard',
-    label: 'Dashboard',
-    icon: <LayoutDashboard size={16} />,
-    component: DashboardTiempo,
-  },
-  {
-    key: 'turnos',
-    label: 'Turnos',
-    icon: <Clock size={16} />,
-    component: TurnosTab,
-  },
-  {
-    key: 'asistencia',
-    label: 'Asistencia',
-    icon: <UserCheck size={16} />,
-    component: AsistenciaTab,
-  },
-  {
-    key: 'horas-extras',
-    label: 'Horas Extras',
-    icon: <Timer size={16} />,
-    component: HorasExtrasTab,
-  },
-  {
-    key: 'consolidados',
-    label: 'Consolidados',
-    icon: <FileText size={16} />,
-    component: ConsolidadosTab,
-  },
+const TABS: TabItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'turnos', label: 'Turnos', icon: Clock },
+  { id: 'asistencia', label: 'Asistencia', icon: UserCheck },
+  { id: 'horas-extras', label: 'Horas Extras', icon: Timer },
+  { id: 'consolidados', label: 'Consolidados', icon: FileText },
 ];
 
 export const ControlTiempoSection = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const currentTab = SUB_TABS.find((t) => t.key === activeTab) || SUB_TABS[0];
-  const TabComponent = currentTab.component;
-
   return (
     <div className="space-y-4">
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav
-          className="-mb-px flex gap-1 overflow-x-auto"
-          aria-label="Sub-tabs de control de tiempo"
-        >
-          {SUB_TABS.map((tab) => {
-            const isActive = tab.key === activeTab;
-            return (
-              <Button
-                key={tab.key}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  'flex items-center gap-2 !px-4 !py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap rounded-none',
-                  isActive
-                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-              </Button>
-            );
-          })}
-        </nav>
-      </div>
+      <PageTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} variant="underline" />
 
       {activeTab === 'dashboard' ? (
         <DashboardTiempo onNavigateTab={setActiveTab} />
-      ) : (
-        <TabComponent />
-      )}
+      ) : activeTab === 'turnos' ? (
+        <TurnosTab />
+      ) : activeTab === 'asistencia' ? (
+        <AsistenciaTab />
+      ) : activeTab === 'horas-extras' ? (
+        <HorasExtrasTab />
+      ) : activeTab === 'consolidados' ? (
+        <ConsolidadosTab />
+      ) : null}
     </div>
   );
 };

@@ -15,7 +15,7 @@ import type { EntregaActivoFormData } from '../../types';
 const TIPO_ACTIVO_OPTIONS = [
   { value: 'computador', label: 'Computador' },
   { value: 'celular', label: 'Celular Corporativo' },
-  { value: 'radio', label: 'Radio de Comunicacion' },
+  { value: 'radio', label: 'Radio de Comunicación' },
   { value: 'vehiculo', label: 'Vehiculo' },
   { value: 'herramienta', label: 'Herramienta' },
   { value: 'uniforme', label: 'Uniforme' },
@@ -132,10 +132,10 @@ export const EntregaActivoFormModal = ({ isOpen, onClose }: Props) => {
             {...register('tipo_activo', { required: 'Selecciona el tipo' })}
           />
           <Input
-            label="Descripcion"
-            placeholder="Descripcion del activo..."
+            label="Descripción"
+            placeholder="Descripción del activo..."
             error={errors.descripcion?.message}
-            {...register('descripcion', { required: 'La descripcion es obligatoria' })}
+            {...register('descripcion', { required: 'La descripción es obligatoria' })}
           />
         </div>
 

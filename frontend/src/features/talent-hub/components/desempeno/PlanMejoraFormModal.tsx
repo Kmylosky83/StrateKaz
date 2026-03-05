@@ -106,6 +106,9 @@ export const PlanMejoraFormModal = ({ plan, isOpen, onClose }: Props) => {
   }, [isOpen, plan, reset]);
 
   const onSubmit = async (data: PlanMejoraFormData) => {
+    // Clean FK value 0 to avoid "Clave primaria '0' inválida"
+    if (!data.colaborador) delete data.colaborador;
+    if (!data.responsable) delete data.responsable;
     await createMutation.mutateAsync(data);
     onClose();
   };

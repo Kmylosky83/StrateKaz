@@ -131,6 +131,9 @@ export const queryKeys = {
   systemModules: createQueryKeys('system-modules'),
   branding: createQueryKeys('branding'),
   empresa: createQueryKeys('empresa'),
+
+  // Talent Hub
+  peopleAnalytics: createQueryKeys('people-analytics'),
 } as const;
 
 /**

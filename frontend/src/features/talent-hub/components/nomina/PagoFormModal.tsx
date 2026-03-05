@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
+import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -144,11 +145,10 @@ export const PagoFormModal = ({ isOpen, onClose }: PagoFormModalProps) => {
         />
 
         {/* Info */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-sm text-blue-800 dark:text-blue-300">
-            Al registrar este pago, la liquidación se marcará como pagada automáticamente.
-          </p>
-        </div>
+        <Alert
+          variant="info"
+          message="Al registrar este pago, la liquidación se marcará como pagada automáticamente."
+        />
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

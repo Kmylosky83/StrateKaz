@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Button } from '@/components/common/Button';
 import { Plus, Trash2 } from 'lucide-react';
 import { useCreateEntregaDotacion, useUpdateEntregaDotacion } from '../../hooks/useNovedades';
@@ -145,18 +146,14 @@ export const EntregaDotacionFormModal = ({
             control={control}
             rules={{ required: 'El colaborador es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Colaborador *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={colaboradoresOptions}
-                  error={errors.colaborador?.message}
-                />
-              </div>
+              <Select
+                label="Colaborador *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={colaboradoresOptions}
+                error={errors.colaborador?.message}
+              />
             )}
           />
 
@@ -165,16 +162,12 @@ export const EntregaDotacionFormModal = ({
             control={control}
             rules={{ required: 'El periodo es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Periodo *
-                </label>
-                <Select
-                  {...field}
-                  options={periodoDotacionOptions}
-                  error={errors.periodo?.message}
-                />
-              </div>
+              <Select
+                label="Periodo *"
+                {...field}
+                options={periodoDotacionOptions}
+                error={errors.periodo?.message}
+              />
             )}
           />
 
@@ -183,18 +176,14 @@ export const EntregaDotacionFormModal = ({
             control={control}
             rules={{ required: 'El año es requerido' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Año *
-                </label>
-                <Select
-                  {...field}
-                  value={String(field.value)}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  options={anioOptions}
-                  error={errors.anio?.message}
-                />
-              </div>
+              <Select
+                label="Año *"
+                {...field}
+                value={String(field.value)}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+                options={anioOptions}
+                error={errors.anio?.message}
+              />
             )}
           />
 
@@ -203,12 +192,12 @@ export const EntregaDotacionFormModal = ({
             control={control}
             rules={{ required: 'La fecha de entrega es requerida' }}
             render={({ field }) => (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Entrega *
-                </label>
-                <Input type="date" {...field} error={errors.fecha_entrega?.message} />
-              </div>
+              <Input
+                label="Fecha Entrega *"
+                type="date"
+                {...field}
+                error={errors.fecha_entrega?.message}
+              />
             )}
           />
 
@@ -217,17 +206,7 @@ export const EntregaDotacionFormModal = ({
             control={control}
             render={({ field }) => (
               <div className="flex items-center h-full pt-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Firma recibida
-                  </span>
-                </label>
+                <Checkbox label="Firma recibida" checked={field.value} onChange={field.onChange} />
               </div>
             )}
           />

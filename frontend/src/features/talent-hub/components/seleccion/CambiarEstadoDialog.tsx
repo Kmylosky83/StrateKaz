@@ -9,7 +9,7 @@
  * - Campos adicionales si el estado es 'contratado' (fecha, salario)
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Select } from '@/components/forms/Select';
@@ -122,7 +122,28 @@ export const CambiarEstadoDialog = ({ candidato, isOpen, onClose }: CambiarEstad
   if (!candidato) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Cambiar Estado" size="md">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Cambiar Estado"
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button
+            variant={isRechazar ? 'danger' : 'primary'}
+            onClick={handleSubmit}
+            disabled={!canSubmit || isLoading || estadosDisponibles.length === 0}
+            isLoading={isLoading}
+          >
+            <Check size={16} className="mr-1" />
+            {isContratar ? 'Contratar' : isRechazar ? 'Rechazar Candidato' : 'Cambiar Estado'}
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-5">
         {/* Current state */}
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
@@ -230,23 +251,7 @@ export const CambiarEstadoDialog = ({ candidato, isOpen, onClose }: CambiarEstad
             message={`El candidato se encuentra en estado "${candidato.estado_display}" que es un estado final. No se puede cambiar.`}
           />
         )}
-
-        {/* Actions */}
-        <div className="flex gap-3 justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
-          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant={isRechazar ? 'danger' : 'primary'}
-            onClick={handleSubmit}
-            disabled={!canSubmit || isLoading || estadosDisponibles.length === 0}
-            isLoading={isLoading}
-          >
-            <Check size={16} className="mr-1" />
-            {isContratar ? 'Contratar' : isRechazar ? 'Rechazar Candidato' : 'Cambiar Estado'}
-          </Button>
-        </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

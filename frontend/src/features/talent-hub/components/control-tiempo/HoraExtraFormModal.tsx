@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
+import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -129,13 +130,11 @@ export const HoraExtraFormModal = ({ isOpen, onClose }: Props) => {
           {...register('justificacion', { required: 'La justificación es obligatoria' })}
         />
 
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="text-xs text-blue-700 dark:text-blue-300">
-            <strong>Ley 2466/2025:</strong> Los recargos se calculan automáticamente según el tipo
-            de hora extra: Diurna 25%, Nocturna 75%, Dominical/Festiva 75%, Dominical Nocturna 110%.
-            Las horas trabajadas se auto-calculan desde hora inicio/fin.
-          </p>
-        </div>
+        <Alert
+          variant="info"
+          title="Ley 2466/2025"
+          message="Los recargos se calculan automáticamente según el tipo de hora extra: Diurna 25%, Nocturna 75%, Dominical/Festiva 75%, Dominical Nocturna 110%. Las horas trabajadas se auto-calculan desde hora inicio/fin."
+        />
       </form>
     </BaseModal>
   );

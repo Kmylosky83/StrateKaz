@@ -13,6 +13,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { Alert } from '@/components/common/Alert';
 import { ChevronLeft, ChevronRight, Check, Briefcase, FileText, Globe } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -542,15 +543,13 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
                 placeholder="0"
               />
               <div className="flex items-end pb-2">
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.salario_oculto || false}
-                    onChange={(e) => updateField('salario_oculto', e.target.checked)}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  Ocultar salario
-                </label>
+                <Checkbox
+                  label="Ocultar salario"
+                  checked={formData.salario_oculto || false}
+                  onChange={(e) =>
+                    updateField('salario_oculto', (e.target as HTMLInputElement).checked)
+                  }
+                />
               </div>
             </div>
 
@@ -581,15 +580,13 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
 
             {/* Publicacion */}
             <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.publicada_externamente || false}
-                  onChange={(e) => updateField('publicada_externamente', e.target.checked)}
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                Publicar externamente
-              </label>
+              <Checkbox
+                label="Publicar externamente"
+                checked={formData.publicada_externamente || false}
+                onChange={(e) =>
+                  updateField('publicada_externamente', (e.target as HTMLInputElement).checked)
+                }
+              />
               {formData.publicada_externamente && (
                 <Input
                   label="URL de Publicacion"

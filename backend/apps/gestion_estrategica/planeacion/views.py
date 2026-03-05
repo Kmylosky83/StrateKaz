@@ -291,7 +291,7 @@ class StrategicObjectiveViewSet(ResumenRevisionMixin, StandardViewSetMixin, Orde
             for n in normas
         ])
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='update-progress')
     def update_progress(self, request, pk=None):
         """Actualiza el progreso del objetivo"""
         objective = self.get_object()
@@ -309,7 +309,7 @@ class StrategicObjectiveViewSet(ResumenRevisionMixin, StandardViewSetMixin, Orde
             'status': objective.status
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='by-perspective')
     def by_perspective(self, request):
         """Retorna objetivos agrupados por perspectiva BSC"""
         plan_id = request.query_params.get('plan')
@@ -756,7 +756,7 @@ class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     # -- Actions --
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='transition-status')
     def transition_status(self, request, pk=None):
         """Transiciona el estado del cambio"""
         cambio = self.get_object()

@@ -88,7 +88,7 @@ class ModuloInduccionViewSet(viewsets.ModelViewSet):
         serializer = ModuloInduccionListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Retorna módulos agrupados por tipo."""
         queryset = self.get_queryset()
@@ -114,7 +114,7 @@ class AsignacionPorCargoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-cargo')
     def por_cargo(self, request):
         """Retorna asignaciones para un cargo específico."""
         cargo_id = request.query_params.get('cargo_id')
@@ -173,7 +173,7 @@ class ChecklistIngresoViewSet(viewsets.ModelViewSet):
         checklist.save()
         return Response({'status': 'Verificado exitosamente'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna checklist completo de un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -251,7 +251,7 @@ class EjecucionIntegralViewSet(viewsets.ModelViewSet):
         ejecucion.save()
         return Response({'status': 'Inducción completada'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna inducciones de un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -316,7 +316,7 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
             entregado_por=self.request.user
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Retorna EPP que están próximos a vencer."""
         dias = int(request.query_params.get('dias', 30))
@@ -330,7 +330,7 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
         serializer = EntregaEPPListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna EPP entregados a un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -369,7 +369,7 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
             entregado_por=self.request.user
         )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-devolucion')
     def registrar_devolucion(self, request, pk=None):
         """Registra la devolución de un activo."""
         activo = self.get_object()
@@ -382,7 +382,7 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
         )
         return Response({'status': 'Devolución registrada'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-devolucion')
     def pendientes_devolucion(self, request):
         """Retorna activos pendientes de devolución."""
         queryset = self.get_queryset().filter(
@@ -392,7 +392,7 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
         serializer = EntregaActivoListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna activos asignados a un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -425,7 +425,7 @@ class FirmaDocumentoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-firmado')
     def marcar_firmado(self, request, pk=None):
         """Marca un documento como firmado."""
         documento = self.get_object()
@@ -436,7 +436,7 @@ class FirmaDocumentoViewSet(viewsets.ModelViewSet):
         documento.save()
         return Response({'status': 'Documento marcado como firmado'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna documentos de un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')

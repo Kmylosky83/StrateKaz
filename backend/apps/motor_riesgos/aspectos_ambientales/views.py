@@ -105,7 +105,7 @@ class AspectoAmbientalViewSet(viewsets.ModelViewSet):
         serializer = AspectoAmbientalListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='incumplimiento-legal')
     def incumplimiento_legal(self, request):
         """Aspectos que no cumplen normatividad legal"""
         queryset = self.get_queryset().filter(cumplimiento_legal=False)
@@ -143,7 +143,7 @@ class ImpactoAmbientalViewSet(viewsets.ModelViewSet):
             empresa_id=empresa.id if empresa else None
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-componente')
     def por_componente(self, request):
         """Impactos agrupados por componente ambiental"""
         empresa = get_tenant_empresa(auto_create=False)
@@ -304,7 +304,7 @@ class MonitoreoAmbientalViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-rango-fechas')
     def por_rango_fechas(self, request):
         """Monitoreos en un rango de fechas"""
         fecha_inicio = request.query_params.get('fecha_inicio')

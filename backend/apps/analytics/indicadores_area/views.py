@@ -30,7 +30,7 @@ class ValorKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='registrar-valor')
     def registrar_valor(self, request):
         """Registrar un nuevo valor de KPI"""
         data = request.data.copy()
@@ -40,7 +40,7 @@ class ValorKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         self.perform_create(serializer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='ultimos-valores')
     def ultimos_valores(self, request):
         """Obtener los últimos N valores de un KPI"""
         kpi_id = request.query_params.get('kpi_id')
@@ -115,14 +115,14 @@ class AlertaKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-leida')
     def marcar_leida(self, request, pk=None):
         """Marcar alerta como leída"""
         alerta = self.get_object()
         alerta.marcar_como_leida(request.user)
         return Response({'success': True, 'message': 'Alerta marcada como leída'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-leidas')
     def no_leidas(self, request):
         """Obtener alertas no leídas"""
         alertas = self.get_queryset().filter(esta_leida=False)

@@ -12,10 +12,28 @@ import type {
   TipoRequisito,
   RequisitoLegal,
   EmpresaRequisito,
-  RequisitoLegalFilters,
-  EmpresaRequisitoFilters,
-  CreateEmpresaRequisitoDTO,
+  EmpresaRequisitoCreate,
 } from '../types';
+
+// Local filter types
+interface RequisitoLegalFilters {
+  tipo?: number;
+  aplica_sst?: boolean;
+  aplica_ambiental?: boolean;
+  aplica_calidad?: boolean;
+  aplica_pesv?: boolean;
+  es_obligatorio?: boolean;
+  search?: string;
+}
+
+interface EmpresaRequisitoFilters {
+  empresa_id?: number;
+  requisito?: number;
+  estado?: string;
+  responsable?: number;
+  fecha_vencimiento_desde?: string;
+  fecha_vencimiento_hasta?: string;
+}
 
 // ==================== QUERY KEYS ====================
 
@@ -41,7 +59,7 @@ export const requisitosKeys = {
 export const useTiposRequisito = () => {
   return useGenericCRUD<TipoRequisito>({
     queryKey: requisitosKeys.tiposRequisito,
-    endpoint: '/cumplimiento/requisitos-legales/tipos/',
+    endpoint: '/cumplimiento/requisitos-legales/tipos-requisito/',
     entityName: 'Tipo de Requisito',
     isPaginated: true,
   });
@@ -72,7 +90,7 @@ export const useEmpresaRequisitos = (filters?: EmpresaRequisitoFilters) => {
 export const useVencimientos = (empresaId: number, dias?: number) => {
   return useQuery({
     queryKey: requisitosKeys.vencimientos(empresaId, dias),
-    queryFn: () => empresaRequisitosApi.getVencimientos(empresaId, dias),
+    queryFn: () => empresaRequisitosApi.getPorVencer(empresaId, dias),
     enabled: !!empresaId,
   });
 };
@@ -81,7 +99,7 @@ export const useRenovarRequisito = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateEmpresaRequisitoDTO }) =>
+    mutationFn: ({ id, data }: { id: number; data: EmpresaRequisitoCreate }) =>
       empresaRequisitosApi.renovar(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: requisitosKeys.empresaRequisitos() });
@@ -119,7 +137,7 @@ export const useCreateEmpresaRequisitoWithFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateEmpresaRequisitoDTO) => empresaRequisitosApi.create(data),
+    mutationFn: (data: EmpresaRequisitoCreate) => empresaRequisitosApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: requisitosKeys.empresaRequisitos() });
       toast.success('Requisito de empresa creado exitosamente');
@@ -134,7 +152,7 @@ export const useUpdateEmpresaRequisitoWithFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CreateEmpresaRequisitoDTO }) =>
+    mutationFn: ({ id, data }: { id: number; data: EmpresaRequisitoCreate }) =>
       empresaRequisitosApi.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: requisitosKeys.empresaRequisitos() });

@@ -210,7 +210,7 @@ class StockProductoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='liberar-reserva')
     def liberar_reserva(self, request, pk=None):
         """
         Libera una cantidad previamente reservada.
@@ -239,7 +239,7 @@ class StockProductoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """
         Lista stocks próximos a vencer (menos de 30 días).

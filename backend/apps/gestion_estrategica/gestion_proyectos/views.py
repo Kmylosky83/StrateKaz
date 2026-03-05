@@ -203,7 +203,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'total_programas': total_programas,
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-estado')
     def por_estado(self, request):
         """Retorna proyectos agrupados por estado"""
         empresa = get_tenant_empresa(auto_create=False)
@@ -218,7 +218,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response(resultado)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         """Cambia el estado de un proyecto"""
         proyecto = self.get_object()
@@ -238,7 +238,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'estado': proyecto.estado
         })
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='crear-desde-cambio')
     def crear_desde_cambio(self, request):
         """
         Crea un proyecto a partir de un registro de Gestión de Cambios.
@@ -320,7 +320,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'proyecto': ProyectoSerializer(proyecto).data
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='crear-desde-estrategia-tows')
     def crear_desde_estrategia_tows(self, request):
         """
         Crea un proyecto a partir de una Estrategia TOWS.
@@ -383,7 +383,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'proyecto': ProyectoSerializer(proyecto).data
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='origenes-choices')
     def origenes_choices(self, request):
         """Retorna las opciones de origen de proyectos"""
         return Response({
@@ -412,7 +412,7 @@ class InteresadoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filterset_fields = ['proyecto', 'nivel_interes', 'nivel_influencia', 'is_internal', 'is_active']
     search_fields = ['nombre', 'cargo_rol', 'organizacion']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='matriz-poder-interes')
     def matriz_poder_interes(self, request):
         """Retorna datos para matriz de poder/interés"""
         proyecto_id = request.query_params.get('proyecto')
@@ -585,7 +585,7 @@ class RiesgoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     search_fields = ['codigo', 'descripcion', 'causa']
     ordering = ['-impacto', '-probabilidad']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='matriz-riesgos')
     def matriz_riesgos(self, request):
         """Retorna datos para matriz de riesgos (probabilidad x impacto)"""
         proyecto_id = request.query_params.get('proyecto')
@@ -635,7 +635,7 @@ class SeguimientoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         proyecto.costo_real = seguimiento.costo_acumulado
         proyecto.save(update_fields=['porcentaje_avance', 'costo_real', 'updated_at'])
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='curva-s')
     def curva_s(self, request):
         """Retorna datos para curva S del proyecto"""
         proyecto_id = request.query_params.get('proyecto')

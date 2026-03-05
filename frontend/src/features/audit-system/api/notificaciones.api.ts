@@ -54,7 +54,7 @@ export const notificacionesAPI = {
    */
   getNoLeidas: async (usuarioId?: number): Promise<Notificacion[]> => {
     const params = usuarioId ? `?usuario_id=${usuarioId}` : '';
-    const response = await axiosInstance.get<Notificacion[]>(`${BASE_URL}/no_leidas/${params}`);
+    const response = await axiosInstance.get<Notificacion[]>(`${BASE_URL}/no-leidas/${params}`);
     return response.data;
   },
 
@@ -70,14 +70,14 @@ export const notificacionesAPI = {
    * Marcar notificación como leída
    */
   marcarLeida: async (id: number): Promise<void> => {
-    await axiosInstance.post(`${BASE_URL}/${id}/marcar_leida/`);
+    await axiosInstance.post(`${BASE_URL}/${id}/marcar-leida/`);
   },
 
   /**
    * Marcar todas las notificaciones como leídas
    */
   marcarTodasLeidas: async (usuarioId: number): Promise<void> => {
-    await axiosInstance.post(`${BASE_URL}/marcar_todas_leidas/`, {
+    await axiosInstance.post(`${BASE_URL}/marcar-todas-leidas/`, {
       usuario_id: usuarioId,
     });
   },

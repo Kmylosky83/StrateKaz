@@ -2,7 +2,8 @@
  * Riesgos Viales — PESV (Resolución 40595/2022)
  *
  * Conecta con backend: /api/riesgos/riesgos-viales/
- * Hooks: useRiesgosViales, useEstadisticasPESV, useIncidentesViales, useInspeccionesVehiculo
+ * Hooks: useRiesgosViales, useEstadisticasRiesgosViales, useEstadisticasIncidentesViales,
+ *        useIncidentesViales, useInspeccionesVehiculo
  */
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
@@ -24,7 +25,8 @@ import { Tabs } from '@/components/common/Tabs';
 import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
 import {
   useRiesgosViales,
-  useEstadisticasPESV,
+  useEstadisticasRiesgosViales,
+  useEstadisticasIncidentesViales,
   useIncidentesViales,
   useInspeccionesVehiculo,
 } from '../hooks/useRiesgosViales';
@@ -53,7 +55,16 @@ export default function RiesgosVialesPage() {
     isLoading: isLoadingRiesgos,
     error: riesgosError,
   } = useRiesgosViales();
-  const { data: estadisticas, isLoading: isLoadingStats } = useEstadisticasPESV();
+  const { data: estadisticasRiesgos, isLoading: isLoadingStatsRiesgos } =
+    useEstadisticasRiesgosViales();
+  const { data: estadisticasIncidentes, isLoading: isLoadingStatsIncidentes } =
+    useEstadisticasIncidentesViales();
+  const isLoadingStats = isLoadingStatsRiesgos || isLoadingStatsIncidentes;
+   
+  const estadisticas = {
+    ...(estadisticasRiesgos ?? {}),
+    ...(estadisticasIncidentes ?? {}),
+  } as Record<string, any>;
   const { data: incidentesData, isLoading: isLoadingIncidentes } = useIncidentesViales();
   const { data: inspeccionesData, isLoading: isLoadingInspecciones } = useInspeccionesVehiculo();
 
@@ -72,44 +83,38 @@ export default function RiesgosVialesPage() {
     return Array.isArray(inspeccionesData) ? inspeccionesData : (inspeccionesData?.results ?? []);
   }, [inspeccionesData]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statsData = estadisticas as Record<string, any> | undefined;
-
   const stats: StatItem[] = useMemo(
     () => [
       {
         label: 'Riesgos Viales',
-        value: statsData?.riesgos?.total ?? riesgos.length,
+        value: estadisticas?.total_riesgos ?? riesgos.length,
         icon: AlertTriangle,
         iconColor: 'danger',
         description: 'Identificados',
       },
       {
         label: 'Incidentes',
-        value: statsData?.incidentes?.total ?? incidentes.length,
+        value: estadisticas?.total_incidentes ?? incidentes.length,
         icon: Activity,
         iconColor: 'warning',
         description: 'Registrados',
       },
       {
         label: 'Inspecciones',
-        value: statsData?.inspecciones?.total ?? inspecciones.length,
+        value: inspecciones.length,
         icon: ClipboardCheck,
         iconColor: 'info',
         description: 'Realizadas',
       },
       {
-        label: 'Tasa Accidentalidad',
-        value:
-          statsData?.indicadores?.tasa_accidentalidad != null
-            ? `${Number(statsData.indicadores.tasa_accidentalidad).toFixed(1)}%`
-            : '-',
+        label: 'Riesgos Críticos',
+        value: estadisticas?.requieren_accion_inmediata ?? '-',
         icon: Shield,
-        iconColor: 'success',
-        description: 'Indicador PESV',
+        iconColor: 'danger',
+        description: 'Requieren atención',
       },
     ],
-    [statsData, riesgos, incidentes, inspecciones]
+    [estadisticas, riesgos, incidentes, inspecciones]
   );
 
   const tabs = [
@@ -199,18 +204,14 @@ export default function RiesgosVialesPage() {
                       >
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(r.nombre ?? r.codigo ?? '-') as string}
+                            {(r.codigo ?? '-') as string}
                           </p>
                           <p className="text-xs text-gray-500 truncate max-w-xs">
-                            {(r.ruta_asociada ?? '') as string}
+                            {(r.descripcion ?? '') as string}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {
-                            ((r.tipo_riesgo as Record<string, unknown>)?.categoria ??
-                              r.tipo_vehiculo ??
-                              '-') as string
-                          }
+                          {(r.tipo_riesgo_categoria ?? r.tipo_vehiculo ?? '-') as string}
                         </td>
                         <td className="px-4 py-3">
                           <Badge
@@ -268,7 +269,7 @@ export default function RiesgosVialesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {incidentes.map((i: Record<string, unknown>) => {
-                    const severidad = (i.severidad ?? '') as SeveridadIncidente;
+                    const gravedad = (i.gravedad ?? '') as SeveridadIncidente;
                     const estadoInv = (i.estado_investigacion ?? '') as EstadoInvestigacion;
                     return (
                       <tr
@@ -277,7 +278,7 @@ export default function RiesgosVialesPage() {
                       >
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(i.codigo ?? '-') as string}
+                            {(i.numero_incidente ?? '-') as string}
                           </p>
                           <p className="text-xs text-gray-500 truncate max-w-xs">
                             {(i.ubicacion ?? i.conductor_nombre ?? '') as string}
@@ -286,10 +287,10 @@ export default function RiesgosVialesPage() {
                         <td className="px-4 py-3">
                           <Badge
                             className={
-                              SEVERIDAD_INCIDENTE_COLORS[severidad] ?? 'bg-gray-100 text-gray-800'
+                              SEVERIDAD_INCIDENTE_COLORS[gravedad] ?? 'bg-gray-100 text-gray-800'
                             }
                           >
-                            {SEVERIDAD_INCIDENTE_LABELS[severidad] ?? severidad ?? '-'}
+                            {SEVERIDAD_INCIDENTE_LABELS[gravedad] ?? gravedad ?? '-'}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
@@ -350,10 +351,10 @@ export default function RiesgosVialesPage() {
                       >
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(ins.placa ?? ins.codigo ?? '-') as string}
+                            {(ins.vehiculo_placa ?? ins.numero_inspeccion ?? '-') as string}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {(ins.marca ?? '') as string} {(ins.modelo ?? '') as string}
+                            {(ins.conductor_nombre ?? '') as string}
                           </p>
                         </td>
                         <td className="px-4 py-3">
@@ -362,12 +363,12 @@ export default function RiesgosVialesPage() {
                               <div
                                 className="h-full bg-blue-500 rounded-full"
                                 style={{
-                                  width: `${Number(ins.porcentaje_cumplimiento ?? 0)}%`,
+                                  width: `${Number(ins.porcentaje_conformidad ?? 0)}%`,
                                 }}
                               />
                             </div>
                             <span className="text-xs text-gray-600 dark:text-gray-400">
-                              {Number(ins.porcentaje_cumplimiento ?? 0)}%
+                              {Number(ins.porcentaje_conformidad ?? 0)}%
                             </span>
                           </div>
                         </td>

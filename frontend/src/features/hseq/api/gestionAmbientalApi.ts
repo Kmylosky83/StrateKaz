@@ -95,7 +95,7 @@ export const tipoResiduoApi = {
   },
 
   porClase: async (): Promise<Record<string, any>> => {
-    const response = await apiClient.get(`${BASE_URL}/tipos-residuos/por_clase/`);
+    const response = await apiClient.get(`${BASE_URL}/tipos-residuos/por-clase/`);
     return response.data;
   },
 };
@@ -135,7 +135,7 @@ export const gestorAmbientalApi = {
   },
 
   verificarLicencia: async (id: number): Promise<any> => {
-    const response = await apiClient.get(`${BASE_URL}/gestores/${id}/licencias_vencidas/`);
+    const response = await apiClient.get(`${BASE_URL}/gestores/${id}/licencias-vencidas/`);
     return response.data;
   },
 };
@@ -189,7 +189,7 @@ export const registroResiduoApi = {
   generarCertificado: async (
     data: GenerarCertificadoDTO
   ): Promise<{ mensaje: string; certificado: CertificadoAmbiental }> => {
-    const response = await apiClient.post(`${BASE_URL}/residuos/generar_certificado/`, data);
+    const response = await apiClient.post(`${BASE_URL}/residuos/generar-certificado/`, data);
     return response.data;
   },
 };
@@ -232,7 +232,7 @@ export const vertimientoApi = {
   getNoConformes: async (
     empresa_id?: number
   ): Promise<{ total: number; vertimientos: Vertimiento[] }> => {
-    const response = await apiClient.get(`${BASE_URL}/vertimientos/no_conformes/`, {
+    const response = await apiClient.get(`${BASE_URL}/vertimientos/no-conformes/`, {
       params: { empresa_id },
     });
     return response.data;
@@ -311,7 +311,7 @@ export const registroEmisionApi = {
   getNoConformes: async (
     empresa_id?: number
   ): Promise<{ total: number; emisiones: RegistroEmision[] }> => {
-    const response = await apiClient.get(`${BASE_URL}/emisiones/no_conformes/`, {
+    const response = await apiClient.get(`${BASE_URL}/emisiones/no-conformes/`, {
       params: { empresa_id },
     });
     return response.data;
@@ -397,7 +397,7 @@ export const consumoRecursoApi = {
     total_costo_anual: number;
     total_emision_co2_anual: number;
   }> => {
-    const response = await apiClient.get(`${BASE_URL}/consumos/resumen_anual/`, {
+    const response = await apiClient.get(`${BASE_URL}/consumos/resumen-anual/`, {
       params: { empresa_id, year },
     });
     return response.data;
@@ -446,7 +446,7 @@ export const huellaCarbonoApi = {
     mensaje: string;
     calculo: CalculoHuellaCarbono;
   }> => {
-    const response = await apiClient.post(`${BASE_URL}/huella-carbono/calcular_huella/`, data);
+    const response = await apiClient.post(`${BASE_URL}/huella-carbono/calcular-huella/`, data);
     return response.data;
   },
 
@@ -477,7 +477,7 @@ export const huellaCarbonoApi = {
       verificado: boolean;
     }>;
   }> => {
-    const response = await apiClient.get(`${BASE_URL}/huella-carbono/comparativa_anual/`, {
+    const response = await apiClient.get(`${BASE_URL}/huella-carbono/comparativa-anual/`, {
       params: { empresa_id },
     });
     return response.data;
@@ -526,7 +526,7 @@ export const certificadoAmbientalApi = {
     total: number;
     certificados: CertificadoAmbiental[];
   }> => {
-    const response = await apiClient.get(`${BASE_URL}/certificados/proximos_vencer/`);
+    const response = await apiClient.get(`${BASE_URL}/certificados/proximos-vencer/`);
     return response.data;
   },
 

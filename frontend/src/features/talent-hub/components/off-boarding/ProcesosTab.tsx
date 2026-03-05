@@ -155,7 +155,7 @@ export function ProcesosTab() {
                         {new Date(proceso.fecha_notificacion).toLocaleDateString('es-CO')}
                       </td>
                       <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(proceso.fecha_efectiva_retiro).toLocaleDateString('es-CO')}
+                        {new Date(proceso.fecha_ultimo_dia_trabajo).toLocaleDateString('es-CO')}
                       </td>
                       <td className="p-3">
                         <span

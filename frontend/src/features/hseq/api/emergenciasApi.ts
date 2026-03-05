@@ -407,7 +407,7 @@ export const simulacroApi = {
   },
 
   programarSimulacro: async (data: any): Promise<Simulacro> => {
-    const response = await apiClient.post(`${BASE_URL}/simulacros/programar_simulacro/`, data);
+    const response = await apiClient.post(`${BASE_URL}/simulacros/programar-simulacro/`, data);
     return response.data;
   },
 
@@ -420,12 +420,12 @@ export const simulacroApi = {
       fue_exitoso?: boolean;
     }
   ): Promise<Simulacro> => {
-    const response = await apiClient.post(`${BASE_URL}/simulacros/${id}/marcar_realizado/`, data);
+    const response = await apiClient.post(`${BASE_URL}/simulacros/${id}/marcar-realizado/`, data);
     return response.data;
   },
 
   registrarEvaluacion: async (data: any): Promise<EvaluacionSimulacro> => {
-    const response = await apiClient.post(`${BASE_URL}/simulacros/registrar_evaluacion/`, data);
+    const response = await apiClient.post(`${BASE_URL}/simulacros/registrar-evaluacion/`, data);
     return response.data;
   },
 };
@@ -502,12 +502,12 @@ export const recursoEmergenciaApi = {
   },
 
   requierenInspeccion: async (): Promise<{ count: number; recursos: RecursoEmergenciaList[] }> => {
-    const response = await apiClient.get(`${BASE_URL}/recursos/requieren_inspeccion/`);
+    const response = await apiClient.get(`${BASE_URL}/recursos/requieren-inspeccion/`);
     return response.data;
   },
 
   porVencer: async (): Promise<{ count: number; recursos: RecursoEmergenciaList[] }> => {
-    const response = await apiClient.get(`${BASE_URL}/recursos/por_vencer/`);
+    const response = await apiClient.get(`${BASE_URL}/recursos/por-vencer/`);
     return response.data;
   },
 };

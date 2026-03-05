@@ -41,7 +41,7 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
       colaborador: 0,
       tipo_falta: 0,
       fecha_memorando: new Date().toISOString().split('T')[0],
-      descargo_relacionado: null,
+      descargo: null,
       antecedentes: '',
       hechos: '',
       normas_infringidas: '',
@@ -64,7 +64,7 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
           colaborador: memorando.colaborador,
           tipo_falta: memorando.tipo_falta,
           fecha_memorando: memorando.fecha_memorando,
-          descargo_relacionado: memorando.descargo_relacionado,
+          descargo: memorando.descargo,
           antecedentes: memorando.antecedentes || '',
           hechos: memorando.hechos,
           normas_infringidas: memorando.normas_infringidas || '',
@@ -81,7 +81,7 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
           colaborador: 0,
           tipo_falta: 0,
           fecha_memorando: new Date().toISOString().split('T')[0],
-          descargo_relacionado: null,
+          descargo: null,
           antecedentes: '',
           hechos: '',
           normas_infringidas: '',
@@ -176,9 +176,9 @@ export const MemorandoFormModal = ({ memorando, isOpen, onClose }: Props) => {
         <div>
           <Select
             label="Descargo Relacionado"
-            {...register('descargo_relacionado', { valueAsNumber: true })}
+            {...register('descargo', { valueAsNumber: true })}
             options={descargoOptions}
-            error={errors.descargo_relacionado?.message}
+            error={errors.descargo?.message}
           />
         </div>
 

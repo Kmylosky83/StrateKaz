@@ -41,7 +41,7 @@ class AlertaGeneradaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(alertas, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-severidad')
     def por_severidad(self, request):
         severidad = request.query_params.get('severidad')
         alertas = self.get_queryset().filter(severidad=severidad)

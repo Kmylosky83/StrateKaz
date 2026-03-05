@@ -98,7 +98,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         description='Marca una notificación específica como leída',
         tags=['Audit System']
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-leida')
     def marcar_leida(self, request, pk=None):
         notif = self.get_object()
         notif.marcar_leida()
@@ -118,7 +118,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             )
         ]
     )
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='marcar-todas-leidas')
     def marcar_todas_leidas(self, request):
         usuario_id = request.data.get('usuario_id')
         Notificacion.objects.filter(usuario_id=usuario_id, esta_leida=False).update(esta_leida=True)
@@ -129,7 +129,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         description='Retorna todas las notificaciones no leídas del usuario actual',
         tags=['Audit System']
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-leidas')
     def no_leidas(self, request):
         # Usar el usuario actual si no se especifica usuario_id
         usuario_id = request.query_params.get('usuario_id', request.user.id)

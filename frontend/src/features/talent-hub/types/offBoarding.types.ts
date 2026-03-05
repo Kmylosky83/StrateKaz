@@ -16,13 +16,40 @@ export type TipoRetiroCode =
   | 'incapacidad_permanente'
   | 'abandono_cargo';
 
-export type EstadoProceso = 'iniciado' | 'en_proceso' | 'pendiente_liquidacion' | 'finalizado' | 'cancelado';
+export type EstadoProceso =
+  | 'iniciado'
+  | 'en_proceso'
+  | 'pendiente_liquidacion'
+  | 'finalizado'
+  | 'cancelado';
 export type EstadoItem = 'pendiente' | 'en_proceso' | 'completado' | 'no_aplica';
-export type TipoPazSalvo = 'herramientas' | 'equipos' | 'documentos' | 'llaves' | 'uniformes' | 'carnet' | 'tarjetas' | 'vehiculo' | 'credenciales' | 'otros';
+export type TipoPazSalvo =
+  | 'herramientas'
+  | 'equipos'
+  | 'documentos'
+  | 'llaves'
+  | 'uniformes'
+  | 'carnet'
+  | 'tarjetas'
+  | 'vehiculo'
+  | 'credenciales'
+  | 'otros';
 export type EstadoPazSalvo = 'pendiente' | 'aprobado' | 'rechazado';
-export type TipoExamenEgreso = 'medico_general' | 'audiometria' | 'optometria' | 'espirometria' | 'laboratorios' | 'psicologico' | 'otros';
+export type TipoExamenEgreso =
+  | 'medico_general'
+  | 'audiometria'
+  | 'optometria'
+  | 'espirometria'
+  | 'laboratorios'
+  | 'psicologico'
+  | 'otros';
 export type ResultadoExamen = 'apto' | 'apto_con_restricciones' | 'no_apto' | 'pendiente';
-export type SatisfaccionGeneral = 'muy_satisfecho' | 'satisfecho' | 'neutral' | 'insatisfecho' | 'muy_insatisfecho';
+export type SatisfaccionGeneral =
+  | 'muy_satisfecho'
+  | 'satisfecho'
+  | 'neutral'
+  | 'insatisfecho'
+  | 'muy_insatisfecho';
 export type EstadoLiquidacionFinal = 'borrador' | 'calculada' | 'aprobada' | 'pagada';
 
 // ============== TIPO RETIRO ==============
@@ -35,7 +62,7 @@ export interface TipoRetiro {
   tipo: TipoRetiroCode;
   requiere_preaviso: boolean;
   dias_preaviso: number;
-  genera_indemnizacion: boolean;
+  requiere_indemnizacion: boolean;
   descripcion: string;
   created_at: string;
   updated_at: string;
@@ -48,7 +75,7 @@ export interface TipoRetiroFormData {
   tipo: TipoRetiroCode;
   requiere_preaviso?: boolean;
   dias_preaviso?: number;
-  genera_indemnizacion?: boolean;
+  requiere_indemnizacion?: boolean;
   descripcion?: string;
 }
 
@@ -64,7 +91,7 @@ export interface ProcesoRetiro {
   tipo_retiro: number;
   tipo_retiro_nombre: string;
   fecha_notificacion: string;
-  fecha_efectiva_retiro: string;
+  fecha_ultimo_dia_trabajo: string;
   motivo_retiro: string;
   carta_renuncia: string;
   carta_terminacion: string;
@@ -83,7 +110,7 @@ export interface ProcesoRetiroFormData {
   colaborador: number;
   tipo_retiro: number;
   fecha_notificacion: string;
-  fecha_efectiva_retiro: string;
+  fecha_ultimo_dia_trabajo: string;
   motivo_retiro: string;
 }
 
@@ -185,9 +212,9 @@ export interface ExamenEgreso {
   empresa: number;
   proceso_retiro: number;
   tipo_examen: TipoExamenEgreso;
-  fecha_programada: string;
+  fecha_examen: string;
   fecha_realizado: string | null;
-  entidad_salud: string;
+  entidad_prestadora: string;
   resultado: ResultadoExamen;
   concepto_medico: string;
   restricciones: string;
@@ -202,8 +229,8 @@ export interface ExamenEgreso {
 export interface ExamenEgresoFormData {
   proceso_retiro: number;
   tipo_examen: TipoExamenEgreso;
-  fecha_programada: string;
-  entidad_salud: string;
+  fecha_examen: string;
+  entidad_prestadora: string;
 }
 
 export interface ExamenEgresoFilter {

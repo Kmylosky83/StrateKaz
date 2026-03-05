@@ -233,13 +233,13 @@ export const medicionAmbientalApi = {
 
   evaluarCumplimiento: async (id: number): Promise<MedicionAmbiental> => {
     const response = await apiClient.post(
-      `${BASE_URL}/mediciones-ambientales/${id}/evaluar_cumplimiento/`
+      `${BASE_URL}/mediciones-ambientales/${id}/evaluar-cumplimiento/`
     );
     return response.data;
   },
 
   proximasMediciones: async (): Promise<MedicionAmbientalList[]> => {
-    const response = await apiClient.get(`${BASE_URL}/mediciones-ambientales/proximas_mediciones/`);
+    const response = await apiClient.get(`${BASE_URL}/mediciones-ambientales/proximas-mediciones/`);
     return response.data;
   },
 };
@@ -286,7 +286,7 @@ export const controlExposicionApi = {
   },
 
   porJerarquia: async (): Promise<Record<string, ControlExposicionList[]>> => {
-    const response = await apiClient.get(`${BASE_URL}/controles-exposicion/por_jerarquia/`);
+    const response = await apiClient.get(`${BASE_URL}/controles-exposicion/por-jerarquia/`);
     return response.data;
   },
 
@@ -348,7 +348,7 @@ export const monitoreoBiologicoApi = {
     count: number;
     examenes: MonitoreoBiologicoList[];
   }> => {
-    const response = await apiClient.get(`${BASE_URL}/monitoreo-biologico/alertas_seguimiento/`);
+    const response = await apiClient.get(`${BASE_URL}/monitoreo-biologico/alertas-seguimiento/`);
     return response.data;
   },
 };

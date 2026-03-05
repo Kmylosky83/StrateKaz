@@ -96,7 +96,7 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
         serializer = FlowNodeSerializer(nodos, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='agregar-nodo')
     def agregar_nodo(self, request, pk=None):
         """Agrega un nodo al flujo"""
         flujo = self.get_object()
@@ -108,7 +108,7 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='validar-usuario')
     def validar_usuario(self, request, pk=None):
         """Valida si un usuario puede participar en el flujo"""
         flujo = self.get_object()
@@ -312,7 +312,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
         # TODO: Crear notificación para el siguiente firmante
         # Integrar con sistema de notificaciones
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='validar-integridad')
     def validar_integridad(self, request, pk=None):
         """Valida la integridad de una firma"""
         firma = self.get_object()
@@ -573,7 +573,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                 documento.save(update_fields=['status', 'updated_at'])
             logger.info(f"Politica {documento.pk} transicionada a VIGENTE (todas las firmas completadas)")
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='asignar-firmantes')
     def asignar_firmantes(self, request):
         """
         Asigna firmantes a un documento en estado BORRADOR/EN_REVISION.
@@ -685,7 +685,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             'documento_nuevo_estado': getattr(documento, 'estado', ''),
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-firmas-pendientes')
     def mis_firmas_pendientes(self, request):
         """
         Obtiene las firmas pendientes del usuario actual.
@@ -835,7 +835,7 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-delegaciones-vigentes')
     def mis_delegaciones_vigentes(self, request):
         """Obtiene las delegaciones vigentes del usuario"""
         user = request.user
@@ -881,7 +881,7 @@ class ConfiguracionRevisionViewSet(viewsets.ModelViewSet):
             is_active=True
         ).select_related('responsable_revision', 'responsable_escalamiento', 'flujo_firma_renovacion')
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='calcular-proxima-revision')
     def calcular_proxima_revision(self, request, pk=None):
         """Calcula la próxima fecha de revisión"""
         configuracion = self.get_object()
@@ -917,7 +917,7 @@ class AlertaRevisionViewSet(viewsets.ModelViewSet):
             'configuracion_revision', 'atendida_por', 'tarea', 'notificacion'
         ).prefetch_related('destinatarios').distinct()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-atendida')
     def marcar_atendida(self, request, pk=None):
         """Marca una alerta como atendida"""
         alerta = self.get_object()
@@ -930,7 +930,7 @@ class AlertaRevisionViewSet(viewsets.ModelViewSet):
             'alerta': AlertaRevisionSerializer(alerta).data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-alertas-pendientes')
     def mis_alertas_pendientes(self, request):
         """Obtiene las alertas pendientes del usuario"""
         user = request.user
@@ -945,7 +945,7 @@ class AlertaRevisionViewSet(viewsets.ModelViewSet):
             'alertas': AlertaRevisionSerializer(alertas, many=True).data
         })
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='crear-alertas-documento')
     def crear_alertas_documento(self, request):
         """Crea alertas para un documento específico"""
         from django.contrib.contenttypes.models import ContentType
@@ -1034,7 +1034,7 @@ class HistorialVersionViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(comparacion)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='comparar-versiones')
     def comparar_versiones(self, request):
         """Compara dos versiones específicas"""
         version_1_id = request.data.get('version_1_id')
@@ -1061,7 +1061,7 @@ class HistorialVersionViewSet(viewsets.ReadOnlyModelViewSet):
             'cambios': version_2.cambios_realizados
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-documento')
     def por_documento(self, request):
         """Obtiene todas las versiones de un documento"""
         content_type_id = request.query_params.get('content_type_id')
@@ -1102,7 +1102,7 @@ class WorkflowPoliticasViewSet(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='iniciar-revision')
     def iniciar_revision(self, request):
         """Inicia el proceso de revisión de un documento"""
         serializer = IniciarRevisionSerializer(data=request.data)
@@ -1156,7 +1156,7 @@ class WorkflowPoliticasViewSet(viewsets.ViewSet):
             'motivo': serializer.validated_data['motivo']
         })
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='renovar-politica')
     def renovar_politica(self, request):
         """Renueva una política vencida o próxima a vencer"""
         serializer = RenovarPoliticaSerializer(data=request.data)
@@ -1177,7 +1177,7 @@ class WorkflowPoliticasViewSet(viewsets.ViewSet):
             'tipo': serializer.validated_data['tipo_renovacion']
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='estado-documento')
     def estado_documento(self, request):
         """Consulta el estado completo de un documento en el workflow"""
         content_type_id = request.query_params.get('content_type_id')

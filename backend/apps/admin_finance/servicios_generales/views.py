@@ -231,7 +231,7 @@ class ServicioPublicoViewSet(viewsets.ModelViewSet):
             return ServicioPublicoListSerializer
         return ServicioPublicoSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='servicios-por-vencer')
     def servicios_por_vencer(self, request):
         """
         Lista servicios próximos a vencer (próximos 7 días).
@@ -257,7 +257,7 @@ class ServicioPublicoViewSet(viewsets.ModelViewSet):
             'servicios': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-consumos')
     def resumen_consumos(self, request):
         """
         Resumen de consumos por tipo de servicio.
@@ -297,7 +297,7 @@ class ServicioPublicoViewSet(viewsets.ModelViewSet):
             'total_servicios': totales['total_servicios']
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-pagado')
     def marcar_pagado(self, request, pk=None):
         """Marca un servicio como pagado."""
         servicio = self.get_object()
@@ -351,7 +351,7 @@ class ContratoServicioViewSet(viewsets.ModelViewSet):
             return ContratoServicioListSerializer
         return ContratoServicioSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='contratos-vigentes')
     def contratos_vigentes(self, request):
         """Lista contratos actualmente vigentes."""
         hoy = timezone.now().date()
@@ -375,7 +375,7 @@ class ContratoServicioViewSet(viewsets.ModelViewSet):
             'contratos': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='contratos-por-vencer')
     def contratos_por_vencer(self, request):
         """
         Lista contratos próximos a vencer (próximos 30 días).
@@ -418,7 +418,7 @@ class ContratoServicioViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(contrato)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-por-proveedor')
     def resumen_por_proveedor(self, request):
         """Resumen de contratos agrupados por proveedor."""
         queryset = self.get_queryset().filter(

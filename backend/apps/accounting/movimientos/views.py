@@ -80,13 +80,13 @@ class ComprobanteContableViewSet(viewsets.ModelViewSet):
         log_financial_operation(request, comprobante, 'aprobado')
         return Response({'status': 'aprobado', 'mensaje': f'Comprobante {comprobante.numero_comprobante} aprobado.'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='recalcular-totales')
     def recalcular_totales(self, request, pk=None):
         comprobante = self.get_object()
         comprobante.calcular_totales()
         return Response({'status': 'recalculado', 'total_debito': comprobante.total_debito, 'total_credito': comprobante.total_credito, 'diferencia': comprobante.diferencia})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-periodo')
     def por_periodo(self, request):
         periodo = request.query_params.get('periodo')
         if not periodo:
@@ -147,7 +147,7 @@ class AsientoPlantillaViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='generar-comprobante')
     def generar_comprobante(self, request, pk=None):
         plantilla = self.get_object()
         fecha_str = request.data.get('fecha_comprobante')

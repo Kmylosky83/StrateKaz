@@ -198,7 +198,7 @@ class IncapacidadViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(incapacidad)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='radicar-cobro')
     def radicar_cobro(self, request, pk=None):
         """Radicar cobro a EPS/ARL"""
         incapacidad = self.get_object()
@@ -223,7 +223,7 @@ class IncapacidadViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(incapacidad)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='calcular-dias')
     def calcular_dias(self, request, pk=None):
         """Calcular días de incapacidad incluyendo prórrogas"""
         incapacidad = self.get_object()
@@ -342,7 +342,7 @@ class LicenciaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(licencia)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-aprobacion')
     def pendientes_aprobacion(self, request):
         """Listar licencias pendientes de aprobación"""
         queryset = self.get_queryset().filter(estado='solicitada')
@@ -426,7 +426,7 @@ class PermisoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(permiso)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Listar permisos de un colaborador específico"""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -477,7 +477,7 @@ class PeriodoVacacionesViewSet(viewsets.ModelViewSet):
         """Actualizar usuario de modificación"""
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='actualizar-acumulacion')
     def actualizar_acumulacion(self, request, pk=None):
         """Actualizar acumulación de días hasta hoy"""
         periodo = self.get_object()
@@ -486,7 +486,7 @@ class PeriodoVacacionesViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(periodo)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Obtener período de un colaborador específico"""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -594,7 +594,7 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(solicitud)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='calcular-dias')
     def calcular_dias(self, request, pk=None):
         """Calcular días hábiles de la solicitud"""
         solicitud = self.get_object()
@@ -607,7 +607,7 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
             'dias_pendientes': solicitud.periodo.dias_pendientes
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-aprobacion')
     def pendientes_aprobacion(self, request):
         """Listar solicitudes pendientes de aprobación"""
         queryset = self.get_queryset().filter(estado='solicitada')

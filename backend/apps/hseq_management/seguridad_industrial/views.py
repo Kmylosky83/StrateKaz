@@ -83,7 +83,7 @@ class PermisoTrabajoViewSet(viewsets.ModelViewSet):
             return PermisoTrabajoListSerializer
         return PermisoTrabajoSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='aprobar-permiso')
     def aprobar_permiso(self, request, pk=None):
         """
         Aprobar permiso de trabajo (SST u Operaciones)
@@ -131,7 +131,7 @@ class PermisoTrabajoViewSet(viewsets.ModelViewSet):
             'permiso': PermisoTrabajoSerializer(permiso).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-permiso')
     def cerrar_permiso(self, request, pk=None):
         """
         Cerrar permiso de trabajo completado
@@ -166,7 +166,7 @@ class PermisoTrabajoViewSet(viewsets.ModelViewSet):
             'permiso': PermisoTrabajoSerializer(permiso).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
     def iniciar_ejecucion(self, request, pk=None):
         """
         Iniciar ejecución del permiso
@@ -293,7 +293,7 @@ class InspeccionViewSet(viewsets.ModelViewSet):
             return InspeccionCreateSerializer
         return InspeccionSerializer
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='crear-desde-plantilla')
     @transaction.atomic
     def crear_desde_plantilla(self, request):
         """
@@ -343,7 +343,7 @@ class InspeccionViewSet(viewsets.ModelViewSet):
             'items_creados': len(items_creados)
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-inspeccion')
     @transaction.atomic
     def completar_inspeccion(self, request, pk=None):
         """
@@ -403,7 +403,7 @@ class InspeccionViewSet(viewsets.ModelViewSet):
             'inspeccion': InspeccionSerializer(inspeccion).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='generar-hallazgo')
     def generar_hallazgo(self, request, pk=None):
         """
         Generar hallazgo/no conformidad desde item de inspección
@@ -521,7 +521,7 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
             return EntregaEPPListSerializer
         return EntregaEPPSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-devolucion')
     def registrar_devolucion(self, request, pk=None):
         """
         Registrar devolución de EPP
@@ -547,7 +547,7 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
             'entrega': EntregaEPPSerializer(entrega).data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximas-reposiciones')
     def proximas_reposiciones(self, request):
         """
         Obtener EPPs que próximamente requieren reposición
@@ -632,7 +632,7 @@ class ProgramaSeguridadViewSet(viewsets.ModelViewSet):
             return ProgramaSeguridadListSerializer
         return ProgramaSeguridadSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='actualizar-avance')
     def actualizar_avance(self, request, pk=None):
         """
         Actualizar porcentaje de avance del programa
@@ -655,7 +655,7 @@ class ProgramaSeguridadViewSet(viewsets.ModelViewSet):
             'programa': ProgramaSeguridadSerializer(programa).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-revision')
     def registrar_revision(self, request, pk=None):
         """
         Registrar revisión del programa

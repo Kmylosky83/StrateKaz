@@ -232,7 +232,7 @@ class PeriodoNominaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(periodo)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-periodo')
     def cerrar_periodo(self, request, pk=None):
         """Cerrar periodo definitivamente."""
         periodo = self.get_object()

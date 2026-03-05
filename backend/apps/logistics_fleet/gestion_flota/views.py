@@ -138,7 +138,7 @@ class VehiculoViewSet(viewsets.ModelViewSet):
             'results': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='documentos-vencidos')
     def documentos_vencidos(self, request):
         """
         GET /api/fleet/vehiculos/documentos_vencidos/
@@ -191,7 +191,7 @@ class VehiculoViewSet(viewsets.ModelViewSet):
             'results': vehiculos_alerta
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximos-mantenimientos')
     def proximos_mantenimientos(self, request):
         """
         GET /api/fleet/vehiculos/proximos_mantenimientos/
@@ -521,7 +521,7 @@ class VerificacionTerceroViewSet(viewsets.ModelViewSet):
             'results': vehiculos_data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-conformes')
     def no_conformes(self, request):
         """
         GET /api/fleet/verificaciones/no_conformes/

@@ -103,15 +103,11 @@ export const rbacAPI = {
   /**
    * Asignar roles por defecto a cargo
    */
-  assignRolesToCargo: async (
-    id: number,
-    role_ids: number[],
-    replace = false
-  ): Promise<Cargo> => {
-    const response = await axiosInstance.post<Cargo>(
-      `/core/cargos-rbac/${id}/assign_roles/`,
-      { role_ids, replace }
-    );
+  assignRolesToCargo: async (id: number, role_ids: number[], replace = false): Promise<Cargo> => {
+    const response = await axiosInstance.post<Cargo>(`/core/cargos-rbac/${id}/assign_roles/`, {
+      role_ids,
+      replace,
+    });
     return response.data;
   },
 
@@ -195,10 +191,10 @@ export const rbacAPI = {
     permission_ids: number[],
     replace = false
   ): Promise<Role> => {
-    const response = await axiosInstance.post<Role>(
-      `/core/roles/${id}/assign_permissions/`,
-      { permission_ids, replace }
-    );
+    const response = await axiosInstance.post<Role>(`/core/roles/${id}/assign_permissions/`, {
+      permission_ids,
+      replace,
+    });
     return response.data;
   },
 
@@ -262,15 +258,11 @@ export const rbacAPI = {
   /**
    * Agregar usuarios a grupo
    */
-  addUsersToGroup: async (
-    id: number,
-    user_ids: number[],
-    leader_id?: number
-  ): Promise<Group> => {
-    const response = await axiosInstance.post<Group>(
-      `/core/groups/${id}/add_users/`,
-      { user_ids, leader_id }
-    );
+  addUsersToGroup: async (id: number, user_ids: number[], leader_id?: number): Promise<Group> => {
+    const response = await axiosInstance.post<Group>(`/core/groups/${id}/add_users/`, {
+      user_ids,
+      leader_id,
+    });
     return response.data;
   },
 
@@ -291,15 +283,11 @@ export const rbacAPI = {
   /**
    * Asignar roles a grupo
    */
-  assignRolesToGroup: async (
-    id: number,
-    role_ids: number[],
-    replace = false
-  ): Promise<Group> => {
-    const response = await axiosInstance.post<Group>(
-      `/core/groups/${id}/assign_roles/`,
-      { role_ids, replace }
-    );
+  assignRolesToGroup: async (id: number, role_ids: number[], replace = false): Promise<Group> => {
+    const response = await axiosInstance.post<Group>(`/core/groups/${id}/assign_roles/`, {
+      role_ids,
+      replace,
+    });
     return response.data;
   },
 
@@ -366,7 +354,7 @@ export const rbacAPI = {
     }>;
     total_sections: number;
   }> => {
-    const response = await axiosInstance.get(`/core/cargos-rbac/${cargoId}/section_accesses/`);
+    const response = await axiosInstance.get(`/core/cargos-rbac/${cargoId}/section-accesses/`);
     return response.data;
   },
 
@@ -385,10 +373,13 @@ export const rbacAPI = {
     sections_removed: number;
     total_sections: number;
   }> => {
-    const response = await axiosInstance.post(`/core/cargos-rbac/${cargoId}/assign_section_accesses/`, {
-      section_ids,
-      replace,
-    });
+    const response = await axiosInstance.post(
+      `/core/cargos-rbac/${cargoId}/assign-section-accesses/`,
+      {
+        section_ids,
+        replace,
+      }
+    );
     return response.data;
   },
 
@@ -416,10 +407,13 @@ export const rbacAPI = {
     sections_updated: number;
     total_sections: number;
   }> => {
-    const response = await axiosInstance.post(`/core/cargos-rbac/${cargoId}/assign_section_accesses/`, {
-      accesses,
-      replace,
-    });
+    const response = await axiosInstance.post(
+      `/core/cargos-rbac/${cargoId}/assign-section-accesses/`,
+      {
+        accesses,
+        replace,
+      }
+    );
     return response.data;
   },
 

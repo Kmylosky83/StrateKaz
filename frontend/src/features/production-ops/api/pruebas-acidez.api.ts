@@ -140,7 +140,7 @@ export const pruebaAcidezApi = {
    * Exportar pruebas a Excel
    */
   exportExcel: async (params?: Record<string, unknown>): Promise<Blob> => {
-    const response = await apiClient.get(`${BASE_URL}/export_excel/`, {
+    const response = await apiClient.get(`${BASE_URL}/export-excel/`, {
       params,
       responseType: 'blob',
     });

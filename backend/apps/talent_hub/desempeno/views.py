@@ -71,7 +71,7 @@ class CicloEvaluacionViewSet(viewsets.ModelViewSet):
         ciclo.save()
         return Response({'status': 'Ciclo activado'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-evaluacion')
     def iniciar_evaluacion(self, request, pk=None):
         """Inicia el período de evaluación."""
         ciclo = self.get_object()
@@ -118,7 +118,7 @@ class CompetenciaEvaluacionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Retorna competencias agrupadas por tipo."""
         queryset = self.get_queryset()
@@ -167,7 +167,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-autoevaluacion')
     def iniciar_autoevaluacion(self, request, pk=None):
         """Inicia la autoevaluación."""
         evaluacion = self.get_object()
@@ -176,7 +176,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         evaluacion.save()
         return Response({'status': 'Autoevaluación iniciada'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-autoevaluacion')
     def completar_autoevaluacion(self, request, pk=None):
         """Completa la autoevaluación."""
         evaluacion = self.get_object()
@@ -188,7 +188,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         evaluacion.save()
         return Response({'status': 'Autoevaluación completada'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='evaluar-jefe')
     def evaluar_jefe(self, request, pk=None):
         """Registra la evaluación del jefe."""
         evaluacion = self.get_object()
@@ -233,7 +233,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         evaluacion.save()
         return Response({'status': 'Evaluación firmada y completada'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='asignar-par')
     def asignar_par(self, request, pk=None):
         """Asigna un evaluador par."""
         evaluacion = self.get_object()
@@ -246,14 +246,14 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         )
         return Response({'status': 'Evaluador par asignado'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-evaluaciones')
     def mis_evaluaciones(self, request):
         """Evaluaciones donde el usuario es evaluador."""
         evaluaciones = self.get_queryset().filter(jefe_evaluador=request.user)
         serializer = EvaluacionDesempenoListSerializer(evaluaciones, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-pares')
     def pendientes_pares(self, request):
         """Evaluaciones pendientes como par."""
         asignaciones = EvaluadorPar.objects.filter(
@@ -341,7 +341,7 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
         plan.save()
         return Response({'status': 'Plan completado'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='agregar-seguimiento')
     def agregar_seguimiento(self, request, pk=None):
         """Agrega un registro de seguimiento."""
         plan = self.get_object()
@@ -361,7 +361,7 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
         plan.save(update_fields=['porcentaje_avance'])
         return Response({'status': 'Seguimiento registrado'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """Retorna planes de un colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -463,7 +463,7 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
         reconocimiento.entregar()
         return Response({'status': 'Reconocimiento entregado'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='publicar-muro')
     def publicar_muro(self, request, pk=None):
         """Publica en el muro de reconocimientos."""
         reconocimiento = self.get_object()
@@ -479,7 +479,7 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
         reconocimiento.save()
         return Response({'status': 'Publicado en muro'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-reconocimientos')
     def mis_reconocimientos(self, request):
         """Reconocimientos del usuario actual."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -489,7 +489,7 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
         serializer = ReconocimientoListSerializer(reconocimientos, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-aprobacion')
     def pendientes_aprobacion(self, request):
         """Reconocimientos pendientes de aprobación."""
         reconocimientos = self.get_queryset().filter(estado='pendiente')
@@ -509,7 +509,7 @@ class MuroReconocimientosViewSet(viewsets.ModelViewSet):
             is_active=True
         ).select_related('reconocimiento__colaborador', 'reconocimiento__tipo_reconocimiento')
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='dar-like')
     def dar_like(self, request, pk=None):
         """Incrementa los likes."""
         publicacion = self.get_object()
@@ -581,7 +581,7 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
         serializer = DesempenoEstadisticasSerializer(data)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='distribucion-calificaciones')
     def distribucion_calificaciones(self, request):
         """Distribución de calificaciones del ciclo actual."""
         ciclo_id = request.query_params.get('ciclo_id')
@@ -610,7 +610,7 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
 
         return Response(distribucion)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='top-reconocidos')
     def top_reconocidos(self, request):
         """Colaboradores más reconocidos."""
         limite = int(request.query_params.get('limite', 10))

@@ -107,7 +107,7 @@ class ConductorViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(conductores, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='licencias-por-vencer')
     def licencias_por_vencer(self, request):
         """Conductores con licencia próxima a vencer (30 días)."""
         hoy = timezone.now().date()
@@ -309,7 +309,7 @@ class DespachoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(despacho)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='reportar-novedad')
     def reportar_novedad(self, request, pk=None):
         """Registrar novedad en el despacho."""
         despacho = self.get_object()

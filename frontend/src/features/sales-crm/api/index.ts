@@ -109,7 +109,7 @@ export const clientesApi = {
   },
 
   actualizarScoring: async (id: number): Promise<ScoringCliente> => {
-    const response = await apiClient.post(`${BASE_URL}/clientes/${id}/actualizar_scoring/`);
+    const response = await apiClient.post(`${BASE_URL}/clientes/${id}/actualizar-scoring/`);
     return response.data;
   },
 
@@ -266,17 +266,17 @@ export const oportunidadesApi = {
   },
 
   cambiarEtapa: async (id: number, data: CambiarEtapaOportunidadDTO): Promise<Oportunidad> => {
-    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar_etapa/`, data);
+    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar-etapa/`, data);
     return response.data;
   },
 
   cerrarGanada: async (id: number, data: CerrarGanadaDTO): Promise<Oportunidad> => {
-    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cerrar_ganada/`, data);
+    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cerrar-ganada/`, data);
     return response.data;
   },
 
   cerrarPerdida: async (id: number, data: CerrarPerdidaDTO): Promise<Oportunidad> => {
-    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cerrar_perdida/`, data);
+    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cerrar-perdida/`, data);
     return response.data;
   },
 
@@ -385,7 +385,7 @@ export const cotizacionesApi = {
   },
 
   convertirAPedido: async (id: number): Promise<Pedido> => {
-    const response = await apiClient.post(`${BASE_URL}/cotizaciones/${id}/convertir_pedido/`);
+    const response = await apiClient.post(`${BASE_URL}/cotizaciones/${id}/convertir-pedido/`);
     return response.data;
   },
 };
@@ -438,7 +438,7 @@ export const pedidosApi = {
   },
 
   generarFactura: async (id: number): Promise<Factura> => {
-    const response = await apiClient.post(`${BASE_URL}/pedidos/${id}/generar_factura/`);
+    const response = await apiClient.post(`${BASE_URL}/pedidos/${id}/generar-factura/`);
     return response.data;
   },
 };
@@ -485,7 +485,7 @@ export const facturasApi = {
     id: number,
     data: RegistrarPagoDTO
   ): Promise<{ factura: Factura; pago: PagoFactura }> => {
-    const response = await apiClient.post(`${BASE_URL}/facturas/${id}/registrar_pago/`, data);
+    const response = await apiClient.post(`${BASE_URL}/facturas/${id}/registrar-pago/`, data);
     return response.data;
   },
 
@@ -650,7 +650,7 @@ export const encuestasApi = {
     fecha_desde?: string;
     fecha_hasta?: string;
   }): Promise<NPSDashboard> => {
-    const response = await apiClient.get(`${BASE_URL}/encuestas/nps_dashboard/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/encuestas/nps-dashboard/`, { params });
     return response.data;
   },
 };

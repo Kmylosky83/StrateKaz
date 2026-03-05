@@ -86,7 +86,7 @@ class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             )
         ]
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-categoria')
     def por_categoria(self, request):
         """Obtener KPIs agrupados por categoría"""
         empresa_id = request.query_params.get('empresa_id')
@@ -106,7 +106,7 @@ class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         tags=['Analytics'],
         deprecated=True
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-area')
     def por_area(self, request):
         """Alias de por_categoria para compatibilidad"""
         return self.por_categoria(request)

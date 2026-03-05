@@ -112,7 +112,7 @@ class ExamenMedicoViewSet(viewsets.ModelViewSet):
         """Multi-tenant: schema isolation handles filtering"""
         return super().get_queryset()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """
         Obtener exámenes médicos de un colaborador específico
@@ -242,7 +242,7 @@ class RestriccionMedicaViewSet(viewsets.ModelViewSet):
         # TODO: Implementar filtro por empresa según usuario autenticado
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """
         Obtener restricciones médicas de un colaborador específico
@@ -368,7 +368,7 @@ class ProgramaVigilanciaViewSet(viewsets.ModelViewSet):
             'programas': serializer.data
         })
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='casos-programa')
     def casos_programa(self, request, pk=None):
         """
         Obtener todos los casos de un programa específico
@@ -446,7 +446,7 @@ class CasoVigilanciaViewSet(viewsets.ModelViewSet):
         # TODO: Implementar filtro por empresa según usuario autenticado
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-seguimiento')
     def registrar_seguimiento(self, request, pk=None):
         """
         Registrar un nuevo seguimiento en el caso
@@ -476,7 +476,7 @@ class CasoVigilanciaViewSet(viewsets.ModelViewSet):
         caso_serializer = CasoVigilanciaSerializer(caso)
         return Response(caso_serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-caso')
     def cerrar_caso(self, request, pk=None):
         """
         Cerrar un caso de vigilancia
@@ -507,7 +507,7 @@ class CasoVigilanciaViewSet(viewsets.ModelViewSet):
         caso_serializer = CasoVigilanciaSerializer(caso)
         return Response(caso_serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         """
         Obtener casos de un colaborador específico
@@ -598,7 +598,7 @@ class DiagnosticoOcupacionalViewSet(viewsets.ModelViewSet):
             'diagnosticos': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='requieren-vigilancia')
     def requieren_vigilancia(self, request):
         """Listar diagnósticos que requieren vigilancia epidemiológica"""
         diagnosticos = self.get_queryset().filter(requiere_vigilancia=True)
@@ -650,7 +650,7 @@ class EstadisticaMedicaViewSet(viewsets.ModelViewSet):
         # TODO: Implementar filtro por empresa según usuario autenticado
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-periodo')
     def por_periodo(self, request):
         """
         Obtener estadísticas de un período específico

@@ -8,14 +8,25 @@ import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tiposNormaApi, normasLegalesApi, empresaNormasApi } from '../api';
-import type {
-  TipoNorma,
-  NormaLegal,
-  EmpresaNorma,
-  NormaLegalFilters,
-  EmpresaNormaFilters,
-  PorcentajeCumplimiento,
-} from '../types';
+import type { TipoNorma, NormaLegal, EmpresaNorma, CumplimientoLevel } from '../types';
+
+// Local filter types
+interface NormaLegalFilters {
+  tipo_norma?: number;
+  vigente?: boolean;
+  aplica_sst?: boolean;
+  aplica_ambiental?: boolean;
+  aplica_calidad?: boolean;
+  aplica_pesv?: boolean;
+  search?: string;
+}
+
+interface EmpresaNormaFilters {
+  empresa_id?: number;
+  norma?: number;
+  aplica?: boolean;
+  responsable?: number;
+}
 
 // ==================== QUERY KEYS ====================
 
@@ -99,7 +110,7 @@ export const useEvaluarCumplimiento = () => {
       observaciones,
     }: {
       id: number;
-      porcentaje_cumplimiento: PorcentajeCumplimiento;
+      porcentaje_cumplimiento: CumplimientoLevel;
       fecha_evaluacion: string;
       observaciones?: string;
     }) =>

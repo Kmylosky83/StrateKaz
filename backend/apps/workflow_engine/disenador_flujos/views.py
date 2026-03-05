@@ -100,7 +100,7 @@ class PlantillaFlujoViewSet(viewsets.ModelViewSet):
 
         return Response(self.get_serializer(plantilla).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='crear-nueva-version')
     def crear_nueva_version(self, request, pk=None):
         """Crea una nueva versión de la plantilla"""
         plantilla = self.get_object()
@@ -275,7 +275,7 @@ class FormularioDiligenciadoViewSet(viewsets.ModelViewSet):
 
         return Response(FormularioDiligenciadoDetailSerializer(formulario).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='guardar-respuesta')
     def guardar_respuesta(self, request, pk=None):
         """Guarda o actualiza una respuesta de campo"""
         formulario = self.get_object()
@@ -328,7 +328,7 @@ class FormularioDiligenciadoViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-formularios')
     def mis_formularios(self, request):
         """Lista formularios diligenciados por el usuario actual"""
         queryset = self.get_queryset().filter(diligenciado_por=request.user)
@@ -446,7 +446,7 @@ class AsignacionFormularioViewSet(viewsets.ModelViewSet):
         asignacion.cancelar()
         return Response(AsignacionFormularioDetailSerializer(asignacion).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-asignaciones')
     def mis_asignaciones(self, request):
         """Lista asignaciones pendientes del usuario actual"""
         queryset = self.get_queryset().filter(

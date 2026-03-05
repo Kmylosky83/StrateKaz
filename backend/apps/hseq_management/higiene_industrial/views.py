@@ -82,7 +82,7 @@ class AgenteRiesgoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Obtener agentes agrupados por tipo"""
         empresa_id = request.query_params.get('empresa_id')
@@ -134,7 +134,7 @@ class GrupoExposicionSimilarViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='asignar-agentes')
     def asignar_agentes(self, request, pk=None):
         """Asignar agentes de riesgo a un GES"""
         grupo = self.get_object()
@@ -177,7 +177,7 @@ class PuntoMedicionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-area')
     def por_area(self, request):
         """Obtener puntos de medición agrupados por área"""
         empresa_id = request.query_params.get('empresa_id')
@@ -259,7 +259,7 @@ class MedicionAmbientalViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='registrar-medicion')
     def registrar_medicion(self, request):
         """
         Action para registrar una nueva medición ambiental
@@ -310,7 +310,7 @@ class MedicionAmbientalViewSet(viewsets.ModelViewSet):
         result_serializer = MedicionAmbientalSerializer(medicion)
         return Response(result_serializer.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='evaluar-cumplimiento')
     def evaluar_cumplimiento(self, request, pk=None):
         """
         Action para evaluar o re-evaluar el cumplimiento de una medición
@@ -373,7 +373,7 @@ class MedicionAmbientalViewSet(viewsets.ModelViewSet):
         serializer = EstadisticasMedicionesSerializer(estadisticas)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-conformes')
     def no_conformes(self, request):
         """Obtener mediciones que no cumplen con el límite"""
         empresa_id = request.query_params.get('empresa_id')
@@ -461,7 +461,7 @@ class ControlExposicionViewSet(viewsets.ModelViewSet):
         serializer = EstadisticasControlesSerializer(estadisticas)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-efectividad')
     def registrar_efectividad(self, request, pk=None):
         """Registrar la efectividad medida de un control"""
         control = self.get_object()
@@ -533,7 +533,7 @@ class MonitoreoBiologicoViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-trabajador')
     def por_trabajador(self, request):
         """Obtener historial de exámenes por trabajador"""
         trabajador_id = request.query_params.get('trabajador_identificacion')
@@ -550,7 +550,7 @@ class MonitoreoBiologicoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(examenes, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='seguimiento-pendiente')
     def seguimiento_pendiente(self, request):
         """Obtener exámenes que requieren seguimiento"""
         empresa_id = request.query_params.get('empresa_id')
@@ -569,7 +569,7 @@ class MonitoreoBiologicoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(examenes, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-aptos')
     def no_aptos(self, request):
         """Obtener exámenes con resultado no apto"""
         empresa_id = request.query_params.get('empresa_id')

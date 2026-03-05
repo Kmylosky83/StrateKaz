@@ -85,11 +85,11 @@ export function ProcesoFormModal({ isOpen, onClose }: ProcesoFormModalProps) {
         />
 
         <Input
-          label="Fecha Efectiva de Retiro"
+          label="Fecha Último Día de Trabajo"
           type="date"
-          error={errors.fecha_efectiva_retiro?.message}
-          {...register('fecha_efectiva_retiro', {
-            required: 'La fecha efectiva de retiro es requerida',
+          error={errors.fecha_ultimo_dia_trabajo?.message}
+          {...register('fecha_ultimo_dia_trabajo', {
+            required: 'La fecha del último día de trabajo es requerida',
           })}
         />
 

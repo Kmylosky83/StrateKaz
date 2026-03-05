@@ -43,7 +43,7 @@ class LogAccesoViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['created_at', 'tipo_evento']
     ordering = ['-created_at']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-usuario')
     def por_usuario(self, request):
         """Logs de acceso por usuario"""
         usuario_id = request.query_params.get('usuario_id')
@@ -65,7 +65,7 @@ class LogCambioViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['created_at', 'accion']
     ordering = ['-created_at']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-objeto')
     def por_objeto(self, request):
         """Logs de cambio de un objeto específico"""
         content_type_id = request.query_params.get('content_type_id')
@@ -80,7 +80,7 @@ class LogCambioViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(serializer.data)
         return Response([])
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-usuario')
     def por_usuario(self, request):
         """Logs de cambio por usuario"""
         usuario_id = request.query_params.get('usuario_id')

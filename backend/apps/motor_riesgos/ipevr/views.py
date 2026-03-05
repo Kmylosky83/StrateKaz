@@ -44,7 +44,7 @@ class ClasificacionPeligroViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering_fields = ['orden', 'categoria', 'codigo']
     ordering = ['orden', 'categoria']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-categoria')
     def por_categoria(self, request):
         """Retorna clasificaciones agrupadas por categoria."""
         clasificaciones = self.get_queryset().filter(is_active=True)
@@ -76,7 +76,7 @@ class PeligroGTC45ViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering_fields = ['orden', 'codigo', 'nombre']
     ordering = ['clasificacion', 'orden']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-clasificacion')
     def por_clasificacion(self, request):
         """Retorna peligros agrupados por clasificacion."""
         clasificacion_id = request.query_params.get('clasificacion_id')
@@ -166,7 +166,7 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = MatrizIPEVRListSerializer(criticos, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-area')
     def por_area(self, request):
         """Matrices agrupadas por area."""
         empresa = get_tenant_empresa(auto_create=False)
@@ -181,7 +181,7 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         ).order_by('-total')
         return Response(list(stats))
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-cargo')
     def por_cargo(self, request):
         """Matrices agrupadas por cargo."""
         empresa = get_tenant_empresa(auto_create=False)
@@ -196,7 +196,7 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         ).order_by('-total')
         return Response(list(stats))
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-peligro')
     def por_peligro(self, request):
         """Matrices agrupadas por tipo de peligro."""
         empresa = get_tenant_empresa(auto_create=False)
@@ -214,7 +214,7 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         ).order_by('-total')
         return Response(list(stats))
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         """Cambiar el estado de una matriz IPEVR."""
         matriz = self.get_object()
@@ -266,7 +266,7 @@ class ControlSSTViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(controles, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Estadisticas de controles por tipo."""
         empresa = get_tenant_empresa(auto_create=False)

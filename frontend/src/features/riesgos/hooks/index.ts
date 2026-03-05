@@ -1,5 +1,5 @@
 /**
- * Exportación centralizada de hooks - Motor de Riesgos
+ * Exportacion centralizada de hooks - Motor de Riesgos
  */
 export * from './useContexto';
 export * from './useRiesgos';
@@ -23,10 +23,8 @@ export {
   // Riesgos Viales
   useRiesgosViales,
   useRiesgoVial,
-  useResumenRiesgosViales,
+  useEstadisticasRiesgosViales,
   useRiesgosCriticos as useRiesgosVialesCriticos,
-  useRiesgosAltos,
-  useRiesgosSinControles,
   useRiesgosPorPilar,
   useCreateRiesgoVial,
   useUpdateRiesgoVial,
@@ -34,9 +32,7 @@ export {
   // Controles
   useControlesViales,
   useControlVial,
-  useResumenControlesViales,
   useControlesAtrasados,
-  useControlesIneficaces,
   useControlesPorRiesgo,
   useCreateControlVial,
   useUpdateControlVial,
@@ -44,30 +40,18 @@ export {
   // Incidentes
   useIncidentesViales,
   useIncidenteVial,
-  useResumenIncidentesViales,
-  useIncidentesPendientesInvestigacion,
+  useEstadisticasIncidentesViales,
   useIncidentesGraves,
-  useIncidentesPorRangoFechas,
   useCreateIncidenteVial,
   useUpdateIncidenteVial,
   useDeleteIncidenteVial,
   useIniciarInvestigacion,
-  useCerrarInvestigacion,
-  useReportarARL,
   // Inspecciones
   useInspeccionesVehiculo,
   useInspeccionVehiculo,
-  useResumenInspeccionesVehiculo,
-  useInspeccionesRechazadas,
   useInspeccionesPorPlaca,
   useUltimaInspeccion,
-  usePuedeOperar,
   useCreateInspeccionVehiculo,
   useUpdateInspeccionVehiculo,
   useDeleteInspeccionVehiculo,
-  // Estadisticas
-  useEstadisticasPESV,
-  useIndicadoresPESV,
-  useTendenciasPESV,
-  useDashboardPilares,
 } from './useRiesgosViales';

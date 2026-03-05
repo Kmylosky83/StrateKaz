@@ -259,7 +259,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         description='Recalcula el scoring del cliente basado en su comportamiento de compras y actividad',
         tags=['Sales CRM']
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='actualizar-scoring')
     def actualizar_scoring(self, request, pk=None):
         """
         Recalcular el scoring del cliente.
@@ -285,7 +285,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         description='Retorna el historial completo de compras del cliente con métricas y estadísticas',
         tags=['Sales CRM']
     )
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='historial-compras')
     def historial_compras(self, request, pk=None):
         """
         Obtener historial de compras del cliente.
@@ -1052,7 +1052,7 @@ class InteraccionClienteViewSet(viewsets.ModelViewSet):
         """Actualizar usuario de modificación."""
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximas-acciones')
     def proximas_acciones(self, request):
         """
         Listar seguimientos pendientes.

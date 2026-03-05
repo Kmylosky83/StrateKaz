@@ -130,13 +130,13 @@ export const proyectosApi = {
 
   // Proyectos por estado (para Kanban)
   getPorEstado: async (): Promise<Record<string, Proyecto[]>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/proyectos/por_estado/`);
+    const response = await axiosInstance.get(`${BASE_URL}/proyectos/por-estado/`);
     return response.data;
   },
 
   // Cambiar estado del proyecto
   cambiarEstado: async (id: number, estado: string): Promise<Proyecto> => {
-    const response = await axiosInstance.post(`${BASE_URL}/proyectos/${id}/cambiar_estado/`, {
+    const response = await axiosInstance.post(`${BASE_URL}/proyectos/${id}/cambiar-estado/`, {
       estado,
     });
     return response.data;
@@ -148,7 +148,7 @@ export const proyectosApi = {
     data: { health_status: string; health_notes?: string }
   ): Promise<Proyecto> => {
     const response = await axiosInstance.post(
-      `${BASE_URL}/proyectos/${id}/actualizar_salud/`,
+      `${BASE_URL}/proyectos/${id}/actualizar-salud/`,
       data
     );
     return response.data;
@@ -158,7 +158,7 @@ export const proyectosApi = {
   crearDesdeCambio: async (
     data: CreateProyectoDesdeCambioDTO
   ): Promise<{ detail: string; proyecto: Proyecto }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/proyectos/crear_desde_cambio/`, data);
+    const response = await axiosInstance.post(`${BASE_URL}/proyectos/crear-desde-cambio/`, data);
     return response.data;
   },
 
@@ -167,7 +167,7 @@ export const proyectosApi = {
     estrategia_id: number;
   }): Promise<{ detail: string; proyecto: Proyecto }> => {
     const response = await axiosInstance.post(
-      `${BASE_URL}/proyectos/crear_desde_estrategia_tows/`,
+      `${BASE_URL}/proyectos/crear-desde-estrategia-tows/`,
       data
     );
     return response.data;
@@ -177,7 +177,7 @@ export const proyectosApi = {
   getOrigenesChoices: async (): Promise<{
     tipo_origen: Array<{ value: string; label: string }>;
   }> => {
-    const response = await axiosInstance.get(`${BASE_URL}/proyectos/origenes_choices/`);
+    const response = await axiosInstance.get(`${BASE_URL}/proyectos/origenes-choices/`);
     return response.data;
   },
 };

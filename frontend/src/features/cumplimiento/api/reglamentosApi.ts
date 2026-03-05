@@ -5,14 +5,20 @@
 import axiosInstance from '@/api/axios-config';
 import type {
   TipoReglamento,
-  CreateTipoReglamentoDTO,
-  UpdateTipoReglamentoDTO,
+  TipoReglamentoCreate,
   Reglamento,
-  CreateReglamentoDTO,
-  UpdateReglamentoDTO,
-  ReglamentoFilters,
+  ReglamentoCreate,
+  EstadoReglamento,
   PaginatedResponse,
 } from '../types';
+
+// Local filter type
+interface ReglamentoFilters {
+  empresa_id?: number;
+  tipo?: number;
+  estado?: EstadoReglamento;
+  search?: string;
+}
 
 const BASE_URL = '/cumplimiento/reglamentos-internos';
 
@@ -20,31 +26,31 @@ const BASE_URL = '/cumplimiento/reglamentos-internos';
 
 export const tiposReglamentoApi = {
   getAll: async (): Promise<PaginatedResponse<TipoReglamento>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/tipos/`);
+    const response = await axiosInstance.get(`${BASE_URL}/tipos-reglamento/`);
     return response.data;
   },
 
   getById: async (id: number): Promise<TipoReglamento> => {
-    const response = await axiosInstance.get(`${BASE_URL}/tipos/${id}/`);
+    const response = await axiosInstance.get(`${BASE_URL}/tipos-reglamento/${id}/`);
     return response.data;
   },
 
-  create: async (data: CreateTipoReglamentoDTO): Promise<TipoReglamento> => {
-    const response = await axiosInstance.post(`${BASE_URL}/tipos/`, data);
+  create: async (data: TipoReglamentoCreate): Promise<TipoReglamento> => {
+    const response = await axiosInstance.post(`${BASE_URL}/tipos-reglamento/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateTipoReglamentoDTO): Promise<TipoReglamento> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/tipos/${id}/`, data);
+  update: async (id: number, data: Partial<TipoReglamentoCreate>): Promise<TipoReglamento> => {
+    const response = await axiosInstance.patch(`${BASE_URL}/tipos-reglamento/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/tipos/${id}/`);
+    await axiosInstance.delete(`${BASE_URL}/tipos-reglamento/${id}/`);
   },
 
   reorder: async (items: { id: number; orden: number }[]): Promise<void> => {
-    await axiosInstance.post(`${BASE_URL}/tipos/reorder/`, { items });
+    await axiosInstance.post(`${BASE_URL}/tipos-reglamento/reorder/`, { items });
   },
 };
 
@@ -61,10 +67,10 @@ export const reglamentosApi = {
     return response.data;
   },
 
-  create: async (data: CreateReglamentoDTO): Promise<Reglamento> => {
+  create: async (data: ReglamentoCreate): Promise<Reglamento> => {
     const isFormData = data.documento instanceof File;
 
-    let formData: FormData | CreateReglamentoDTO = data;
+    let formData: FormData | ReglamentoCreate = data;
 
     if (isFormData && data.documento) {
       formData = new FormData();
@@ -85,10 +91,10 @@ export const reglamentosApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateReglamentoDTO): Promise<Reglamento> => {
+  update: async (id: number, data: Partial<ReglamentoCreate>): Promise<Reglamento> => {
     const isFormData = data.documento instanceof File;
 
-    let formData: FormData | UpdateReglamentoDTO = data;
+    let formData: FormData | Partial<ReglamentoCreate> = data;
 
     if (isFormData && data.documento) {
       formData = new FormData();

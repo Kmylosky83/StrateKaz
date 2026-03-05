@@ -81,7 +81,7 @@ export const normasApi = {
    * Exportar normas a Excel
    */
   exportExcel: async (params?: NormasListParams): Promise<Blob> => {
-    const response = await apiClient.get(`${BASE_URL}/export_excel/`, {
+    const response = await apiClient.get(`${BASE_URL}/export-excel/`, {
       params,
       responseType: 'blob',
     });

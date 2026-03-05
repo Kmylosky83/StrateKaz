@@ -322,7 +322,7 @@ class PQRSViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(pqrs)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='dashboard-pqrs')
     def dashboard_pqrs(self, request):
         """Dashboard con métricas de PQRS"""
         queryset = self.get_queryset()
@@ -406,7 +406,7 @@ class PQRSViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             'proximas_vencer': PQRSListSerializer(proximas, many=True).data,
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-asignadas')
     def mis_asignadas(self, request):
         """Lista PQRS asignadas al usuario actual"""
         queryset = self.get_queryset().filter(
@@ -518,7 +518,7 @@ class EncuestaSatisfaccionViewSet(viewsets.ModelViewSet):
             'categoria_nps': encuesta.categoria_nps
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='nps-dashboard')
     def nps_dashboard(self, request):
         """Dashboard NPS: promotores, pasivos, detractores, score"""
         queryset = self.get_queryset().filter(
@@ -620,7 +620,7 @@ class PuntosFidelizacionViewSet(viewsets.ModelViewSet):
             'cliente', 'programa'
         ).prefetch_related('movimientos').all()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='acumular-puntos')
     def acumular_puntos(self, request, pk=None):
         """Acumula puntos a un cliente"""
         puntos_cliente = self.get_object()
@@ -677,7 +677,7 @@ class PuntosFidelizacionViewSet(viewsets.ModelViewSet):
             'puntos_disponibles': puntos_cliente.puntos_disponibles
         })
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='consultar-saldo')
     def consultar_saldo(self, request, pk=None):
         """Consulta saldo de puntos del cliente"""
         puntos_cliente = self.get_object()

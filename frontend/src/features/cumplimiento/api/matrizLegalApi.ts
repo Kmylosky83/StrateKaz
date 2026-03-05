@@ -5,18 +5,31 @@
 import axiosInstance from '@/api/axios-config';
 import type {
   TipoNorma,
-  CreateTipoNormaDTO,
-  UpdateTipoNormaDTO,
+  TipoNormaCreate,
   NormaLegal,
-  CreateNormaLegalDTO,
-  UpdateNormaLegalDTO,
-  NormaLegalFilters,
+  NormaLegalCreateUpdate,
   EmpresaNorma,
-  CreateEmpresaNormaDTO,
-  UpdateEmpresaNormaDTO,
-  EmpresaNormaFilters,
+  EmpresaNormaCreateUpdate,
   PaginatedResponse,
 } from '../types';
+
+// Local filter types (not in barrel yet)
+interface NormaLegalFilters {
+  tipo_norma?: number;
+  vigente?: boolean;
+  aplica_sst?: boolean;
+  aplica_ambiental?: boolean;
+  aplica_calidad?: boolean;
+  aplica_pesv?: boolean;
+  search?: string;
+}
+
+interface EmpresaNormaFilters {
+  empresa_id?: number;
+  norma?: number;
+  aplica?: boolean;
+  responsable?: number;
+}
 
 const BASE_URL = '/cumplimiento/matriz-legal';
 
@@ -33,12 +46,12 @@ export const tiposNormaApi = {
     return response.data;
   },
 
-  create: async (data: CreateTipoNormaDTO): Promise<TipoNorma> => {
+  create: async (data: TipoNormaCreate): Promise<TipoNorma> => {
     const response = await axiosInstance.post(`${BASE_URL}/tipos-norma/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateTipoNormaDTO): Promise<TipoNorma> => {
+  update: async (id: number, data: Partial<TipoNormaCreate>): Promise<TipoNorma> => {
     const response = await axiosInstance.patch(`${BASE_URL}/tipos-norma/${id}/`, data);
     return response.data;
   },
@@ -61,12 +74,12 @@ export const normasLegalesApi = {
     return response.data;
   },
 
-  create: async (data: CreateNormaLegalDTO): Promise<NormaLegal> => {
+  create: async (data: NormaLegalCreateUpdate): Promise<NormaLegal> => {
     const response = await axiosInstance.post(`${BASE_URL}/normas/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateNormaLegalDTO): Promise<NormaLegal> => {
+  update: async (id: number, data: Partial<NormaLegalCreateUpdate>): Promise<NormaLegal> => {
     const response = await axiosInstance.patch(`${BASE_URL}/normas/${id}/`, data);
     return response.data;
   },
@@ -98,12 +111,12 @@ export const empresaNormasApi = {
     return response.data;
   },
 
-  create: async (data: CreateEmpresaNormaDTO): Promise<EmpresaNorma> => {
+  create: async (data: EmpresaNormaCreateUpdate): Promise<EmpresaNorma> => {
     const response = await axiosInstance.post(`${BASE_URL}/empresa-normas/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateEmpresaNormaDTO): Promise<EmpresaNorma> => {
+  update: async (id: number, data: Partial<EmpresaNormaCreateUpdate>): Promise<EmpresaNorma> => {
     const response = await axiosInstance.patch(`${BASE_URL}/empresa-normas/${id}/`, data);
     return response.data;
   },

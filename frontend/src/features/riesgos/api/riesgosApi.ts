@@ -96,7 +96,7 @@ export const riesgosApi = {
   },
 
   cambiarEstado: async (id: number, estado: string): Promise<RiesgoProceso> => {
-    const response = await apiClient.post(`${BASE_URL}/riesgos/${id}/cambiar_estado/`, { estado });
+    const response = await apiClient.post(`${BASE_URL}/riesgos/${id}/cambiar-estado/`, { estado });
     return response.data;
   },
 };
@@ -159,7 +159,7 @@ export const tratamientosApi = {
   },
 
   actualizarAvance: async (id: number, porcentaje: number): Promise<TratamientoRiesgo> => {
-    const response = await apiClient.post(`${BASE_URL}/tratamientos/${id}/actualizar_avance/`, {
+    const response = await apiClient.post(`${BASE_URL}/tratamientos/${id}/actualizar-avance/`, {
       porcentaje_avance: porcentaje,
     });
     return response.data;
@@ -202,7 +202,7 @@ export const oportunidadesApi = {
   },
 
   cambiarEstado: async (id: number, estado: string): Promise<Oportunidad> => {
-    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar_estado/`, {
+    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar-estado/`, {
       estado,
     });
     return response.data;

@@ -168,7 +168,7 @@ export function ExamenesTab() {
                           </span>
                         </td>
                         <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                          {new Date(examen.fecha_programada).toLocaleDateString('es-CO')}
+                          {new Date(examen.fecha_examen).toLocaleDateString('es-CO')}
                         </td>
                         <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
                           {examen.fecha_realizado ? (
@@ -187,7 +187,7 @@ export function ExamenesTab() {
                           )}
                         </td>
                         <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                          {examen.entidad_salud}
+                          {examen.entidad_prestadora}
                         </td>
                         <td className="p-3">
                           {registrandoResultado === examen.id ? (

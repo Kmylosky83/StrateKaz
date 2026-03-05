@@ -148,7 +148,7 @@ class SedeEmpresaViewSet(viewsets.ModelViewSet):
         serializer = SedeEmpresaSerializer(sede, context={'request': request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='set-principal')
     def set_principal(self, request, pk=None):
         """
         Establece una sede como la sede principal.
@@ -284,7 +284,7 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
         serializer = IntegracionExternaChoicesSerializer({})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='test-connection')
     def test_connection(self, request, pk=None):
         """
         MI-001: Prueba la conexión con el servicio externo.
@@ -376,7 +376,7 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='toggle-status')
     def toggle_status(self, request, pk=None):
         """
         Activa o desactiva una integración.
@@ -422,7 +422,7 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
             'porcentaje_uso_limite': integracion.porcentaje_uso_limite,
         })
 
-    @action(detail=True, methods=['put', 'patch'], permission_classes=[IsAuthenticated, IsSuperAdmin])
+    @action(detail=True, methods=['put', 'patch'], permission_classes=[IsAuthenticated, IsSuperAdmin], url_path='update-credentials')
     def update_credentials(self, request, pk=None):
         """
         Actualiza las credenciales de la integración.
@@ -494,7 +494,7 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='clear-errors')
     def clear_errors(self, request, pk=None):
         """
         Limpia la lista de errores recientes de la integración.
@@ -595,7 +595,7 @@ class IconRegistryViewSet(viewsets.ModelViewSet):
         serializer = IconCategorySerializer(categories_data, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
         """
         Obtiene iconos filtrados por categoria.
@@ -631,7 +631,7 @@ class IconRegistryViewSet(viewsets.ModelViewSet):
         serializer = IconRegistryListSerializer(icons, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='load-system-icons')
     def load_system_icons(self, request):
         """
         Carga los iconos base del sistema.
@@ -751,7 +751,7 @@ class NormaISOViewSet(viewsets.ModelViewSet):
             ]
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
         """
         Retorna normas ISO agrupadas por categoría.

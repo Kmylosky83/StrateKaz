@@ -36,9 +36,8 @@ const ESTADO_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'da
 
 const DECISION_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'danger'> = {
   pendiente: 'gray',
-  exonerado: 'success',
+  absuelto: 'success',
   sancionado: 'danger',
-  archivado: 'info',
 };
 
 export const DescargosTab = () => {
@@ -54,7 +53,7 @@ export const DescargosTab = () => {
   const [descargoText, setDescargoText] = useState('');
   const [pruebasText, setPruebasText] = useState('');
   const [testigosText, setTestigosText] = useState('');
-  const [decision, setDecision] = useState<string>('pendiente');
+  const [decision, setDecision] = useState<string>('absuelto');
   const [justificacion, setJustificacion] = useState('');
 
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
@@ -119,7 +118,7 @@ export const DescargosTab = () => {
     };
     await emitirMutation.mutateAsync({ id: emitirDecisionModal.id, data });
     setEmitirDecisionModal(null);
-    setDecision('pendiente');
+    setDecision('absuelto');
     setJustificacion('');
   };
 

@@ -269,7 +269,7 @@ class ReunionViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-asistencia')
     @transaction.atomic
     def registrar_asistencia(self, request, pk=None):
         """
@@ -404,7 +404,7 @@ class ActaReunionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='aprobar-acta')
     @transaction.atomic
     def aprobar_acta(self, request, pk=None):
         """
@@ -455,7 +455,7 @@ class ActaReunionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(acta)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='enviar-revision')
     def enviar_revision(self, request, pk=None):
         """Envía un acta a revisión."""
         acta = self.get_object()
@@ -513,7 +513,7 @@ class CompromisoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximos-vencer')
     def proximos_vencer(self, request):
         """Lista compromisos próximos a vencer (7 días)."""
         empresa_id = request.query_params.get('empresa_id')
@@ -534,7 +534,7 @@ class CompromisoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-compromiso')
     @transaction.atomic
     def cerrar_compromiso(self, request, pk=None):
         """
@@ -577,7 +577,7 @@ class CompromisoViewSet(viewsets.ModelViewSet):
             'compromiso': CompromisoSerializer(compromiso).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='actualizar-avance')
     def actualizar_avance(self, request, pk=None):
         """Actualiza el avance de un compromiso."""
         compromiso = self.get_object()

@@ -113,7 +113,7 @@ class ActivoProduccionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='requiere-mantenimiento')
     def requiere_mantenimiento(self, request):
         """Listar activos que requieren mantenimiento urgente o están vencidos"""
         hoy = date.today()
@@ -228,7 +228,7 @@ class EquipoMedicionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='requiere-calibracion')
     def requiere_calibracion(self, request):
         """Listar equipos que requieren calibración urgente (próximos 30 días)"""
         hoy = date.today()
@@ -464,7 +464,7 @@ class OrdenTrabajoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-estado')
     def por_estado(self, request):
         """Listar órdenes agrupadas por estado"""
         empresa_id = request.query_params.get('empresa_id')

@@ -133,7 +133,7 @@ export const auditoriaApi = {
   uploadPlan: async (id: number, file: File): Promise<Auditoria> => {
     const formData = new FormData();
     formData.append('plan_auditoria', file);
-    const response = await apiClient.post(`${BASE_URL}/auditorias/${id}/upload_plan/`, formData, {
+    const response = await apiClient.post(`${BASE_URL}/auditorias/${id}/upload-plan/`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
@@ -197,7 +197,7 @@ export const hallazgoApi = {
   },
 
   iniciarTratamiento: async (id: number): Promise<Hallazgo> => {
-    const response = await apiClient.post(`${BASE_URL}/hallazgos/${id}/iniciar_tratamiento/`);
+    const response = await apiClient.post(`${BASE_URL}/hallazgos/${id}/iniciar-tratamiento/`);
     return response.data;
   },
 
@@ -279,7 +279,7 @@ export const evaluacionCumplimientoApi = {
   },
 
   porVencer: async (): Promise<{ count: number; evaluaciones: EvaluacionCumplimientoList[] }> => {
-    const response = await apiClient.get(`${BASE_URL}/evaluaciones-cumplimiento/por_vencer/`);
+    const response = await apiClient.get(`${BASE_URL}/evaluaciones-cumplimiento/por-vencer/`);
     return response.data;
   },
 };

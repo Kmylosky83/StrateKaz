@@ -30,7 +30,7 @@ class AnalisisKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-por-direccion')
     def resumen_por_direccion(self, request):
         """Obtener resumen de análisis agrupados por dirección"""
         empresa_id = request.query_params.get('empresa_id')
@@ -62,7 +62,7 @@ class TendenciaKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo-tendencia')
     def por_tipo_tendencia(self, request):
         """Obtener tendencias agrupadas por tipo"""
         empresa_id = request.query_params.get('empresa_id')
@@ -96,7 +96,7 @@ class AnomaliaDetectadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-revisada')
     def marcar_revisada(self, request, pk=None):
         """Marcar anomalía como revisada"""
         from django.utils import timezone
@@ -119,7 +119,7 @@ class AnomaliaDetectadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(anomalia)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-revision')
     def pendientes_revision(self, request):
         """Obtener anomalías pendientes de revisión"""
         empresa_id = request.query_params.get('empresa_id')
@@ -137,7 +137,7 @@ class AnomaliaDetectadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-por-severidad')
     def resumen_por_severidad(self, request):
         """Obtener resumen de anomalías por severidad"""
         empresa_id = request.query_params.get('empresa_id')

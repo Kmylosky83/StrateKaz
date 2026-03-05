@@ -255,7 +255,7 @@ export const tenantsApi = {
   toggleActive: async (
     id: number
   ): Promise<{ id: number; is_active: boolean; message: string }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/tenants/${id}/toggle_active/`);
+    const response = await axiosInstance.post(`${BASE_URL}/tenants/${id}/toggle-active/`);
     return response.data;
   },
 
@@ -348,7 +348,7 @@ export const tenantUsersApi = {
     tenant: string;
     role: string;
   }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/assign_tenant/`, data);
+    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/assign-tenant/`, data);
     return response.data;
   },
 
@@ -356,7 +356,7 @@ export const tenantUsersApi = {
    * Remueve acceso de un usuario a un tenant
    */
   removeTenant: async (userId: number, tenantId: number): Promise<{ message: string }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/remove_tenant/`, {
+    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/remove-tenant/`, {
       tenant_id: tenantId,
     });
     return response.data;

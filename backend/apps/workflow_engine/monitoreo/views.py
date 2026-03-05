@@ -25,7 +25,7 @@ class MetricaFlujoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa())
 
-    @action(detail=False, methods=["post"])
+    @action(detail=False, methods=["post"], url_path='generar-metricas')
     def generar_metricas(self, request):
         """
         Genera métricas reales para una plantilla en un período dado.
@@ -329,7 +329,7 @@ class DashboardWidgetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], url_path='mi-dashboard')
     def mi_dashboard(self, request):
         widgets = self.get_queryset().filter(is_visible=True)
         return Response({"widgets": self.get_serializer(widgets, many=True).data, "total": widgets.count()})
@@ -347,7 +347,7 @@ class ReporteAutomaticoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa())
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path='ejecutar-ahora')
     def ejecutar_ahora(self, request, pk=None):
         reporte = self.get_object()
         reporte.ultimo_envio = timezone.now()

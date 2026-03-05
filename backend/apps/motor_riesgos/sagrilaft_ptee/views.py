@@ -58,7 +58,7 @@ class FactorRiesgoLAFTViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by('tipo_factor', 'codigo')
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Obtiene factores agrupados por tipo"""
         tipos = {}
@@ -172,7 +172,7 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
 
         return Response(resumen)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximas-revisiones')
     def proximas_revisiones(self, request):
         """Matrices que requieren revision proximamente"""
         empresa = get_tenant_empresa(auto_create=False)
@@ -230,7 +230,7 @@ class SenalAlertaViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa(auto_create=False)
         serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='asignar-analista')
     def asignar_analista(self, request, pk=None):
         """Asigna un analista a la señal"""
         senal = self.get_object()
@@ -263,7 +263,7 @@ class SenalAlertaViewSet(viewsets.ModelViewSet):
         )
         return Response(SenalAlertaListSerializer(queryset, many=True).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='requieren-ros')
     def requieren_ros(self, request):
         """Senales que requieren ROS"""
         queryset = self.get_queryset().filter(
@@ -306,7 +306,7 @@ class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa(auto_create=False)
         serializer.save(empresa_id=empresa.id if empresa else None, elaborado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='enviar-uiaf')
     def enviar_uiaf(self, request, pk=None):
         """Marca el ROS como enviado a UIAF"""
         ros = self.get_object()
@@ -321,7 +321,7 @@ class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
         ros.save()
         return Response(ReporteOperacionSospechosaDetailSerializer(ros).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-envio')
     def pendientes_envio(self, request):
         """ROS aprobados pendientes de envío"""
         queryset = self.get_queryset().filter(estado='APROBADO')
@@ -370,7 +370,7 @@ class DebidaDiligenciaViewSet(viewsets.ModelViewSet):
         )
         return Response(DebidaDiligenciaListSerializer(queryset, many=True).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximas-actualizacion')
     def proximas_actualizacion(self, request):
         """Diligencias que requieren actualización próximamente"""
         hoy = timezone.now().date()

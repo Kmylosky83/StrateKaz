@@ -82,7 +82,7 @@ class NormaLegalViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return NormaLegalCreateUpdateSerializer
         return NormaLegalSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='by-sistema')
     def by_sistema(self, request):
         """Filtra normas por sistema de gestión"""
         sistema = request.query_params.get('sistema', '').lower()
@@ -223,7 +223,7 @@ class EmpresaNormaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'normas': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-evaluacion')
     def pendientes_evaluacion(self, request):
         """Retorna normas pendientes de evaluación"""
         empresa_id = request.query_params.get('empresa')

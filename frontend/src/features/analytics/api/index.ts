@@ -32,12 +32,12 @@ export const catalogoKPIApi = {
     apiClient.patch<CatalogoKPI>(`${API_BASE}/config/kpis/${id}/`, data),
   delete: (id: number) => apiClient.delete(`${API_BASE}/config/kpis/${id}/`),
   porCategoria: (categoria: string) =>
-    apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por_categoria/?categoria=${categoria}`),
+    apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por-categoria/?categoria=${categoria}`),
   porArea: (areaId: number) =>
-    apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por_area/?area=${areaId}`),
+    apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por-area/?area=${areaId}`),
   porPerspectiva: (perspectiva: string) =>
     apiClient.get<CatalogoKPI[]>(
-      `${API_BASE}/config/kpis/por_perspectiva/?perspectiva=${perspectiva}`
+      `${API_BASE}/config/kpis/por-perspectiva/?perspectiva=${perspectiva}`
     ),
 };
 
@@ -47,7 +47,7 @@ export const fichasTecnicasApi = {
   getById: (id: number) =>
     apiClient.get<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/${id}/`),
   getByKPI: (kpiId: number) =>
-    apiClient.get<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/por_kpi/${kpiId}/`),
+    apiClient.get<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/por-kpi/${kpiId}/`),
   create: (data: Partial<FichaTecnicaKPI>) =>
     apiClient.post<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/`, data),
   update: (id: number, data: Partial<FichaTecnicaKPI>) =>
@@ -60,7 +60,7 @@ export const metasKPIApi = {
     apiClient.get<MetaKPI[]>(`${API_BASE}/config/metas/`, { params }),
   getById: (id: number) => apiClient.get<MetaKPI>(`${API_BASE}/config/metas/${id}/`),
   getByKPI: (kpiId: number, params?: Record<string, unknown>) =>
-    apiClient.get<MetaKPI[]>(`${API_BASE}/config/metas/por_kpi/${kpiId}/`, { params }),
+    apiClient.get<MetaKPI[]>(`${API_BASE}/config/metas/por-kpi/${kpiId}/`, { params }),
   create: (data: Partial<MetaKPI>) => apiClient.post<MetaKPI>(`${API_BASE}/config/metas/`, data),
   update: (id: number, data: Partial<MetaKPI>) =>
     apiClient.patch<MetaKPI>(`${API_BASE}/config/metas/${id}/`, data),
@@ -73,7 +73,7 @@ export const semaforosApi = {
   getById: (id: number) =>
     apiClient.get<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/${id}/`),
   getByKPI: (kpiId: number) =>
-    apiClient.get<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/por_kpi/${kpiId}/`),
+    apiClient.get<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/por-kpi/${kpiId}/`),
   create: (data: Partial<ConfiguracionSemaforo>) =>
     apiClient.post<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/`, data),
   update: (id: number, data: Partial<ConfiguracionSemaforo>) =>
@@ -105,7 +105,7 @@ export const widgetsDashboardApi = {
     apiClient.get<WidgetDashboard[]>(`${API_BASE}/dashboards/widgets/`, { params }),
   getById: (id: number) => apiClient.get<WidgetDashboard>(`${API_BASE}/dashboards/widgets/${id}/`),
   getByVista: (vistaId: number) =>
-    apiClient.get<WidgetDashboard[]>(`${API_BASE}/dashboards/widgets/por_vista/${vistaId}/`),
+    apiClient.get<WidgetDashboard[]>(`${API_BASE}/dashboards/widgets/por-vista/${vistaId}/`),
   create: (data: Partial<WidgetDashboard>) =>
     apiClient.post<WidgetDashboard>(`${API_BASE}/dashboards/widgets/`, data),
   update: (id: number, data: Partial<WidgetDashboard>) =>
@@ -133,7 +133,7 @@ export const valoresKPIApi = {
     apiClient.get<ValorKPI[]>(`${API_BASE}/indicadores/valores/`, { params }),
   getById: (id: number) => apiClient.get<ValorKPI>(`${API_BASE}/indicadores/valores/${id}/`),
   getByKPI: (kpiId: number, params?: Record<string, unknown>) =>
-    apiClient.get<ValorKPI[]>(`${API_BASE}/indicadores/valores/por_kpi/${kpiId}/`, { params }),
+    apiClient.get<ValorKPI[]>(`${API_BASE}/indicadores/valores/por-kpi/${kpiId}/`, { params }),
   getUltimoValor: (kpiId: number) =>
     apiClient.get<ValorKPI>(`${API_BASE}/indicadores/valores/ultimo/${kpiId}/`),
   create: (data: Partial<ValorKPI>) =>
@@ -151,7 +151,7 @@ export const accionesKPIApi = {
     apiClient.get<AccionPorKPI[]>(`${API_BASE}/indicadores/acciones/`, { params }),
   getById: (id: number) => apiClient.get<AccionPorKPI>(`${API_BASE}/indicadores/acciones/${id}/`),
   getByKPI: (kpiId: number) =>
-    apiClient.get<AccionPorKPI[]>(`${API_BASE}/indicadores/acciones/por_kpi/${kpiId}/`),
+    apiClient.get<AccionPorKPI[]>(`${API_BASE}/indicadores/acciones/por-kpi/${kpiId}/`),
   create: (data: Partial<AccionPorKPI>) =>
     apiClient.post<AccionPorKPI>(`${API_BASE}/indicadores/acciones/`, data),
   update: (id: number, data: Partial<AccionPorKPI>) =>
@@ -168,9 +168,9 @@ export const alertasKPIApi = {
     apiClient.get<AlertaKPI[]>(`${API_BASE}/indicadores/alertas/`, { params }),
   getById: (id: number) => apiClient.get<AlertaKPI>(`${API_BASE}/indicadores/alertas/${id}/`),
   getByKPI: (kpiId: number) =>
-    apiClient.get<AlertaKPI[]>(`${API_BASE}/indicadores/alertas/por_kpi/${kpiId}/`),
+    apiClient.get<AlertaKPI[]>(`${API_BASE}/indicadores/alertas/por-kpi/${kpiId}/`),
   marcarLeida: (id: number) =>
-    apiClient.post(`${API_BASE}/indicadores/alertas/${id}/marcar_leida/`),
+    apiClient.post(`${API_BASE}/indicadores/alertas/${id}/marcar-leida/`),
   delete: (id: number) => apiClient.delete(`${API_BASE}/indicadores/alertas/${id}/`),
 };
 
@@ -219,7 +219,7 @@ export const analisisKPIApi = {
       tipo_analisis: tipoAnalisis,
     }),
   compararPeriodos: (kpiId: number, periodo1: string, periodo2: string) =>
-    apiClient.post<AnalisisKPI>(`${API_BASE}/analisis/analisis-kpi/comparar_periodos/`, {
+    apiClient.post<AnalisisKPI>(`${API_BASE}/analisis/analisis-kpi/comparar-periodos/`, {
       kpi: kpiId,
       periodo1,
       periodo2,
@@ -256,7 +256,7 @@ export const anomaliasApi = {
   getById: (id: number) =>
     apiClient.get<AnomaliaDetectada>(`${API_BASE}/analisis/anomalias/${id}/`),
   marcarRevisada: (id: number, observaciones: string) =>
-    apiClient.post(`${API_BASE}/analisis/anomalias/${id}/marcar_revisada/`, { observaciones }),
+    apiClient.post(`${API_BASE}/analisis/anomalias/${id}/marcar-revisada/`, { observaciones }),
   pendientes: () =>
     apiClient.get<AnomaliaDetectada[]>(`${API_BASE}/analisis/anomalias/pendientes/`),
 };
@@ -306,7 +306,7 @@ export const programacionesInformeApi = {
   update: (id: number, data: Partial<ProgramacionInforme>) =>
     apiClient.patch<ProgramacionInforme>(`${API_BASE}/informes/programaciones/${id}/`, data),
   ejecutarAhora: (id: number) =>
-    apiClient.post(`${API_BASE}/informes/programaciones/${id}/ejecutar_ahora/`),
+    apiClient.post(`${API_BASE}/informes/programaciones/${id}/ejecutar-ahora/`),
   pausar: (id: number) => apiClient.post(`${API_BASE}/informes/programaciones/${id}/pausar/`),
   reanudar: (id: number) => apiClient.post(`${API_BASE}/informes/programaciones/${id}/reanudar/`),
 };

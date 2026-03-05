@@ -425,7 +425,7 @@ class CandidatoViewSet(viewsets.ModelViewSet):
         serializer = CandidatoListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         """Cambia el estado del candidato"""
         candidato = self.get_object()
@@ -1345,7 +1345,7 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
             except Exception:
                 pass  # Email failure should not block assignment
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-candidato')
     def por_candidato(self, request):
         """Lista asignaciones de un candidato"""
         candidato_id = request.query_params.get('candidato')
@@ -1358,7 +1358,7 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
         serializer = AsignacionPruebaDinamicaListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='calificar-manual')
     def calificar_manual(self, request, pk=None):
         """Calificación manual por HR (para campos de texto libre)"""
         asignacion = self.get_object()
@@ -1404,7 +1404,7 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
         serializer = AsignacionPruebaDinamicaDetailSerializer(asignacion)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='reenviar-email')
     def reenviar_email(self, request, pk=None):
         """Reenvía el email de invitación al candidato"""
         asignacion = self.get_object()

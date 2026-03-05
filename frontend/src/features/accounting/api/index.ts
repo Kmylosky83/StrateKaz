@@ -104,7 +104,7 @@ export const tiposDocumentoApi = {
     apiClient.delete(`${BASE}/config/tipos-documento/${id}/`).then((r) => r.data),
   reiniciarConsecutivo: (id: number) =>
     apiClient
-      .post(`${BASE}/config/tipos-documento/${id}/reiniciar_consecutivo/`)
+      .post(`${BASE}/config/tipos-documento/${id}/reiniciar-consecutivo/`)
       .then((r) => r.data),
 };
 
@@ -122,7 +122,7 @@ export const tercerosApi = {
   delete: (id: number) => apiClient.delete(`${BASE}/config/terceros/${id}/`).then((r) => r.data),
   porTipo: (tipo: string) =>
     apiClient
-      .get<TerceroList[]>(`${BASE}/config/terceros/por_tipo/`, { params: { tipo } })
+      .get<TerceroList[]>(`${BASE}/config/terceros/por-tipo/`, { params: { tipo } })
       .then((r) => r.data),
   buscar: (q: string) =>
     apiClient
@@ -167,9 +167,9 @@ export const configuracionApi = {
       .patch<ConfiguracionModulo>(`${BASE}/config/configuracion/${id}/`, data)
       .then((r) => r.data),
   cerrarPeriodo: (id: number) =>
-    apiClient.post(`${BASE}/config/configuracion/${id}/cerrar_periodo/`).then((r) => r.data),
+    apiClient.post(`${BASE}/config/configuracion/${id}/cerrar-periodo/`).then((r) => r.data),
   abrirPeriodo: (id: number) =>
-    apiClient.post(`${BASE}/config/configuracion/${id}/abrir_periodo/`).then((r) => r.data),
+    apiClient.post(`${BASE}/config/configuracion/${id}/abrir-periodo/`).then((r) => r.data),
   getEstado: () => apiClient.get(`${BASE}/config/configuracion/estado/`).then((r) => r.data),
 };
 
@@ -204,13 +204,13 @@ export const comprobantesApi = {
     apiClient.post(`${BASE}/movimientos/comprobantes/${id}/aprobar/`).then((r) => r.data),
   recalcularTotales: (id: number) =>
     apiClient
-      .post(`${BASE}/movimientos/comprobantes/${id}/recalcular_totales/`)
+      .post(`${BASE}/movimientos/comprobantes/${id}/recalcular-totales/`)
       .then((r) => r.data),
   porPeriodo: (periodo: number) =>
     apiClient
       .get<
         ComprobanteContableList[]
-      >(`${BASE}/movimientos/comprobantes/por_periodo/`, { params: { periodo } })
+      >(`${BASE}/movimientos/comprobantes/por-periodo/`, { params: { periodo } })
       .then((r) => r.data),
 };
 
@@ -261,7 +261,7 @@ export const plantillasApi = {
     apiClient.delete(`${BASE}/movimientos/plantillas/${id}/`).then((r) => r.data),
   generarComprobante: (id: number, data: Record<string, unknown>) =>
     apiClient
-      .post(`${BASE}/movimientos/plantillas/${id}/generar_comprobante/`, data)
+      .post(`${BASE}/movimientos/plantillas/${id}/generar-comprobante/`, data)
       .then((r) => r.data),
 };
 
@@ -348,11 +348,11 @@ export const parametrosIntegracionApi = {
     apiClient
       .get<
         ParametrosIntegracionList[]
-      >(`${BASE}/integracion/parametros/por_modulo/`, { params: { modulo } })
+      >(`${BASE}/integracion/parametros/por-modulo/`, { params: { modulo } })
       .then((r) => r.data),
   getResumen: () => apiClient.get(`${BASE}/integracion/parametros/resumen/`).then((r) => r.data),
   toggleActivo: (id: number) =>
-    apiClient.post(`${BASE}/integracion/parametros/${id}/toggle_activo/`).then((r) => r.data),
+    apiClient.post(`${BASE}/integracion/parametros/${id}/toggle-activo/`).then((r) => r.data),
 };
 
 export const logsIntegracionApi = {
@@ -366,13 +366,13 @@ export const logsIntegracionApi = {
     apiClient
       .get<
         LogIntegracionList[]
-      >(`${BASE}/integracion/logs/por_documento/`, { params: { tipo, id } })
+      >(`${BASE}/integracion/logs/por-documento/`, { params: { tipo, id } })
       .then((r) => r.data),
   erroresRecientes: (limit?: number) =>
     apiClient
       .get<
         LogIntegracionList[]
-      >(`${BASE}/integracion/logs/errores_recientes/`, { params: { limit: limit || 20 } })
+      >(`${BASE}/integracion/logs/errores-recientes/`, { params: { limit: limit || 20 } })
       .then((r) => r.data),
   getEstadisticas: () =>
     apiClient.get(`${BASE}/integracion/logs/estadisticas/`).then((r) => r.data),
@@ -406,7 +406,7 @@ export const colaContabilizacionApi = {
       .get<ColaContabilizacionList[]>(`${BASE}/integracion/cola/errores/`)
       .then((r) => r.data),
   reintentarTodos: () =>
-    apiClient.post(`${BASE}/integracion/cola/reintentar_todos/`).then((r) => r.data),
+    apiClient.post(`${BASE}/integracion/cola/reintentar-todos/`).then((r) => r.data),
   getEstadisticas: () =>
     apiClient.get(`${BASE}/integracion/cola/estadisticas/`).then((r) => r.data),
 };

@@ -8,13 +8,15 @@ import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { tiposReglamentoApi, reglamentosApi } from '../api';
-import type {
-  TipoReglamento,
-  Reglamento,
-  ReglamentoFilters,
-  CreateReglamentoDTO,
-  UpdateReglamentoDTO,
-} from '../types';
+import type { TipoReglamento, Reglamento, ReglamentoCreate, EstadoReglamento } from '../types';
+
+// Local filter type
+interface ReglamentoFilters {
+  empresa_id?: number;
+  tipo?: number;
+  estado?: EstadoReglamento;
+  search?: string;
+}
 
 // ==================== QUERY KEYS ====================
 
@@ -33,7 +35,7 @@ export const reglamentosKeys = {
 export const useTiposReglamento = () => {
   return useGenericCRUD<TipoReglamento>({
     queryKey: reglamentosKeys.tipos,
-    endpoint: '/cumplimiento/reglamentos-internos/tipos/',
+    endpoint: '/cumplimiento/reglamentos-internos/tipos-reglamento/',
     entityName: 'Tipo de Reglamento',
     isPaginated: true,
   });
@@ -70,7 +72,7 @@ export const useCreateReglamentoWithFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateReglamentoDTO) => reglamentosApi.create(data),
+    mutationFn: (data: ReglamentoCreate) => reglamentosApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reglamentosKeys.reglamentos() });
       toast.success('Reglamento creado exitosamente');
@@ -85,7 +87,7 @@ export const useUpdateReglamentoWithFile = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateReglamentoDTO }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<ReglamentoCreate> }) =>
       reglamentosApi.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: reglamentosKeys.reglamentos() });

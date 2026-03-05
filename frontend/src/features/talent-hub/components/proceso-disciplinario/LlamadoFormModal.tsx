@@ -43,7 +43,7 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
       tipo: 'verbal',
       tipo_falta: null,
       fecha_llamado: new Date().toISOString().split('T')[0],
-      fecha_hechos: new Date().toISOString().split('T')[0],
+      fecha_falta: new Date().toISOString().split('T')[0],
       descripcion_hechos: '',
       lugar_hechos: '',
       testigos: '',
@@ -60,7 +60,7 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           tipo: llamado.tipo,
           tipo_falta: llamado.tipo_falta,
           fecha_llamado: llamado.fecha_llamado,
-          fecha_hechos: llamado.fecha_hechos,
+          fecha_falta: llamado.fecha_falta,
           descripcion_hechos: llamado.descripcion_hechos,
           lugar_hechos: llamado.lugar_hechos || '',
           testigos: llamado.testigos || '',
@@ -73,7 +73,7 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
           tipo: 'verbal',
           tipo_falta: null,
           fecha_llamado: new Date().toISOString().split('T')[0],
-          fecha_hechos: new Date().toISOString().split('T')[0],
+          fecha_falta: new Date().toISOString().split('T')[0],
           descripcion_hechos: '',
           lugar_hechos: '',
           testigos: '',
@@ -166,8 +166,8 @@ export const LlamadoFormModal = ({ llamado, isOpen, onClose }: Props) => {
             <Input
               label="Fecha de los Hechos *"
               type="date"
-              {...register('fecha_hechos', { required: true })}
-              error={errors.fecha_hechos?.message}
+              {...register('fecha_falta', { required: true })}
+              error={errors.fecha_falta?.message}
             />
           </div>
 

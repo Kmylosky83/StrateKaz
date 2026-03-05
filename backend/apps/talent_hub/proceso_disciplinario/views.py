@@ -93,7 +93,7 @@ class LlamadoAtencionViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.soft_delete()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-firma')
     def registrar_firma(self, request, pk=None):
         """Registra la firma del colaborador"""
         llamado = self.get_object()
@@ -141,7 +141,7 @@ class DescargoViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.soft_delete()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-descargo')
     def registrar_descargo(self, request, pk=None):
         """Registra el descargo del colaborador"""
         descargo = self.get_object()
@@ -154,7 +154,7 @@ class DescargoViewSet(viewsets.ModelViewSet):
         serializer = DescargoDetailSerializer(descargo)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='emitir-decision')
     def emitir_decision(self, request, pk=None):
         """Emite decisión sobre el descargo"""
         descargo = self.get_object()
@@ -179,7 +179,7 @@ class DescargoViewSet(viewsets.ModelViewSet):
         descargo.save()
         return Response(DescargoDetailSerializer(descargo).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='resolver-apelacion')
     def resolver_apelacion(self, request, pk=None):
         """Resuelve apelación del descargo"""
         descargo = self.get_object()
@@ -241,7 +241,7 @@ class MemorandoViewSet(viewsets.ModelViewSet):
         serializer = MemorandoDetailSerializer(memorando)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-apelacion')
     def registrar_apelacion(self, request, pk=None):
         """Registra apelación del colaborador"""
         memorando = self.get_object()
@@ -267,7 +267,7 @@ class HistorialDisciplinarioViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(tipo_evento=tipo_evento)
         return queryset.select_related('colaborador').order_by('-fecha_evento')
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-colaborador')
     def resumen_colaborador(self, request):
         """Obtiene resumen disciplinario de un colaborador"""
         colaborador_id = request.query_params.get('colaborador')
@@ -323,7 +323,7 @@ class NotificacionDisciplinariaViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.soft_delete()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-acuse')
     def registrar_acuse(self, request, pk=None):
         """Registra acuse de recibo de la notificación"""
         notificacion = self.get_object()
@@ -429,7 +429,7 @@ class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.soft_delete()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         """Cambiar estado de la denuncia."""
         denuncia = self.get_object()
@@ -446,7 +446,7 @@ class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
         denuncia.save()
         return Response(DenunciaAcosoLaboralDetailSerializer(denuncia).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='notificar-comite')
     def notificar_comite(self, request, pk=None):
         """Notificar al Comité de Convivencia Laboral."""
         denuncia = self.get_object()

@@ -129,12 +129,12 @@ export interface UserReference {
 
 export interface TipoRiesgoVial extends BaseEntity {
   categoria: CategoriaFactor;
+  categoria_display?: string;
   codigo: string;
   nombre: string;
   descripcion: string;
-  pilar_pesv: PilarPESV;
-  icono?: string;
-  color?: string;
+  consecuencias_posibles?: string;
+  marco_legal?: string;
 }
 
 export interface TipoRiesgoVialCreate {
@@ -142,9 +142,8 @@ export interface TipoRiesgoVialCreate {
   codigo: string;
   nombre: string;
   descripcion: string;
-  pilar_pesv: PilarPESV;
-  icono?: string;
-  color?: string;
+  consecuencias_posibles?: string;
+  marco_legal?: string;
 }
 
 export type TipoRiesgoVialUpdate = Partial<TipoRiesgoVialCreate>;
@@ -155,67 +154,106 @@ export type TipoRiesgoVialUpdate = Partial<TipoRiesgoVialCreate>;
 
 export interface RiesgoVial extends BaseEntity {
   codigo: string;
-  nombre: string;
+  tipo_riesgo: number;
+  tipo_riesgo_data?: TipoRiesgoVial;
+  tipo_riesgo_nombre?: string;
+  tipo_riesgo_categoria?: string;
   descripcion: string;
-  tipo_riesgo: TipoRiesgoVial;
-  tipo_riesgo_id: number;
+  proceso_afectado?: string;
+  rutas_afectadas?: string;
+  tipo_vehiculo?: TipoVehiculo;
 
-  // Contexto
-  ruta_asociada: string;
-  actividad: string;
-  rol_conductor: string;
-  tipo_vehiculo: TipoVehiculo;
-
-  // Evaluacion
+  // Evaluacion inherente
+  frecuencia: number;
   probabilidad: number;
-  consecuencia: number;
-  exposicion: number;
-  valor_riesgo: number;
+  severidad: number;
+  valoracion_riesgo?: number;
   nivel_riesgo: NivelRiesgoVial;
+  nivel_riesgo_display?: string;
+
+  // Controles actuales
+  controles_actuales?: string;
+  efectividad_controles?: string;
+
+  // Evaluacion residual
+  frecuencia_residual?: number;
+  probabilidad_residual?: number;
+  severidad_residual?: number;
+  valoracion_residual?: number;
+  nivel_residual?: NivelRiesgoVial;
+  nivel_residual_display?: string;
+  porcentaje_reduccion?: number | null;
+
+  // Responsable y estado
+  responsable?: number;
+  responsable_nombre?: string;
   estado: EstadoRiesgoVial;
+  estado_display?: string;
+  fecha_identificacion?: string;
+  fecha_evaluacion?: string;
+  fecha_revision?: string;
+  observaciones?: string;
 
-  // Tratamiento
-  tratamiento_propuesto: string;
-  riesgo_residual_esperado: NivelRiesgoVial;
+  // Calculados
+  requiere_accion_inmediata?: boolean;
 
-  // Referencias
-  created_by: UserReference;
-  empresa_id: number;
+  created_by_nombre?: string;
+  empresa_id?: number;
 }
 
 export interface RiesgoVialList {
   id: number;
   codigo: string;
-  nombre: string;
-  tipo_riesgo: Pick<TipoRiesgoVial, 'id' | 'nombre' | 'categoria' | 'pilar_pesv'>;
-  ruta_asociada: string;
-  tipo_vehiculo: TipoVehiculo;
-  valor_riesgo: number;
+  tipo_riesgo: number;
+  tipo_riesgo_nombre?: string;
+  tipo_riesgo_categoria?: string;
+  descripcion: string;
+  proceso_afectado?: string;
+  tipo_vehiculo?: TipoVehiculo;
+  frecuencia?: number;
+  probabilidad?: number;
+  severidad?: number;
+  valoracion_riesgo?: number;
   nivel_riesgo: NivelRiesgoVial;
+  nivel_riesgo_display?: string;
+  nivel_residual?: NivelRiesgoVial;
+  porcentaje_reduccion?: number | null;
+  responsable?: number;
+  responsable_nombre?: string;
   estado: EstadoRiesgoVial;
-  controles_count: number;
+  estado_display?: string;
+  fecha_identificacion?: string;
+  fecha_revision?: string;
+  requiere_accion_inmediata?: boolean;
+  created_by_nombre?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface RiesgoVialCreate {
   codigo: string;
-  nombre: string;
   descripcion: string;
-  tipo_riesgo_id: number;
-  ruta_asociada: string;
-  actividad: string;
-  rol_conductor: string;
+  tipo_riesgo: number;
+  proceso_afectado?: string;
+  rutas_afectadas?: string;
   tipo_vehiculo: TipoVehiculo;
+  frecuencia: number;
   probabilidad: number;
-  consecuencia: number;
-  exposicion: number;
-  tratamiento_propuesto?: string;
-  riesgo_residual_esperado?: NivelRiesgoVial;
+  severidad: number;
+  controles_actuales?: string;
+  efectividad_controles?: string;
+  frecuencia_residual?: number;
+  probabilidad_residual?: number;
+  severidad_residual?: number;
+  responsable?: number;
+  estado?: EstadoRiesgoVial;
+  fecha_identificacion?: string;
+  fecha_evaluacion?: string;
+  fecha_revision?: string;
+  observaciones?: string;
 }
 
-export interface RiesgoVialUpdate extends Partial<RiesgoVialCreate> {
-  estado?: EstadoRiesgoVial;
-}
+export type RiesgoVialUpdate = Partial<RiesgoVialCreate>;
 
 export interface RiesgoVialFilter {
   tipo_riesgo?: number;
@@ -233,69 +271,72 @@ export interface RiesgoVialFilter {
 // ============================================
 
 export interface ControlVial extends BaseEntity {
-  riesgo: Pick<RiesgoVial, 'id' | 'codigo' | 'nombre'>;
-  riesgo_id: number;
+  riesgo_vial: number;
+  riesgo_vial_codigo?: string;
+  riesgo_vial_descripcion?: string;
   codigo: string;
   nombre: string;
   descripcion: string;
   tipo_control: TipoControlVial;
+  tipo_control_display?: string;
+  momento_aplicacion?: string;
+  momento_aplicacion_display?: string;
+  jerarquia?: string;
+  jerarquia_display?: string;
+  responsable?: number;
+  responsable_nombre?: string;
+  area_responsable?: string;
   estado: EstadoControlVial;
-
-  // Planificacion
-  fecha_implementacion_planificada: string;
+  estado_display?: string;
+  fecha_propuesta?: string;
+  fecha_implementacion_programada?: string;
   fecha_implementacion_real?: string;
-  responsable: UserReference;
-  responsable_id: number;
-
-  // Recursos
-  presupuesto: number;
-  recursos_requeridos: string;
-
-  // Seguimiento
-  indicador_eficacia: string;
-  meta_indicador: string;
-  valor_actual_indicador?: number;
-  porcentaje_avance: number;
-
-  // Verificacion
-  fecha_ultima_verificacion?: string;
+  costo_estimado?: number;
+  costo_real?: number;
+  recursos_necesarios?: string;
+  indicador_efectividad?: string;
+  efectividad_verificada?: boolean;
+  fecha_verificacion?: string;
   resultado_verificacion?: string;
-  eficacia_comprobada: boolean;
-
-  observaciones: string;
-  created_by: UserReference;
-  empresa_id: number;
+  observaciones?: string;
+  esta_atrasado?: boolean;
+  created_by_nombre?: string;
+  empresa_id?: number;
 }
 
 export interface ControlVialCreate {
-  riesgo_id: number;
+  riesgo_vial: number;
   codigo: string;
   nombre: string;
   descripcion: string;
   tipo_control: TipoControlVial;
-  fecha_implementacion_planificada: string;
-  responsable_id: number;
-  presupuesto?: number;
-  recursos_requeridos?: string;
-  indicador_eficacia?: string;
-  meta_indicador?: string;
+  momento_aplicacion?: string;
+  jerarquia?: string;
+  responsable?: number;
+  area_responsable?: string;
+  fecha_propuesta?: string;
+  fecha_implementacion_programada?: string;
+  fecha_implementacion_real?: string;
+  estado?: EstadoControlVial;
+  costo_estimado?: number;
+  costo_real?: number;
+  recursos_necesarios?: string;
+  indicador_efectividad?: string;
+  efectividad_verificada?: boolean;
+  fecha_verificacion?: string;
+  resultado_verificacion?: string;
   observaciones?: string;
 }
 
-export interface ControlVialUpdate extends Partial<ControlVialCreate> {
-  estado?: EstadoControlVial;
-  fecha_implementacion_real?: string;
-  valor_actual_indicador?: number;
-  porcentaje_avance?: number;
-  eficacia_comprobada?: boolean;
-}
+export type ControlVialUpdate = Partial<ControlVialCreate>;
 
 export interface ControlVialFilter {
-  riesgo?: number;
+  riesgo_vial?: number;
   tipo_control?: TipoControlVial;
   estado?: EstadoControlVial;
+  jerarquia?: string;
   responsable?: number;
-  eficacia_comprobada?: boolean;
+  search?: string;
 }
 
 // ============================================
@@ -303,129 +344,147 @@ export interface ControlVialFilter {
 // ============================================
 
 export interface IncidenteVial extends BaseEntity {
-  codigo: string;
+  numero_incidente: string;
   tipo_incidente: TipoIncidenteVial;
-  severidad: SeveridadIncidente;
+  gravedad: SeveridadIncidente;
   estado_investigacion: EstadoInvestigacion;
 
   // Fecha y ubicacion
   fecha_incidente: string;
-  hora_incidente: string;
   ubicacion: string;
-  coordenadas_gps?: string;
-  ruta_relacionada?: string;
+  municipio?: string;
+  departamento?: string;
+  coordenadas?: string;
 
   // Descripcion
   descripcion_hechos: string;
-  condiciones_climaticas: string;
-  condiciones_via: string;
-  visibilidad: string;
+  condiciones_climaticas?: string;
+  condiciones_via?: string;
+  condiciones_vehiculo?: string;
 
-  // Vehiculo
-  tipo_vehiculo: TipoVehiculo;
-  placa_vehiculo?: string;
-  kilometraje?: number;
-
-  // Conductor
+  // Vehiculo y conductor
   conductor_nombre: string;
   conductor_identificacion: string;
-  conductor_antiguedad_cargo?: string;
-  conductor_horas_conduccion?: number;
+  conductor_licencia?: string;
+  vehiculo_placa?: string;
+  vehiculo_tipo?: TipoVehiculo;
 
   // Consecuencias
-  lesionados: number;
-  fallecidos: number;
-  danos_materiales: string;
-  costo_estimado: number;
-  dias_incapacidad: number;
+  numero_lesionados?: number;
+  numero_fallecidos?: number;
+  descripcion_lesiones?: string;
+  daños_vehiculo_propio?: string;
+  daños_terceros?: string;
+  costo_estimado_daños?: number;
+
+  // Autoridades
+  autoridades_notificadas?: boolean;
+  numero_informe_policial?: string;
+  comparendo_numero?: string;
 
   // Investigacion
-  causa_inmediata?: string;
+  causas_inmediatas?: string;
   causas_basicas?: string;
-  factores_trabajo?: string;
-  acciones_correctivas?: string;
-  responsable_investigacion?: UserReference;
-  responsable_investigacion_id?: number;
+  causas_raiz?: string;
+  investigador?: number;
+  investigador_nombre?: string;
+  fecha_inicio_investigacion?: string;
   fecha_cierre_investigacion?: string;
 
-  // Reportes
-  reportado_arl: boolean;
-  fecha_reporte_arl?: string;
-  numero_reporte_arl?: string;
-
   // Relaciones
-  riesgo_relacionado?: Pick<RiesgoVial, 'id' | 'codigo' | 'nombre'>;
-  riesgo_relacionado_id?: number;
+  riesgos_relacionados?: number[];
+  riesgos_relacionados_data?: Pick<RiesgoVial, 'id' | 'codigo' | 'descripcion'>[];
 
-  evidencias_url?: string[];
-  created_by: UserReference;
-  empresa_id: number;
+  // Lecciones y acciones
+  lecciones_aprendidas?: string;
+  acciones_correctivas?: string;
+
+  // Calculados
+  es_accidente_grave?: boolean;
+  dias_investigacion_abierta?: number | null;
+
+  created_by_nombre?: string;
+  empresa_id?: number;
 }
 
 export interface IncidenteVialList {
   id: number;
-  codigo: string;
+  numero_incidente: string;
   tipo_incidente: TipoIncidenteVial;
-  severidad: SeveridadIncidente;
+  gravedad: SeveridadIncidente;
   estado_investigacion: EstadoInvestigacion;
   fecha_incidente: string;
   ubicacion: string;
-  tipo_vehiculo: TipoVehiculo;
+  municipio?: string;
+  departamento?: string;
   conductor_nombre: string;
-  lesionados: number;
-  fallecidos: number;
+  conductor_identificacion?: string;
+  vehiculo_placa?: string;
+  vehiculo_tipo?: TipoVehiculo;
+  numero_lesionados?: number;
+  numero_fallecidos?: number;
+  costo_estimado_daños?: number;
+  autoridades_notificadas?: boolean;
+  investigador?: number;
+  investigador_nombre?: string;
+  fecha_inicio_investigacion?: string;
+  fecha_cierre_investigacion?: string;
+  es_accidente_grave?: boolean;
+  dias_investigacion_abierta?: number | null;
+  created_by_nombre?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface IncidenteVialCreate {
-  codigo: string;
+  numero_incidente: string;
   tipo_incidente: TipoIncidenteVial;
-  severidad: SeveridadIncidente;
+  gravedad: SeveridadIncidente;
   fecha_incidente: string;
-  hora_incidente: string;
   ubicacion: string;
-  coordenadas_gps?: string;
-  ruta_relacionada?: string;
-  descripcion_hechos: string;
-  condiciones_climaticas: string;
-  condiciones_via: string;
-  visibilidad: string;
-  tipo_vehiculo: TipoVehiculo;
-  placa_vehiculo?: string;
-  kilometraje?: number;
+  municipio?: string;
+  departamento?: string;
+  coordenadas?: string;
   conductor_nombre: string;
   conductor_identificacion: string;
-  conductor_antiguedad_cargo?: string;
-  conductor_horas_conduccion?: number;
-  lesionados: number;
-  fallecidos: number;
-  danos_materiales?: string;
-  costo_estimado?: number;
-  dias_incapacidad?: number;
-  riesgo_relacionado_id?: number;
+  conductor_licencia?: string;
+  vehiculo_placa?: string;
+  vehiculo_tipo?: TipoVehiculo;
+  descripcion_hechos: string;
+  condiciones_climaticas?: string;
+  condiciones_via?: string;
+  condiciones_vehiculo?: string;
+  numero_lesionados?: number;
+  numero_fallecidos?: number;
+  descripcion_lesiones?: string;
+  daños_vehiculo_propio?: string;
+  daños_terceros?: string;
+  costo_estimado_daños?: number;
+  autoridades_notificadas?: boolean;
+  numero_informe_policial?: string;
+  comparendo_numero?: string;
+  estado_investigacion?: EstadoInvestigacion;
+  investigador?: number;
+  fecha_inicio_investigacion?: string;
+  causas_inmediatas?: string;
+  causas_basicas?: string;
+  causas_raiz?: string;
+  riesgos_relacionados?: number[];
+  lecciones_aprendidas?: string;
+  acciones_correctivas?: string;
 }
 
-export interface IncidenteVialUpdate extends Partial<IncidenteVialCreate> {
-  estado_investigacion?: EstadoInvestigacion;
-  causa_inmediata?: string;
-  causas_basicas?: string;
-  factores_trabajo?: string;
-  acciones_correctivas?: string;
-  responsable_investigacion_id?: number;
+export type IncidenteVialUpdate = Partial<IncidenteVialCreate> & {
   fecha_cierre_investigacion?: string;
-  reportado_arl?: boolean;
-  fecha_reporte_arl?: string;
-  numero_reporte_arl?: string;
-}
+};
 
 export interface IncidenteVialFilter {
   tipo_incidente?: TipoIncidenteVial;
-  severidad?: SeveridadIncidente;
+  gravedad?: SeveridadIncidente;
   estado_investigacion?: EstadoInvestigacion;
-  tipo_vehiculo?: TipoVehiculo;
+  vehiculo_placa?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
-  ruta_relacionada?: string;
   search?: string;
 }
 

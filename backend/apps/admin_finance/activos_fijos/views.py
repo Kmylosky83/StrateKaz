@@ -76,7 +76,7 @@ class CategoriaActivoViewSet(viewsets.ModelViewSet):
             return CategoriaActivoListSerializer
         return CategoriaActivoSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='activos-por-categoria')
     def activos_por_categoria(self, request):
         """Resumen de activos agrupados por categoría."""
         resumen = self.get_queryset().annotate(
@@ -144,7 +144,7 @@ class ActivoFijoViewSet(viewsets.ModelViewSet):
             return ActivoFijoListSerializer
         return ActivoFijoSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='enviar-mantenimiento')
     def enviar_mantenimiento(self, request, pk=None):
         """Envía el activo a mantenimiento."""
         activo = self.get_object()
@@ -236,7 +236,7 @@ class ActivoFijoViewSet(viewsets.ModelViewSet):
             'por_categoria': list(por_categoria)
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-depreciacion')
     def resumen_depreciacion(self, request):
         """
         Resumen de depreciación de todos los activos.
@@ -281,7 +281,7 @@ class ActivoFijoViewSet(viewsets.ModelViewSet):
             'activos': resumen
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-ubicacion')
     def por_ubicacion(self, request):
         """Activos agrupados por ubicación."""
         resumen = self.get_queryset().exclude(
@@ -333,7 +333,7 @@ class HojaVidaActivoViewSet(viewsets.ModelViewSet):
             return HojaVidaActivoListSerializer
         return HojaVidaActivoSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-activo')
     def por_activo(self, request):
         """
         Historial de eventos de un activo específico.
@@ -372,7 +372,7 @@ class HojaVidaActivoViewSet(viewsets.ModelViewSet):
             'eventos': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-costos')
     def resumen_costos(self, request):
         """
         Resumen de costos de mantenimiento.
@@ -579,7 +579,7 @@ class DepreciacionViewSet(viewsets.ModelViewSet):
             return DepreciacionListSerializer
         return DepreciacionSerializer
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='calcular-periodo')
     def calcular_periodo(self, request):
         """
         Calcula la depreciación de todos los activos para un período.
@@ -660,7 +660,7 @@ class DepreciacionViewSet(viewsets.ModelViewSet):
             'errores': errores
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='reporte-mensual')
     def reporte_mensual(self, request):
         """
         Reporte de depreciación mensual.
@@ -710,7 +710,7 @@ class DepreciacionViewSet(viewsets.ModelViewSet):
             'detalle': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-activo')
     def por_activo(self, request):
         """
         Historial de depreciación de un activo.

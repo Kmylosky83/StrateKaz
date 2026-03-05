@@ -54,7 +54,7 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa(auto_create=False)
         serializer.save(empresa_id=empresa.id if empresa else None, iniciado_por=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-instancias')
     def mis_instancias(self, request):
         """Obtener instancias donde el usuario es responsable actual"""
         instancias = self.get_queryset().filter(
@@ -178,7 +178,7 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instancia)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='iniciar-flujo')
     def iniciar_flujo(self, request):
         """
         Iniciar una nueva instancia de flujo desde una plantilla.
@@ -269,7 +269,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             created_by=self.request.user
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-tareas')
     def mis_tareas(self, request):
         """Tareas asignadas al usuario actual"""
         tareas = self.get_queryset().filter(
@@ -513,7 +513,7 @@ class HistorialTareaViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-instancia')
     def por_instancia(self, request):
         """Obtener historial de una instancia específica"""
         instancia_id = request.query_params.get('instancia_id')
@@ -567,7 +567,7 @@ class ArchivoAdjuntoViewSet(viewsets.ModelViewSet):
                 subido_por=self.request.user
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-instancia')
     def por_instancia(self, request):
         """Obtener archivos de una instancia específica"""
         instancia_id = request.query_params.get('instancia_id')
@@ -583,7 +583,7 @@ class ArchivoAdjuntoViewSet(viewsets.ModelViewSet):
             'archivos': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tarea')
     def por_tarea(self, request):
         """Obtener archivos de una tarea específica"""
         tarea_id = request.query_params.get('tarea_id')
@@ -627,7 +627,7 @@ class NotificacionFlujoViewSet(viewsets.ModelViewSet):
             generada_por=self.request.user
         )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-notificaciones')
     def mis_notificaciones(self, request):
         """Obtener notificaciones del usuario autenticado"""
         notificaciones = self.get_queryset().filter(destinatario=request.user)
@@ -639,7 +639,7 @@ class NotificacionFlujoViewSet(viewsets.ModelViewSet):
             'notificaciones': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-leidas')
     def no_leidas(self, request):
         """Obtener notificaciones no leídas del usuario"""
         notificaciones = self.get_queryset().filter(
@@ -652,7 +652,7 @@ class NotificacionFlujoViewSet(viewsets.ModelViewSet):
             'notificaciones': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-leida')
     def marcar_leida(self, request, pk=None):
         """Marcar una notificación como leída"""
         notificacion = self.get_object()
@@ -665,7 +665,7 @@ class NotificacionFlujoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(notificacion)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='marcar-todas-leidas')
     def marcar_todas_leidas(self, request):
         """Marcar todas las notificaciones como leídas"""
         notificaciones = self.get_queryset().filter(

@@ -213,7 +213,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='generar-factura')
     def generar_factura(self, request, pk=None):
         """Generar factura desde pedido aprobado"""
         pedido = self.get_object()
@@ -377,7 +377,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
             return FacturaListSerializer
         return FacturaDetailSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-pago')
     def registrar_pago(self, request, pk=None):
         """Registrar pago para factura"""
         factura = self.get_object()

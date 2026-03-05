@@ -172,7 +172,7 @@ export function useIniciarEvaluacionCiclo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.post(`${DESEMPENO_URL}/ciclos/${id}/iniciar_evaluacion/`);
+      const { data } = await apiClient.post(`${DESEMPENO_URL}/ciclos/${id}/iniciar-evaluacion/`);
       return data;
     },
     onSuccess: () => {
@@ -248,7 +248,7 @@ export function useMisEvaluaciones() {
   return useQuery({
     queryKey: desempenoKeys.evaluaciones.misEvaluaciones(),
     queryFn: async () => {
-      const response = await apiClient.get(`${DESEMPENO_URL}/evaluaciones/mis_evaluaciones/`);
+      const response = await apiClient.get(`${DESEMPENO_URL}/evaluaciones/mis-evaluaciones/`);
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EvaluacionDesempeno[];
     },
@@ -259,7 +259,7 @@ export function usePendientesPares() {
   return useQuery({
     queryKey: desempenoKeys.evaluaciones.pendientesPares(),
     queryFn: async () => {
-      const { data } = await apiClient.get(`${DESEMPENO_URL}/evaluaciones/pendientes_pares/`);
+      const { data } = await apiClient.get(`${DESEMPENO_URL}/evaluaciones/pendientes-pares/`);
       return data;
     },
   });
@@ -316,7 +316,7 @@ export function useEvaluarJefe() {
       fortalezas: string;
       areasMejora: string;
     }) => {
-      const { data } = await apiClient.post(`${DESEMPENO_URL}/evaluaciones/${id}/evaluar_jefe/`, {
+      const { data } = await apiClient.post(`${DESEMPENO_URL}/evaluaciones/${id}/evaluar-jefe/`, {
         calificacion,
         fortalezas,
         areas_mejora: areasMejora,
@@ -647,7 +647,7 @@ export function useDarLike() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await apiClient.post(`${DESEMPENO_URL}/muro/${id}/dar_like/`);
+      const { data } = await apiClient.post(`${DESEMPENO_URL}/muro/${id}/dar-like/`);
       return data;
     },
     onSuccess: () => {

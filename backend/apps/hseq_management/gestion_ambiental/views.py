@@ -46,7 +46,7 @@ class TipoResiduoViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre', 'clase']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-clase')
     def por_clase(self, request):
         """Obtener tipos de residuos agrupados por clase"""
         clases = {}
@@ -77,7 +77,7 @@ class GestorAmbientalViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='licencias-vencidas')
     def licencias_vencidas(self, request, pk=None):
         """Verificar si las licencias están vencidas"""
         gestor = self.get_object()
@@ -253,7 +253,7 @@ class RegistroResiduoViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='generar-certificado')
     def generar_certificado(self, request):
         """Generar certificado de disposición para residuos seleccionados"""
         serializer = GenerarCertificadoSerializer(data=request.data)
@@ -326,7 +326,7 @@ class VertimientoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-conformes')
     def no_conformes(self, request):
         """Vertimientos que no cumplen normativa"""
         empresa_id = request.query_params.get('empresa_id')
@@ -378,7 +378,7 @@ class RegistroEmisionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='no-conformes')
     def no_conformes(self, request):
         """Emisiones que no cumplen normativa"""
         queryset = self.get_queryset().filter(cumple_normativa=False)
@@ -418,7 +418,7 @@ class ConsumoRecursoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-anual')
     def resumen_anual(self, request):
         """Resumen de consumos por año"""
         empresa_id = request.query_params.get('empresa_id')
@@ -491,7 +491,7 @@ class CalculoHuellaCarbonoViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='calcular-huella')
     def calcular_huella(self, request):
         """Calcular huella de carbono automáticamente desde consumos"""
         serializer = CalcularHuellaInputSerializer(data=request.data)
@@ -585,7 +585,7 @@ class CalculoHuellaCarbonoViewSet(viewsets.ModelViewSet):
             'calculo': self.get_serializer(calculo).data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='comparativa-anual')
     def comparativa_anual(self, request):
         """Comparativa de huellas de carbono por años"""
         empresa_id = request.query_params.get('empresa_id')
@@ -639,7 +639,7 @@ class CertificadoAmbientalViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximos-vencer')
     def proximos_vencer(self, request):
         """Certificados próximos a vencer (30 días)"""
         hoy = timezone.now().date()

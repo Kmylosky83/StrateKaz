@@ -1097,7 +1097,7 @@ export const partesInteresadasApi = {
    * Exporta las partes interesadas a Excel (4 hojas F-GD-04).
    */
   exportExcel: async (): Promise<Blob> => {
-    const response = await apiClient.get(`${BASE_URL}/partes-interesadas/export_excel/`, {
+    const response = await apiClient.get(`${BASE_URL}/partes-interesadas/export-excel/`, {
       responseType: 'blob',
     });
     return response.data;

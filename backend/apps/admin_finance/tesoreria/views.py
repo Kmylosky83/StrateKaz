@@ -120,7 +120,7 @@ class CuentaPorPagarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'results': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Listar cuentas próximas a vencer (próximos 7 días)."""
         empresa = get_tenant_empresa()
@@ -206,7 +206,7 @@ class CuentaPorCobrarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'results': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Listar cuentas próximas a vencer (próximos 7 días)."""
         empresa = get_tenant_empresa()
@@ -267,7 +267,7 @@ class FlujoCajaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return FlujoCajaListSerializer
         return FlujoCajaSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-periodo')
     def resumen_periodo(self, request):
         """Resumen de flujo de caja por período."""
         empresa = get_tenant_empresa()

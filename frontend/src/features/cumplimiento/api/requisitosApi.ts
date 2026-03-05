@@ -5,18 +5,33 @@
 import axiosInstance from '@/api/axios-config';
 import type {
   TipoRequisito,
-  CreateTipoRequisitoDTO,
-  UpdateTipoRequisitoDTO,
+  TipoRequisitoCreate,
   RequisitoLegal,
-  CreateRequisitoLegalDTO,
-  UpdateRequisitoLegalDTO,
-  RequisitoLegalFilters,
+  RequisitoLegalCreate,
   EmpresaRequisito,
-  CreateEmpresaRequisitoDTO,
-  UpdateEmpresaRequisitoDTO,
-  EmpresaRequisitoFilters,
+  EmpresaRequisitoCreate,
   PaginatedResponse,
 } from '../types';
+
+// Local filter types
+interface RequisitoLegalFilters {
+  tipo?: number;
+  aplica_sst?: boolean;
+  aplica_ambiental?: boolean;
+  aplica_calidad?: boolean;
+  aplica_pesv?: boolean;
+  es_obligatorio?: boolean;
+  search?: string;
+}
+
+interface EmpresaRequisitoFilters {
+  empresa_id?: number;
+  requisito?: number;
+  estado?: string;
+  responsable?: number;
+  fecha_vencimiento_desde?: string;
+  fecha_vencimiento_hasta?: string;
+}
 
 const BASE_URL = '/cumplimiento/requisitos-legales';
 
@@ -24,27 +39,27 @@ const BASE_URL = '/cumplimiento/requisitos-legales';
 
 export const tiposRequisitoApi = {
   getAll: async (): Promise<PaginatedResponse<TipoRequisito>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/tipos/`);
+    const response = await axiosInstance.get(`${BASE_URL}/tipos-requisito/`);
     return response.data;
   },
 
   getById: async (id: number): Promise<TipoRequisito> => {
-    const response = await axiosInstance.get(`${BASE_URL}/tipos/${id}/`);
+    const response = await axiosInstance.get(`${BASE_URL}/tipos-requisito/${id}/`);
     return response.data;
   },
 
-  create: async (data: CreateTipoRequisitoDTO): Promise<TipoRequisito> => {
-    const response = await axiosInstance.post(`${BASE_URL}/tipos/`, data);
+  create: async (data: TipoRequisitoCreate): Promise<TipoRequisito> => {
+    const response = await axiosInstance.post(`${BASE_URL}/tipos-requisito/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateTipoRequisitoDTO): Promise<TipoRequisito> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/tipos/${id}/`, data);
+  update: async (id: number, data: Partial<TipoRequisitoCreate>): Promise<TipoRequisito> => {
+    const response = await axiosInstance.patch(`${BASE_URL}/tipos-requisito/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/tipos/${id}/`);
+    await axiosInstance.delete(`${BASE_URL}/tipos-requisito/${id}/`);
   },
 };
 
@@ -61,12 +76,12 @@ export const requisitosLegalesApi = {
     return response.data;
   },
 
-  create: async (data: CreateRequisitoLegalDTO): Promise<RequisitoLegal> => {
+  create: async (data: RequisitoLegalCreate): Promise<RequisitoLegal> => {
     const response = await axiosInstance.post(`${BASE_URL}/requisitos/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: UpdateRequisitoLegalDTO): Promise<RequisitoLegal> => {
+  update: async (id: number, data: Partial<RequisitoLegalCreate>): Promise<RequisitoLegal> => {
     const response = await axiosInstance.patch(`${BASE_URL}/requisitos/${id}/`, data);
     return response.data;
   },
@@ -93,10 +108,10 @@ export const empresaRequisitosApi = {
     return response.data;
   },
 
-  create: async (data: CreateEmpresaRequisitoDTO): Promise<EmpresaRequisito> => {
+  create: async (data: EmpresaRequisitoCreate): Promise<EmpresaRequisito> => {
     const isFormData = data.documento_soporte instanceof File;
 
-    let formData: FormData | CreateEmpresaRequisitoDTO = data;
+    let formData: FormData | EmpresaRequisitoCreate = data;
 
     if (isFormData && data.documento_soporte) {
       formData = new FormData();
@@ -117,10 +132,10 @@ export const empresaRequisitosApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateEmpresaRequisitoDTO): Promise<EmpresaRequisito> => {
+  update: async (id: number, data: Partial<EmpresaRequisitoCreate>): Promise<EmpresaRequisito> => {
     const isFormData = data.documento_soporte instanceof File;
 
-    let formData: FormData | UpdateEmpresaRequisitoDTO = data;
+    let formData: FormData | Partial<EmpresaRequisitoCreate> = data;
 
     if (isFormData && data.documento_soporte) {
       formData = new FormData();
@@ -145,14 +160,14 @@ export const empresaRequisitosApi = {
     await axiosInstance.delete(`${BASE_URL}/empresa-requisitos/${id}/`);
   },
 
-  getVencimientos: async (empresaId: number, dias?: number): Promise<EmpresaRequisito[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/empresa-requisitos/vencimientos/`, {
+  getPorVencer: async (empresaId: number, dias?: number): Promise<EmpresaRequisito[]> => {
+    const response = await axiosInstance.get(`${BASE_URL}/empresa-requisitos/por-vencer/`, {
       params: { empresa: empresaId, dias },
     });
     return response.data;
   },
 
-  renovar: async (id: number, data: CreateEmpresaRequisitoDTO): Promise<EmpresaRequisito> => {
+  renovar: async (id: number, data: EmpresaRequisitoCreate): Promise<EmpresaRequisito> => {
     const response = await axiosInstance.post(
       `${BASE_URL}/empresa-requisitos/${id}/renovar/`,
       data

@@ -32,7 +32,7 @@ class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-favoritos')
     def mis_favoritos(self, request):
         """Obtener dashboards favoritos del usuario actual"""
         favoritos = FavoritoDashboard.objects.filter(
@@ -42,7 +42,7 @@ class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
         serializer = self.get_serializer(vistas, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='agregar-favorito')
     def agregar_favorito(self, request, pk=None):
         """Agregar esta vista a favoritos del usuario"""
         vista = self.get_object()

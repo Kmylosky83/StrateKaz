@@ -41,7 +41,7 @@ class ParametrosIntegracionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-modulo')
     def por_modulo(self, request):
         """Obtiene parámetros agrupados por módulo."""
         modulo = request.query_params.get('modulo')
@@ -64,7 +64,7 @@ class ParametrosIntegracionViewSet(viewsets.ModelViewSet):
         )
         return Response(list(resumen))
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='toggle-activo')
     def toggle_activo(self, request, pk=None):
         """Activa o desactiva un parámetro."""
         parametro = self.get_object()
@@ -89,7 +89,7 @@ class LogIntegracionViewSet(viewsets.ModelViewSet):
             return LogIntegracionListSerializer
         return LogIntegracionSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-documento')
     def por_documento(self, request):
         """Busca logs por documento origen."""
         modulo = request.query_params.get('modulo')
@@ -105,7 +105,7 @@ class LogIntegracionViewSet(viewsets.ModelViewSet):
         serializer = LogIntegracionSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='errores-recientes')
     def errores_recientes(self, request):
         """Obtiene los errores recientes de integración."""
         empresa_id = request.query_params.get('empresa')
@@ -190,7 +190,7 @@ class ColaContabilizacionViewSet(viewsets.ModelViewSet):
         serializer = ColaContabilizacionListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='reintentar-todos')
     def reintentar_todos(self, request):
         """Reintenta todos los elementos con error que pueden reintentar."""
         empresa_id = request.data.get('empresa')

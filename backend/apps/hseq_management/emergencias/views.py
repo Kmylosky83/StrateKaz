@@ -467,7 +467,7 @@ class SimulacroViewSet(viewsets.ModelViewSet):
             creado_por=user.get_full_name() or user.username
         )
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='programar-simulacro')
     def programar_simulacro(self, request):
         """
         Action para programar un nuevo simulacro
@@ -535,7 +535,7 @@ class SimulacroViewSet(viewsets.ModelViewSet):
             'simulacro': SimulacroDetailSerializer(simulacro).data
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-realizado')
     def marcar_realizado(self, request, pk=None):
         """Marcar simulacro como realizado"""
         simulacro = self.get_object()
@@ -559,7 +559,7 @@ class SimulacroViewSet(viewsets.ModelViewSet):
             'simulacro': self.get_serializer(simulacro).data
         })
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='registrar-evaluacion')
     def registrar_evaluacion(self, request):
         """
         Action para registrar evaluación de simulacro
@@ -751,7 +751,7 @@ class RecursoEmergenciaViewSet(viewsets.ModelViewSet):
             'por_vencer_30d': por_vencer_30d,
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='requieren-inspeccion')
     def requieren_inspeccion(self, request):
         """Listar recursos que requieren inspección"""
         queryset = self.get_queryset().filter(
@@ -765,7 +765,7 @@ class RecursoEmergenciaViewSet(viewsets.ModelViewSet):
             'recursos': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Recursos próximos a vencer (30 días)"""
         fecha_limite = timezone.now().date() + timezone.timedelta(days=30)

@@ -120,7 +120,7 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
         plantilla.save()
         return Response(PlantillaDocumentoDetailSerializer(plantilla).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-obsoleta')
     def marcar_obsoleta(self, request, pk=None):
         """Marca plantilla como obsoleta"""
         plantilla = self.get_object()
@@ -128,7 +128,7 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
         plantilla.save()
         return Response(PlantillaDocumentoDetailSerializer(plantilla).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='establecer-por-defecto')
     def establecer_por_defecto(self, request, pk=None):
         """Establece plantilla como predeterminada"""
         plantilla = self.get_object()
@@ -273,7 +273,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         firmas = documento.get_firmas_digitales()
         return Response(FirmaDigitalSerializer(firmas, many=True).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='content-type-id')
     def content_type_id(self, request):
         """Retorna el ContentType ID del modelo Documento para uso en FirmaDigital."""
         ct = ContentType.objects.get_for_model(Documento)
@@ -334,7 +334,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(DocumentoDetailSerializer(documento).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-obsoleto')
     def marcar_obsoleto(self, request, pk=None):
         """Marca documento como obsoleto"""
         documento = self.get_object()
@@ -355,7 +355,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(DocumentoDetailSerializer(documento).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='enviar-revision')
     def enviar_revision(self, request, pk=None):
         """Envía documento a revisión"""
         documento = self.get_object()
@@ -372,7 +372,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(DocumentoDetailSerializer(documento).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='incrementar-descarga')
     def incrementar_descarga(self, request, pk=None):
         """Incrementa contador de descargas"""
         documento = self.get_object()
@@ -380,7 +380,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         documento.save(update_fields=['numero_descargas'])
         return Response({'descargas': documento.numero_descargas})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='incrementar-impresion')
     def incrementar_impresion(self, request, pk=None):
         """Incrementa contador de impresiones"""
         documento = self.get_object()
@@ -396,7 +396,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         stats = DocumentoService.obtener_estadisticas(empresa.id if empresa else None)
         return Response(stats)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-revision')
     def pendientes_revision(self, request):
         """Documentos pendientes de revisión programada"""
         hoy = timezone.now().date()
@@ -408,7 +408,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(DocumentoListSerializer(queryset, many=True).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='listado-maestro')
     def listado_maestro(self, request):
         """Listado maestro de documentos publicados"""
         queryset = Documento.objects.filter(
@@ -462,7 +462,7 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa()
         serializer.save(empresa_id=empresa.id if empresa else None, creado_por=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-documento')
     def por_documento(self, request):
         """Historial de versiones de un documento específico"""
         documento_id = request.query_params.get('documento_id')
@@ -536,7 +536,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa()
         serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='confirmar-recepcion')
     def confirmar_recepcion(self, request, pk=None):
         """Confirma recepción de documento por usuario"""
         control = self.get_object()
@@ -555,7 +555,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'Recepción confirmada exitosamente'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='distribuciones-activas')
     def distribuciones_activas(self, request):
         """Controles de distribución activos"""
         queryset = self.get_queryset().filter(
@@ -564,7 +564,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         )
         return Response(ControlDocumentalListSerializer(queryset, many=True).data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='documentos-obsoletos')
     def documentos_obsoletos(self, request):
         """Controles de documentos retirados/obsoletos"""
         queryset = self.get_queryset().filter(

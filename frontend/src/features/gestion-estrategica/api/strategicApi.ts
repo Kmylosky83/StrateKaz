@@ -565,7 +565,7 @@ export const sedesApi = {
   },
 
   setPrincipal: async (id: number): Promise<SedeEmpresa> => {
-    const response = await apiClient.post(`${CONFIGURACION_URL}/sedes/${id}/set_principal/`);
+    const response = await apiClient.post(`${CONFIGURACION_URL}/sedes/${id}/set-principal/`);
     return response.data;
   },
 

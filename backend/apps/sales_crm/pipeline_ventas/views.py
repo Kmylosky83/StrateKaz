@@ -171,7 +171,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(empresa=get_tenant_empresa())
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-etapa')
     def cambiar_etapa(self, request, pk=None):
         """
         POST /oportunidades/{id}/cambiar_etapa/
@@ -213,7 +213,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-ganada')
     def cerrar_ganada(self, request, pk=None):
         """
         POST /oportunidades/{id}/cerrar_ganada/
@@ -241,7 +241,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-perdida')
     def cerrar_perdida(self, request, pk=None):
         """
         POST /oportunidades/{id}/cerrar_perdida/
@@ -282,7 +282,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='dashboard-pipeline')
     def dashboard_pipeline(self, request):
         """
         GET /oportunidades/dashboard_pipeline/
@@ -578,7 +578,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
             'cotizacion': CotizacionDetailSerializer(cotizacion, context={'request': request}).data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='convertir-pedido')
     def convertir_pedido(self, request, pk=None):
         """
         POST /cotizaciones/{id}/convertir_pedido/
@@ -618,7 +618,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
             'cotizacion': CotizacionDetailSerializer(nueva_cotizacion, context={'request': request}).data
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='enviar-email')
     def enviar_email(self, request, pk=None):
         """
         POST /cotizaciones/{id}/enviar_email/

@@ -146,7 +146,7 @@ class CapacitacionViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         capacitacion.save()
         return Response({'status': 'Capacitación publicada'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         queryset = self.get_queryset()
         result = {}
@@ -220,7 +220,7 @@ class EjecucionCapacitacionViewSet(viewsets.ModelViewSet):
         ejecucion.programacion.inscritos += 1
         ejecucion.programacion.save(update_fields=['inscritos'])
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-asistencia')
     def registrar_asistencia(self, request, pk=None):
         ejecucion = self.get_object()
         ejecucion.asistio = request.data.get('asistio', True)
@@ -230,7 +230,7 @@ class EjecucionCapacitacionViewSet(viewsets.ModelViewSet):
         ejecucion.save()
         return Response({'status': 'Asistencia registrada'})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-evaluacion')
     def registrar_evaluacion(self, request, pk=None):
         ejecucion = self.get_object()
         nota = request.data.get('nota')
@@ -246,7 +246,7 @@ class EjecucionCapacitacionViewSet(viewsets.ModelViewSet):
         ejecucion.save()
         return Response({'status': 'Evaluación registrada', 'aprobo': ejecucion.aprobo})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         colaborador_id = request.query_params.get('colaborador_id')
         if not colaborador_id:
@@ -297,7 +297,7 @@ class GamificacionViewSet(viewsets.ViewSet):
         serializer = LeaderboardSerializer(data, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mi-perfil')
     def mi_perfil(self, request):
         """Retorna el perfil de gamificación del colaborador actual."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -312,7 +312,7 @@ class GamificacionViewSet(viewsets.ViewSet):
         except GamificacionColaborador.DoesNotExist:
             return Response({'error': 'Perfil no encontrado'}, status=404)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-badges')
     def mis_badges(self, request):
         """Retorna los badges del colaborador."""
         colaborador_id = request.query_params.get('colaborador_id')
@@ -365,7 +365,7 @@ class CertificadoViewSet(viewsets.ModelViewSet):
         certificado.save()
         return Response({'status': 'Certificado anulado'})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
         colaborador_id = request.query_params.get('colaborador_id')
         if not colaborador_id:

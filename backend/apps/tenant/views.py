@@ -637,7 +637,7 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='grant-access')
     def grant_access(self, request, pk=None):
         """
         Otorgar acceso a un tenant.
@@ -671,7 +671,7 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
             'tenant': tenant.name,
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='revoke-access')
     def revoke_access(self, request, pk=None):
         """
         Revocar acceso a un tenant.
@@ -723,7 +723,7 @@ class PublicTenantViewSet(viewsets.ViewSet):
     authentication_classes = []  # Sin auth - evita query a core_user en schema público
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='by-domain')
     def by_domain(self, request):
         """
         Obtener información básica del tenant por dominio.
@@ -893,7 +893,7 @@ class PublicTenantViewSet(viewsets.ViewSet):
         from django.http import JsonResponse
         return JsonResponse(manifest_data, content_type='application/manifest+json')
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='check-domain')
     def check_domain(self, request):
         """
         Verificar si un dominio está disponible.

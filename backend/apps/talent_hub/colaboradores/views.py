@@ -832,7 +832,7 @@ class HistorialLaboralViewSet(viewsets.ModelViewSet):
         serializer = HistorialLaboralSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='cambios-salario')
     def cambios_salario(self, request):
         """Retorna solo cambios de salario"""
         queryset = self.get_queryset().filter(tipo_movimiento='cambio_salario')

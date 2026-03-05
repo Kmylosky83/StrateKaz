@@ -39,7 +39,7 @@ export const factoresRiesgoLAFTApi = {
     await apiClient.delete(`${BASE_URL}/factores-riesgo/${id}/`);
   },
   porTipo: async () => {
-    const response = await apiClient.get(`${BASE_URL}/factores-riesgo/por_tipo/`);
+    const response = await apiClient.get(`${BASE_URL}/factores-riesgo/por-tipo/`);
     return response.data;
   },
 };
@@ -103,7 +103,7 @@ export const matricesRiesgoLAFTApi = {
     return response.data;
   },
   proximasRevisiones: async () => {
-    const response = await apiClient.get(`${BASE_URL}/matrices/proximas_revisiones/`);
+    const response = await apiClient.get(`${BASE_URL}/matrices/proximas-revisiones/`);
     return response.data;
   },
 };
@@ -133,7 +133,7 @@ export const senalesAlertaApi = {
     await apiClient.delete(`${BASE_URL}/senales-alerta/${id}/`);
   },
   asignarAnalista: async (id: number, analistaId: number) => {
-    const response = await apiClient.post(`${BASE_URL}/senales-alerta/${id}/asignar_analista/`, {
+    const response = await apiClient.post(`${BASE_URL}/senales-alerta/${id}/asignar-analista/`, {
       analista_id: analistaId,
     });
     return response.data;
@@ -143,7 +143,7 @@ export const senalesAlertaApi = {
     return response.data;
   },
   requierenROS: async () => {
-    const response = await apiClient.get(`${BASE_URL}/senales-alerta/requieren_ros/`);
+    const response = await apiClient.get(`${BASE_URL}/senales-alerta/requieren-ros/`);
     return response.data;
   },
 };
@@ -173,11 +173,11 @@ export const reportesROSApi = {
     await apiClient.delete(`${BASE_URL}/reportes-ros/${id}/`);
   },
   enviarUIAF: async (id: number, data?: { numero_radicado?: string }) => {
-    const response = await apiClient.post(`${BASE_URL}/reportes-ros/${id}/enviar_uiaf/`, data);
+    const response = await apiClient.post(`${BASE_URL}/reportes-ros/${id}/enviar-uiaf/`, data);
     return response.data;
   },
   pendientesEnvio: async () => {
-    const response = await apiClient.get(`${BASE_URL}/reportes-ros/pendientes_envio/`);
+    const response = await apiClient.get(`${BASE_URL}/reportes-ros/pendientes-envio/`);
     return response.data;
   },
 };
@@ -211,7 +211,7 @@ export const debidasDiligenciasApi = {
     return response.data;
   },
   proximasActualizacion: async () => {
-    const response = await apiClient.get(`${BASE_URL}/debidas-diligencias/proximas_actualizacion/`);
+    const response = await apiClient.get(`${BASE_URL}/debidas-diligencias/proximas-actualizacion/`);
     return response.data;
   },
   peps: async () => {

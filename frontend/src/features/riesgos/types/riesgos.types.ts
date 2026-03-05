@@ -11,11 +11,22 @@
 
 // ==================== ENUMS Y TIPOS ====================
 
-export type TipoRiesgo = 'estrategico' | 'operativo' | 'financiero' | 'cumplimiento' | 'tecnologico' | 'reputacional';
+export type TipoRiesgo =
+  | 'estrategico'
+  | 'operativo'
+  | 'financiero'
+  | 'cumplimiento'
+  | 'tecnologico'
+  | 'reputacional';
 export type TipoTratamiento = 'evitar' | 'mitigar' | 'transferir' | 'aceptar';
 export type TipoControl = 'preventivo' | 'detectivo' | 'correctivo';
-export type EstadoRiesgo = 'identificado' | 'en_tratamiento' | 'controlado' | 'materializado' | 'cerrado';
-export type EstadoTratamiento = 'pendiente' | 'en_proceso' | 'completado' | 'cancelado';
+export type EstadoRiesgo =
+  | 'identificado'
+  | 'en_tratamiento'
+  | 'controlado'
+  | 'materializado'
+  | 'cerrado';
+export type EstadoTratamiento = 'pendiente' | 'en_curso' | 'completado' | 'cancelado';
 export type NivelRiesgo = 'muy_bajo' | 'bajo' | 'medio' | 'alto' | 'muy_alto';
 export type EfectividadControl = 'baja' | 'media' | 'alta';
 
@@ -79,7 +90,7 @@ export interface ControlRiesgo {
   riesgo: number;
   nombre: string;
   descripcion: string;
-  tipo: TipoControl;
+  tipo_control: TipoControl;
   responsable: number | null;
   responsable_detail?: {
     id: number;
@@ -195,7 +206,13 @@ export interface Oportunidad {
     last_name: string;
   };
 
-  estado: 'identificada' | 'en_evaluacion' | 'aprobada' | 'en_ejecucion' | 'implementada' | 'rechazada';
+  estado:
+    | 'identificada'
+    | 'en_evaluacion'
+    | 'aprobada'
+    | 'en_ejecucion'
+    | 'implementada'
+    | 'rechazada';
 
   fecha_identificacion: string;
   fecha_implementacion: string | null;
@@ -298,7 +315,7 @@ export interface CreateControlRiesgoDTO {
   riesgo: number;
   nombre: string;
   descripcion: string;
-  tipo: TipoControl;
+  tipo_control: TipoControl;
   responsable?: number;
   frecuencia: 'continuo' | 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
   efectividad: EfectividadControl;
@@ -311,7 +328,7 @@ export interface CreateControlRiesgoDTO {
 export interface UpdateControlRiesgoDTO {
   nombre?: string;
   descripcion?: string;
-  tipo?: TipoControl;
+  tipo_control?: TipoControl;
   responsable?: number;
   frecuencia?: 'continuo' | 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'semestral' | 'anual';
   efectividad?: EfectividadControl;
@@ -387,7 +404,13 @@ export interface UpdateOportunidadDTO {
   proceso_relacionado?: string;
   area_responsable?: string;
   responsable?: number;
-  estado?: 'identificada' | 'en_evaluacion' | 'aprobada' | 'en_ejecucion' | 'implementada' | 'rechazada';
+  estado?:
+    | 'identificada'
+    | 'en_evaluacion'
+    | 'aprobada'
+    | 'en_ejecucion'
+    | 'implementada'
+    | 'rechazada';
   fecha_identificacion?: string;
   fecha_implementacion?: string;
   recursos_requeridos?: string;

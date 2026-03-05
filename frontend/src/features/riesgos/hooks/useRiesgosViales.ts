@@ -9,7 +9,6 @@ import {
   controlesVialesApi,
   incidentesVialesApi,
   inspeccionesVehiculoApi,
-  estadisticasPESVApi,
 } from '../api/riesgosVialesApi';
 import type {
   TipoRiesgoVialCreate,
@@ -50,21 +49,16 @@ export const riesgosVialesKeys = {
   riesgosList: (filters?: RiesgoVialFilter) =>
     [...riesgosVialesKeys.riesgos(), 'list', filters] as const,
   riesgo: (id: number) => [...riesgosVialesKeys.riesgos(), id] as const,
-  riesgosResumen: () => [...riesgosVialesKeys.riesgos(), 'resumen'] as const,
+  riesgosEstadisticas: () => [...riesgosVialesKeys.riesgos(), 'estadisticas'] as const,
   riesgosCriticos: () => [...riesgosVialesKeys.riesgos(), 'criticos'] as const,
-  riesgosAltos: () => [...riesgosVialesKeys.riesgos(), 'altos'] as const,
-  riesgosSinControles: () => [...riesgosVialesKeys.riesgos(), 'sin-controles'] as const,
-  riesgosPorPilar: (pilar: PilarPESV) =>
-    [...riesgosVialesKeys.riesgos(), 'pilar', pilar] as const,
+  riesgosPorPilar: (pilar: PilarPESV) => [...riesgosVialesKeys.riesgos(), 'pilar', pilar] as const,
 
   // Controles
   controles: () => [...riesgosVialesKeys.all, 'controles'] as const,
   controlesList: (filters?: ControlVialFilter) =>
     [...riesgosVialesKeys.controles(), 'list', filters] as const,
   control: (id: number) => [...riesgosVialesKeys.controles(), id] as const,
-  controlesResumen: () => [...riesgosVialesKeys.controles(), 'resumen'] as const,
   controlesAtrasados: () => [...riesgosVialesKeys.controles(), 'atrasados'] as const,
-  controlesIneficaces: () => [...riesgosVialesKeys.controles(), 'ineficaces'] as const,
   controlesPorRiesgo: (riesgoId: number) =>
     [...riesgosVialesKeys.controles(), 'riesgo', riesgoId] as const,
 
@@ -73,8 +67,7 @@ export const riesgosVialesKeys = {
   incidentesList: (filters?: IncidenteVialFilter) =>
     [...riesgosVialesKeys.incidentes(), 'list', filters] as const,
   incidente: (id: number) => [...riesgosVialesKeys.incidentes(), id] as const,
-  incidentesResumen: () => [...riesgosVialesKeys.incidentes(), 'resumen'] as const,
-  incidentesPendientes: () => [...riesgosVialesKeys.incidentes(), 'pendientes'] as const,
+  incidentesEstadisticas: () => [...riesgosVialesKeys.incidentes(), 'estadisticas'] as const,
   incidentesGraves: () => [...riesgosVialesKeys.incidentes(), 'graves'] as const,
 
   // Inspecciones
@@ -82,18 +75,8 @@ export const riesgosVialesKeys = {
   inspeccionesList: (filters?: InspeccionVehiculoFilter) =>
     [...riesgosVialesKeys.inspecciones(), 'list', filters] as const,
   inspeccion: (id: number) => [...riesgosVialesKeys.inspecciones(), id] as const,
-  inspeccionesResumen: () => [...riesgosVialesKeys.inspecciones(), 'resumen'] as const,
-  inspeccionesRechazadas: () => [...riesgosVialesKeys.inspecciones(), 'rechazadas'] as const,
   inspeccionesPorPlaca: (placa: string) =>
     [...riesgosVialesKeys.inspecciones(), 'placa', placa] as const,
-
-  // Estadisticas
-  estadisticas: () => [...riesgosVialesKeys.all, 'estadisticas'] as const,
-  estadisticasIndicadores: (periodo?: { fecha_inicio: string; fecha_fin: string }) =>
-    [...riesgosVialesKeys.estadisticas(), 'indicadores', periodo] as const,
-  estadisticasTendencias: (meses: number) =>
-    [...riesgosVialesKeys.estadisticas(), 'tendencias', meses] as const,
-  dashboardPilares: () => [...riesgosVialesKeys.estadisticas(), 'dashboard-pilares'] as const,
 };
 
 // ============================================
@@ -179,10 +162,10 @@ export function useRiesgoVial(id: number) {
   });
 }
 
-export function useResumenRiesgosViales() {
+export function useEstadisticasRiesgosViales() {
   return useQuery({
-    queryKey: riesgosVialesKeys.riesgosResumen(),
-    queryFn: riesgosVialesApi.resumen,
+    queryKey: riesgosVialesKeys.riesgosEstadisticas(),
+    queryFn: riesgosVialesApi.estadisticas,
   });
 }
 
@@ -190,20 +173,6 @@ export function useRiesgosCriticos() {
   return useQuery({
     queryKey: riesgosVialesKeys.riesgosCriticos(),
     queryFn: riesgosVialesApi.criticos,
-  });
-}
-
-export function useRiesgosAltos() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.riesgosAltos(),
-    queryFn: riesgosVialesApi.altos,
-  });
-}
-
-export function useRiesgosSinControles() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.riesgosSinControles(),
-    queryFn: riesgosVialesApi.sinControles,
   });
 }
 
@@ -222,7 +191,6 @@ export function useCreateRiesgoVial() {
     mutationFn: (data: RiesgoVialCreate) => riesgosVialesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.riesgos() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -247,7 +215,6 @@ export function useDeleteRiesgoVial() {
     mutationFn: (id: number) => riesgosVialesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.riesgos() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -271,24 +238,10 @@ export function useControlVial(id: number) {
   });
 }
 
-export function useResumenControlesViales() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.controlesResumen(),
-    queryFn: controlesVialesApi.resumen,
-  });
-}
-
 export function useControlesAtrasados() {
   return useQuery({
     queryKey: riesgosVialesKeys.controlesAtrasados(),
     queryFn: controlesVialesApi.atrasados,
-  });
-}
-
-export function useControlesIneficaces() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.controlesIneficaces(),
-    queryFn: controlesVialesApi.ineficaces,
   });
 }
 
@@ -308,9 +261,8 @@ export function useCreateControlVial() {
     onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.controles() });
       queryClient.invalidateQueries({
-        queryKey: riesgosVialesKeys.controlesPorRiesgo(data.riesgo_id),
+        queryKey: riesgosVialesKeys.controlesPorRiesgo(data.riesgo_vial),
       });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -335,7 +287,6 @@ export function useDeleteControlVial() {
     mutationFn: (id: number) => controlesVialesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.controles() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -359,17 +310,10 @@ export function useIncidenteVial(id: number) {
   });
 }
 
-export function useResumenIncidentesViales() {
+export function useEstadisticasIncidentesViales() {
   return useQuery({
-    queryKey: riesgosVialesKeys.incidentesResumen(),
-    queryFn: incidentesVialesApi.resumen,
-  });
-}
-
-export function useIncidentesPendientesInvestigacion() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.incidentesPendientes(),
-    queryFn: incidentesVialesApi.pendientesInvestigacion,
+    queryKey: riesgosVialesKeys.incidentesEstadisticas(),
+    queryFn: incidentesVialesApi.estadisticas,
   });
 }
 
@@ -380,14 +324,6 @@ export function useIncidentesGraves() {
   });
 }
 
-export function useIncidentesPorRangoFechas(fechaInicio: string, fechaFin: string) {
-  return useQuery({
-    queryKey: [...riesgosVialesKeys.incidentes(), 'rango', fechaInicio, fechaFin],
-    queryFn: () => incidentesVialesApi.porRangoFechas(fechaInicio, fechaFin),
-    enabled: !!fechaInicio && !!fechaFin,
-  });
-}
-
 export function useCreateIncidenteVial() {
   const queryClient = useQueryClient();
 
@@ -395,7 +331,6 @@ export function useCreateIncidenteVial() {
     mutationFn: (data: IncidenteVialCreate) => incidentesVialesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidentes() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -420,60 +355,26 @@ export function useDeleteIncidenteVial() {
     mutationFn: (id: number) => incidentesVialesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidentes() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
 
-// Acciones especiales de incidentes
+// Iniciar investigacion de un incidente
 export function useIniciarInvestigacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, responsableId }: { id: number; responsableId: number }) =>
-      incidentesVialesApi.iniciarInvestigacion(id, responsableId),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidentes() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidente(id) });
-    },
-  });
-}
-
-export function useCerrarInvestigacion() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
     mutationFn: ({
       id,
-      data,
+      investigadorId,
+      fechaInicio,
     }: {
       id: number;
-      data: {
-        causa_inmediata: string;
-        causas_basicas: string;
-        factores_trabajo?: string;
-        acciones_correctivas: string;
-      };
-    }) => incidentesVialesApi.cerrarInvestigacion(id, data),
+      investigadorId: number;
+      fechaInicio?: string;
+    }) => incidentesVialesApi.iniciarInvestigacion(id, investigadorId, fechaInicio),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidentes() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidente(id) });
-    },
-  });
-}
-
-export function useReportarARL() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: { numero_reporte_arl: string; fecha_reporte_arl: string };
-    }) => incidentesVialesApi.reportarARL(id, data),
-    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.incidente(id) });
     },
   });
@@ -498,20 +399,6 @@ export function useInspeccionVehiculo(id: number) {
   });
 }
 
-export function useResumenInspeccionesVehiculo() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.inspeccionesResumen(),
-    queryFn: inspeccionesVehiculoApi.resumen,
-  });
-}
-
-export function useInspeccionesRechazadas() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.inspeccionesRechazadas(),
-    queryFn: inspeccionesVehiculoApi.rechazadas,
-  });
-}
-
 export function useInspeccionesPorPlaca(placa: string) {
   return useQuery({
     queryKey: riesgosVialesKeys.inspeccionesPorPlaca(placa),
@@ -528,14 +415,6 @@ export function useUltimaInspeccion(placa: string) {
   });
 }
 
-export function usePuedeOperar(placa: string) {
-  return useQuery({
-    queryKey: [...riesgosVialesKeys.inspecciones(), 'puede-operar', placa],
-    queryFn: () => inspeccionesVehiculoApi.puedeOperar(placa),
-    enabled: !!placa,
-  });
-}
-
 export function useCreateInspeccionVehiculo() {
   const queryClient = useQueryClient();
 
@@ -546,7 +425,6 @@ export function useCreateInspeccionVehiculo() {
       queryClient.invalidateQueries({
         queryKey: riesgosVialesKeys.inspeccionesPorPlaca(data.placa),
       });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
   });
 }
@@ -571,39 +449,6 @@ export function useDeleteInspeccionVehiculo() {
     mutationFn: (id: number) => inspeccionesVehiculoApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.inspecciones() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.estadisticas() });
     },
-  });
-}
-
-// ============================================
-// HOOKS PARA ESTADISTICAS PESV
-// ============================================
-
-export function useEstadisticasPESV() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.estadisticas(),
-    queryFn: estadisticasPESVApi.getGeneral,
-  });
-}
-
-export function useIndicadoresPESV(periodo?: { fecha_inicio: string; fecha_fin: string }) {
-  return useQuery({
-    queryKey: riesgosVialesKeys.estadisticasIndicadores(periodo),
-    queryFn: () => estadisticasPESVApi.getIndicadores(periodo),
-  });
-}
-
-export function useTendenciasPESV(meses: number = 12) {
-  return useQuery({
-    queryKey: riesgosVialesKeys.estadisticasTendencias(meses),
-    queryFn: () => estadisticasPESVApi.getTendencias(meses),
-  });
-}
-
-export function useDashboardPilares() {
-  return useQuery({
-    queryKey: riesgosVialesKeys.dashboardPilares(),
-    queryFn: estadisticasPESVApi.getDashboardPilares,
   });
 }

@@ -110,7 +110,7 @@ class EmpresaRequisitoViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewse
             'nuevos_en_periodo': nuevos_periodo,
         }
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], url_path='por-vencer')
     def por_vencer(self, request):
         empresa = get_tenant_empresa(auto_create=False)
         empresa_id = empresa.id if empresa else None

@@ -88,7 +88,7 @@ class PlanTrabajoAnualViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
     def iniciar_ejecucion(self, request, pk=None):
         """
         Iniciar la ejecucion de un plan aprobado
@@ -146,7 +146,7 @@ class PlanTrabajoAnualViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='reporte-ejecutivo')
     def reporte_ejecutivo(self, request, pk=None):
         """
         Generar reporte ejecutivo del plan con metricas clave
@@ -273,7 +273,7 @@ class ActividadPlanViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='reportar-avance')
     def reportar_avance(self, request, pk=None):
         """
         Reportar avance de una actividad
@@ -426,7 +426,7 @@ class ObjetivoSistemaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='actualizar-valor')
     def actualizar_valor(self, request, pk=None):
         """
         Actualizar valor actual del indicador y calcular cumplimiento
@@ -476,7 +476,7 @@ class ObjetivoSistemaViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-cumplido')
     def marcar_cumplido(self, request, pk=None):
         """
         Marcar objetivo como cumplido
@@ -660,7 +660,7 @@ class SeguimientoCronogramaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='generar-seguimiento')
     def generar_seguimiento(self, request):
         """
         Generar seguimiento automatico basado en el estado actual del plan

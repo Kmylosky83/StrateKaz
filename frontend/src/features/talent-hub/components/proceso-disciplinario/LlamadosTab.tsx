@@ -170,7 +170,7 @@ export const LlamadosTab = () => {
                       {llamado.tipo_falta_nombre || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {new Date(llamado.fecha_hechos).toLocaleDateString('es-CO')}
+                      {new Date(llamado.fecha_falta).toLocaleDateString('es-CO')}
                     </td>
                     <td className="px-4 py-3">
                       {llamado.firmado_colaborador ? (

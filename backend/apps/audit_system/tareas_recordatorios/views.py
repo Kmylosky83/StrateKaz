@@ -35,7 +35,7 @@ class TareaViewSet(viewsets.ModelViewSet):
             return Response({'status': 'task reassigned'})
         return Response({'error': 'nuevo_usuario_id required'}, status=400)
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-tareas')
     def mis_tareas(self, request):
         usuario_id = request.user.id
         tareas = self.get_queryset().filter(asignado_a_id=usuario_id, estado__in=['pendiente', 'en_progreso'])
@@ -75,7 +75,7 @@ class EventoCalendarioViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['tipo', 'creado_por']
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-mes')
     def por_mes(self, request):
         from datetime import datetime
         mes = request.query_params.get('mes')
@@ -86,7 +86,7 @@ class EventoCalendarioViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response([])
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-eventos')
     def mis_eventos(self, request):
         usuario_id = request.user.id
         eventos = self.get_queryset().filter(participantes__id=usuario_id)

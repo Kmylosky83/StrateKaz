@@ -232,7 +232,7 @@ class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.M
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='matriz-completa')
     def matriz_completa(self, request, pk=None) -> Response:
         """Retorna la matriz DOFA completa con factores y estrategias organizados."""
         analisis = self.get_object()
@@ -391,7 +391,7 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='proximas-vencer')
     def proximas_vencer(self, request) -> Response:
         """Retorna estrategias próximas a vencer (30 días)."""
         from datetime import timedelta
@@ -411,7 +411,7 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'total': estrategias.count()
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='convertir-objetivo')
     def convertir_objetivo(self, request, pk=None) -> Response:
         """Convierte una estrategia TOWS en un objetivo estratégico."""
         from apps.gestion_estrategica.planeacion.models import StrategicObjective, StrategicPlan
@@ -731,7 +731,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering_fields = ['nombre', 'nivel_influencia_pi', 'nivel_influencia_empresa', 'nivel_interes', 'created_at']
     ordering = ['tipo__grupo__orden', 'tipo__orden', 'nombre']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='matriz-poder-interes')
     def matriz_poder_interes(self, request) -> Response:
         """
         Retorna las partes interesadas organizadas por cuadrante.
@@ -812,7 +812,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response(stats)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='generar-matriz-comunicacion')
     def generar_matriz_comunicacion(self, request) -> Response:
         """
         Genera la matriz de comunicaciones para una parte interesada específica.
@@ -862,7 +862,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'data': MatrizComunicacionSerializer(comunicaciones, many=True).data
         }, status=status.HTTP_201_CREATED if any_created else status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='generar-matriz-comunicacion-masiva')
     def generar_matriz_comunicacion_masiva(self, request) -> Response:
         """
         Genera matrices de comunicación para todas las partes interesadas activas.
@@ -903,7 +903,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'total_errores': len(errors)
         })
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request) -> Response:
         """
         Exporta las partes interesadas a formato Excel F-GD-04.
@@ -1146,7 +1146,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         )
         return response
 
-    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser], url_path='import-excel')
     def import_excel(self, request) -> Response:
         """
         Importa partes interesadas desde Excel.

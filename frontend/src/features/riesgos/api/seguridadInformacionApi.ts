@@ -167,7 +167,7 @@ export const controlesSeguridadApi = {
     return response.data;
   },
   porEfectividad: async () => {
-    const response = await apiClient.get(`${BASE_URL}/controles-seguridad/por_efectividad/`);
+    const response = await apiClient.get(`${BASE_URL}/controles-seguridad/por-efectividad/`);
     return response.data;
   },
 };

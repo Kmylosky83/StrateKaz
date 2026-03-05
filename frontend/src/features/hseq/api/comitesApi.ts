@@ -297,7 +297,7 @@ export const actaReunionApi = {
     id: number,
     data: AprobarActaDTO
   ): Promise<{ message: string; acta: ActaReunion }> => {
-    const response = await apiClient.post(`${BASE_URL}/actas/${id}/aprobar_acta/`, data);
+    const response = await apiClient.post(`${BASE_URL}/actas/${id}/aprobar-acta/`, data);
     return response.data;
   },
 
@@ -309,7 +309,7 @@ export const actaReunionApi = {
   },
 
   enviarRevision: async (id: number): Promise<ActaReunion> => {
-    const response = await apiClient.post(`${BASE_URL}/actas/${id}/enviar_revision/`);
+    const response = await apiClient.post(`${BASE_URL}/actas/${id}/enviar-revision/`);
     return response.data;
   },
 };
@@ -356,7 +356,7 @@ export const compromisoApi = {
   },
 
   getProximosVencer: async (params?: { empresa_id?: number }): Promise<CompromisoList[]> => {
-    const response = await apiClient.get(`${BASE_URL}/compromisos/proximos_vencer/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/compromisos/proximos-vencer/`, { params });
     return response.data;
   },
 
@@ -364,7 +364,7 @@ export const compromisoApi = {
     id: number,
     data: CerrarCompromisoDTO
   ): Promise<{ message: string; compromiso: Compromiso }> => {
-    const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/cerrar_compromiso/`, data);
+    const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/cerrar-compromiso/`, data);
     return response.data;
   },
 
@@ -372,7 +372,7 @@ export const compromisoApi = {
     id: number,
     data: ActualizarAvanceCompromisoDTO
   ): Promise<Compromiso> => {
-    const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/actualizar_avance/`, data);
+    const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/actualizar-avance/`, data);
     return response.data;
   },
 };

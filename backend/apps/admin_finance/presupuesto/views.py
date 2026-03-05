@@ -85,7 +85,7 @@ class RubroViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         queryset = queryset.select_related('rubro_padre').prefetch_related('subrubros')
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         """Listar rubros por tipo (ingreso o egreso)."""
         tipo = request.query_params.get('tipo')
@@ -193,7 +193,7 @@ class PresupuestoPorAreaViewSet(ResumenRevisionMixin, StandardViewSetMixin, view
         queryset = queryset.select_related('area', 'centro_costo', 'rubro')
         return queryset
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='resumen-ejecucion')
     def resumen_ejecucion(self, request):
         """
         Resumen de ejecución presupuestal por área.

@@ -198,7 +198,7 @@ class ProgramaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response(eventos)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         """Cambia el estado de un programa"""
         programa = self.get_object()
@@ -240,7 +240,7 @@ class TemaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filterset_fields = ['programa', 'categoria', 'fue_presentado']
     ordering = ['orden']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='plantilla-temas-iso')
     def plantilla_temas_iso(self, request):
         """Retorna plantilla de temas según ISO"""
         temas_iso = [
@@ -560,7 +560,7 @@ class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = CompromisoRevisionListSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-responsable')
     def por_responsable(self, request):
         """Agrupa compromisos por responsable"""
         _empresa = get_tenant_empresa()
@@ -592,7 +592,7 @@ class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response(por_responsable)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-avance')
     def registrar_avance(self, request, pk=None):
         """Registra avance en un compromiso"""
         compromiso = self.get_object()

@@ -146,7 +146,7 @@ class TipoDocumentoContableViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='reiniciar-consecutivo')
     def reiniciar_consecutivo(self, request, pk=None):
         tipo = self.get_object()
         nuevo_consecutivo = request.data.get('consecutivo', 0)
@@ -176,7 +176,7 @@ class TerceroViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-tipo')
     def por_tipo(self, request):
         tipo = request.query_params.get('tipo')
         if not tipo:
@@ -251,14 +251,14 @@ class ConfiguracionModuloViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-periodo')
     def cerrar_periodo(self, request, pk=None):
         config = self.get_object()
         config.ultimo_periodo_cerrado = config.periodo_actual
         config.save(update_fields=['ultimo_periodo_cerrado', 'updated_at'])
         return Response({'status': 'cerrado', 'periodo': config.ultimo_periodo_cerrado})
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='abrir-periodo')
     def abrir_periodo(self, request, pk=None):
         config = self.get_object()
         nuevo_periodo = request.data.get('periodo')

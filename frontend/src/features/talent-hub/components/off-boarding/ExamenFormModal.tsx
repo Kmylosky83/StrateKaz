@@ -56,20 +56,20 @@ export function ExamenFormModal({ isOpen, onClose, procesoId }: ExamenFormModalP
         />
 
         <Input
-          label="Fecha Programada"
+          label="Fecha del Examen"
           type="date"
-          error={errors.fecha_programada?.message}
-          {...register('fecha_programada', {
-            required: 'La fecha programada es requerida',
+          error={errors.fecha_examen?.message}
+          {...register('fecha_examen', {
+            required: 'La fecha del examen es requerida',
           })}
         />
 
         <Input
-          label="Entidad de Salud"
+          label="Entidad Prestadora"
           type="text"
-          error={errors.entidad_salud?.message}
-          {...register('entidad_salud', {
-            required: 'La entidad de salud es requerida',
+          error={errors.entidad_prestadora?.message}
+          {...register('entidad_prestadora', {
+            required: 'La entidad prestadora es requerida',
           })}
           placeholder="Nombre de la IPS o entidad prestadora"
         />

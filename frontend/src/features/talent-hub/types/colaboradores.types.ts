@@ -94,9 +94,9 @@ export interface Colaborador {
   // Estructura organizacional
   // List serializer: cargo/area son IDs (number), con _nombre como campo plano
   // Detail serializer: cargo_data/area_data son objetos anidados
-  cargo: number | { id: string; nombre: string; codigo?: string };
+  cargo: number | { id: number; name: string; code?: string };
   cargo_nombre?: string;
-  area: number | { id: string; nombre: string };
+  area: number | { id: number; name: string };
   area_nombre?: string;
 
   // Información laboral

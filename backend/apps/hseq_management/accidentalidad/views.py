@@ -137,7 +137,7 @@ class AccidenteTrabajoViewSet(ResumenRevisionMixin, ExportMixin, viewsets.ModelV
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-investigacion')
     def iniciar_investigacion(self, request, pk=None):
         """
         Iniciar investigación de accidente de trabajo
@@ -278,7 +278,7 @@ class EnfermedadLaboralViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-investigacion')
     def iniciar_investigacion(self, request, pk=None):
         """Iniciar investigación de enfermedad laboral"""
         enfermedad = self.get_object()
@@ -333,7 +333,7 @@ class IncidenteTrabajoViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-investigacion')
     def iniciar_investigacion(self, request, pk=None):
         """Iniciar investigación de incidente"""
         incidente = self.get_object()
@@ -409,7 +409,7 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-investigacion')
     def completar_investigacion(self, request, pk=None):
         """
         Completar investigación
@@ -438,7 +438,7 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(investigacion)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-investigacion')
     def cerrar_investigacion(self, request, pk=None):
         """
         Cerrar investigación con aprobación
@@ -462,7 +462,7 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(investigacion)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='agregar-causas')
     def agregar_causas(self, request, pk=None):
         """
         Agregar causas raíz a la investigación
@@ -560,7 +560,7 @@ class LeccionAprendidaViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='divulgar-leccion')
     def divulgar_leccion(self, request, pk=None):
         """
         Marcar lección como divulgada
@@ -592,7 +592,7 @@ class LeccionAprendidaViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(leccion)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='pendientes-divulgacion')
     def pendientes_divulgacion(self, request):
         """Listar lecciones pendientes de divulgación"""
         lecciones = LeccionAprendida.objects.filter(
@@ -640,7 +640,7 @@ class PlanAccionATELViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='iniciar-ejecucion')
     def iniciar_ejecucion(self, request, pk=None):
         """Iniciar la ejecución del plan"""
         plan = self.get_object()
@@ -657,7 +657,7 @@ class PlanAccionATELViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(plan)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='verificar-plan')
     def verificar_plan(self, request, pk=None):
         """
         Verificar plan completado
@@ -727,7 +727,7 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(actualizado_por=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-accion')
     def completar_accion(self, request, pk=None):
         """
         Completar acción
@@ -765,7 +765,7 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(accion)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='verificar-accion')
     def verificar_accion(self, request, pk=None):
         """
         Verificar acción completada
@@ -793,7 +793,7 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(accion)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='mis-acciones')
     def mis_acciones(self, request):
         """Listar acciones asignadas al usuario actual"""
         acciones = AccionPlan.objects.filter(

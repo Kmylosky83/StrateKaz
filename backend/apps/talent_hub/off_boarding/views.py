@@ -193,7 +193,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='verificar-progreso')
     def verificar_progreso(self, request, pk=None):
         """Actualizar progreso del proceso."""
         proceso = self.get_object()
@@ -206,7 +206,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-checklist')
     def completar_checklist(self, request, pk=None):
         """Marcar checklist como completado."""
         proceso = self.get_object()
@@ -233,7 +233,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-paz-salvos')
     def completar_paz_salvos(self, request, pk=None):
         """Marcar paz y salvos como completos."""
         proceso = self.get_object()
@@ -260,7 +260,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-examen')
     def completar_examen(self, request, pk=None):
         """Marcar examen de egreso como realizado."""
         proceso = self.get_object()
@@ -283,7 +283,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-entrevista')
     def completar_entrevista(self, request, pk=None):
         """Marcar entrevista como realizada."""
         proceso = self.get_object()
@@ -306,7 +306,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='completar-liquidacion')
     def completar_liquidacion(self, request, pk=None):
         """Marcar liquidación como aprobada."""
         proceso = self.get_object()
@@ -336,7 +336,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
             'proceso': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='cerrar-proceso')
     def cerrar_proceso(self, request, pk=None):
         """Cerrar proceso completo."""
         proceso = self.get_object()
@@ -443,7 +443,7 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
         """Soft delete."""
         instance.soft_delete()
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-completado')
     def marcar_completado(self, request, pk=None):
         """Marcar item como completado."""
         item = self.get_object()
@@ -461,7 +461,7 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
             'item': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='marcar-no-aplica')
     def marcar_no_aplica(self, request, pk=None):
         """Marcar item como no aplica."""
         item = self.get_object()
@@ -654,7 +654,7 @@ class EntrevistaRetiroViewSet(viewsets.ModelViewSet):
         """Soft delete."""
         instance.soft_delete()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='estadisticas-generales')
     def estadisticas_generales(self, request):
         """Estadísticas generales de entrevistas."""
         entrevistas = self.get_queryset()
@@ -761,7 +761,7 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
             'liquidacion': serializer.data
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='registrar-pago')
     def registrar_pago(self, request, pk=None):
         """Registrar pago de liquidación."""
         liquidacion = self.get_object()

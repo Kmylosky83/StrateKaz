@@ -8,9 +8,14 @@
 export type GravedadFalta = 'leve' | 'grave' | 'muy_grave';
 export type TipoLlamado = 'verbal' | 'escrito';
 export type EstadoDescargo = 'citado' | 'realizado' | 'no_presentado';
-export type DecisionDescargo = 'pendiente' | 'exonerado' | 'sancionado' | 'archivado';
+export type DecisionDescargo = 'pendiente' | 'absuelto' | 'sancionado';
 export type TipoSancion = 'amonestacion' | 'suspension' | 'multa' | 'terminacion_justa_causa';
-export type TipoEventoDisciplinario = 'llamado_atencion' | 'descargo' | 'memorando' | 'suspension' | 'terminacion';
+export type TipoEventoDisciplinario =
+  | 'llamado_atencion'
+  | 'descargo'
+  | 'memorando'
+  | 'suspension'
+  | 'terminacion';
 
 // ============== TIPO FALTA ==============
 
@@ -57,7 +62,7 @@ export interface LlamadoAtencion {
   tipo_falta: number | null;
   tipo_falta_nombre: string;
   fecha_llamado: string;
-  fecha_hechos: string;
+  fecha_falta: string;
   descripcion_hechos: string;
   lugar_hechos: string;
   testigos: string;
@@ -77,7 +82,7 @@ export interface LlamadoAtencionFormData {
   tipo: TipoLlamado;
   tipo_falta?: number | null;
   fecha_llamado: string;
-  fecha_hechos: string;
+  fecha_falta: string;
   descripcion_hechos: string;
   lugar_hechos?: string;
   testigos?: string;
@@ -154,7 +159,7 @@ export interface RegistrarDescargoData {
 }
 
 export interface EmitirDecisionData {
-  decision: DecisionDescargo;
+  decision: 'absuelto' | 'sancionado';
   justificacion_decision: string;
 }
 
@@ -169,7 +174,7 @@ export interface Memorando {
   tipo_falta: number;
   tipo_falta_nombre: string;
   fecha_memorando: string;
-  descargo_relacionado: number | null;
+  descargo: number | null;
   antecedentes: string;
   hechos: string;
   normas_infringidas: string;
@@ -196,7 +201,7 @@ export interface MemorandoFormData {
   colaborador: number;
   tipo_falta: number;
   fecha_memorando: string;
-  descargo_relacionado?: number | null;
+  descargo?: number | null;
   antecedentes?: string;
   hechos: string;
   normas_infringidas?: string;
@@ -351,10 +356,8 @@ export const estadoDescargoOptions = [
 ];
 
 export const decisionDescargoOptions = [
-  { value: 'pendiente', label: 'Pendiente' },
-  { value: 'exonerado', label: 'Exonerado' },
+  { value: 'absuelto', label: 'Absuelto' },
   { value: 'sancionado', label: 'Sancionado' },
-  { value: 'archivado', label: 'Archivado' },
 ];
 
 export const tipoSancionOptions = [

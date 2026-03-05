@@ -87,7 +87,7 @@ export const cuentasPorPagarApi = {
     ),
   getPorVencer: () =>
     apiClient.get<PaginatedResponse<CuentaPorPagarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-pagar/por_vencer/`
+      `${API_BASE}/tesoreria/cuentas-por-pagar/por-vencer/`
     ),
   getEstadisticas: () =>
     apiClient.get<CuentaPorPagarEstadisticas>(
@@ -114,7 +114,7 @@ export const cuentasPorCobrarApi = {
     ),
   getPorVencer: () =>
     apiClient.get<PaginatedResponse<CuentaPorCobrarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-cobrar/por_vencer/`
+      `${API_BASE}/tesoreria/cuentas-por-cobrar/por-vencer/`
     ),
   getEstadisticas: () =>
     apiClient.get<CuentaPorCobrarEstadisticas>(
@@ -134,7 +134,7 @@ export const flujoCajaApi = {
     apiClient.patch<FlujoCaja>(`${API_BASE}/tesoreria/flujo-caja/${id}/`, data),
   delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/flujo-caja/${id}/`),
   getResumenPeriodo: (params: { fecha_inicio: string; fecha_fin: string }) =>
-    apiClient.get<FlujoCajaResumen>(`${API_BASE}/tesoreria/flujo-caja/resumen_periodo/`, {
+    apiClient.get<FlujoCajaResumen>(`${API_BASE}/tesoreria/flujo-caja/resumen-periodo/`, {
       params,
     }),
 };
@@ -200,13 +200,13 @@ export const presupuestosApi = {
     apiClient.patch<PresupuestoPorArea>(`${API_BASE}/presupuesto/presupuestos/${id}/`, data),
   delete: (id: number) => apiClient.delete(`${API_BASE}/presupuesto/presupuestos/${id}/`),
   getResumenEjecucion: (params?: { anio?: number }) =>
-    apiClient.get<ResumenEjecucion>(`${API_BASE}/presupuesto/presupuestos/resumen_ejecucion/`, {
+    apiClient.get<ResumenEjecucion>(`${API_BASE}/presupuesto/presupuestos/resumen-ejecucion/`, {
       params,
     }),
   getDisponible: (id: number) =>
     apiClient.get(`${API_BASE}/presupuesto/presupuestos/${id}/disponible/`),
   getPorTipo: (params?: Record<string, unknown>) =>
-    apiClient.get(`${API_BASE}/presupuesto/presupuestos/por_tipo/`, { params }),
+    apiClient.get(`${API_BASE}/presupuesto/presupuestos/por-tipo/`, { params }),
 };
 
 export const aprobacionesApi = {
@@ -268,11 +268,11 @@ export const activosFijosApi = {
     apiClient.patch<ActivoFijo>(`${API_BASE}/activos-fijos/activos/${id}/`, data),
   delete: (id: number) => apiClient.delete(`${API_BASE}/activos-fijos/activos/${id}/`),
   enviarMantenimiento: (id: number) =>
-    apiClient.post(`${API_BASE}/activos-fijos/activos/${id}/enviar_mantenimiento/`),
+    apiClient.post(`${API_BASE}/activos-fijos/activos/${id}/enviar-mantenimiento/`),
   activar: (id: number) => apiClient.post(`${API_BASE}/activos-fijos/activos/${id}/activar/`),
   getEstadisticas: () =>
     apiClient.get<ActivosFijosEstadisticas>(`${API_BASE}/activos-fijos/activos/estadisticas/`),
-  getPorCategoria: () => apiClient.get(`${API_BASE}/activos-fijos/activos/activos_por_categoria/`),
+  getPorCategoria: () => apiClient.get(`${API_BASE}/activos-fijos/activos/activos-por-categoria/`),
 };
 
 export const hojasVidaApi = {
@@ -287,10 +287,10 @@ export const hojasVidaApi = {
   update: (id: number, data: Partial<HojaVidaActivo>) =>
     apiClient.patch<HojaVidaActivo>(`${API_BASE}/activos-fijos/hojas-vida/${id}/`, data),
   getResumenCostos: (params?: Record<string, unknown>) =>
-    apiClient.get(`${API_BASE}/activos-fijos/hojas-vida/resumen_costos/`, { params }),
+    apiClient.get(`${API_BASE}/activos-fijos/hojas-vida/resumen-costos/`, { params }),
   getPorActivo: (activoId: number) =>
     apiClient.get<PaginatedResponse<HojaVidaActivoList>>(
-      `${API_BASE}/activos-fijos/hojas-vida/por_activo/`,
+      `${API_BASE}/activos-fijos/hojas-vida/por-activo/`,
       { params: { activo: activoId } }
     ),
 };
@@ -336,12 +336,12 @@ export const depreciacionesApi = {
   getById: (id: number) =>
     apiClient.get<Depreciacion>(`${API_BASE}/activos-fijos/depreciaciones/${id}/`),
   calcularPeriodo: (data: { periodo_mes: number; periodo_anio: number }) =>
-    apiClient.post(`${API_BASE}/activos-fijos/depreciaciones/calcular_periodo/`, data),
+    apiClient.post(`${API_BASE}/activos-fijos/depreciaciones/calcular-periodo/`, data),
   getReporteMensual: (params: { periodo_mes: number; periodo_anio: number }) =>
-    apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/reporte_mensual/`, { params }),
+    apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/reporte-mensual/`, { params }),
   getResumenDepreciacion: () =>
-    apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/resumen_depreciacion/`),
-  getPorUbicacion: () => apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/por_ubicacion/`),
+    apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/resumen-depreciacion/`),
+  getPorUbicacion: () => apiClient.get(`${API_BASE}/activos-fijos/depreciaciones/por-ubicacion/`),
 };
 
 export const bajasApi = {
@@ -410,14 +410,14 @@ export const serviciosPublicosApi = {
     ),
   getPorVencer: () =>
     apiClient.get<PaginatedResponse<ServicioPublicoList>>(
-      `${API_BASE}/servicios-generales/servicios-publicos/servicios_por_vencer/`
+      `${API_BASE}/servicios-generales/servicios-publicos/servicios-por-vencer/`
     ),
   getResumenConsumos: (params?: Record<string, unknown>) =>
-    apiClient.get(`${API_BASE}/servicios-generales/servicios-publicos/resumen_consumos/`, {
+    apiClient.get(`${API_BASE}/servicios-generales/servicios-publicos/resumen-consumos/`, {
       params,
     }),
   marcarPagado: (id: number) =>
-    apiClient.post(`${API_BASE}/servicios-generales/servicios-publicos/${id}/marcar_pagado/`),
+    apiClient.post(`${API_BASE}/servicios-generales/servicios-publicos/${id}/marcar-pagado/`),
 };
 
 export const contratosServiciosApi = {
@@ -436,12 +436,12 @@ export const contratosServiciosApi = {
     apiClient.post(`${API_BASE}/servicios-generales/contratos/${id}/terminar/`),
   getVigentes: () =>
     apiClient.get<PaginatedResponse<ContratoServicioList>>(
-      `${API_BASE}/servicios-generales/contratos/contratos_vigentes/`
+      `${API_BASE}/servicios-generales/contratos/contratos-vigentes/`
     ),
   getPorVencer: () =>
     apiClient.get<PaginatedResponse<ContratoServicioList>>(
-      `${API_BASE}/servicios-generales/contratos/contratos_por_vencer/`
+      `${API_BASE}/servicios-generales/contratos/contratos-por-vencer/`
     ),
   getResumenPorProveedor: () =>
-    apiClient.get(`${API_BASE}/servicios-generales/contratos/resumen_por_proveedor/`),
+    apiClient.get(`${API_BASE}/servicios-generales/contratos/resumen-por-proveedor/`),
 };

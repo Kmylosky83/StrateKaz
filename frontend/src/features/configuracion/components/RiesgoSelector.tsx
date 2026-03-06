@@ -70,10 +70,10 @@ const CLASIFICACION_LABELS: Record<string, string> = {
 
 // Variantes de Badge para niveles de riesgo (GTC 45)
 const NIVEL_RIESGO_VARIANTS = {
-  'I': 'danger', // Crítico - rojo
-  'II': 'warning', // Alto - naranja
-  'III': 'warning', // Medio - amarillo
-  'IV': 'success', // Bajo - verde
+  I: 'danger', // Crítico - rojo
+  II: 'warning', // Alto - naranja
+  III: 'warning', // Medio - amarillo
+  IV: 'success', // Bajo - verde
 } as const;
 
 /**
@@ -242,11 +242,12 @@ export const RiesgoSelector = ({
       </div>
 
       {/* Acordeón de categorías */}
-      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+      <div className="space-y-2">
         {Array.from(riesgosFiltrados.entries()).map(([clasificacion, riesgosCategoria]) => {
           const isExpanded = expandedCategories.has(clasificacion);
           const categoryState = getCategoryCheckboxState(clasificacion);
-          const Icon = CLASIFICACION_ICONS[clasificacion as keyof typeof CLASIFICACION_ICONS] || AlertTriangle;
+          const Icon =
+            CLASIFICACION_ICONS[clasificacion as keyof typeof CLASIFICACION_ICONS] || AlertTriangle;
 
           return (
             <div
@@ -377,7 +378,9 @@ export const RiesgoSelector = ({
             {searchTerm ? (
               <>
                 <Search className="mx-auto mb-2 text-gray-400" size={32} />
-                <p className="text-sm">No se encontraron riesgos que coincidan con "{searchTerm}"</p>
+                <p className="text-sm">
+                  No se encontraron riesgos que coincidan con "{searchTerm}"
+                </p>
               </>
             ) : (
               <p className="text-sm">No hay riesgos ocupacionales disponibles</p>
@@ -391,19 +394,27 @@ export const RiesgoSelector = ({
         <p className="font-medium mb-1">Niveles de riesgo según GTC 45:</p>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex items-center gap-2">
-            <Badge variant="danger" size="sm">I</Badge>
+            <Badge variant="danger" size="sm">
+              I
+            </Badge>
             <span>Crítico (No tolerable)</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="warning" size="sm">II</Badge>
+            <Badge variant="warning" size="sm">
+              II
+            </Badge>
             <span>Alto (Corregir)</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="warning" size="sm">III</Badge>
+            <Badge variant="warning" size="sm">
+              III
+            </Badge>
             <span>Medio (Mejorar)</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="success" size="sm">IV</Badge>
+            <Badge variant="success" size="sm">
+              IV
+            </Badge>
             <span>Bajo (Aceptable)</span>
           </div>
         </div>

@@ -1,20 +1,25 @@
 /**
- * Página Supply Chain — Unificada con 8 tabs (flujo de negocio)
+ * Página Principal: Supply Chain - Cadena de Suministro
+ * Sistema de Gestión StrateKaz
  *
- * Orden:
- * 1. Proveedores — Crear/gestionar proveedores + KPIs
+ * Arquitectura route-based: El sidebar controla la navegación.
+ * Cada ruta /supply-chain/{seccion} renderiza su componente correspondiente.
+ * NO usa tabs internos — el sidebar ES la navegación.
+ *
+ * Secciones (flujo de negocio):
+ * 1. Proveedores — Registro, KPIs, importación masiva
  * 2. Precios — Gestión de precios por tipo materia prima
  * 3. Compras — Requisiciones, cotizaciones, órdenes, recepciones
  * 4. Almacenamiento — Inventarios, movimientos, kardex, alertas
  * 5. Programación — Programación de abastecimiento
  * 6. Evaluaciones — Evaluación periódica de proveedores
- * 7. Unidades de Negocio — Proveedores internos (config)
- * 8. Catálogos — Catálogos dinámicos (config admin)
+ * 7. Unidades de Negocio — Proveedores internos (configuración)
+ * 8. Catálogos — Catálogos dinámicos (configuración admin)
  */
-import { useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
+import { Card } from '@/components/common/Card';
+import { EmptyState } from '@/components/common/EmptyState';
 import {
   Users,
   DollarSign,
@@ -36,97 +41,98 @@ import {
   CatalogosTab,
 } from '../components';
 
-// ==================== ROUTE → TAB MAPPING ====================
+// ============================================================================
+// Mapa de secciones por ruta
+// ============================================================================
 
-const ROUTE_TO_TAB: Record<string, string> = {
-  proveedores: 'proveedores',
-  precios: 'precios',
-  compras: 'compras',
-  almacenamiento: 'almacenamiento',
-  programacion: 'programacion',
-  evaluaciones: 'evaluaciones',
-  'unidades-negocio': 'unidades-negocio',
-  catalogos: 'catalogos',
+interface SectionMeta {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  component: React.ComponentType | null;
+}
+
+const SECTION_MAP: Record<string, SectionMeta> = {
+  proveedores: {
+    title: 'Proveedores',
+    description: 'Registro y gestión de proveedores, KPIs e importación masiva',
+    icon: <Users className="w-5 h-5" />,
+    component: ProveedoresTab,
+  },
+  precios: {
+    title: 'Precios',
+    description: 'Gestión de precios por tipo de materia prima y proveedor',
+    icon: <DollarSign className="w-5 h-5" />,
+    component: PreciosTab,
+  },
+  compras: {
+    title: 'Compras',
+    description: 'Requisiciones, cotizaciones, órdenes de compra y recepciones',
+    icon: <ShoppingCart className="w-5 h-5" />,
+    component: ComprasTab,
+  },
+  almacenamiento: {
+    title: 'Almacenamiento',
+    description: 'Control de inventario, movimientos, kardex y alertas de stock',
+    icon: <Package className="w-5 h-5" />,
+    component: AlmacenamientoTab,
+  },
+  programacion: {
+    title: 'Programación',
+    description: 'Programación de abastecimiento y operaciones logísticas',
+    icon: <Calendar className="w-5 h-5" />,
+    component: ProgramacionTab,
+  },
+  evaluaciones: {
+    title: 'Evaluaciones',
+    description: 'Evaluación periódica de proveedores con criterios ponderados',
+    icon: <ClipboardCheck className="w-5 h-5" />,
+    component: EvaluacionesTab,
+  },
+  'unidades-negocio': {
+    title: 'Unidades de Negocio',
+    description: 'Gestión de proveedores internos tipo unidad de negocio',
+    icon: <Building2 className="w-5 h-5" />,
+    component: UnidadesNegocioTab,
+  },
+  catalogos: {
+    title: 'Catálogos',
+    description: 'Catálogos dinámicos de la cadena de suministro',
+    icon: <FolderOpen className="w-5 h-5" />,
+    component: CatalogosTab,
+  },
 };
 
-const tabs = [
-  {
-    id: 'proveedores',
-    label: 'Proveedores',
-    icon: <Users className="w-4 h-4" />,
-  },
-  {
-    id: 'precios',
-    label: 'Precios',
-    icon: <DollarSign className="w-4 h-4" />,
-  },
-  {
-    id: 'compras',
-    label: 'Compras',
-    icon: <ShoppingCart className="w-4 h-4" />,
-  },
-  {
-    id: 'almacenamiento',
-    label: 'Almacenamiento',
-    icon: <Package className="w-4 h-4" />,
-  },
-  {
-    id: 'programacion',
-    label: 'Programación',
-    icon: <Calendar className="w-4 h-4" />,
-  },
-  {
-    id: 'evaluaciones',
-    label: 'Evaluaciones',
-    icon: <ClipboardCheck className="w-4 h-4" />,
-  },
-  {
-    id: 'unidades-negocio',
-    label: 'Unidades de Negocio',
-    icon: <Building2 className="w-4 h-4" />,
-  },
-  {
-    id: 'catalogos',
-    label: 'Catálogos',
-    icon: <FolderOpen className="w-4 h-4" />,
-  },
-];
-
-// ==================== MAIN PAGE COMPONENT ====================
+// ============================================================================
+// Componente Principal
+// ============================================================================
 
 export default function SupplyChainPage() {
   const location = useLocation();
-  const navigate = useNavigate();
 
-  const activeTab = useMemo(() => {
-    const segments = location.pathname.split('/');
-    const lastSegment = segments[segments.length - 1];
-    return ROUTE_TO_TAB[lastSegment] || 'proveedores';
-  }, [location.pathname]);
+  // Extraer la sección activa de la ruta: /supply-chain/proveedores -> "proveedores"
+  const activeKey = location.pathname.split('/supply-chain/')[1]?.split('/')[0] || 'proveedores';
+  const section = SECTION_MAP[activeKey] || SECTION_MAP.proveedores;
 
-  const handleTabChange = (tabId: string) => {
-    navigate(`/supply-chain/${tabId}`);
-  };
+  const SectionComponent = section.component;
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Cadena de Suministro"
-        description="Gestión integral de proveedores, compras, inventarios y abastecimiento"
-      />
+    <div className="space-y-6">
+      <PageHeader title={section.title} description={section.description} />
 
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={handleTabChange} variant="pills" />
-
-      <div className="mt-6">
-        {activeTab === 'proveedores' && <ProveedoresTab />}
-        {activeTab === 'precios' && <PreciosTab />}
-        {activeTab === 'compras' && <ComprasTab />}
-        {activeTab === 'almacenamiento' && <AlmacenamientoTab />}
-        {activeTab === 'programacion' && <ProgramacionTab />}
-        {activeTab === 'evaluaciones' && <EvaluacionesTab />}
-        {activeTab === 'unidades-negocio' && <UnidadesNegocioTab />}
-        {activeTab === 'catalogos' && <CatalogosTab />}
-      </div>
+      {SectionComponent ? (
+        <SectionComponent />
+      ) : (
+        <Card className="p-8">
+          <EmptyState
+            icon={
+              <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-xl">{section.icon}</div>
+            }
+            title={section.title}
+            description={`Módulo en desarrollo. ${section.description}`}
+          />
+        </Card>
+      )}
     </div>
   );
 }

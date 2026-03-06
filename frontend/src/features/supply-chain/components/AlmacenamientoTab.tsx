@@ -579,7 +579,7 @@ const ConfiguracionSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function AlmacenamientoTab() {
-  const moduleColor = useModuleColor('supply_chain');
+  const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('inventarios');
 
   const tabs = [

@@ -591,7 +591,7 @@ const CalendarioSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ProgramacionTab() {
-  const moduleColor = useModuleColor('supply_chain');
+  const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('programaciones');
 
   const tabs = [

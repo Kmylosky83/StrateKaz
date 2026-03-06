@@ -14,7 +14,7 @@ import { useProveedor, useEstadisticasProveedores } from '../hooks/useProveedore
 import type { ProveedorList } from '../types';
 
 export default function ProveedoresTab() {
-  const moduleColor = useModuleColor('supply_chain');
+  const { color: moduleColor } = useModuleColor('supply_chain');
   const [showProveedorForm, setShowProveedorForm] = useState(false);
   const [editProveedorId, setEditProveedorId] = useState<number | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);

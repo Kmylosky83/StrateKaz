@@ -695,7 +695,7 @@ const RecepcionesSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ComprasTab() {
-  const moduleColor = useModuleColor('supply_chain');
+  const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('requisiciones');
 
   const tabs = [

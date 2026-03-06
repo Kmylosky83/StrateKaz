@@ -145,6 +145,7 @@ class InventarioSerializer(serializers.ModelSerializer):
         model = Inventario
         fields = [
             'id', 'empresa', 'almacen', 'almacen_nombre',
+            'tipo_epp_id', 'tipo_epp_nombre',
             'producto_codigo', 'producto_nombre', 'producto_tipo', 'producto_tipo_display',
             'lote', 'fecha_vencimiento', 'fecha_ingreso',
             'cantidad_disponible', 'cantidad_reservada', 'cantidad_en_transito',

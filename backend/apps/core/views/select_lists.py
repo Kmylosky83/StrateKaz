@@ -338,3 +338,36 @@ def select_tipos_documento(request):
         }
         for t in qs
     ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_tipos_epp(request):
+    """
+    Lista de tipos de EPP activos para dropdowns.
+    Usado por: Configuración (Cargo SST), HSEQ (entregas EPP), Supply Chain (inventario)
+    """
+    TipoEPP = _safe_get_model('seguridad_industrial', 'TipoEPP')
+    if not TipoEPP:
+        return Response([])
+
+    qs = TipoEPP.objects.filter(
+        is_active=True
+    ).values(
+        'id', 'codigo', 'nombre', 'categoria',
+        'vida_util_dias', 'normas_aplicables'
+    ).order_by('categoria', 'nombre')[:200]
+
+    return Response([
+        {
+            'id': t['id'],
+            'label': t['nombre'],
+            'extra': {
+                'codigo': t.get('codigo', ''),
+                'categoria': t.get('categoria', ''),
+                'vida_util_dias': t.get('vida_util_dias'),
+                'normas': t.get('normas_aplicables', ''),
+            }
+        }
+        for t in qs
+    ])

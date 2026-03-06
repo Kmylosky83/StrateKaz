@@ -183,7 +183,7 @@ class EntregaEPPSerializer(serializers.ModelSerializer):
     class Meta:
         model = EntregaEPP
         fields = '__all__'
-        read_only_fields = ['numero_entrega', 'fecha_reposicion_programada']
+        read_only_fields = ['numero_entrega', 'fecha_reposicion_programada', 'cargo_nombre']
 
 
 class EntregaEPPListSerializer(serializers.ModelSerializer):
@@ -197,7 +197,8 @@ class EntregaEPPListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'numero_entrega', 'tipo_epp_nombre', 'colaborador_nombre',
             'fecha_entrega', 'fecha_reposicion_programada', 'cantidad',
-            'estado', 'estado_display', 'capacitacion_realizada'
+            'estado', 'estado_display', 'capacitacion_realizada',
+            'cargo_id_ref', 'cargo_nombre'
         ]
 
 

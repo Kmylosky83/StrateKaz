@@ -60,24 +60,69 @@ class CrossModuleStatsService:
 
     @classmethod
     def _get_talent_hub_stats(cls, empresa_id: int) -> dict:
+        now = timezone.now()
+        año = now.year
+
         total = cls._safe_count('colaboradores', 'Colaborador', empresa_id)
         activos = cls._safe_count('colaboradores', 'Colaborador', empresa_id, estado='ACTIVO')
 
         # Formacion
         capacitaciones_año = 0
         qs = cls._safe_query('formacion_reinduccion', 'Capacitacion', empresa_id,
-                             fecha_programada__year=timezone.now().year)
+                             fecha_programada__year=año)
         if qs is not None:
             capacitaciones_año = qs.count()
 
         # Novedades pendientes
         novedades_pend = cls._safe_count('novedades', 'Novedad', empresa_id, estado='PENDIENTE')
 
+        # Desempeño
+        evaluaciones_completadas = cls._safe_count(
+            'desempeno', 'EvaluacionDesempeno', empresa_id, estado='COMPLETADA')
+        planes_mejora_activos = cls._safe_count(
+            'desempeno', 'PlanMejora', empresa_id, estado='EN_CURSO')
+        promedio_calificacion = None
+        qs_eval = cls._safe_query('desempeno', 'EvaluacionDesempeno', empresa_id,
+                                  estado='COMPLETADA', ciclo__year=año)
+        if qs_eval is not None:
+            agg = qs_eval.aggregate(promedio=Avg('calificacion_final'))
+            promedio_calificacion = round(float(agg['promedio']), 2) if agg['promedio'] else None
+
+        # Control Tiempo — asistencia mes actual
+        porcentaje_asistencia = None
+        qs_asist = cls._safe_query('control_tiempo', 'RegistroAsistencia', empresa_id,
+                                   fecha__year=año, fecha__month=now.month)
+        if qs_asist is not None:
+            total_registros = qs_asist.count()
+            asistio = qs_asist.filter(estado='PRESENTE').count()
+            porcentaje_asistencia = round((asistio / total_registros * 100), 1) if total_registros > 0 else None
+
+        # Selección
+        procesos_activos = cls._safe_count(
+            'seleccion_contratacion', 'VacanteActiva', empresa_id, estado='ABIERTA')
+        contrataciones_mes = cls._safe_count(
+            'colaboradores', 'Colaborador', empresa_id,
+            fecha_ingreso__year=año, fecha_ingreso__month=now.month)
+
+        # Rotación 12 meses
+        hace_12m = now - timedelta(days=365)
+        retiros_12m = cls._safe_count(
+            'off_boarding', 'ProcesoRetiro', empresa_id, fecha_retiro__gte=hace_12m)
+        rotacion_12m = round((retiros_12m / activos * 100), 1) if activos > 0 else 0
+
         return {
             'total_colaboradores': total,
             'colaboradores_activos': activos,
             'capacitaciones_año': capacitaciones_año,
             'novedades_pendientes': novedades_pend,
+            'evaluaciones_completadas': evaluaciones_completadas,
+            'promedio_calificacion': promedio_calificacion,
+            'planes_mejora_activos': planes_mejora_activos,
+            'porcentaje_asistencia': porcentaje_asistencia,
+            'procesos_seleccion_activos': procesos_activos,
+            'contrataciones_mes': contrataciones_mes,
+            'retiros_12m': retiros_12m,
+            'rotacion_12m': rotacion_12m,
         }
 
     # =========================================================================

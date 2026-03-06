@@ -11,6 +11,7 @@ from django.db.models import Count, Avg, Q
 from datetime import timedelta
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     CicloEvaluacion, CompetenciaEvaluacion, CriterioEvaluacion, EscalaCalificacion,
@@ -32,12 +33,50 @@ from .serializers import (
 )
 
 
-class CicloEvaluacionViewSet(viewsets.ModelViewSet):
+class CicloEvaluacionViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """ViewSet para ciclos de evaluación."""
     permission_classes = [IsAuthenticated]
     filterset_fields = ['tipo_ciclo', 'anio', 'estado', 'is_active']
     search_fields = ['codigo', 'nombre']
     ordering = ['-anio', '-periodo']
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'desempeno'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de desempeño para Revisión por la Dirección."""
+        evaluaciones = EvaluacionDesempeno.objects.filter(
+            is_active=True,
+            created_at__date__range=[fecha_desde, fecha_hasta]
+        )
+        total_eval = evaluaciones.exclude(estado='cancelada').count()
+        completadas = evaluaciones.filter(estado='completada').count()
+        promedio = evaluaciones.filter(
+            calificacion_final__isnull=False
+        ).aggregate(avg=Avg('calificacion_final'))['avg']
+
+        planes = PlanMejora.objects.filter(
+            is_active=True,
+            created_at__date__range=[fecha_desde, fecha_hasta]
+        )
+        planes_activos = planes.filter(estado__in=['aprobado', 'en_ejecucion']).count()
+        planes_completados = planes.filter(estado='completado').count()
+
+        reconocimientos = Reconocimiento.objects.filter(
+            is_active=True,
+            fecha_reconocimiento__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        return {
+            'evaluaciones_total': total_eval,
+            'evaluaciones_completadas': completadas,
+            'tasa_completitud': round((completadas / total_eval * 100), 1) if total_eval > 0 else 0,
+            'promedio_calificacion': round(float(promedio), 2) if promedio else None,
+            'planes_mejora_activos': planes_activos,
+            'planes_mejora_completados': planes_completados,
+            'reconocimientos': reconocimientos,
+        }
 
     def get_queryset(self):
         return CicloEvaluacion.objects.filter(

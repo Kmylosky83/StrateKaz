@@ -30,7 +30,8 @@ export const Modules = {
 
 export const Sections = {
   // CORE
-  USERS: 'colaboradores', // Retained for backward compatibility
+  USERS: 'usuarios', // Matches seed_permisos_rbac 'core' → 'usuarios'
+  USUARIOS: 'usuarios',
   COLABORADORES: 'colaboradores',
   ROLES: 'roles',
   CARGOS: 'cargos',

@@ -714,6 +714,18 @@ class EntregaEPP(models.Model):
         related_name='entregas_epp'
     )
 
+    # Cross-module: Cargo del colaborador al momento de la entrega
+    cargo_id_ref = models.PositiveBigIntegerField(
+        null=True, blank=True, db_index=True,
+        verbose_name='Cargo (referencia)',
+        help_text='ID del cargo en core.Cargo al momento de la entrega'
+    )
+    cargo_nombre = models.CharField(
+        max_length=200, blank=True,
+        verbose_name='Cargo (nombre)',
+        help_text='Nombre del cargo (cache para display sin join)'
+    )
+
     # EPP entregado
     tipo_epp = models.ForeignKey(
         TipoEPP,
@@ -823,6 +835,16 @@ class EntregaEPP(models.Model):
             self.fecha_reposicion_programada = (
                 self.fecha_entrega + timedelta(days=self.tipo_epp.vida_util_dias)
             )
+
+        # Auto-populate cargo del colaborador si no se proporcionó
+        if not self.cargo_id_ref and self.colaborador_id:
+            try:
+                user = self.colaborador
+                if hasattr(user, 'cargo') and user.cargo:
+                    self.cargo_id_ref = user.cargo_id
+                    self.cargo_nombre = user.cargo.name
+            except Exception:
+                pass
 
         super().save(*args, **kwargs)
 

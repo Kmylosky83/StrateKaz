@@ -28,6 +28,7 @@ export const selectListKeys = {
     [...selectListKeys.all, 'ciudades', departamentoId] as const,
   tiposDocumento: () => [...selectListKeys.all, 'tipos-documento'] as const,
   tiposMateriaPrima: () => [...selectListKeys.all, 'tipos-materia-prima'] as const,
+  tiposEPP: () => [...selectListKeys.all, 'tipos-epp'] as const,
 };
 
 // ============================================================================
@@ -139,6 +140,16 @@ export const useSelectTiposMateriaPrima = (enabled = true) => {
   return useQuery<SelectListItem[]>({
     queryKey: selectListKeys.tiposMateriaPrima(),
     queryFn: selectListsAPI.getTiposMateriaPrima,
+    staleTime: 1000 * 60 * 5,
+    enabled,
+  });
+};
+
+/** Tipos de EPP (para Cargo SST, entregas EPP, inventario) */
+export const useSelectTiposEPP = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.tiposEPP(),
+    queryFn: selectListsAPI.getTiposEPP,
     staleTime: 1000 * 60 * 5,
     enabled,
   });

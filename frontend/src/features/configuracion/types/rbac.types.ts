@@ -152,6 +152,17 @@ export interface CompetenciaCargo {
   descripcion?: string;
 }
 
+/**
+ * EPP requerido del cargo - formato estructurado
+ * Reemplaza el array plano de strings con referencia al catálogo TipoEPP
+ */
+export interface EPPItem {
+  tipo_epp_id: number | null;
+  nombre: string;
+  cantidad: number;
+  obligatorio: boolean;
+}
+
 /** Opciones de frecuencia para selects */
 export const FRECUENCIA_OPTIONS: { value: FrecuenciaFuncion; label: string }[] = [
   { value: 'diaria', label: 'Diaria' },
@@ -296,7 +307,7 @@ export interface Cargo {
   // TAB 4: SST
   expuesto_riesgos?: number[];
   expuesto_riesgos_detail?: RiesgoOcupacional[];
-  epp_requeridos: string[];
+  epp_requeridos: EPPItem[];
   examenes_medicos: string[];
   restricciones_medicas?: string;
   capacitaciones_sst: string[];
@@ -390,7 +401,7 @@ export interface CreateCargoDTO {
 
   // SST
   riesgo_ids?: number[];
-  epp_requeridos?: string[];
+  epp_requeridos?: EPPItem[];
   examenes_medicos?: string[];
   restricciones_medicas?: string;
   capacitaciones_sst?: string[];
@@ -443,7 +454,7 @@ export interface UpdateCargoDTO {
 
   // SST
   riesgo_ids?: number[];
-  epp_requeridos?: string[];
+  epp_requeridos?: EPPItem[];
   examenes_medicos?: string[];
   restricciones_medicas?: string;
   capacitaciones_sst?: string[];
@@ -710,24 +721,7 @@ export const SCOPE_OPTIONS: SelectOption[] = [
   { value: 'TEAM', label: 'Equipo' },
 ];
 
-// ==================== EPP SUGERIDOS ====================
-
-export const EPP_SUGERIDOS = [
-  'Casco de seguridad',
-  'Gafas de proteccion',
-  'Protector auditivo',
-  'Mascarilla/Respirador',
-  'Guantes de nitrilo',
-  'Guantes de carnaza',
-  'Botas de seguridad',
-  'Botas de caucho',
-  'Chaleco reflectivo',
-  'Overol/Uniforme',
-  'Delantal impermeable',
-  'Careta facial',
-  'Arnes de seguridad',
-  'Linea de vida',
-];
+// EPP_SUGERIDOS was removed — EPP now uses structured objects with TipoEPP catalog
 
 // ==================== EXAMENES MEDICOS SUGERIDOS ====================
 

@@ -36,6 +36,7 @@ export default function UsersPage() {
     search: '',
     cargo: '',
     is_active: undefined,
+    tipo: 'todos',
     page: 1,
     page_size: 10,
   });
@@ -132,6 +133,7 @@ export default function UsersPage() {
       search: '',
       cargo: '',
       is_active: undefined,
+      tipo: 'todos',
       page: 1,
       page_size: 10,
     });
@@ -140,6 +142,7 @@ export default function UsersPage() {
   const activeFiltersCount = [
     filters.cargo,
     filters.is_active !== undefined ? 'active' : '',
+    filters.tipo && filters.tipo !== 'todos' ? 'tipo' : '',
   ].filter(Boolean).length;
 
   const hasActiveFilters = activeFiltersCount > 0;
@@ -153,6 +156,12 @@ export default function UsersPage() {
     { value: '', label: 'Todos los estados' },
     { value: 'true', label: 'Activos' },
     { value: 'false', label: 'Inactivos' },
+  ];
+
+  const tipoFilterOptions = [
+    { value: 'todos', label: 'Todos los tipos' },
+    { value: 'interno', label: 'Internos' },
+    { value: 'externo', label: 'Externos' },
   ];
 
   const users = usersData?.results || [];
@@ -220,6 +229,14 @@ export default function UsersPage() {
                 'is_active',
                 e.target.value === '' ? undefined : e.target.value === 'true'
               )
+            }
+          />
+          <Select
+            label="Tipo"
+            options={tipoFilterOptions}
+            value={filters.tipo || 'todos'}
+            onChange={(e) =>
+              handleFilterChange('tipo', e.target.value as 'todos' | 'interno' | 'externo')
             }
           />
         </FilterGrid>

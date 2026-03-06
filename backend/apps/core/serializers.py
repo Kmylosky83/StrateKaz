@@ -44,6 +44,40 @@ class CargoSerializer(serializers.ModelSerializer):
         return obj.subordinados.filter(is_active=True).count()
 
 
+class CargoDetailSerializer(CargoSerializer):
+    """Serializer detallado para Cargo incluyendo campos SST."""
+
+    epp_requeridos = serializers.JSONField(read_only=True)
+    examenes_medicos = serializers.JSONField(read_only=True)
+    capacitaciones_sst = serializers.JSONField(read_only=True)
+    restricciones_medicas = serializers.JSONField(read_only=True)
+    expuesto_riesgos = serializers.SerializerMethodField()
+
+    class Meta(CargoSerializer.Meta):
+        fields = CargoSerializer.Meta.fields + [
+            'epp_requeridos',
+            'examenes_medicos',
+            'capacitaciones_sst',
+            'restricciones_medicas',
+            'expuesto_riesgos',
+        ]
+
+    def get_expuesto_riesgos(self, obj):
+        """Retorna riesgos ocupacionales asociados al cargo."""
+        if not hasattr(obj, 'expuesto_riesgos'):
+            return []
+        return [
+            {
+                'id': r.id,
+                'code': r.code,
+                'name': r.name,
+                'clasificacion': r.clasificacion,
+                'nivel_riesgo': r.nivel_riesgo,
+            }
+            for r in obj.expuesto_riesgos.all()
+        ]
+
+
 class UserListSerializer(serializers.ModelSerializer):
     """Serializer para listado de usuarios (campos resumidos)"""
 

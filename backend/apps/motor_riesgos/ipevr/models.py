@@ -172,6 +172,12 @@ class MatrizIPEVR(BaseCompanyModel):
         max_length=200,
         verbose_name='Cargo'
     )
+    # Cross-module FK a core.Cargo (patrón PositiveBigIntegerField)
+    cargo_id_ref = models.PositiveBigIntegerField(
+        null=True, blank=True, db_index=True,
+        verbose_name='Cargo (referencia)',
+        help_text='ID del cargo en core.Cargo para consultas cross-module'
+    )
     proceso = models.CharField(
         max_length=200,
         verbose_name='Proceso'

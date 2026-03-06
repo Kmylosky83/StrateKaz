@@ -540,6 +540,47 @@ def normalize_competencias(data):
     return result
 
 
+def normalize_epp_requeridos(data):
+    """
+    Normaliza epp_requeridos aceptando ambos formatos:
+    - Legacy: ["Casco de seguridad", "Guantes"]
+    - Estructurado: [{"tipo_epp_id": 1, "nombre": "Casco", "cantidad": 1, "obligatorio": true}]
+    Siempre retorna formato estructurado.
+    """
+    if not data:
+        return []
+    if not isinstance(data, list):
+        raise serializers.ValidationError('epp_requeridos debe ser una lista.')
+    result = []
+    for item in data:
+        if isinstance(item, str):
+            # Legacy format: convert string to structured object
+            result.append({
+                'tipo_epp_id': None,
+                'nombre': item,
+                'cantidad': 1,
+                'obligatorio': True,
+            })
+        elif isinstance(item, dict):
+            # Structured format: validate required keys
+            nombre = item.get('nombre', '')
+            if not nombre and not item.get('tipo_epp_id'):
+                raise serializers.ValidationError(
+                    'Cada EPP debe tener al menos "nombre" o "tipo_epp_id".'
+                )
+            result.append({
+                'tipo_epp_id': item.get('tipo_epp_id'),
+                'nombre': nombre,
+                'cantidad': item.get('cantidad', 1),
+                'obligatorio': item.get('obligatorio', True),
+            })
+        else:
+            raise serializers.ValidationError(
+                'Cada EPP debe ser un string o un objeto {tipo_epp_id, nombre, cantidad, obligatorio}.'
+            )
+    return result
+
+
 class CargoCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear cargos con todos los campos"""
 
@@ -616,6 +657,9 @@ class CargoCreateSerializer(serializers.ModelSerializer):
 
     def validate_competencias_blandas(self, value):
         return normalize_competencias(value)
+
+    def validate_epp_requeridos(self, value):
+        return normalize_epp_requeridos(value)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -736,6 +780,9 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
 
     def validate_competencias_blandas(self, value):
         return normalize_competencias(value)
+
+    def validate_epp_requeridos(self, value):
+        return normalize_epp_requeridos(value)
 
     def validate(self, attrs):
         instance = self.instance

@@ -33,7 +33,7 @@ export const portalsRoutes = (
     <Route
       path="/usuarios"
       element={
-        <SectionGuard moduleCode="core" sectionCode="users_management">
+        <SectionGuard moduleCode="core" sectionCode="usuarios">
           <Suspense fallback={<PageLoader />}>
             <UsersPage />
           </Suspense>

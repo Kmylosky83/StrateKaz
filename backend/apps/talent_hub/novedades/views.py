@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.db.models import Q
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     TipoIncapacidad,
@@ -127,13 +128,48 @@ class TipoLicenciaViewSet(viewsets.ModelViewSet):
 # INCAPACIDADES
 # =============================================================================
 
-class IncapacidadViewSet(viewsets.ModelViewSet):
+class IncapacidadViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet para incapacidades.
 
     Gestión completa de incapacidades con radicación y cobro a EPS/ARL.
     """
     permission_classes = [IsAuthenticated]
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'fecha_inicio'
+    resumen_modulo_nombre = 'novedades'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de novedades para Revisión por la Dirección."""
+        total_incapacidades = queryset.count()
+        dias_perdidos = 0
+        for inc in queryset:
+            if inc.fecha_fin and inc.fecha_inicio:
+                dias_perdidos += (inc.fecha_fin - inc.fecha_inicio).days + 1
+
+        licencias = Licencia.objects.filter(
+            is_active=True,
+            fecha_inicio__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        permisos = Permiso.objects.filter(
+            is_active=True,
+            fecha__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        vacaciones = SolicitudVacaciones.objects.filter(
+            is_active=True,
+            fecha_inicio__range=[fecha_desde, fecha_hasta]
+        ).count()
+
+        return {
+            'incapacidades': total_incapacidades,
+            'dias_perdidos_incapacidad': dias_perdidos,
+            'licencias': licencias,
+            'permisos': permisos,
+            'vacaciones_solicitadas': vacaciones,
+        }
 
     def get_queryset(self):
         """Filtrar incapacidades activas del tenant."""

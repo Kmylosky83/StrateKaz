@@ -16,6 +16,7 @@ from decimal import Decimal
 from django.utils import timezone
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     TipoContrato,
@@ -123,7 +124,7 @@ class TipoPruebaViewSet(viewsets.ModelViewSet):
 # VACANTE ACTIVA
 # =============================================================================
 
-class VacanteActivaViewSet(viewsets.ModelViewSet):
+class VacanteActivaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de Vacantes Activas.
 
@@ -138,6 +139,38 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
     - POST /vacantes-activas/{id}/publicar/ - Publicar externamente
     """
     permission_classes = [IsAuthenticated]
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'seleccion_contratacion'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de selección para Revisión por la Dirección."""
+        total_vacantes = queryset.count()
+        abiertas = queryset.filter(estado='abierta').count()
+        cerradas = queryset.filter(estado='cerrada').count()
+        cubiertas = queryset.filter(estado='cubierta').count()
+
+        candidatos = Candidato.objects.filter(
+            is_active=True,
+            created_at__date__range=[fecha_desde, fecha_hasta]
+        )
+        total_candidatos = candidatos.count()
+        contratados = candidatos.filter(estado='contratado').count()
+
+        tasa_efectividad = round(
+            (contratados / total_vacantes * 100), 1
+        ) if total_vacantes > 0 else 0
+
+        return {
+            'vacantes_total': total_vacantes,
+            'vacantes_abiertas': abiertas,
+            'vacantes_cerradas': cerradas,
+            'vacantes_cubiertas': cubiertas,
+            'candidatos_total': total_candidatos,
+            'candidatos_contratados': contratados,
+            'tasa_efectividad': tasa_efectividad,
+        }
 
     def get_queryset(self):
         queryset = VacanteActiva.objects.filter(is_active=True)

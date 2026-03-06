@@ -273,6 +273,21 @@ class Inventario(models.Model):
         verbose_name='Tipo de producto'
     )
 
+    # Cross-module: tipo EPP (seguridad_industrial.TipoEPP)
+    tipo_epp_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Tipo EPP',
+        help_text='ID del tipo de EPP (seguridad_industrial.TipoEPP)'
+    )
+    tipo_epp_nombre = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Nombre tipo EPP',
+        help_text='Cache del nombre del tipo de EPP'
+    )
+
     # Lote y trazabilidad
     lote = models.CharField(
         max_length=50,

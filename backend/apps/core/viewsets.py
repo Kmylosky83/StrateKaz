@@ -17,6 +17,7 @@ from .utils.audit_logging import (
 )
 from .serializers import (
     CargoSerializer,
+    CargoDetailSerializer,
     UserListSerializer,
     UserDetailSerializer,
     UserCreateSerializer,
@@ -59,6 +60,12 @@ class CargoViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['level', 'name', 'created_at']
     ordering = ['level', 'name']
 
+    def get_serializer_class(self):
+        """Retornar CargoDetailSerializer para retrieve (incluye campos SST)."""
+        if self.action == 'retrieve':
+            return CargoDetailSerializer
+        return CargoSerializer
+
     def get_queryset(self):
         """Filtrar solo cargos activos por defecto"""
         queryset = super().get_queryset()
@@ -67,6 +74,10 @@ class CargoViewSet(viewsets.ReadOnlyModelViewSet):
         include_inactive = self.request.query_params.get('include_inactive', 'false')
         if include_inactive.lower() != 'true':
             queryset = queryset.filter(is_active=True)
+
+        # Para retrieve, prefetch riesgos
+        if self.action == 'retrieve':
+            queryset = queryset.prefetch_related('expuesto_riesgos')
 
         return queryset.select_related('parent_cargo')
 
@@ -116,6 +127,13 @@ class UserViewSet(viewsets.ModelViewSet):
         include_deleted = self.request.query_params.get('include_deleted', 'false')
         if include_deleted.lower() != 'true':
             queryset = queryset.filter(deleted_at__isnull=True)
+
+        # Filtro por tipo: interno/externo/todos
+        tipo = self.request.query_params.get('tipo', 'todos')
+        if tipo == 'interno':
+            queryset = queryset.filter(Q(cargo__is_externo=False) | Q(cargo__isnull=True))
+        elif tipo == 'externo':
+            queryset = queryset.filter(cargo__is_externo=True)
 
         return queryset.select_related('cargo', 'created_by')
 
@@ -468,15 +486,18 @@ class UserViewSet(viewsets.ModelViewSet):
         # Excluir superusuarios (usuario técnico, no es colaborador real)
         base_qs = User.objects.exclude(is_superuser=True)
 
-        total_users = base_qs.filter(deleted_at__isnull=True).count()
-        active_users = base_qs.filter(is_active=True, deleted_at__isnull=True).count()
-        inactive_users = base_qs.filter(is_active=False, deleted_at__isnull=True).count()
+        alive_qs = base_qs.filter(deleted_at__isnull=True)
+        total_users = alive_qs.count()
+        active_users = alive_qs.filter(is_active=True).count()
+        inactive_users = alive_qs.filter(is_active=False).count()
         deleted_users = base_qs.filter(deleted_at__isnull=False).count()
 
+        # Internos vs externos
+        internos = alive_qs.filter(Q(cargo__is_externo=False) | Q(cargo__isnull=True)).count()
+        externos = alive_qs.filter(cargo__is_externo=True).count()
+
         # Usuarios por cargo
-        by_cargo = base_qs.filter(
-            deleted_at__isnull=True
-        ).values(
+        by_cargo = alive_qs.values(
             'cargo__name', 'cargo__code'
         ).annotate(
             count=Count('id')
@@ -487,6 +508,8 @@ class UserViewSet(viewsets.ModelViewSet):
             'active': active_users,
             'inactive': inactive_users,
             'deleted': deleted_users,
+            'internos': internos,
+            'externos': externos,
             'by_cargo': list(by_cargo)
         })
 

@@ -39,17 +39,18 @@ import type {
   ExperienciaRequerida,
   FuncionCargo,
   CompetenciaCargo,
+  EPPItem,
 } from '../types/rbac.types';
 import {
   NIVEL_JERARQUICO_OPTIONS,
   NIVEL_EDUCATIVO_OPTIONS,
   EXPERIENCIA_OPTIONS,
-  EPP_SUGERIDOS,
   EXAMENES_MEDICOS_SUGERIDOS,
   CAPACITACIONES_SST_SUGERIDAS,
   normalizeFunciones,
   normalizeCompetencias,
 } from '../types/rbac.types';
+import { useSelectTiposEPP } from '@/hooks/useSelectLists';
 import { FuncionesTable } from './FuncionesTable';
 import { CompetenciasTable } from './CompetenciasTable';
 import type { Tab } from '@/components/common';
@@ -181,6 +182,26 @@ const ListEditor = ({
   );
 };
 
+/** Normaliza epp_requeridos legacy (string[]) o estructurado (EPPItem[]) */
+const normalizeEppItems = (data: unknown): EPPItem[] => {
+  if (!Array.isArray(data)) return [];
+  return data.map((item) => {
+    if (typeof item === 'string') {
+      return { tipo_epp_id: null, nombre: item, cantidad: 1, obligatorio: true };
+    }
+    if (typeof item === 'object' && item !== null) {
+      const obj = item as Record<string, unknown>;
+      return {
+        tipo_epp_id: (obj.tipo_epp_id as number | null) ?? null,
+        nombre: (obj.nombre as string) || '',
+        cantidad: (obj.cantidad as number) || 1,
+        obligatorio: obj.obligatorio !== false,
+      };
+    }
+    return { tipo_epp_id: null, nombre: String(item), cantidad: 1, obligatorio: true };
+  });
+};
+
 export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormModalProps) => {
   // Estado para transicion create→edit: al crear un cargo, permite configurar permisos sin cerrar el modal
   const [createdCargo, setCreatedCargo] = useState<{ id: number; name: string } | null>(null);
@@ -225,7 +246,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
 
     // Tab 4: SST
     riesgo_ids: [] as number[],
-    epp_requeridos: [] as string[],
+    epp_requeridos: [] as EPPItem[],
     examenes_medicos: [] as string[],
     restricciones_medicas: '',
     capacitaciones_sst: [] as string[],
@@ -237,6 +258,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
   const { data: cargosData } = useCargos({ include_inactive: false, page_size: 100 });
   const { data: choicesData } = useCargoChoices();
   const { data: riesgosData } = useRiesgosOcupacionales({});
+  const { data: tiposEPP = [] } = useSelectTiposEPP();
   // Cargar cargo completo para edicion (CargoList no tiene todos los campos)
   const { data: cargoCompleto, isLoading: isLoadingCargo } = useCargo(cargo?.id ?? null);
 
@@ -281,7 +303,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         formacion_complementaria: cargoCompleto.formacion_complementaria || '',
 
         riesgo_ids: cargoCompleto.expuesto_riesgos || [],
-        epp_requeridos: cargoCompleto.epp_requeridos || [],
+        epp_requeridos: normalizeEppItems(cargoCompleto.epp_requeridos),
         examenes_medicos: cargoCompleto.examenes_medicos || [],
         restricciones_medicas: cargoCompleto.restricciones_medicas || '',
         capacitaciones_sst: cargoCompleto.capacitaciones_sst || [],
@@ -848,13 +870,100 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 )}
               </div>
 
-              <ListEditor
-                label="EPP Requeridos"
-                items={formData.epp_requeridos}
-                onChange={(items) => setFormData({ ...formData, epp_requeridos: items })}
-                placeholder="Agregar EPP..."
-                suggestions={EPP_SUGERIDOS}
-              />
+              {/* EPP Requeridos — selector basado en catálogo TipoEPP */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  EPP Requeridos
+                </label>
+                <div className="flex gap-2">
+                  <Select
+                    value=""
+                    onChange={(e) => {
+                      const tipoId = Number(e.target.value);
+                      if (!tipoId) return;
+                      const tipo = tiposEPP.find((t) => t.id === tipoId);
+                      if (!tipo) return;
+                      if (formData.epp_requeridos.some((epp) => epp.tipo_epp_id === tipoId)) return;
+                      setFormData({
+                        ...formData,
+                        epp_requeridos: [
+                          ...formData.epp_requeridos,
+                          {
+                            tipo_epp_id: tipoId,
+                            nombre: tipo.label,
+                            cantidad: 1,
+                            obligatorio: true,
+                          },
+                        ],
+                      });
+                    }}
+                    options={[
+                      { value: '', label: 'Seleccionar EPP...' },
+                      ...tiposEPP
+                        .filter(
+                          (t) => !formData.epp_requeridos.some((epp) => epp.tipo_epp_id === t.id)
+                        )
+                        .map((t) => ({ value: String(t.id), label: t.label })),
+                    ]}
+                  />
+                </div>
+                {formData.epp_requeridos.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {formData.epp_requeridos.map((epp, index) => (
+                      <div
+                        key={epp.tipo_epp_id ?? index}
+                        className="flex items-center gap-2 px-3 py-2 bg-primary-50 dark:bg-primary-900/30 rounded-md"
+                      >
+                        <span className="flex-1 text-sm text-primary-700 dark:text-primary-300">
+                          {epp.nombre}
+                        </span>
+                        <Input
+                          type="number"
+                          value={epp.cantidad}
+                          onChange={(e) => {
+                            const updated = [...formData.epp_requeridos];
+                            updated[index] = {
+                              ...epp,
+                              cantidad: Math.max(1, Number(e.target.value)),
+                            };
+                            setFormData({ ...formData, epp_requeridos: updated });
+                          }}
+                          className="w-16 text-center"
+                          min={1}
+                        />
+                        <Switch
+                          checked={epp.obligatorio}
+                          onCheckedChange={(checked) => {
+                            const updated = [...formData.epp_requeridos];
+                            updated[index] = { ...epp, obligatorio: checked };
+                            setFormData({ ...formData, epp_requeridos: updated });
+                          }}
+                          label="Obligatorio"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              epp_requeridos: formData.epp_requeridos.filter((_, i) => i !== index),
+                            });
+                          }}
+                          className="p-0.5 hover:text-red-500 h-auto min-h-0"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {tiposEPP.length === 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    No hay tipos de EPP configurados. Agrégalos desde Seguridad Industrial.
+                  </p>
+                )}
+              </div>
 
               <ListEditor
                 label="Exámenes Médicos Ocupacionales"

@@ -72,6 +72,7 @@ export interface UserFilters {
   cargo?: string;
   cargo__code?: string;
   is_active?: boolean | string;
+  tipo?: 'todos' | 'interno' | 'externo';
   page?: number;
   page_size?: number;
 }

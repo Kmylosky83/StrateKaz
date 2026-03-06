@@ -86,7 +86,7 @@ class MatrizIPEVRListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MatrizIPEVR
         fields = [
-            'id', 'area', 'cargo', 'proceso', 'actividad', 'rutinaria',
+            'id', 'area', 'cargo', 'cargo_id_ref', 'proceso', 'actividad', 'rutinaria',
             'peligro', 'peligro_nombre', 'peligro_clasificacion', 'peligro_categoria',
             'nivel_deficiencia', 'nivel_exposicion', 'nivel_consecuencia',
             'nivel_probabilidad', 'interpretacion_np',

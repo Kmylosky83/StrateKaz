@@ -12,6 +12,7 @@ from django.db.models import Sum, Count, Q
 from decimal import Decimal
 
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
     ConfiguracionNomina,
@@ -158,7 +159,7 @@ class ConceptoNominaViewSet(viewsets.ModelViewSet):
 # PERIODO DE NÓMINA
 # =============================================================================
 
-class PeriodoNominaViewSet(viewsets.ModelViewSet):
+class PeriodoNominaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de periodos de nómina.
 
@@ -169,6 +170,37 @@ class PeriodoNominaViewSet(viewsets.ModelViewSet):
     """
 
     queryset = PeriodoNomina.objects.all()
+
+    # ResumenRevisionMixin config
+    resumen_date_field = 'created_at'
+    resumen_modulo_nombre = 'nomina'
+
+    def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
+        """Resumen de nómina para Revisión por la Dirección."""
+        periodos_cerrados = queryset.filter(estado='cerrado').count()
+        total_periodos = queryset.count()
+
+        liquidaciones = LiquidacionNomina.objects.filter(
+            is_active=True,
+            periodo__in=queryset
+        )
+        total_devengado = liquidaciones.aggregate(
+            total=Sum('total_devengado')
+        )['total'] or Decimal('0')
+        total_deducido = liquidaciones.aggregate(
+            total=Sum('total_deducido')
+        )['total'] or Decimal('0')
+        total_neto = liquidaciones.aggregate(
+            total=Sum('total_neto')
+        )['total'] or Decimal('0')
+
+        return {
+            'periodos_total': total_periodos,
+            'periodos_cerrados': periodos_cerrados,
+            'total_devengado': str(total_devengado),
+            'total_deducido': str(total_deducido),
+            'total_neto': str(total_neto),
+        }
 
     def get_queryset(self):
         """Filtrar periodos activos del tenant."""

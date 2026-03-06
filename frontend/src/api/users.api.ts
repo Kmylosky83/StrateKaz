@@ -28,6 +28,9 @@ export const usersAPI = {
     if (filters?.tipo && filters.tipo !== 'todos') {
       params.append('tipo', filters.tipo);
     }
+    if (filters?.origen) {
+      params.append('origen', filters.origen);
+    }
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 

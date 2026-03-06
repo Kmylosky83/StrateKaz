@@ -195,7 +195,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
   const currentAuthUser = useAuthStore((state) => state.user);
   const isEditingSelf = isEditMode && user && currentAuthUser && user.id === currentAuthUser.id;
   const userHadAdminCargo = user?.cargo?.code === 'ADMIN';
-  const isChangingFromAdmin = isEditingSelf && userHadAdminCargo && selectedCargo && selectedCargo.code !== 'ADMIN';
+  const isChangingFromAdmin =
+    isEditingSelf && userHadAdminCargo && selectedCargo && selectedCargo.code !== 'ADMIN';
 
   useEffect(() => {
     if (isOpen && user) {
@@ -249,7 +250,32 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                   Este usuario es Superusuario del Tenant
                 </p>
                 <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
-                  Tiene acceso completo a todas las secciones y funcionalidades de este tenant, independiente del cargo asignado.
+                  Tiene acceso completo a todas las secciones y funcionalidades de este tenant,
+                  independiente del cargo asignado.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Guía de flujos correctos — solo en modo creación */}
+        {!isEditMode && (
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start gap-2">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <p className="font-medium text-sm">
+                  Esta página es para cuentas técnicas o administrativas.
+                </p>
+                <p>
+                  Si necesitas registrar un <strong>empleado</strong>, usa{' '}
+                  <strong>Talent Hub &gt; Colaboradores</strong> (incluye contrato, salario y acceso
+                  opcional).
+                </p>
+                <p>
+                  Si necesitas dar acceso a un <strong>proveedor o cliente externo</strong>, usa{' '}
+                  <strong>Supply Chain &gt; Proveedores</strong> o{' '}
+                  <strong>Sales CRM &gt; Clientes</strong>.
                 </p>
               </div>
             </div>
@@ -348,8 +374,9 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                     Advertencia: Está cambiando su propio cargo de Administrador
                   </p>
                   <p className="text-red-600 dark:text-red-300 mt-1">
-                    Si usted es el único administrador, perderá acceso a las funciones de administración.
-                    Asegúrese de que otro usuario tenga el cargo ADMIN antes de continuar.
+                    Si usted es el único administrador, perderá acceso a las funciones de
+                    administración. Asegúrese de que otro usuario tenga el cargo ADMIN antes de
+                    continuar.
                   </p>
                 </div>
               </div>

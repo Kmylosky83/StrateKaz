@@ -10,6 +10,29 @@ export interface Cargo {
   level: number;
 }
 
+export type UserOrigen =
+  | 'colaborador'
+  | 'proveedor_portal'
+  | 'proveedor_profesional'
+  | 'cliente_portal'
+  | 'manual';
+
+export const ORIGEN_LABELS: Record<UserOrigen, string> = {
+  colaborador: 'Colaborador (TH)',
+  proveedor_portal: 'Proveedor (Portal)',
+  proveedor_profesional: 'Proveedor (Profesional)',
+  cliente_portal: 'Cliente (Portal)',
+  manual: 'Manual',
+};
+
+export const ORIGEN_COLORS: Record<UserOrigen, string> = {
+  colaborador: 'info',
+  proveedor_portal: 'warning',
+  proveedor_profesional: 'primary',
+  cliente_portal: 'success',
+  manual: 'gray',
+};
+
 export interface User {
   id: number;
   username: string;
@@ -31,6 +54,7 @@ export interface User {
   updated_at: string;
   last_login?: string | null;
   date_joined: string;
+  origen?: UserOrigen;
 }
 
 export interface CreateUserDTO {
@@ -73,6 +97,7 @@ export interface UserFilters {
   cargo__code?: string;
   is_active?: boolean | string;
   tipo?: 'todos' | 'interno' | 'externo';
+  origen?: UserOrigen | '';
   page?: number;
   page_size?: number;
 }

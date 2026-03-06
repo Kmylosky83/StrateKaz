@@ -10,6 +10,8 @@ import { Badge } from '@/components/common/Badge';
 import { UserStatusBadge } from '@/components/users/UserStatusBadge';
 import { CargoLevelBadge } from '@/components/users/CargoLevelBadge';
 import type { User } from '@/types/users.types';
+import { ORIGEN_LABELS, ORIGEN_COLORS } from '@/types/users.types';
+import type { BadgeVariant } from '@/components/common/Badge';
 
 interface UsersTableProps {
   users: User[];
@@ -98,6 +100,9 @@ export const UsersTable = ({
                 Cargo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Origen
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Estado
               </th>
               <th
@@ -140,7 +145,11 @@ export const UsersTable = ({
                           {user.full_name || user.username}
                         </span>
                         {user.is_superuser && (
-                          <Badge variant="warning" size="sm" title="Tiene acceso completo a todas las secciones de este tenant">
+                          <Badge
+                            variant="warning"
+                            size="sm"
+                            title="Tiene acceso completo a todas las secciones de este tenant"
+                          >
                             Superusuario
                           </Badge>
                         )}
@@ -152,12 +161,20 @@ export const UsersTable = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-gray-100">
-                    {user.email}
-                  </div>
+                  <div className="text-sm text-gray-900 dark:text-gray-100">{user.email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <CargoLevelBadge cargo={user.cargo} />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {user.origen && (
+                    <Badge
+                      variant={(ORIGEN_COLORS[user.origen] || 'gray') as BadgeVariant}
+                      size="sm"
+                    >
+                      {ORIGEN_LABELS[user.origen] || user.origen}
+                    </Badge>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <UserStatusBadge isActive={user.is_active} />
@@ -177,9 +194,13 @@ export const UsersTable = ({
                         {
                           key: 'toggle-status',
                           label: user.is_active ? 'Desactivar' : 'Activar',
-                          icon: user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />,
+                          icon: user.is_active ? (
+                            <UserX className="w-4 h-4" />
+                          ) : (
+                            <UserCheck className="w-4 h-4" />
+                          ),
                           onClick: () => onToggleStatus(user),
-                        }
+                        },
                       ]}
                     />
                   </div>

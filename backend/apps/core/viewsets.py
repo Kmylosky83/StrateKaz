@@ -135,6 +135,47 @@ class UserViewSet(viewsets.ModelViewSet):
         elif tipo == 'externo':
             queryset = queryset.filter(cargo__is_externo=True)
 
+        # Filtro por origen
+        origen = self.request.query_params.get('origen', '')
+        if origen == 'proveedor_portal':
+            queryset = queryset.filter(proveedor__isnull=False, cargo__code='PROVEEDOR_PORTAL')
+        elif origen == 'proveedor_profesional':
+            queryset = queryset.filter(proveedor__isnull=False).exclude(cargo__code='PROVEEDOR_PORTAL')
+        elif origen == 'cliente_portal':
+            queryset = queryset.filter(cliente__isnull=False)
+        elif origen == 'colaborador':
+            try:
+                from django.apps import apps
+                Colaborador = apps.get_model('colaboradores', 'Colaborador')
+                colab_user_ids = Colaborador.objects.values_list('usuario_id', flat=True)
+                queryset = queryset.filter(id__in=colab_user_ids)
+            except LookupError:
+                pass
+        elif origen == 'manual':
+            try:
+                from django.apps import apps
+                Colaborador = apps.get_model('colaboradores', 'Colaborador')
+                colab_user_ids = Colaborador.objects.values_list('usuario_id', flat=True)
+                queryset = queryset.filter(
+                    proveedor__isnull=True,
+                    cliente__isnull=True,
+                ).exclude(id__in=colab_user_ids)
+            except LookupError:
+                queryset = queryset.filter(proveedor__isnull=True, cliente__isnull=True)
+
+        # Annotate _has_colaborador para evitar N+1 en serializer
+        try:
+            from django.apps import apps
+            Colaborador = apps.get_model('colaboradores', 'Colaborador')
+            from django.db.models import Exists, OuterRef
+            queryset = queryset.annotate(
+                _has_colaborador=Exists(
+                    Colaborador.objects.filter(usuario=OuterRef('pk'))
+                )
+            )
+        except LookupError:
+            pass
+
         return queryset.select_related('cargo', 'created_by')
 
     def get_serializer_class(self):
@@ -503,6 +544,24 @@ class UserViewSet(viewsets.ModelViewSet):
             count=Count('id')
         ).order_by('-count')
 
+        # Origen breakdown
+        proveedores_portal = alive_qs.filter(
+            proveedor__isnull=False, cargo__code='PROVEEDOR_PORTAL'
+        ).count()
+        proveedores_profesional = alive_qs.filter(
+            proveedor__isnull=False
+        ).exclude(cargo__code='PROVEEDOR_PORTAL').count()
+        clientes_portal = alive_qs.filter(cliente__isnull=False).count()
+        try:
+            from django.apps import apps as django_apps
+            Colaborador = django_apps.get_model('colaboradores', 'Colaborador')
+            colaboradores = alive_qs.filter(
+                id__in=Colaborador.objects.values_list('usuario_id', flat=True)
+            ).count()
+        except LookupError:
+            colaboradores = 0
+        manuales = total_users - proveedores_portal - proveedores_profesional - clientes_portal - colaboradores
+
         return Response({
             'total': total_users,
             'active': active_users,
@@ -510,7 +569,14 @@ class UserViewSet(viewsets.ModelViewSet):
             'deleted': deleted_users,
             'internos': internos,
             'externos': externos,
-            'by_cargo': list(by_cargo)
+            'by_cargo': list(by_cargo),
+            'by_origen': {
+                'colaborador': colaboradores,
+                'proveedor_portal': proveedores_portal,
+                'proveedor_profesional': proveedores_profesional,
+                'cliente_portal': clientes_portal,
+                'manual': max(0, manuales),
+            },
         })
 
 

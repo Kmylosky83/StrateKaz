@@ -23,7 +23,14 @@ import {
   useToggleUserStatus,
 } from '../hooks/useUsers';
 import { useSelectRoles } from '@/hooks/useSelectLists';
-import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
+import type {
+  User,
+  CreateUserDTO,
+  UpdateUserDTO,
+  UserFilters,
+  UserOrigen,
+} from '@/types/users.types';
+import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
@@ -37,6 +44,7 @@ export default function UsersPage() {
     cargo: '',
     is_active: undefined,
     tipo: 'todos',
+    origen: '',
     page: 1,
     page_size: 10,
   });
@@ -134,6 +142,7 @@ export default function UsersPage() {
       cargo: '',
       is_active: undefined,
       tipo: 'todos',
+      origen: '',
       page: 1,
       page_size: 10,
     });
@@ -143,6 +152,7 @@ export default function UsersPage() {
     filters.cargo,
     filters.is_active !== undefined ? 'active' : '',
     filters.tipo && filters.tipo !== 'todos' ? 'tipo' : '',
+    filters.origen ? 'origen' : '',
   ].filter(Boolean).length;
 
   const hasActiveFilters = activeFiltersCount > 0;
@@ -162,6 +172,11 @@ export default function UsersPage() {
     { value: 'todos', label: 'Todos los tipos' },
     { value: 'interno', label: 'Internos' },
     { value: 'externo', label: 'Externos' },
+  ];
+
+  const origenFilterOptions = [
+    { value: '', label: 'Todos los orígenes' },
+    ...Object.entries(ORIGEN_LABELS).map(([value, label]) => ({ value, label })),
   ];
 
   const users = usersData?.results || [];
@@ -213,7 +228,7 @@ export default function UsersPage() {
         hasActiveFilters={hasActiveFilters}
         onClearFilters={handleClearFilters}
       >
-        <FilterGrid columns={3}>
+        <FilterGrid columns={4}>
           <Select
             label="Cargo"
             options={cargoFilterOptions}
@@ -238,6 +253,12 @@ export default function UsersPage() {
             onChange={(e) =>
               handleFilterChange('tipo', e.target.value as 'todos' | 'interno' | 'externo')
             }
+          />
+          <Select
+            label="Origen"
+            options={origenFilterOptions}
+            value={filters.origen || ''}
+            onChange={(e) => handleFilterChange('origen', e.target.value as UserOrigen | '')}
           />
         </FilterGrid>
       </FilterCard>

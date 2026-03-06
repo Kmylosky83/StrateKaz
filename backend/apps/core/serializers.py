@@ -85,6 +85,7 @@ class UserListSerializer(serializers.ModelSerializer):
     cargo = CargoSerializer(read_only=True)
     cargo_name = serializers.CharField(source='cargo.name', read_only=True)
     document_type_display = serializers.CharField(source='get_document_type_display', read_only=True)
+    origen = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -103,11 +104,33 @@ class UserListSerializer(serializers.ModelSerializer):
             'phone',
             'is_active',
             'date_joined',
+            'origen',
         ]
 
     def get_full_name(self, obj):
         """Retorna nombre completo del usuario"""
         return obj.get_full_name() or obj.username
+
+    def get_origen(self, obj):
+        """Calcula el origen del usuario basado en FKs existentes."""
+        cargo_code = obj.cargo.code if obj.cargo else None
+        if obj.proveedor_id:
+            if cargo_code == 'PROVEEDOR_PORTAL':
+                return 'proveedor_portal'
+            return 'proveedor_profesional'
+        if obj.cliente_id:
+            return 'cliente_portal'
+        # Check if linked to Colaborador (reverse FK)
+        if hasattr(obj, '_has_colaborador'):
+            return 'colaborador' if obj._has_colaborador else 'manual'
+        try:
+            from django.apps import apps
+            Colaborador = apps.get_model('colaboradores', 'Colaborador')
+            if Colaborador.objects.filter(usuario=obj).exists():
+                return 'colaborador'
+        except (LookupError, Exception):
+            pass
+        return 'manual'
 
 
 class UserDetailSerializer(serializers.ModelSerializer):

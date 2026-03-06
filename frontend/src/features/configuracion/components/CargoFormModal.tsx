@@ -490,7 +490,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
             ? `Cargo: ${createdCargo.name}`
             : 'Nuevo Cargo'
       }
-      size="5xl"
+      size="4xl"
       footer={footer}
     >
       <div className="space-y-4">
@@ -501,7 +501,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
           variant="pills"
         />
 
-        <form onSubmit={handleSubmit} className="space-y-6 max-h-[65vh] overflow-y-auto px-1">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* ========== TAB 1: IDENTIFICACION Y UBICACION ========== */}
           {activeTab === 'identificacion' && (
             <div className="space-y-4">
@@ -511,7 +511,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
               />
 
               {/* Identificación */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Código *"
                   value={formData.code}
@@ -545,7 +545,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Ubicación Organizacional
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Select
                     label="Proceso"
                     value={formData.area?.toString() || ''}
@@ -574,9 +574,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                       label: opt.label,
                     }))}
                   />
-                </div>
-
-                <div className="mt-4">
                   <Select
                     label="Reporta a (Cargo Superior)"
                     value={formData.parent_cargo?.toString() || ''}
@@ -602,7 +599,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Configuración del Cargo
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Input
                     label="Cantidad de Posiciones"
                     type="number"
@@ -616,50 +613,48 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                     }
                     helperText="Cuántas personas pueden ocupar este cargo"
                   />
-                  <div className="flex flex-col gap-3 pt-6">
-                    <Switch
-                      checked={formData.is_jefatura}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, is_jefatura: checked })
-                      }
-                      label="Es Jefatura"
-                    />
-                    <Switch
-                      checked={formData.is_externo}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, is_externo: checked })
-                      }
-                      label="Es Externo (Contratista, Consultor, Auditor)"
-                    />
-                    <Switch
-                      checked={formData.requiere_licencia_conduccion}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requiere_licencia_conduccion: checked })
-                      }
-                      label="Requiere Licencia de Conducción"
-                    />
-                    <Switch
-                      checked={formData.requiere_licencia_sst}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requiere_licencia_sst: checked })
-                      }
-                      label="Requiere Licencia en SST"
-                    />
-                    <Switch
-                      checked={formData.requiere_tarjeta_contador}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requiere_tarjeta_contador: checked })
-                      }
-                      label="Requiere Tarjeta Profesional Contador"
-                    />
-                    <Switch
-                      checked={formData.requiere_tarjeta_abogado}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requiere_tarjeta_abogado: checked })
-                      }
-                      label="Requiere Tarjeta Profesional Abogado"
-                    />
-                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
+                  <Switch
+                    checked={formData.is_jefatura}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, is_jefatura: checked })
+                    }
+                    label="Es Jefatura"
+                  />
+                  <Switch
+                    checked={formData.is_externo}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_externo: checked })}
+                    label="Es Externo (Contratista)"
+                  />
+                  <Switch
+                    checked={formData.requiere_licencia_conduccion}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requiere_licencia_conduccion: checked })
+                    }
+                    label="Licencia de Conducción"
+                  />
+                  <Switch
+                    checked={formData.requiere_licencia_sst}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requiere_licencia_sst: checked })
+                    }
+                    label="Licencia en SST"
+                  />
+                  <Switch
+                    checked={formData.requiere_tarjeta_contador}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requiere_tarjeta_contador: checked })
+                    }
+                    label="Tarjeta Prof. Contador"
+                  />
+                  <Switch
+                    checked={formData.requiere_tarjeta_abogado}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requiere_tarjeta_abogado: checked })
+                    }
+                    label="Tarjeta Prof. Abogado"
+                  />
                 </div>
 
                 {formData.requiere_licencia_conduccion && (
@@ -709,7 +704,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 rows={2}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Textarea
                   label="Relaciones Internas"
                   value={formData.relaciones_internas}
@@ -745,7 +740,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Formación Académica
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Select
                     label="Nivel Educativo Mínimo"
                     value={formData.nivel_educativo || ''}
@@ -764,7 +759,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                     ]}
                   />
                   <Input
-                    label="Titulo Requerido"
+                    label="Título Requerido"
                     value={formData.titulo_requerido}
                     onChange={(e) => setFormData({ ...formData, titulo_requerido: e.target.value })}
                     placeholder="Ingeniero Industrial, Contador Público..."
@@ -777,7 +772,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                   Experiencia Laboral
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Select
                     label="Experiencia Mínima"
                     value={formData.experiencia_requerida || ''}

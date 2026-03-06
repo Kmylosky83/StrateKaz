@@ -121,7 +121,7 @@ class Command(BaseCommand):
         return created, updated
 
     def _seed_tipo_documento(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import TipoDocumentoIdentidad
+        from apps.core.models import TipoDocumentoIdentidad
         data = [
             {'codigo': 'CC', 'nombre': 'Cédula de Ciudadanía', 'orden': 1},
             {'codigo': 'NIT', 'nombre': 'NIT', 'orden': 2},
@@ -223,7 +223,7 @@ class Command(BaseCommand):
         return self._seed_model(ModalidadLogistica, data, 'Modalidades Logísticas', dry_run)
 
     def _seed_departamentos(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import Departamento
+        from apps.core.models import Departamento
         # 33 departamentos de Colombia con códigos DANE
         data = [
             {'codigo': 'AMAZONAS', 'nombre': 'Amazonas', 'codigo_dane': '91', 'orden': 1},
@@ -263,7 +263,7 @@ class Command(BaseCommand):
         return self._seed_model(Departamento, data, 'Departamentos de Colombia', dry_run)
 
     def _seed_ciudades(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import Ciudad, Departamento
+        from apps.core.models import Ciudad, Departamento
 
         self.stdout.write('\n--- Ciudades principales ---')
         created = 0

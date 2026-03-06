@@ -1,6 +1,10 @@
 /**
  * Rutas: Supply Chain (Cadena de Suministro)
- * Capa 2 — Modulo de Negocio
+ * Capa 2 — Módulo de Negocio
+ *
+ * Página unificada con 8 tabs en flujo de negocio:
+ * proveedores → precios → compras → almacenamiento → programación →
+ * evaluaciones → unidades-negocio → catálogos
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -9,19 +13,16 @@ import { withModuleGuard } from '../helpers';
 const SupplyChainPage = lazy(() =>
   import('@/features/supply-chain').then((m) => ({ default: m.SupplyChainPage }))
 );
-const GestionProveedoresPage = lazy(() =>
-  import('@/features/supply-chain').then((m) => ({ default: m.GestionProveedoresPage }))
-);
 
 export const supplyChainRoutes = (
   <>
     <Route path="/supply-chain" element={<Navigate to="/supply-chain/proveedores" replace />} />
     <Route
       path="/supply-chain/proveedores"
-      element={withModuleGuard(GestionProveedoresPage, 'supply_chain')}
+      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
     <Route
-      path="/supply-chain/programacion"
+      path="/supply-chain/precios"
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
     <Route
@@ -33,7 +34,15 @@ export const supplyChainRoutes = (
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
     <Route
-      path="/supply-chain/pruebas-acidez"
+      path="/supply-chain/programacion"
+      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+    />
+    <Route
+      path="/supply-chain/evaluaciones"
+      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+    />
+    <Route
+      path="/supply-chain/unidades-negocio"
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
     <Route

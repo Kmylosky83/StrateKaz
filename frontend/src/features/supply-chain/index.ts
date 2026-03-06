@@ -21,7 +21,6 @@
  */
 
 // ==================== PAGES ====================
-export { default as GestionProveedoresPage } from './pages/GestionProveedoresPage';
 export { default as SupplyChainPage } from './pages/SupplyChainPage';
 
 // ==================== TYPES ====================

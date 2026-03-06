@@ -284,8 +284,8 @@ def estado_material_conforme(db):
 @pytest.fixture
 def proveedor(db):
     """Proveedor de prueba."""
-    from apps.supply_chain.catalogos.models import Departamento
-    from apps.supply_chain.gestion_proveedores.models import TipoProveedor, TipoDocumentoIdentidad
+    from apps.core.models import Departamento, TipoDocumentoIdentidad
+    from apps.supply_chain.gestion_proveedores.models import TipoProveedor
 
     departamento = Departamento.objects.create(
         codigo='CUNDINAMARCA',

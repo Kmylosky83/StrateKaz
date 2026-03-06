@@ -270,7 +270,8 @@ def proveedor(db):
     )
 
     # Crear tipo de proveedor simple
-    from apps.supply_chain.gestion_proveedores.models import TipoProveedor, TipoDocumentoIdentidad
+    from apps.supply_chain.gestion_proveedores.models import TipoProveedor
+    from apps.core.models import TipoDocumentoIdentidad
 
     tipo_doc = TipoDocumentoIdentidad.objects.create(
         codigo='NIT',

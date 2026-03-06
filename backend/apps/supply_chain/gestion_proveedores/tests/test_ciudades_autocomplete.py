@@ -7,7 +7,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.supply_chain.gestion_proveedores.models import Departamento, Ciudad
+from apps.core.models import Departamento, Ciudad
 
 
 @pytest.fixture

@@ -661,22 +661,32 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 40,
                 'tabs': [
-                    {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [
-                        {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'orden': 1, 'description': 'Registro y gestión de proveedores'},
-                        {'code': 'evaluaciones_prov', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'orden': 2, 'description': 'Evaluación periódica de proveedores'},
-                        {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'orden': 3, 'description': 'Control de precios de materias primas'},
+                    # Flujo operativo: definir → comprar → almacenar → programar → evaluar
+                    {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [
+                        {'code': 'registro_proveedores', 'name': 'Registro', 'icon': 'Users', 'orden': 1, 'description': 'Registro y gestión de proveedores'},
+                        {'code': 'importacion_proveedores', 'name': 'Importación', 'icon': 'Upload', 'orden': 2, 'description': 'Importación masiva de proveedores'},
                     ]},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'List', 'route': 'catalogos', 'orden': 2, 'sections': [
-                        {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'List', 'orden': 1, 'description': 'Configuración de catálogos dinámicos'},
+                    {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 2, 'sections': [
+                        {'code': 'precios_materia_prima', 'name': 'Precios Materia Prima', 'icon': 'DollarSign', 'orden': 1, 'description': 'Control de precios por tipo de materia prima'},
                     ]},
-                    {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'icon': 'Calendar', 'route': 'programacion', 'orden': 3, 'sections': [
-                        {'code': 'programacion_sc', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Programación de abastecimiento'},
-                    ]},
-                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 4, 'sections': [
+                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 3, 'sections': [
                         {'code': 'ordenes_compra', 'name': 'Órdenes de Compra', 'icon': 'ShoppingCart', 'orden': 1, 'description': 'Gestión de órdenes de compra'},
                     ]},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5, 'sections': [
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 4, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
+                    ]},
+                    {'code': 'programacion_abastecimiento', 'name': 'Programación', 'icon': 'Calendar', 'route': 'programacion', 'orden': 5, 'sections': [
+                        {'code': 'programacion_sc', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Programación de abastecimiento'},
+                    ]},
+                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 6, 'sections': [
+                        {'code': 'evaluaciones_prov', 'name': 'Evaluación Proveedores', 'icon': 'ClipboardCheck', 'orden': 1, 'description': 'Evaluación periódica de proveedores'},
+                    ]},
+                    # Configuración (admin)
+                    {'code': 'unidades_negocio', 'name': 'Unidades de Negocio', 'icon': 'Building2', 'route': 'unidades-negocio', 'orden': 7, 'sections': [
+                        {'code': 'unidades_negocio_sc', 'name': 'Unidades de Negocio', 'icon': 'Building2', 'orden': 1, 'description': 'Proveedores internos tipo unidad de negocio'},
+                    ]},
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 8, 'sections': [
+                        {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]
             },

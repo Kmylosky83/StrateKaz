@@ -11,7 +11,7 @@ from .views import (
     ItemChecklistViewSet,
     ChecklistIngresoViewSet,
     EjecucionIntegralViewSet,
-    EntregaEPPViewSet,
+    # EntregaEPPViewSet DEPRECATED — EPP ahora se gestiona vía HSEQ Seguridad Industrial
     EntregaActivoViewSet,
     FirmaDocumentoViewSet,
     OnboardingEstadisticasViewSet,
@@ -25,7 +25,7 @@ router.register(r'asignaciones-cargo', AsignacionPorCargoViewSet, basename='asig
 router.register(r'items-checklist', ItemChecklistViewSet, basename='items-checklist')
 router.register(r'checklist-ingreso', ChecklistIngresoViewSet, basename='checklist-ingreso')
 router.register(r'ejecuciones', EjecucionIntegralViewSet, basename='ejecuciones')
-router.register(r'entregas-epp', EntregaEPPViewSet, basename='entregas-epp')
+# entregas-epp DEPRECATED — FE ahora llama a /api/hseq/seguridad/entregas-epp/ directamente
 router.register(r'entregas-activos', EntregaActivoViewSet, basename='entregas-activos')
 router.register(r'firmas-documentos', FirmaDocumentoViewSet, basename='firmas-documentos')
 router.register(r'estadisticas', OnboardingEstadisticasViewSet, basename='estadisticas')

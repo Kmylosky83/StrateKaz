@@ -602,6 +602,34 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
             'por_tipo': list(por_tipo)
         })
 
+    @action(detail=False, methods=['get'], url_path='por-colaborador')
+    def por_colaborador(self, request):
+        """
+        Retorna entregas de EPP para un colaborador (core.User) específico.
+        Usado por HSEQ y por TH Onboarding.
+
+        GET /api/hseq/seguridad/entregas-epp/por-colaborador/?colaborador_id=X
+        """
+        colaborador_id = request.query_params.get('colaborador_id')
+        if not colaborador_id:
+            return Response(
+                {'error': 'Se requiere colaborador_id'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        queryset = self.get_queryset().filter(colaborador_id=colaborador_id)
+        serializer = EntregaEPPListSerializer(queryset, many=True)
+
+        return Response({
+            'entregas': serializer.data,
+            'resumen': {
+                'total': queryset.count(),
+                'en_uso': queryset.filter(estado='EN_USO').count(),
+                'vencidos': queryset.filter(estado='VENCIDO').count(),
+                'devueltos': queryset.filter(estado='DEVUELTO').count(),
+            }
+        })
+
 
 # =============================================================================
 # PROGRAMAS DE SEGURIDAD

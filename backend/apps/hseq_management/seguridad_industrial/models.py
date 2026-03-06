@@ -846,7 +846,75 @@ class EntregaEPP(models.Model):
             except Exception:
                 pass
 
+        is_new = not self.pk
         super().save(*args, **kwargs)
+
+        # Post-save: descontar inventario si es nueva entrega
+        if is_new:
+            self._descontar_inventario()
+
+    def _descontar_inventario(self):
+        """
+        Crea un MovimientoInventario de salida para descontar stock de Almacén.
+        Usa apps.get_model() para evitar imports cross-module directos.
+        Falla silenciosamente si Supply Chain no está instalado o no hay stock.
+        """
+        from django.apps import apps
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            Inventario = apps.get_model('almacenamiento', 'Inventario')
+            MovimientoInventario = apps.get_model('almacenamiento', 'MovimientoInventario')
+            TipoMovimientoInv = apps.get_model('almacenamiento', 'TipoMovimientoInventario')
+        except LookupError:
+            return  # Supply Chain no instalado
+
+        try:
+            # Buscar tipo de movimiento SALIDA con afecta_stock NEGATIVO
+            tipo_mov = TipoMovimientoInv.objects.filter(
+                afecta_stock='NEGATIVO'
+            ).first()
+            if not tipo_mov:
+                return
+
+            # Buscar inventario con este tipo de EPP y stock suficiente
+            inventario = Inventario.objects.filter(
+                tipo_epp_id=self.tipo_epp_id,
+                cantidad_disponible__gte=self.cantidad,
+            ).first()
+            if not inventario:
+                return  # No hay stock registrado para este EPP
+
+            # Crear movimiento de salida
+            MovimientoInventario.objects.create(
+                empresa=inventario.empresa,
+                almacen_origen=inventario.almacen,
+                tipo_movimiento=tipo_mov,
+                producto_codigo=inventario.producto_codigo,
+                producto_nombre=inventario.producto_nombre,
+                lote=inventario.lote or '',
+                cantidad=self.cantidad,
+                unidad_medida=inventario.unidad_medida,
+                costo_unitario=inventario.costo_promedio or 0,
+                documento_referencia=self.numero_entrega,
+                origen_tipo='ENTREGA_EPP',
+                origen_id=self.id,
+                observaciones=f'Entrega EPP #{self.numero_entrega} a colaborador ID {self.colaborador_id}',
+                registrado_por=self.entregado_por,
+            )
+
+            # Descontar stock
+            inventario.cantidad_disponible -= self.cantidad
+            inventario.save(update_fields=['cantidad_disponible'])
+
+            logger.info(
+                'Stock descontado: EPP %s, cantidad %s, inventario %s',
+                self.numero_entrega, self.cantidad, inventario.producto_codigo
+            )
+        except Exception as e:
+            # Nunca fallar la entrega por un error de inventario
+            logger.warning('Error al descontar inventario para EPP %s: %s', self.numero_entrega, e)
 
     @property
     def requiere_reposicion(self):

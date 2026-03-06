@@ -46,17 +46,15 @@ export type CategoriaChecklist =
   | 'capacitacion'
   | 'otros';
 
-export type TipoEPP =
-  | 'casco'
-  | 'gafas'
-  | 'guantes'
-  | 'botas'
-  | 'overol'
-  | 'protector_auditivo'
-  | 'mascarilla'
-  | 'arnes'
-  | 'chaleco'
-  | 'otro';
+// TipoEPP ELIMINADO — EPP ahora usa catálogo TipoEPP de HSEQ Seguridad Industrial
+// Re-exportar tipos HSEQ para compatibilidad
+export type {
+  EntregaEPP as HseqEntregaEPP,
+  CreateEntregaEPPDTO,
+  EstadoEntregaEPP,
+  TipoEPP as HseqTipoEPP,
+  CategoriaEPP,
+} from '@/features/hseq/types/seguridad-industrial.types';
 
 export type TipoActivo =
   | 'computador'
@@ -187,26 +185,7 @@ export interface EjecucionIntegral {
   aprobo?: boolean;
 }
 
-export interface EntregaEPP {
-  id: number;
-  colaborador: number;
-  colaborador_nombre?: string;
-  tipo_epp: TipoEPP;
-  tipo_epp_display?: string;
-  descripcion: string;
-  marca?: string;
-  referencia?: string;
-  talla?: string;
-  cantidad: number;
-  fecha_entrega: string;
-  fecha_vencimiento?: string;
-  entregado_por?: number;
-  entregado_por_nombre?: string;
-  recibido_conforme: boolean;
-  observaciones?: string;
-  acta_entrega?: string;
-  requiere_reposicion?: boolean;
-}
+// EntregaEPP ELIMINADO — Usar HseqEntregaEPP de HSEQ Seguridad Industrial
 
 export interface EntregaActivo {
   id: number;
@@ -219,7 +198,7 @@ export interface EntregaActivo {
   serial?: string;
   marca?: string;
   modelo?: string;
-  valor_activo?: number;
+  valor_activo?: string | null;
   fecha_entrega: string;
   fecha_devolucion?: string;
   estado_entrega: EstadoEntrega;
@@ -328,18 +307,7 @@ export interface EjecucionCreateData {
   observaciones?: string;
 }
 
-export interface EntregaEPPFormData {
-  colaborador: number;
-  tipo_epp: TipoEPP;
-  descripcion: string;
-  marca?: string;
-  referencia?: string;
-  talla?: string;
-  cantidad: number;
-  fecha_entrega: string;
-  fecha_vencimiento?: string;
-  observaciones?: string;
-}
+// EntregaEPPFormData ELIMINADO — Usar CreateEntregaEPPDTO de HSEQ
 
 export interface EntregaActivoFormData {
   colaborador: number;
@@ -349,7 +317,7 @@ export interface EntregaActivoFormData {
   serial?: string;
   marca?: string;
   modelo?: string;
-  valor_activo?: number;
+  valor_activo?: string | null;
   fecha_entrega: string;
   estado_entrega: EstadoEntrega;
   observaciones?: string;

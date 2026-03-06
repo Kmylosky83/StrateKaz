@@ -18,7 +18,7 @@ from .models import (
     ItemChecklist,
     ChecklistIngreso,
     EjecucionIntegral,
-    EntregaEPP,
+    # EntregaEPP DEPRECATED — EPP ahora se gestiona vía HSEQ Seguridad Industrial
     EntregaActivo,
     FirmaDocumento,
 )
@@ -34,9 +34,7 @@ from .serializers import (
     EjecucionIntegralDetailSerializer,
     EjecucionIntegralCreateSerializer,
     EjecucionIntegralUpdateSerializer,
-    EntregaEPPListSerializer,
-    EntregaEPPDetailSerializer,
-    EntregaEPPCreateUpdateSerializer,
+    # EntregaEPP serializers DEPRECATED
     EntregaActivoListSerializer,
     EntregaActivoDetailSerializer,
     EntregaActivoCreateSerializer,
@@ -291,55 +289,9 @@ class EjecucionIntegralViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class EntregaEPPViewSet(viewsets.ModelViewSet):
-    """ViewSet para entregas de EPP."""
-    permission_classes = [IsAuthenticated]
-    filterset_fields = ['colaborador', 'tipo_epp', 'recibido_conforme']
-    ordering = ['-fecha_entrega']
-
-    def get_queryset(self):
-        return EntregaEPP.objects.filter(
-            is_active=True
-        ).select_related('colaborador', 'entregado_por')
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return EntregaEPPListSerializer
-        if self.action in ['create', 'update', 'partial_update']:
-            return EntregaEPPCreateUpdateSerializer
-        return EntregaEPPDetailSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(
-            empresa=get_tenant_empresa(),
-            created_by=self.request.user,
-            entregado_por=self.request.user
-        )
-
-    @action(detail=False, methods=['get'], url_path='por-vencer')
-    def por_vencer(self, request):
-        """Retorna EPP que están próximos a vencer."""
-        dias = int(request.query_params.get('dias', 30))
-        fecha_limite = timezone.now().date() + timedelta(days=dias)
-
-        queryset = self.get_queryset().filter(
-            fecha_vencimiento__isnull=False,
-            fecha_vencimiento__lte=fecha_limite,
-            fecha_vencimiento__gte=timezone.now().date()
-        )
-        serializer = EntregaEPPListSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='por-colaborador')
-    def por_colaborador(self, request):
-        """Retorna EPP entregados a un colaborador."""
-        colaborador_id = request.query_params.get('colaborador_id')
-        if not colaborador_id:
-            return Response({'error': 'Se requiere colaborador_id'}, status=400)
-
-        queryset = self.get_queryset().filter(colaborador_id=colaborador_id)
-        serializer = EntregaEPPListSerializer(queryset, many=True)
-        return Response(serializer.data)
+# EntregaEPPViewSet DEPRECATED — EPP se gestiona vía HSEQ Seguridad Industrial
+# POST /api/hseq/seguridad/entregas-epp/ es la fuente única de verdad
+# GET /api/hseq/seguridad/entregas-epp/por-colaborador/ para consultas por colaborador
 
 
 class EntregaActivoViewSet(viewsets.ModelViewSet):
@@ -498,14 +450,19 @@ class OnboardingEstadisticasViewSet(viewsets.ViewSet):
         total_asignadas = inducciones.filter(fecha_asignacion__gte=inicio_mes).count()
         tasa_cumplimiento = (inducciones_completadas_mes / total_asignadas * 100) if total_asignadas > 0 else 0
 
-        # EPP por vencer (próximos 30 días)
+        # EPP por vencer (próximos 30 días) — fuente: HSEQ Seguridad Industrial
         fecha_limite = hoy + timedelta(days=30)
-        epp_por_vencer = EntregaEPP.objects.filter(
-            is_active=True,
-            fecha_vencimiento__isnull=False,
-            fecha_vencimiento__lte=fecha_limite,
-            fecha_vencimiento__gte=hoy
-        ).count()
+        try:
+            from django.apps import apps
+            HseqEntregaEPP = apps.get_model('seguridad_industrial', 'EntregaEPP')
+            epp_por_vencer = HseqEntregaEPP.objects.filter(
+                estado='EN_USO',
+                fecha_reposicion_programada__isnull=False,
+                fecha_reposicion_programada__lte=fecha_limite,
+                fecha_reposicion_programada__gte=hoy,
+            ).count()
+        except (LookupError, Exception):
+            epp_por_vencer = 0
 
         # Activos pendientes de devolución
         activos_pendientes = EntregaActivo.objects.filter(

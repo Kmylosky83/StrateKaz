@@ -1,6 +1,9 @@
 /**
  * React Query Hooks para Onboarding e Induccion - Talent Hub
  * Sistema de Gestion StrateKaz
+ *
+ * EPP: delegado a HSEQ Seguridad Industrial (fuente unica de verdad)
+ * Activos: gestionado localmente en onboarding
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -16,14 +19,16 @@ import type {
   EjecucionIntegral,
   EjecucionResumen,
   EjecucionCreateData,
-  EntregaEPP,
-  EntregaEPPFormData,
   EntregaActivo,
   EntregaActivoFormData,
   FirmaDocumento,
   FirmaDocumentoFormData,
   OnboardingEstadisticas,
 } from '../types';
+import type {
+  EntregaEPP as HseqEntregaEPP,
+  CreateEntregaEPPDTO,
+} from '@/features/hseq/types/seguridad-industrial.types';
 
 // ============================================================================
 // QUERY KEYS
@@ -58,11 +63,12 @@ export const onboardingKeys = {
     vencidas: () => [...onboardingKeys.ejecuciones.all, 'vencidas'] as const,
   },
 
+  // EPP keys apuntan a HSEQ
   entregasEpp: {
-    all: ['onboarding', 'entregas-epp'] as const,
-    list: () => [...onboardingKeys.entregasEpp.all, 'list'] as const,
-    porColaborador: (id: number) => [...onboardingKeys.entregasEpp.all, 'colaborador', id] as const,
-    porVencer: () => [...onboardingKeys.entregasEpp.all, 'por-vencer'] as const,
+    all: ['hseq', 'entregas-epp'] as const,
+    porColaborador: (userId: number) =>
+      ['hseq', 'entregas-epp', 'por-colaborador', userId] as const,
+    porVencer: () => ['hseq', 'entregas-epp', 'proximas-reposiciones'] as const,
   },
 
   entregasActivos: {
@@ -131,9 +137,9 @@ export function useCreateModuloInduccion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.modulos.all });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
-      toast.success('Modulo de induccion creado');
+      toast.success('Módulo de inducción creado');
     },
-    onError: () => toast.error('Error al crear modulo'),
+    onError: () => toast.error('Error al crear módulo'),
   });
 }
 
@@ -155,9 +161,9 @@ export function useUpdateModuloInduccion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.modulos.all });
-      toast.success('Modulo actualizado');
+      toast.success('Módulo actualizado');
     },
-    onError: () => toast.error('Error al actualizar modulo'),
+    onError: () => toast.error('Error al actualizar módulo'),
   });
 }
 
@@ -170,9 +176,9 @@ export function useDeleteModuloInduccion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.modulos.all });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
-      toast.success('Modulo eliminado');
+      toast.success('Módulo eliminado');
     },
-    onError: () => toast.error('Error al eliminar modulo'),
+    onError: () => toast.error('Error al eliminar módulo'),
   });
 }
 
@@ -218,7 +224,7 @@ export function useChecklistPorColaborador(colaboradorId: number) {
     queryKey: onboardingKeys.checklistIngreso.porColaborador(colaboradorId),
     queryFn: async () => {
       const { data } = await api.get<{ items: ChecklistIngreso[]; resumen: ChecklistResumen }>(
-        `/talent-hub/onboarding/checklist-ingreso/por_colaborador/?colaborador_id=${colaboradorId}`
+        `/talent-hub/onboarding/checklist-ingreso/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       return data;
     },
@@ -263,7 +269,7 @@ export function useEjecucionesPorColaborador(colaboradorId: number) {
       const { data } = await api.get<{
         inducciones: EjecucionIntegral[];
         resumen: EjecucionResumen;
-      }>(`/talent-hub/onboarding/ejecuciones/por_colaborador/?colaborador_id=${colaboradorId}`);
+      }>(`/talent-hub/onboarding/ejecuciones/por-colaborador/?colaborador_id=${colaboradorId}`);
       return data;
     },
     enabled: !!colaboradorId,
@@ -294,9 +300,9 @@ export function useCreateEjecucion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.ejecuciones.all });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
-      toast.success('Induccion asignada');
+      toast.success('Inducción asignada');
     },
-    onError: () => toast.error('Error al asignar induccion'),
+    onError: () => toast.error('Error al asignar inducción'),
   });
 }
 
@@ -309,9 +315,9 @@ export function useIniciarModulo() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.ejecuciones.all });
-      toast.success('Modulo iniciado');
+      toast.success('Módulo iniciado');
     },
-    onError: () => toast.error('Error al iniciar modulo'),
+    onError: () => toast.error('Error al iniciar módulo'),
   });
 }
 
@@ -327,67 +333,89 @@ export function useCompletarModulo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.ejecuciones.all });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
-      toast.success('Modulo completado');
+      toast.success('Módulo completado');
     },
-    onError: () => toast.error('Error al completar modulo'),
+    onError: () => toast.error('Error al completar módulo'),
   });
 }
 
 // ============================================================================
-// HOOKS - ENTREGAS EPP
+// HOOKS - ENTREGAS EPP (delegado a HSEQ Seguridad Industrial)
+// Fuente unica: POST/GET /api/hseq/seguridad/entregas-epp/
 // ============================================================================
 
-export function useEntregasEpp() {
+interface HseqEppPorColaboradorResponse {
+  entregas: HseqEntregaEPP[];
+  resumen: {
+    total: number;
+    en_uso: number;
+    vencidos: number;
+    devueltos: number;
+  };
+}
+
+/** Lista todas las entregas EPP (vista admin — HSEQ) */
+export function useEntregasEppList() {
   return useQuery({
-    queryKey: onboardingKeys.entregasEpp.list(),
+    queryKey: [...onboardingKeys.entregasEpp.all, 'list'] as const,
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/entregas-epp/');
+      const response = await api.get('/hseq/seguridad/entregas-epp/');
       const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HseqEntregaEPP[];
     },
   });
 }
 
-export function useEntregasEppPorColaborador(colaboradorId: number) {
+/** Entregas EPP de un usuario (core.User.id, NO Colaborador.id) */
+export function useEntregasEppHseq(usuarioId?: number) {
   return useQuery({
-    queryKey: onboardingKeys.entregasEpp.porColaborador(colaboradorId),
+    queryKey: onboardingKeys.entregasEpp.porColaborador(usuarioId || 0),
     queryFn: async () => {
-      const response = await api.get(
-        `/talent-hub/onboarding/entregas-epp/por_colaborador/?colaborador_id=${colaboradorId}`
+      const { data } = await api.get<HseqEppPorColaboradorResponse>(
+        `/hseq/seguridad/entregas-epp/por-colaborador/?colaborador_id=${usuarioId}`
       );
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
+      return data;
     },
-    enabled: !!colaboradorId,
+    enabled: !!usuarioId,
   });
 }
 
-export function useEppPorVencer() {
+/** EPP próximos a reposición (HSEQ) */
+export function useEppProximasReposiciones(dias = 30) {
   return useQuery({
     queryKey: onboardingKeys.entregasEpp.porVencer(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/entregas-epp/por_vencer/');
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
+      const { data } = await api.get<{ total: number; entregas: HseqEntregaEPP[] }>(
+        `/hseq/seguridad/entregas-epp/proximas-reposiciones/?dias=${dias}`
+      );
+      return data;
     },
   });
 }
 
-export function useCreateEntregaEpp() {
+/** Crear entrega EPP vía HSEQ */
+export function useCreateEntregaEppHseq() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (formData: EntregaEPPFormData) => {
-      const { data } = await api.post<EntregaEPP>('/talent-hub/onboarding/entregas-epp/', formData);
+    mutationFn: async (formData: CreateEntregaEPPDTO) => {
+      const { data } = await api.post<HseqEntregaEPP>('/hseq/seguridad/entregas-epp/', formData);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: onboardingKeys.entregasEpp.all });
+      // Invalidar tanto keys HSEQ como onboarding estadísticas
+      queryClient.invalidateQueries({ queryKey: ['hseq', 'entregas-epp'] });
+      queryClient.invalidateQueries({ queryKey: ['hseq', 'seguridad-industrial'] });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
       toast.success('Entrega de EPP registrada');
     },
-    onError: () => toast.error('Error al registrar entrega'),
+    onError: () => toast.error('Error al registrar entrega de EPP'),
   });
 }
+
+// Aliases de compatibilidad (mantener exports usados por componentes)
+export const useEntregasEpp = useEntregasEppHseq;
+export const useEppPorVencer = useEppProximasReposiciones;
+export const useCreateEntregaEpp = useCreateEntregaEppHseq;
 
 // ============================================================================
 // HOOKS - ENTREGAS ACTIVOS
@@ -409,7 +437,7 @@ export function useEntregasActivosPorColaborador(colaboradorId: number) {
     queryKey: onboardingKeys.entregasActivos.porColaborador(colaboradorId),
     queryFn: async () => {
       const response = await api.get(
-        `/talent-hub/onboarding/entregas-activos/por_colaborador/?colaborador_id=${colaboradorId}`
+        `/talent-hub/onboarding/entregas-activos/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
@@ -423,7 +451,7 @@ export function useActivosPendientesDevolucion() {
     queryKey: onboardingKeys.entregasActivos.pendientesDevolucion(),
     queryFn: async () => {
       const response = await api.get(
-        '/talent-hub/onboarding/entregas-activos/pendientes_devolucion/'
+        '/talent-hub/onboarding/entregas-activos/pendientes-devolucion/'
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
@@ -462,7 +490,7 @@ export function useRegistrarDevolucion() {
       observaciones?: string;
     }) => {
       const { data } = await api.post(
-        `/talent-hub/onboarding/entregas-activos/${id}/registrar_devolucion/`,
+        `/talent-hub/onboarding/entregas-activos/${id}/registrar-devolucion/`,
         body
       );
       return data;
@@ -470,9 +498,9 @@ export function useRegistrarDevolucion() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.entregasActivos.all });
       queryClient.invalidateQueries({ queryKey: onboardingKeys.estadisticas() });
-      toast.success('Devolucion registrada');
+      toast.success('Devolución registrada');
     },
-    onError: () => toast.error('Error al registrar devolucion'),
+    onError: () => toast.error('Error al registrar devolución'),
   });
 }
 
@@ -499,7 +527,7 @@ export function useFirmasPorColaborador(colaboradorId: number) {
         documentos: FirmaDocumento[];
         resumen: { total: number; firmados: number; pendientes: number };
       }>(
-        `/talent-hub/onboarding/firmas-documentos/por_colaborador/?colaborador_id=${colaboradorId}`
+        `/talent-hub/onboarding/firmas-documentos/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       return data;
     },
@@ -541,7 +569,7 @@ export function useMarcarFirmado() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await api.post(
-        `/talent-hub/onboarding/firmas-documentos/${id}/marcar_firmado/`
+        `/talent-hub/onboarding/firmas-documentos/${id}/marcar-firmado/`
       );
       return data;
     },

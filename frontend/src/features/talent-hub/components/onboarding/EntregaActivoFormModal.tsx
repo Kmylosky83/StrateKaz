@@ -56,7 +56,7 @@ export const EntregaActivoFormModal = ({ isOpen, onClose }: Props) => {
   useEffect(() => {
     if (isOpen) {
       reset({
-        colaborador: 0,
+        colaborador: undefined as unknown as number,
         tipo_activo: 'computador',
         descripcion: '',
         codigo_activo: '',
@@ -86,10 +86,12 @@ export const EntregaActivoFormModal = ({ isOpen, onClose }: Props) => {
   ];
 
   const onSubmit = async (data: EntregaActivoFormData) => {
-    await createMutation.mutateAsync({
+    const payload = {
       ...data,
       colaborador: Number(data.colaborador),
-    });
+    };
+    if (!payload.colaborador) delete (payload as Record<string, unknown>).colaborador;
+    await createMutation.mutateAsync(payload);
     onClose();
   };
 
@@ -125,7 +127,7 @@ export const EntregaActivoFormModal = ({ isOpen, onClose }: Props) => {
           })}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Tipo de Activo"
             options={TIPO_ACTIVO_OPTIONS}
@@ -139,13 +141,13 @@ export const EntregaActivoFormModal = ({ isOpen, onClose }: Props) => {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input label="Codigo Activo" placeholder="INV-001" {...register('codigo_activo')} />
           <Input label="Serial" placeholder="S/N" {...register('serial')} />
           <Select label="Estado" options={ESTADO_ENTREGA_OPTIONS} {...register('estado_entrega')} />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input label="Marca" placeholder="Marca" {...register('marca')} />
           <Input label="Modelo" placeholder="Modelo" {...register('modelo')} />
           <Input

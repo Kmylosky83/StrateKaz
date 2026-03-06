@@ -1,88 +1,94 @@
 /**
- * EntregaEppFormModal - Registrar entrega de EPP
+ * EntregaEppFormModal - Registrar entrega de EPP vía HSEQ
+ *
+ * Usa catálogo TipoEPP de HSEQ Seguridad Industrial.
+ * POST va a /api/hseq/seguridad/entregas-epp/ (fuente única).
  */
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Switch } from '@/components/forms/Switch';
+import { useSelectTiposEPP } from '@/hooks/useSelectLists';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import { useCreateEntregaEpp } from '../../hooks/useOnboardingInduccion';
-import { useColaboradores } from '../../hooks/useColaboradores';
-import type { EntregaEPPFormData } from '../../types';
-
-const TIPO_EPP_OPTIONS = [
-  { value: 'casco', label: 'Casco de Seguridad' },
-  { value: 'gafas', label: 'Gafas de Protección' },
-  { value: 'guantes', label: 'Guantes' },
-  { value: 'botas', label: 'Botas de Seguridad' },
-  { value: 'overol', label: 'Overol' },
-  { value: 'protector_auditivo', label: 'Protector Auditivo' },
-  { value: 'mascarilla', label: 'Mascarilla/Respirador' },
-  { value: 'arnes', label: 'Arnes de Seguridad' },
-  { value: 'chaleco', label: 'Chaleco Reflectivo' },
-  { value: 'otro', label: 'Otro' },
-];
+import { useAuthStore } from '@/store/authStore';
+import type { CreateEntregaEPPDTO } from '@/features/hseq/types/seguridad-industrial.types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /** User.id del colaborador (NO Colaborador.id) */
+  usuarioId?: number;
 }
 
-export const EntregaEppFormModal = ({ isOpen, onClose }: Props) => {
+export const EntregaEppFormModal = ({ isOpen, onClose, usuarioId }: Props) => {
   const createMutation = useCreateEntregaEpp();
-  const { data: colaboradoresData } = useColaboradores({ estado: 'activo' });
+  const { data: tiposEpp = [] } = useSelectTiposEPP();
+  const { data: users = [] } = useSelectUsers();
+  const currentUser = useAuthStore((s) => s.user);
 
   const {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
-  } = useForm<EntregaEPPFormData>({
+  } = useForm<CreateEntregaEPPDTO>({
     defaultValues: {
       cantidad: 1,
       fecha_entrega: new Date().toISOString().split('T')[0],
+      capacitacion_realizada: false,
     },
   });
 
   useEffect(() => {
     if (isOpen) {
       reset({
-        colaborador: 0,
-        tipo_epp: 'casco',
-        descripcion: '',
+        colaborador_id: usuarioId || (undefined as unknown as number),
+        tipo_epp_id: undefined as unknown as number,
         marca: '',
-        referencia: '',
+        modelo: '',
         talla: '',
+        serial: '',
         cantidad: 1,
         fecha_entrega: new Date().toISOString().split('T')[0],
-        fecha_vencimiento: '',
+        entregado_por_id: currentUser?.id || (undefined as unknown as number),
+        capacitacion_realizada: false,
         observaciones: '',
       });
     }
-  }, [isOpen, reset]);
+  }, [isOpen, reset, usuarioId, currentUser?.id]);
 
-  const colaboradorOptions = [
-    { value: '', label: 'Selecciona...' },
-    ...(colaboradoresData?.results || []).map(
-      (c: {
-        id: number;
-        nombre_completo?: string;
-        primer_nombre?: string;
-        primer_apellido?: string;
-      }) => ({
-        value: String(c.id),
-        label: c.nombre_completo || `${c.primer_nombre} ${c.primer_apellido}`,
-      })
-    ),
+  const tipoEppOptions = [
+    { value: '', label: 'Selecciona tipo de EPP...' },
+    ...tiposEpp.map((t) => ({ value: String(t.value), label: t.label })),
   ];
 
-  const onSubmit = async (data: EntregaEPPFormData) => {
-    await createMutation.mutateAsync({
+  const colaboradorOptions = [
+    { value: '', label: 'Selecciona colaborador...' },
+    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+  ];
+
+  const onSubmit = async (data: CreateEntregaEPPDTO) => {
+    const payload: CreateEntregaEPPDTO = {
       ...data,
-      colaborador: Number(data.colaborador),
-    });
+      colaborador_id: Number(data.colaborador_id),
+      tipo_epp_id: Number(data.tipo_epp_id),
+      entregado_por_id: Number(data.entregado_por_id) || currentUser?.id || 0,
+      cantidad: Number(data.cantidad) || 1,
+    };
+    // Limpiar campos vacíos opcionales
+    if (!payload.marca) delete payload.marca;
+    if (!payload.modelo) delete payload.modelo;
+    if (!payload.talla) delete payload.talla;
+    if (!payload.serial) delete payload.serial;
+    if (!payload.observaciones) delete payload.observaciones;
+
+    await createMutation.mutateAsync(payload);
     onClose();
   };
 
@@ -108,49 +114,67 @@ export const EntregaEppFormModal = ({ isOpen, onClose }: Props) => {
       }
     >
       <form className="space-y-4">
-        <Select
-          label="Colaborador"
-          options={colaboradorOptions}
-          error={errors.colaborador?.message}
-          {...register('colaborador', {
-            required: 'Selecciona un colaborador',
-            validate: (v) => Number(v) > 0 || 'Selecciona un colaborador',
-          })}
-        />
+        {/* Colaborador — solo muestra si no se pasó por prop */}
+        {!usuarioId && (
+          <Select
+            label="Colaborador"
+            options={colaboradorOptions}
+            error={errors.colaborador_id?.message}
+            {...register('colaborador_id', {
+              required: 'Selecciona un colaborador',
+              validate: (v) => Number(v) > 0 || 'Selecciona un colaborador',
+            })}
+          />
+        )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Tipo de EPP"
-            options={TIPO_EPP_OPTIONS}
-            {...register('tipo_epp', { required: 'Selecciona el tipo' })}
+            options={tipoEppOptions}
+            error={errors.tipo_epp_id?.message}
+            {...register('tipo_epp_id', {
+              required: 'Selecciona el tipo de EPP',
+              validate: (v) => Number(v) > 0 || 'Selecciona el tipo de EPP',
+            })}
           />
-          <Input
-            label="Descripción"
-            placeholder="Descripción del EPP..."
-            error={errors.descripcion?.message}
-            {...register('descripcion', { required: 'La descripción es obligatoria' })}
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
-          <Input label="Marca" placeholder="Marca" {...register('marca')} />
-          <Input label="Referencia" placeholder="Modelo/Ref" {...register('referencia')} />
-          <Input label="Talla" placeholder="M, L, 42..." {...register('talla')} />
-        </div>
-
-        <div className="grid grid-cols-3 gap-4">
           <Input
             label="Cantidad"
             type="number"
-            {...register('cantidad', { valueAsNumber: true, min: 1 })}
+            error={errors.cantidad?.message}
+            {...register('cantidad', {
+              valueAsNumber: true,
+              min: { value: 1, message: 'Mínimo 1' },
+            })}
           />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Input label="Marca" placeholder="Marca" {...register('marca')} />
+          <Input label="Modelo" placeholder="Modelo/Referencia" {...register('modelo')} />
+          <Input label="Talla" placeholder="M, L, 42..." {...register('talla')} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input label="Serial" placeholder="Número de serie" {...register('serial')} />
           <Input
             label="Fecha Entrega"
             type="date"
+            error={errors.fecha_entrega?.message}
             {...register('fecha_entrega', { required: 'La fecha es obligatoria' })}
           />
-          <Input label="Fecha Vencimiento" type="date" {...register('fecha_vencimiento')} />
         </div>
+
+        <Controller
+          name="capacitacion_realizada"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              label="Capacitación de uso realizada"
+              checked={field.value || false}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
 
         <Textarea
           label="Observaciones"

@@ -1,5 +1,8 @@
 /**
  * EppActivosTab - Entregas de EPP y Activos
+ *
+ * EPP: datos de HSEQ Seguridad Industrial (fuente única)
+ * Activos: datos de Onboarding (gestionado localmente)
  */
 import { useState } from 'react';
 import { Card } from '@/components/common/Card';
@@ -14,18 +17,25 @@ import { getModuleColorClasses } from '@/utils/moduleColors';
 import { HardHat, Package, Plus, RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import {
-  useEntregasEpp,
+  useEntregasEppList,
   useEppPorVencer,
-  useCreateEntregaEpp,
   useEntregasActivos,
-  useCreateEntregaActivo,
   useRegistrarDevolucion,
 } from '../../hooks/useOnboardingInduccion';
 import type { EntregaActivo } from '../../types';
+import type { EntregaEPP as HseqEntregaEPP } from '@/features/hseq/types/seguridad-industrial.types';
 import { EntregaEppFormModal } from './EntregaEppFormModal';
 import { EntregaActivoFormModal } from './EntregaActivoFormModal';
 
 type SubView = 'epp' | 'activos';
+
+const ESTADO_EPP_COLORS: Record<string, 'success' | 'warning' | 'danger' | 'gray' | 'info'> = {
+  EN_USO: 'success',
+  DEVUELTO: 'gray',
+  EXTRAVIADO: 'danger',
+  DANADO: 'warning',
+  VENCIDO: 'danger',
+};
 
 export const EppActivosTab = () => {
   const [subView, setSubView] = useState<SubView>('epp');
@@ -36,10 +46,12 @@ export const EppActivosTab = () => {
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
   const colorClasses = getModuleColorClasses(moduleColor);
 
-  const { data: entregas_epp, isLoading: loadingEpp } = useEntregasEpp();
-  const { data: eppPorVencer } = useEppPorVencer();
+  const { data: entregas_epp, isLoading: loadingEpp } = useEntregasEppList();
+  const { data: eppPorVencerData } = useEppPorVencer();
   const { data: entregas_activos, isLoading: loadingActivos } = useEntregasActivos();
   const devolucionMutation = useRegistrarDevolucion();
+
+  const eppPorVencer = eppPorVencerData?.entregas;
 
   const confirmDevolucion = async () => {
     if (!devolucionTarget) return;
@@ -51,6 +63,22 @@ export const EppActivosTab = () => {
     setDevolucionTarget(null);
   };
 
+  const getColaboradorNombre = (epp: HseqEntregaEPP) => {
+    if (typeof epp.colaborador === 'object' && epp.colaborador) {
+      return (
+        epp.colaborador.full_name || `${epp.colaborador.first_name} ${epp.colaborador.last_name}`
+      );
+    }
+    return '-';
+  };
+
+  const getTipoEppNombre = (epp: HseqEntregaEPP) => {
+    if (typeof epp.tipo_epp === 'object' && epp.tipo_epp) {
+      return epp.tipo_epp.nombre;
+    }
+    return '-';
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -60,7 +88,7 @@ export const EppActivosTab = () => {
           </div>
         }
         title="EPP y Activos"
-        description="Entregas de equipos de proteccion personal y activos empresariales"
+        description="Entregas de equipos de protección personal y activos empresariales"
         variant="compact"
         actions={
           <div className="flex items-center gap-3">
@@ -117,13 +145,13 @@ export const EppActivosTab = () => {
           <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
             <AlertTriangle size={16} />
             <span className="text-sm font-medium">
-              {eppPorVencer.length} EPP proximos a vencer (30 dias)
+              {eppPorVencer.length} EPP próximos a reposición (30 días)
             </span>
           </div>
         </Card>
       )}
 
-      {/* EPP Table */}
+      {/* EPP Table — datos de HSEQ */}
       {subView === 'epp' && (
         <Card variant="bordered" padding="none">
           {loadingEpp ? (
@@ -144,22 +172,25 @@ export const EppActivosTab = () => {
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                      Nº Entrega
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                       Colaborador
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                       Tipo EPP
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Descripcion
+                      Marca / Modelo
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Cantidad
+                      Cant.
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                       Fecha Entrega
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Vencimiento
+                      Reposición
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                       Estado
@@ -169,29 +200,32 @@ export const EppActivosTab = () => {
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                   {entregas_epp.map((epp) => (
                     <tr key={epp.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3 text-sm font-mono text-gray-600">
+                        {epp.numero_entrega || '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {epp.colaborador_nombre}
+                        {getColaboradorNombre(epp)}
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="gray" size="sm">
-                          {epp.tipo_epp_display || epp.tipo_epp}
+                          {getTipoEppNombre(epp)}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                        {epp.descripcion}
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {[epp.marca, epp.modelo].filter(Boolean).join(' / ') || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">{epp.cantidad}</td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {new Date(epp.fecha_entrega).toLocaleDateString('es-CO')}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {epp.fecha_vencimiento ? (
+                        {epp.fecha_reposicion_programada ? (
                           <span
                             className={
                               epp.requiere_reposicion ? 'text-red-600 font-medium' : 'text-gray-600'
                             }
                           >
-                            {new Date(epp.fecha_vencimiento).toLocaleDateString('es-CO')}
+                            {new Date(epp.fecha_reposicion_programada).toLocaleDateString('es-CO')}
                             {epp.requiere_reposicion && (
                               <AlertTriangle size={14} className="inline ml-1" />
                             )}
@@ -201,8 +235,8 @@ export const EppActivosTab = () => {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={epp.recibido_conforme ? 'success' : 'warning'} size="sm">
-                          {epp.recibido_conforme ? 'Conforme' : 'Observaciones'}
+                        <Badge variant={ESTADO_EPP_COLORS[epp.estado] || 'gray'} size="sm">
+                          {epp.estado?.replace('_', ' ') || '-'}
                         </Badge>
                       </td>
                     </tr>
@@ -214,7 +248,7 @@ export const EppActivosTab = () => {
         </Card>
       )}
 
-      {/* Activos Table */}
+      {/* Activos Table — sin cambios funcionales */}
       {subView === 'activos' && (
         <Card variant="bordered" padding="none">
           {loadingActivos ? (
@@ -241,10 +275,10 @@ export const EppActivosTab = () => {
                       Tipo
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Descripcion
+                      Descripción
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Codigo
+                      Código
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                       Fecha Entrega
@@ -317,9 +351,9 @@ export const EppActivosTab = () => {
 
       <ConfirmDialog
         isOpen={!!devolucionTarget}
-        title="Registrar Devolucion"
-        message={`¿Confirmar la devolucion del activo "${devolucionTarget?.descripcion}" por ${devolucionTarget?.colaborador_nombre}?`}
-        confirmText="Confirmar Devolucion"
+        title="Registrar Devolución"
+        message={`¿Confirmar la devolución del activo "${devolucionTarget?.descripcion}" por ${devolucionTarget?.colaborador_nombre}?`}
+        confirmText="Confirmar Devolución"
         variant="warning"
         isLoading={devolucionMutation.isPending}
         onConfirm={confirmDevolucion}

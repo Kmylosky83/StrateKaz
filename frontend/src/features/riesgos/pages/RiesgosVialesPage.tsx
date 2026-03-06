@@ -34,16 +34,19 @@ import {
   NIVEL_RIESGO_VIAL_LABELS,
   NIVEL_RIESGO_VIAL_COLORS,
   ESTADO_RIESGO_VIAL_LABELS,
-  SEVERIDAD_INCIDENTE_LABELS,
-  SEVERIDAD_INCIDENTE_COLORS,
+  GRAVEDAD_INCIDENTE_LABELS,
+  GRAVEDAD_INCIDENTE_COLORS,
   ESTADO_INVESTIGACION_LABELS,
   RESULTADO_INSPECCION_LABELS,
   RESULTADO_INSPECCION_COLORS,
   type NivelRiesgoVial,
-  type SeveridadIncidente,
+  type GravedadIncidente,
   type EstadoRiesgoVial,
   type EstadoInvestigacion,
   type ResultadoInspeccion,
+  type RiesgoVialList,
+  type IncidenteVialList,
+  type InspeccionVehiculoList,
 } from '../types/riesgos-viales.types';
 
 export default function RiesgosVialesPage() {
@@ -60,41 +63,44 @@ export default function RiesgosVialesPage() {
   const { data: estadisticasIncidentes, isLoading: isLoadingStatsIncidentes } =
     useEstadisticasIncidentesViales();
   const isLoadingStats = isLoadingStatsRiesgos || isLoadingStatsIncidentes;
-   
-  const estadisticas = {
-    ...(estadisticasRiesgos ?? {}),
-    ...(estadisticasIncidentes ?? {}),
-  } as Record<string, any>;
+
   const { data: incidentesData, isLoading: isLoadingIncidentes } = useIncidentesViales();
   const { data: inspeccionesData, isLoading: isLoadingInspecciones } = useInspeccionesVehiculo();
 
   const riesgos = useMemo(() => {
     if (!riesgosData) return [];
-    return Array.isArray(riesgosData) ? riesgosData : (riesgosData?.results ?? []);
+    return Array.isArray(riesgosData)
+      ? riesgosData
+      : (((riesgosData as Record<string, unknown>)?.results as RiesgoVialList[]) ?? []);
   }, [riesgosData]);
 
   const incidentes = useMemo(() => {
     if (!incidentesData) return [];
-    return Array.isArray(incidentesData) ? incidentesData : (incidentesData?.results ?? []);
+    return Array.isArray(incidentesData)
+      ? incidentesData
+      : (((incidentesData as Record<string, unknown>)?.results as IncidenteVialList[]) ?? []);
   }, [incidentesData]);
 
   const inspecciones = useMemo(() => {
     if (!inspeccionesData) return [];
-    return Array.isArray(inspeccionesData) ? inspeccionesData : (inspeccionesData?.results ?? []);
+    return Array.isArray(inspeccionesData)
+      ? inspeccionesData
+      : (((inspeccionesData as Record<string, unknown>)?.results as InspeccionVehiculoList[]) ??
+          []);
   }, [inspeccionesData]);
 
   const stats: StatItem[] = useMemo(
     () => [
       {
         label: 'Riesgos Viales',
-        value: estadisticas?.total_riesgos ?? riesgos.length,
+        value: estadisticasRiesgos?.total_riesgos ?? riesgos.length,
         icon: AlertTriangle,
         iconColor: 'danger',
         description: 'Identificados',
       },
       {
         label: 'Incidentes',
-        value: estadisticas?.total_incidentes ?? incidentes.length,
+        value: estadisticasIncidentes?.total_incidentes ?? incidentes.length,
         icon: Activity,
         iconColor: 'warning',
         description: 'Registrados',
@@ -108,13 +114,13 @@ export default function RiesgosVialesPage() {
       },
       {
         label: 'Riesgos Críticos',
-        value: estadisticas?.requieren_accion_inmediata ?? '-',
+        value: estadisticasRiesgos?.requieren_accion_inmediata ?? '-',
         icon: Shield,
         iconColor: 'danger',
         description: 'Requieren atención',
       },
     ],
-    [estadisticas, riesgos, incidentes, inspecciones]
+    [estadisticasRiesgos, estadisticasIncidentes, riesgos, incidentes, inspecciones]
   );
 
   const tabs = [
@@ -194,24 +200,21 @@ export default function RiesgosVialesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {riesgos.map((r: Record<string, unknown>) => {
-                    const nivel = (r.nivel_riesgo ?? '') as NivelRiesgoVial;
-                    const estado = (r.estado ?? '') as EstadoRiesgoVial;
+                  {riesgos.map((r: RiesgoVialList) => {
+                    const nivel = r.nivel_riesgo;
+                    const estado = r.estado;
                     return (
-                      <tr
-                        key={r.id as number}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
+                      <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(r.codigo ?? '-') as string}
+                            {r.codigo ?? '-'}
                           </p>
                           <p className="text-xs text-gray-500 truncate max-w-xs">
-                            {(r.descripcion ?? '') as string}
+                            {r.descripcion ?? ''}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {(r.tipo_riesgo_categoria ?? r.tipo_vehiculo ?? '-') as string}
+                          {r.tipo_riesgo_categoria ?? '-'}
                         </td>
                         <td className="px-4 py-3">
                           <Badge
@@ -257,7 +260,7 @@ export default function RiesgosVialesPage() {
                       Incidente
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
-                      Severidad
+                      Gravedad
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       Estado
@@ -268,36 +271,33 @@ export default function RiesgosVialesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {incidentes.map((i: Record<string, unknown>) => {
-                    const gravedad = (i.gravedad ?? '') as SeveridadIncidente;
-                    const estadoInv = (i.estado_investigacion ?? '') as EstadoInvestigacion;
+                  {incidentes.map((i: IncidenteVialList) => {
+                    const gravedad = i.gravedad;
+                    const estadoInv = i.estado_investigacion;
                     return (
-                      <tr
-                        key={i.id as number}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
+                      <tr key={i.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(i.numero_incidente ?? '-') as string}
+                            {i.numero_incidente ?? '-'}
                           </p>
                           <p className="text-xs text-gray-500 truncate max-w-xs">
-                            {(i.ubicacion ?? i.conductor_nombre ?? '') as string}
+                            {i.ubicacion ?? i.conductor_nombre ?? ''}
                           </p>
                         </td>
                         <td className="px-4 py-3">
                           <Badge
                             className={
-                              SEVERIDAD_INCIDENTE_COLORS[gravedad] ?? 'bg-gray-100 text-gray-800'
+                              GRAVEDAD_INCIDENTE_COLORS[gravedad] ?? 'bg-gray-100 text-gray-800'
                             }
                           >
-                            {SEVERIDAD_INCIDENTE_LABELS[gravedad] ?? gravedad ?? '-'}
+                            {GRAVEDAD_INCIDENTE_LABELS[gravedad] ?? gravedad ?? '-'}
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                           {ESTADO_INVESTIGACION_LABELS[estadoInv] ?? estadoInv ?? '-'}
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {(i.fecha_incidente ?? '-') as string}
+                          {i.fecha_incidente ?? '-'}
                         </td>
                       </tr>
                     );
@@ -331,7 +331,7 @@ export default function RiesgosVialesPage() {
                       Vehículo
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
-                      Cumplimiento
+                      Conformidad
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       Resultado
@@ -342,20 +342,15 @@ export default function RiesgosVialesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {inspecciones.map((ins: Record<string, unknown>) => {
-                    const resultado = (ins.resultado ?? '') as ResultadoInspeccion;
+                  {inspecciones.map((ins: InspeccionVehiculoList) => {
+                    const resultado = ins.resultado;
                     return (
-                      <tr
-                        key={ins.id as number}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
+                      <tr key={ins.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <td className="px-4 py-3">
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {(ins.vehiculo_placa ?? ins.numero_inspeccion ?? '-') as string}
+                            {ins.vehiculo_placa ?? ins.numero_inspeccion ?? '-'}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            {(ins.conductor_nombre ?? '') as string}
-                          </p>
+                          <p className="text-xs text-gray-500">{ins.conductor_nombre ?? ''}</p>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -382,7 +377,7 @@ export default function RiesgosVialesPage() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                          {(ins.fecha_inspeccion ?? '-') as string}
+                          {ins.fecha_inspeccion ?? '-'}
                         </td>
                       </tr>
                     );

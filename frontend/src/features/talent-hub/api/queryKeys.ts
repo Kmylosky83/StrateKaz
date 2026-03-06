@@ -124,4 +124,5 @@ export const thKeys = {
   examenesEgreso: createQueryKeys('th-examenes-egreso'),
   entrevistasRetiro: createQueryKeys('th-entrevistas-retiro'),
   liquidacionesFinales: createQueryKeys('th-liquidaciones-finales'),
+  certificadosTrabajo: createQueryKeys('th-certificados-trabajo'),
 } as const;

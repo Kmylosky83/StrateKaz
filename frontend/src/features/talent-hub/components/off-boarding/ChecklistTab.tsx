@@ -4,24 +4,24 @@
  */
 
 import { useState } from 'react';
-import { Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, MinusCircle } from 'lucide-react';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
-import { Input } from '@/components/forms/Input';
 import { cn } from '@/utils/cn';
 import {
   useProcesosRetiro,
   useChecklistRetiro,
-  useCompletarChecklistItem,
+  useMarcarCompletadoChecklistItem,
+  useMarcarNoAplicaChecklistItem,
   usePazSalvos,
   useAprobarPazSalvo,
   useRechazarPazSalvo,
 } from '../../hooks/useOffBoarding';
 import type { EstadoItem, EstadoPazSalvo } from '../../types';
-import { estadoItemOptions, estadoPazSalvoOptions, tipoPazSalvoOptions } from '../../types';
+import { estadoItemOptions, estadoPazSalvoOptions, areaPazSalvoOptions } from '../../types';
 import { ChecklistItemFormModal } from './ChecklistItemFormModal';
 import { PazSalvoFormModal } from './PazSalvoFormModal';
 
@@ -47,7 +47,6 @@ export function ChecklistTab() {
   const [selectedProcesoId, setSelectedProcesoId] = useState<number | null>(null);
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [showPazSalvoModal, setShowPazSalvoModal] = useState(false);
-  const [cantidadDevuelta, setCantidadDevuelta] = useState<Record<number, number>>({});
 
   const { data: procesos = [] } = useProcesosRetiro();
   const { data: checklistItems = [] } = useChecklistRetiro(
@@ -57,7 +56,8 @@ export function ChecklistTab() {
     selectedProcesoId ? { proceso_retiro: selectedProcesoId } : undefined
   );
 
-  const completarMutation = useCompletarChecklistItem();
+  const completarMutation = useMarcarCompletadoChecklistItem();
+  const noAplicaMutation = useMarcarNoAplicaChecklistItem();
   const aprobarPazSalvoMutation = useAprobarPazSalvo();
   const rechazarPazSalvoMutation = useRechazarPazSalvo();
 
@@ -70,18 +70,18 @@ export function ChecklistTab() {
     completarMutation.mutate({ id });
   };
 
+  const handleNoAplicaItem = (id: number) => {
+    noAplicaMutation.mutate({ id });
+  };
+
   const handleAprobarPazSalvo = (id: number) => {
-    const cantidad = cantidadDevuelta[id] || 0;
-    aprobarPazSalvoMutation.mutate({
-      id,
-      data: { cantidad_devuelta: cantidad },
-    });
+    aprobarPazSalvoMutation.mutate({ id });
   };
 
   const handleRechazarPazSalvo = (id: number) => {
-    const observaciones = prompt('Ingrese el motivo del rechazo:');
-    if (observaciones) {
-      rechazarPazSalvoMutation.mutate({ id, observaciones });
+    const motivo = prompt('Ingrese el motivo del rechazo:');
+    if (motivo) {
+      rechazarPazSalvoMutation.mutate({ id, motivo });
     }
   };
 
@@ -130,6 +130,9 @@ export function ChecklistTab() {
                           Orden
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Tipo
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                           Descripción
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -139,7 +142,7 @@ export function ChecklistTab() {
                           Estado
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Fecha Completado
+                          Validado Por
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                           Acciones
@@ -156,10 +159,13 @@ export function ChecklistTab() {
                             {item.orden}
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                            {item.tipo_item_display || item.tipo_item}
+                          </td>
+                          <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
                             {item.descripcion}
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                            {item.area_responsable}
+                            {item.responsable_area_display || item.responsable_area}
                           </td>
                           <td className="p-3">
                             <span
@@ -168,26 +174,36 @@ export function ChecklistTab() {
                                 getEstadoColor(item.estado)
                               )}
                             >
-                              {estadoItemOptions.find((opt) => opt.value === item.estado)?.label}
+                              {item.estado_display ||
+                                estadoItemOptions.find((opt) => opt.value === item.estado)?.label}
                             </span>
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                            {item.fecha_completado
-                              ? new Date(item.fecha_completado).toLocaleDateString('es-CO')
-                              : '-'}
+                            {item.validado_por_nombre || '-'}
                           </td>
                           <td className="p-3">
-                            {item.estado !== 'completado' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCompletarItem(item.id)}
-                                disabled={completarMutation.isPending}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Completar
-                              </Button>
-                            )}
+                            {item.estado === 'pendiente' || item.estado === 'en_proceso' ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCompletarItem(item.id)}
+                                  disabled={completarMutation.isPending}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Completar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleNoAplicaItem(item.id)}
+                                  disabled={noAplicaMutation.isPending}
+                                >
+                                  <MinusCircle className="h-4 w-4 mr-1" />
+                                  N/A
+                                </Button>
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       ))}
@@ -202,7 +218,7 @@ export function ChecklistTab() {
           <div className="space-y-4">
             <SectionHeader
               title="Paz y Salvos"
-              description="Control de entrega de elementos y documentación"
+              description="Aprobación por áreas para el proceso de retiro"
             >
               <Button onClick={() => setShowPazSalvoModal(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -213,7 +229,7 @@ export function ChecklistTab() {
             {pazSalvos.length === 0 ? (
               <EmptyState
                 title="No hay paz y salvos registrados"
-                description="Agregue paz y salvos para controlar la entrega de elementos."
+                description="Agregue paz y salvos por área para este proceso."
                 action={{
                   label: 'Agregar Paz y Salvo',
                   onClick: () => setShowPazSalvoModal(true),
@@ -226,16 +242,13 @@ export function ChecklistTab() {
                     <thead>
                       <tr className="border-b border-gray-200 dark:border-gray-700">
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Tipo
-                        </th>
-                        <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Descripción
-                        </th>
-                        <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                           Área
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Cantidad
+                          Responsable
+                        </th>
+                        <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Pendientes
                         </th>
                         <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                           Estado
@@ -261,17 +274,15 @@ export function ChecklistTab() {
                                 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                               )}
                             >
-                              {tipoPazSalvoOptions.find((opt) => opt.value === paz.tipo)?.label}
+                              {paz.area_display ||
+                                areaPazSalvoOptions.find((opt) => opt.value === paz.area)?.label}
                             </span>
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                            {paz.descripcion}
+                            {paz.responsable_nombre || '-'}
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                            {paz.area_responsable}
-                          </td>
-                          <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
-                            {paz.cantidad_devuelta}/{paz.cantidad_entregada}
+                            {paz.pendientes || '-'}
                           </td>
                           <td className="p-3">
                             <span
@@ -280,7 +291,9 @@ export function ChecklistTab() {
                                 getEstadoColor(paz.estado)
                               )}
                             >
-                              {estadoPazSalvoOptions.find((opt) => opt.value === paz.estado)?.label}
+                              {paz.estado_display ||
+                                estadoPazSalvoOptions.find((opt) => opt.value === paz.estado)
+                                  ?.label}
                             </span>
                           </td>
                           <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
@@ -289,20 +302,6 @@ export function ChecklistTab() {
                           <td className="p-3">
                             {paz.estado === 'pendiente' && (
                               <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max={paz.cantidad_entregada}
-                                  value={cantidadDevuelta[paz.id] || 0}
-                                  onChange={(e) =>
-                                    setCantidadDevuelta({
-                                      ...cantidadDevuelta,
-                                      [paz.id]: Number(e.target.value),
-                                    })
-                                  }
-                                  className="w-16"
-                                  placeholder="Cant."
-                                />
                                 <Button
                                   size="sm"
                                   variant="outline"

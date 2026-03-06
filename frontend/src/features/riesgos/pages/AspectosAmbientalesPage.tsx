@@ -1,7 +1,7 @@
 /**
  * Aspectos e Impactos Ambientales — ISO 14001:2015
  *
- * Conecta con backend: /api/motor-riesgos/aspectos-ambientales/
+ * Conecta con backend: /api/riesgos/aspectos-ambientales/
  * Hooks: useAspectosAmbientales, useResumenAspectos, useProgramasAmbientales, useMonitoreosAmbientales
  */
 import { useState, useMemo } from 'react';
@@ -28,12 +28,21 @@ import {
   useProgramasAmbientales,
   useMonitoreosAmbientales,
 } from '../hooks/useAspectosAmbientales';
-
-const SIGNIFICANCIA_COLORS: Record<string, string> = {
-  significativo: 'bg-red-100 text-red-800',
-  no_significativo: 'bg-green-100 text-green-800',
-  por_evaluar: 'bg-yellow-100 text-yellow-800',
-};
+import type {
+  AspectoAmbientalList,
+  ProgramaAmbientalList,
+  MonitoreoAmbiental,
+  ResumenAspectosAmbientales,
+} from '../types/aspectos-ambientales.types';
+import {
+  SIGNIFICANCIA_LABELS,
+  SIGNIFICANCIA_COLORS,
+  CONDICION_OPERACION_LABELS,
+  TIPO_PROGRAMA_LABELS,
+  ESTADO_PROGRAMA_LABELS,
+  CUMPLIMIENTO_MONITOREO_LABELS,
+  CUMPLIMIENTO_MONITOREO_COLORS,
+} from '../types/aspectos-ambientales.types';
 
 export default function AspectosAmbientalesPage() {
   const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
@@ -48,23 +57,28 @@ export default function AspectosAmbientalesPage() {
   const { data: programasData, isLoading: isLoadingProgramas } = useProgramasAmbientales();
   const { data: monitoreosData, isLoading: isLoadingMonitoreos } = useMonitoreosAmbientales();
 
-  const aspectos = useMemo(() => {
+  const aspectos = useMemo<AspectoAmbientalList[]>(() => {
     if (!aspectosData) return [];
-    return Array.isArray(aspectosData) ? aspectosData : (aspectosData?.results ?? []);
+    return Array.isArray(aspectosData)
+      ? aspectosData
+      : (((aspectosData as Record<string, unknown>)?.results as AspectoAmbientalList[]) ?? []);
   }, [aspectosData]);
 
-  const programas = useMemo(() => {
+  const programas = useMemo<ProgramaAmbientalList[]>(() => {
     if (!programasData) return [];
-    return Array.isArray(programasData) ? programasData : (programasData?.results ?? []);
+    return Array.isArray(programasData)
+      ? programasData
+      : (((programasData as Record<string, unknown>)?.results as ProgramaAmbientalList[]) ?? []);
   }, [programasData]);
 
-  const monitoreos = useMemo(() => {
+  const monitoreos = useMemo<MonitoreoAmbiental[]>(() => {
     if (!monitoreosData) return [];
-    return Array.isArray(monitoreosData) ? monitoreosData : (monitoreosData?.results ?? []);
+    return Array.isArray(monitoreosData)
+      ? monitoreosData
+      : (((monitoreosData as Record<string, unknown>)?.results as MonitoreoAmbiental[]) ?? []);
   }, [monitoreosData]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const resumenData = resumen as Record<string, any> | undefined;
+  const resumenData = resumen as ResumenAspectosAmbientales | undefined;
 
   const stats: StatItem[] = useMemo(
     () => [
@@ -77,21 +91,23 @@ export default function AspectosAmbientalesPage() {
       },
       {
         label: 'Significativos',
-        value: resumenData?.significativos ?? 0,
+        value:
+          resumenData?.por_significancia?.find((s) => s.significancia === 'SIGNIFICATIVO')
+            ?.cantidad ?? 0,
         icon: AlertTriangle,
         iconColor: 'danger',
         description: 'Requieren acción',
       },
       {
         label: 'Programas',
-        value: resumenData?.programas_activos ?? programas.length,
+        value: programas.length,
         icon: FileCheck,
         iconColor: 'info',
-        description: 'Activos',
+        description: 'Registrados',
       },
       {
         label: 'Monitoreos',
-        value: resumenData?.monitoreos_pendientes ?? monitoreos.length,
+        value: monitoreos.length,
         icon: Activity,
         iconColor: 'warning',
         description: 'Registrados',
@@ -165,7 +181,10 @@ export default function AspectosAmbientalesPage() {
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
-                      Aspecto
+                      Código
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Proceso / Actividad
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       Categoría
@@ -179,30 +198,28 @@ export default function AspectosAmbientalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {aspectos.map((a: Record<string, unknown>) => (
-                    <tr key={a.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  {aspectos.map((a) => (
+                    <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">
+                        {a.codigo}
+                      </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {(a.nombre ?? a.name ?? '-') as string}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate max-w-xs">
-                          {(a.descripcion ?? a.description ?? '') as string}
-                        </p>
+                        <p className="font-medium text-gray-900 dark:text-white">{a.proceso}</p>
+                        <p className="text-xs text-gray-500 truncate max-w-xs">{a.actividad}</p>
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {(a.categoria_nombre ?? a.categoria ?? '-') as string}
+                        {a.categoria_nombre}
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {(a.condicion_operacion_display ?? a.condicion_operacion ?? '-') as string}
+                        {CONDICION_OPERACION_LABELS[a.condicion_operacion] ?? a.condicion_operacion}
                       </td>
                       <td className="px-4 py-3">
                         <Badge
                           className={
-                            SIGNIFICANCIA_COLORS[a.significancia as string] ??
-                            'bg-gray-100 text-gray-800'
+                            SIGNIFICANCIA_COLORS[a.significancia] ?? 'bg-gray-100 text-gray-800'
                           }
                         >
-                          {(a.significancia_display ?? a.significancia ?? 'Por evaluar') as string}
+                          {SIGNIFICANCIA_LABELS[a.significancia] ?? a.significancia}
                         </Badge>
                       </td>
                     </tr>
@@ -247,27 +264,28 @@ export default function AspectosAmbientalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {programas.map((p: Record<string, unknown>) => (
-                    <tr key={p.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                        {(p.nombre ?? p.name ?? '-') as string}
+                  {programas.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900 dark:text-white">{p.nombre}</p>
+                        <p className="text-xs text-gray-500">{p.codigo}</p>
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {(p.tipo_programa_display ?? p.tipo_programa ?? '-') as string}
+                        {TIPO_PROGRAMA_LABELS[p.tipo_programa] ?? p.tipo_programa}
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {(p.estado_display ?? p.estado ?? '-') as string}
+                        {ESTADO_PROGRAMA_LABELS[p.estado] ?? p.estado}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-green-500 rounded-full"
-                              style={{ width: `${Number(p.porcentaje_avance ?? 0)}%` }}
+                              style={{ width: `${p.porcentaje_avance ?? 0}%` }}
                             />
                           </div>
                           <span className="text-xs text-gray-600 dark:text-gray-400">
-                            {Number(p.porcentaje_avance ?? 0)}%
+                            {p.porcentaje_avance ?? 0}%
                           </span>
                         </div>
                       </td>
@@ -305,7 +323,7 @@ export default function AspectosAmbientalesPage() {
                       Valor
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
-                      Cumple
+                      Cumplimiento
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       Fecha
@@ -313,27 +331,29 @@ export default function AspectosAmbientalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {monitoreos.map((m: Record<string, unknown>) => (
-                    <tr key={m.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                        {(m.parametro_medido ?? '-') as string}
+                  {monitoreos.map((m) => (
+                    <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {m.parametro_medido}
+                        </p>
+                        <p className="text-xs text-gray-500">{m.codigo}</p>
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {String(m.valor_medido ?? '-')} {(m.unidad_medida ?? '') as string}
+                        {m.valor_medido} {m.unidad_medida}
                       </td>
                       <td className="px-4 py-3">
                         <Badge
                           className={
-                            m.cumple_normativa
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                            CUMPLIMIENTO_MONITOREO_COLORS[m.cumplimiento] ??
+                            'bg-gray-100 text-gray-800'
                           }
                         >
-                          {m.cumple_normativa ? 'Sí' : 'No'}
+                          {CUMPLIMIENTO_MONITOREO_LABELS[m.cumplimiento] ?? m.cumplimiento}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
-                        {(m.fecha_monitoreo ?? '-') as string}
+                        {m.fecha_monitoreo}
                       </td>
                     </tr>
                   ))}

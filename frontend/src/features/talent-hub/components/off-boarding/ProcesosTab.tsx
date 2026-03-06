@@ -4,32 +4,29 @@
  */
 
 import { useState } from 'react';
-import { Plus, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle, Eye } from 'lucide-react';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
-import { Textarea } from '@/components/forms/Textarea';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { cn } from '@/utils/cn';
-import {
-  useProcesosRetiro,
-  useFinalizarProcesoRetiro,
-  useCancelarProcesoRetiro,
-} from '../../hooks/useOffBoarding';
+import { useProcesosRetiro, useCerrarProcesoRetiro } from '../../hooks/useOffBoarding';
 import type { ProcesoRetiro, EstadoProceso } from '../../types';
-import { estadoProcesoOptions } from '../../types';
+import { estadoProcesoOptions, motivoRetiroOptions } from '../../types';
 import { ProcesoFormModal } from './ProcesoFormModal';
 
 const getEstadoColor = (estado: EstadoProceso) => {
   switch (estado) {
     case 'iniciado':
       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-    case 'en_proceso':
-    case 'pendiente_liquidacion':
+    case 'checklist_pendiente':
+    case 'paz_salvo_pendiente':
+    case 'examen_pendiente':
+    case 'entrevista_pendiente':
+    case 'liquidacion_pendiente':
       return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
-    case 'finalizado':
+    case 'completado':
       return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
     case 'cancelado':
       return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
@@ -41,31 +38,15 @@ const getEstadoColor = (estado: EstadoProceso) => {
 export function ProcesosTab() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [estadoFilter, setEstadoFilter] = useState<EstadoProceso | ''>('');
-  const [cancelProcesoId, setCancelProcesoId] = useState<number | null>(null);
-  const [cancelMotivo, setCancelMotivo] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const { data: procesos = [], isLoading } = useProcesosRetiro(
     estadoFilter ? { estado: estadoFilter } : undefined
   );
-  const finalizarMutation = useFinalizarProcesoRetiro();
-  const cancelarMutation = useCancelarProcesoRetiro();
+  const cerrarMutation = useCerrarProcesoRetiro();
 
-  const handleFinalizar = (id: number) => {
-    finalizarMutation.mutate(id);
-  };
-
-  const handleCancelar = () => {
-    if (!cancelProcesoId || !cancelMotivo.trim()) return;
-    cancelarMutation.mutate(
-      { id: cancelProcesoId, motivo: cancelMotivo },
-      {
-        onSuccess: () => {
-          setCancelProcesoId(null);
-          setCancelMotivo('');
-        },
-      }
-    );
+  const handleCerrar = (id: number) => {
+    cerrarMutation.mutate(id);
   };
 
   if (isLoading) {
@@ -86,7 +67,7 @@ export function ProcesosTab() {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Select
             label="Estado"
             value={estadoFilter}
@@ -122,7 +103,10 @@ export function ProcesosTab() {
                     Fecha Notificación
                   </th>
                   <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Fecha Retiro
+                    Último Día
+                  </th>
+                  <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Progreso
                   </th>
                   <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Estado
@@ -145,7 +129,11 @@ export function ProcesosTab() {
                           <div className="font-medium text-gray-900 dark:text-gray-100">
                             {proceso.colaborador_nombre}
                           </div>
-                          <div className="text-xs text-gray-500">{proceso.colaborador_cargo}</div>
+                          {proceso.colaborador_identificacion && (
+                            <div className="text-xs text-gray-500">
+                              {proceso.colaborador_identificacion}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
@@ -157,6 +145,11 @@ export function ProcesosTab() {
                       <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
                         {new Date(proceso.fecha_ultimo_dia_trabajo).toLocaleDateString('es-CO')}
                       </td>
+                      <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                        {proceso.progreso_porcentaje != null
+                          ? `${proceso.progreso_porcentaje}%`
+                          : '-'}
+                      </td>
                       <td className="p-3">
                         <span
                           className={cn(
@@ -164,78 +157,62 @@ export function ProcesosTab() {
                             getEstadoColor(proceso.estado)
                           )}
                         >
-                          {estadoProcesoOptions.find((opt) => opt.value === proceso.estado)?.label}
+                          {proceso.estado_display ||
+                            estadoProcesoOptions.find((opt) => opt.value === proceso.estado)?.label}
                         </span>
                       </td>
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          {proceso.estado !== 'finalizado' && proceso.estado !== 'cancelado' && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleFinalizar(proceso.id)}
-                                disabled={finalizarMutation.isPending}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Finalizar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setCancelProcesoId(proceso.id)}
-                                disabled={cancelarMutation.isPending}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Cancelar
-                              </Button>
-                            </>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setExpandedId(expandedId === proceso.id ? null : proceso.id)
+                            }
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {proceso.estado !== 'completado' && proceso.estado !== 'cancelado' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCerrar(proceso.id)}
+                              disabled={cerrarMutation.isPending}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Cerrar
+                            </Button>
                           )}
                         </div>
                       </td>
                     </tr>
                     {expandedId === proceso.id && (
-                      <tr>
-                        <td colSpan={6} className="p-4 bg-gray-50 dark:bg-gray-800/50">
+                      <tr key={`${proceso.id}-expanded`}>
+                        <td colSpan={7} className="p-4 bg-gray-50 dark:bg-gray-800/50">
                           <div className="space-y-2">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div>
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  Documento:
+                                  Motivo de retiro:
                                 </span>
                                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                                  {proceso.colaborador_documento}
+                                  {proceso.motivo_retiro_display ||
+                                    motivoRetiroOptions.find(
+                                      (opt) => opt.value === proceso.motivo_retiro
+                                    )?.label}
                                 </span>
                               </div>
-                              <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  Responsable:
-                                </span>
-                                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                                  {proceso.responsable_proceso_nombre}
-                                </span>
-                              </div>
+                              {proceso.esta_completado != null && (
+                                <div>
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Completado:
+                                  </span>
+                                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                                    {proceso.esta_completado ? 'Sí' : 'No'}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            {proceso.motivo_retiro && (
-                              <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  Motivo:
-                                </span>
-                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                  {proceso.motivo_retiro}
-                                </p>
-                              </div>
-                            )}
-                            {proceso.observaciones && (
-                              <div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  Observaciones:
-                                </span>
-                                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                  {proceso.observaciones}
-                                </p>
-                              </div>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -252,29 +229,6 @@ export function ProcesosTab() {
       {showCreateModal && (
         <ProcesoFormModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
       )}
-
-      <ConfirmDialog
-        isOpen={!!cancelProcesoId}
-        onClose={() => {
-          setCancelProcesoId(null);
-          setCancelMotivo('');
-        }}
-        onConfirm={handleCancelar}
-        title="Cancelar Proceso de Retiro"
-        message="¿Está seguro de cancelar este proceso de retiro? Esta acción no se puede deshacer."
-        confirmText="Cancelar Proceso"
-        variant="danger"
-      >
-        <div className="mt-4">
-          <Textarea
-            label="Motivo de Cancelación *"
-            value={cancelMotivo}
-            onChange={(e) => setCancelMotivo(e.target.value)}
-            rows={3}
-            placeholder="Ingrese el motivo de cancelación..."
-          />
-        </div>
-      </ConfirmDialog>
     </div>
   );
 }

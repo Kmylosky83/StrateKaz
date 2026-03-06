@@ -16,7 +16,7 @@ export {
   // Factores
   useFactoresRiesgoVial,
   useFactorRiesgoVial,
-  useFactoresPorPilar,
+  useFactoresPorCategoria,
   useCreateFactorRiesgoVial,
   useUpdateFactorRiesgoVial,
   useDeleteFactorRiesgoVial,
@@ -25,7 +25,6 @@ export {
   useRiesgoVial,
   useEstadisticasRiesgosViales,
   useRiesgosCriticos as useRiesgosVialesCriticos,
-  useRiesgosPorPilar,
   useCreateRiesgoVial,
   useUpdateRiesgoVial,
   useDeleteRiesgoVial,
@@ -49,9 +48,7 @@ export {
   // Inspecciones
   useInspeccionesVehiculo,
   useInspeccionVehiculo,
-  useInspeccionesPorPlaca,
-  useUltimaInspeccion,
+  useInspeccionesPorVehiculo,
   useCreateInspeccionVehiculo,
-  useUpdateInspeccionVehiculo,
   useDeleteInspeccionVehiculo,
 } from './useRiesgosViales';

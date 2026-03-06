@@ -1,6 +1,13 @@
 /**
  * React Query Hooks para Riesgos Viales - PESV
- * Plan Estrategico de Seguridad Vial - Resolucion 40595/2022
+ * Plan Estratégico de Seguridad Vial - Resolución 40595/2022
+ *
+ * Mapea 1:1 con los endpoints del backend:
+ *   factores/      -> FactorRiesgoVialViewSet
+ *   riesgos/       -> RiesgoVialViewSet
+ *   controles/     -> ControlVialViewSet
+ *   incidentes/    -> IncidenteVialViewSet
+ *   inspecciones/  -> InspeccionVehiculoViewSet
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -23,10 +30,8 @@ import type {
   IncidenteVialUpdate,
   IncidenteVialFilter,
   InspeccionVehiculoCreate,
-  InspeccionVehiculoUpdate,
   InspeccionVehiculoFilter,
   CategoriaFactor,
-  PilarPESV,
 } from '../types/riesgos-viales.types';
 
 // ============================================
@@ -38,11 +43,10 @@ export const riesgosVialesKeys = {
 
   // Factores/Tipos de riesgo
   factores: () => [...riesgosVialesKeys.all, 'factores'] as const,
-  factoresList: (categoria?: CategoriaFactor) =>
-    [...riesgosVialesKeys.factores(), 'list', categoria] as const,
+  factoresList: (params?: { categoria?: CategoriaFactor; search?: string }) =>
+    [...riesgosVialesKeys.factores(), 'list', params] as const,
   factor: (id: number) => [...riesgosVialesKeys.factores(), id] as const,
-  factoresPorPilar: (pilar: PilarPESV) =>
-    [...riesgosVialesKeys.factores(), 'pilar', pilar] as const,
+  factoresPorCategoria: () => [...riesgosVialesKeys.factores(), 'por-categoria'] as const,
 
   // Riesgos
   riesgos: () => [...riesgosVialesKeys.all, 'riesgos'] as const,
@@ -51,7 +55,6 @@ export const riesgosVialesKeys = {
   riesgo: (id: number) => [...riesgosVialesKeys.riesgos(), id] as const,
   riesgosEstadisticas: () => [...riesgosVialesKeys.riesgos(), 'estadisticas'] as const,
   riesgosCriticos: () => [...riesgosVialesKeys.riesgos(), 'criticos'] as const,
-  riesgosPorPilar: (pilar: PilarPESV) => [...riesgosVialesKeys.riesgos(), 'pilar', pilar] as const,
 
   // Controles
   controles: () => [...riesgosVialesKeys.all, 'controles'] as const,
@@ -60,7 +63,7 @@ export const riesgosVialesKeys = {
   control: (id: number) => [...riesgosVialesKeys.controles(), id] as const,
   controlesAtrasados: () => [...riesgosVialesKeys.controles(), 'atrasados'] as const,
   controlesPorRiesgo: (riesgoId: number) =>
-    [...riesgosVialesKeys.controles(), 'riesgo', riesgoId] as const,
+    [...riesgosVialesKeys.controles(), 'por-riesgo', riesgoId] as const,
 
   // Incidentes
   incidentes: () => [...riesgosVialesKeys.all, 'incidentes'] as const,
@@ -75,19 +78,19 @@ export const riesgosVialesKeys = {
   inspeccionesList: (filters?: InspeccionVehiculoFilter) =>
     [...riesgosVialesKeys.inspecciones(), 'list', filters] as const,
   inspeccion: (id: number) => [...riesgosVialesKeys.inspecciones(), id] as const,
-  inspeccionesPorPlaca: (placa: string) =>
-    [...riesgosVialesKeys.inspecciones(), 'placa', placa] as const,
+  inspeccionesPorVehiculo: (placa: string) =>
+    [...riesgosVialesKeys.inspecciones(), 'por-vehiculo', placa] as const,
 };
 
 // ============================================
-// HOOKS PARA FACTORES DE RIESGO VIAL
+// HOOKS PARA FACTORES DE RIESGO VIAL (Catálogo)
 // ============================================
 
-export function useFactoresRiesgoVial(categoria?: CategoriaFactor) {
+export function useFactoresRiesgoVial(params?: { categoria?: CategoriaFactor; search?: string }) {
   return useQuery({
-    queryKey: riesgosVialesKeys.factoresList(categoria),
-    queryFn: () => factoresRiesgoVialApi.getAll(categoria),
-    staleTime: 10 * 60 * 1000, // 10 minutos (es catalogo)
+    queryKey: riesgosVialesKeys.factoresList(params),
+    queryFn: () => factoresRiesgoVialApi.getAll(params),
+    staleTime: 10 * 60 * 1000, // 10 minutos (es catálogo)
   });
 }
 
@@ -99,11 +102,10 @@ export function useFactorRiesgoVial(id: number) {
   });
 }
 
-export function useFactoresPorPilar(pilar: PilarPESV) {
+export function useFactoresPorCategoria() {
   return useQuery({
-    queryKey: riesgosVialesKeys.factoresPorPilar(pilar),
-    queryFn: () => factoresRiesgoVialApi.getByPilar(pilar),
-    enabled: !!pilar,
+    queryKey: riesgosVialesKeys.factoresPorCategoria(),
+    queryFn: () => factoresRiesgoVialApi.porCategoria(),
     staleTime: 10 * 60 * 1000,
   });
 }
@@ -176,14 +178,6 @@ export function useRiesgosCriticos() {
   });
 }
 
-export function useRiesgosPorPilar(pilar: PilarPESV) {
-  return useQuery({
-    queryKey: riesgosVialesKeys.riesgosPorPilar(pilar),
-    queryFn: () => riesgosVialesApi.getByPilar(pilar),
-    enabled: !!pilar,
-  });
-}
-
 export function useCreateRiesgoVial() {
   const queryClient = useQueryClient();
 
@@ -241,14 +235,14 @@ export function useControlVial(id: number) {
 export function useControlesAtrasados() {
   return useQuery({
     queryKey: riesgosVialesKeys.controlesAtrasados(),
-    queryFn: controlesVialesApi.atrasados,
+    queryFn: () => controlesVialesApi.atrasados(),
   });
 }
 
 export function useControlesPorRiesgo(riesgoId: number) {
   return useQuery({
     queryKey: riesgosVialesKeys.controlesPorRiesgo(riesgoId),
-    queryFn: () => controlesVialesApi.getByRiesgo(riesgoId),
+    queryFn: () => controlesVialesApi.porRiesgo(riesgoId),
     enabled: !!riesgoId,
   });
 }
@@ -320,7 +314,7 @@ export function useEstadisticasIncidentesViales() {
 export function useIncidentesGraves() {
   return useQuery({
     queryKey: riesgosVialesKeys.incidentesGraves(),
-    queryFn: incidentesVialesApi.graves,
+    queryFn: () => incidentesVialesApi.graves(),
   });
 }
 
@@ -359,7 +353,7 @@ export function useDeleteIncidenteVial() {
   });
 }
 
-// Iniciar investigacion de un incidente
+/** POST incidentes/{id}/iniciar-investigacion/ */
 export function useIniciarInvestigacion() {
   const queryClient = useQueryClient();
 
@@ -381,7 +375,7 @@ export function useIniciarInvestigacion() {
 }
 
 // ============================================
-// HOOKS PARA INSPECCIONES DE VEHICULOS
+// HOOKS PARA INSPECCIONES DE VEHÍCULOS
 // ============================================
 
 export function useInspeccionesVehiculo(filters?: InspeccionVehiculoFilter) {
@@ -399,18 +393,10 @@ export function useInspeccionVehiculo(id: number) {
   });
 }
 
-export function useInspeccionesPorPlaca(placa: string) {
+export function useInspeccionesPorVehiculo(placa: string) {
   return useQuery({
-    queryKey: riesgosVialesKeys.inspeccionesPorPlaca(placa),
-    queryFn: () => inspeccionesVehiculoApi.porPlaca(placa),
-    enabled: !!placa,
-  });
-}
-
-export function useUltimaInspeccion(placa: string) {
-  return useQuery({
-    queryKey: [...riesgosVialesKeys.inspeccionesPorPlaca(placa), 'ultima'],
-    queryFn: () => inspeccionesVehiculoApi.ultimaInspeccion(placa),
+    queryKey: riesgosVialesKeys.inspeccionesPorVehiculo(placa),
+    queryFn: () => inspeccionesVehiculoApi.porVehiculo(placa),
     enabled: !!placa,
   });
 }
@@ -422,22 +408,11 @@ export function useCreateInspeccionVehiculo() {
     mutationFn: (data: InspeccionVehiculoCreate) => inspeccionesVehiculoApi.create(data),
     onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.inspecciones() });
-      queryClient.invalidateQueries({
-        queryKey: riesgosVialesKeys.inspeccionesPorPlaca(data.placa),
-      });
-    },
-  });
-}
-
-export function useUpdateInspeccionVehiculo() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: InspeccionVehiculoUpdate }) =>
-      inspeccionesVehiculoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.inspecciones() });
-      queryClient.invalidateQueries({ queryKey: riesgosVialesKeys.inspeccion(id) });
+      if (data.vehiculo_placa) {
+        queryClient.invalidateQueries({
+          queryKey: riesgosVialesKeys.inspeccionesPorVehiculo(data.vehiculo_placa),
+        });
+      }
     },
   });
 }

@@ -176,6 +176,9 @@ import type {
   EntrevistaRetiro,
   EntrevistaRetiroFormData,
   LiquidacionFinal,
+  LiquidacionFinalFormData,
+  CertificadoTrabajo,
+  CertificadoTrabajoFormData,
 } from '../types';
 
 // =============================================================================
@@ -937,10 +940,17 @@ export const entrevistaRetiroApi = createApiClient<
   Partial<EntrevistaRetiroFormData>
 >(OFF_BOARDING_URL, 'entrevistas');
 
-export const liquidacionFinalApi = createApiClient<LiquidacionFinal>(
-  OFF_BOARDING_URL,
-  'liquidaciones'
-);
+export const liquidacionFinalApi = createApiClient<
+  LiquidacionFinal,
+  LiquidacionFinalFormData,
+  Partial<LiquidacionFinalFormData>
+>(OFF_BOARDING_URL, 'liquidaciones');
+
+export const certificadoTrabajoApi = createApiClient<
+  CertificadoTrabajo,
+  CertificadoTrabajoFormData,
+  Partial<CertificadoTrabajoFormData>
+>(OFF_BOARDING_URL, 'certificados-trabajo');
 
 // =============================================================================
 // EXPORTACION POR DEFECTO
@@ -1034,6 +1044,7 @@ const talentHubApi = {
   examenEgreso: examenEgresoApi,
   entrevistaRetiro: entrevistaRetiroApi,
   liquidacionFinal: liquidacionFinalApi,
+  certificadoTrabajo: certificadoTrabajoApi,
 };
 
 export default talentHubApi;

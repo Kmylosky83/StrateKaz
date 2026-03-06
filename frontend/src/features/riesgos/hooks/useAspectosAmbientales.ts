@@ -1,6 +1,9 @@
 /**
  * React Query Hooks para Aspectos Ambientales - ISO 14001
- * Sistema de Gestion Ambiental
+ * Sistema de Gestión Ambiental
+ *
+ * Sincronizado con backend: apps/motor_riesgos/aspectos_ambientales/
+ * Fecha sincronización: 2026-03-05
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -34,7 +37,7 @@ import type {
 export const aspectosAmbientalesKeys = {
   all: ['aspectos-ambientales'] as const,
 
-  // Categorias
+  // Categorías
   categorias: () => [...aspectosAmbientalesKeys.all, 'categorias'] as const,
   categoria: (id: number) => [...aspectosAmbientalesKeys.categorias(), id] as const,
 
@@ -72,7 +75,8 @@ export const aspectosAmbientalesKeys = {
     [...aspectosAmbientalesKeys.monitoreos(), 'list', filters] as const,
   monitoreo: (id: number) => [...aspectosAmbientalesKeys.monitoreos(), id] as const,
   monitoreosResumen: () => [...aspectosAmbientalesKeys.monitoreos(), 'resumen'] as const,
-  monitoreosIncumplimientos: () => [...aspectosAmbientalesKeys.monitoreos(), 'incumplimientos'] as const,
+  monitoreosIncumplimientos: () =>
+    [...aspectosAmbientalesKeys.monitoreos(), 'incumplimientos'] as const,
   monitoreosPorAspecto: (aspectoId: number) =>
     [...aspectosAmbientalesKeys.monitoreos(), 'aspecto', aspectoId] as const,
   monitoreosPorPrograma: (programaId: number) =>
@@ -80,14 +84,14 @@ export const aspectosAmbientalesKeys = {
 };
 
 // ============================================
-// HOOKS PARA CATEGORIAS
+// HOOKS PARA CATEGORÍAS
 // ============================================
 
 export function useCategoriasAspecto() {
   return useQuery({
     queryKey: aspectosAmbientalesKeys.categorias(),
     queryFn: categoriasAspectoApi.getAll,
-    staleTime: 10 * 60 * 1000, // 10 minutos (es catalogo)
+    staleTime: 10 * 60 * 1000, // 10 minutos (es catálogo)
   });
 }
 
@@ -258,7 +262,7 @@ export function useCreateImpactoAmbiental() {
     onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: aspectosAmbientalesKeys.impactos() });
       queryClient.invalidateQueries({
-        queryKey: aspectosAmbientalesKeys.impactosPorAspecto(data.aspecto_id),
+        queryKey: aspectosAmbientalesKeys.impactosPorAspecto(data.aspecto),
       });
     },
   });
@@ -427,14 +431,14 @@ export function useCreateMonitoreoAmbiental() {
     mutationFn: (data: MonitoreoAmbientalCreate) => monitoreosAmbientalesApi.create(data),
     onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: aspectosAmbientalesKeys.monitoreos() });
-      if (data.aspecto_relacionado_id) {
+      if (data.aspecto_relacionado) {
         queryClient.invalidateQueries({
-          queryKey: aspectosAmbientalesKeys.monitoreosPorAspecto(data.aspecto_relacionado_id),
+          queryKey: aspectosAmbientalesKeys.monitoreosPorAspecto(data.aspecto_relacionado),
         });
       }
-      if (data.programa_relacionado_id) {
+      if (data.programa_relacionado) {
         queryClient.invalidateQueries({
-          queryKey: aspectosAmbientalesKeys.monitoreosPorPrograma(data.programa_relacionado_id),
+          queryKey: aspectosAmbientalesKeys.monitoreosPorPrograma(data.programa_relacionado),
         });
       }
     },

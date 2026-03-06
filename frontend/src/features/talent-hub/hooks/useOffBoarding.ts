@@ -1,9 +1,11 @@
 /**
  * Hooks para Off-Boarding - Talent Hub
- * Sistema de Gestion StrateKaz
+ * Sistema de Gestión StrateKaz
  *
- * Refactored to use createCrudHooks + createApiClient factories.
- * Custom actions (finalizar, cancelar, completar, aprobar, etc.) remain manual.
+ * Sincronizado con backend: apps/talent_hub/off_boarding/views.py
+ * - URLs y @action url_path coinciden con backend (kebab-case)
+ * - Payloads de mutación coinciden con serializers
+ * - Factory para CRUD básico, manual para @actions custom
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +20,7 @@ import {
   examenEgresoApi,
   entrevistaRetiroApi,
   liquidacionFinalApi,
+  certificadoTrabajoApi,
 } from '../api/talentHubApi';
 import { thKeys } from '../api/queryKeys';
 import type {
@@ -29,21 +32,25 @@ import type {
   ChecklistRetiro,
   ChecklistRetiroFormData,
   ChecklistRetiroFilter,
-  CompletarItemData,
+  MarcarCompletadoData,
   PazSalvo,
   PazSalvoFormData,
   PazSalvoFilter,
   AprobarPazSalvoData,
+  RechazarPazSalvoData,
   ExamenEgreso,
   ExamenEgresoFormData,
   ExamenEgresoFilter,
-  RegistrarResultadoExamenData,
   EntrevistaRetiro,
   EntrevistaRetiroFormData,
   EntrevistaRetiroFilter,
   LiquidacionFinal,
+  LiquidacionFinalFormData,
   LiquidacionFinalFilter,
-  CalcularLiquidacionFinalData,
+  RegistrarPagoData,
+  CertificadoTrabajo,
+  CertificadoTrabajoFormData,
+  CertificadoTrabajoFilter,
 } from '../types';
 
 const BASE_URL = '/talent-hub/off-boarding';
@@ -91,6 +98,12 @@ export const offBoardingKeys = {
     list: (filters?: LiquidacionFinalFilter) =>
       thKeys.liquidacionesFinales.list(filters as Record<string, unknown>),
     detail: (id: number) => thKeys.liquidacionesFinales.detail(id),
+  },
+  certificados: {
+    all: () => thKeys.certificadosTrabajo.all,
+    list: (filters?: CertificadoTrabajoFilter) =>
+      thKeys.certificadosTrabajo.list(filters as Record<string, unknown>),
+    detail: (id: number) => thKeys.certificadosTrabajo.detail(id),
   },
 };
 
@@ -140,44 +153,156 @@ export const useCreateProcesoRetiro = procesoRetiroHooks.useCreate;
 export const useUpdateProcesoRetiro = procesoRetiroHooks.useUpdate;
 export const useDeleteProcesoRetiro = procesoRetiroHooks.useDelete;
 
-export const useFinalizarProcesoRetiro = () => {
+/** POST /procesos/{id}/autorizar/ */
+export const useAutorizarProcesoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await apiClient.post<ProcesoRetiro>(
-        `${BASE_URL}/procesos/${id}/finalizar/`
-      );
-      return response;
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/autorizar/`);
+      return data;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
-      toast.success('Proceso de retiro finalizado exitosamente');
+      toast.success('Proceso autorizado exitosamente');
     },
-    onError: () => toast.error('Error al finalizar el proceso de retiro'),
+    onError: () => toast.error('Error al autorizar el proceso'),
   });
 };
 
-export const useCancelarProcesoRetiro = () => {
+/** POST /procesos/{id}/verificar-progreso/ */
+export const useVerificarProgresoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
-      const { data: response } = await apiClient.post<ProcesoRetiro>(
-        `${BASE_URL}/procesos/${id}/cancelar/`,
-        { observaciones: motivo }
-      );
-      return response;
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/verificar-progreso/`);
+      return data;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
-      toast.success('Proceso de retiro cancelado');
+      toast.success('Progreso actualizado');
     },
-    onError: () => toast.error('Error al cancelar el proceso de retiro'),
+    onError: () => toast.error('Error al verificar progreso'),
   });
 };
 
-// ============== CHECKLIST RETIRO (via factory + custom action) ==============
+/** POST /procesos/{id}/completar-checklist/ */
+export const useCompletarChecklistProceso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/completar-checklist/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Checklist marcado como completado');
+    },
+    onError: () => toast.error('Error al completar checklist'),
+  });
+};
+
+/** POST /procesos/{id}/completar-paz-salvos/ */
+export const useCompletarPazSalvosProceso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/completar-paz-salvos/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Paz y salvos marcados como completos');
+    },
+    onError: () => toast.error('Error al completar paz y salvos'),
+  });
+};
+
+/** POST /procesos/{id}/completar-examen/ */
+export const useCompletarExamenProceso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/completar-examen/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Examen de egreso marcado como realizado');
+    },
+    onError: () => toast.error('Error al completar examen'),
+  });
+};
+
+/** POST /procesos/{id}/completar-entrevista/ */
+export const useCompletarEntrevistaProceso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/completar-entrevista/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Entrevista marcada como realizada');
+    },
+    onError: () => toast.error('Error al completar entrevista'),
+  });
+};
+
+/** POST /procesos/{id}/completar-liquidacion/ */
+export const useCompletarLiquidacionProceso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/procesos/${id}/completar-liquidacion/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Liquidación marcada como aprobada en el proceso');
+    },
+    onError: () => toast.error('Error al completar liquidación en el proceso'),
+  });
+};
+
+/** POST /procesos/{id}/cerrar-proceso/ */
+export const useCerrarProcesoRetiro = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post<{ proceso: ProcesoRetiro }>(
+        `${BASE_URL}/procesos/${id}/cerrar-proceso/`
+      );
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.detail(id) });
+      toast.success('Proceso cerrado exitosamente');
+    },
+    onError: () => toast.error('Error al cerrar el proceso de retiro'),
+  });
+};
+
+/** GET /procesos/{id}/estadisticas/ */
+export const useEstadisticasProceso = (id: number, enabled = true) => {
+  return useQuery({
+    queryKey: [...thKeys.procesosRetiro.detail(id), 'estadisticas'],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`${BASE_URL}/procesos/${id}/estadisticas/`);
+      return data;
+    },
+    enabled: enabled && !!id,
+  });
+};
+
+// ============== CHECKLIST RETIRO (via factory + custom actions) ==============
 
 const checklistHooks = createCrudHooks<
   ChecklistRetiro,
@@ -201,12 +326,13 @@ export const useCreateChecklistItem = checklistHooks.useCreate;
 export const useUpdateChecklistItem = checklistHooks.useUpdate;
 export const useDeleteChecklistItem = checklistHooks.useDelete;
 
-export const useCompletarChecklistItem = () => {
+/** POST /checklist/{id}/marcar-completado/ */
+export const useMarcarCompletadoChecklistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data?: CompletarItemData }) => {
-      const { data: response } = await apiClient.post<ChecklistRetiro>(
-        `${BASE_URL}/checklist/${id}/completar/`,
+    mutationFn: async ({ id, data }: { id: number; data?: MarcarCompletadoData }) => {
+      const { data: response } = await apiClient.post(
+        `${BASE_URL}/checklist/${id}/marcar-completado/`,
         data || {}
       );
       return response;
@@ -215,9 +341,30 @@ export const useCompletarChecklistItem = () => {
       queryClient.invalidateQueries({ queryKey: thKeys.checklistRetiro.all });
       queryClient.invalidateQueries({ queryKey: thKeys.checklistRetiro.detail(id) });
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
-      toast.success('Item completado exitosamente');
+      toast.success('Item marcado como completado');
     },
     onError: () => toast.error('Error al completar el item'),
+  });
+};
+
+/** POST /checklist/{id}/marcar-no-aplica/ */
+export const useMarcarNoAplicaChecklistItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, observaciones }: { id: number; observaciones?: string }) => {
+      const { data: response } = await apiClient.post(
+        `${BASE_URL}/checklist/${id}/marcar-no-aplica/`,
+        { observaciones: observaciones || '' }
+      );
+      return response;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.checklistRetiro.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.checklistRetiro.detail(id) });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
+      toast.success('Item marcado como no aplica');
+    },
+    onError: () => toast.error('Error al marcar item como no aplica'),
   });
 };
 
@@ -245,45 +392,48 @@ export const useCreatePazSalvo = pazSalvoHooks.useCreate;
 export const useUpdatePazSalvo = pazSalvoHooks.useUpdate;
 export const useDeletePazSalvo = pazSalvoHooks.useDelete;
 
+/** POST /paz-salvos/{id}/aprobar/ — sends { observaciones } */
 export const useAprobarPazSalvo = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: AprobarPazSalvoData }) => {
-      const { data: response } = await apiClient.post<PazSalvo>(
+    mutationFn: async ({ id, data }: { id: number; data?: AprobarPazSalvoData }) => {
+      const { data: response } = await apiClient.post(
         `${BASE_URL}/paz-salvos/${id}/aprobar/`,
-        data
+        data || {}
       );
       return response;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: thKeys.pazSalvos.all });
       queryClient.invalidateQueries({ queryKey: thKeys.pazSalvos.detail(id) });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
       toast.success('Paz y salvo aprobado exitosamente');
     },
     onError: () => toast.error('Error al aprobar el paz y salvo'),
   });
 };
 
+/** POST /paz-salvos/{id}/rechazar/ — sends { motivo } (NOT observaciones) */
 export const useRechazarPazSalvo = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await apiClient.post<PazSalvo>(
-        `${BASE_URL}/paz-salvos/${id}/rechazar/`,
-        { observaciones }
-      );
+    mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
+      const { data: response } = await apiClient.post(`${BASE_URL}/paz-salvos/${id}/rechazar/`, {
+        motivo,
+      });
       return response;
     },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: thKeys.pazSalvos.all });
       queryClient.invalidateQueries({ queryKey: thKeys.pazSalvos.detail(id) });
+      queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
       toast.success('Paz y salvo rechazado');
     },
     onError: () => toast.error('Error al rechazar el paz y salvo'),
   });
 };
 
-// ============== EXAMENES EGRESO (via factory + custom action) ==============
+// ============== EXAMENES EGRESO (via factory) ==============
 
 const examenHooks = createCrudHooks<
   ExamenEgreso,
@@ -307,26 +457,7 @@ export const useCreateExamenEgreso = examenHooks.useCreate;
 export const useUpdateExamenEgreso = examenHooks.useUpdate;
 export const useDeleteExamenEgreso = examenHooks.useDelete;
 
-export const useRegistrarResultadoExamen = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: RegistrarResultadoExamenData }) => {
-      const { data: response } = await apiClient.post<ExamenEgreso>(
-        `${BASE_URL}/examenes/${id}/registrar_resultado/`,
-        data
-      );
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: thKeys.examenesEgreso.all });
-      queryClient.invalidateQueries({ queryKey: thKeys.examenesEgreso.detail(id) });
-      toast.success('Resultado registrado exitosamente');
-    },
-    onError: () => toast.error('Error al registrar el resultado'),
-  });
-};
-
-// ============== ENTREVISTAS RETIRO (via factory) ==============
+// ============== ENTREVISTAS RETIRO (via factory + custom action) ==============
 
 const entrevistaRetiroHooks = createCrudHooks<
   EntrevistaRetiro,
@@ -350,16 +481,28 @@ export const useCreateEntrevistaRetiro = entrevistaRetiroHooks.useCreate;
 export const useUpdateEntrevistaRetiro = entrevistaRetiroHooks.useUpdate;
 export const useDeleteEntrevistaRetiro = entrevistaRetiroHooks.useDelete;
 
-// ============== LIQUIDACIONES FINALES (custom — non-standard CRUD) ==============
+/** GET /entrevistas/estadisticas-generales/ (list-level action) */
+export const useEstadisticasEntrevistas = (enabled = true) => {
+  return useQuery({
+    queryKey: [...thKeys.entrevistasRetiro.all, 'estadisticas-generales'],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`${BASE_URL}/entrevistas/estadisticas-generales/`);
+      return data;
+    },
+    enabled,
+  });
+};
+
+// ============== LIQUIDACIONES FINALES (via factory + custom actions) ==============
+
+const liquidacionHooks = createCrudHooks<
+  LiquidacionFinal,
+  LiquidacionFinalFormData,
+  Partial<LiquidacionFinalFormData>
+>(liquidacionFinalApi, thKeys.liquidacionesFinales, 'Liquidación final', { isFeminine: true });
 
 export const useLiquidacionesFinales = (filters?: LiquidacionFinalFilter) => {
-  return useQuery({
-    queryKey: thKeys.liquidacionesFinales.list(filters as Record<string, unknown>),
-    queryFn: async () => {
-      const response = await liquidacionFinalApi.getAll(filters as Record<string, unknown>);
-      return Array.isArray(response) ? response : (response?.results ?? []);
-    },
-  });
+  return liquidacionHooks.useList(filters as Record<string, unknown>);
 };
 
 export const useLiquidacionFinal = (id: number, enabled = true) => {
@@ -370,58 +513,120 @@ export const useLiquidacionFinal = (id: number, enabled = true) => {
   });
 };
 
+export const useCreateLiquidacionFinal = liquidacionHooks.useCreate;
+export const useUpdateLiquidacionFinal = liquidacionHooks.useUpdate;
+export const useDeleteLiquidacionFinal = liquidacionHooks.useDelete;
+
+/** POST /liquidaciones/{id}/calcular/ — recalculates existing liquidacion */
 export const useCalcularLiquidacionFinal = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CalcularLiquidacionFinalData) => {
-      const { data: response } = await apiClient.post<LiquidacionFinal>(
-        `${BASE_URL}/liquidaciones/calcular/`,
-        data
-      );
-      return response;
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/liquidaciones/${id}/calcular/`);
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.detail(id) });
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
-      toast.success('Liquidacion final calculada exitosamente');
+      toast.success('Liquidación calculada exitosamente');
     },
-    onError: () => toast.error('Error al calcular la liquidacion final'),
+    onError: () => toast.error('Error al calcular la liquidación final'),
   });
 };
 
+/** POST /liquidaciones/{id}/aprobar/ */
 export const useAprobarLiquidacionFinal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await apiClient.post<LiquidacionFinal>(
-        `${BASE_URL}/liquidaciones/${id}/aprobar/`
-      );
-      return response;
+      const { data } = await apiClient.post(`${BASE_URL}/liquidaciones/${id}/aprobar/`);
+      return data;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.all });
       queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.detail(id) });
-      toast.success('Liquidacion final aprobada exitosamente');
+      toast.success('Liquidación aprobada exitosamente');
     },
-    onError: () => toast.error('Error al aprobar la liquidacion final'),
+    onError: () => toast.error('Error al aprobar la liquidación final'),
   });
 };
 
-export const usePagarLiquidacionFinal = () => {
+/** POST /liquidaciones/{id}/registrar-pago/ — sends { fecha_pago, metodo_pago, referencia_pago } */
+export const useRegistrarPagoLiquidacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
-      const { data: response } = await apiClient.post<LiquidacionFinal>(
-        `${BASE_URL}/liquidaciones/${id}/pagar/`
+    mutationFn: async ({ id, data }: { id: number; data: RegistrarPagoData }) => {
+      const { data: response } = await apiClient.post(
+        `${BASE_URL}/liquidaciones/${id}/registrar-pago/`,
+        data
       );
       return response;
     },
-    onSuccess: (_, id) => {
+    onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.all });
       queryClient.invalidateQueries({ queryKey: thKeys.liquidacionesFinales.detail(id) });
       queryClient.invalidateQueries({ queryKey: thKeys.procesosRetiro.all });
-      toast.success('Liquidacion final pagada exitosamente');
+      toast.success('Pago registrado exitosamente');
     },
-    onError: () => toast.error('Error al pagar la liquidacion final'),
+    onError: () => toast.error('Error al registrar el pago'),
+  });
+};
+
+// ============== CERTIFICADOS DE TRABAJO (via factory + custom actions) ==============
+
+const certificadoHooks = createCrudHooks<
+  CertificadoTrabajo,
+  CertificadoTrabajoFormData,
+  Partial<CertificadoTrabajoFormData>
+>(certificadoTrabajoApi, thKeys.certificadosTrabajo, 'Certificado de trabajo');
+
+export const useCertificadosTrabajo = (filters?: CertificadoTrabajoFilter) => {
+  return certificadoHooks.useList(filters as Record<string, unknown>);
+};
+
+export const useCertificadoTrabajo = (id: number, enabled = true) => {
+  return useQuery({
+    queryKey: thKeys.certificadosTrabajo.detail(id),
+    queryFn: () => certificadoTrabajoApi.getById(id),
+    enabled: enabled && !!id,
+  });
+};
+
+export const useCreateCertificadoTrabajo = certificadoHooks.useCreate;
+export const useUpdateCertificadoTrabajo = certificadoHooks.useUpdate;
+export const useDeleteCertificadoTrabajo = certificadoHooks.useDelete;
+
+/** POST /certificados-trabajo/{id}/generar/ */
+export const useGenerarCertificado = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/certificados-trabajo/${id}/generar/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.certificadosTrabajo.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.certificadosTrabajo.detail(id) });
+      toast.success('Certificado generado exitosamente');
+    },
+    onError: () => toast.error('Error al generar el certificado'),
+  });
+};
+
+/** POST /certificados-trabajo/{id}/entregar/ */
+export const useEntregarCertificado = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await apiClient.post(`${BASE_URL}/certificados-trabajo/${id}/entregar/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.certificadosTrabajo.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.certificadosTrabajo.detail(id) });
+      toast.success('Certificado marcado como entregado');
+    },
+    onError: () => toast.error('Error al entregar el certificado'),
   });
 };

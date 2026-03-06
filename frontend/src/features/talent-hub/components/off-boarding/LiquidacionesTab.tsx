@@ -16,7 +16,7 @@ import {
   useLiquidacionesFinales,
   useCalcularLiquidacionFinal,
   useAprobarLiquidacionFinal,
-  usePagarLiquidacionFinal,
+  useRegistrarPagoLiquidacion,
 } from '../../hooks/useOffBoarding';
 import type { EstadoLiquidacionFinal } from '../../types';
 import { estadoLiquidacionFinalOptions } from '../../types';
@@ -55,7 +55,7 @@ export function LiquidacionesTab() {
 
   const calcularMutation = useCalcularLiquidacionFinal();
   const aprobarMutation = useAprobarLiquidacionFinal();
-  const pagarMutation = usePagarLiquidacionFinal();
+  const pagarMutation = useRegistrarPagoLiquidacion();
 
   const procesoOptions = procesos.map((proceso) => ({
     value: proceso.id.toString(),
@@ -76,7 +76,14 @@ export function LiquidacionesTab() {
 
   const handlePagar = () => {
     if (!liquidacion) return;
-    pagarMutation.mutate(liquidacion.id);
+    pagarMutation.mutate({
+      id: liquidacion.id,
+      data: {
+        fecha_pago: new Date().toISOString().split('T')[0],
+        metodo_pago: 'transferencia',
+        referencia_pago: '',
+      },
+    });
   };
 
   return (

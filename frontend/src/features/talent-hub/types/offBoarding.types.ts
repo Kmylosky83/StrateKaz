@@ -71,11 +71,23 @@ export type MotivoRetiro =
 
 export type ModalidadEntrevista = 'presencial' | 'virtual' | 'telefonica';
 
-export type MetodoPago = 'transferencia' | 'cheque' | 'efectivo';
+/** Re-use MetodoPago from nomina.types via barrel — only import here if needed standalone */
+export type MetodoPagoLiquidacion = 'transferencia' | 'cheque' | 'efectivo';
 
 export type TipoCertificado = 'laboral' | 'ingresos' | 'cargo';
 
 export type EstadoCertificado = 'pendiente' | 'generado' | 'entregado';
+
+/** Satisfacción general en entrevista de retiro (escala cualitativa para UI) */
+export type SatisfaccionGeneral =
+  | 'muy_satisfecho'
+  | 'satisfecho'
+  | 'neutral'
+  | 'insatisfecho'
+  | 'muy_insatisfecho';
+
+/** Estado derivado de liquidación final (UI-only, backend no tiene campo estado) */
+export type EstadoLiquidacionFinal = 'borrador' | 'calculada' | 'aprobada' | 'pagada';
 
 // ============== TIPO RETIRO ==============
 // ListSerializer fields
@@ -426,7 +438,7 @@ export interface LiquidacionFinal {
   esta_aprobada?: boolean;
   esta_pagada?: boolean;
   fecha_pago?: string | null;
-  metodo_pago?: MetodoPago;
+  metodo_pago?: MetodoPagoLiquidacion;
   // DetailSerializer adds:
   fecha_ingreso?: string;
   fecha_retiro?: string;
@@ -490,7 +502,7 @@ export interface LiquidacionFinalFilter {
 
 export interface RegistrarPagoData {
   fecha_pago: string;
-  metodo_pago: MetodoPago;
+  metodo_pago: MetodoPagoLiquidacion;
   referencia_pago: string;
 }
 
@@ -622,7 +634,7 @@ export const modalidadEntrevistaOptions = [
   { value: 'telefonica', label: 'Telefónica' },
 ];
 
-export const metodoPagoOptions = [
+export const metodoPagoLiquidacionOptions = [
   { value: 'transferencia', label: 'Transferencia Bancaria' },
   { value: 'cheque', label: 'Cheque' },
   { value: 'efectivo', label: 'Efectivo' },
@@ -638,4 +650,19 @@ export const estadoCertificadoOptions = [
   { value: 'pendiente', label: 'Pendiente' },
   { value: 'generado', label: 'Generado' },
   { value: 'entregado', label: 'Entregado' },
+];
+
+export const satisfaccionGeneralOptions = [
+  { value: 'muy_satisfecho', label: 'Muy Satisfecho' },
+  { value: 'satisfecho', label: 'Satisfecho' },
+  { value: 'neutral', label: 'Neutral' },
+  { value: 'insatisfecho', label: 'Insatisfecho' },
+  { value: 'muy_insatisfecho', label: 'Muy Insatisfecho' },
+];
+
+export const estadoLiquidacionFinalOptions = [
+  { value: 'borrador', label: 'Borrador' },
+  { value: 'calculada', label: 'Calculada' },
+  { value: 'aprobada', label: 'Aprobada' },
+  { value: 'pagada', label: 'Pagada' },
 ];

@@ -15,10 +15,10 @@ import { cn } from '@/utils/cn';
 import {
   useProcesosRetiro,
   useExamenesEgreso,
-  useRegistrarResultadoExamen,
+  useUpdateExamenEgreso,
 } from '../../hooks/useOffBoarding';
 import type { ResultadoExamen } from '../../types';
-import { tipoExamenEgresoOptions, resultadoExamenOptions } from '../../types';
+import { resultadoExamenOptions } from '../../types';
 import { ExamenFormModal } from './ExamenFormModal';
 
 const getResultadoColor = (resultado: ResultadoExamen) => {
@@ -54,7 +54,7 @@ export function ExamenesTab() {
   const { data: examenes = [] } = useExamenesEgreso(
     selectedProcesoId ? { proceso_retiro: selectedProcesoId } : undefined
   );
-  const registrarResultadoMutation = useRegistrarResultadoExamen();
+  const registrarResultadoMutation = useUpdateExamenEgreso();
 
   const procesoOptions = procesos.map((proceso) => ({
     value: proceso.id.toString(),
@@ -125,9 +125,6 @@ export function ExamenesTab() {
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700">
                       <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Tipo de Examen
-                      </th>
-                      <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
                         Fecha Programada
                       </th>
                       <th className="text-left p-3 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -153,20 +150,6 @@ export function ExamenesTab() {
                         key={examen.id}
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       >
-                        <td className="p-3">
-                          <span
-                            className={cn(
-                              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                              'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                            )}
-                          >
-                            {
-                              tipoExamenEgresoOptions.find(
-                                (opt) => opt.value === examen.tipo_examen
-                              )?.label
-                            }
-                          </span>
-                        </td>
                         <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
                           {new Date(examen.fecha_examen).toLocaleDateString('es-CO')}
                         </td>

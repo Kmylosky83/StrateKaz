@@ -1,6 +1,9 @@
 /**
  * Paz y Salvo Form Modal - Off-Boarding
  * Talent Hub - Sistema de Gestión StrateKaz
+ *
+ * PazSalvo es por ÁREA organizacional (talento_humano, sistemas, etc.)
+ * Sincronizado con backend: off_boarding/serializers.py PazSalvoCreateSerializer
  */
 
 import { useForm } from 'react-hook-form';
@@ -11,7 +14,7 @@ import { Select } from '@/components/forms/Select';
 import { Button } from '@/components/common/Button';
 import { useCreatePazSalvo } from '../../hooks/useOffBoarding';
 import type { PazSalvoFormData } from '../../types';
-import { tipoPazSalvoOptions } from '../../types';
+import { areaPazSalvoOptions } from '../../types';
 
 interface PazSalvoFormModalProps {
   isOpen: boolean;
@@ -48,41 +51,43 @@ export function PazSalvoFormModal({ isOpen, onClose, procesoId }: PazSalvoFormMo
         <input type="hidden" {...register('proceso_retiro')} value={procesoId} />
 
         <Select
-          label="Tipo"
-          error={errors.tipo?.message}
-          {...register('tipo', {
-            required: 'El tipo es requerido',
+          label="Área *"
+          error={errors.area?.message}
+          {...register('area', {
+            required: 'El área es requerida',
           })}
-          options={tipoPazSalvoOptions}
+          options={areaPazSalvoOptions}
         />
 
         <Textarea
-          label="Descripción *"
-          {...register('descripcion', {
-            required: 'La descripción es requerida',
-          })}
+          label="Descripción del Área"
+          {...register('descripcion_area')}
           rows={2}
-          placeholder="Describa los elementos entregados..."
-          error={errors.descripcion?.message}
+          placeholder="Detalle de los elementos o responsabilidades a verificar..."
         />
 
         <Input
-          label="Cantidad Entregada"
+          label="Responsable"
           type="number"
-          error={errors.cantidad_entregada?.message}
-          {...register('cantidad_entregada', {
-            required: 'La cantidad es requerida',
+          error={errors.responsable?.message}
+          {...register('responsable', {
             valueAsNumber: true,
-            min: { value: 0, message: 'La cantidad debe ser mayor o igual a 0' },
           })}
+          placeholder="ID del responsable del área"
         />
 
-        <Input
-          label="Área Responsable"
-          type="text"
-          error={errors.area_responsable?.message}
-          {...register('area_responsable')}
-          placeholder="Ej: Sistemas, Mantenimiento, Seguridad"
+        <Textarea
+          label="Pendientes"
+          {...register('pendientes')}
+          rows={2}
+          placeholder="Elementos pendientes por entregar o verificar..."
+        />
+
+        <Textarea
+          label="Observaciones"
+          {...register('observaciones')}
+          rows={2}
+          placeholder="Observaciones adicionales..."
         />
 
         <div className="flex justify-end gap-3 pt-4">

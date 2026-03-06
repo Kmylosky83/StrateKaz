@@ -1,8 +1,6 @@
 /**
- * Tab Catálogos - Gestión CRUD de 9 catálogos dinámicos
- *
- * Selector de catálogo + tabla CRUD genérica.
- * Todos los hooks de CRUD ya existen en useCatalogos.ts.
+ * Tab Catálogos - Gestión CRUD de 9 catálogos dinámicos (Tipo B — tabla con selector)
+ * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
 import { Plus, Edit, Trash2, Settings, Check, X } from 'lucide-react';
@@ -10,9 +8,11 @@ import { Plus, Edit, Trash2, Settings, Check, X } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -36,7 +36,7 @@ import {
   useCiudades,
 } from '../hooks/useCatalogos';
 
-// ==================== CONFIGURACIÓN DE CATÁLOGOS ====================
+// ==================== TIPOS ====================
 
 interface CatalogConfig {
   key: string;
@@ -44,6 +44,23 @@ interface CatalogConfig {
   group: string;
   hasExtraFields?: boolean;
 }
+
+interface CatalogItem {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  is_active: boolean;
+  categoria?: number;
+  categoria_nombre?: string;
+  acidez_min?: string | number | null;
+  acidez_max?: string | number | null;
+  requiere_materia_prima?: boolean;
+  requiere_modalidad_logistica?: boolean;
+  departamento_nombre?: string;
+}
+
+// ==================== CONFIGURACIÓN DE CATÁLOGOS ====================
 
 const CATALOGS: CatalogConfig[] = [
   { key: 'categorias-mp', label: 'Categorías de Materia Prima', group: 'Materias Primas' },
@@ -72,7 +89,8 @@ const CATALOGS: CatalogConfig[] = [
 export function CatalogosTab() {
   const [selectedCatalog, setSelectedCatalog] = useState('categorias-mp');
   const [showForm, setShowForm] = useState(false);
-  const [editItem, setEditItem] = useState<any>(null);
+  const [editItem, setEditItem] = useState<CatalogItem | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
 
   const catalogConfig = CATALOGS.find((c) => c.key === selectedCatalog)!;
 
@@ -97,8 +115,9 @@ export function CatalogosTab() {
   const createTipoProv = useCreateTipoProveedor();
 
   // Resolver datos según catálogo seleccionado
-  const resolveData = (): { items: any[]; isLoading: boolean } => {
-    const normalize = (d: any) => (Array.isArray(d) ? d : d?.results || []);
+  const resolveData = (): { items: CatalogItem[]; isLoading: boolean } => {
+    const normalize = (d: unknown): CatalogItem[] =>
+      Array.isArray(d) ? d : ((d as Record<string, unknown>)?.results as CatalogItem[]) || [];
     switch (selectedCatalog) {
       case 'categorias-mp':
         return { items: normalize(categoriasData), isLoading: l1 };
@@ -170,7 +189,6 @@ export function CatalogosTab() {
               requiere_modalidad_logistica: fd.get('requiere_modalidad_logistica') === 'true',
             };
             if (editItem) {
-              // Note: useUpdateTipoProveedor doesn't exist yet in hooks - use create pattern
               await createTipoProv.mutateAsync(provData);
             } else {
               await createTipoProv.mutateAsync(provData);
@@ -178,8 +196,6 @@ export function CatalogosTab() {
           }
           break;
         default:
-          // Para los demás catálogos, usar el mismo patrón de create con categorías base
-          // Los hooks de create/update existen pero se invocan genéricamente
           if (editItem) {
             await updateCategoria.mutateAsync({ id: editItem.id, data: baseData });
           } else {
@@ -194,78 +210,77 @@ export function CatalogosTab() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Eliminar este registro?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteItemId) return;
     try {
       switch (selectedCatalog) {
         case 'categorias-mp':
-          await deleteCategoria.mutateAsync(id);
+          await deleteCategoria.mutateAsync(deleteItemId);
           break;
         case 'tipos-mp':
-          await deleteTipoMp.mutateAsync(id);
+          await deleteTipoMp.mutateAsync(deleteItemId);
           break;
         default:
-          await deleteCategoria.mutateAsync(id);
+          await deleteCategoria.mutateAsync(deleteItemId);
           break;
       }
     } catch {
       // Error handled by mutation
     }
+    setDeleteItemId(null);
   };
 
   // Datos auxiliares para formularios (categorías para tipos MP)
-  const categorias = Array.isArray(categoriasData)
+  const categorias: CatalogItem[] = Array.isArray(categoriasData)
     ? categoriasData
-    : (categoriasData as any)?.results || [];
+    : ((categoriasData as Record<string, unknown>)?.results as CatalogItem[]) || [];
 
   // ==================== RENDER ====================
 
   return (
     <div className="space-y-4">
       {/* Selector de catálogo */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Catálogo:</label>
-          <Select
-            value={selectedCatalog}
-            onChange={(e) => {
-              setSelectedCatalog(e.target.value);
-              setEditItem(null);
-            }}
-          >
-            {Object.entries(
-              CATALOGS.reduce(
-                (groups, cat) => {
-                  if (!groups[cat.group]) groups[cat.group] = [];
-                  groups[cat.group].push(cat);
-                  return groups;
-                },
-                {} as Record<string, CatalogConfig[]>
-              )
-            ).map(([group, cats]) => (
-              <optgroup key={group} label={group}>
-                {cats.map((cat) => (
-                  <option key={cat.key} value={cat.key}>
-                    {cat.label}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </Select>
-        </div>
-
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={() => {
+      <div className="flex items-center gap-3">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Catálogo:</label>
+        <Select
+          value={selectedCatalog}
+          onChange={(e) => {
+            setSelectedCatalog(e.target.value);
             setEditItem(null);
-            setShowForm(true);
           }}
         >
-          Nuevo
-        </Button>
+          {Object.entries(
+            CATALOGS.reduce(
+              (groups, cat) => {
+                if (!groups[cat.group]) groups[cat.group] = [];
+                groups[cat.group].push(cat);
+                return groups;
+              },
+              {} as Record<string, CatalogConfig[]>
+            )
+          ).map(([group, cats]) => (
+            <optgroup key={group} label={group}>
+              {cats.map((cat) => (
+                <option key={cat.key} value={cat.key}>
+                  {cat.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </Select>
       </div>
+
+      <SectionToolbar
+        title={catalogConfig.label}
+        count={items.length}
+        primaryAction={{
+          label: 'Nuevo',
+          onClick: () => {
+            setEditItem(null);
+            setShowForm(true);
+          },
+        }}
+      />
 
       {/* Tabla */}
       {isLoading ? (
@@ -327,7 +342,7 @@ export function CatalogosTab() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {items.map((item: any) => (
+                {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-3 text-sm font-mono text-gray-900 dark:text-white">
                       {item.codigo}
@@ -381,7 +396,7 @@ export function CatalogosTab() {
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteItemId(item.id)}>
                           <Trash2 className="w-4 h-4 text-danger-600" />
                         </Button>
                       </div>
@@ -395,7 +410,7 @@ export function CatalogosTab() {
       )}
 
       {/* Modal Crear/Editar */}
-      <Modal
+      <BaseModal
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);
@@ -403,9 +418,26 @@ export function CatalogosTab() {
         }}
         title={`${editItem ? 'Editar' : 'Nuevo'} - ${catalogConfig.label}`}
         size="md"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                const form = document.getElementById('catalogo-form') as HTMLFormElement;
+                form?.requestSubmit();
+              }}
+            >
+              {editItem ? 'Actualizar' : 'Crear'}
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form id="catalogo-form" onSubmit={handleSave} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Código *"
               type="text"
@@ -431,7 +463,7 @@ export function CatalogosTab() {
 
           {/* Campos extra: Tipos de Materia Prima */}
           {selectedCatalog === 'tipos-mp' && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Select
                 label="Categoría *"
                 name="categoria"
@@ -439,7 +471,7 @@ export function CatalogosTab() {
                 defaultValue={editItem?.categoria || ''}
               >
                 <option value="">Seleccione...</option>
-                {categorias.map((cat: any) => (
+                {categorias.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.nombre}
                   </option>
@@ -450,21 +482,21 @@ export function CatalogosTab() {
                 type="number"
                 name="acidez_min"
                 step="0.01"
-                defaultValue={editItem?.acidez_min || ''}
+                defaultValue={editItem?.acidez_min ?? ''}
               />
               <Input
                 label="Acidez Máx. (%)"
                 type="number"
                 name="acidez_max"
                 step="0.01"
-                defaultValue={editItem?.acidez_max || ''}
+                defaultValue={editItem?.acidez_max ?? ''}
               />
             </div>
           )}
 
           {/* Campos extra: Tipos de Proveedor */}
           {selectedCatalog === 'tipos-proveedor' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label="Requiere Materia Prima"
                 name="requiere_materia_prima"
@@ -483,17 +515,19 @@ export function CatalogosTab() {
               </Select>
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary">
-              {editItem ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </BaseModal>
+
+      {/* Confirmar eliminación */}
+      <ConfirmDialog
+        isOpen={!!deleteItemId}
+        title="Eliminar Registro"
+        message={`¿Está seguro de eliminar este registro de ${catalogConfig.label}? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmText="Eliminar"
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteItemId(null)}
+      />
     </div>
   );
 }

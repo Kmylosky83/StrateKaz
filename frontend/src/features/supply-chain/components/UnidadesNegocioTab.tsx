@@ -1,15 +1,18 @@
 /**
- * Tab Unidades de Negocio - CRUD de sedes, plantas y centros
+ * Tab Unidades de Negocio - CRUD de sedes, plantas y centros (Tipo B — tabla simple)
+ * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
+import { Edit, Trash2, Building2 } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
@@ -37,14 +40,13 @@ const TIPOS_UNIDAD = [
 export function UnidadesNegocioTab() {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<UnidadNegocio | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Query
   const { data: unidadesData, isLoading } = useUnidadesNegocio();
   const unidades: UnidadNegocio[] = Array.isArray(unidadesData)
     ? unidadesData
     : ((unidadesData as Record<string, unknown>)?.results as UnidadNegocio[]) || [];
 
-  // Mutations
   const createMutation = useCreateUnidadNegocio();
   const updateMutation = useUpdateUnidadNegocio();
   const deleteMutation = useDeleteUnidadNegocio();
@@ -77,10 +79,10 @@ export function UnidadesNegocioTab() {
     setEditItem(null);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Eliminar esta unidad de negocio?')) {
-      await deleteMutation.mutateAsync(id);
-    }
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    await deleteMutation.mutateAsync(deleteId);
+    setDeleteId(null);
   };
 
   // ==================== RENDER ====================
@@ -95,25 +97,18 @@ export function UnidadesNegocioTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Unidades de Negocio ({unidades.length})
-        </h3>
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={() => {
+      <SectionToolbar
+        title="Unidades de Negocio"
+        count={unidades.length}
+        primaryAction={{
+          label: 'Nueva Unidad',
+          onClick: () => {
             setEditItem(null);
             setShowForm(true);
-          }}
-        >
-          Nueva Unidad
-        </Button>
-      </div>
+          },
+        }}
+      />
 
-      {/* Tabla o Empty State */}
       {unidades.length === 0 ? (
         <EmptyState
           icon={<Building2 className="w-16 h-16" />}
@@ -122,7 +117,7 @@ export function UnidadesNegocioTab() {
           action={{
             label: 'Nueva Unidad',
             onClick: () => setShowForm(true),
-            icon: <Plus className="w-4 h-4" />,
+            icon: <Building2 className="w-4 h-4" />,
           }}
         />
       ) : (
@@ -200,7 +195,7 @@ export function UnidadesNegocioTab() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(un.id)}
+                          onClick={() => setDeleteId(un.id)}
                           disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="w-4 h-4 text-danger-600" />
@@ -216,7 +211,7 @@ export function UnidadesNegocioTab() {
       )}
 
       {/* Modal Crear/Editar */}
-      <Modal
+      <BaseModal
         isOpen={showForm}
         onClose={() => {
           setShowForm(false);
@@ -224,8 +219,30 @@ export function UnidadesNegocioTab() {
         }}
         title={editItem ? 'Editar Unidad de Negocio' : 'Nueva Unidad de Negocio'}
         size="lg"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              onClick={() => {
+                const form = document.getElementById('unidad-form') as HTMLFormElement;
+                form?.requestSubmit();
+              }}
+            >
+              {createMutation.isPending || updateMutation.isPending
+                ? 'Guardando...'
+                : editItem
+                  ? 'Actualizar'
+                  : 'Crear'}
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form id="unidad-form" onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Código *"
@@ -275,25 +292,20 @@ export function UnidadesNegocioTab() {
               defaultValue={editItem?.ciudad || ''}
             />
           </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? 'Guardando...'
-                : editItem
-                  ? 'Actualizar'
-                  : 'Crear'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </BaseModal>
+
+      {/* Confirmar eliminación */}
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        title="Eliminar Unidad de Negocio"
+        message="¿Está seguro de eliminar esta unidad de negocio? Esta acción no se puede deshacer."
+        variant="danger"
+        confirmText="Eliminar"
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteId(null)}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

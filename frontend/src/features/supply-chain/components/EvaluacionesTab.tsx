@@ -1,8 +1,6 @@
 /**
- * Tab Evaluaciones - Lista de evaluaciones de proveedores con CRUD
- *
- * Usa EvaluacionProveedorForm (modal existente) para crear/editar.
- * Tabla con filtros, badges de estado, y acciones rápidas.
+ * Tab Evaluaciones - Lista de evaluaciones de proveedores con CRUD (Tipo A — CRUD)
+ * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
 import { Plus, Edit, CheckCircle, XCircle, ClipboardCheck, Settings } from 'lucide-react';
@@ -10,9 +8,11 @@ import { Plus, Edit, CheckCircle, XCircle, ClipboardCheck, Settings } from 'luci
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -60,6 +60,12 @@ export function EvaluacionesTab() {
   const [showCriterioForm, setShowCriterioForm] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState<string>('');
 
+  // Confirm/Reject states (reemplazan window.confirm / window.prompt)
+  const [approveId, setApproveId] = useState<number | null>(null);
+  const [rejectId, setRejectId] = useState<number | null>(null);
+  const [rejectMotivo, setRejectMotivo] = useState('');
+  const [deleteCriterioId, setDeleteCriterioId] = useState<number | null>(null);
+
   // Queries
   const { data: evaluacionesData, isLoading } = useEvaluaciones(
     filtroEstado ? { estado: filtroEstado } : undefined
@@ -92,17 +98,17 @@ export function EvaluacionesTab() {
     setShowForm(true);
   };
 
-  const handleAprobar = async (id: number) => {
-    if (window.confirm('¿Aprobar esta evaluación?')) {
-      await aprobarMutation.mutateAsync({ id });
-    }
+  const handleConfirmAprobar = async () => {
+    if (!approveId) return;
+    await aprobarMutation.mutateAsync({ id: approveId });
+    setApproveId(null);
   };
 
-  const handleRechazar = async (id: number) => {
-    const motivo = window.prompt('Motivo del rechazo:');
-    if (motivo) {
-      await rechazarMutation.mutateAsync({ id, motivo });
-    }
+  const handleConfirmRechazar = async () => {
+    if (!rejectId || !rejectMotivo.trim()) return;
+    await rechazarMutation.mutateAsync({ id: rejectId, motivo: rejectMotivo });
+    setRejectId(null);
+    setRejectMotivo('');
   };
 
   const handleSaveCriterio = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -127,10 +133,10 @@ export function EvaluacionesTab() {
     setEditCriterio(null);
   };
 
-  const handleDeleteCriterio = async (id: number) => {
-    if (window.confirm('¿Eliminar este criterio de evaluación?')) {
-      await deleteCriterioMutation.mutateAsync(id);
-    }
+  const handleConfirmDeleteCriterio = async () => {
+    if (!deleteCriterioId) return;
+    await deleteCriterioMutation.mutateAsync(deleteCriterioId);
+    setDeleteCriterioId(null);
   };
 
   // ==================== RENDER ====================
@@ -145,39 +151,31 @@ export function EvaluacionesTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header con acciones */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Evaluaciones de Proveedores ({evaluaciones.length})
-        </h3>
-        <div className="flex items-center gap-2">
-          {/* Filtro estado */}
-          <Select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-            <option value="">Todos los estados</option>
-            <option value="BORRADOR">Borrador</option>
-            <option value="EN_PROCESO">En Proceso</option>
-            <option value="COMPLETADA">Completada</option>
-            <option value="APROBADA">Aprobada</option>
-          </Select>
+      <SectionToolbar
+        title="Evaluaciones de Proveedores"
+        count={evaluaciones.length}
+        primaryAction={{
+          label: 'Nueva Evaluación',
+          onClick: handleNew,
+        }}
+        extraActions={[
+          {
+            label: 'Criterios',
+            onClick: () => setShowCriterios(true),
+            variant: 'outline',
+          },
+        ]}
+      />
 
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Settings className="w-4 h-4" />}
-            onClick={() => setShowCriterios(true)}
-          >
-            Criterios
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={handleNew}
-          >
-            Nueva Evaluación
-          </Button>
-        </div>
+      {/* Filtro de estado */}
+      <div className="flex items-center gap-3">
+        <Select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+          <option value="">Todos los estados</option>
+          <option value="BORRADOR">Borrador</option>
+          <option value="EN_PROCESO">En Proceso</option>
+          <option value="COMPLETADA">Completada</option>
+          <option value="APROBADA">Aprobada</option>
+        </Select>
       </div>
 
       {/* Tabla o Empty State */}
@@ -252,7 +250,7 @@ export function EvaluacionesTab() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleAprobar(ev.id)}
+                              onClick={() => setApproveId(ev.id)}
                               title="Aprobar"
                             >
                               <CheckCircle className="w-4 h-4 text-success-600" />
@@ -260,7 +258,7 @@ export function EvaluacionesTab() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleRechazar(ev.id)}
+                              onClick={() => setRejectId(ev.id)}
                               title="Rechazar"
                             >
                               <XCircle className="w-4 h-4 text-danger-600" />
@@ -287,8 +285,61 @@ export function EvaluacionesTab() {
         evaluacion={editEvaluacion}
       />
 
+      {/* Confirmar Aprobación */}
+      <ConfirmDialog
+        isOpen={!!approveId}
+        title="Aprobar Evaluación"
+        message="¿Está seguro de aprobar esta evaluación de proveedor?"
+        variant="info"
+        confirmText="Aprobar"
+        onConfirm={handleConfirmAprobar}
+        onClose={() => setApproveId(null)}
+        isLoading={aprobarMutation.isPending}
+      />
+
+      {/* Modal Rechazar (con motivo) */}
+      <BaseModal
+        isOpen={!!rejectId}
+        onClose={() => {
+          setRejectId(null);
+          setRejectMotivo('');
+        }}
+        title="Rechazar Evaluación"
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRejectId(null);
+                setRejectMotivo('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              disabled={!rejectMotivo.trim() || rechazarMutation.isPending}
+              onClick={handleConfirmRechazar}
+            >
+              {rechazarMutation.isPending ? 'Rechazando...' : 'Rechazar'}
+            </Button>
+          </div>
+        }
+      >
+        <Textarea
+          label="Motivo del Rechazo *"
+          value={rejectMotivo}
+          onChange={(e) => setRejectMotivo(e.target.value)}
+          rows={3}
+          placeholder="Indique el motivo del rechazo..."
+        />
+      </BaseModal>
+
       {/* Modal Gestionar Criterios */}
-      <Modal
+      <BaseModal
         isOpen={showCriterios}
         onClose={() => setShowCriterios(false)}
         title="Criterios de Evaluación"
@@ -369,7 +420,7 @@ export function EvaluacionesTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteCriterio(c.id)}
+                            onClick={() => setDeleteCriterioId(c.id)}
                           >
                             <XCircle className="w-4 h-4 text-danger-600" />
                           </Button>
@@ -382,10 +433,22 @@ export function EvaluacionesTab() {
             </div>
           )}
         </div>
-      </Modal>
+      </BaseModal>
+
+      {/* Confirmar Eliminar Criterio */}
+      <ConfirmDialog
+        isOpen={!!deleteCriterioId}
+        title="Eliminar Criterio"
+        message="¿Está seguro de eliminar este criterio de evaluación? Esta acción no se puede deshacer."
+        variant="danger"
+        confirmText="Eliminar"
+        onConfirm={handleConfirmDeleteCriterio}
+        onClose={() => setDeleteCriterioId(null)}
+        isLoading={deleteCriterioMutation.isPending}
+      />
 
       {/* Modal Form Criterio */}
-      <Modal
+      <BaseModal
         isOpen={showCriterioForm}
         onClose={() => {
           setShowCriterioForm(false);
@@ -393,8 +456,28 @@ export function EvaluacionesTab() {
         }}
         title={editCriterio ? 'Editar Criterio' : 'Nuevo Criterio'}
         size="md"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setShowCriterioForm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={createCriterioMutation.isPending || updateCriterioMutation.isPending}
+              onClick={() => {
+                const form = document.getElementById('criterio-form') as HTMLFormElement;
+                form?.requestSubmit();
+              }}
+            >
+              {createCriterioMutation.isPending || updateCriterioMutation.isPending
+                ? 'Guardando...'
+                : 'Guardar'}
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={handleSaveCriterio} className="space-y-4">
+        <form id="criterio-form" onSubmit={handleSaveCriterio} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Código *"
@@ -437,23 +520,8 @@ export function EvaluacionesTab() {
               defaultValue={editCriterio?.orden || ''}
             />
           </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setShowCriterioForm(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={createCriterioMutation.isPending || updateCriterioMutation.isPending}
-            >
-              {createCriterioMutation.isPending || updateCriterioMutation.isPending
-                ? 'Guardando...'
-                : 'Guardar'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </BaseModal>
     </div>
   );
 }

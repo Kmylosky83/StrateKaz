@@ -5,7 +5,8 @@
  * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
-import { Tabs } from '@/components/common/Tabs';
+import { PageTabs } from '@/components/layout';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -590,39 +591,26 @@ const CalendarioSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ProgramacionTab() {
+  const moduleColor = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('programaciones');
 
   const tabs = [
-    {
-      id: 'programaciones',
-      label: 'Programaciones',
-      icon: <Calendar className="w-4 h-4" />,
-    },
-    {
-      id: 'asignaciones',
-      label: 'Asignaciones',
-      icon: <Truck className="w-4 h-4" />,
-    },
-    {
-      id: 'ejecuciones',
-      label: 'Ejecuciones',
-      icon: <CheckCircle className="w-4 h-4" />,
-    },
-    {
-      id: 'liquidaciones',
-      label: 'Liquidaciones',
-      icon: <DollarSign className="w-4 h-4" />,
-    },
-    {
-      id: 'calendario',
-      label: 'Calendario',
-      icon: <CalendarDays className="w-4 h-4" />,
-    },
+    { id: 'programaciones', label: 'Programaciones', icon: Calendar },
+    { id: 'asignaciones', label: 'Asignaciones', icon: Truck },
+    { id: 'ejecuciones', label: 'Ejecuciones', icon: CheckCircle },
+    { id: 'liquidaciones', label: 'Liquidaciones', icon: DollarSign },
+    { id: 'calendario', label: 'Calendario', icon: CalendarDays },
   ];
 
   return (
     <div className="space-y-6">
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
+      <PageTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        variant="underline"
+        moduleColor={moduleColor}
+      />
 
       <div className="mt-6">
         {activeTab === 'programaciones' && <ProgramacionesSection />}

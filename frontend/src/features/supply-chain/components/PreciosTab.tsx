@@ -1,22 +1,31 @@
 /**
- * Tab Precios - Gestión de precios de materias primas por proveedor
- *
- * Muestra tabla de proveedores con sus precios actuales.
- * Permite cambiar precios y ver historial de cambios.
+ * Tab Precios - Gestión de precios de materias primas por proveedor (Tipo B — tabla)
+ * SectionToolbar + Card+Table + BaseModal
  */
 import { useState } from 'react';
 import { DollarSign, History, TrendingUp, TrendingDown, Minus, Edit } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 
 import { useProveedores, useCambiarPrecio, useHistorialPrecio } from '../hooks/useProveedores';
 import type { PrecioMateriaPrima, HistorialPrecioProveedor } from '../types';
+
+// ==================== TIPOS ====================
+
+interface ProveedorConPrecios {
+  id: number;
+  razon_social: string;
+  nombre_comercial: string;
+  numero_documento: string;
+  precios_materia_prima: PrecioMateriaPrima[];
+}
 
 // ==================== UTILIDADES ====================
 
@@ -53,8 +62,8 @@ export function PreciosTab() {
 
   // Filtrar solo proveedores que tienen precios
   const proveedoresConPrecios = proveedores.filter(
-    (p: any) => p.precios_materia_prima && p.precios_materia_prima.length > 0
-  );
+    (p: ProveedorConPrecios) => p.precios_materia_prima && p.precios_materia_prima.length > 0
+  ) as ProveedorConPrecios[];
 
   // Mutations
   const cambiarPrecioMutation = useCambiarPrecio();
@@ -124,11 +133,7 @@ export function PreciosTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Precios por Proveedor ({proveedoresConPrecios.length} proveedores)
-        </h3>
-      </div>
+      <SectionToolbar title="Precios por Proveedor" count={proveedoresConPrecios.length} />
 
       {/* Tabla de precios */}
       <Card variant="bordered" padding="none">
@@ -145,16 +150,13 @@ export function PreciosTab() {
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Precio/Kg
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Vigencia
-                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {proveedoresConPrecios.map((prov: any) =>
+              {proveedoresConPrecios.map((prov) =>
                 prov.precios_materia_prima.map((precio: PrecioMateriaPrima, idx: number) => (
                   <tr
                     key={`${prov.id}-${precio.id}`}
@@ -177,7 +179,7 @@ export function PreciosTab() {
                     <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900 dark:text-white">
                       {formatCurrency(precio.precio_kg)}
                     </td>
-                    <td className="px-6 py-4 text-sm text-right">
+                    <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
@@ -208,7 +210,7 @@ export function PreciosTab() {
       </Card>
 
       {/* Modal Cambiar Precio */}
-      <Modal
+      <BaseModal
         isOpen={showCambiarPrecio}
         onClose={() => {
           setShowCambiarPrecio(false);
@@ -216,8 +218,26 @@ export function PreciosTab() {
         }}
         title="Cambiar Precio"
         size="md"
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setShowCambiarPrecio(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={cambiarPrecioMutation.isPending}
+              onClick={() => {
+                const form = document.getElementById('cambiar-precio-form') as HTMLFormElement;
+                form?.requestSubmit();
+              }}
+            >
+              {cambiarPrecioMutation.isPending ? 'Guardando...' : 'Cambiar Precio'}
+            </Button>
+          </div>
+        }
       >
-        <form onSubmit={handleSubmitCambio} className="space-y-4">
+        <form id="cambiar-precio-form" onSubmit={handleSubmitCambio} className="space-y-4">
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             <p>
               Proveedor: <strong>{selectedProveedorNombre}</strong>
@@ -249,20 +269,11 @@ export function PreciosTab() {
             rows={2}
             placeholder="Ej: Ajuste por inflación, nuevo contrato..."
           />
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setShowCambiarPrecio(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" disabled={cambiarPrecioMutation.isPending}>
-              {cambiarPrecioMutation.isPending ? 'Guardando...' : 'Cambiar Precio'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </BaseModal>
 
       {/* Modal Historial de Precios */}
-      <Modal
+      <BaseModal
         isOpen={showHistorial}
         onClose={() => setShowHistorial(false)}
         title={`Historial de Precios \u2014 ${selectedProveedorNombre}`}
@@ -347,7 +358,7 @@ export function PreciosTab() {
             </table>
           </div>
         )}
-      </Modal>
+      </BaseModal>
     </div>
   );
 }

@@ -5,7 +5,8 @@
  * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
-import { Tabs } from '@/components/common/Tabs';
+import { PageTabs } from '@/components/layout';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -578,19 +579,26 @@ const ConfiguracionSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function AlmacenamientoTab() {
+  const moduleColor = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('inventarios');
 
   const tabs = [
-    { id: 'inventarios', label: 'Inventarios', icon: <Package className="w-4 h-4" /> },
-    { id: 'movimientos', label: 'Movimientos', icon: <ArrowRightLeft className="w-4 h-4" /> },
-    { id: 'kardex', label: 'Kardex', icon: <FileText className="w-4 h-4" /> },
-    { id: 'alertas', label: 'Alertas', icon: <AlertTriangle className="w-4 h-4" /> },
-    { id: 'configuracion', label: 'Configuración', icon: <Settings className="w-4 h-4" /> },
+    { id: 'inventarios', label: 'Inventarios', icon: Package },
+    { id: 'movimientos', label: 'Movimientos', icon: ArrowRightLeft },
+    { id: 'kardex', label: 'Kardex', icon: FileText },
+    { id: 'alertas', label: 'Alertas', icon: AlertTriangle },
+    { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
 
   return (
     <div className="space-y-6">
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
+      <PageTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        variant="underline"
+        moduleColor={moduleColor}
+      />
 
       <div className="mt-6">
         {activeTab === 'inventarios' && <InventariosSection />}

@@ -5,7 +5,8 @@
  * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
-import { Tabs } from '@/components/common/Tabs';
+import { PageTabs } from '@/components/layout';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -694,19 +695,26 @@ const RecepcionesSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ComprasTab() {
+  const moduleColor = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('requisiciones');
 
   const tabs = [
-    { id: 'requisiciones', label: 'Requisiciones', icon: <FileText className="w-4 h-4" /> },
-    { id: 'cotizaciones', label: 'Cotizaciones', icon: <TrendingUp className="w-4 h-4" /> },
-    { id: 'ordenes', label: 'Órdenes de Compra', icon: <ShoppingCart className="w-4 h-4" /> },
-    { id: 'contratos', label: 'Contratos', icon: <FileSignature className="w-4 h-4" /> },
-    { id: 'recepciones', label: 'Recepciones', icon: <PackageCheck className="w-4 h-4" /> },
+    { id: 'requisiciones', label: 'Requisiciones', icon: FileText },
+    { id: 'cotizaciones', label: 'Cotizaciones', icon: TrendingUp },
+    { id: 'ordenes', label: 'Órdenes de Compra', icon: ShoppingCart },
+    { id: 'contratos', label: 'Contratos', icon: FileSignature },
+    { id: 'recepciones', label: 'Recepciones', icon: PackageCheck },
   ];
 
   return (
     <div className="space-y-6">
-      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
+      <PageTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        variant="underline"
+        moduleColor={moduleColor}
+      />
 
       <div className="mt-6">
         {activeTab === 'requisiciones' && <RequisicionesSection />}

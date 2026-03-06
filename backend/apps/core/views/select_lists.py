@@ -352,7 +352,7 @@ def select_tipos_epp(request):
         return Response([])
 
     qs = TipoEPP.objects.filter(
-        is_active=True
+        activo=True
     ).values(
         'id', 'codigo', 'nombre', 'categoria',
         'vida_util_dias', 'normas_aplicables'

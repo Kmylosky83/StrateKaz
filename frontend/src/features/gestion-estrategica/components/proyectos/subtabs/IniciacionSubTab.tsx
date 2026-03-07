@@ -15,11 +15,13 @@ import { Card, Badge, EmptyState, Button } from '@/components/common';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
 import { BaseModal } from '@/components/modals/BaseModal';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Input, Textarea } from '@/components/forms';
 import {
   useProyectos,
   useProyecto,
   useUpdateProyecto,
+  useCambiarEstadoProyecto,
   useCharters,
   useInteresados,
   proyectosKeys,
@@ -40,6 +42,7 @@ import {
   UserCheck,
   ChevronDown,
   ChevronUp,
+  ArrowRight,
 } from 'lucide-react';
 
 // ==================== CHECKLIST HELPERS ====================
@@ -111,9 +114,17 @@ interface ProgressIndicatorProps {
   checklist: ChecklistItem[];
   completedCount: number;
   onItemClick: (item: ChecklistItem) => void;
+  onAdvance?: () => void;
+  isAdvancing?: boolean;
 }
 
-const ProgressIndicator = ({ checklist, completedCount, onItemClick }: ProgressIndicatorProps) => {
+const ProgressIndicator = ({
+  checklist,
+  completedCount,
+  onItemClick,
+  onAdvance,
+  isAdvancing,
+}: ProgressIndicatorProps) => {
   if (checklist.length === 0) return null;
   const pct = (completedCount / checklist.length) * 100;
   const allDone = completedCount === checklist.length;
@@ -135,27 +146,43 @@ const ProgressIndicator = ({ checklist, completedCount, onItemClick }: ProgressI
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1">
-          {checklist.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => !item.completed && onItemClick(item)}
-              className={`flex items-center gap-1.5 text-xs transition-colors ${
-                item.completed
-                  ? 'text-green-700 dark:text-green-400 cursor-default'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer'
-              }`}
-              title={item.completed ? 'Completado' : `Ir a: ${item.label}`}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {checklist.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => !item.completed && onItemClick(item)}
+                className={`flex items-center gap-1.5 text-xs transition-colors ${
+                  item.completed
+                    ? 'text-green-700 dark:text-green-400 cursor-default'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer'
+                }`}
+                title={item.completed ? 'Completado' : `Ir a: ${item.label}`}
+              >
+                {item.completed ? (
+                  <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Circle className="h-3.5 w-3.5" />
+                )}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Botón avanzar — aparece cuando checklist está completo */}
+          {allDone && onAdvance && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onAdvance}
+              disabled={isAdvancing}
+              isLoading={isAdvancing}
             >
-              {item.completed ? (
-                <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-              ) : (
-                <Circle className="h-3.5 w-3.5" />
-              )}
-              <span>{item.label}</span>
-            </button>
-          ))}
+              <ArrowRight className="h-4 w-4 mr-1" />
+              Avanzar a Planificación
+            </Button>
+          )}
         </div>
       </div>
     </Card>
@@ -174,6 +201,9 @@ const INICIACION_TABS: Tab[] = [
 export const IniciacionSubTab = () => {
   const [selectedProyectoId, setSelectedProyectoId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('charter');
+  const [showAdvanceConfirm, setShowAdvanceConfirm] = useState(false);
+
+  const cambiarEstado = useCambiarEstadoProyecto();
 
   const { data: proyectosData, isLoading } = useProyectos({
     estado: 'iniciacion',
@@ -274,11 +304,13 @@ export const IniciacionSubTab = () => {
           {/* Resumen del proyecto (inline, siempre visible) */}
           <ProjectSummaryWithEvent proyecto={displayProyecto} proyectoId={selectedProyectoId} />
 
-          {/* Checklist de progreso (clickable) */}
+          {/* Checklist de progreso (clickable) + botón avanzar */}
           <ProgressIndicator
             checklist={checklist}
             completedCount={completedCount}
             onItemClick={handleChecklistClick}
+            onAdvance={() => setShowAdvanceConfirm(true)}
+            isAdvancing={cambiarEstado.isPending}
           />
 
           {/* Tabs */}
@@ -299,6 +331,25 @@ export const IniciacionSubTab = () => {
               </div>
             )}
           </div>
+
+          {/* Confirmar avance de fase */}
+          <ConfirmDialog
+            isOpen={showAdvanceConfirm}
+            onClose={() => setShowAdvanceConfirm(false)}
+            onConfirm={async () => {
+              await cambiarEstado.mutateAsync({
+                id: selectedProyectoId!,
+                estado: 'planificacion',
+              });
+              setShowAdvanceConfirm(false);
+              setSelectedProyectoId(null);
+            }}
+            title="Avanzar a Planificación"
+            message={`El proyecto "${displayProyecto?.nombre}" pasará a la fase de Planificación. Podrá definir el alcance, cronograma, recursos y presupuesto. ¿Desea continuar?`}
+            confirmText="Avanzar"
+            variant="info"
+            isLoading={cambiarEstado.isPending}
+          />
         </>
       )}
     </div>

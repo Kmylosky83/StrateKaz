@@ -2,11 +2,14 @@
  * SubTab de Iniciación
  * Gestión de proyectos en fase de iniciación
  */
+import { useState } from 'react';
 import { Card, Badge, Button, EmptyState } from '@/components/common';
 import { useProyectos } from '../../../hooks/useProyectos';
+import { ProyectoCreateModal } from './PortafolioSubTab';
 import { Plus, FileText, Users, Target, Calendar } from 'lucide-react';
 
 export const IniciacionSubTab = () => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { data: proyectosData, isLoading } = useProyectos({
     estado: 'iniciacion',
     is_active: true,
@@ -41,7 +44,7 @@ export const IniciacionSubTab = () => {
             Proyectos en fase de iniciación - Definición de charter y acta de constitución
           </p>
         </div>
-        <Button variant="primary" onClick={() => {}}>
+        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nuevo Proyecto
         </Button>
@@ -170,6 +173,9 @@ export const IniciacionSubTab = () => {
           description="Crea un nuevo proyecto para comenzar la fase de iniciación"
         />
       )}
+
+      {/* Modal Crear Proyecto */}
+      <ProyectoCreateModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />
     </div>
   );
 };

@@ -275,7 +275,7 @@ const PRIORIDADES: { value: PrioridadProyecto; label: string }[] = [
   { value: 'alta', label: 'Alta' },
 ];
 
-const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
+export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
   const createMutation = useCreateProyecto();
 
   const [form, setForm] = useState<Partial<CreateProyectoDTO>>({

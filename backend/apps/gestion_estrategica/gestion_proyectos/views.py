@@ -80,7 +80,9 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     - GET /proyectos/por_estado/ - Proyectos agrupados por estado
     """
     queryset = Proyecto.objects.select_related(
-        'programa', 'sponsor', 'gerente_proyecto', 'created_by'
+        'programa', 'sponsor', 'gerente_proyecto', 'created_by',
+        'origen_cambio', 'origen_objetivo', 'origen_estrategia_tows',
+        'charter',
     ).all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]

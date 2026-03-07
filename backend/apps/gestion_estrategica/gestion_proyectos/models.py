@@ -9,6 +9,8 @@ Subtabs:
 - Ejecución/Monitoreo
 - Cierre
 """
+from decimal import Decimal
+
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -390,14 +392,15 @@ class Proyecto(BaseCompanyModel):
     @property
     def variacion_costo(self):
         """CV = EV - AC (Earned Value - Actual Cost)"""
-        return self.presupuesto_aprobado * (self.porcentaje_avance / 100) - self.costo_real
+        ev = self.presupuesto_aprobado * Decimal(self.porcentaje_avance) / Decimal(100)
+        return ev - self.costo_real
 
     @property
     def indice_desempeno_costo(self):
         """CPI = EV / AC"""
         if self.costo_real > 0:
-            ev = self.presupuesto_aprobado * (self.porcentaje_avance / 100)
-            return round(ev / float(self.costo_real), 2)
+            ev = self.presupuesto_aprobado * Decimal(self.porcentaje_avance) / Decimal(100)
+            return round(float(ev / self.costo_real), 2)
         return 1.0
 
 

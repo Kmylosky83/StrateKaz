@@ -392,8 +392,9 @@ function TabMiCuenta() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
-  const { status, isLoadingStatus } = use2FA();
   const user = useAuthStore((s) => s.user);
+  const isPortal = isPortalOnlyUser(user);
+  const { status, isLoadingStatus } = use2FA();
 
   return (
     <div className="space-y-4">
@@ -401,7 +402,7 @@ function TabMiCuenta() {
       <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4">
         <InfoRow label="Usuario" value={user?.username} />
         <InfoRow label="Email" value={user?.email} />
-        <InfoRow label="Cargo" value={user?.cargo_name} />
+        <InfoRow label="Cargo" value={user?.cargo?.name} />
       </div>
 
       {/* Cambiar contraseña */}
@@ -429,54 +430,63 @@ function TabMiCuenta() {
         </div>
       </Card>
 
-      {/* 2FA */}
-      <Card className="p-5">
-        <div className="flex items-start gap-4">
-          <div className="p-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
-            <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+      {/* 2FA — solo para usuarios internos (no portal-only) */}
+      {!isPortal && (
+        <Card className="p-5">
+          <div className="flex items-start gap-4">
+            <div className="p-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
+              <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                Autenticación de Dos Factores
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Añade una capa extra de seguridad a tu cuenta.
+              </p>
+              {!isLoadingStatus && status && (
+                <div className="mt-3 flex items-center gap-3">
+                  {status.is_enabled ? (
+                    <>
+                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <CheckCircle className="h-3.5 w-3.5" /> Habilitado
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDisable2FAModal(true)}
+                      >
+                        Deshabilitar
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        <XCircle className="h-3.5 w-3.5" /> Deshabilitado
+                      </span>
+                      <Button variant="outline" size="sm" onClick={() => setShow2FAModal(true)}>
+                        Habilitar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-              Autenticación de Dos Factores
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Añade una capa extra de seguridad a tu cuenta.
-            </p>
-            {!isLoadingStatus && status && (
-              <div className="mt-3 flex items-center gap-3">
-                {status.is_enabled ? (
-                  <>
-                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                      <CheckCircle className="h-3.5 w-3.5" /> Habilitado
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowDisable2FAModal(true)}
-                    >
-                      Deshabilitar
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <XCircle className="h-3.5 w-3.5" /> Deshabilitado
-                    </span>
-                    <Button variant="outline" size="sm" onClick={() => setShow2FAModal(true)}>
-                      Habilitar
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Modals */}
       <ChangePasswordModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
-      <TwoFactorModal isOpen={show2FAModal} onClose={() => setShow2FAModal(false)} />
-      <Disable2FAModal isOpen={showDisable2FAModal} onClose={() => setShowDisable2FAModal(false)} />
+      {!isPortal && (
+        <>
+          <TwoFactorModal isOpen={show2FAModal} onClose={() => setShow2FAModal(false)} />
+          <Disable2FAModal
+            isOpen={showDisable2FAModal}
+            onClose={() => setShowDisable2FAModal(false)}
+          />
+        </>
+      )}
     </div>
   );
 }

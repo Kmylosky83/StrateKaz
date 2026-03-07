@@ -14,7 +14,7 @@
  * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente a
  * su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -22,22 +22,43 @@ import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 import { PortalLayout } from './PortalLayout';
 
+const MAX_PROFILE_RETRIES = 3;
+
 export const AdaptiveLayout = () => {
   const location = useLocation();
+  const retryCount = useRef(0);
 
   // Auth state
   const currentTenantId = useAuthStore((s) => s.currentTenantId);
   const user = useAuthStore((s) => s.user);
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
+  const forceLogout = useAuthStore((s) => s.forceLogout);
+
+  // Reset retry counter when user is loaded successfully
+  useEffect(() => {
+    if (user) {
+      retryCount.current = 0;
+    }
+  }, [user]);
 
   // Cargar perfil del User cuando hay tenant pero no user
   // (Cubre: F5, navegación directa, primer acceso post-login)
+  // Limita reintentos para evitar loop infinito si el endpoint falla
   useEffect(() => {
     if (currentTenantId && !user && !isLoadingUser) {
-      loadUserProfile();
+      if (retryCount.current < MAX_PROFILE_RETRIES) {
+        retryCount.current += 1;
+        loadUserProfile();
+      } else {
+        // Reintentos agotados: la sesión no puede recuperarse → forzar logout
+        console.error(
+          `AdaptiveLayout: profile load failed after ${MAX_PROFILE_RETRIES} attempts. Forcing logout.`
+        );
+        forceLogout();
+      }
     }
-  }, [currentTenantId, user, isLoadingUser, loadUserProfile]);
+  }, [currentTenantId, user, isLoadingUser, loadUserProfile, forceLogout]);
 
   // Mientras se carga el perfil, mostrar spinner
   if (isLoadingUser || (currentTenantId && !user)) {

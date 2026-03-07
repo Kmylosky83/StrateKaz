@@ -211,6 +211,22 @@ def current_user(request):
     if user.photo:
         photo_url = request.build_absolute_uri(user.photo.url)
 
+    # 6. Proveedor vinculado (portal proveedor / profesional externo)
+    proveedor_nombre = None
+    if user.proveedor_id:
+        try:
+            proveedor_nombre = user.proveedor.nombre_comercial
+        except Exception:
+            pass
+
+    # 7. Cliente vinculado (portal cliente)
+    cliente_nombre = None
+    if user.cliente_id:
+        try:
+            cliente_nombre = user.cliente.nombre_comercial
+        except Exception:
+            pass
+
     return Response({
         'id': user.id,
         'username': user.username,
@@ -226,6 +242,7 @@ def current_user(request):
         } if user.cargo else None,
         'cargo_code': user.cargo_code,
         'cargo_level': user.cargo_level,
+        'cargo_name': user.cargo.name if user.cargo else None,
         'phone': user.phone,
         'document_type': user.document_type,
         'document_type_display': user.get_document_type_display(),
@@ -244,6 +261,11 @@ def current_user(request):
         'area_nombre': area_nombre,
         # Foto de perfil
         'photo_url': photo_url,
+        # Portal: proveedor/cliente vinculado
+        'proveedor': user.proveedor_id,
+        'proveedor_nombre': proveedor_nombre,
+        'cliente': user.cliente_id,
+        'cliente_nombre': cliente_nombre,
     })
 
 

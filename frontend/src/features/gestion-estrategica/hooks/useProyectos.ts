@@ -27,9 +27,11 @@ import type {
 // ==================== QUERY KEYS ====================
 
 export const proyectosKeys = {
+  // Base key para invalidar TODAS las queries de proyectos
+  all: ['proyectos'] as const,
   // Proyectos
-  proyectos: (filters?: ProyectoFilters) => ['proyectos', filters] as const,
-  proyecto: (id: number) => ['proyecto', id] as const,
+  proyectos: (filters?: ProyectoFilters) => ['proyectos', 'list', filters] as const,
+  proyecto: (id: number) => ['proyectos', 'detail', id] as const,
   proyectosDashboard: ['proyectos', 'dashboard'] as const,
   proyectosPorEstado: ['proyectos', 'por-estado'] as const,
 
@@ -101,9 +103,7 @@ export const useCreateProyecto = () => {
   return useMutation({
     mutationFn: (data: CreateProyectoDTO) => proyectosApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
       toast.success('Proyecto creado exitosamente');
     },
     onError: (error: unknown) => {
@@ -117,11 +117,8 @@ export const useUpdateProyecto = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateProyectoDTO }) =>
       proyectosApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(id) });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
       toast.success('Proyecto actualizado exitosamente');
     },
     onError: (error: unknown) => {
@@ -135,9 +132,7 @@ export const useDeleteProyecto = () => {
   return useMutation({
     mutationFn: (id: number) => proyectosApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
       toast.success('Proyecto eliminado exitosamente');
     },
     onError: (error: unknown) => {
@@ -151,11 +146,8 @@ export const useCambiarEstadoProyecto = () => {
   return useMutation({
     mutationFn: ({ id, estado }: { id: number; estado: string }) =>
       proyectosApi.cambiarEstado(id, estado),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(id) });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
       toast.success('Estado del proyecto actualizado');
     },
     onError: (error: unknown) => {
@@ -174,10 +166,8 @@ export const useActualizarSaludProyecto = () => {
       id: number;
       data: { health_status: string; health_notes?: string };
     }) => proyectosApi.actualizarSalud(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(id) });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
       toast.success('Salud del proyecto actualizada');
     },
     onError: (error: unknown) => {
@@ -207,9 +197,9 @@ export const useCreateEquipoProyecto = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateEquipoProyectoDTO) => equipoProyectoApi.create(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.equipos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(variables.proyecto) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
       toast.success('Miembro del equipo agregado exitosamente');
     },
     onError: (error: unknown) => {
@@ -223,9 +213,8 @@ export const useUpdateEquipoProyecto = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateEquipoProyectoDTO }) =>
       equipoProyectoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.equipos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.equipo(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
       toast.success('Miembro del equipo actualizado exitosamente');
     },
     onError: (error: unknown) => {
@@ -239,7 +228,7 @@ export const useDeleteEquipoProyecto = () => {
   return useMutation({
     mutationFn: (id: number) => equipoProyectoApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.equipos() });
+      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
       toast.success('Miembro del equipo eliminado exitosamente');
     },
     onError: (error: unknown) => {
@@ -269,9 +258,9 @@ export const useCreateHitoProyecto = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateHitoProyectoDTO) => hitosProyectoApi.create(data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hitos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(variables.proyecto) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
       toast.success('Hito creado exitosamente');
     },
     onError: (error: unknown) => {
@@ -285,9 +274,8 @@ export const useUpdateHitoProyecto = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateHitoProyectoDTO }) =>
       hitosProyectoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hitos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hito(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
       toast.success('Hito actualizado exitosamente');
     },
     onError: (error: unknown) => {
@@ -301,7 +289,7 @@ export const useDeleteHitoProyecto = () => {
   return useMutation({
     mutationFn: (id: number) => hitosProyectoApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hitos() });
+      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
       toast.success('Hito eliminado exitosamente');
     },
     onError: (error: unknown) => {
@@ -315,9 +303,9 @@ export const useCompletarHitoProyecto = () => {
   return useMutation({
     mutationFn: ({ id, evidencia }: { id: number; evidencia?: string }) =>
       hitosProyectoApi.completar(id, { evidencia }),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hitos() });
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.hito(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
       toast.success('Hito completado exitosamente');
     },
     onError: (error: unknown) => {

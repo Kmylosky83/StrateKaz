@@ -1,239 +1,172 @@
 /**
- * SubTab de Ejecucion y Monitoreo
- * Gestion de proyectos en ejecucion y monitoreo
- *
- * Sprint PLANNER-1: Agrega vista Kanban de actividades.
- * Toggle: Lista (proyectos) | Kanban (actividades del proyecto seleccionado)
+ * SubTab de Ejecución y Monitoreo — Workspace por proyecto
+ * Selector de proyecto + Tabs: Dashboard | Actividades | Kanban | Gantt | Riesgos | Seguimiento | Calendario
  */
-import { useState } from 'react';
-import { Card, Badge, Button, EmptyState, ViewToggle, SectionHeader } from '@/components/common';
+import { useState, useEffect } from 'react';
+import { Card, Badge, EmptyState } from '@/components/common';
+import { StatsGrid } from '@/components/layout/StatsGrid';
+import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
-import { useProyectos } from '../../../hooks/useProyectos';
+import { useProyectos, useProyecto } from '../../../hooks/useProyectos';
 import { KanbanBoard } from '../kanban';
-import type { Proyecto } from '../../../types/proyectos.types';
+import { CalendarView } from '../calendar';
+import { ActividadesSection } from '../planificacion/ActividadesSection';
+import { ActividadFormModal } from '../planificacion/ActividadFormModal';
+import { GanttView } from '../planificacion/GanttView';
+import { RiesgosSection } from '../monitoreo/RiesgosSection';
+import { SeguimientoSection } from '../monitoreo/SeguimientoSection';
+import type { Proyecto, ActividadProyecto } from '../../../types/proyectos.types';
+import type { Tab } from '@/components/common/Tabs';
 import {
   Activity,
-  TrendingUp,
-  CheckCircle2,
-  Clock,
-  DollarSign,
-  List,
+  ListChecks,
   KanbanSquare,
-  BarChart3,
   Calendar,
+  BarChart3,
+  ShieldAlert,
+  TrendingUp,
+  Target,
+  DollarSign,
+  CheckCircle2,
 } from 'lucide-react';
-import { CalendarView } from '../calendar';
 
-type ViewMode = 'list' | 'kanban' | 'calendario' | 'timeline';
+// ==================== TABS CONFIG ====================
 
-const VIEW_OPTIONS = [
-  { value: 'list' as const, label: 'Lista', icon: List },
-  { value: 'kanban' as const, label: 'Kanban', icon: KanbanSquare },
-  { value: 'calendario' as const, label: 'Calendario', icon: Calendar },
-  { value: 'timeline' as const, label: 'Cronograma', icon: BarChart3 },
+const MONITOREO_TABS: Tab[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <Activity className="h-4 w-4" /> },
+  { id: 'actividades', label: 'Actividades', icon: <ListChecks className="h-4 w-4" /> },
+  { id: 'kanban', label: 'Kanban', icon: <KanbanSquare className="h-4 w-4" /> },
+  { id: 'gantt', label: 'Gantt', icon: <BarChart3 className="h-4 w-4" /> },
+  { id: 'riesgos', label: 'Riesgos', icon: <ShieldAlert className="h-4 w-4" /> },
+  { id: 'seguimiento', label: 'Seguimiento', icon: <TrendingUp className="h-4 w-4" /> },
+  { id: 'calendario', label: 'Calendario', icon: <Calendar className="h-4 w-4" /> },
 ];
 
-// ==================== LISTA DE PROYECTOS (vista existente) ====================
+// ==================== DASHBOARD TAB ====================
 
-interface ProyectoListViewProps {
-  proyectos: Proyecto[];
-  onSelectProject: (proyecto: Proyecto) => void;
-}
+const DashboardTab = ({ proyectoId }: { proyectoId: number }) => {
+  const { data: proyecto } = useProyecto(proyectoId);
 
-const ProyectoListView = ({ proyectos, onSelectProject }: ProyectoListViewProps) => {
-  if (proyectos.length === 0) {
-    return (
-      <EmptyState
-        icon={<Activity className="h-12 w-12" />}
-        title="No hay proyectos en ejecucion"
-        description="Los proyectos pasaran a esta fase desde planificacion"
-      />
-    );
-  }
+  if (!proyecto) return null;
 
   return (
-    <div className="grid grid-cols-1 gap-4">
-      {proyectos.map((proyecto) => (
-        <Card key={proyecto.id}>
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    {proyecto.nombre}
-                  </h3>
-                  <Badge variant="info" size="sm">
-                    {proyecto.codigo}
-                  </Badge>
-                  <Badge
-                    variant={proyecto.estado === 'ejecucion' ? 'primary' : 'warning'}
-                    size="sm"
-                  >
-                    {proyecto.estado_display ?? proyecto.estado}
-                  </Badge>
-                </div>
-              </div>
-              <Button variant="secondary" size="sm" onClick={() => onSelectProject(proyecto)}>
-                Ver Kanban
-              </Button>
-            </div>
+    <div className="space-y-4">
+      <StatsGrid
+        columns={4}
+        variant="compact"
+        stats={[
+          {
+            label: 'Avance',
+            value: `${proyecto.porcentaje_avance ?? 0}%`,
+            icon: Target,
+            iconColor: 'primary',
+          },
+          {
+            label: 'Actividades',
+            value: proyecto.total_actividades ?? 0,
+            icon: CheckCircle2,
+            iconColor: 'info',
+          },
+          {
+            label: 'Presupuesto',
+            value: `$${proyecto.presupuesto_aprobado ?? '0'}`,
+            icon: DollarSign,
+            iconColor: 'success',
+          },
+          {
+            label: 'Costo Real',
+            value: `$${proyecto.costo_real ?? '0'}`,
+            icon: DollarSign,
+            iconColor: 'warning',
+          },
+        ]}
+      />
 
-            {/* Progress bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Progreso General
-                </span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {proyecto.porcentaje_avance ?? 0}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                <div
-                  className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
-                  style={{ width: `${proyecto.porcentaje_avance ?? 0}%` }}
-                />
-              </div>
+      <Card>
+        <div className="p-6">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+            Resumen del Proyecto
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Gerente</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {proyecto.gerente_nombre || 'Sin asignar'}
+              </p>
             </div>
-
-            {/* Footer info */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-              {proyecto.total_actividades !== undefined && (
-                <div className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>{proyecto.total_actividades} actividades</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                <span>
-                  Fin:{' '}
-                  {proyecto.fecha_fin_plan
-                    ? new Date(proyecto.fecha_fin_plan).toLocaleDateString('es-CO')
-                    : 'Sin definir'}
-                </span>
-              </div>
-              {proyecto.gerente_nombre && (
-                <div className="flex items-center gap-1">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>{proyecto.gerente_nombre}</span>
-                </div>
-              )}
-              {(proyecto.presupuesto_aprobado ?? proyecto.costo_real) != null && (
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-3.5 w-3.5" />
-                  <span>
-                    ${proyecto.costo_real ?? '0'} / ${proyecto.presupuesto_aprobado ?? '0'}
-                  </span>
-                </div>
-              )}
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Sponsor</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {proyecto.sponsor_nombre || 'Sin asignar'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Estado</p>
+              <Badge variant="info" size="sm">
+                {proyecto.estado_display ?? proyecto.estado}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Inicio Plan</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {proyecto.fecha_inicio_plan
+                  ? new Date(proyecto.fecha_inicio_plan).toLocaleDateString('es-CO')
+                  : 'Sin definir'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Fin Plan</p>
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {proyecto.fecha_fin_plan
+                  ? new Date(proyecto.fecha_fin_plan).toLocaleDateString('es-CO')
+                  : 'Sin definir'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Prioridad</p>
+              <Badge
+                variant={
+                  proyecto.prioridad === 'critica'
+                    ? 'danger'
+                    : proyecto.prioridad === 'alta'
+                      ? 'warning'
+                      : 'info'
+                }
+                size="sm"
+              >
+                {proyecto.prioridad_display}
+              </Badge>
             </div>
           </div>
-        </Card>
-      ))}
-    </div>
-  );
-};
 
-// ==================== KANBAN VIEW CON SELECTOR ====================
-
-interface KanbanViewProps {
-  proyectos: Proyecto[];
-  selectedProjectId: number | null;
-  onSelectProject: (id: number | null) => void;
-}
-
-const KanbanView = ({ proyectos, selectedProjectId, onSelectProject }: KanbanViewProps) => {
-  const projectOptions = proyectos.map((p) => ({
-    value: String(p.id),
-    label: `${p.codigo} - ${p.nombre}`,
-  }));
-
-  return (
-    <div className="space-y-4">
-      {/* Project selector */}
-      <Card>
-        <div className="p-4">
-          <Select
-            label="Proyecto"
-            placeholder="Selecciona un proyecto para ver sus actividades..."
-            value={selectedProjectId ? String(selectedProjectId) : ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              onSelectProject(val ? Number(val) : null);
-            }}
-            options={[{ value: '', label: 'Seleccionar proyecto...' }, ...projectOptions]}
-          />
-        </div>
-      </Card>
-
-      {/* Kanban board */}
-      <KanbanBoard proyectoId={selectedProjectId} />
-    </div>
-  );
-};
-
-// ==================== CALENDAR VIEW CON SELECTOR ====================
-
-interface CalendarViewWithSelectorProps {
-  proyectos: Proyecto[];
-  selectedProjectId: number | null;
-  onSelectProject: (id: number | null) => void;
-}
-
-const CalendarViewWithSelector = ({
-  proyectos,
-  selectedProjectId,
-  onSelectProject,
-}: CalendarViewWithSelectorProps) => {
-  const projectOptions = proyectos.map((p) => ({
-    value: String(p.id),
-    label: `${p.codigo} - ${p.nombre}`,
-  }));
-
-  return (
-    <div className="space-y-4">
-      {/* Project selector */}
-      <Card>
-        <div className="p-4">
-          <Select
-            label="Proyecto"
-            placeholder="Selecciona un proyecto para ver sus actividades..."
-            value={selectedProjectId ? String(selectedProjectId) : ''}
-            onChange={(e) => {
-              const val = e.target.value;
-              onSelectProject(val ? Number(val) : null);
-            }}
-            options={[{ value: '', label: 'Seleccionar proyecto...' }, ...projectOptions]}
-          />
-        </div>
-      </Card>
-
-      {/* Calendar view */}
-      <Card>
-        <div className="p-4">
-          <CalendarView proyectoId={selectedProjectId} />
+          {/* Progress bar */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Progreso General</span>
+              <span className="text-sm font-bold">{proyecto.porcentaje_avance ?? 0}%</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <div
+                className="bg-primary-600 h-2.5 rounded-full transition-all"
+                style={{ width: `${proyecto.porcentaje_avance ?? 0}%` }}
+              />
+            </div>
+          </div>
         </div>
       </Card>
     </div>
   );
 };
-
-// ==================== TIMELINE PLACEHOLDER ====================
-
-const TimelineView = () => (
-  <EmptyState
-    icon={<BarChart3 className="h-12 w-12" />}
-    title="Vista de cronograma"
-    description="La vista de cronograma (Gantt) estara disponible proximamente."
-  />
-);
 
 // ==================== COMPONENTE PRINCIPAL ====================
 
 export const MonitoreoSubTab = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Edit activity from Kanban/Calendar/Gantt
+  const [editActivity, setEditActivity] = useState<ActividadProyecto | null>(null);
+  const [showActivityForm, setShowActivityForm] = useState(false);
 
   const { data: proyectosEjecucion, isLoading: loadingEjecucion } = useProyectos({
     estado: 'ejecucion',
@@ -246,17 +179,28 @@ export const MonitoreoSubTab = () => {
 
   const isLoading = loadingEjecucion || loadingMonitoreo;
 
-  // Combinar proyectos de ambos estados
   const rawEjecucion =
     proyectosEjecucion?.results ?? (Array.isArray(proyectosEjecucion) ? proyectosEjecucion : []);
   const rawMonitoreo =
     proyectosMonitoreo?.results ?? (Array.isArray(proyectosMonitoreo) ? proyectosMonitoreo : []);
   const proyectos: Proyecto[] = [...rawEjecucion, ...rawMonitoreo];
 
-  const handleSelectProject = (proyecto: Proyecto) => {
-    setSelectedProjectId(proyecto.id);
-    setViewMode('kanban');
-  };
+  // Auto-select first project
+  useEffect(() => {
+    if (proyectos.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(proyectos[0].id);
+    }
+  }, [proyectos, selectedProjectId]);
+
+  const selectedProyecto = proyectos.find((p) => p.id === selectedProjectId);
+
+  const proyectoOptions = [
+    { value: '', label: 'Seleccionar proyecto...' },
+    ...proyectos.map((p) => ({
+      value: String(p.id),
+      label: `${p.codigo} - ${p.nombre}`,
+    })),
+  ];
 
   if (isLoading) {
     return (
@@ -273,48 +217,102 @@ export const MonitoreoSubTab = () => {
     );
   }
 
-  const totalProyectos = proyectos.length;
+  if (proyectos.length === 0) {
+    return (
+      <EmptyState
+        icon={<Activity className="h-12 w-12" />}
+        title="No hay proyectos en ejecución"
+        description="Los proyectos pasarán a esta fase desde planificación"
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header con toggle de vista */}
-      <SectionHeader
-        icon={
-          <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-            <Activity className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-          </div>
-        }
-        title="Ejecucion y Monitoreo"
-        description={`${totalProyectos} proyecto${totalProyectos !== 1 ? 's' : ''} en ejecucion o monitoreo`}
-        actions={
-          <ViewToggle
-            value={viewMode}
-            onChange={setViewMode}
-            options={VIEW_OPTIONS}
-            moduleColor="purple"
+    <div className="space-y-4">
+      {/* Project Selector */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+        <div className="w-full sm:max-w-md">
+          <Select
+            label="Proyecto"
+            value={selectedProjectId ? String(selectedProjectId) : ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedProjectId(val ? Number(val) : null);
+              setActiveTab('dashboard');
+            }}
+            options={proyectoOptions}
           />
-        }
-      />
+        </div>
+        {selectedProyecto && (
+          <div className="flex items-center gap-2 pb-1">
+            <Badge variant="info" size="sm">
+              {selectedProyecto.codigo}
+            </Badge>
+            <Badge variant="primary" size="sm">
+              {selectedProyecto.estado_display ?? selectedProyecto.estado}
+            </Badge>
+            <span className="text-xs text-gray-500">
+              {selectedProyecto.porcentaje_avance ?? 0}% avance
+            </span>
+          </div>
+        )}
+      </div>
 
-      {/* Contenido segun vista seleccionada */}
-      {viewMode === 'list' && (
-        <ProyectoListView proyectos={proyectos} onSelectProject={handleSelectProject} />
+      {selectedProjectId && (
+        <>
+          {/* Tabs */}
+          <Tabs
+            tabs={MONITOREO_TABS}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            variant="underline"
+          />
+
+          {/* Tab Content */}
+          <div className="mt-4">
+            {activeTab === 'dashboard' && <DashboardTab proyectoId={selectedProjectId} />}
+            {activeTab === 'actividades' && <ActividadesSection proyectoId={selectedProjectId} />}
+            {activeTab === 'kanban' && (
+              <KanbanBoard
+                proyectoId={selectedProjectId}
+                onCardClick={(actividad) => {
+                  setEditActivity(actividad);
+                  setShowActivityForm(true);
+                }}
+              />
+            )}
+            {activeTab === 'gantt' && <GanttView proyectoId={selectedProjectId} />}
+            {activeTab === 'riesgos' && <RiesgosSection proyectoId={selectedProjectId} />}
+            {activeTab === 'seguimiento' && <SeguimientoSection proyectoId={selectedProjectId} />}
+            {activeTab === 'calendario' && (
+              <Card>
+                <div className="p-4">
+                  <CalendarView
+                    proyectoId={selectedProjectId}
+                    onActivityClick={(actividad) => {
+                      setEditActivity(actividad);
+                      setShowActivityForm(true);
+                    }}
+                  />
+                </div>
+              </Card>
+            )}
+          </div>
+        </>
       )}
-      {viewMode === 'kanban' && (
-        <KanbanView
-          proyectos={proyectos}
-          selectedProjectId={selectedProjectId}
-          onSelectProject={setSelectedProjectId}
+
+      {/* Shared Activity Edit Modal */}
+      {showActivityForm && selectedProjectId && (
+        <ActividadFormModal
+          actividad={editActivity}
+          proyectoId={selectedProjectId}
+          isOpen={showActivityForm}
+          onClose={() => {
+            setShowActivityForm(false);
+            setEditActivity(null);
+          }}
         />
       )}
-      {viewMode === 'calendario' && (
-        <CalendarViewWithSelector
-          proyectos={proyectos}
-          selectedProjectId={selectedProjectId}
-          onSelectProject={setSelectedProjectId}
-        />
-      )}
-      {viewMode === 'timeline' && <TimelineView />}
     </div>
   );
 };

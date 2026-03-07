@@ -28,19 +28,17 @@ export type TipoProyecto =
   | 'normativo'
   | 'otro';
 
-export type RolProyecto =
-  | 'sponsor'
-  | 'director'
-  | 'gerente'
-  | 'lider_tecnico'
-  | 'miembro'
-  | 'stakeholder'
-  | 'observador';
-
 export type SaludProyecto = 'verde' | 'amarillo' | 'rojo';
 
-// Origen del proyecto (trazabilidad PMI/ISO)
-export type OrigenProyecto = 'manual' | 'cambio' | 'objetivo' | 'auditoria' | 'riesgo' | 'mejora';
+// Origen del proyecto (trazabilidad PMI/ISO) — valores de Proyecto.OrigenProyecto en backend
+export type OrigenProyecto =
+  | 'manual'
+  | 'cambio'
+  | 'objetivo'
+  | 'estrategia_tows'
+  | 'auditoria'
+  | 'riesgo'
+  | 'mejora';
 
 // Estados para Portafolio
 export type EstadoPortafolio = 'activo' | 'en_revision' | 'archivado';
@@ -256,94 +254,417 @@ export interface UpdateProyectoDTO {
   is_active?: boolean;
 }
 
-// ==================== EQUIPO DE PROYECTO ====================
+// ==================== PROJECT CHARTER ====================
+// Campos alineados con ProjectCharterSerializer del backend
 
-export interface EquipoProyecto {
+export interface ProjectCharter {
   id: number;
   proyecto: number;
-  proyecto_name?: string;
+  proposito: string;
+  objetivos_medibles: string;
+  requisitos_alto_nivel?: string | null;
+  descripcion_alto_nivel?: string | null;
+  supuestos?: string | null;
+  restricciones?: string | null;
+  hitos_clave?: string | null;
+  riesgos_alto_nivel?: string | null;
+  resumen_presupuesto?: string | null;
+  resumen_cronograma?: string | null;
+  criterios_exito?: string | null;
+  fecha_aprobacion?: string | null;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string | null;
+  observaciones_aprobacion?: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCharterDTO {
+  proyecto: number;
+  proposito: string;
+  objetivos_medibles: string;
+  requisitos_alto_nivel?: string;
+  descripcion_alto_nivel?: string;
+  supuestos?: string;
+  restricciones?: string;
+  hitos_clave?: string;
+  riesgos_alto_nivel?: string;
+  resumen_presupuesto?: string;
+  resumen_cronograma?: string;
+  criterios_exito?: string;
+}
+
+export type UpdateCharterDTO = Partial<CreateCharterDTO>;
+
+// ==================== INTERESADO (STAKEHOLDER) ====================
+// Campos alineados con InteresadoProyectoSerializer del backend
+
+export type NivelInteres = 'alto' | 'medio' | 'bajo';
+export type NivelInfluencia = 'alta' | 'media' | 'baja';
+
+export interface InteresadoProyecto {
+  id: number;
+  proyecto: number;
+  nombre: string;
+  cargo_rol?: string | null;
+  organizacion?: string | null;
+  contacto?: string | null;
+  nivel_interes: NivelInteres;
+  nivel_interes_display?: string;
+  nivel_influencia: NivelInfluencia;
+  nivel_influencia_display?: string;
+  requisitos?: string | null;
+  estrategia_gestion?: string | null;
+  is_internal: boolean;
+  is_active: boolean;
+  origen_parte_interesada_id?: number | null;
+  created_at: string;
+}
+
+export interface CreateInteresadoDTO {
+  proyecto: number;
+  nombre: string;
+  cargo_rol?: string;
+  organizacion?: string;
+  contacto?: string;
+  nivel_interes?: NivelInteres;
+  nivel_influencia?: NivelInfluencia;
+  requisitos?: string;
+  estrategia_gestion?: string;
+  is_internal?: boolean;
+  is_active?: boolean;
+}
+
+export type UpdateInteresadoDTO = Partial<Omit<CreateInteresadoDTO, 'proyecto'>>;
+
+export interface InteresadoFilters {
+  proyecto?: number;
+  nivel_interes?: NivelInteres;
+  nivel_influencia?: NivelInfluencia;
+  is_internal?: boolean;
+  is_active?: boolean;
+  search?: string;
+}
+
+export interface MatrizPoderInteres {
+  gestionar_cerca: InteresadoProyecto[];
+  mantener_satisfecho: InteresadoProyecto[];
+  mantener_informado: InteresadoProyecto[];
+  monitorear: InteresadoProyecto[];
+}
+
+// ==================== FASE DEL PROYECTO ====================
+// Campos alineados con FaseProyectoSerializer del backend
+
+export interface FaseProyecto {
+  id: number;
+  proyecto: number;
+  orden: number;
+  nombre: string;
+  descripcion?: string | null;
+  fecha_inicio_plan?: string | null;
+  fecha_fin_plan?: string | null;
+  fecha_inicio_real?: string | null;
+  fecha_fin_real?: string | null;
+  porcentaje_avance: number;
+  entregables?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CreateFaseDTO {
+  proyecto: number;
+  orden?: number;
+  nombre: string;
+  descripcion?: string;
+  fecha_inicio_plan?: string;
+  fecha_fin_plan?: string;
+  entregables?: string;
+  is_active?: boolean;
+}
+
+export type UpdateFaseDTO = Partial<Omit<CreateFaseDTO, 'proyecto'>>;
+
+export interface FaseFilters {
+  proyecto?: number;
+  is_active?: boolean;
+}
+
+// ==================== RECURSO DEL PROYECTO ====================
+// Campos alineados con RecursoProyectoSerializer del backend
+
+export type TipoRecurso = 'humano' | 'material' | 'equipo' | 'servicio';
+
+export interface RecursoProyecto {
+  id: number;
+  proyecto: number;
+  tipo: TipoRecurso;
+  tipo_display?: string;
+  nombre: string;
+  descripcion?: string | null;
   usuario?: number | null;
-  usuario_name?: string | null;
-  cargo?: number | null;
-  cargo_name?: string | null;
-  rol: RolProyecto;
-  rol_display?: string;
-  responsabilidades?: string | null;
-  dedicacion_porcentaje?: number;
+  usuario_nombre?: string | null;
+  rol_proyecto?: string | null;
+  dedicacion_porcentaje: number;
+  costo_unitario: string;
+  cantidad: string;
+  costo_total: string;
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
 }
 
-export interface CreateEquipoProyectoDTO {
+export interface CreateRecursoDTO {
   proyecto: number;
+  tipo: TipoRecurso;
+  nombre: string;
+  descripcion?: string;
   usuario?: number;
-  cargo?: number;
-  rol: RolProyecto;
-  responsabilidades?: string;
+  rol_proyecto?: string;
   dedicacion_porcentaje?: number;
+  costo_unitario?: string;
+  cantidad?: string;
   fecha_inicio?: string;
   fecha_fin?: string;
   is_active?: boolean;
 }
 
-export interface UpdateEquipoProyectoDTO {
-  usuario?: number;
-  cargo?: number;
-  rol?: RolProyecto;
-  responsabilidades?: string;
-  dedicacion_porcentaje?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
+export type UpdateRecursoDTO = Partial<Omit<CreateRecursoDTO, 'proyecto'>>;
+
+export interface RecursoFilters {
+  proyecto?: number;
+  tipo?: TipoRecurso;
   is_active?: boolean;
 }
 
-// ==================== HITO DE PROYECTO ====================
+// ==================== RIESGO DEL PROYECTO ====================
+// Campos alineados con RiesgoProyectoSerializer del backend
 
-export interface HitoProyecto {
+export type ProbabilidadRiesgo = 'muy_alta' | 'alta' | 'media' | 'baja' | 'muy_baja';
+export type ImpactoRiesgo = 'muy_alto' | 'alto' | 'medio' | 'bajo' | 'muy_bajo';
+export type TipoRiesgoProyecto = 'amenaza' | 'oportunidad';
+export type EstrategiaRespuesta =
+  | 'evitar'
+  | 'transferir'
+  | 'mitigar'
+  | 'aceptar'
+  | 'explotar'
+  | 'compartir'
+  | 'mejorar';
+
+export interface RiesgoProyecto {
   id: number;
   proyecto: number;
-  proyecto_name?: string;
-  code: string;
-  name: string;
-  description?: string | null;
-  fecha_prevista: string;
-  fecha_real?: string | null;
-  is_completed: boolean;
-  completed_by?: number | null;
-  completed_by_name?: string | null;
-  completed_at?: string | null;
-  entregables?: string | null;
-  criterios_aceptacion?: string | null;
-  evidencia?: string | null;
+  codigo: string;
+  tipo: TipoRiesgoProyecto;
+  tipo_display?: string;
+  descripcion: string;
+  causa?: string | null;
+  efecto?: string | null;
+  probabilidad: ProbabilidadRiesgo;
+  probabilidad_display?: string;
+  impacto: ImpactoRiesgo;
+  impacto_display?: string;
+  nivel_riesgo?: number;
+  estrategia?: EstrategiaRespuesta | null;
+  plan_respuesta?: string | null;
+  responsable?: number | null;
+  responsable_nombre?: string | null;
+  is_materializado: boolean;
+  fecha_identificacion: string;
+  fecha_materializacion?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateHitoProyectoDTO {
+export interface CreateRiesgoDTO {
   proyecto: number;
-  code: string;
-  name: string;
-  description?: string;
-  fecha_prevista: string;
-  entregables?: string;
-  criterios_aceptacion?: string;
+  codigo: string;
+  tipo?: TipoRiesgoProyecto;
+  descripcion: string;
+  causa?: string;
+  efecto?: string;
+  probabilidad?: ProbabilidadRiesgo;
+  impacto?: ImpactoRiesgo;
+  estrategia?: EstrategiaRespuesta;
+  plan_respuesta?: string;
+  responsable?: number;
   is_active?: boolean;
 }
 
-export interface UpdateHitoProyectoDTO {
-  code?: string;
-  name?: string;
-  description?: string;
-  fecha_prevista?: string;
-  fecha_real?: string;
-  entregables?: string;
-  criterios_aceptacion?: string;
-  evidencia?: string;
+export type UpdateRiesgoDTO = Partial<Omit<CreateRiesgoDTO, 'proyecto'>>;
+
+export interface RiesgoFilters {
+  proyecto?: number;
+  tipo?: TipoRiesgoProyecto;
+  probabilidad?: ProbabilidadRiesgo;
+  impacto?: ImpactoRiesgo;
+  is_materializado?: boolean;
   is_active?: boolean;
+}
+
+export interface MatrizRiesgos {
+  matriz: Record<string, Record<string, RiesgoProyecto[]>>;
+  total_riesgos: number;
+  riesgos_alto_nivel: number;
+}
+
+// ==================== SEGUIMIENTO (EVM) ====================
+// Campos alineados con SeguimientoProyectoSerializer del backend
+
+export type EstadoGeneral = 'verde' | 'amarillo' | 'rojo';
+
+export interface SeguimientoProyecto {
+  id: number;
+  proyecto: number;
+  fecha: string;
+  porcentaje_avance: number;
+  costo_acumulado: string;
+  estado_general: EstadoGeneral;
+  logros_periodo?: string | null;
+  problemas_encontrados?: string | null;
+  acciones_correctivas?: string | null;
+  proximas_actividades?: string | null;
+  valor_planificado: string;
+  valor_ganado: string;
+  costo_actual: string;
+  observaciones?: string | null;
+  registrado_por?: number | null;
+  registrado_por_nombre?: string | null;
+  spi?: number;
+  cpi?: number;
+  created_at: string;
+}
+
+export interface CreateSeguimientoDTO {
+  proyecto: number;
+  fecha: string;
+  porcentaje_avance: number;
+  costo_acumulado?: string;
+  estado_general?: EstadoGeneral;
+  logros_periodo?: string;
+  problemas_encontrados?: string;
+  acciones_correctivas?: string;
+  proximas_actividades?: string;
+  valor_planificado?: string;
+  valor_ganado?: string;
+  costo_actual?: string;
+  observaciones?: string;
+}
+
+export type UpdateSeguimientoDTO = Partial<Omit<CreateSeguimientoDTO, 'proyecto'>>;
+
+export interface SeguimientoFilters {
+  proyecto?: number;
+  estado_general?: EstadoGeneral;
+}
+
+export interface CurvaSPoint {
+  fecha: string;
+  valor_planificado: number;
+  valor_ganado: number;
+  costo_actual: number;
+  avance: number;
+  spi: number;
+  cpi: number;
+}
+
+// ==================== LECCION APRENDIDA ====================
+// Campos alineados con LeccionAprendidaSerializer del backend
+
+export type TipoLeccion = 'exito' | 'problema' | 'mejora' | 'buena_practica';
+
+export interface LeccionAprendida {
+  id: number;
+  proyecto: number;
+  tipo: TipoLeccion;
+  tipo_display?: string;
+  titulo: string;
+  situacion: string;
+  accion_tomada?: string | null;
+  resultado?: string | null;
+  recomendacion: string;
+  area_conocimiento?: string | null;
+  tags?: string | null;
+  registrado_por?: number | null;
+  registrado_por_nombre?: string | null;
+  fecha_registro: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CreateLeccionDTO {
+  proyecto: number;
+  tipo: TipoLeccion;
+  titulo: string;
+  situacion: string;
+  accion_tomada?: string;
+  resultado?: string;
+  recomendacion: string;
+  area_conocimiento?: string;
+  tags?: string;
+}
+
+export type UpdateLeccionDTO = Partial<Omit<CreateLeccionDTO, 'proyecto'>>;
+
+export interface LeccionFilters {
+  proyecto?: number;
+  tipo?: TipoLeccion;
+  is_active?: boolean;
+  search?: string;
+}
+
+// ==================== ACTA DE CIERRE ====================
+// Campos alineados con ActaCierreSerializer del backend
+
+export interface ActaCierre {
+  id: number;
+  proyecto: number;
+  proyecto_codigo?: string;
+  proyecto_nombre?: string;
+  fecha_cierre: string;
+  objetivos_cumplidos: string;
+  objetivos_no_cumplidos?: string | null;
+  entregables_completados: string;
+  entregables_pendientes?: string | null;
+  presupuesto_final: string;
+  costo_final: string;
+  variacion_presupuesto: string;
+  duracion_planificada_dias: number;
+  duracion_real_dias: number;
+  evaluacion_general?: string | null;
+  recomendaciones_futuras?: string | null;
+  aprobado_por_sponsor: boolean;
+  fecha_aprobacion?: string | null;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string | null;
+  created_at: string;
+  created_by?: number | null;
+}
+
+export interface CreateActaCierreDTO {
+  proyecto: number;
+  fecha_cierre: string;
+  objetivos_cumplidos: string;
+  objetivos_no_cumplidos?: string;
+  entregables_completados: string;
+  entregables_pendientes?: string;
+  presupuesto_final: string;
+  costo_final: string;
+  duracion_planificada_dias: number;
+  duracion_real_dias: number;
+  evaluacion_general?: string;
+  recomendaciones_futuras?: string;
+}
+
+export type UpdateActaCierreDTO = Partial<Omit<CreateActaCierreDTO, 'proyecto'>>;
+
+export interface ActaCierreFilters {
+  proyecto?: number;
+  aprobado_por_sponsor?: boolean;
 }
 
 // ==================== DASHBOARD ====================
@@ -421,21 +742,6 @@ export interface ProyectoFilters {
   search?: string;
 }
 
-export interface EquipoProyectoFilters {
-  proyecto?: number;
-  usuario?: number;
-  rol?: RolProyecto;
-  is_active?: boolean;
-}
-
-export interface HitoProyectoFilters {
-  proyecto?: number;
-  is_completed?: boolean;
-  is_active?: boolean;
-  fecha_desde?: string;
-  fecha_hasta?: string;
-}
-
 // ==================== KANBAN ====================
 
 export type KanbanColumn = 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
@@ -470,6 +776,37 @@ export interface ActividadProyecto {
   updated_at: string;
 }
 
+export interface CreateActividadDTO {
+  proyecto: number;
+  fase?: number;
+  codigo_wbs?: string;
+  nombre: string;
+  descripcion?: string;
+  estado?: 'pendiente' | 'en_progreso' | 'completada' | 'bloqueada' | 'cancelada';
+  fecha_inicio_plan?: string;
+  fecha_fin_plan?: string;
+  duracion_estimada_dias?: number;
+  esfuerzo_estimado_horas?: string;
+  responsable?: number;
+  predecesoras?: number[];
+  prioridad?: number;
+  notas?: string;
+  kanban_column?: KanbanColumn;
+  is_active?: boolean;
+}
+
+export type UpdateActividadDTO = Partial<Omit<CreateActividadDTO, 'proyecto'>>;
+
+export interface ActividadFilters {
+  proyecto?: number;
+  fase?: number;
+  estado?: string;
+  responsable?: number;
+  is_active?: boolean;
+  kanban_column?: KanbanColumn;
+  search?: string;
+}
+
 export interface KanbanData {
   columns: Record<KanbanColumn, ActividadProyecto[]>;
   column_order: KanbanColumn[];
@@ -482,23 +819,21 @@ export interface KanbanReorderItem {
   kanban_order: number;
 }
 
-// ==================== PAGINATION ====================
-
-// PaginatedResponse: importar desde '@/types'
+export interface GanttItem {
+  id: number;
+  codigo_wbs: string;
+  nombre: string;
+  inicio: string | null;
+  fin: string | null;
+  avance: number;
+  responsable: string | null;
+  predecesoras: number[];
+  estado: string;
+}
 
 // ==================== SELECT OPTIONS ====================
 
 export interface SelectOption {
   value: string | number;
   label: string;
-}
-
-export interface ProyectosChoices {
-  estados_proyecto: SelectOption[];
-  prioridades: SelectOption[];
-  tipos_proyecto: SelectOption[];
-  roles_proyecto: SelectOption[];
-  estados_portafolio: SelectOption[];
-  estados_programa: SelectOption[];
-  salud_estados: SelectOption[];
 }

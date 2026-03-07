@@ -488,6 +488,13 @@ class InteresadoProyecto(models.Model):
 
     is_internal = models.BooleanField(default=True, help_text="Interesado interno o externo")
     is_active = models.BooleanField(default=True)
+
+    # Trazabilidad cross-module (patrón M1: IntegerField, NO FK directo)
+    origen_parte_interesada_id = models.PositiveBigIntegerField(
+        null=True, blank=True, db_index=True,
+        help_text="ID de ParteInteresada (Contexto §4.2) de donde se importó"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

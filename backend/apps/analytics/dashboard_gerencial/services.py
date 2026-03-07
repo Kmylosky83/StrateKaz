@@ -10,7 +10,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.apps import apps
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Count, Max, Q, Subquery, Sum
 from django.utils import timezone
 
 logger = logging.getLogger('analytics')
@@ -269,13 +269,121 @@ class CrossModuleStatsService:
     @classmethod
     def _get_proyectos_stats(cls, empresa_id: int) -> dict:
         total = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id)
+
+        # Desglose por estado (valores lowercase del TextChoices)
+        propuestos = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                     estado='propuesto')
+        iniciacion = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                     estado='iniciacion')
+        planificacion = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                        estado='planificacion')
         en_ejecucion = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
-                                       estado='EN_EJECUCION')
+                                       estado='ejecucion')
+        monitoreo = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                    estado='monitoreo')
+        cierre = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                 estado='cierre')
         completados = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
-                                      estado='COMPLETADO')
+                                      estado='completado')
+        cancelados = cls._safe_count('gestion_proyectos', 'Proyecto', empresa_id,
+                                     estado='cancelado')
+
+        # Métricas EVM del último seguimiento por proyecto
+        spi_promedio = None
+        cpi_promedio = None
+        seguimientos_qs = cls._safe_query(
+            'gestion_proyectos', 'SeguimientoProyecto', empresa_id
+        )
+        if seguimientos_qs is not None:
+            try:
+                # Último seguimiento por proyecto (max id por proyecto)
+                latest_seguimientos = seguimientos_qs.filter(
+                    id__in=Subquery(
+                        seguimientos_qs.values('proyecto').annotate(
+                            latest_id=Max('id')
+                        ).values('latest_id')
+                    )
+                )
+                aggs = latest_seguimientos.aggregate(
+                    spi_avg=Avg('spi'),
+                    cpi_avg=Avg('cpi'),
+                )
+                spi_promedio = round(float(aggs['spi_avg']), 2) if aggs['spi_avg'] else None
+                cpi_promedio = round(float(aggs['cpi_avg']), 2) if aggs['cpi_avg'] else None
+            except Exception as e:
+                logger.debug(f"Error calculando EVM stats: {e}")
+
+        # Presupuesto total vs ejecutado
+        presupuesto_total = 0
+        costo_total = 0
+        proyectos_qs = cls._safe_query('gestion_proyectos', 'Proyecto', empresa_id)
+        if proyectos_qs is not None:
+            try:
+                aggs = proyectos_qs.aggregate(
+                    pres_total=Sum('presupuesto_aprobado'),
+                    costo_total=Sum('costo_real'),
+                )
+                presupuesto_total = float(aggs['pres_total'] or 0)
+                costo_total = float(aggs['costo_total'] or 0)
+            except Exception as e:
+                logger.debug(f"Error calculando presupuesto stats: {e}")
+
+        # Riesgos alto nivel
+        riesgos_alto = cls._safe_count(
+            'gestion_proyectos', 'RiesgoProyecto', empresa_id,
+            nivel_riesgo__gte=15
+        )
+
+        # Lecciones aprendidas
+        total_lecciones = cls._safe_count(
+            'gestion_proyectos', 'LeccionAprendida', empresa_id
+        )
+
+        # Seguimientos con estado rojo (crítico)
+        proyectos_criticos = 0
+        if seguimientos_qs is not None:
+            try:
+                proyectos_criticos = seguimientos_qs.filter(
+                    id__in=Subquery(
+                        seguimientos_qs.values('proyecto').annotate(
+                            latest_id=Max('id')
+                        ).values('latest_id')
+                    ),
+                    estado_general='rojo',
+                ).count()
+            except Exception:
+                pass
+
+        # Tasa de cierre
+        tasa_cierre = round((completados / total) * 100, 1) if total > 0 else 0
 
         return {
             'total_proyectos': total,
-            'en_ejecucion': en_ejecucion,
+            'por_estado': {
+                'propuestos': propuestos,
+                'iniciacion': iniciacion,
+                'planificacion': planificacion,
+                'ejecucion': en_ejecucion,
+                'monitoreo': monitoreo,
+                'cierre': cierre,
+                'completados': completados,
+                'cancelados': cancelados,
+            },
+            'en_ejecucion': en_ejecucion + monitoreo,
             'completados': completados,
+            'tasa_cierre': tasa_cierre,
+            'evm': {
+                'spi_promedio': spi_promedio,
+                'cpi_promedio': cpi_promedio,
+            },
+            'presupuesto': {
+                'total_aprobado': presupuesto_total,
+                'total_ejecutado': costo_total,
+                'variacion': round(
+                    ((costo_total - presupuesto_total) / presupuesto_total) * 100, 1
+                ) if presupuesto_total > 0 else 0,
+            },
+            'riesgos_alto_nivel': riesgos_alto,
+            'lecciones_aprendidas': total_lecciones,
+            'proyectos_criticos': proyectos_criticos,
         }

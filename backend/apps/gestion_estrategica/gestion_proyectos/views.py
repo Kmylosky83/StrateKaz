@@ -404,6 +404,24 @@ class ProjectCharterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['proyecto']
 
+    @action(detail=True, methods=['post'], url_path='aprobar')
+    def aprobar(self, request, pk=None):
+        """Aprueba el charter con fecha y observaciones"""
+        charter = self.get_object()
+        from django.utils import timezone
+
+        charter.fecha_aprobacion = request.data.get(
+            'fecha_aprobacion', timezone.now().date()
+        )
+        charter.aprobado_por = request.user
+        charter.observaciones_aprobacion = request.data.get(
+            'observaciones_aprobacion', ''
+        )
+        charter.save(update_fields=[
+            'fecha_aprobacion', 'aprobado_por', 'observaciones_aprobacion'
+        ])
+        return Response(ProjectCharterSerializer(charter).data)
+
 
 class InteresadoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Interesados/Stakeholders"""
@@ -413,6 +431,79 @@ class InteresadoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['proyecto', 'nivel_interes', 'nivel_influencia', 'is_internal', 'is_active']
     search_fields = ['nombre', 'cargo_rol', 'organizacion']
+
+    @action(detail=False, methods=['post'], url_path='importar-desde-contexto')
+    def importar_desde_contexto(self, request):
+        """Importa ParteInteresada (Contexto §4.2) como InteresadoProyecto.
+        Payload: { proyecto_id: int, partes_interesadas_ids: int[] }
+        """
+        proyecto_id = request.data.get('proyecto_id')
+        pi_ids = request.data.get('partes_interesadas_ids', [])
+
+        if not proyecto_id or not pi_ids:
+            return Response(
+                {'detail': 'Se requieren proyecto_id y partes_interesadas_ids'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            proyecto = Proyecto.objects.get(pk=proyecto_id)
+        except Proyecto.DoesNotExist:
+            return Response(
+                {'detail': 'Proyecto no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Cross-module: apps.get_model (NO FK directo)
+        ParteInteresada = apps.get_model('gestion_estrategica_contexto', 'ParteInteresada')
+        partes = ParteInteresada.objects.filter(
+            id__in=pi_ids, is_active=True
+        ).select_related('tipo')
+
+        creados = []
+        for pi in partes:
+            # Evitar duplicados por origen
+            if InteresadoProyecto.objects.filter(
+                proyecto=proyecto,
+                origen_parte_interesada_id=pi.id
+            ).exists():
+                continue
+
+            # Mapear categoría → is_internal
+            is_internal = True
+            if hasattr(pi, 'tipo') and pi.tipo:
+                is_internal = getattr(pi.tipo, 'categoria', 'interna') == 'interna'
+
+            # Contacto: combinar email + teléfono
+            contacto_parts = []
+            if getattr(pi, 'email', ''):
+                contacto_parts.append(pi.email)
+            if getattr(pi, 'telefono', ''):
+                contacto_parts.append(pi.telefono)
+
+            interesado = InteresadoProyecto.objects.create(
+                proyecto=proyecto,
+                nombre=pi.nombre,
+                cargo_rol=getattr(pi, 'cargo_representante', '') or '',
+                organizacion=(
+                    pi.tipo.grupo.nombre if hasattr(pi, 'tipo')
+                    and pi.tipo and hasattr(pi.tipo, 'grupo')
+                    and pi.tipo.grupo else ''
+                ),
+                contacto=', '.join(contacto_parts),
+                nivel_interes=getattr(pi, 'nivel_interes', 'medio'),
+                nivel_influencia=getattr(pi, 'nivel_influencia_pi', 'media'),
+                requisitos=getattr(pi, 'requisitos_pertinentes', '') or '',
+                estrategia_gestion=getattr(pi, 'temas_interes_pi', '') or '',
+                is_internal=is_internal,
+                origen_parte_interesada_id=pi.id,
+            )
+            creados.append(interesado)
+
+        return Response({
+            'importados': len(creados),
+            'interesados': InteresadoProyectoSerializer(creados, many=True).data,
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'], url_path='matriz-poder-interes')
     def matriz_poder_interes(self, request):

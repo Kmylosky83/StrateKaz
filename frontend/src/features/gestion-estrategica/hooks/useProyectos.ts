@@ -1,50 +1,81 @@
-﻿/**
+/**
  * React Query Hooks para Gestión de Proyectos PMI
  * Sistema de Gestión StrateKaz
- * Semana 5: Gestión de Proyectos
+ * Hooks alineados con backend viewsets y @actions
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import {
   proyectosApi,
-  equipoProyectoApi,
-  hitosProyectoApi,
-  proyectosChoicesApi,
+  chartersApi,
+  interesadosApi,
+  fasesApi,
+  actividadesApi,
+  recursosApi,
+  riesgosProyectoApi,
+  seguimientosApi,
+  leccionesApi,
+  actasCierreApi,
 } from '../api/proyectosApi';
 import type {
   CreateProyectoDTO,
   UpdateProyectoDTO,
   ProyectoFilters,
-  CreateEquipoProyectoDTO,
-  UpdateEquipoProyectoDTO,
-  EquipoProyectoFilters,
-  CreateHitoProyectoDTO,
-  UpdateHitoProyectoDTO,
-  HitoProyectoFilters,
+  CreateCharterDTO,
+  UpdateCharterDTO,
+  CreateInteresadoDTO,
+  UpdateInteresadoDTO,
+  InteresadoFilters,
+  CreateFaseDTO,
+  UpdateFaseDTO,
+  FaseFilters,
+  CreateActividadDTO,
+  UpdateActividadDTO,
+  ActividadFilters,
+  KanbanReorderItem,
+  CreateRecursoDTO,
+  UpdateRecursoDTO,
+  RecursoFilters,
+  CreateRiesgoDTO,
+  UpdateRiesgoDTO,
+  RiesgoFilters,
+  CreateSeguimientoDTO,
+  UpdateSeguimientoDTO,
+  SeguimientoFilters,
+  CreateLeccionDTO,
+  UpdateLeccionDTO,
+  LeccionFilters,
+  CreateActaCierreDTO,
+  UpdateActaCierreDTO,
+  ActaCierreFilters,
 } from '../types/proyectos';
 
 // ==================== QUERY KEYS ====================
 
 export const proyectosKeys = {
-  // Base key para invalidar TODAS las queries de proyectos
   all: ['proyectos'] as const,
-  // Proyectos
   proyectos: (filters?: ProyectoFilters) => ['proyectos', 'list', filters] as const,
   proyecto: (id: number) => ['proyectos', 'detail', id] as const,
   proyectosDashboard: ['proyectos', 'dashboard'] as const,
   proyectosPorEstado: ['proyectos', 'por-estado'] as const,
-
-  // Equipo
-  equipos: (filters?: EquipoProyectoFilters) => ['equipo-proyecto', filters] as const,
-  equipo: (id: number) => ['equipo-proyecto', id] as const,
-
-  // Hitos
-  hitos: (filters?: HitoProyectoFilters) => ['hitos-proyecto', filters] as const,
-  hito: (id: number) => ['hito-proyecto', id] as const,
-
-  // Choices
-  choices: ['proyectos-choices'] as const,
+  // Sub-models
+  charters: (filters?: { proyecto?: number }) => ['proyectos', 'charters', filters] as const,
+  charter: (id: number) => ['proyectos', 'charters', 'detail', id] as const,
+  interesados: (filters?: InteresadoFilters) => ['proyectos', 'interesados', filters] as const,
+  matrizPoderInteres: (proyectoId: number) =>
+    ['proyectos', 'interesados', 'matriz', proyectoId] as const,
+  fases: (filters?: FaseFilters) => ['proyectos', 'fases', filters] as const,
+  actividades: (filters?: ActividadFilters) => ['proyectos', 'actividades', filters] as const,
+  gantt: (proyectoId: number) => ['proyectos', 'actividades', 'gantt', proyectoId] as const,
+  kanban: (proyectoId: number) => ['proyectos', 'actividades', 'kanban', proyectoId] as const,
+  recursos: (filters?: RecursoFilters) => ['proyectos', 'recursos', filters] as const,
+  riesgos: (filters?: RiesgoFilters) => ['proyectos', 'riesgos', filters] as const,
+  matrizRiesgos: (proyectoId: number) => ['proyectos', 'riesgos', 'matriz', proyectoId] as const,
+  seguimientos: (filters?: SeguimientoFilters) => ['proyectos', 'seguimientos', filters] as const,
+  curvaS: (proyectoId: number) => ['proyectos', 'seguimientos', 'curva-s', proyectoId] as const,
+  lecciones: (filters?: LeccionFilters) => ['proyectos', 'lecciones', filters] as const,
+  actasCierre: (filters?: ActaCierreFilters) => ['proyectos', 'actas-cierre', filters] as const,
 };
 
 // ==================== HELPERS ====================
@@ -67,7 +98,7 @@ const getErrorMessage = (error: unknown, defaultMessage: string): string => {
   return defaultMessage;
 };
 
-// ==================== PROYECTOS HOOKS ====================
+// ==================== PROYECTOS ====================
 
 export const useProyectos = (filters?: ProyectoFilters) => {
   return useQuery({
@@ -156,170 +187,577 @@ export const useCambiarEstadoProyecto = () => {
   });
 };
 
-export const useActualizarSaludProyecto = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: { health_status: string; health_notes?: string };
-    }) => proyectosApi.actualizarSalud(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
-      toast.success('Salud del proyecto actualizada');
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al actualizar la salud del proyecto'));
-    },
+// ==================== CHARTERS ====================
+
+export const useCharters = (filters?: { proyecto?: number }) => {
+  return useQuery({
+    queryKey: proyectosKeys.charters(filters),
+    queryFn: () => chartersApi.getAll(filters),
+    enabled: !!filters?.proyecto,
   });
 };
 
-// ==================== EQUIPO PROYECTO HOOKS ====================
-
-export const useEquipoProyecto = (filters?: EquipoProyectoFilters) => {
+export const useCharter = (id: number) => {
   return useQuery({
-    queryKey: proyectosKeys.equipos(filters),
-    queryFn: () => equipoProyectoApi.getAll(filters),
-  });
-};
-
-export const useEquipoProyectoById = (id: number) => {
-  return useQuery({
-    queryKey: proyectosKeys.equipo(id),
-    queryFn: () => equipoProyectoApi.getById(id),
+    queryKey: proyectosKeys.charter(id),
+    queryFn: () => chartersApi.getById(id),
     enabled: !!id,
   });
 };
 
-export const useCreateEquipoProyecto = () => {
+export const useCreateCharter = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateEquipoProyectoDTO) => equipoProyectoApi.create(data),
+    mutationFn: (data: CreateCharterDTO) => chartersApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
-      toast.success('Miembro del equipo agregado exitosamente');
+      toast.success('Charter creado exitosamente');
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al agregar miembro al equipo'));
+      toast.error(getErrorMessage(error, 'Error al crear el charter'));
     },
   });
 };
 
-export const useUpdateEquipoProyecto = () => {
+export const useUpdateCharter = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateEquipoProyectoDTO }) =>
-      equipoProyectoApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
-      toast.success('Miembro del equipo actualizado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al actualizar miembro del equipo'));
-    },
-  });
-};
-
-export const useDeleteEquipoProyecto = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => equipoProyectoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['equipo-proyecto'] });
-      toast.success('Miembro del equipo eliminado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al eliminar miembro del equipo'));
-    },
-  });
-};
-
-// ==================== HITOS PROYECTO HOOKS ====================
-
-export const useHitosProyecto = (filters?: HitoProyectoFilters) => {
-  return useQuery({
-    queryKey: proyectosKeys.hitos(filters),
-    queryFn: () => hitosProyectoApi.getAll(filters),
-  });
-};
-
-export const useHitoProyecto = (id: number) => {
-  return useQuery({
-    queryKey: proyectosKeys.hito(id),
-    queryFn: () => hitosProyectoApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateHitoProyecto = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateHitoProyectoDTO) => hitosProyectoApi.create(data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateCharterDTO }) =>
+      chartersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
-      toast.success('Hito creado exitosamente');
+      toast.success('Charter actualizado exitosamente');
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al crear el hito'));
+      toast.error(getErrorMessage(error, 'Error al actualizar el charter'));
     },
   });
 };
 
-export const useUpdateHitoProyecto = () => {
+export const useDeleteCharter = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateHitoProyectoDTO }) =>
-      hitosProyectoApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
-      toast.success('Hito actualizado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al actualizar el hito'));
-    },
-  });
-};
-
-export const useDeleteHitoProyecto = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => hitosProyectoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
-      toast.success('Hito eliminado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al eliminar el hito'));
-    },
-  });
-};
-
-export const useCompletarHitoProyecto = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, evidencia }: { id: number; evidencia?: string }) =>
-      hitosProyectoApi.completar(id, { evidencia }),
+    mutationFn: (id: number) => chartersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['hitos-proyecto'] });
-      toast.success('Hito completado exitosamente');
+      toast.success('Charter eliminado exitosamente');
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Error al completar el hito'));
+      toast.error(getErrorMessage(error, 'Error al eliminar el charter'));
     },
   });
 };
 
-// ==================== CHOICES HOOKS ====================
+export const useAprobarCharter = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { observaciones_aprobacion?: string } }) =>
+      chartersApi.aprobar(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Charter aprobado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar el charter'));
+    },
+  });
+};
 
-export const useProyectosChoices = () => {
+// ==================== INTERESADOS (STAKEHOLDERS) ====================
+
+export const useInteresados = (filters?: InteresadoFilters) => {
   return useQuery({
-    queryKey: proyectosKeys.choices,
-    queryFn: proyectosChoicesApi.getChoices,
-    staleTime: Infinity,
+    queryKey: proyectosKeys.interesados(filters),
+    queryFn: () => interesadosApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateInteresado = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateInteresadoDTO) => interesadosApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Interesado agregado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al agregar el interesado'));
+    },
+  });
+};
+
+export const useUpdateInteresado = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateInteresadoDTO }) =>
+      interesadosApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Interesado actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el interesado'));
+    },
+  });
+};
+
+export const useDeleteInteresado = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => interesadosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Interesado eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el interesado'));
+    },
+  });
+};
+
+export const useMatrizPoderInteres = (proyectoId: number) => {
+  return useQuery({
+    queryKey: proyectosKeys.matrizPoderInteres(proyectoId),
+    queryFn: () => interesadosApi.getMatrizPoderInteres(proyectoId),
+    enabled: !!proyectoId,
+  });
+};
+
+export const useImportarStakeholders = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { proyecto_id: number; partes_interesadas_ids: number[] }) =>
+      interesadosApi.importarDesdeContexto(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success(`${result.creados} interesados importados exitosamente`);
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al importar interesados'));
+    },
+  });
+};
+
+// ==================== FASES ====================
+
+export const useFases = (filters?: FaseFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.fases(filters),
+    queryFn: () => fasesApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateFase = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateFaseDTO) => fasesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Fase creada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear la fase'));
+    },
+  });
+};
+
+export const useUpdateFase = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateFaseDTO }) => fasesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Fase actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar la fase'));
+    },
+  });
+};
+
+export const useDeleteFase = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => fasesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Fase eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar la fase'));
+    },
+  });
+};
+
+// ==================== ACTIVIDADES ====================
+
+export const useActividades = (filters?: ActividadFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.actividades(filters),
+    queryFn: () => actividadesApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateActividad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateActividadDTO) => actividadesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Actividad creada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear la actividad'));
+    },
+  });
+};
+
+export const useUpdateActividad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateActividadDTO }) =>
+      actividadesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Actividad actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar la actividad'));
+    },
+  });
+};
+
+export const useDeleteActividad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => actividadesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Actividad eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar la actividad'));
+    },
+  });
+};
+
+export const useGantt = (proyectoId: number) => {
+  return useQuery({
+    queryKey: proyectosKeys.gantt(proyectoId),
+    queryFn: () => actividadesApi.getGantt(proyectoId),
+    enabled: !!proyectoId,
+  });
+};
+
+export const useKanban = (proyectoId: number) => {
+  return useQuery({
+    queryKey: proyectosKeys.kanban(proyectoId),
+    queryFn: () => actividadesApi.getKanban(proyectoId),
+    enabled: !!proyectoId,
+  });
+};
+
+export const useReorderKanban = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (items: KanbanReorderItem[]) => actividadesApi.reorder(items),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al reordenar actividades'));
+    },
+  });
+};
+
+// ==================== RECURSOS ====================
+
+export const useRecursos = (filters?: RecursoFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.recursos(filters),
+    queryFn: () => recursosApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateRecurso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateRecursoDTO) => recursosApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Recurso agregado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al agregar el recurso'));
+    },
+  });
+};
+
+export const useUpdateRecurso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateRecursoDTO }) =>
+      recursosApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Recurso actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el recurso'));
+    },
+  });
+};
+
+export const useDeleteRecurso = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => recursosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Recurso eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el recurso'));
+    },
+  });
+};
+
+// ==================== RIESGOS ====================
+
+export const useRiesgosProyecto = (filters?: RiesgoFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.riesgos(filters),
+    queryFn: () => riesgosProyectoApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateRiesgo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateRiesgoDTO) => riesgosProyectoApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Riesgo registrado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar el riesgo'));
+    },
+  });
+};
+
+export const useUpdateRiesgo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateRiesgoDTO }) =>
+      riesgosProyectoApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Riesgo actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el riesgo'));
+    },
+  });
+};
+
+export const useDeleteRiesgo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => riesgosProyectoApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Riesgo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el riesgo'));
+    },
+  });
+};
+
+export const useMatrizRiesgos = (proyectoId: number) => {
+  return useQuery({
+    queryKey: proyectosKeys.matrizRiesgos(proyectoId),
+    queryFn: () => riesgosProyectoApi.getMatrizRiesgos(proyectoId),
+    enabled: !!proyectoId,
+  });
+};
+
+// ==================== SEGUIMIENTOS (EVM) ====================
+
+export const useSeguimientos = (filters?: SeguimientoFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.seguimientos(filters),
+    queryFn: () => seguimientosApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateSeguimiento = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateSeguimientoDTO) => seguimientosApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Seguimiento registrado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar el seguimiento'));
+    },
+  });
+};
+
+export const useUpdateSeguimiento = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateSeguimientoDTO }) =>
+      seguimientosApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Seguimiento actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el seguimiento'));
+    },
+  });
+};
+
+export const useDeleteSeguimiento = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => seguimientosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Seguimiento eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el seguimiento'));
+    },
+  });
+};
+
+export const useCurvaS = (proyectoId: number) => {
+  return useQuery({
+    queryKey: proyectosKeys.curvaS(proyectoId),
+    queryFn: () => seguimientosApi.getCurvaS(proyectoId),
+    enabled: !!proyectoId,
+  });
+};
+
+// ==================== LECCIONES APRENDIDAS ====================
+
+export const useLecciones = (filters?: LeccionFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.lecciones(filters),
+    queryFn: () => leccionesApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateLeccion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateLeccionDTO) => leccionesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Lección aprendida registrada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar la lección'));
+    },
+  });
+};
+
+export const useUpdateLeccion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateLeccionDTO }) =>
+      leccionesApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Lección actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar la lección'));
+    },
+  });
+};
+
+export const useDeleteLeccion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => leccionesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Lección eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar la lección'));
+    },
+  });
+};
+
+export const useBuscarLecciones = (q: string) => {
+  return useQuery({
+    queryKey: ['proyectos', 'lecciones', 'buscar', q] as const,
+    queryFn: () => leccionesApi.buscar(q),
+    enabled: q.length >= 2,
+  });
+};
+
+// ==================== ACTAS DE CIERRE ====================
+
+export const useActasCierre = (filters?: ActaCierreFilters) => {
+  return useQuery({
+    queryKey: proyectosKeys.actasCierre(filters),
+    queryFn: () => actasCierreApi.getAll(filters),
+    enabled: !!filters?.proyecto,
+  });
+};
+
+export const useCreateActaCierre = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateActaCierreDTO) => actasCierreApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Acta de cierre creada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear el acta de cierre'));
+    },
+  });
+};
+
+export const useUpdateActaCierre = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateActaCierreDTO }) =>
+      actasCierreApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Acta de cierre actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el acta de cierre'));
+    },
+  });
+};
+
+export const useDeleteActaCierre = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => actasCierreApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+      toast.success('Acta de cierre eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el acta de cierre'));
+    },
   });
 };

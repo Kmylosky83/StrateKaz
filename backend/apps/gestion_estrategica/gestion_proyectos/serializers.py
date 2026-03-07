@@ -12,7 +12,7 @@ from .models import (
 
 class PortafolioSerializer(serializers.ModelSerializer):
     responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
+        source='responsable.get_full_name', read_only=True, default=''
     )
     codigo = serializers.CharField(required=False, allow_blank=True, default='')
     total_programas = serializers.SerializerMethodField()
@@ -38,10 +38,10 @@ class PortafolioSerializer(serializers.ModelSerializer):
 
 class ProgramaSerializer(serializers.ModelSerializer):
     portafolio_nombre = serializers.CharField(
-        source='portafolio.nombre', read_only=True
+        source='portafolio.nombre', read_only=True, default=''
     )
     responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
+        source='responsable.get_full_name', read_only=True, default=''
     )
     codigo = serializers.CharField(required=False, allow_blank=True, default='')
     total_proyectos = serializers.SerializerMethodField()
@@ -64,13 +64,13 @@ class ProgramaSerializer(serializers.ModelSerializer):
 class ProyectoListSerializer(serializers.ModelSerializer):
     """Serializer ligero para listados"""
     programa_nombre = serializers.CharField(
-        source='programa.nombre', read_only=True
+        source='programa.nombre', read_only=True, default=''
     )
     gerente_nombre = serializers.CharField(
-        source='gerente_proyecto.get_full_name', read_only=True
+        source='gerente_proyecto.get_full_name', read_only=True, default=''
     )
     sponsor_nombre = serializers.CharField(
-        source='sponsor.get_full_name', read_only=True
+        source='sponsor.get_full_name', read_only=True, default=''
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -93,7 +93,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
 
 class ProjectCharterSerializer(serializers.ModelSerializer):
     aprobado_por_nombre = serializers.CharField(
-        source='aprobado_por.get_full_name', read_only=True
+        source='aprobado_por.get_full_name', read_only=True, default=''
     )
 
     class Meta:
@@ -125,10 +125,10 @@ class FaseProyectoSerializer(serializers.ModelSerializer):
 
 class ActividadProyectoSerializer(serializers.ModelSerializer):
     responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
+        source='responsable.get_full_name', read_only=True, default=''
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    fase_nombre = serializers.CharField(source='fase.nombre', read_only=True)
+    fase_nombre = serializers.CharField(source='fase.nombre', read_only=True, default='')
     kanban_column_display = serializers.CharField(
         source='get_kanban_column_display', read_only=True
     )
@@ -142,7 +142,7 @@ class ActividadProyectoSerializer(serializers.ModelSerializer):
 class RecursoProyectoSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     usuario_nombre = serializers.CharField(
-        source='usuario.get_full_name', read_only=True
+        source='usuario.get_full_name', read_only=True, default=''
     )
 
     class Meta:
@@ -159,7 +159,7 @@ class RiesgoProyectoSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     nivel_riesgo = serializers.IntegerField(read_only=True)
     responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
+        source='responsable.get_full_name', read_only=True, default=''
     )
 
     class Meta:
@@ -170,7 +170,7 @@ class RiesgoProyectoSerializer(serializers.ModelSerializer):
 
 class SeguimientoProyectoSerializer(serializers.ModelSerializer):
     registrado_por_nombre = serializers.CharField(
-        source='registrado_por.get_full_name', read_only=True
+        source='registrado_por.get_full_name', read_only=True, default=''
     )
     spi = serializers.FloatField(read_only=True)
     cpi = serializers.FloatField(read_only=True)
@@ -184,7 +184,7 @@ class SeguimientoProyectoSerializer(serializers.ModelSerializer):
 class LeccionAprendidaSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     registrado_por_nombre = serializers.CharField(
-        source='registrado_por.get_full_name', read_only=True
+        source='registrado_por.get_full_name', read_only=True, default=''
     )
 
     class Meta:
@@ -197,7 +197,7 @@ class ActaCierreSerializer(serializers.ModelSerializer):
     proyecto_codigo = serializers.CharField(source='proyecto.codigo', read_only=True)
     proyecto_nombre = serializers.CharField(source='proyecto.nombre', read_only=True)
     aprobado_por_nombre = serializers.CharField(
-        source='aprobado_por.get_full_name', read_only=True
+        source='aprobado_por.get_full_name', read_only=True, default=''
     )
 
     class Meta:
@@ -208,12 +208,12 @@ class ActaCierreSerializer(serializers.ModelSerializer):
 
 class ProyectoSerializer(serializers.ModelSerializer):
     """Serializer completo para detalle del proyecto"""
-    programa_nombre = serializers.CharField(source='programa.nombre', read_only=True)
+    programa_nombre = serializers.CharField(source='programa.nombre', read_only=True, default='')
     sponsor_nombre = serializers.CharField(
-        source='sponsor.get_full_name', read_only=True
+        source='sponsor.get_full_name', read_only=True, default=''
     )
     gerente_nombre = serializers.CharField(
-        source='gerente_proyecto.get_full_name', read_only=True
+        source='gerente_proyecto.get_full_name', read_only=True, default=''
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -221,8 +221,12 @@ class ProyectoSerializer(serializers.ModelSerializer):
 
     # Origen del proyecto (trazabilidad PMI/ISO)
     tipo_origen_display = serializers.CharField(source='get_tipo_origen_display', read_only=True)
-    origen_cambio_titulo = serializers.CharField(source='origen_cambio.titulo', read_only=True)
-    origen_objetivo_nombre = serializers.CharField(source='origen_objetivo.name', read_only=True)
+    origen_cambio_titulo = serializers.CharField(
+        source='origen_cambio.titulo', read_only=True, default=''
+    )
+    origen_objetivo_nombre = serializers.CharField(
+        source='origen_objetivo.name', read_only=True, default=''
+    )
 
     # Relaciones anidadas
     charter = ProjectCharterSerializer(read_only=True)

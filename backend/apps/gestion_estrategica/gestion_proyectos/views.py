@@ -396,8 +396,10 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class ProjectCharterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para Project Charters (Actas de Constitución)"""
+class ProjectCharterViewSet(viewsets.ModelViewSet):
+    """ViewSet para Project Charters (Actas de Constitución).
+    No usa StandardViewSetMixin porque ProjectCharter no tiene is_active.
+    """
     queryset = ProjectCharter.objects.select_related('proyecto', 'aprobado_por').all()
     serializer_class = ProjectCharterSerializer
     permission_classes = [IsAuthenticated]
@@ -710,8 +712,10 @@ class RiesgoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class SeguimientoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para gestionar Seguimientos del proyecto"""
+class SeguimientoProyectoViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestionar Seguimientos del proyecto.
+    No usa StandardViewSetMixin porque SeguimientoProyecto no tiene is_active.
+    """
     queryset = SeguimientoProyecto.objects.select_related('proyecto', 'registrado_por').all()
     serializer_class = SeguimientoProyectoSerializer
     permission_classes = [IsAuthenticated]
@@ -792,8 +796,10 @@ class LeccionAprendidaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ActaCierreViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para gestionar Actas de Cierre"""
+class ActaCierreViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestionar Actas de Cierre.
+    No usa StandardViewSetMixin porque ActaCierre no tiene is_active.
+    """
     queryset = ActaCierre.objects.select_related('proyecto', 'aprobado_por', 'created_by').all()
     serializer_class = ActaCierreSerializer
     permission_classes = [IsAuthenticated]

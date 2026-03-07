@@ -7,58 +7,78 @@ import { useState } from 'react';
 import { Badge } from '@/components/common';
 import { useProyectosPorEstado, useCambiarEstadoProyecto } from '../../hooks/useProyectos';
 import type { Proyecto, EstadoProyecto } from '../../types/proyectos';
-import { GripVertical, Calendar, User, TrendingUp, AlertCircle } from 'lucide-react';
+import {
+  GripVertical,
+  Calendar,
+  User,
+  TrendingUp,
+  AlertCircle,
+  FileText,
+  Rocket,
+  Ruler,
+  Zap,
+  BarChart3,
+  Package,
+  CheckCircle2,
+  type LucideIcon,
+} from 'lucide-react';
 
 // Configuración de columnas del Kanban
-const KANBAN_COLUMNS = [
+const KANBAN_COLUMNS: {
+  id: string;
+  label: string;
+  color: string;
+  borderColor: string;
+  icon: LucideIcon;
+}[] = [
   {
     id: 'propuesto',
     label: 'Propuesto',
     color: 'bg-gray-100 dark:bg-gray-800',
     borderColor: 'border-gray-300',
-    icon: '📋',
+    icon: FileText,
   },
   {
     id: 'iniciacion',
     label: 'Iniciación',
     color: 'bg-purple-50 dark:bg-purple-900/20',
     borderColor: 'border-purple-300',
-    icon: '🚀',
+    icon: Rocket,
   },
   {
     id: 'planificacion',
     label: 'Planificación',
     color: 'bg-blue-50 dark:bg-blue-900/20',
     borderColor: 'border-blue-300',
-    icon: '📐',
+    icon: Ruler,
   },
   {
     id: 'ejecucion',
     label: 'Ejecución',
     color: 'bg-orange-50 dark:bg-orange-900/20',
     borderColor: 'border-orange-300',
-    icon: '⚡',
+    icon: Zap,
   },
   {
     id: 'monitoreo',
     label: 'Monitoreo',
     color: 'bg-yellow-50 dark:bg-yellow-900/20',
     borderColor: 'border-yellow-300',
-    icon: '📊',
+    icon: BarChart3,
   },
   {
     id: 'cierre',
     label: 'Cierre',
     color: 'bg-indigo-50 dark:bg-indigo-900/20',
     borderColor: 'border-indigo-300',
-    icon: '📦',
+    icon: Package,
   },
   {
     id: 'completado',
     label: 'Completado',
     color: 'bg-green-50 dark:bg-green-900/20',
     borderColor: 'border-green-300',
-    icon: '✅',
+    icon: CheckCircle2,
   },
 ];
 
@@ -177,7 +197,7 @@ const KanbanColumn = ({
       {/* Header de la columna */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
-          <span className="text-sm">{column.icon}</span>
+          <column.icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{column.label}</h3>
         </div>
         <Badge variant="gray" size="sm">

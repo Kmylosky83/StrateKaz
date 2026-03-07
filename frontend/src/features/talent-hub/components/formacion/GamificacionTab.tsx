@@ -8,15 +8,15 @@ import { Spinner } from '@/components/common/Spinner';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
-import { Trophy, Medal, Star, Flame, TrendingUp } from 'lucide-react';
+import { Trophy, Medal, Star, Flame, TrendingUp, Gem, Target, type LucideIcon } from 'lucide-react';
 import { useLeaderboard, useBadges } from '../../hooks/useFormacionReinduccion';
 
-const TIPO_BADGE_ICON: Record<string, string> = {
-  logro: '🏆',
-  nivel: '⭐',
-  especial: '💎',
-  competencia: '🎯',
-  racha: '🔥',
+const TIPO_BADGE_ICON: Record<string, LucideIcon> = {
+  logro: Trophy,
+  nivel: Star,
+  especial: Gem,
+  competencia: Target,
+  racha: Flame,
 };
 
 export const GamificacionTab = () => {
@@ -170,7 +170,10 @@ export const GamificacionTab = () => {
                       className="flex items-center justify-center w-10 h-10 rounded-full text-lg"
                       style={{ backgroundColor: `${badge.color}20` }}
                     >
-                      {TIPO_BADGE_ICON[badge.tipo] || '🏅'}
+                      {(() => {
+                        const Icon = TIPO_BADGE_ICON[badge.tipo] || Medal;
+                        return <Icon className="h-5 w-5" style={{ color: badge.color }} />;
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

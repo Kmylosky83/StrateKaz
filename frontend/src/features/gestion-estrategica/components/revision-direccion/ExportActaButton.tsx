@@ -314,7 +314,7 @@ function ExportOptionsModal({
           {/* Info */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-800">
-              💡 El PDF incluirá encabezado con logo, pie de página con paginación, y formato
+              El PDF incluirá encabezado con logo, pie de página con paginación, y formato
               profesional según normas ISO.
             </p>
           </div>
@@ -322,20 +322,10 @@ function ExportOptionsModal({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={onConfirm}
-          >
+          <Button type="button" variant="primary" size="sm" onClick={onConfirm}>
             <FileDown size={16} />
             Exportar PDF
           </Button>

@@ -303,6 +303,8 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
             defaults = {
                 **config_data,
                 'empresa_id': empresa_id,
+                'is_active': True,       # Siempre activar al cargar sistema
+                'deleted_at': None,       # Restaurar si estaba soft-deleted
             }
 
             # Solo asignar created_by si es nuevo registro

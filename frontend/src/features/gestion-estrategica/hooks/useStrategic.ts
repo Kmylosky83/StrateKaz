@@ -177,8 +177,26 @@ const identityHooks = createCrudHooks<
 
 export const useIdentities = identityHooks.useList;
 export const useIdentity = identityHooks.useDetail;
-export const useCreateIdentity = identityHooks.useCreate;
 export const useDeleteIdentity = identityHooks.useDelete;
+
+// useCreateIdentity con lógica custom (refetch activeIdentity)
+// NO usar factory porque IdentidadTab consume useActiveIdentity (key: activeIdentity),
+// y el factory solo invalida lists() → la página no se actualiza.
+export const useCreateIdentity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateCorporateIdentityDTO) => identityApi.create(data),
+    onSuccess: async (newIdentity) => {
+      queryClient.setQueryData(strategicKeys.activeIdentity, newIdentity);
+      queryClient.invalidateQueries({ queryKey: identityKeys.lists() });
+      await queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Identidad corporativa creada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear la identidad corporativa');
+    },
+  });
+};
 
 // useUpdateIdentity con lógica custom (refetch activeIdentity)
 export const useUpdateIdentity = () => {

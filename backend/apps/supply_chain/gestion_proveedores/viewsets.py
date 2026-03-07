@@ -642,7 +642,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
             send_setup_password_email_task.delay(
                 user_email=email,
-                user_name=proveedor.nombre_comercial or proveedor.razon_social,
+                user_name=new_user.get_full_name() or new_user.username or proveedor.razon_social,
                 tenant_name=tenant_name,
                 cargo_name=cargo.name if cargo else '',
                 setup_url=setup_url,
@@ -744,7 +744,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                         secondary_color = '#1e40af'
                     send_setup_password_email_task.delay(
                         user_email=email,
-                        user_name=tenant_name,
+                        user_name=existing_user.get_full_name() or existing_user.username or tenant_name,
                         tenant_name=tenant_name,
                         cargo_name=cargo.name if cargo else '',
                         setup_url=setup_url,

@@ -568,7 +568,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
             send_setup_password_email_task.delay(
                 user_email=user.email,
-                user_name=tenant_name,
+                user_name=user.get_full_name() or user.username or tenant_name,
                 tenant_name=tenant_name,
                 cargo_name='Portal de Clientes',
                 setup_url=setup_url,

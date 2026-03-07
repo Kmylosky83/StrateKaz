@@ -125,7 +125,7 @@ def send_setup_password_email(user, *, entity_name, cargo_name=''):
 
         send_setup_password_email_task.delay(
             user_email=user.email,
-            user_name=user.first_name or entity_name,
+            user_name=user.get_full_name() or user.first_name or user.username or entity_name,
             tenant_name=entity_name,
             cargo_name=cargo_name,
             setup_url=setup_url,

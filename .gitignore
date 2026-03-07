@@ -110,6 +110,12 @@ redis_data/
 # Dev/test scripts (NEVER commit)
 _test_token.txt
 create_superuser.py
+test_*.sh
+deploy_sprint*.sh
+
+# Sprint/audit temp docs (use docs/ for permanent docs)
+SPRINT_*.md
+AUDITORIA_*.md
 
 # Claude Code local settings
 .claude/settings.local.json

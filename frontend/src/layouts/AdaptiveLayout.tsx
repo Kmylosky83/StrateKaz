@@ -11,17 +11,14 @@
  * También se encarga de cargar el perfil del User (core.User) cuando hay
  * tenant seleccionado pero el perfil aún no se ha cargado (ej: F5 refresh).
  *
- * IMPERSONACIÓN: Cuando un superadmin impersona un usuario portal-only,
- * no se fuerza el redirect vía <Navigate> — la navegación ya la maneja
- * el handler de impersonación. Se muestra un spinner breve mientras se
- * completa la navegación programática. Esto evita doble navegación
- * que causa pantalla negra.
+ * REDIRECT PORTAL: Se usa PortalRedirect (navigate imperativo + spinner)
+ * en vez de <Navigate> que renderiza null y causa flash negro en dark mode.
  *
- * SEGURIDAD: Los usuarios portal-only REALES son redirigidos forzosamente
+ * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente
  * a su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
 import { useEffect, useRef } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
@@ -29,6 +26,25 @@ import { DashboardLayout } from './DashboardLayout';
 import { PortalLayout } from './PortalLayout';
 
 const MAX_PROFILE_RETRIES = 3;
+
+/**
+ * PortalRedirect — Navega imperativamente mostrando un spinner.
+ *
+ * A diferencia de <Navigate> (que renderiza null → flash negro),
+ * este componente muestra un spinner visible mientras la navegación
+ * se completa. Funciona tanto para impersonación como para reload.
+ */
+const PortalRedirect = ({ to }: { to: string }) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate(to, { replace: true });
+  }, [to, navigate]);
+  return (
+    <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+    </div>
+  );
+};
 
 export const AdaptiveLayout = () => {
   const location = useLocation();
@@ -40,7 +56,6 @@ export const AdaptiveLayout = () => {
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
   const forceLogout = useAuthStore((s) => s.forceLogout);
-  const isImpersonating = useAuthStore((s) => s.isImpersonating);
 
   // Reset retry counter when user is loaded successfully
   useEffect(() => {
@@ -90,22 +105,11 @@ export const AdaptiveLayout = () => {
       return <PortalLayout />;
     }
 
-    // Impersonando pero aún no en ruta portal → spinner breve mientras
-    // el navigate() programático del handler de impersonación se completa.
-    // NO disparar <Navigate> para evitar doble navegación → pantalla negra.
-    if (isImpersonating) {
-      return (
-        <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-        </div>
-      );
-    }
-
-    // Usuario portal-only REAL (no impersonado) fuera de su portal → redirect forzado
-    if (isClientePortalUser(user)) {
-      return <Navigate to="/cliente-portal" replace />;
-    }
-    return <Navigate to="/proveedor-portal" replace />;
+    // No está en ruta portal → redirigir con spinner visible
+    // Usa PortalRedirect (navigate imperativo) en vez de <Navigate> (renderiza null → flash negro)
+    // Funciona tanto para: impersonación desde modal, reload con estado persistido, y portal real
+    const targetRoute = isClientePortalUser(user) ? '/cliente-portal' : '/proveedor-portal';
+    return <PortalRedirect to={targetRoute} />;
   }
 
   // Usuario normal (empleado interno o profesional colocado) → DashboardLayout

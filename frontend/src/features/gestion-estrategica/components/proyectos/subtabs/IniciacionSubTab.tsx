@@ -10,6 +10,7 @@
  * DS: Card + Badge + Button + SectionToolbar + Tabs + Select + BaseModal
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, EmptyState, Button } from '@/components/common';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
@@ -21,6 +22,7 @@ import {
   useUpdateProyecto,
   useCharters,
   useInteresados,
+  proyectosKeys,
 } from '../../../hooks/useProyectos';
 import { useSelectUsers } from '@/hooks/useSelectLists';
 import { CharterView } from '../charter/CharterView';
@@ -157,291 +159,6 @@ const ProgressIndicator = ({ checklist, completedCount, onItemClick }: ProgressI
         </div>
       </div>
     </Card>
-  );
-};
-
-// ==================== PROJECT SUMMARY (inline-editable) ====================
-
-interface ProjectSummaryProps {
-  proyecto: Proyecto;
-  proyectoId: number;
-}
-
-const ProjectSummary = ({ proyecto, proyectoId }: ProjectSummaryProps) => {
-  const updateProyecto = useUpdateProyecto();
-  const { data: users = [] } = useSelectUsers();
-  const [showEdit, setShowEdit] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  const [form, setForm] = useState({
-    sponsor: '',
-    gerente_proyecto: '',
-    fecha_inicio_plan: '',
-    fecha_fin_plan: '',
-    justificacion: '',
-    beneficios_esperados: '',
-    descripcion: '',
-  });
-
-  useEffect(() => {
-    if (proyecto) {
-      setForm({
-        sponsor: proyecto.sponsor ? String(proyecto.sponsor) : '',
-        gerente_proyecto: proyecto.gerente_proyecto ? String(proyecto.gerente_proyecto) : '',
-        fecha_inicio_plan: proyecto.fecha_inicio_plan || '',
-        fecha_fin_plan: proyecto.fecha_fin_plan || '',
-        justificacion: proyecto.justificacion || '',
-        beneficios_esperados: proyecto.beneficios_esperados || '',
-        descripcion: proyecto.descripcion || '',
-      });
-    }
-  }, [proyecto]);
-
-  const handleSave = () => {
-    const data: Record<string, unknown> = {};
-    if (form.sponsor) data.sponsor = Number(form.sponsor);
-    else data.sponsor = null;
-    if (form.gerente_proyecto) data.gerente_proyecto = Number(form.gerente_proyecto);
-    else data.gerente_proyecto = null;
-    if (form.fecha_inicio_plan) data.fecha_inicio_plan = form.fecha_inicio_plan;
-    if (form.fecha_fin_plan) data.fecha_fin_plan = form.fecha_fin_plan;
-    if (form.justificacion !== (proyecto?.justificacion || ''))
-      data.justificacion = form.justificacion;
-    if (form.beneficios_esperados !== (proyecto?.beneficios_esperados || ''))
-      data.beneficios_esperados = form.beneficios_esperados;
-    if (form.descripcion !== (proyecto?.descripcion || '')) data.descripcion = form.descripcion;
-
-    updateProyecto.mutate({ id: proyectoId, data }, { onSuccess: () => setShowEdit(false) });
-  };
-
-  const userOptions = [
-    { value: '', label: 'Sin asignar' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
-  ];
-
-  const hasMissing = !proyecto.sponsor_nombre || !proyecto.gerente_nombre;
-  const hasExtras = proyecto.descripcion || proyecto.justificacion || proyecto.beneficios_esperados;
-
-  return (
-    <>
-      <Card>
-        <div className="px-4 py-3">
-          {/* Fila principal compacta */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
-              {/* Sponsor */}
-              <div className="flex items-center gap-1.5">
-                <UserCheck className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                <span className="text-xs text-gray-500">Sponsor:</span>
-                <span
-                  className={`text-xs font-medium ${
-                    proyecto.sponsor_nombre
-                      ? 'text-gray-900 dark:text-gray-100'
-                      : 'text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  {proyecto.sponsor_nombre || 'Sin asignar'}
-                </span>
-              </div>
-
-              <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
-
-              {/* Gerente */}
-              <div className="flex items-center gap-1.5">
-                <UserCheck className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                <span className="text-xs text-gray-500">Gerente:</span>
-                <span
-                  className={`text-xs font-medium ${
-                    proyecto.gerente_nombre
-                      ? 'text-gray-900 dark:text-gray-100'
-                      : 'text-amber-600 dark:text-amber-400'
-                  }`}
-                >
-                  {proyecto.gerente_nombre || 'Sin asignar'}
-                </span>
-              </div>
-
-              <span className="text-gray-300 dark:text-gray-600 hidden sm:inline">|</span>
-
-              {/* Tipo + Prioridad */}
-              <div className="flex items-center gap-2">
-                <Badge variant="gray" size="sm">
-                  {proyecto.tipo_display}
-                </Badge>
-                <Badge
-                  variant={
-                    proyecto.prioridad === 'critica'
-                      ? 'danger'
-                      : proyecto.prioridad === 'alta'
-                        ? 'warning'
-                        : 'info'
-                  }
-                  size="sm"
-                >
-                  {proyecto.prioridad_display}
-                </Badge>
-              </div>
-
-              {/* Fechas inline */}
-              {(proyecto.fecha_inicio_plan || proyecto.fecha_fin_plan) && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600 hidden md:inline">|</span>
-                  <span className="text-xs text-gray-500 hidden md:inline">
-                    {proyecto.fecha_inicio_plan &&
-                      new Date(proyecto.fecha_inicio_plan).toLocaleDateString('es-CO')}
-                    {proyecto.fecha_inicio_plan && proyecto.fecha_fin_plan && ' → '}
-                    {proyecto.fecha_fin_plan &&
-                      new Date(proyecto.fecha_fin_plan).toLocaleDateString('es-CO')}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Acciones */}
-            <div className="flex items-center gap-1 shrink-0">
-              {hasExtras && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded(!expanded)}
-                  className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title={expanded ? 'Colapsar' : 'Ver más detalles'}
-                >
-                  {expanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowEdit(true)}
-                className={`p-1.5 rounded-md transition-colors ${
-                  hasMissing
-                    ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-                title="Editar datos del proyecto"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Detalles expandibles */}
-          {expanded && hasExtras && (
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-1 md:grid-cols-3 gap-3">
-              {proyecto.descripcion && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">
-                    Descripción
-                  </p>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line line-clamp-3">
-                    {proyecto.descripcion}
-                  </p>
-                </div>
-              )}
-              {proyecto.justificacion && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">
-                    Justificación
-                  </p>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line line-clamp-3">
-                    {proyecto.justificacion}
-                  </p>
-                </div>
-              )}
-              {proyecto.beneficios_esperados && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">
-                    Beneficios Esperados
-                  </p>
-                  <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line line-clamp-3">
-                    {proyecto.beneficios_esperados}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Modal de edición */}
-      <BaseModal
-        isOpen={showEdit}
-        onClose={() => setShowEdit(false)}
-        title="Editar Proyecto"
-        subtitle="Actualice los datos clave del proyecto"
-        size="2xl"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setShowEdit(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              disabled={updateProyecto.isPending}
-              isLoading={updateProyecto.isPending}
-            >
-              Guardar Cambios
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Select
-              label="Sponsor"
-              value={form.sponsor}
-              onChange={(e) => setForm({ ...form, sponsor: e.target.value })}
-              options={userOptions}
-            />
-            <Select
-              label="Gerente de Proyecto"
-              value={form.gerente_proyecto}
-              onChange={(e) => setForm({ ...form, gerente_proyecto: e.target.value })}
-              options={userOptions}
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Fecha Inicio Planificada"
-              type="date"
-              value={form.fecha_inicio_plan}
-              onChange={(e) => setForm({ ...form, fecha_inicio_plan: e.target.value })}
-            />
-            <Input
-              label="Fecha Fin Planificada"
-              type="date"
-              value={form.fecha_fin_plan}
-              onChange={(e) => setForm({ ...form, fecha_fin_plan: e.target.value })}
-            />
-          </div>
-          <Textarea
-            label="Descripción del Proyecto"
-            value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            rows={2}
-            placeholder="Describir el alcance y objetivos del proyecto..."
-          />
-          <Textarea
-            label="Justificación"
-            value={form.justificacion}
-            onChange={(e) => setForm({ ...form, justificacion: e.target.value })}
-            rows={2}
-            placeholder="Razón de ser del proyecto..."
-          />
-          <Textarea
-            label="Beneficios Esperados"
-            value={form.beneficios_esperados}
-            onChange={(e) => setForm({ ...form, beneficios_esperados: e.target.value })}
-            rows={2}
-            placeholder="Metas SMART y beneficios esperados..."
-          />
-        </div>
-      </BaseModal>
-    </>
   );
 };
 
@@ -632,6 +349,7 @@ const ProjectSummaryControlled = ({
   onForceOpenHandled: () => void;
 }) => {
   const updateProyecto = useUpdateProyecto();
+  const queryClient = useQueryClient();
   const { data: users = [] } = useSelectUsers();
   const [showEdit, setShowEdit] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -654,8 +372,9 @@ const ProjectSummaryControlled = ({
     descripcion: '',
   });
 
+  // Re-sync form when proyecto data changes OR when modal opens
   useEffect(() => {
-    if (proyecto) {
+    if (proyecto && showEdit) {
       setForm({
         sponsor: proyecto.sponsor ? String(proyecto.sponsor) : '',
         gerente_proyecto: proyecto.gerente_proyecto ? String(proyecto.gerente_proyecto) : '',
@@ -666,9 +385,9 @@ const ProjectSummaryControlled = ({
         descripcion: proyecto.descripcion || '',
       });
     }
-  }, [proyecto]);
+  }, [proyecto, showEdit]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const data: Record<string, unknown> = {};
     if (form.sponsor) data.sponsor = Number(form.sponsor);
     else data.sponsor = null;
@@ -682,7 +401,15 @@ const ProjectSummaryControlled = ({
       data.beneficios_esperados = form.beneficios_esperados;
     if (form.descripcion !== (proyecto?.descripcion || '')) data.descripcion = form.descripcion;
 
-    updateProyecto.mutate({ id: proyectoId, data }, { onSuccess: () => setShowEdit(false) });
+    try {
+      await updateProyecto.mutateAsync({ id: proyectoId, data });
+      // Esperar a que la query de detalle se refresque con datos frescos
+      // antes de cerrar el modal — así displayProyecto + checklist se actualizan inmediatamente
+      await queryClient.refetchQueries({ queryKey: proyectosKeys.proyecto(proyectoId) });
+      setShowEdit(false);
+    } catch {
+      // Error manejado por el onError del hook
+    }
   };
 
   const userOptions = [

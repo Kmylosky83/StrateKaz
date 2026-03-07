@@ -14,6 +14,7 @@ class PortafolioSerializer(serializers.ModelSerializer):
     responsable_nombre = serializers.CharField(
         source='responsable.get_full_name', read_only=True
     )
+    codigo = serializers.CharField(required=False, allow_blank=True, default='')
     total_programas = serializers.SerializerMethodField()
     total_proyectos = serializers.SerializerMethodField()
 
@@ -21,6 +22,12 @@ class PortafolioSerializer(serializers.ModelSerializer):
         model = Portafolio
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'empresa']
+
+    def get_validators(self):
+        return [
+            v for v in super().get_validators()
+            if not (hasattr(v, 'fields') and set(v.fields) == {'empresa', 'codigo'})
+        ]
 
     def get_total_programas(self, obj):
         return obj.programas.filter(is_active=True).count()
@@ -36,12 +43,19 @@ class ProgramaSerializer(serializers.ModelSerializer):
     responsable_nombre = serializers.CharField(
         source='responsable.get_full_name', read_only=True
     )
+    codigo = serializers.CharField(required=False, allow_blank=True, default='')
     total_proyectos = serializers.SerializerMethodField()
 
     class Meta:
         model = Programa
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at', 'empresa']
+
+    def get_validators(self):
+        return [
+            v for v in super().get_validators()
+            if not (hasattr(v, 'fields') and set(v.fields) == {'empresa', 'codigo'})
+        ]
 
     def get_total_proyectos(self, obj):
         return obj.proyectos.filter(is_active=True).count()
@@ -234,6 +248,7 @@ class ProyectoSerializer(serializers.ModelSerializer):
 
 class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar proyectos"""
+    codigo = serializers.CharField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = Proyecto

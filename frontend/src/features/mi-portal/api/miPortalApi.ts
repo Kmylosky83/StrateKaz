@@ -145,7 +145,7 @@ export function useMisDocumentos(colaboradorId: number | null | undefined) {
 // HOOKS - VACACIONES
 // ============================================================================
 
-export function useMisVacaciones() {
+export function useMisVacaciones(enabled = true) {
   return useQuery({
     queryKey: miPortalKeys.vacaciones(),
     queryFn: async () => {
@@ -153,6 +153,7 @@ export function useMisVacaciones() {
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -200,7 +201,7 @@ export function useSolicitarPermiso() {
 // HOOKS - RECIBOS DE NOMINA
 // ============================================================================
 
-export function useMisRecibos() {
+export function useMisRecibos(enabled = true) {
   return useQuery({
     queryKey: miPortalKeys.recibos(),
     queryFn: async () => {
@@ -208,6 +209,7 @@ export function useMisRecibos() {
       return response.data;
     },
     staleTime: 10 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -215,7 +217,7 @@ export function useMisRecibos() {
 // HOOKS - CAPACITACIONES
 // ============================================================================
 
-export function useMisCapacitaciones() {
+export function useMisCapacitaciones(enabled = true) {
   return useQuery({
     queryKey: miPortalKeys.capacitaciones(),
     queryFn: async () => {
@@ -223,6 +225,7 @@ export function useMisCapacitaciones() {
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -230,7 +233,7 @@ export function useMisCapacitaciones() {
 // HOOKS - EVALUACION
 // ============================================================================
 
-export function useMiEvaluacion() {
+export function useMiEvaluacion(enabled = true) {
   return useQuery({
     queryKey: miPortalKeys.evaluacion(),
     queryFn: async () => {
@@ -238,5 +241,6 @@ export function useMiEvaluacion() {
       return response.data;
     },
     staleTime: 10 * 60 * 1000,
+    enabled,
   });
 }

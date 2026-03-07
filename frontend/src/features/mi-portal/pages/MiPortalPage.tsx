@@ -234,11 +234,14 @@ export default function MiPortalPage() {
   // Perfil del colaborador
   const { data: perfil, isLoading: perfilLoading } = useMiPerfil();
   const { isExterno } = useIsExterno();
+  const hasPerfil = !!perfil;
 
-  // Stats data hooks — React Query deduplica si child components usan los mismos hooks
-  const { data: vacaciones, isLoading: vacacionesLoading } = useMisVacaciones();
-  const { data: capacitaciones, isLoading: capacitacionesLoading } = useMisCapacitaciones();
-  const { data: evaluaciones, isLoading: evaluacionesLoading } = useMiEvaluacion();
+  // Stats data hooks — solo disparan cuando el usuario tiene perfil de colaborador
+  // Evita 404 innecesarios para superadmins y usuarios sin Colaborador asociado
+  const { data: vacaciones, isLoading: vacacionesLoading } = useMisVacaciones(hasPerfil);
+  const { data: capacitaciones, isLoading: capacitacionesLoading } =
+    useMisCapacitaciones(hasPerfil);
+  const { data: evaluaciones, isLoading: evaluacionesLoading } = useMiEvaluacion(hasPerfil);
 
   // Greeting
   const { text: greetingText, Icon: GreetingIcon } = getGreeting();

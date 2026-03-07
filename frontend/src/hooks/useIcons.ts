@@ -96,7 +96,7 @@ const fetchCategories = async (): Promise<IconCategory[]> => {
 };
 
 const fetchIconsByCategory = async (category: string): Promise<IconRegistryItem[]> => {
-  const response = await axiosInstance.get('/configuracion/icons/by_category/', {
+  const response = await axiosInstance.get('/configuracion/icons/by-category/', {
     params: { category },
   });
   return response.data;

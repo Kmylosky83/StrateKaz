@@ -102,14 +102,21 @@ class SetupPasswordView(APIView):
         user.password_setup_expires = None
         user.save(update_fields=['password', 'password_setup_token', 'password_setup_expires'])
 
-        # Sincronizar password al TenantUser (public schema) para que el login funcione
-        from apps.core.utils import sync_password_to_tenant_user
-        sync_password_to_tenant_user(user)
-
         logger.info(
             'Contraseña configurada exitosamente para User %s (%s)',
             user.id, user.email
         )
+
+        # Sincronizar password al TenantUser (public schema) para que el login funcione
+        # En try/except para no bloquear la respuesta exitosa si falla el sync
+        try:
+            from apps.core.utils import sync_password_to_tenant_user
+            sync_password_to_tenant_user(user)
+        except Exception as e:
+            logger.error(
+                'Error sincronizando password a TenantUser para User %s (%s): %s',
+                user.id, user.email, e, exc_info=True
+            )
 
         return Response({
             'message': 'Contraseña configurada exitosamente. Ya puedes iniciar sesión.'

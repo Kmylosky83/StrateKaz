@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { UserCheck, UserX, Shield } from 'lucide-react';
+import {
+  UserCheck,
+  UserX,
+  Shield,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { Modules, Sections } from '@/constants/permissions';
@@ -19,11 +27,37 @@ interface UsersTableProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onToggleStatus: (user: User) => void;
+  /** Callback para impersonar un usuario (solo superusers) */
+  onImpersonate?: (user: User) => void;
+  /** ID del usuario actual (para no permitir auto-impersonación) */
+  currentUserId?: number;
   /** Custom RBAC Module (optional, defaults to CORE) */
   module?: string;
   /** Custom RBAC Section (optional, defaults to USERS) */
   section?: string;
 }
+
+type SortableField = 'full_name' | 'email' | 'date_joined';
+
+/** Indicador visual de dirección de sort */
+const SortIcon = ({
+  field,
+  activeField,
+  direction,
+}: {
+  field: SortableField;
+  activeField: SortableField;
+  direction: 'asc' | 'desc';
+}) => {
+  if (field !== activeField) {
+    return <ChevronsUpDown className="inline ml-1 h-3 w-3 opacity-40" />;
+  }
+  return direction === 'asc' ? (
+    <ChevronUp className="inline ml-1 h-3 w-3" />
+  ) : (
+    <ChevronDown className="inline ml-1 h-3 w-3" />
+  );
+};
 
 export const UsersTable = ({
   users,
@@ -31,13 +65,15 @@ export const UsersTable = ({
   onEdit,
   onDelete,
   onToggleStatus,
+  onImpersonate,
+  currentUserId,
   module = Modules.CORE,
   section = Sections.USERS,
 }: UsersTableProps) => {
-  const [sortField, setSortField] = useState<keyof User>('full_name');
+  const [sortField, setSortField] = useState<SortableField>('full_name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const handleSort = (field: keyof User) => {
+  const handleSort = (field: SortableField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -78,135 +114,153 @@ export const UsersTable = ({
     );
   }
 
+  const thBase =
+    'px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider';
+  const thSortable = `${thBase} cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700`;
+
   return (
     <Card>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSort('full_name')}
-              >
-                Usuario
+              <th className={thSortable} onClick={() => handleSort('full_name')}>
+                Usuario{' '}
+                <SortIcon field="full_name" activeField={sortField} direction={sortDirection} />
               </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSort('email')}
-              >
-                Email
+              <th className={thBase}>Cargo</th>
+              <th className={thBase}>Origen</th>
+              <th className={thBase}>Estado</th>
+              <th className={thSortable} onClick={() => handleSort('email')}>
+                Correo <SortIcon field="email" activeField={sortField} direction={sortDirection} />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Cargo
+              <th className={thSortable} onClick={() => handleSort('date_joined')}>
+                Registro{' '}
+                <SortIcon field="date_joined" activeField={sortField} direction={sortDirection} />
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Origen
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Estado
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSort('date_joined')}
-              >
-                Fecha Registro
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Acciones
-              </th>
+              <th className={`${thBase} text-right`}>Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {sortedUsers.map((user) => (
-              <tr
-                key={user.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 relative">
-                      <Avatar
-                        src={user.photo || undefined}
-                        name={user.full_name || user.username}
-                        size="md"
-                      />
-                      {user.is_superuser && (
-                        <div
-                          className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
-                          title="Superusuario - Acceso completo a este tenant"
-                        >
-                          <Shield className="h-2.5 w-2.5 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {user.full_name || user.username}
-                        </span>
+            {sortedUsers.map((user) => {
+              const canImpersonate =
+                onImpersonate && user.id !== currentUserId && !user.is_superuser;
+
+              return (
+                <tr
+                  key={user.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {/* Usuario */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 relative">
+                        <Avatar
+                          src={user.photo || undefined}
+                          name={user.full_name || user.username}
+                          size="md"
+                        />
                         {user.is_superuser && (
-                          <Badge
-                            variant="warning"
-                            size="sm"
-                            title="Tiene acceso completo a todas las secciones de este tenant"
+                          <div
+                            className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
+                            title="Superusuario - Acceso completo a este tenant"
                           >
-                            Superusuario
-                          </Badge>
+                            <Shield className="h-2.5 w-2.5 text-white" />
+                          </div>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        @{user.username}
+                      <div className="ml-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {user.full_name || user.username}
+                          </span>
+                          {user.is_superuser && (
+                            <Badge
+                              variant="warning"
+                              size="sm"
+                              title="Tiene acceso completo a todas las secciones de este tenant"
+                            >
+                              Superusuario
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          @{user.username}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-gray-100">{user.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <CargoLevelBadge cargo={user.cargo} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {user.origen && (
-                    <Badge
-                      variant={(ORIGEN_COLORS[user.origen] || 'gray') as BadgeVariant}
-                      size="sm"
-                    >
-                      {ORIGEN_LABELS[user.origen] || user.origen}
-                    </Badge>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <UserStatusBadge isActive={user.is_active} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {format(new Date(user.date_joined), 'PP', { locale: es })}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end gap-2">
-                    <ActionButtons
-                      module={module}
-                      section={section}
-                      onEdit={() => onEdit(user)}
-                      onDelete={() => onDelete(user)}
-                      size="sm"
-                      customActions={[
-                        {
-                          key: 'toggle-status',
-                          label: user.is_active ? 'Desactivar' : 'Activar',
-                          icon: user.is_active ? (
-                            <UserX className="w-4 h-4" />
-                          ) : (
-                            <UserCheck className="w-4 h-4" />
-                          ),
-                          onClick: () => onToggleStatus(user),
-                        },
-                      ]}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+
+                  {/* Cargo */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <CargoLevelBadge cargo={user.cargo} />
+                  </td>
+
+                  {/* Origen */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {user.origen && (
+                      <Badge
+                        variant={(ORIGEN_COLORS[user.origen] || 'gray') as BadgeVariant}
+                        size="sm"
+                      >
+                        {ORIGEN_LABELS[user.origen] || user.origen}
+                      </Badge>
+                    )}
+                  </td>
+
+                  {/* Estado */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <UserStatusBadge isActive={user.is_active} />
+                  </td>
+
+                  {/* Correo */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{user.email}</div>
+                  </td>
+
+                  {/* Fecha Registro */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {format(new Date(user.date_joined), 'PP', { locale: es })}
+                  </td>
+
+                  {/* Acciones */}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
+                      <ActionButtons
+                        module={module}
+                        section={section}
+                        onEdit={() => onEdit(user)}
+                        onDelete={() => onDelete(user)}
+                        size="sm"
+                        customActions={[
+                          ...(canImpersonate
+                            ? [
+                                {
+                                  key: 'impersonate',
+                                  label: 'Ver como este usuario',
+                                  icon: <Eye className="w-4 h-4" />,
+                                  onClick: () => onImpersonate(user),
+                                  variant: 'ghost' as const,
+                                },
+                              ]
+                            : []),
+                          {
+                            key: 'toggle-status',
+                            label: user.is_active ? 'Desactivar' : 'Activar',
+                            icon: user.is_active ? (
+                              <UserX className="w-4 h-4" />
+                            ) : (
+                              <UserCheck className="w-4 h-4" />
+                            ),
+                            onClick: () => onToggleStatus(user),
+                          },
+                        ]}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

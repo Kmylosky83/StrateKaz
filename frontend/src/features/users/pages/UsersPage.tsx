@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
 import {
@@ -34,10 +36,18 @@ import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
+import { useAuthStore } from '@/store/authStore';
+import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 export default function UsersPage() {
+  const navigate = useNavigate();
   const { color: moduleColor } = useModuleColor('USUARIOS');
   const { canDo } = usePermissions();
+
+  // Impersonación: solo disponible para superusers
+  const currentUser = useAuthStore((s) => s.user);
+  const startUserImpersonation = useAuthStore((s) => s.startUserImpersonation);
+  const canImpersonate = currentUser?.is_superuser === true;
 
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
@@ -125,6 +135,22 @@ export default function UsersPage() {
       });
     } catch (error) {
       console.error('Error toggling user status:', error);
+    }
+  };
+
+  const handleImpersonate = async (user: User) => {
+    try {
+      await startUserImpersonation(user.id);
+      // Navegar según tipo de usuario
+      if (isPortalOnlyUser(user)) {
+        const isCliente = user.cargo?.code === 'CLIENTE_PORTAL';
+        navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err?.response?.data?.error || 'No se pudo impersonar este usuario');
     }
   };
 
@@ -283,6 +309,8 @@ export default function UsersPage() {
           onEdit={handleOpenEditForm}
           onDelete={handleOpenDeleteModal}
           onToggleStatus={handleToggleStatus}
+          onImpersonate={canImpersonate ? handleImpersonate : undefined}
+          currentUserId={currentUser?.id}
         />
       </DataTableCard>
 

@@ -19,8 +19,9 @@ class Portafolio(BaseCompanyModel):
     """Agrupación estratégica de programas y proyectos"""
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         verbose_name='Código',
-        help_text='Código único del portafolio'
+        help_text='Código único del portafolio (se genera automáticamente si se deja vacío)'
     )
     nombre = models.CharField(
         max_length=200,
@@ -74,6 +75,12 @@ class Portafolio(BaseCompanyModel):
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PORTAFOLIO')
+        super().save(*args, **kwargs)
+
 
 class Programa(BaseCompanyModel):
     """Agrupación de proyectos relacionados"""
@@ -86,8 +93,9 @@ class Programa(BaseCompanyModel):
     )
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         verbose_name='Código',
-        help_text='Código único del programa'
+        help_text='Código único del programa (se genera automáticamente si se deja vacío)'
     )
     nombre = models.CharField(
         max_length=200,
@@ -136,6 +144,12 @@ class Programa(BaseCompanyModel):
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PROGRAMA')
+        super().save(*args, **kwargs)
+
 
 class Proyecto(BaseCompanyModel):
     """Proyecto individual - Entidad principal"""
@@ -175,8 +189,9 @@ class Proyecto(BaseCompanyModel):
     )
     codigo = models.CharField(
         max_length=30,
+        blank=True,
         verbose_name='Código',
-        help_text='Código único del proyecto'
+        help_text='Código único del proyecto (se genera automáticamente si se deja vacío)'
     )
     nombre = models.CharField(
         max_length=200,
@@ -365,6 +380,12 @@ class Proyecto(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PROYECTO')
+        super().save(*args, **kwargs)
 
     @property
     def variacion_costo(self):

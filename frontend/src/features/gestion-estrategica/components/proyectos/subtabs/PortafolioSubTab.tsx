@@ -294,7 +294,6 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!form.codigo?.trim()) newErrors.codigo = 'El código es requerido';
     if (!form.nombre?.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!form.tipo) newErrors.tipo = 'El tipo es requerido';
     if (!form.prioridad) newErrors.prioridad = 'La prioridad es requerida';
@@ -348,11 +347,11 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
         {/* Código y Nombre */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
-            label="Código *"
-            placeholder="PRY-001"
+            label="Código"
+            placeholder="Automático (ej: PROY-2026-0001)"
             value={form.codigo ?? ''}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            error={errors.codigo}
+            helperText="Déjalo vacío para generar automáticamente"
           />
           <div className="md:col-span-2">
             <Input

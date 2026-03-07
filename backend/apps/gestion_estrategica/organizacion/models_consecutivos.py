@@ -880,6 +880,37 @@ CONSECUTIVOS_ADICIONALES = [
         'reset_yearly': False,
         'es_sistema': True,
     },
+    # ── Gestión de Proyectos ─────────────────────────────────
+    {
+        'codigo': 'PORTAFOLIO',
+        'nombre': 'Portafolio de Proyectos',
+        'categoria': 'GENERAL',
+        'prefix': 'PTF',
+        'padding': 3,
+        'include_year': False,
+        'reset_yearly': False,
+        'es_sistema': True,
+    },
+    {
+        'codigo': 'PROGRAMA',
+        'nombre': 'Programa de Proyectos',
+        'categoria': 'GENERAL',
+        'prefix': 'PGM',
+        'padding': 3,
+        'include_year': False,
+        'reset_yearly': False,
+        'es_sistema': True,
+    },
+    {
+        'codigo': 'PROYECTO',
+        'nombre': 'Proyecto',
+        'categoria': 'GENERAL',
+        'prefix': 'PROY',
+        'padding': 4,
+        'include_year': True,
+        'reset_yearly': True,
+        'es_sistema': True,
+    },
     # ── Gestión Documental (catálogos) ─────────────────────
     {
         'codigo': 'TIPO_DOCUMENTO',

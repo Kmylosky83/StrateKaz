@@ -8,7 +8,7 @@ import { Plus, FileText, Users, Target, Calendar } from 'lucide-react';
 
 export const IniciacionSubTab = () => {
   const { data: proyectosData, isLoading } = useProyectos({
-    estado: 'INICIACION',
+    estado: 'iniciacion',
     is_active: true,
   });
 
@@ -113,14 +113,14 @@ export const IniciacionSubTab = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        {proyecto.name}
+                        {proyecto.nombre}
                       </h3>
                       <Badge variant="info" size="sm">
-                        {proyecto.code}
+                        {proyecto.codigo}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {proyecto.description || 'Sin descripción'}
+                      {proyecto.descripcion || 'Sin descripción'}
                     </p>
                   </div>
                   <Button variant="secondary" size="sm">
@@ -132,13 +132,13 @@ export const IniciacionSubTab = () => {
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Sponsor:</span>
                     <p className="font-medium text-gray-900 dark:text-gray-100">
-                      {proyecto.sponsor_name || 'Sin asignar'}
+                      {proyecto.sponsor_nombre || 'Sin asignar'}
                     </p>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Project Manager:</span>
                     <p className="font-medium text-gray-900 dark:text-gray-100">
-                      {proyecto.project_manager_name || 'Sin asignar'}
+                      {proyecto.gerente_nombre || 'Sin asignar'}
                     </p>
                   </div>
                   <div>
@@ -146,9 +146,9 @@ export const IniciacionSubTab = () => {
                     <div className="mt-1">
                       <Badge
                         variant={
-                          proyecto.prioridad === 'CRITICA'
+                          proyecto.prioridad === 'critica'
                             ? 'danger'
-                            : proyecto.prioridad === 'ALTA'
+                            : proyecto.prioridad === 'alta'
                               ? 'warning'
                               : 'info'
                         }

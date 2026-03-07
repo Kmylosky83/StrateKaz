@@ -19,43 +19,43 @@ import {
 // Configuración de columnas del Kanban
 const KANBAN_COLUMNS = [
   {
-    id: 'PROPUESTO',
+    id: 'propuesto',
     label: 'Propuesto',
     color: 'bg-gray-100 dark:bg-gray-800',
     borderColor: 'border-gray-300',
   },
   {
-    id: 'INICIACION',
+    id: 'iniciacion',
     label: 'Iniciación',
     color: 'bg-purple-50 dark:bg-purple-900/20',
     borderColor: 'border-purple-300',
   },
   {
-    id: 'PLANIFICACION',
+    id: 'planificacion',
     label: 'Planificación',
     color: 'bg-blue-50 dark:bg-blue-900/20',
     borderColor: 'border-blue-300',
   },
   {
-    id: 'EJECUCION',
+    id: 'ejecucion',
     label: 'Ejecución',
     color: 'bg-orange-50 dark:bg-orange-900/20',
     borderColor: 'border-orange-300',
   },
   {
-    id: 'MONITOREO',
+    id: 'monitoreo',
     label: 'Monitoreo',
     color: 'bg-yellow-50 dark:bg-yellow-900/20',
     borderColor: 'border-yellow-300',
   },
   {
-    id: 'CIERRE',
+    id: 'cierre',
     label: 'Cierre',
     color: 'bg-indigo-50 dark:bg-indigo-900/20',
     borderColor: 'border-indigo-300',
   },
   {
-    id: 'COMPLETADO',
+    id: 'completado',
     label: 'Completado',
     color: 'bg-green-50 dark:bg-green-900/20',
     borderColor: 'border-green-300',
@@ -65,9 +65,9 @@ const KANBAN_COLUMNS = [
 // Badge de salud del proyecto
 const HealthBadge = ({ status }: { status: string }) => {
   const config = {
-    VERDE: { color: 'success', label: 'Saludable' },
-    AMARILLO: { color: 'warning', label: 'En Riesgo' },
-    ROJO: { color: 'danger', label: 'Crítico' },
+    verde: { color: 'success', label: 'Saludable' },
+    amarillo: { color: 'warning', label: 'En Riesgo' },
+    rojo: { color: 'danger', label: 'Crítico' },
   };
 
   const { color, label } = config[status as keyof typeof config] || {
@@ -85,10 +85,10 @@ const HealthBadge = ({ status }: { status: string }) => {
 // Badge de prioridad
 const PriorityBadge = ({ priority }: { priority: string }) => {
   const config = {
-    CRITICA: { color: 'danger', label: 'Crítica' },
-    ALTA: { color: 'warning', label: 'Alta' },
-    MEDIA: { color: 'info', label: 'Media' },
-    BAJA: { color: 'gray', label: 'Baja' },
+    critica: { color: 'danger', label: 'Crítica' },
+    alta: { color: 'warning', label: 'Alta' },
+    media: { color: 'info', label: 'Media' },
+    baja: { color: 'gray', label: 'Baja' },
   };
 
   const { color, label } = config[priority as keyof typeof config] || {
@@ -124,11 +124,11 @@ const ProjectCard = ({ proyecto, onDragStart, onClick }: ProjectCardProps) => {
           <div className="flex items-center gap-2 mb-1">
             <GripVertical className="h-4 w-4 text-gray-400" />
             <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-              {proyecto.code}
+              {proyecto.codigo}
             </span>
           </div>
           <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm line-clamp-2">
-            {proyecto.name}
+            {proyecto.nombre}
           </h4>
         </div>
         <HealthBadge status={proyecto.health_status} />
@@ -144,57 +144,50 @@ const ProjectCard = ({ proyecto, onDragStart, onClick }: ProjectCardProps) => {
 
       {/* Detalles */}
       <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-        {proyecto.project_manager_name && (
+        {proyecto.gerente_nombre && (
           <div className="flex items-center gap-2">
             <User className="h-3.5 w-3.5" />
-            <span className="truncate">{proyecto.project_manager_name}</span>
+            <span className="truncate">{proyecto.gerente_nombre}</span>
           </div>
         )}
 
-        {proyecto.fecha_fin_prevista && (
+        {proyecto.fecha_fin_plan && (
           <div className="flex items-center gap-2">
             <Calendar className="h-3.5 w-3.5" />
-            <span>{new Date(proyecto.fecha_fin_prevista).toLocaleDateString('es-CO')}</span>
+            <span>{new Date(proyecto.fecha_fin_plan).toLocaleDateString('es-CO')}</span>
           </div>
         )}
 
-        {proyecto.presupuesto_estimado && (
+        {proyecto.presupuesto_aprobado && (
           <div className="flex items-center gap-2">
             <DollarSign className="h-3.5 w-3.5" />
-            <span>${proyecto.presupuesto_estimado}</span>
+            <span>${proyecto.presupuesto_aprobado}</span>
           </div>
         )}
 
-        {proyecto.progreso_general !== undefined && (
+        {proyecto.porcentaje_avance !== undefined && proyecto.porcentaje_avance > 0 && (
           <div className="flex items-center gap-2">
             <TrendingUp className="h-3.5 w-3.5" />
             <div className="flex-1">
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
                 <div
                   className="bg-purple-600 h-1.5 rounded-full"
-                  style={{ width: `${proyecto.progreso_general}%` }}
+                  style={{ width: `${proyecto.porcentaje_avance}%` }}
                 />
               </div>
             </div>
-            <span className="font-medium">{proyecto.progreso_general}%</span>
+            <span className="font-medium">{proyecto.porcentaje_avance}%</span>
           </div>
         )}
       </div>
 
       {/* Footer - Estadísticas */}
       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-        {proyecto.hitos_count !== undefined && (
-          <div className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>{proyecto.hitos_count} hitos</span>
-          </div>
-        )}
-        {proyecto.equipo_count !== undefined && (
-          <div className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5" />
-            <span>{proyecto.equipo_count} miembros</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          <Badge variant="gray" size="sm">
+            {proyecto.prioridad_display || proyecto.prioridad}
+          </Badge>
+        </div>
       </div>
     </div>
   );

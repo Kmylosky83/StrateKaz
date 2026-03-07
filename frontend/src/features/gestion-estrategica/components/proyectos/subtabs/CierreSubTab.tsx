@@ -17,12 +17,12 @@ import {
 
 export const CierreSubTab = () => {
   const { data: proyectosCierre, isLoading: loadingCierre } = useProyectos({
-    estado: 'CIERRE',
+    estado: 'cierre',
     is_active: true,
   });
 
   const { data: proyectosCompletados, isLoading: loadingCompletados } = useProyectos({
-    estado: 'COMPLETADO',
+    estado: 'completado',
   });
 
   const isLoading = loadingCierre || loadingCompletados;
@@ -152,7 +152,7 @@ export const CierreSubTab = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          {proyecto.name}
+                          {proyecto.nombre}
                         </h3>
                         <Badge variant="warning" size="sm">
                           En Cierre
@@ -224,7 +224,7 @@ export const CierreSubTab = () => {
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          {proyecto.name}
+                          {proyecto.nombre}
                         </h3>
                         <Badge variant="success" size="sm">
                           Completado
@@ -262,9 +262,9 @@ export const CierreSubTab = () => {
                           <div className="mt-1">
                             <Badge
                               variant={
-                                proyecto.health_status === 'VERDE'
+                                proyecto.health_status === 'verde'
                                   ? 'success'
-                                  : proyecto.health_status === 'AMARILLO'
+                                  : proyecto.health_status === 'amarillo'
                                     ? 'warning'
                                     : 'danger'
                               }

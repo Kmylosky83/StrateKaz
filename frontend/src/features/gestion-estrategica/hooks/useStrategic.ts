@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { createQueryKeys } from '@/lib/query-keys';
 import { createCrudHooks } from '@/lib/crud-hooks-factory';
+import { apiClient } from '@/lib/api-client';
 import {
   identityApi,
   valuesApi,
@@ -255,18 +256,13 @@ export const useValues = (identityId?: number) => {
   });
 };
 
-// Reorder hook (custom)
+// Reorder hook — usa POST /valores/reorder/ (OrderingMixin)
 export const useReorderValues = (identityId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newOrder: CorporateValue[]) => {
-      // Actualizar orden de cada valor
-      await Promise.all(
-        newOrder.map((value, index) =>
-          valuesApi.update(value.id, { display_order: index } as UpdateCorporateValueDTO)
-        )
-      );
-      return newOrder;
+    mutationFn: async (orders: { id: number; orden: number }[]) => {
+      const response = await apiClient.post('/identidad/valores/reorder/', { orders });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.values(identityId) });

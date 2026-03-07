@@ -231,8 +231,8 @@ export default function MiPortalPage() {
   // Branding
   const { primaryColor } = useBrandingConfig();
 
-  // Perfil del colaborador
-  const { data: perfil, isLoading: perfilLoading } = useMiPerfil();
+  // Perfil del colaborador — no disparar para superadmins (nunca tienen Colaborador)
+  const { data: perfil, isLoading: perfilLoading } = useMiPerfil(!isSuperAdmin);
   const { isExterno } = useIsExterno();
   const hasPerfil = !!perfil;
 

@@ -429,7 +429,7 @@ class Command(BaseCommand):
                         'orden': 4,
                         'sections': [
                             {'code': 'portafolio', 'name': 'Portafolio', 'icon': 'Briefcase', 'orden': 1, 'description': 'Vista general del portafolio, programas y estado de proyectos'},
-                            {'code': 'iniciacion', 'name': 'Iniciación', 'icon': 'FileSignature', 'orden': 2, 'description': 'Charter del proyecto, objetivos SMART y registro de stakeholders'},
+                            {'code': 'iniciacion', 'name': 'Iniciación', 'icon': 'FileSignature', 'orden': 2, 'description': 'Acta de constitución, aprobación y registro de partes interesadas'},
                             {'code': 'planificacion', 'name': 'Planificación', 'icon': 'CalendarRange', 'orden': 3, 'description': 'Alcance, cronograma, recursos, costos y plan de riesgos'},
                             {'code': 'ejecucion_monitoreo', 'name': 'Ejecución y Monitoreo', 'icon': 'Activity', 'orden': 4, 'description': 'Seguimiento de avance, indicadores EVM y control de cambios'},
                             {'code': 'cierre', 'name': 'Cierre', 'icon': 'CheckCircle2', 'orden': 5, 'description': 'Lecciones aprendidas, acta de cierre y liberación de recursos'},

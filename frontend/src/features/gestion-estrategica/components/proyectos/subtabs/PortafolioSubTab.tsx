@@ -24,6 +24,9 @@ import { Input, Select, Textarea } from '@/components/forms';
 import { PortafolioDashboard } from '../PortafolioDashboard';
 import { ProyectosKanban } from '../ProyectosKanban';
 import { useProyecto, useProyectosDashboard, useCreateProyecto } from '../../../hooks/useProyectos';
+import { programasApi } from '../../../api/proyectosApi';
+import { useSelectUsers } from '@/hooks/useSelectLists';
+import { useQuery } from '@tanstack/react-query';
 import type {
   Proyecto,
   CreateProyectoDTO,
@@ -277,11 +280,19 @@ const PRIORIDADES: { value: PrioridadProyecto; label: string }[] = [
 
 export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
   const createMutation = useCreateProyecto();
+  const { data: users = [] } = useSelectUsers();
+  const { data: programasData } = useQuery({
+    queryKey: ['proyectos', 'programas-select'],
+    queryFn: () => programasApi.getAll({ page_size: 200 }),
+  });
+
+  const programas = programasData?.results ?? (Array.isArray(programasData) ? programasData : []);
 
   const [form, setForm] = useState<Partial<CreateProyectoDTO>>({
     tipo: 'mejora',
     prioridad: 'media',
     tipo_origen: 'manual',
+    estado: 'iniciacion',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -306,15 +317,29 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
       setErrors(validationErrors);
       return;
     }
-    // Limpiar datos: fechas vacías → null, campos vacíos → undefined
     const cleanData = { ...form };
     if (!cleanData.fecha_inicio_plan) cleanData.fecha_inicio_plan = undefined;
     if (!cleanData.fecha_fin_plan) cleanData.fecha_fin_plan = undefined;
     if (!cleanData.codigo) delete cleanData.codigo;
+    // Asignar sponsor/gerente como number o undefined
+    if (cleanData.sponsor) cleanData.sponsor = Number(cleanData.sponsor);
+    else delete cleanData.sponsor;
+    if (cleanData.gerente_proyecto) cleanData.gerente_proyecto = Number(cleanData.gerente_proyecto);
+    else delete cleanData.gerente_proyecto;
+    // Programa
+    if (cleanData.programa) cleanData.programa = Number(cleanData.programa);
+    else delete cleanData.programa;
+    // Auto-estado: iniciacion (el proyecto se crea e inicia directamente)
+    cleanData.estado = 'iniciacion';
 
     createMutation.mutate(cleanData as CreateProyectoDTO, {
       onSuccess: () => {
-        setForm({ tipo: 'mejora', prioridad: 'media', tipo_origen: 'manual' });
+        setForm({
+          tipo: 'mejora',
+          prioridad: 'media',
+          tipo_origen: 'manual',
+          estado: 'iniciacion',
+        });
         setErrors({});
         onClose();
       },
@@ -322,17 +347,31 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
   };
 
   const handleClose = () => {
-    setForm({ tipo: 'mejora', prioridad: 'media', tipo_origen: 'manual' });
+    setForm({ tipo: 'mejora', prioridad: 'media', tipo_origen: 'manual', estado: 'iniciacion' });
     setErrors({});
     onClose();
   };
+
+  const userOptions = [
+    { value: '', label: 'Sin asignar' },
+    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+  ];
+
+  const programaOptions = [
+    { value: '', label: 'Sin programa' },
+    ...programas.map((p) => ({
+      value: String(p.id),
+      label: `${p.codigo || ''} ${p.nombre}`.trim(),
+    })),
+  ];
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={handleClose}
       title="Nuevo Proyecto"
-      size="xl"
+      subtitle="El proyecto se creará en estado de Iniciación automáticamente"
+      size="2xl"
       footer={
         <>
           <Button variant="secondary" onClick={handleClose} disabled={createMutation.isPending}>
@@ -354,10 +393,10 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input
             label="Código"
-            placeholder="Automático (ej: PROY-2026-0001)"
+            placeholder="Automático"
             value={form.codigo ?? ''}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            helperText="Déjalo vacío para generar automáticamente"
+            helperText="Vacío = autogenerar"
           />
           <div className="md:col-span-2">
             <Input
@@ -370,8 +409,8 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
           </div>
         </div>
 
-        {/* Tipo y Prioridad */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Tipo, Prioridad, Programa */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Select
             label="Tipo *"
             value={form.tipo ?? 'mejora'}
@@ -385,6 +424,28 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
             onChange={(e) => handleChange('prioridad', e.target.value)}
             error={errors.prioridad}
             options={PRIORIDADES}
+          />
+          <Select
+            label="Programa"
+            value={form.programa ? String(form.programa) : ''}
+            onChange={(e) => handleChange('programa', e.target.value)}
+            options={programaOptions}
+          />
+        </div>
+
+        {/* Sponsor y Gerente */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select
+            label="Sponsor"
+            value={form.sponsor ? String(form.sponsor) : ''}
+            onChange={(e) => handleChange('sponsor', e.target.value)}
+            options={userOptions}
+          />
+          <Select
+            label="Gerente de Proyecto"
+            value={form.gerente_proyecto ? String(form.gerente_proyecto) : ''}
+            onChange={(e) => handleChange('gerente_proyecto', e.target.value)}
+            options={userOptions}
           />
         </div>
 
@@ -408,7 +469,7 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
         <Textarea
           label="Descripción"
           resize="none"
-          rows={3}
+          rows={2}
           placeholder="Descripción del proyecto..."
           value={form.descripcion ?? ''}
           onChange={(e) => handleChange('descripcion', e.target.value)}

@@ -105,7 +105,7 @@ export const RecursoFormModal = ({
 
   const userOptions = [
     { value: '', label: 'No aplica' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+    ...users.map((u) => ({ value: String(u.id), label: u.label })),
   ];
 
   const footer = (

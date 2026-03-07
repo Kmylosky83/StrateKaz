@@ -414,7 +414,7 @@ const ProjectSummaryControlled = ({
 
   const userOptions = [
     { value: '', label: 'Sin asignar' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+    ...users.map((u) => ({ value: String(u.id), label: u.label })),
   ];
 
   const hasMissing = !proyecto.sponsor_nombre || !proyecto.gerente_nombre;

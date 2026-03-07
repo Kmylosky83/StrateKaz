@@ -354,7 +354,7 @@ export const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProp
 
   const userOptions = [
     { value: '', label: 'Sin asignar' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+    ...users.map((u) => ({ value: String(u.id), label: u.label })),
   ];
 
   const programaOptions = [

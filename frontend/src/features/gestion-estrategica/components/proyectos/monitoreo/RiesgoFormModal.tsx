@@ -129,7 +129,7 @@ export const RiesgoFormModal = ({ riesgo, proyectoId, isOpen, onClose }: RiesgoF
 
   const userOptions = [
     { value: '', label: 'Sin asignar' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+    ...users.map((u) => ({ value: String(u.id), label: u.label })),
   ];
 
   const footer = (

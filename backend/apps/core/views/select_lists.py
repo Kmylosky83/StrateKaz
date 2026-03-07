@@ -147,8 +147,6 @@ def select_users(request):
     User = apps.get_model('core', 'User')
     qs = User.objects.filter(
         is_active=True
-    ).exclude(
-        is_superuser=True
     ).values(
         'id', 'first_name', 'last_name', 'email', 'cargo__name'
     ).order_by('first_name', 'last_name')[:500]

@@ -58,7 +58,7 @@ export function ProcesoFormModal({ isOpen, onClose }: ProcesoFormModalProps) {
   }));
 
   const responsableOptions = users.map((u) => ({
-    value: String(u.value),
+    value: String(u.id),
     label: u.label,
   }));
 

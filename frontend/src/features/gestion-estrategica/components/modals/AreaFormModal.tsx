@@ -165,7 +165,7 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
     return [
       { value: '', label: 'Sin responsable asignado' },
       ...users.map((u) => ({
-        value: String(u.value),
+        value: String(u.id),
         label: u.label,
       })),
     ];

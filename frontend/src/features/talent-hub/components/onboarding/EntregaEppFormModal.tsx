@@ -65,12 +65,12 @@ export const EntregaEppFormModal = ({ isOpen, onClose, usuarioId }: Props) => {
 
   const tipoEppOptions = [
     { value: '', label: 'Selecciona tipo de EPP...' },
-    ...tiposEpp.map((t) => ({ value: String(t.value), label: t.label })),
+    ...tiposEpp.map((t) => ({ value: String(t.id), label: t.label })),
   ];
 
   const colaboradorOptions = [
     { value: '', label: 'Selecciona colaborador...' },
-    ...users.map((u) => ({ value: String(u.value), label: u.label })),
+    ...users.map((u) => ({ value: String(u.id), label: u.label })),
   ];
 
   const onSubmit = async (data: CreateEntregaEPPDTO) => {

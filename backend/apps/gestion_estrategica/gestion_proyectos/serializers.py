@@ -69,6 +69,9 @@ class ProyectoListSerializer(serializers.ModelSerializer):
     gerente_nombre = serializers.CharField(
         source='gerente_proyecto.get_full_name', read_only=True
     )
+    sponsor_nombre = serializers.CharField(
+        source='sponsor.get_full_name', read_only=True
+    )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
@@ -77,11 +80,13 @@ class ProyectoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proyecto
         fields = [
-            'id', 'codigo', 'nombre', 'tipo', 'tipo_display',
+            'id', 'codigo', 'nombre', 'descripcion', 'tipo', 'tipo_display',
             'estado', 'estado_display', 'prioridad', 'prioridad_display',
-            'programa', 'programa_nombre', 'gerente_proyecto', 'gerente_nombre',
+            'programa', 'programa_nombre',
+            'sponsor', 'sponsor_nombre', 'gerente_proyecto', 'gerente_nombre',
             'fecha_inicio_plan', 'fecha_fin_plan', 'porcentaje_avance',
             'presupuesto_aprobado', 'costo_real', 'is_active',
+            'justificacion', 'beneficios_esperados',
             'tipo_origen', 'tipo_origen_display', 'origen_cambio', 'origen_objetivo'
         ]
 

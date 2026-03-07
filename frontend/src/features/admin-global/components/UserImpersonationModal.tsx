@@ -14,6 +14,7 @@ import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
+import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 import { usersAPI } from '@/api/users.api';
 import { cn } from '@/utils/cn';
 
@@ -56,16 +57,22 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     );
   }, [data, search, superadminId]);
 
-  const handleImpersonate = async (userId: number, hasProveedor: boolean, hasCliente: boolean) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleImpersonate = async (userId: number, userItem: any) => {
     try {
       setLoading(userId);
       await startUserImpersonation(userId);
+
+      // Determinar destino ANTES de cerrar modal y navegar.
+      // CRÍTICO: Usar cargo.code (via isPortalOnlyUser) en vez de user.proveedor
+      // porque UserListSerializer NO incluye 'proveedor' en su response.
+      const portalOnly = isPortalOnlyUser(userItem);
+      const isCliente = isClientePortalUser(userItem);
+
       onClose();
-      // Navegar según tipo de usuario
-      if (hasCliente) {
-        navigate('/cliente-portal');
-      } else if (hasProveedor) {
-        navigate('/proveedor-portal');
+
+      if (portalOnly) {
+        navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
       } else {
         navigate('/dashboard');
       }
@@ -109,9 +116,8 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
             </div>
           ) : (
             users.map((user) => {
-              const isExterno = (user as { proveedor?: number | null }).proveedor != null;
-              const isCliente = (user as { cliente?: number | null }).cliente != null;
-              const isLoading = loading === user.id;
+              const isExterno = isPortalOnlyUser(user);
+              const isItemLoading = loading === user.id;
 
               return (
                 <div
@@ -172,11 +178,11 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleImpersonate(user.id, isExterno, isCliente)}
-                    disabled={isLoading}
+                    onClick={() => handleImpersonate(user.id, user)}
+                    disabled={isItemLoading}
                     className="flex-shrink-0 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
-                    isLoading={isLoading}
-                    leftIcon={!isLoading ? <Eye className="w-3.5 h-3.5" /> : undefined}
+                    isLoading={isItemLoading}
+                    leftIcon={!isItemLoading ? <Eye className="w-3.5 h-3.5" /> : undefined}
                   >
                     Ver como
                   </Button>

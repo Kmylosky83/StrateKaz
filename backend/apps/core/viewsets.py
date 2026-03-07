@@ -428,7 +428,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Buscar el usuario target (bypasa get_queryset que excluye superusers)
         try:
             target_user = User.objects.select_related(
-                'cargo', 'cargo__area', 'proveedor'
+                'cargo', 'cargo__area', 'proveedor', 'cliente'
             ).get(pk=pk, deleted_at__isnull=True)
         except User.DoesNotExist:
             from apps.core.utils.audit_logging import log_impersonation_failed
@@ -479,6 +479,14 @@ class UserViewSet(viewsets.ModelViewSet):
         from apps.core.utils.audit_logging import log_impersonation
         log_impersonation(request, target_user)
 
+        # Cliente vinculado (portal cliente)
+        cliente_nombre = None
+        if target_user.cliente_id:
+            try:
+                cliente_nombre = target_user.cliente.nombre_comercial
+            except Exception:
+                pass
+
         # Respuesta en el mismo formato que current_user() de core_views.py
         return Response({
             'id': target_user.id,
@@ -495,6 +503,7 @@ class UserViewSet(viewsets.ModelViewSet):
             } if target_user.cargo else None,
             'cargo_code': target_user.cargo_code,
             'cargo_level': target_user.cargo_level,
+            'cargo_name': target_user.cargo.name if target_user.cargo else None,
             'phone': target_user.phone,
             'document_type': target_user.document_type,
             'document_type_display': target_user.get_document_type_display(),
@@ -515,6 +524,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 target_user.proveedor.nombre_comercial
                 if target_user.proveedor else None
             ),
+            'cliente': target_user.cliente_id,
+            'cliente_nombre': cliente_nombre,
         })
 
     @action(detail=False, methods=['get'])

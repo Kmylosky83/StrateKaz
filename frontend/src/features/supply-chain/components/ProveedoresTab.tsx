@@ -10,7 +10,11 @@ import { Users, UserCheck, UserX, TrendingUp } from 'lucide-react';
 import { ProveedoresTable } from './ProveedoresTable';
 import { ProveedorForm } from './ProveedorForm';
 import ImportProveedoresModal from './ImportProveedoresModal';
-import { useProveedor, useEstadisticasProveedores } from '../hooks/useProveedores';
+import {
+  useProveedor,
+  useEstadisticasProveedores,
+  useDescargarPlantilla,
+} from '../hooks/useProveedores';
 import type { ProveedorList } from '../types';
 
 export default function ProveedoresTab() {
@@ -19,9 +23,11 @@ export default function ProveedoresTab() {
   const [editProveedorId, setEditProveedorId] = useState<number | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
 
+  const [showFilters, setShowFilters] = useState(false);
   const { data: estadisticasData, isLoading: statsLoading } = useEstadisticasProveedores();
   const estadisticas = estadisticasData as Record<string, unknown> | undefined;
   const { data: proveedorDetalle } = useProveedor(editProveedorId ?? 0);
+  const exportMutation = useDescargarPlantilla();
 
   const stats = [
     {
@@ -77,11 +83,22 @@ export default function ProveedoresTab() {
 
       <SectionToolbar
         title="Proveedores"
+        count={(estadisticas?.total_proveedores as number) ?? undefined}
         primaryAction={{
           label: 'Nuevo Proveedor',
           onClick: handleNewProveedor,
         }}
         extraActions={[
+          {
+            label: 'Filtros',
+            onClick: () => setShowFilters((v) => !v),
+            variant: 'outline',
+          },
+          {
+            label: 'Exportar',
+            onClick: () => exportMutation.mutate(),
+            variant: 'outline',
+          },
           {
             label: 'Importar',
             onClick: () => setShowImportModal(true),
@@ -90,7 +107,7 @@ export default function ProveedoresTab() {
         ]}
       />
 
-      <ProveedoresTable onNew={handleNewProveedor} onEdit={handleEditProveedor} />
+      <ProveedoresTable onEdit={handleEditProveedor} showFilters={showFilters} />
 
       <ProveedorForm
         isOpen={showProveedorForm}

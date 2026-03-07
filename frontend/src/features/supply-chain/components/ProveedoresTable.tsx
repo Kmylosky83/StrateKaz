@@ -7,8 +7,8 @@
  * - Exportación a Excel
  * - Paginación
  */
-import { useState } from 'react';
-import { Edit, Eye, Trash2, Download, Filter, Plus, Users, Shield, UserCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Edit, Eye, Trash2, Users, Shield, UserCheck } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -18,7 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
-import { useProveedores, useDeleteProveedor, useDescargarPlantilla } from '../hooks/useProveedores';
+import { useProveedores, useDeleteProveedor } from '../hooks/useProveedores';
 import { useTiposProveedor } from '../hooks/useCatalogos';
 import { CrearAccesoProveedorModal } from './CrearAccesoProveedorModal';
 import type { ProveedorList, TipoProveedor } from '../types';
@@ -28,7 +28,7 @@ import type { ProveedorList, TipoProveedor } from '../types';
 interface ProveedoresTableProps {
   onView?: (proveedor: ProveedorList) => void;
   onEdit?: (proveedor: ProveedorList) => void;
-  onNew?: () => void;
+  showFilters?: boolean;
 }
 
 interface Filtros {
@@ -50,9 +50,20 @@ const formatEstado = (isActive: boolean): string => {
 
 // ==================== COMPONENTE ====================
 
-export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProps) {
+export function ProveedoresTable({
+  onView,
+  onEdit,
+  showFilters: externalShowFilters,
+}: ProveedoresTableProps) {
   const [filtros, setFiltros] = useState<Filtros>({});
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync filter visibility from parent (SectionToolbar toggle)
+  useEffect(() => {
+    if (externalShowFilters !== undefined) {
+      setShowFilters(externalShowFilters);
+    }
+  }, [externalShowFilters]);
   const [page, setPage] = useState(1);
   const [accesoProveedor, setAccesoProveedor] = useState<ProveedorList | null>(null);
   const pageSize = 10;
@@ -66,7 +77,6 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
 
   const { data: tiposProveedor } = useTiposProveedor({ is_active: true });
   const deleteMutation = useDeleteProveedor();
-  const exportMutation = useDescargarPlantilla();
 
   // ==================== HANDLERS ====================
 
@@ -74,10 +84,6 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
     if (window.confirm('¿Está seguro de eliminar este proveedor?')) {
       await deleteMutation.mutateAsync(id);
     }
-  };
-
-  const handleExport = () => {
-    exportMutation.mutate();
   };
 
   const handleFilterChange = (key: keyof Filtros, value: any) => {
@@ -106,15 +112,6 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
         icon={<Users className="w-16 h-16" />}
         title="No hay proveedores registrados"
         description="Comience agregando proveedores a su sistema"
-        action={
-          onNew
-            ? {
-                label: 'Nuevo Proveedor',
-                onClick: onNew,
-                icon: <Plus className="w-4 h-4" />,
-              }
-            : undefined
-        }
       />
     );
   }
@@ -124,42 +121,6 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
 
   return (
     <div className="space-y-4">
-      {/* Header con acciones */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Proveedores ({totalCount})
-        </h3>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Filter className="w-4 h-4" />}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            Filtros
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Download className="w-4 h-4" />}
-            onClick={handleExport}
-            disabled={exportMutation.isPending}
-          >
-            Exportar
-          </Button>
-          {onNew && (
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onNew}
-            >
-              Nuevo Proveedor
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Panel de filtros */}
       {showFilters && (
         <Card variant="bordered" padding="md">
@@ -240,7 +201,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                   Contacto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Materias Primas
+                  Suministros
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Estado
@@ -278,7 +239,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                     {proveedor.tipos_materia_prima_display?.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {proveedor.tipos_materia_prima_display.slice(0, 2).map((tipo, idx) => (
-                          <Badge key={idx} variant="gray" size="sm">
+                          <Badge key={idx} variant="primary" size="sm">
                             {tipo}
                           </Badge>
                         ))}
@@ -289,7 +250,9 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                         )}
                       </div>
                     ) : (
-                      '-'
+                      <span className="text-gray-400 dark:text-gray-500 italic text-xs">
+                        No aplica
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

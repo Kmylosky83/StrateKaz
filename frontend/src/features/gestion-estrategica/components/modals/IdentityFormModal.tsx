@@ -298,7 +298,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
               </div>
 
               {areas.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                   {areas.map((area) => (
                     <label
                       key={area.id}

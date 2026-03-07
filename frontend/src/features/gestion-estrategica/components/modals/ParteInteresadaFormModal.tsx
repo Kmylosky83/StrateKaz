@@ -632,7 +632,7 @@ const ParteInteresadaFormModalComponent = ({
               Seleccione todos los canales aplicables. El primero seleccionado será el canal
               principal.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {CANALES_COMUNICACION.map((canal) => {
                 const Icon = canal.icon;
                 const isSelected =

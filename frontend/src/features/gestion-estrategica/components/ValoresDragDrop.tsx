@@ -38,7 +38,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Button, DynamicIcon, IconPicker } from '@/components/common';
+import { Card, Button, DynamicIcon, IconPicker, ConfirmDialog } from '@/components/common';
 import { Input, Textarea } from '@/components/forms';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type {
@@ -403,6 +403,7 @@ export const ValoresDragDrop = ({
     description: '',
     icon: 'Heart',
   });
+  const [valueToDelete, setValueToDelete] = useState<CorporateValue | null>(null);
 
   // Colores dinamicos del branding
   const { primaryColor } = useBrandingConfig();
@@ -486,10 +487,14 @@ export const ValoresDragDrop = ({
     setNewValue({ name: '', description: '', icon: 'Heart' });
   };
 
-  const handleDelete = async (value: CorporateValue) => {
-    if (window.confirm(`Eliminar el valor "${value.name}"?`)) {
-      await onDelete(value.id);
-    }
+  const handleDelete = (value: CorporateValue) => {
+    setValueToDelete(value);
+  };
+
+  const confirmDelete = async () => {
+    if (!valueToDelete) return;
+    await onDelete(valueToDelete.id);
+    setValueToDelete(null);
   };
 
   const activeValue = activeId ? sortedValues.find((v) => v.id === activeId) : null;
@@ -604,7 +609,7 @@ export const ValoresDragDrop = ({
           >
             {/* Cards View */}
             {viewMode === 'cards' ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <AnimatePresence>
                   {sortedValues.map((value) =>
                     editingId === value.id ? (
@@ -695,6 +700,17 @@ export const ValoresDragDrop = ({
           </DragOverlay>
         </DndContext>
       )}
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!valueToDelete}
+        onClose={() => setValueToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Valor Corporativo"
+        message={`¿Está seguro de eliminar el valor "${valueToDelete?.name}"? Esta acción no se puede deshacer.`}
+        variant="danger"
+        confirmText="Eliminar"
+        isLoading={isLoading}
+      />
     </Card>
   );
 };

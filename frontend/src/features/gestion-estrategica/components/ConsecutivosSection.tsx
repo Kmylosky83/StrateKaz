@@ -33,7 +33,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { Alert, Badge, Button, BrandedSkeleton } from '@/components/common';
+import { Alert, Badge, Button, BrandedSkeleton, ConfirmDialog } from '@/components/common';
 import { Select } from '@/components/forms';
 import { DataTableCard } from '@/components/layout';
 import { DataSection } from '@/components/data-display';
@@ -90,6 +90,10 @@ export const ConsecutivosSection = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filtroCategoria, setFiltroCategoria] = useState<CategoriaConsecutivo | ''>('');
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'sistema' | 'custom'>('todos');
+  const [consecutivoToDelete, setConsecutivoToDelete] = useState<ConsecutivoConfigList | null>(
+    null
+  );
+  const [showCargarConfirm, setShowCargarConfirm] = useState(false);
 
   // RBAC
   const { canDo } = usePermissions();
@@ -123,19 +127,24 @@ export const ConsecutivosSection = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (consecutivo: ConsecutivoConfigList) => {
-    if (consecutivo.es_sistema) {
-      return;
-    }
-    if (window.confirm(`¿Está seguro de eliminar el consecutivo "${consecutivo.nombre}"?`)) {
-      await deleteMutation.mutateAsync(consecutivo.id);
-    }
+  const handleDelete = (consecutivo: ConsecutivoConfigList) => {
+    if (consecutivo.es_sistema) return;
+    setConsecutivoToDelete(consecutivo);
   };
 
-  const handleCargarSistema = async () => {
-    if (window.confirm('¿Desea cargar los consecutivos predefinidos del sistema?')) {
-      await cargarSistemaMutation.mutateAsync();
-    }
+  const confirmDelete = async () => {
+    if (!consecutivoToDelete) return;
+    await deleteMutation.mutateAsync(consecutivoToDelete.id);
+    setConsecutivoToDelete(null);
+  };
+
+  const handleCargarSistema = () => {
+    setShowCargarConfirm(true);
+  };
+
+  const confirmCargarSistema = async () => {
+    await cargarSistemaMutation.mutateAsync();
+    setShowCargarConfirm(false);
   };
 
   const handleCloseModal = () => {
@@ -340,6 +349,30 @@ export const ConsecutivosSection = () => {
         consecutivo={selectedConsecutivo}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!consecutivoToDelete}
+        onClose={() => setConsecutivoToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Consecutivo"
+        message={`¿Está seguro de eliminar el consecutivo "${consecutivoToDelete?.nombre}"?`}
+        variant="danger"
+        confirmText="Eliminar"
+        isLoading={deleteMutation.isPending}
+      />
+
+      {/* Confirmación de cargar sistema */}
+      <ConfirmDialog
+        isOpen={showCargarConfirm}
+        onClose={() => setShowCargarConfirm(false)}
+        onConfirm={confirmCargarSistema}
+        title="Cargar Consecutivos del Sistema"
+        message="¿Desea cargar los consecutivos predefinidos del sistema? Esto agregará los consecutivos estándar sin afectar los existentes."
+        variant="warning"
+        confirmText="Cargar"
+        isLoading={cargarSistemaMutation.isPending}
       />
     </div>
   );

@@ -427,7 +427,7 @@ export const AnalisisPestelFormModal = ({
   const renderFactoresTab = () => (
     <div className="space-y-6">
       {/* Estadisticas por tipo */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
         {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
           const config = TIPO_FACTOR_PESTEL_CONFIG[value];
           const count = factoresPorTipo[value] || 0;

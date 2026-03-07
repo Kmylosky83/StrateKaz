@@ -214,7 +214,7 @@ export const FuerzaPorterFormModal = ({
             Tipo de Fuerza
           </h4>
 
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {TIPO_FUERZA_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FUERZA_PORTER_CONFIG[value];
               const isSelected = formData.tipo === value;

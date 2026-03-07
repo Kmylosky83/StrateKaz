@@ -11,8 +11,14 @@
  * También se encarga de cargar el perfil del User (core.User) cuando hay
  * tenant seleccionado pero el perfil aún no se ha cargado (ej: F5 refresh).
  *
- * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente a
- * su portal correspondiente si intentan acceder a cualquier otra ruta.
+ * IMPERSONACIÓN: Cuando un superadmin impersona un usuario portal-only,
+ * no se fuerza el redirect vía <Navigate> — la navegación ya la maneja
+ * el handler de impersonación. Se muestra un spinner breve mientras se
+ * completa la navegación programática. Esto evita doble navegación
+ * que causa pantalla negra.
+ *
+ * SEGURIDAD: Los usuarios portal-only REALES son redirigidos forzosamente
+ * a su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
 import { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -34,6 +40,7 @@ export const AdaptiveLayout = () => {
   const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
   const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
   const forceLogout = useAuthStore((s) => s.forceLogout);
+  const isImpersonating = useAuthStore((s) => s.isImpersonating);
 
   // Reset retry counter when user is loaded successfully
   useEffect(() => {
@@ -73,19 +80,32 @@ export const AdaptiveLayout = () => {
   const portalOnly = isPortalOnlyUser(user);
 
   if (portalOnly) {
-    // Cliente portal → /cliente-portal
-    if (isClientePortalUser(user)) {
-      if (location.pathname !== '/cliente-portal') {
-        return <Navigate to="/cliente-portal" replace />;
-      }
+    // ¿Está en una ruta de portal?
+    const onPortalRoute =
+      location.pathname.startsWith('/proveedor-portal') ||
+      location.pathname.startsWith('/cliente-portal');
+
+    // Si ya está en ruta de portal → renderizar PortalLayout directamente
+    if (onPortalRoute) {
       return <PortalLayout />;
     }
 
-    // Proveedor portal → /proveedor-portal
-    if (location.pathname !== '/proveedor-portal') {
-      return <Navigate to="/proveedor-portal" replace />;
+    // Impersonando pero aún no en ruta portal → spinner breve mientras
+    // el navigate() programático del handler de impersonación se completa.
+    // NO disparar <Navigate> para evitar doble navegación → pantalla negra.
+    if (isImpersonating) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+        </div>
+      );
     }
-    return <PortalLayout />;
+
+    // Usuario portal-only REAL (no impersonado) fuera de su portal → redirect forzado
+    if (isClientePortalUser(user)) {
+      return <Navigate to="/cliente-portal" replace />;
+    }
+    return <Navigate to="/proveedor-portal" replace />;
   }
 
   // Usuario normal (empleado interno o profesional colocado) → DashboardLayout

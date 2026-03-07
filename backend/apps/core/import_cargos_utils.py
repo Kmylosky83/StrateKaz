@@ -265,11 +265,11 @@ def generate_cargo_import_template(
     # Secciones de referencia - columna 1
     row = 1
     row = write_section(ws2, 'NIVELES JERÁRQUICOS', ['Código', 'Descripción'], [
-        ['ESTRATEGICO', 'Estratégico — Alta dirección'],
-        ['TACTICO', 'Táctico — Mandos medios'],
-        ['OPERATIVO', 'Operativo — Ejecución'],
-        ['APOYO', 'Apoyo — Funciones transversales'],
-        ['EXTERNO', 'Externo — Contratistas, consultores'],
+        ['ESTRATEGICO', 'Estratégico (Alta dirección)'],
+        ['TACTICO', 'Táctico (Mandos medios)'],
+        ['OPERATIVO', 'Operativo (Ejecución)'],
+        ['APOYO', 'Apoyo (Funciones transversales)'],
+        ['EXTERNO', 'Externo (Contratistas, consultores)'],
     ], row, 1)
 
     row = write_section(ws2, 'NIVELES EDUCATIVOS', ['Código', 'Descripción'], [

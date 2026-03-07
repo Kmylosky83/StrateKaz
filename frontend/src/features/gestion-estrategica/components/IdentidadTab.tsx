@@ -635,10 +635,10 @@ const PoliticasSection = ({ identity }: { identity: CorporateIdentity }) => {
               Para habilitar flujos de aprobación y firma en políticas, primero configura los cargos
               en{' '}
               <Link
-                to="/fundacion/organizacion"
+                to="/talento/estructura"
                 className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200"
               >
-                Fundación → Organización → Cargos
+                Talento Humano → Estructura de Cargos
               </Link>
               .
             </p>
@@ -664,7 +664,7 @@ const PoliticasSection = ({ identity }: { identity: CorporateIdentity }) => {
           description={
             hayCargos
               ? 'No hay políticas registradas. Crea una desde Sistema de Gestión → Documentos seleccionando tipo «Política».'
-              : 'Para crear políticas con flujo de aprobación, primero configura los cargos en Fundación → Organización. Luego crea políticas desde Sistema de Gestión → Documentos.'
+              : 'Para crear políticas con flujo de aprobación, primero configura los cargos en Talento Humano → Estructura de Cargos. Luego crea políticas desde Sistema de Gestión → Documentos.'
           }
           action={{
             label: 'Crear política',

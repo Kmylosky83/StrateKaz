@@ -475,14 +475,12 @@ export const IniciacionSubTab = () => {
 
   const selectedProyecto = proyectos.find((p) => p.id === selectedProyectoId);
 
-  const { checklist, completedCount } = useInitiationChecklist(
-    selectedProyectoId,
-    selectedProyecto
-  );
-
-  // Refetch proyecto detail para datos actualizados (sponsor_nombre, etc.)
+  // Fetch detail actualizado (sponsor_nombre, gerente_nombre, etc.)
   const { data: proyectoDetail } = useProyecto(selectedProyectoId ?? 0);
+  // Usar detail como fuente principal — siempre tiene datos frescos post-mutación
   const displayProyecto = proyectoDetail || selectedProyecto;
+
+  const { checklist, completedCount } = useInitiationChecklist(selectedProyectoId, displayProyecto);
 
   // Handler para checklist clickable
   const handleChecklistClick = useCallback((item: ChecklistItem) => {

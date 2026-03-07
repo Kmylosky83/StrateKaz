@@ -14,6 +14,7 @@ import {
   useUpdateProyecto,
   useCharters,
   useInteresados,
+  useActividades,
 } from '../../../hooks/useProyectos';
 import { useSelectUsers } from '@/hooks/useSelectLists';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -48,29 +49,19 @@ const useInitiationChecklist = (proyectoId: number | null, proyecto?: Proyecto) 
   const { data: interesadosData } = useInteresados(
     proyectoId ? { proyecto: proyectoId, is_active: true } : undefined
   );
+  const { data: actividadesData } = useActividades(
+    proyectoId ? { proyecto: proyectoId, is_active: true } : undefined
+  );
 
   const charters = chartersData?.results ?? (Array.isArray(chartersData) ? chartersData : []);
   const interesados =
     interesadosData?.results ?? (Array.isArray(interesadosData) ? interesadosData : []);
+  const actividades =
+    actividadesData?.results ?? (Array.isArray(actividadesData) ? actividadesData : []);
 
   const checklist: ChecklistItem[] = useMemo(() => {
     if (!proyecto) return [];
     return [
-      {
-        key: 'charter',
-        label: 'Charter',
-        completed: charters.length > 0,
-      },
-      {
-        key: 'charter_aprobado',
-        label: 'Charter Aprobado',
-        completed: charters.length > 0 && !!charters[0]?.fecha_aprobacion,
-      },
-      {
-        key: 'stakeholders',
-        label: 'Stakeholders',
-        completed: interesados.length > 0,
-      },
       {
         key: 'sponsor',
         label: 'Sponsor',
@@ -82,12 +73,27 @@ const useInitiationChecklist = (proyectoId: number | null, proyecto?: Proyecto) 
         completed: !!proyecto.gerente_nombre,
       },
       {
+        key: 'acta',
+        label: 'Acta de Constitución',
+        completed: charters.length > 0,
+      },
+      {
+        key: 'acta_aprobada',
+        label: 'Acta Aprobada',
+        completed: charters.length > 0 && !!charters[0]?.fecha_aprobacion,
+      },
+      {
+        key: 'interesados',
+        label: 'Partes Interesadas',
+        completed: interesados.length > 0,
+      },
+      {
         key: 'cronograma',
         label: 'Cronograma',
-        completed: !!(proyecto.fecha_inicio_plan && proyecto.fecha_fin_plan),
+        completed: actividades.length > 0,
       },
     ];
-  }, [proyecto, charters, interesados]);
+  }, [proyecto, charters, interesados, actividades]);
 
   const completedCount = checklist.filter((c) => c.completed).length;
 
@@ -420,8 +426,8 @@ const ConfiguracionTab = ({ proyectoId }: ConfiguracionTabProps) => {
 // ==================== TABS CONFIG ====================
 
 const INICIACION_TABS: Tab[] = [
-  { id: 'charter', label: 'Charter', icon: <FileText className="h-4 w-4" /> },
-  { id: 'stakeholders', label: 'Stakeholders', icon: <Users className="h-4 w-4" /> },
+  { id: 'charter', label: 'Acta de Constitución', icon: <FileText className="h-4 w-4" /> },
+  { id: 'stakeholders', label: 'Partes Interesadas', icon: <Users className="h-4 w-4" /> },
   { id: 'config', label: 'Configuración', icon: <Settings className="h-4 w-4" /> },
 ];
 

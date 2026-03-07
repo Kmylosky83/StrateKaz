@@ -1,5 +1,5 @@
 /**
- * Modal para crear/editar Project Charter (Acta de Constitución)
+ * Modal para crear/editar Acta de Constitución del Proyecto
  * DS: BaseModal + Input + Textarea + Button
  */
 import { useState, useEffect } from 'react';
@@ -100,7 +100,7 @@ export const CharterFormModal = ({
         disabled={isLoading || !formData.proposito || !formData.objetivos_medibles}
         isLoading={isLoading}
       >
-        {isEditing ? 'Guardar Cambios' : 'Crear Charter'}
+        {isEditing ? 'Guardar Cambios' : 'Crear Acta'}
       </Button>
     </>
   );
@@ -109,8 +109,8 @@ export const CharterFormModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Project Charter' : 'Nuevo Project Charter'}
-      subtitle="Acta de Constitución del Proyecto"
+      title={isEditing ? 'Editar Acta de Constitución' : 'Nueva Acta de Constitución'}
+      subtitle="Documento que formaliza el inicio del proyecto"
       size="3xl"
       footer={footer}
     >

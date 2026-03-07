@@ -1,5 +1,5 @@
 /**
- * Vista read-only del Project Charter con acciones de edición y aprobación
+ * Vista read-only del Acta de Constitución con acciones de edición y aprobación
  * DS: Card + Badge + Button + SectionToolbar
  */
 import { useState } from 'react';
@@ -78,11 +78,11 @@ export const CharterView = ({ proyectoId }: CharterViewProps) => {
       <>
         <EmptyState
           icon={<FileText className="h-12 w-12" />}
-          title="Sin Project Charter"
-          description="Crea el Acta de Constitución para formalizar el inicio del proyecto"
+          title="Sin Acta de Constitución"
+          description="Cree el acta de constitución para formalizar el inicio del proyecto"
           action={
             <Button variant="primary" size="sm" onClick={() => setShowForm(true)}>
-              Crear Charter
+              Crear Acta
             </Button>
           }
         />
@@ -102,16 +102,16 @@ export const CharterView = ({ proyectoId }: CharterViewProps) => {
     <>
       <div className="space-y-4">
         <SectionToolbar
-          title="Project Charter"
+          title="Acta de Constitución"
           subtitle={
             isAprobado
-              ? `Aprobado el ${new Date(charter.fecha_aprobacion!).toLocaleDateString('es-CO')}`
+              ? `Aprobada el ${new Date(charter.fecha_aprobacion!).toLocaleDateString('es-CO')}`
               : 'Pendiente de aprobación'
           }
           primaryAction={
             !isAprobado
               ? {
-                  label: 'Aprobar Charter',
+                  label: 'Aprobar Acta',
                   icon: <ShieldCheck className="h-4 w-4" />,
                   onClick: () => setShowApproveConfirm(true),
                   variant: 'primary',
@@ -217,8 +217,8 @@ export const CharterView = ({ proyectoId }: CharterViewProps) => {
         isOpen={showApproveConfirm}
         onClose={() => setShowApproveConfirm(false)}
         onConfirm={handleAprobar}
-        title="Aprobar Charter"
-        message="Al aprobar el charter se registrará la fecha y su usuario como aprobador. Esta acción formaliza el inicio del proyecto."
+        title="Aprobar Acta de Constitución"
+        message="Al aprobar el acta se registrará la fecha y su usuario como aprobador. Esta acción formaliza el inicio del proyecto. ¿Desea continuar?"
         confirmText="Aprobar"
         variant="info"
         isLoading={aprobarMutation.isPending}

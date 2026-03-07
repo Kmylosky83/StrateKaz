@@ -360,7 +360,7 @@ export function ExportActaButtonCompact({
         includeSignatures: true,
       });
 
-      toast.success('PDF generado', { duration: 2000, icon: '📄' });
+      toast.success('PDF generado', { duration: 2000 });
       onExportSuccess?.();
     } catch (error) {
       console.error('Error al exportar:', error);
@@ -436,7 +436,7 @@ export function ExportActaButtonWithMenu({
 
       await exportActaToPDF(acta, options as ExportOptions);
 
-      toast.success('PDF generado', { duration: 2000, icon: '📄' });
+      toast.success('PDF generado', { duration: 2000 });
       onExportSuccess?.();
     } catch (error) {
       console.error('Error:', error);

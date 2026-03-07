@@ -18,6 +18,7 @@ import {
   Clock,
   LogIn,
   LogOut,
+  Check,
   Calendar,
   ChevronRight,
 } from 'lucide-react';
@@ -102,7 +103,14 @@ const MarcajeRapido = ({ colaboradorId }: MarcajeRapidoProps) => {
           className="w-full justify-center"
         >
           <LogIn size={14} className="mr-1.5" />
-          {tieneEntrada ? 'Entrada ✓' : 'Marcar Entrada'}
+          {tieneEntrada ? (
+            <>
+              <Check size={14} className="mr-0.5" />
+              Entrada
+            </>
+          ) : (
+            'Marcar Entrada'
+          )}
         </Button>
         <Button
           variant={tieneSalida ? 'ghost' : 'primary'}
@@ -112,7 +120,14 @@ const MarcajeRapido = ({ colaboradorId }: MarcajeRapidoProps) => {
           className="w-full justify-center"
         >
           <LogOut size={14} className="mr-1.5" />
-          {tieneSalida ? 'Salida ✓' : 'Marcar Salida'}
+          {tieneSalida ? (
+            <>
+              <Check size={14} className="mr-0.5" />
+              Salida
+            </>
+          ) : (
+            'Marcar Salida'
+          )}
         </Button>
         <Button
           variant={tieneEntradaAlmuerzo ? 'ghost' : 'ghost'}
@@ -121,7 +136,14 @@ const MarcajeRapido = ({ colaboradorId }: MarcajeRapidoProps) => {
           disabled={!tieneEntrada || tieneEntradaAlmuerzo || registrarMarcaje.isPending}
           className="w-full justify-center text-xs"
         >
-          {tieneEntradaAlmuerzo ? 'Salida Almuerzo ✓' : 'Salida Almuerzo'}
+          {tieneEntradaAlmuerzo ? (
+            <>
+              <Check size={14} className="mr-0.5" />
+              Salida Almuerzo
+            </>
+          ) : (
+            'Salida Almuerzo'
+          )}
         </Button>
         <Button
           variant={tieneSalidaAlmuerzo ? 'ghost' : 'ghost'}
@@ -130,7 +152,14 @@ const MarcajeRapido = ({ colaboradorId }: MarcajeRapidoProps) => {
           disabled={!tieneEntradaAlmuerzo || tieneSalidaAlmuerzo || registrarMarcaje.isPending}
           className="w-full justify-center text-xs"
         >
-          {tieneSalidaAlmuerzo ? 'Regreso Almuerzo ✓' : 'Regreso Almuerzo'}
+          {tieneSalidaAlmuerzo ? (
+            <>
+              <Check size={14} className="mr-0.5" />
+              Regreso Almuerzo
+            </>
+          ) : (
+            'Regreso Almuerzo'
+          )}
         </Button>
       </div>
       {marcajeHoy.length > 0 && (

@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { Tabs } from '@/components/common';
 import { Button } from '@/components/common';
-import { LayoutDashboard, Table2, AlertTriangle, Shield, Plus, Download } from 'lucide-react';
+import { LayoutDashboard, Table2, AlertTriangle, Shield, Plus, Download, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 // Hooks
@@ -278,11 +278,7 @@ function MatrizSection({ className }: MatrizSectionProps) {
           >
             Exportar Excel
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-          >
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
             Nueva Valoración
           </Button>
         </div>
@@ -298,7 +294,9 @@ function MatrizSection({ className }: MatrizSectionProps) {
             Mostrando {matrices.length} de {matricesData.count} registros
           </span>
           {matricesData.next && (
-            <Button variant="ghost" size="sm">Cargar más</Button>
+            <Button variant="ghost" size="sm">
+              Cargar más
+            </Button>
           )}
         </div>
       )}
@@ -403,12 +401,8 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
           <div className="bg-card rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold">Peligros Detallados</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedClasificacion(undefined)}
-              >
-                ✕
+              <Button variant="ghost" size="sm" onClick={() => setSelectedClasificacion(undefined)}>
+                <X size={18} />
               </Button>
             </div>
 
@@ -486,11 +480,7 @@ function ControlesSection({ className }: ControlesSectionProps) {
             Controles implementados según la jerarquía de control de riesgos
           </p>
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
+        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
           Nuevo Control
         </Button>
       </div>

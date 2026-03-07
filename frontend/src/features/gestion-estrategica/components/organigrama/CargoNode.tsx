@@ -7,7 +7,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Users, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { Users, ChevronDown, ChevronRight, AlertCircle, MapPin } from 'lucide-react';
 import { Badge, Avatar, Button, DynamicIcon } from '@/components/common';
 import type {
   CargoNodeData,
@@ -140,8 +140,9 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
       <div className="p-3 space-y-2">
         {/* Área */}
         {cargo.area_name && (
-          <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-            📍 {cargo.area_name}
+          <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 truncate">
+            <MapPin size={14} className="flex-shrink-0" />
+            {cargo.area_name}
           </div>
         )}
 

@@ -8,7 +8,17 @@ import { Spinner } from '@/components/common/Spinner';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
-import { Trophy, Medal, Star, Flame, TrendingUp, Gem, Target, type LucideIcon } from 'lucide-react';
+import {
+  Trophy,
+  Medal,
+  Star,
+  Flame,
+  TrendingUp,
+  Gem,
+  Target,
+  Award,
+  type LucideIcon,
+} from 'lucide-react';
 import { useLeaderboard, useBadges } from '../../hooks/useFormacionReinduccion';
 
 const TIPO_BADGE_ICON: Record<string, LucideIcon> = {
@@ -94,9 +104,16 @@ export const GamificacionTab = () => {
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold">
                             {entry.posicion <= 3 ? (
-                              <span className="text-lg">
-                                {entry.posicion === 1 ? '🥇' : entry.posicion === 2 ? '🥈' : '🥉'}
-                              </span>
+                              <Award
+                                size={20}
+                                className={
+                                  entry.posicion === 1
+                                    ? 'text-yellow-500'
+                                    : entry.posicion === 2
+                                      ? 'text-gray-400'
+                                      : 'text-amber-600'
+                                }
+                              />
                             ) : (
                               <span className="text-gray-500">{entry.posicion}</span>
                             )}

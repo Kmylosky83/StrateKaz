@@ -4,6 +4,7 @@
  * Usa Tailwind CSS exclusivamente (sin librerías externas)
  */
 import { useMemo, useState } from 'react';
+import { CalendarDays } from 'lucide-react';
 import type { ActividadPlan, EstadoActividad } from '../../types/planificacion-sistema.types';
 
 interface GanttTimelineProps {
@@ -131,7 +132,7 @@ export function GanttTimeline({ actividades, planFechaInicio, planFechaFin }: Ga
   if (!actividades.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-600">
-        <div className="text-4xl mb-3">📅</div>
+        <CalendarDays className="h-10 w-10 mb-3" />
         <p className="text-sm">No hay actividades para mostrar en el cronograma</p>
       </div>
     );

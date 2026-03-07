@@ -810,10 +810,10 @@ function TiposTab() {
             </div>
             <div className="flex items-center gap-4 pt-2">
               <Badge variant={selectedTipo.es_email ? 'success' : 'gray'} size="sm">
-                {selectedTipo.es_email ? '✓ Email' : '✗ Email'}
+                {selectedTipo.es_email ? 'Email activo' : 'Email inactivo'}
               </Badge>
               <Badge variant={selectedTipo.es_push ? 'success' : 'gray'} size="sm">
-                {selectedTipo.es_push ? '✓ Push' : '✗ Push'}
+                {selectedTipo.es_push ? 'Push activo' : 'Push inactivo'}
               </Badge>
             </div>
           </div>

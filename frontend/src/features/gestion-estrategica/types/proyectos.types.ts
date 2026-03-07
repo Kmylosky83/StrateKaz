@@ -204,7 +204,7 @@ export interface Proyecto {
 
 export interface CreateProyectoDTO {
   programa?: number | null;
-  codigo: string;
+  codigo?: string;
   nombre: string;
   descripcion?: string;
   tipo: TipoProyecto;

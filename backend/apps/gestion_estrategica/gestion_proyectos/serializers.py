@@ -240,6 +240,35 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['created_at', 'updated_at', 'fecha_propuesta', 'created_by', 'empresa']
 
+    def get_validators(self):
+        """Excluir UniqueTogetherValidator de (empresa, codigo) porque empresa
+        es read_only y se asigna en perform_create. La unicidad se valida
+        explícitamente en validate_codigo."""
+        return [
+            v for v in super().get_validators()
+            if not (
+                hasattr(v, 'fields')
+                and set(v.fields) == {'empresa', 'codigo'}
+            )
+        ]
+
+    def validate_codigo(self, value):
+        """Valida unicidad de codigo dentro de la empresa (si se proporcionó)."""
+        if not value:
+            return value  # Vacío → se auto-genera en model.save()
+
+        from apps.core.base_models.mixins import get_tenant_empresa
+        empresa = get_tenant_empresa()
+        if empresa:
+            qs = Proyecto.objects.filter(empresa=empresa, codigo=value)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    f'Ya existe un proyecto con el código "{value}" en esta empresa.'
+                )
+        return value
+
 
 class DashboardProyectosSerializer(serializers.Serializer):
     """Serializer para dashboard de proyectos"""

@@ -306,7 +306,13 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
       setErrors(validationErrors);
       return;
     }
-    createMutation.mutate(form as CreateProyectoDTO, {
+    // Limpiar datos: fechas vacías → null, campos vacíos → undefined
+    const cleanData = { ...form };
+    if (!cleanData.fecha_inicio_plan) cleanData.fecha_inicio_plan = undefined;
+    if (!cleanData.fecha_fin_plan) cleanData.fecha_fin_plan = undefined;
+    if (!cleanData.codigo) delete cleanData.codigo;
+
+    createMutation.mutate(cleanData as CreateProyectoDTO, {
       onSuccess: () => {
         setForm({ tipo: 'mejora', prioridad: 'media', tipo_origen: 'manual' });
         setErrors({});

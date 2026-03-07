@@ -4,6 +4,7 @@
  * Semana 5: Gestión de Proyectos
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import {
   proyectosApi,
@@ -42,6 +43,26 @@ export const proyectosKeys = {
 
   // Choices
   choices: ['proyectos-choices'] as const,
+};
+
+// ==================== HELPERS ====================
+
+const getErrorMessage = (error: unknown, defaultMessage: string): string => {
+  if (error instanceof AxiosError && error.response?.data) {
+    const data = error.response.data;
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      const messages: string[] = [];
+      for (const [field, value] of Object.entries(data as Record<string, unknown>)) {
+        if (field === 'detail' || field === 'message') return String(value);
+        if (Array.isArray(value)) messages.push(`${field}: ${value.join(', ')}`);
+        else if (typeof value === 'string') messages.push(`${field}: ${value}`);
+      }
+      if (messages.length > 0) return messages.join('\n');
+    }
+    if (typeof data === 'string') return data;
+  }
+  if (error instanceof Error) return error.message;
+  return defaultMessage;
 };
 
 // ==================== PROYECTOS HOOKS ====================
@@ -85,8 +106,8 @@ export const useCreateProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
       toast.success('Proyecto creado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al crear el proyecto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear el proyecto'));
     },
   });
 };
@@ -103,8 +124,8 @@ export const useUpdateProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
       toast.success('Proyecto actualizado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar el proyecto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el proyecto'));
     },
   });
 };
@@ -119,8 +140,8 @@ export const useDeleteProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosPorEstado });
       toast.success('Proyecto eliminado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar el proyecto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el proyecto'));
     },
   });
 };
@@ -137,8 +158,8 @@ export const useCambiarEstadoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
       toast.success('Estado del proyecto actualizado');
     },
-    onError: () => {
-      toast.error('Error al cambiar el estado del proyecto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cambiar el estado del proyecto'));
     },
   });
 };
@@ -159,8 +180,8 @@ export const useActualizarSaludProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyectosDashboard });
       toast.success('Salud del proyecto actualizada');
     },
-    onError: () => {
-      toast.error('Error al actualizar la salud del proyecto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar la salud del proyecto'));
     },
   });
 };
@@ -191,8 +212,8 @@ export const useCreateEquipoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(variables.proyecto) });
       toast.success('Miembro del equipo agregado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al agregar miembro al equipo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al agregar miembro al equipo'));
     },
   });
 };
@@ -207,8 +228,8 @@ export const useUpdateEquipoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.equipo(id) });
       toast.success('Miembro del equipo actualizado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar miembro del equipo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar miembro del equipo'));
     },
   });
 };
@@ -221,8 +242,8 @@ export const useDeleteEquipoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.equipos() });
       toast.success('Miembro del equipo eliminado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar miembro del equipo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar miembro del equipo'));
     },
   });
 };
@@ -253,8 +274,8 @@ export const useCreateHitoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.proyecto(variables.proyecto) });
       toast.success('Hito creado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al crear el hito');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear el hito'));
     },
   });
 };
@@ -269,8 +290,8 @@ export const useUpdateHitoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.hito(id) });
       toast.success('Hito actualizado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar el hito');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar el hito'));
     },
   });
 };
@@ -283,8 +304,8 @@ export const useDeleteHitoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.hitos() });
       toast.success('Hito eliminado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar el hito');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar el hito'));
     },
   });
 };
@@ -299,8 +320,8 @@ export const useCompletarHitoProyecto = () => {
       queryClient.invalidateQueries({ queryKey: proyectosKeys.hito(id) });
       toast.success('Hito completado exitosamente');
     },
-    onError: () => {
-      toast.error('Error al completar el hito');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al completar el hito'));
     },
   });
 };

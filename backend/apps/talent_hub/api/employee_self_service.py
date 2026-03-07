@@ -20,6 +20,8 @@ from django.utils import timezone
 
 logger = logging.getLogger('apps')
 
+from apps.core.utils.impersonation import get_effective_user
+
 from .ess_serializers import (
     ColaboradorESSSerializer,
     InfoPersonalUpdateESSSerializer,
@@ -45,7 +47,7 @@ class MiPerfilView(APIView):
 
     def get(self, request):
         try:
-            colaborador = self._get_colaborador(request.user)
+            colaborador = self._get_colaborador(get_effective_user(request))
             if not colaborador:
                 return Response(
                     {'error': 'No tiene un perfil de colaborador asociado.'},
@@ -61,7 +63,7 @@ class MiPerfilView(APIView):
             )
 
     def put(self, request):
-        colaborador = self._get_colaborador(request.user)
+        colaborador = self._get_colaborador(get_effective_user(request))
         if not colaborador:
             return Response(
                 {'error': 'No tiene un perfil de colaborador asociado.'},
@@ -138,7 +140,7 @@ class MisVacacionesView(APIView):
         return Colaborador.objects.filter(usuario=user, is_active=True).first()
 
     def get(self, request):
-        colaborador = self._get_colaborador(request.user)
+        colaborador = self._get_colaborador(get_effective_user(request))
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -169,7 +171,7 @@ class MisVacacionesView(APIView):
         return Response(VacacionesSaldoESSSerializer(data).data)
 
     def post(self, request):
-        colaborador = self._get_colaborador(request.user)
+        colaborador = self._get_colaborador(get_effective_user(request))
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -200,12 +202,13 @@ class SolicitarPermisoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if hasattr(request.user, 'colaborador'):
-            colaborador = request.user.colaborador
+        effective_user = get_effective_user(request)
+        if hasattr(effective_user, 'colaborador'):
+            colaborador = effective_user.colaborador
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                usuario=request.user, is_active=True
+                usuario=effective_user, is_active=True
             ).first()
 
         if not colaborador:
@@ -239,12 +242,13 @@ class MisRecibosView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if hasattr(request.user, 'colaborador'):
-            colaborador = request.user.colaborador
+        effective_user = get_effective_user(request)
+        if hasattr(effective_user, 'colaborador'):
+            colaborador = effective_user.colaborador
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                usuario=request.user, is_active=True
+                usuario=effective_user, is_active=True
             ).first()
 
         if not colaborador:
@@ -276,12 +280,13 @@ class MisCapacitacionesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if hasattr(request.user, 'colaborador'):
-            colaborador = request.user.colaborador
+        effective_user = get_effective_user(request)
+        if hasattr(effective_user, 'colaborador'):
+            colaborador = effective_user.colaborador
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                usuario=request.user, is_active=True
+                usuario=effective_user, is_active=True
             ).first()
 
         if not colaborador:
@@ -314,12 +319,13 @@ class MiEvaluacionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        if hasattr(request.user, 'colaborador'):
-            colaborador = request.user.colaborador
+        effective_user = get_effective_user(request)
+        if hasattr(effective_user, 'colaborador'):
+            colaborador = effective_user.colaborador
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                usuario=request.user, is_active=True
+                usuario=effective_user, is_active=True
             ).first()
 
         if not colaborador:

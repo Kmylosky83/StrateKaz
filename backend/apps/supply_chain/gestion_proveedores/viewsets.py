@@ -18,6 +18,7 @@ from django.db import transaction
 from django.db.models import Q, Avg, Sum, Count
 from django.utils import timezone
 from django.conf import settings
+from apps.core.utils.impersonation import get_effective_user
 
 from .models import (
     # Catálogos dinámicos (propios de Supply Chain)
@@ -854,7 +855,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         Solo accesible para usuarios con proveedor asignado.
         Solo lectura — el consultor ve su ficha pero no la edita.
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
@@ -879,7 +880,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         GET /api/supply-chain/proveedores/mi-empresa/contratos/
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
@@ -905,7 +906,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         GET /api/supply-chain/proveedores/mi-empresa/evaluaciones/
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
@@ -935,7 +936,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         Solo disponible para proveedores que manejan materia prima.
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
@@ -971,7 +972,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         que ha colocado en la empresa cliente.
         Solo disponible para proveedores tipo CONSULTOR.
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
@@ -1024,7 +1025,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         - Solo puede gestionar usuarios del MISMO proveedor
         - No puede desactivar su propia cuenta
         """
-        proveedor = getattr(request.user, 'proveedor', None)
+        proveedor = getattr(get_effective_user(request), 'proveedor', None)
         if not proveedor:
             return Response(
                 {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},

@@ -38,6 +38,17 @@ SECURE_HSTS_PRELOAD = True
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^https://[\w-]+\.stratekaz\.com$',
 ]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'authorization',
+    'content-type',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-tenant-id',
+    'x-impersonated-user-id',
+)
 
 # =============================================================================
 # CSRF - Trust all tenant subdomains

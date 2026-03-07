@@ -24,6 +24,14 @@ axiosInstance.interceptors.request.use(
       config.headers['X-Tenant-ID'] = tenantId;
     }
 
+    // Impersonación: informar al backend cuál es el usuario efectivo
+    // Los endpoints de portal (mi-empresa, mi-portal) usan esto para
+    // devolver datos del usuario impersonado en vez del superadmin
+    const impersonatedUserId = localStorage.getItem('impersonated_user_id');
+    if (impersonatedUserId && config.headers) {
+      config.headers['X-Impersonated-User-ID'] = impersonatedUserId;
+    }
+
     return config;
   },
   (error) => {

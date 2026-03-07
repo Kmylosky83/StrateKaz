@@ -896,7 +896,9 @@ export const useCargarConsecutivosSistema = () => {
     mutationFn: consecutivosApi.cargarSistema,
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
-      toast.success(result.message);
+      toast.success(
+        `${result.message} (${result.creados} nuevos, ${result.actualizados} actualizados, ${result.total} total)`
+      );
     },
     onError: () => {
       toast.error('Error al cargar consecutivos del sistema');

@@ -54,6 +54,7 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'consecutivos'
+    pagination_class = None  # Consecutivos son finitos (~50), no necesitan paginación
 
     # Filtros: FilterSet explícito para manejo robusto de booleanos
     # y escalabilidad para consumo por otras áreas del sistema

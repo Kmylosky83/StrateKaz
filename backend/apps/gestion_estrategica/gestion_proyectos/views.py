@@ -567,7 +567,7 @@ class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def gantt(self, request):
-        """Retorna datos para diagrama de Gantt"""
+        """Retorna datos para diagrama de Gantt con info de fase"""
         proyecto_id = request.query_params.get('proyecto')
         if not proyecto_id:
             return Response(
@@ -577,7 +577,9 @@ class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         actividades = self.get_queryset().filter(
             proyecto_id=proyecto_id, is_active=True
-        ).order_by('fecha_inicio_plan')
+        ).select_related('responsable', 'fase').order_by(
+            'fase__orden', 'codigo_wbs'
+        )
 
         data = []
         for act in actividades:
@@ -591,6 +593,9 @@ class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 'responsable': act.responsable.get_full_name() if act.responsable else None,
                 'predecesoras': list(act.predecesoras.values_list('id', flat=True)),
                 'estado': act.estado,
+                'fase_id': act.fase_id,
+                'fase_nombre': act.fase.nombre if act.fase else None,
+                'fase_orden': act.fase.orden if act.fase else None,
             })
 
         return Response(data)

@@ -492,7 +492,7 @@ const ParteInteresadaFormModalComponent = ({
       { value: '', label: 'Sin asignar' },
       ...(Array.isArray(areasData) ? areasData : areasData?.results || []).map((a) => ({
         value: a.id.toString(),
-        label: a.nombre,
+        label: a.name,
       })),
     ],
     [areasData]

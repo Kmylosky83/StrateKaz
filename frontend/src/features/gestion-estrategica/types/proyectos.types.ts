@@ -829,6 +829,9 @@ export interface GanttItem {
   responsable: string | null;
   predecesoras: number[];
   estado: string;
+  fase_id: number | null;
+  fase_nombre: string | null;
+  fase_orden: number | null;
 }
 
 // ==================== SELECT OPTIONS ====================

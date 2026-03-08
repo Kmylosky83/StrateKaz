@@ -30,6 +30,8 @@ class Command(BaseCommand):
         ('documentos_th', 'seed_tipos_documento_th', [], 'TipoDocumento + Plantilla para contratos laborales'),
         ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
         ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
+        ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),
+        ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
     ]
 
     def add_arguments(self, parser):

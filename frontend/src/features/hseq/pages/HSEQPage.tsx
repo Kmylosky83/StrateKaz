@@ -52,13 +52,13 @@ export default function HSEQPage() {
         </div>
       </div>
 
-      {/* GRID DE MÓDULOS — 8 tabs operativos HSEQ */}
+      {/* GRID DE MÓDULOS — 7 tabs operativos HSEQ + acceso a Calidad (SGI) */}
       <SelectionCardGrid columns={4}>
         <SelectionCard
           icon={Award}
           title="Calidad"
           subtitle="ISO 9001 - No conformidades, acciones correctivas y control de cambios"
-          href="/hseq/calidad"
+          href="/sistema-gestion/calidad"
           variant="gradient"
           color="green"
         />

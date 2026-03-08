@@ -67,7 +67,6 @@ const TAB_ROUTES: Record<string, string> = {
   // Cumplimiento
   matriz_legal: 'matriz-legal',
   requisitos_legales: 'requisitos-legales',
-  partes_interesadas: 'partes-interesadas',
   reglamentos_internos: 'reglamentos-internos',
   // Riesgos
   riesgos_procesos: 'procesos',
@@ -219,7 +218,7 @@ export const DashboardPage = () => {
 
   const enabledModules = useMemo(() => {
     if (!modulesTree?.modules) return [];
-    return modulesTree.modules.filter((m) => m.is_enabled).sort((a, b) => a.order - b.order);
+    return modulesTree.modules.filter((m) => m.is_enabled).sort((a, b) => a.orden - b.orden);
   }, [modulesTree]);
 
   const enabledModuleCodes = useMemo(

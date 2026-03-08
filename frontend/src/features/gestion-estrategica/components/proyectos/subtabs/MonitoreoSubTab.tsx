@@ -7,7 +7,7 @@ import { Card, Badge, EmptyState } from '@/components/common';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
-import { useProyectos, useProyecto } from '../../../hooks/useProyectos';
+import { useProyectos, useProyecto, useSeguimientos } from '../../../hooks/useProyectos';
 import { KanbanBoard } from '../kanban';
 import { CalendarView } from '../calendar';
 import { ActividadesSection } from '../planificacion/ActividadesSection';
@@ -15,7 +15,12 @@ import { ActividadFormModal } from '../planificacion/ActividadFormModal';
 import { GanttView } from '../planificacion/GanttView';
 import { RiesgosSection } from '../monitoreo/RiesgosSection';
 import { SeguimientoSection } from '../monitoreo/SeguimientoSection';
-import type { Proyecto, ActividadProyecto } from '../../../types/proyectos.types';
+import { CurvaSChart } from '../monitoreo/CurvaSChart';
+import type {
+  Proyecto,
+  ActividadProyecto,
+  SeguimientoProyecto,
+} from '../../../types/proyectos.types';
 import type { Tab } from '@/components/common/Tabs';
 import {
   Activity,
@@ -28,6 +33,8 @@ import {
   Target,
   DollarSign,
   CheckCircle2,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react';
 
 // ==================== TABS CONFIG ====================
@@ -42,15 +49,51 @@ const MONITOREO_TABS: Tab[] = [
   { id: 'calendario', label: 'Calendario', icon: <Calendar className="h-4 w-4" /> },
 ];
 
+// ==================== HELPERS ====================
+
+const fmtMoney = (val?: string | number | null): string => {
+  const n = Number(val ?? 0);
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return `$${n}`;
+};
+
+const indexColor = (val?: number | null): 'success' | 'warning' | 'danger' | 'gray' => {
+  if (!val) return 'gray';
+  if (val >= 1) return 'success';
+  if (val >= 0.9) return 'warning';
+  return 'danger';
+};
+
+const saludColor = (estado?: string): 'success' | 'warning' | 'danger' | 'gray' => {
+  if (estado === 'verde') return 'success';
+  if (estado === 'amarillo') return 'warning';
+  if (estado === 'rojo') return 'danger';
+  return 'gray';
+};
+
+const saludLabel: Record<string, string> = {
+  verde: 'En Plan',
+  amarillo: 'En Riesgo',
+  rojo: 'Crítico',
+};
+
 // ==================== DASHBOARD TAB ====================
 
 const DashboardTab = ({ proyectoId }: { proyectoId: number }) => {
   const { data: proyecto } = useProyecto(proyectoId);
+  const { data: seguimientosData } = useSeguimientos({ proyecto: proyectoId });
 
   if (!proyecto) return null;
 
+  const seguimientos: SeguimientoProyecto[] = Array.isArray(seguimientosData)
+    ? seguimientosData
+    : (seguimientosData?.results ?? []);
+  const lastSeg = seguimientos[0]; // Más reciente (ordenado por -fecha)
+
   return (
     <div className="space-y-4">
+      {/* KPIs — Proyecto */}
       <StatsGrid
         columns={4}
         variant="compact"
@@ -69,19 +112,57 @@ const DashboardTab = ({ proyectoId }: { proyectoId: number }) => {
           },
           {
             label: 'Presupuesto',
-            value: `$${proyecto.presupuesto_aprobado ?? '0'}`,
+            value: fmtMoney(proyecto.presupuesto_aprobado),
             icon: DollarSign,
             iconColor: 'success',
           },
           {
             label: 'Costo Real',
-            value: `$${proyecto.costo_real ?? '0'}`,
+            value: fmtMoney(proyecto.costo_real),
             icon: DollarSign,
             iconColor: 'warning',
           },
         ]}
       />
 
+      {/* KPIs — EVM (último seguimiento) */}
+      {lastSeg && (
+        <StatsGrid
+          columns={4}
+          variant="compact"
+          stats={[
+            {
+              label: 'SPI',
+              value: lastSeg.spi != null ? lastSeg.spi.toFixed(2) : '—',
+              icon: TrendingUp,
+              iconColor: indexColor(lastSeg.spi),
+            },
+            {
+              label: 'CPI',
+              value: lastSeg.cpi != null ? lastSeg.cpi.toFixed(2) : '—',
+              icon: DollarSign,
+              iconColor: indexColor(lastSeg.cpi),
+            },
+            {
+              label: 'Salud',
+              value: saludLabel[lastSeg.estado_general] ?? lastSeg.estado_general,
+              icon: ShieldCheck,
+              iconColor: saludColor(lastSeg.estado_general),
+            },
+            {
+              label: 'Último Reporte',
+              value: new Date(lastSeg.fecha).toLocaleDateString('es-CO', {
+                day: '2-digit',
+                month: 'short',
+              }),
+              icon: Clock,
+              iconColor: 'gray',
+            },
+          ]}
+        />
+      )}
+
+      {/* Resumen del proyecto */}
       <Card>
         <div className="p-6">
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
@@ -139,7 +220,7 @@ const DashboardTab = ({ proyectoId }: { proyectoId: number }) => {
             </div>
           </div>
 
-          {/* Progress bar */}
+          {/* Barra de progreso */}
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">Progreso General</span>
@@ -154,6 +235,9 @@ const DashboardTab = ({ proyectoId }: { proyectoId: number }) => {
           </div>
         </div>
       </Card>
+
+      {/* Curva S — EVM (se muestra solo si hay ≥2 seguimientos) */}
+      <CurvaSChart proyectoId={proyectoId} />
     </div>
   );
 };

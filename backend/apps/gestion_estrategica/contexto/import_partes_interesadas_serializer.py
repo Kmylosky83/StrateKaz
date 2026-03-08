@@ -8,6 +8,7 @@ from .import_partes_interesadas_utils import (
     NIVEL_INFLUENCIA_MAP,
     NIVEL_INTERES_MAP,
     CANAL_MAP,
+    FRECUENCIA_MAP,
     normalizar_valor,
     parsear_bool,
 )
@@ -34,12 +35,22 @@ class ParteInteresadaImportRowSerializer(serializers.Serializer):
     subgrupo_nombre = serializers.CharField(required=False, allow_blank=True, default='')
     descripcion = serializers.CharField(required=False, allow_blank=True, default='')
     representante = serializers.CharField(required=False, allow_blank=True, default='')
+    cargo_representante = serializers.CharField(required=False, allow_blank=True, default='')
+    email = serializers.CharField(required=False, allow_blank=True, default='')
+    telefono = serializers.CharField(required=False, allow_blank=True, default='')
+    direccion = serializers.CharField(required=False, allow_blank=True, default='')
+    sitio_web = serializers.CharField(required=False, allow_blank=True, default='')
     temas_interes_pi = serializers.CharField(required=False, allow_blank=True, default='')
     temas_interes_empresa = serializers.CharField(required=False, allow_blank=True, default='')
     nivel_influencia_pi = serializers.CharField(required=False, allow_blank=True, default='')
     nivel_influencia_empresa = serializers.CharField(required=False, allow_blank=True, default='')
     nivel_interes = serializers.CharField(required=False, allow_blank=True, default='')
     canal_principal = serializers.CharField(required=False, allow_blank=True, default='')
+    frecuencia_comunicacion = serializers.CharField(required=False, allow_blank=True, default='')
+    necesidades = serializers.CharField(required=False, allow_blank=True, default='')
+    expectativas = serializers.CharField(required=False, allow_blank=True, default='')
+    requisitos_pertinentes = serializers.CharField(required=False, allow_blank=True, default='')
+    es_requisito_legal = serializers.CharField(required=False, allow_blank=True, default='')
     relacionado_sst = serializers.CharField(required=False, allow_blank=True, default='')
     relacionado_ambiental = serializers.CharField(required=False, allow_blank=True, default='')
     relacionado_calidad = serializers.CharField(required=False, allow_blank=True, default='')
@@ -156,7 +167,17 @@ class ParteInteresadaImportRowSerializer(serializers.Serializer):
         else:
             attrs['canal_principal'] = 'email'
 
+        # ── Normalizar frecuencia de comunicación ──
+        frec = normalizar_valor(attrs.get('frecuencia_comunicacion', ''))
+        attrs['frecuencia_comunicacion'] = FRECUENCIA_MAP.get(frec, 'mensual') if frec else 'mensual'
+
+        # ── Limpiar campos de texto libre ──
+        for campo in ('cargo_representante', 'email', 'telefono', 'direccion',
+                      'sitio_web', 'necesidades', 'expectativas', 'requisitos_pertinentes'):
+            attrs[campo] = str(attrs.get(campo, '')).strip()
+
         # ── Parsear booleanos ──
+        attrs['es_requisito_legal'] = parsear_bool(attrs.get('es_requisito_legal', ''))
         attrs['relacionado_sst'] = parsear_bool(attrs.get('relacionado_sst', ''))
         attrs['relacionado_ambiental'] = parsear_bool(attrs.get('relacionado_ambiental', ''))
         attrs['relacionado_calidad'] = parsear_bool(attrs.get('relacionado_calidad', ''))

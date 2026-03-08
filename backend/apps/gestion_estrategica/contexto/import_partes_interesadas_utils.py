@@ -42,23 +42,48 @@ CANAL_MAP = {
     'OTRO': 'otro',
 }
 
+FRECUENCIA_MAP = {
+    'DIARIA': 'diaria',
+    'SEMANAL': 'semanal',
+    'QUINCENAL': 'quincenal',
+    'MENSUAL': 'mensual',
+    'BIMESTRAL': 'bimestral',
+    'TRIMESTRAL': 'trimestral',
+    'SEMESTRAL': 'semestral',
+    'ANUAL': 'anual',
+    'SEGUN NECESIDAD': 'segun_necesidad',
+    'SEGÚN NECESIDAD': 'segun_necesidad',
+    'SEGUN NECESIDADES': 'segun_necesidad',
+    'SEGÚN NECESIDADES': 'segun_necesidad',
+}
+
 # Columnas del archivo de importación (índice 0-based)
 PI_COLUMNAS = [
-    'grupo_nombre',
-    'subgrupo_nombre',
-    'nombre',
-    'descripcion',
-    'representante',
-    'temas_interes_pi',
-    'temas_interes_empresa',
-    'nivel_influencia_pi',
-    'nivel_influencia_empresa',
-    'nivel_interes',
-    'canal_principal',
-    'relacionado_sst',
-    'relacionado_ambiental',
-    'relacionado_calidad',
-    'relacionado_pesv',
+    'grupo_nombre',           # A
+    'subgrupo_nombre',        # B
+    'nombre',                 # C
+    'descripcion',            # D
+    'representante',          # E
+    'cargo_representante',    # F
+    'email',                  # G
+    'telefono',               # H
+    'direccion',              # I
+    'sitio_web',              # J
+    'temas_interes_pi',       # K
+    'temas_interes_empresa',  # L
+    'nivel_influencia_pi',    # M
+    'nivel_influencia_empresa', # N
+    'nivel_interes',          # O
+    'canal_principal',        # P
+    'frecuencia_comunicacion', # Q
+    'necesidades',            # R
+    'expectativas',           # S
+    'requisitos_pertinentes', # T
+    'es_requisito_legal',     # U
+    'relacionado_sst',        # V
+    'relacionado_ambiental',  # W
+    'relacionado_calidad',    # X
+    'relacionado_pesv',       # Y
 ]
 
 
@@ -135,22 +160,32 @@ THIN_BORDER = Border(
 )
 
 # Definición de columnas para la plantilla
+# (header, ancho, requerido, ejemplo, nota)
 TEMPLATE_COLUMNS = [
-    # (header, ancho, requerido, ejemplo, nota)
     ('Grupo', 25, True, 'Personal', 'Grupo macro (ver hoja Referencia)'),
     ('Subgrupo (Tipo)', 25, False, 'Alta Dirección', 'Tipo dentro del grupo (se crea automáticamente si no existe)'),
-    ('Nombre Parte Interesada', 30, True, 'Gerente General', 'Nombre de la parte interesada'),
+    ('Nombre Parte Interesada', 30, True, 'Gerente General', 'Nombre único de la parte interesada'),
     ('Descripción', 40, False, 'Máxima autoridad de la empresa', 'Descripción de la parte interesada'),
-    ('Representante', 25, False, 'Juan Pérez', 'Persona representante'),
-    ('Temas Interés PI', 35, False, 'Rentabilidad, crecimiento', 'Temas de interés para la parte interesada'),
-    ('Temas Interés Empresa', 35, False, 'Liderazgo, compromiso', 'Temas de interés para la empresa'),
-    ('Impacto PI→Empresa', 18, False, 'Alta', 'Alta / Media / Baja'),
-    ('Impacto Empresa→PI', 18, False, 'Media', 'Alta / Media / Baja'),
+    ('Representante', 25, False, 'Juan Pérez', 'Nombre de la persona representante'),
+    ('Cargo Representante', 22, False, 'Director General', 'Cargo o rol del representante'),
+    ('Email Contacto', 28, False, 'contacto@empresa.com', 'Correo electrónico de contacto'),
+    ('Teléfono Contacto', 18, False, '+57 300 123 4567', 'Número de teléfono de contacto'),
+    ('Dirección', 30, False, 'Calle 123 #45-67, Bogotá', 'Dirección física de la parte interesada'),
+    ('Sitio Web', 28, False, 'https://empresa.com', 'URL del sitio web (incluir https://)'),
+    ('Temas Interés PI', 35, False, 'Rentabilidad, crecimiento', 'Qué le interesa a la PI de la empresa'),
+    ('Temas Interés Empresa', 35, False, 'Liderazgo, compromiso', 'Qué le interesa a la empresa de la PI'),
+    ('Impacto PI→Empresa', 18, False, 'Alta', 'Alta / Media / Baja — Poder de la PI'),
+    ('Impacto Empresa→PI', 18, False, 'Media', 'Alta / Media / Baja — Poder de la Empresa'),
     ('Nivel Interés', 18, False, 'Alto', 'Alto / Medio / Bajo'),
     ('Canal Comunicación', 22, False, 'Reunión Presencial', 'Canal principal (ver hoja Referencia)'),
-    ('SST', 10, False, 'Sí', 'Sí / No — ¿Relacionado con SST?'),
-    ('Ambiental', 10, False, 'No', 'Sí / No — ¿Relacionado con Ambiental?'),
-    ('Calidad', 10, False, 'Sí', 'Sí / No — ¿Relacionado con Calidad?'),
+    ('Frecuencia Comunicación', 22, False, 'Mensual', 'Diaria / Semanal / Quincenal / Mensual / Trimestral / Anual / Según necesidad'),
+    ('Necesidades', 40, False, 'Productos de calidad, información oportuna', '¿Qué necesita esta PI de la organización?'),
+    ('Expectativas', 40, False, 'Servicio confiable, mejora continua', '¿Qué espera esta PI de la organización?'),
+    ('Requisitos Pertinentes', 40, False, 'Certificación ISO, tiempos de entrega', 'Requisitos que la empresa debe cumplir para esta PI'),
+    ('Requisito Legal', 12, False, 'No', 'Sí / No — ¿Tiene requisitos de carácter legal?'),
+    ('SST', 10, False, 'Sí', 'Sí / No — ¿Relacionado con SST (ISO 45001)?'),
+    ('Ambiental', 10, False, 'No', 'Sí / No — ¿Relacionado con Ambiental (ISO 14001)?'),
+    ('Calidad', 10, False, 'Sí', 'Sí / No — ¿Relacionado con Calidad (ISO 9001)?'),
     ('PESV', 10, False, 'No', 'Sí / No — ¿Relacionado con PESV?'),
 ]
 
@@ -279,8 +314,15 @@ def generate_partes_interesadas_template(
         ['Otro'],
     ], row, 1)
 
+    # Frecuencias de Comunicación
+    row = write_section(ws2, 'FRECUENCIAS DE COMUNICACIÓN', ['Valor'], [
+        ['Diaria'], ['Semanal'], ['Quincenal'], ['Mensual'],
+        ['Bimestral'], ['Trimestral'], ['Semestral'], ['Anual'],
+        ['Según necesidad'],
+    ], row, 1)
+
     # Sistemas de Gestión (SST/Ambiental/Calidad/PESV)
-    write_section(ws2, 'RELACIÓN CON SISTEMAS', ['Valor'], [
+    write_section(ws2, 'RELACIÓN CON SISTEMAS / SÍ/NO', ['Valor'], [
         ['Sí'], ['No'],
     ], row, 1)
 

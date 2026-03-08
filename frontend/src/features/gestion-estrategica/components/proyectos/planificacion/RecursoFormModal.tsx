@@ -210,6 +210,25 @@ export const RecursoFormModal = ({
           />
         </div>
 
+        {/* Costo Total preview */}
+        {(() => {
+          const total = Number(formData.costo_unitario ?? 0) * Number(formData.cantidad ?? 1);
+          const fmt =
+            total >= 1_000_000
+              ? `$${(total / 1_000_000).toFixed(2)}M`
+              : total >= 1_000
+                ? `$${(total / 1_000).toFixed(0)}K`
+                : `$${total.toFixed(2)}`;
+          return (
+            <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2.5">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Costo Total Estimado</span>
+              <span className="text-base font-bold text-primary-600 dark:text-primary-400">
+                {fmt}
+              </span>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Fecha Inicio"

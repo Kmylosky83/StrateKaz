@@ -380,6 +380,9 @@ export interface CreateFaseDTO {
   descripcion?: string;
   fecha_inicio_plan?: string;
   fecha_fin_plan?: string;
+  fecha_inicio_real?: string;
+  fecha_fin_real?: string;
+  porcentaje_avance?: number;
   entregables?: string;
   is_active?: boolean;
 }

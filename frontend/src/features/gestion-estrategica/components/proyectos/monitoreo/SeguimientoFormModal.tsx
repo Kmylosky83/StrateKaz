@@ -188,6 +188,49 @@ export const SeguimientoFormModal = ({
           />
         </div>
 
+        {/* SPI / CPI live preview */}
+        {(() => {
+          const pv = Number(formData.valor_planificado ?? 0);
+          const ev = Number(formData.valor_ganado ?? 0);
+          const ac = Number(formData.costo_actual ?? 0);
+          const spi = pv > 0 ? ev / pv : null;
+          const cpi = ac > 0 ? ev / ac : null;
+          const color = (v: number | null) =>
+            v == null
+              ? 'text-gray-400'
+              : v >= 1
+                ? 'text-green-600 dark:text-green-400'
+                : v >= 0.9
+                  ? 'text-yellow-600 dark:text-yellow-400'
+                  : 'text-red-600 dark:text-red-400';
+          return (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-center">
+                <p className="text-xs text-gray-500 mb-0.5">SPI (Eficiencia Plazo)</p>
+                <p className={`text-xl font-bold ${color(spi)}`}>
+                  {spi != null ? spi.toFixed(2) : '—'}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {spi != null && spi >= 1 ? 'A tiempo' : spi != null ? 'Retrasado' : 'Sin datos'}
+                </p>
+              </div>
+              <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-center">
+                <p className="text-xs text-gray-500 mb-0.5">CPI (Eficiencia Costo)</p>
+                <p className={`text-xl font-bold ${color(cpi)}`}>
+                  {cpi != null ? cpi.toFixed(2) : '—'}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {cpi != null && cpi >= 1
+                    ? 'Bajo presupuesto'
+                    : cpi != null
+                      ? 'Sobre presupuesto'
+                      : 'Sin datos'}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
         <Input
           label="Costo Acumulado"
           type="number"

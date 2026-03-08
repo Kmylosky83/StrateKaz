@@ -183,6 +183,39 @@ export const ActaCierreFormModal = ({
           />
         </div>
 
+        {/* Variación presupuestal live preview */}
+        {(() => {
+          const pf = Number(formData.presupuesto_final ?? 0);
+          const cf = Number(formData.costo_final ?? 0);
+          if (pf <= 0) return null;
+          const variacion = ((cf - pf) / pf) * 100;
+          const isOver = variacion > 0;
+          return (
+            <div
+              className={`flex items-center justify-between rounded-lg border px-4 py-2.5 ${
+                isOver
+                  ? 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
+                  : 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+              }`}
+            >
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Variación Presupuestal
+              </span>
+              <span
+                className={`text-base font-bold ${
+                  isOver ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                }`}
+              >
+                {isOver ? '+' : ''}
+                {variacion.toFixed(1)}%{' '}
+                <span className="text-xs font-normal">
+                  ({isOver ? 'sobre presupuesto' : 'bajo presupuesto'})
+                </span>
+              </span>
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Duración Planificada (días)"

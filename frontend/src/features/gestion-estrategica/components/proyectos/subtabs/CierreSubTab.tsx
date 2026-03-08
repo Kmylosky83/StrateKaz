@@ -3,10 +3,18 @@
  * Selector de proyecto + Tabs: Checklist | Lecciones Aprendidas | Acta de Cierre
  */
 import { useState, useEffect } from 'react';
-import { Card, Badge, EmptyState } from '@/components/common';
+import { Card, Badge, Button, EmptyState } from '@/components/common';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
-import { useProyectos, useLecciones, useActasCierre } from '../../../hooks/useProyectos';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import {
+  useProyectos,
+  useLecciones,
+  useActasCierre,
+  useCambiarEstadoProyecto,
+  proyectosKeys,
+} from '../../../hooks/useProyectos';
+import { useQueryClient } from '@tanstack/react-query';
 import { LeccionesSection } from '../cierre/LeccionesSection';
 import { ActaCierreSection } from '../cierre/ActaCierreSection';
 import type { Proyecto } from '../../../types/proyectos.types';
@@ -18,6 +26,7 @@ import {
   FileCheck,
   ShieldCheck,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
 
 // ==================== TABS CONFIG ====================
@@ -36,7 +45,15 @@ interface CheckItem {
   detail?: string;
 }
 
-const ChecklistTab = ({ proyectoId }: { proyectoId: number }) => {
+const ChecklistTab = ({
+  proyectoId,
+  onAdvance,
+  isAdvancing,
+}: {
+  proyectoId: number;
+  onAdvance?: () => void;
+  isAdvancing?: boolean;
+}) => {
   const { data: leccionesData } = useLecciones({ proyecto: proyectoId, is_active: true });
   const { data: actasData } = useActasCierre({ proyecto: proyectoId });
 
@@ -144,6 +161,22 @@ const ChecklistTab = ({ proyectoId }: { proyectoId: number }) => {
             </div>
           ))}
         </div>
+
+        {/* Avanzar a Completado */}
+        {completedCount === items.length && onAdvance && (
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onAdvance}
+              isLoading={isAdvancing}
+              disabled={isAdvancing}
+            >
+              <ArrowRight className="h-4 w-4 mr-1" />
+              Marcar como Completado
+            </Button>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -154,6 +187,10 @@ const ChecklistTab = ({ proyectoId }: { proyectoId: number }) => {
 export const CierreSubTab = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('checklist');
+  const [showAdvanceConfirm, setShowAdvanceConfirm] = useState(false);
+
+  const queryClient = useQueryClient();
+  const cambiarEstado = useCambiarEstadoProyecto();
 
   const { data: proyectosCierre, isLoading: loadingCierre } = useProyectos({
     estado: 'cierre',
@@ -261,10 +298,36 @@ export const CierreSubTab = () => {
 
           {/* Tab Content */}
           <div className="mt-4">
-            {activeTab === 'checklist' && <ChecklistTab proyectoId={selectedProjectId} />}
+            {activeTab === 'checklist' && (
+              <ChecklistTab
+                proyectoId={selectedProjectId}
+                onAdvance={() => setShowAdvanceConfirm(true)}
+                isAdvancing={cambiarEstado.isPending}
+              />
+            )}
             {activeTab === 'lecciones' && <LeccionesSection proyectoId={selectedProjectId} />}
             {activeTab === 'acta' && <ActaCierreSection proyectoId={selectedProjectId} />}
           </div>
+
+          {/* Confirmar avance a Completado */}
+          <ConfirmDialog
+            isOpen={showAdvanceConfirm}
+            onClose={() => setShowAdvanceConfirm(false)}
+            onConfirm={async () => {
+              await cambiarEstado.mutateAsync({
+                id: selectedProjectId!,
+                estado: 'completado',
+              });
+              queryClient.invalidateQueries({ queryKey: proyectosKeys.all });
+              setShowAdvanceConfirm(false);
+              setSelectedProjectId(null);
+            }}
+            title="Marcar proyecto como Completado"
+            message={`El proyecto "${selectedProyecto?.nombre}" pasará a estado Completado. Esta acción formaliza el cierre del proyecto. ¿Desea continuar?`}
+            confirmText="Completar Proyecto"
+            variant="info"
+            isLoading={cambiarEstado.isPending}
+          />
         </>
       )}
     </div>

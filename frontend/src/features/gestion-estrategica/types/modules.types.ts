@@ -99,6 +99,20 @@ export interface SystemModuleTree {
   dependents?: number[];
 }
 
+// ==================== LAYERS (AGRUPAMIENTO SIDEBAR/DASHBOARD) ====================
+
+/**
+ * Configuración de layer para agrupamiento visual
+ * Viene del backend SIDEBAR_LAYERS
+ */
+export interface ModuleLayer {
+  code: string;
+  name: string;
+  icon: string;
+  color: string;
+  module_codes: string[];
+}
+
 // ==================== ÁRBOL DE MÓDULOS ====================
 
 /**
@@ -114,6 +128,7 @@ export interface ModulesTree {
     name: string;
     modules_count: number;
   }[];
+  layers: ModuleLayer[];
 }
 
 // ==================== DTOs DE TOGGLE ====================

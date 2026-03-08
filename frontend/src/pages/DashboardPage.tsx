@@ -1,8 +1,8 @@
 /**
  * Dashboard Principal - Página de inicio post-login
  *
- * Muestra todos los módulos del sistema en un grid uniforme.
- * Incluye: banner de bienvenida (dismissible), accesos rápidos y grid de módulos.
+ * Muestra módulos del sistema agrupados por capas funcionales (6 layers).
+ * Incluye: banner de bienvenida (dismissible), accesos rápidos y grid agrupado.
  * Usa componentes del Design System para animaciones.
  */
 import { useMemo, useState } from 'react';
@@ -36,35 +36,31 @@ const getIconComponent = (iconName: string | undefined): LucideIcon => {
 };
 
 /**
- * Mapeo hardcodeado de módulos a sus rutas base
+ * Mapeo de módulos a sus rutas base
  * Sincronizado con routes/index.tsx y seed_estructura_final.py
  */
 const MODULE_ROUTES: Record<string, string> = {
-  // Nivel 1-2: Fundacion + Estructura
-  gestion_estrategica: '/gestion-estrategica',
-  // Nivel 3: Direccion Estrategica (soporte redirige a HSEQ)
-  soporte_estrategico: '/hseq',
-  // Nivel 4: Talento Humano
-  talent_hub: '/talento',
-  // Nivel 5: Riesgos y Cumplimiento
+  fundacion: '/fundacion',
+  planeacion_estrategica: '/planeacion-estrategica',
+  sistema_gestion: '/sistema-gestion',
   motor_cumplimiento: '/cumplimiento',
   motor_riesgos: '/riesgos',
   workflow_engine: '/workflows',
-  // Nivel 6: Gestion HSEQ
   hseq_management: '/hseq',
-  // Nivel 7: Operaciones y Soporte
   supply_chain: '/supply-chain',
   production_ops: '/produccion',
   logistics_fleet: '/logistica',
   sales_crm: '/ventas',
+  talent_hub: '/talento',
   admin_finance: '/finanzas',
   accounting: '/contabilidad',
   analytics: '/analytics',
+  revision_direccion: '/revision-direccion',
   audit_system: '/auditoria',
 };
 
 /**
- * Mapeo hardcodeado de tabs a sus rutas (slug)
+ * Mapeo de tabs a sus rutas (slug)
  * Solo para tabs que tienen ruta diferente al código
  */
 const TAB_ROUTES: Record<string, string> = {
@@ -90,11 +86,14 @@ const TAB_ROUTES: Record<string, string> = {
   gestion_comites: 'comites',
   gestion_ambiental: 'gestion-ambiental',
   mejora_continua: 'mejora-continua',
-  // Dirección Estratégica
-  gestion_documental: 'gestion-documental',
-  planificacion_sistema: 'planificacion-sistema',
+  // Sistema de Gestión
+  gestion_documental: 'documentos',
+  planificacion_sistema: 'planificacion',
+  auditorias_internas: 'auditorias',
+  acciones_mejora: 'acciones',
+  // Planeación Estratégica
   gestion_proyectos: 'proyectos',
-  revision_direccion: 'revision-direccion',
+  riesgos_oportunidades: 'riesgos-oportunidades',
   // Supply Chain
   materia_prima: 'materia-prima',
   productos_servicios: 'productos-servicios',
@@ -128,16 +127,13 @@ const getModuleRoute = (module: {
     is_enabled: boolean;
   }[];
 }): string => {
-  // Usar mapeo hardcodeado para la ruta base del módulo
   const baseRoute =
     MODULE_ROUTES[module.code] ||
     module.route ||
     `/${module.code.toLowerCase().replace(/_/g, '-')}`;
 
-  // Si el módulo tiene tabs, navegar al primer tab habilitado
   if (module.tabs && module.tabs.length > 0) {
     const firstTab = module.tabs.find((t) => t.is_enabled) || module.tabs[0];
-    // Usar mapeo hardcodeado para el tab, luego el route del API, luego convertir código
     const tabSlug =
       TAB_ROUTES[firstTab.code] || firstTab.route || firstTab.code.toLowerCase().replace(/_/g, '-');
     return `${baseRoute}/${tabSlug}`;
@@ -172,16 +168,16 @@ const QUICK_ACCESS_ITEMS: QuickAccessItem[] = [
     label: 'Documentos',
     description: 'Acceder al sistema documental',
     icon: FolderOpen,
-    to: '/gestion-estrategica/gestion-documental',
-    moduleCode: 'gestion_estrategica',
+    to: '/sistema-gestion/documentos',
+    moduleCode: 'sistema_gestion',
     color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
   },
   {
     label: 'No Conformidades',
     description: 'Registrar y hacer seguimiento',
     icon: CheckSquare,
-    to: '/hseq/mejora-continua',
-    moduleCode: 'hseq_management',
+    to: '/sistema-gestion/acciones',
+    moduleCode: 'sistema_gestion',
     color: 'text-red-600 bg-red-50 dark:bg-red-900/20',
   },
   {
@@ -235,6 +231,19 @@ export const DashboardPage = () => {
     () => QUICK_ACCESS_ITEMS.filter((item) => enabledModuleCodes.has(item.moduleCode)),
     [enabledModuleCodes]
   );
+
+  // Agrupar módulos por layers del backend
+  const layeredModules = useMemo(() => {
+    if (!modulesTree?.layers?.length || !enabledModules.length) return null;
+
+    return modulesTree.layers
+      .map((layer) => {
+        const layerCodes = new Set(layer.module_codes);
+        const modules = enabledModules.filter((m) => layerCodes.has(m.code));
+        return { ...layer, modules };
+      })
+      .filter((layer) => layer.modules.length > 0);
+  }, [modulesTree, enabledModules]);
 
   const headerVariants: Variants = {
     hidden: { opacity: 0, y: -10 },
@@ -314,18 +323,54 @@ export const DashboardPage = () => {
         </motion.section>
       )}
 
-      {/* Grid de módulos */}
-      <motion.section variants={headerVariants}>
-        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-          Módulos del Sistema
-        </h2>
-        {isLoading ? (
+      {/* Grid de módulos agrupados por layers */}
+      {isLoading ? (
+        <motion.section variants={headerVariants}>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Módulos del Sistema
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <ModuleCardSkeleton key={i} />
             ))}
           </div>
-        ) : (
+        </motion.section>
+      ) : layeredModules ? (
+        <div className="space-y-6">
+          {layeredModules.map((layer) => {
+            const LayerIcon = getIconComponent(layer.icon);
+            return (
+              <motion.section key={layer.code} variants={headerVariants}>
+                <div className="flex items-center gap-2 mb-3">
+                  <LayerIcon className="h-4 w-4 flex-shrink-0" style={{ color: layer.color }} />
+                  <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {layer.name}
+                  </h2>
+                  <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                </div>
+                <ModuleGrid>
+                  {layer.modules.map((module) => (
+                    <ModuleCard
+                      key={module.code}
+                      icon={getIconComponent(module.icon)}
+                      title={module.name}
+                      description={module.description}
+                      color={module.color as ModuleCardColor}
+                      sectionsCount={module.tabs?.filter((t) => t.is_enabled).length}
+                      to={getModuleRoute(module)}
+                    />
+                  ))}
+                </ModuleGrid>
+              </motion.section>
+            );
+          })}
+        </div>
+      ) : (
+        /* Fallback: grid plano si el backend no retorna layers */
+        <motion.section variants={headerVariants}>
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+            Módulos del Sistema
+          </h2>
           <ModuleGrid>
             {enabledModules.map((module) => (
               <ModuleCard
@@ -339,8 +384,8 @@ export const DashboardPage = () => {
               />
             ))}
           </ModuleGrid>
-        )}
-      </motion.section>
+        </motion.section>
+      )}
     </motion.div>
   );
 };

@@ -73,6 +73,9 @@ class Command(BaseCommand):
         # PASO 1: Migrar tabs de gestion_estrategica a nuevos módulos
         self._migrate_gestion_estrategica()
 
+        # PASO 1b: Migrar tab calidad de hseq_management a sistema_gestion
+        self._migrate_calidad_to_sistema_gestion()
+
         # PASO 2: Configurar todos los módulos
         modules_config = self.get_modules_config()
 
@@ -305,6 +308,30 @@ class Command(BaseCommand):
                     f'  [WARN] No se pudo actualizar Plan.features: {e}'
                 ))
 
+    def _migrate_calidad_to_sistema_gestion(self):
+        """
+        Migra el tab 'calidad' de hseq_management a sistema_gestion.
+
+        Usa UPDATE de ModuleTab.module FK (no delete+create)
+        para preservar TabSection IDs → CargoSectionAccess intacto.
+        """
+        from apps.core.models import SystemModule, ModuleTab
+
+        try:
+            hseq = SystemModule.objects.get(code='hseq_management')
+            sg = SystemModule.objects.get(code='sistema_gestion')
+        except SystemModule.DoesNotExist:
+            return
+
+        calidad_tab = ModuleTab.objects.filter(module=hseq, code='calidad').first()
+        if calidad_tab:
+            calidad_tab.module = sg
+            calidad_tab.orden = 5
+            calidad_tab.save(update_fields=['module', 'orden'])
+            self.stdout.write(self.style.SUCCESS(
+                '  [OK] Tab calidad migrado de hseq_management → sistema_gestion'
+            ))
+
     def get_modules_config(self):
         """Retorna la configuración completa de los 16 módulos (3 capas)"""
         return [
@@ -454,29 +481,29 @@ class Command(BaseCommand):
                 'orden': 20,
                 'tabs': [
                     {
-                        'code': 'gestion_documental',
-                        'name': 'Gestión Documental',
-                        'icon': 'FileText',
-                        'route': 'documentos',
-                        'orden': 1,
-                        'sections': [
-                            {'code': 'tipos_documento', 'name': 'Tipos de Documento', 'icon': 'FileType', 'orden': 1, 'description': 'Clasificación de documentos del sistema'},
-                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'Files', 'orden': 2, 'description': 'Procedimientos, instructivos, formatos y registros'},
-                            {'code': 'control_cambios', 'name': 'Control de Cambios', 'icon': 'History', 'orden': 3, 'description': 'Historial de versiones y cambios'},
-                            {'code': 'distribucion', 'name': 'Distribución', 'icon': 'Share2', 'orden': 4, 'description': 'Control de copias y distribución'},
-                        ]
-                    },
-                    {
                         'code': 'planificacion_sistema',
                         'name': 'Planificación del Sistema',
                         'icon': 'Calendar',
                         'route': 'planificacion',
-                        'orden': 2,
+                        'orden': 1,
                         'sections': [
                             {'code': 'programas', 'name': 'Programas', 'icon': 'ListChecks', 'orden': 1, 'description': 'Programas de gestión (SST, Ambiental, Calidad)'},
                             {'code': 'plan_auditorias', 'name': 'Plan de Auditorías', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Programación de auditorías internas'},
                             {'code': 'objetivos_metas', 'name': 'Objetivos y Metas', 'icon': 'Target', 'orden': 3, 'description': 'Objetivos del sistema de gestión'},
                             {'code': 'indicadores_gestion', 'name': 'Indicadores', 'icon': 'BarChart3', 'orden': 4, 'description': 'Indicadores de desempeño del sistema'},
+                        ]
+                    },
+                    {
+                        'code': 'gestion_documental',
+                        'name': 'Gestión Documental',
+                        'icon': 'FileText',
+                        'route': 'documentos',
+                        'orden': 2,
+                        'sections': [
+                            {'code': 'tipos_documento', 'name': 'Tipos de Documento', 'icon': 'FileType', 'orden': 1, 'description': 'Clasificación de documentos del sistema'},
+                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'Files', 'orden': 2, 'description': 'Procedimientos, instructivos, formatos y registros'},
+                            {'code': 'control_cambios', 'name': 'Control de Cambios', 'icon': 'History', 'orden': 3, 'description': 'Historial de versiones y cambios'},
+                            {'code': 'distribucion', 'name': 'Distribución', 'icon': 'Share2', 'orden': 4, 'description': 'Control de copias y distribución'},
                         ]
                     },
                     {
@@ -502,6 +529,16 @@ class Command(BaseCommand):
                             {'code': 'acciones_correctivas', 'name': 'Acciones Correctivas', 'icon': 'CheckCircle', 'orden': 2, 'description': 'Plan de acciones correctivas'},
                             {'code': 'acciones_preventivas', 'name': 'Acciones Preventivas', 'icon': 'Shield', 'orden': 3, 'description': 'Acciones para prevenir NC'},
                             {'code': 'oportunidades_mejora', 'name': 'Oportunidades de Mejora', 'icon': 'Lightbulb', 'orden': 4, 'description': 'Ideas y proyectos de mejora'},
+                        ]
+                    },
+                    {
+                        'code': 'calidad',
+                        'name': 'Calidad',
+                        'icon': 'CheckCircle',
+                        'route': 'calidad',
+                        'orden': 5,
+                        'sections': [
+                            {'code': 'gestion_calidad', 'name': 'Gestión de Calidad', 'icon': 'CheckCircle', 'orden': 1, 'description': 'Control y aseguramiento de calidad'},
                         ]
                     },
                 ]
@@ -605,8 +642,8 @@ class Command(BaseCommand):
             # =====================================================================
             {
                 'code': 'hseq_management',
-                'name': 'Gestión Integral',
-                'description': 'Operación integrada HSEQ - Calidad, SST, Ambiental y Comités',
+                'name': 'Gestión HSEQ',
+                'description': 'Seguridad, Salud en el Trabajo, Medio Ambiente y Comités',
                 'category': 'INTEGRATED',
                 'color': 'teal',
                 'icon': 'Shield',
@@ -616,30 +653,28 @@ class Command(BaseCommand):
                 'orden': 30,
                 'tabs': [
                     # NOTA: sistema_documental y planificacion_sistema movidos a sistema_gestion [15]
-                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'route': 'calidad', 'orden': 1, 'sections': [
-                        {'code': 'gestion_calidad', 'name': 'Gestión de Calidad', 'icon': 'CheckCircle', 'orden': 1, 'description': 'Control y aseguramiento de calidad'},
-                    ]},
-                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 2, 'sections': [
+                    # NOTA: calidad movido a sistema_gestion [paso 1b migración]
+                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 1, 'sections': [
                         {'code': 'examenes_medicos', 'name': 'Exámenes Médicos', 'icon': 'Heart', 'orden': 1, 'description': 'Gestión de exámenes médicos ocupacionales'},
                         {'code': 'condiciones_salud', 'name': 'Condiciones de Salud', 'icon': 'Activity', 'orden': 2, 'description': 'Seguimiento de condiciones de salud'},
                     ]},
-                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 3, 'sections': [
+                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 2, 'sections': [
                         {'code': 'inspecciones', 'name': 'Inspecciones', 'icon': 'HardHat', 'orden': 1, 'description': 'Inspecciones de seguridad industrial'},
                     ]},
-                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 4, 'sections': [
+                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 3, 'sections': [
                         {'code': 'mediciones', 'name': 'Mediciones', 'icon': 'Thermometer', 'orden': 1, 'description': 'Mediciones higiénicas ambientales'},
                     ]},
-                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 5, 'sections': [
+                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 4, 'sections': [
                         {'code': 'comites', 'name': 'Comités', 'icon': 'Users', 'orden': 1, 'description': 'Gestión de COPASST, Convivencia y otros comités'},
                     ]},
-                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 6, 'sections': [
+                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 5, 'sections': [
                         {'code': 'registro_atel', 'name': 'Registro ATEL', 'icon': 'AlertCircle', 'orden': 1, 'description': 'Registro de accidentes de trabajo y enfermedades laborales'},
                         {'code': 'investigacion', 'name': 'Investigación', 'icon': 'Search', 'orden': 2, 'description': 'Investigación de incidentes y accidentes'},
                     ]},
-                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 7, 'sections': [
+                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 6, 'sections': [
                         {'code': 'plan_emergencias', 'name': 'Plan de Emergencias', 'icon': 'Siren', 'orden': 1, 'description': 'Plan de prevención, preparación y respuesta ante emergencias'},
                     ]},
-                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 8, 'sections': [
+                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 7, 'sections': [
                         {'code': 'programas_ambientales', 'name': 'Programas Ambientales', 'icon': 'Leaf', 'orden': 1, 'description': 'Programas de gestión ambiental'},
                     ]},
                     # NOTA: mejora_continua (auditorías + hallazgos) movido a sistema_gestion [20]

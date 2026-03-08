@@ -1,21 +1,21 @@
 /**
- * Rutas: HSEQ Management (Torre de Control)
- * Capa 2 — Módulo de Negocio
+ * Rutas: HSEQ Management (Gestión HSEQ)
+ * Capa 2 — Módulo de Negocio (Operaciones)
  *
- * 8 tabs operativos: calidad, medicina, seguridad, higiene, comités,
+ * 7 tabs operativos: medicina, seguridad, higiene, comités,
  * accidentalidad, emergencias, ambiental.
  *
  * Redirects a Sistema de Gestión:
  * - /hseq/sistema-documental → /sistema-gestion/documentos
  * - /hseq/planificacion → /sistema-gestion/planificacion
  * - /hseq/mejora-continua → /sistema-gestion/auditorias
+ * - /hseq/calidad → /sistema-gestion/calidad
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
-const CalidadPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.CalidadPage })));
 const MedicinaLaboralPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.MedicinaLaboralPage }))
 );
@@ -57,8 +57,10 @@ export const hseqRoutes = (
       element={<Navigate to="/sistema-gestion/auditorias" replace />}
     />
 
-    {/* 8 tabs operativos HSEQ */}
-    <Route path="/hseq/calidad" element={withModuleGuard(CalidadPage, 'hseq_management')} />
+    {/* Redirect calidad → sistema-gestion (sprint sidebar-6-layers) */}
+    <Route path="/hseq/calidad" element={<Navigate to="/sistema-gestion/calidad" replace />} />
+
+    {/* 7 tabs operativos HSEQ */}
     <Route
       path="/hseq/medicina-laboral"
       element={withModuleGuard(MedicinaLaboralPage, 'hseq_management')}

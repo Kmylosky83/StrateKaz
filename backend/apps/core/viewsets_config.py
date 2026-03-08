@@ -44,7 +44,8 @@ from .serializers_config import (
 
 
 # =============================================================================
-# SIDEBAR: Agrupamiento por capas (C1/C2/C3)
+# SIDEBAR: Agrupamiento por afinidad funcional (6 grupos)
+# C2 se sub-divide en PE / SGI / OPS / ORG para mejor navegación
 # Frontend Sidebar.tsx ya soporta is_category + NIVEL_ prefix
 # =============================================================================
 SIDEBAR_LAYERS = [
@@ -56,16 +57,35 @@ SIDEBAR_LAYERS = [
         'module_codes': ['fundacion'],
     },
     {
-        'code': 'NIVEL_C2',
-        'name': 'Módulos de Negocio',
-        'icon': 'Boxes',
+        'code': 'NIVEL_PE',
+        'name': 'Planeación Estratégica',
+        'icon': 'Target',
+        'color': '#6366F1',
+        'module_codes': ['planeacion_estrategica'],
+    },
+    {
+        'code': 'NIVEL_SGI',
+        'name': 'Sistema de Gestión',
+        'icon': 'ShieldCheck',
+        'color': '#0EA5E9',
+        'module_codes': ['sistema_gestion', 'motor_cumplimiento', 'motor_riesgos'],
+    },
+    {
+        'code': 'NIVEL_OPS',
+        'name': 'Operaciones',
+        'icon': 'Factory',
         'color': '#10B981',
         'module_codes': [
-            'planeacion_estrategica', 'talent_hub', 'sistema_gestion',
-            'motor_cumplimiento', 'motor_riesgos', 'workflow_engine',
             'hseq_management', 'supply_chain', 'production_ops',
-            'logistics_fleet', 'sales_crm', 'admin_finance', 'accounting',
+            'logistics_fleet', 'sales_crm', 'workflow_engine',
         ],
+    },
+    {
+        'code': 'NIVEL_ORG',
+        'name': 'Organización',
+        'icon': 'Building2',
+        'color': '#F59E0B',
+        'module_codes': ['talent_hub', 'admin_finance', 'accounting'],
     },
     {
         'code': 'NIVEL_C3',
@@ -336,6 +356,19 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
         return self._get_filtered_tree(authorized_section_ids)
 
+    def _get_layers_config(self):
+        """Retorna SIDEBAR_LAYERS para que el Dashboard agrupe módulos."""
+        return [
+            {
+                'code': layer['code'],
+                'name': layer['name'],
+                'icon': layer['icon'],
+                'color': layer['color'],
+                'module_codes': layer['module_codes'],
+            }
+            for layer in SIDEBAR_LAYERS
+        ]
+
     def _get_full_tree(self):
         """
         Retorna árbol completo para super usuarios.
@@ -369,7 +402,8 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             'modules': serializer.data,
             'total_modules': total,
             'enabled_modules': enabled,
-            'categories': categories
+            'categories': categories,
+            'layers': self._get_layers_config(),
         })
 
     def _get_filtered_tree(self, authorized_section_ids):
@@ -425,7 +459,8 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             'modules': serializer.data,
             'total_modules': total,
             'enabled_modules': enabled,
-            'categories': categories
+            'categories': categories,
+            'layers': self._get_layers_config(),
         })
 
     @action(detail=False, methods=['get'])

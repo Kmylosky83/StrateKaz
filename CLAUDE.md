@@ -269,12 +269,15 @@ Documentacion detallada en auto-memory (se carga automaticamente):
 
 ## Documentacion
 
-- `docs/00-INDICE.md` — Indice maestro
-- `docs/01-arquitectura/` — Arquitectura, DB, RBAC, Multi-tenant
-- `docs/02-desarrollo/` — API endpoints, auth, convenciones, testing, frontend patterns
-- `docs/03-modulos/` — Guias por modulo
-- `docs/04-devops/` — Docker, GitHub Actions, Celery/Redis, Deploy
-- `docs/05-refactoring/` — Auditorias, planes de mejora
+```
+docs/
+├── 01-arquitectura/       # ADMIN-GLOBAL, ARQUITECTURA-DINAMICA, DATABASE, MULTI-TENANT, RBAC
+├── 02-desarrollo/         # API endpoints, auth, convenciones, testing, logging, snippets
+│   ├── backend/           # Branding dinamico, integraciones, workflows/firmas
+│   └── frontend/          # Design system, hooks, layout, iconos, React Query, navegacion
+├── 03-modulos/            # Guias por modulo (planeacion, riesgos, talent-hub)
+└── 04-devops/             # Docker, GitHub Actions, Celery/Redis, deploy checklist
+```
 
 ---
 

@@ -11,6 +11,18 @@ StrateKaz es un **Sistema de Gestion Integral (SGI)** multi-tenant tipo SaaS par
 
 ---
 
+## Modelos IA — Estrategia de Sesiones
+
+| Modelo | Cuándo usarlo | Comando |
+|--------|--------------|---------|
+| **Sonnet** (default) | Desarrollo diario: Django, React, APIs, lógica SST/ISO, debugging | sesión normal |
+| **Opus** | Auditorías de arquitectura, decisiones multi-tenant críticas, análisis cross-módulo, pre-deploy review | `/model opus` |
+| **Haiku** | Boilerplate mecánico: CRUD, admin.py, migraciones repetitivas, seeds | `/model haiku` |
+
+> Sonnet arranca automáticamente. Escalar a Opus o bajar a Haiku con `/model` cuando aplique.
+
+---
+
 ## Stack Tecnologico
 
 | Capa | Tecnologia | Version |

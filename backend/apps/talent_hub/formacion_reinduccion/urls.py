@@ -16,6 +16,7 @@ from .views import (
     CertificadoViewSet,
     FormacionEstadisticasViewSet,
 )
+from .game_views import GameViewSet
 
 app_name = 'formacion_reinduccion'
 
@@ -29,6 +30,7 @@ router.register(r'gamificacion', GamificacionViewSet, basename='gamificacion')
 router.register(r'evaluaciones-eficacia', EvaluacionEficaciaViewSet, basename='evaluaciones-eficacia')
 router.register(r'certificados', CertificadoViewSet, basename='certificados')
 router.register(r'estadisticas', FormacionEstadisticasViewSet, basename='estadisticas')
+router.register(r'juego-sst', GameViewSet, basename='juego-sst')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -117,4 +117,5 @@ export type MiPortalTab =
   | 'permisos'
   | 'recibos'
   | 'capacitaciones'
-  | 'evaluacion';
+  | 'evaluacion'
+  | 'juego_sst';

@@ -76,6 +76,18 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 año
               }
             }
+          },
+          {
+            // Cache de assets del juego SST (CacheFirst)
+            urlPattern: /\/game\/.*\.(?:png|json|mp3|ogg)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'game-assets-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+              }
+            }
           }
         ]
       },
@@ -182,6 +194,11 @@ export default defineConfig({
           // === REACT QUERY (~40 KB, core infra — cached long-term) ===
           if (id.includes('node_modules/@tanstack/react-query')) {
             return 'vendor-query'
+          }
+
+          // === GAME ENGINE: Phaser (~1MB, loaded only by SST game in Mi Portal) ===
+          if (id.includes('node_modules/phaser')) {
+            return 'vendor-phaser'
           }
         },
       },

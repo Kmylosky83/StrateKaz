@@ -32,6 +32,7 @@ class Command(BaseCommand):
         ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),
         ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
+        ('juego_sst', 'seed_juego_sst', [], 'Juego SST: Nivel 1 + 10 preguntas quiz (Los Héroes de la Seguridad)'),
     ]
 
     def add_arguments(self, parser):

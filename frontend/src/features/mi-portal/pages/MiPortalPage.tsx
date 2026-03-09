@@ -9,7 +9,7 @@
  * BRANDING: Usa primaryColor del tenant (NO moduleColor hardcoded)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
@@ -31,6 +31,7 @@ import {
   Eye,
   LayoutDashboard,
   ArrowRight,
+  Swords,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton, Button } from '@/components/common';
@@ -58,6 +59,10 @@ import {
 } from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
+
+const GameEntryCard = lazy(() =>
+  import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
+);
 
 // ============================================================================
 // HELPERS
@@ -106,6 +111,11 @@ const ALL_PORTAL_TABS = [
     icon: <GraduationCap className="w-4 h-4" />,
   },
   { id: 'evaluacion' as const, label: 'Evaluacion', icon: <BarChart3 className="w-4 h-4" /> },
+  {
+    id: 'juego_sst' as const,
+    label: 'Héroes SST',
+    icon: <Swords className="w-4 h-4" />,
+  },
 ];
 
 // ============================================================================
@@ -478,6 +488,13 @@ export default function MiPortalPage() {
           {safeActiveTab === 'recibos' && !isExterno && <RecibosNomina />}
           {safeActiveTab === 'capacitaciones' && <CapacitacionesList />}
           {safeActiveTab === 'evaluacion' && <EvaluacionResumen />}
+          {safeActiveTab === 'juego_sst' && (
+            <Suspense
+              fallback={<div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>}
+            >
+              <GameEntryCard />
+            </Suspense>
+          )}
         </motion.div>
 
         {/* ================================================================

@@ -68,7 +68,25 @@ export const CHART_ENGINE_CONFIG: Record<
   },
   echarts: {
     label: 'Apache ECharts',
-    capabilities: ['line', 'bar', 'area', 'pie', 'donut', 'gauge', 'heatmap', 'calendar_heatmap', 'scatter3d', 'surface3d', 'bar3d', 'treemap', 'sankey', 'funnel', 'radar', 'scatter', 'bubble'],
+    capabilities: [
+      'line',
+      'bar',
+      'area',
+      'pie',
+      'donut',
+      'gauge',
+      'heatmap',
+      'calendar_heatmap',
+      'scatter3d',
+      'surface3d',
+      'bar3d',
+      'treemap',
+      'sankey',
+      'funnel',
+      'radar',
+      'scatter',
+      'bubble',
+    ],
     level: 'enterprise',
     description: 'Visualizaciones enterprise de alto rendimiento (incluye 3D via echarts-gl)',
   },
@@ -237,17 +255,54 @@ export const CHART_COLOR_SCHEMES = {
   gradient_purple: ['#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#9333ea', '#7e22ce'],
 
   // Rainbow para categorías múltiples
-  rainbow: ['#ef4444', '#f59e0b', '#eab308', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'],
+  rainbow: [
+    '#ef4444',
+    '#f59e0b',
+    '#eab308',
+    '#84cc16',
+    '#10b981',
+    '#06b6d4',
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+  ],
 
   // Tonos profesionales
-  professional: ['#1e40af', '#7c3aed', '#db2777', '#dc2626', '#ea580c', '#ca8a04', '#65a30d', '#059669'],
+  professional: [
+    '#1e40af',
+    '#7c3aed',
+    '#db2777',
+    '#dc2626',
+    '#ea580c',
+    '#ca8a04',
+    '#65a30d',
+    '#059669',
+  ],
 
   // Tonos pasteles
   pastel: ['#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6', '#fb7185', '#fbbf24'],
 
   // Monocromáticos
-  mono_blue: ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8'],
-  mono_gray: ['#f9fafb', '#f3f4f6', '#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151'],
+  mono_blue: [
+    '#eff6ff',
+    '#dbeafe',
+    '#bfdbfe',
+    '#93c5fd',
+    '#60a5fa',
+    '#3b82f6',
+    '#2563eb',
+    '#1d4ed8',
+  ],
+  mono_gray: [
+    '#f9fafb',
+    '#f3f4f6',
+    '#e5e7eb',
+    '#d1d5db',
+    '#9ca3af',
+    '#6b7280',
+    '#4b5563',
+    '#374151',
+  ],
 } as const;
 
 /**
@@ -286,17 +341,17 @@ export interface KPIObjetivo {
   frequency_display?: string;
   trend_type: TrendType;
   trend_type_display?: string;
-  target_value: number;
-  warning_threshold: number;
-  critical_threshold: number;
-  min_value?: number | null;
-  max_value?: number | null;
+  target_value: string; // DecimalField → string en DRF
+  warning_threshold: string; // DecimalField → string en DRF
+  critical_threshold: string; // DecimalField → string en DRF
+  min_value?: string | null; // DecimalField → string en DRF
+  max_value?: string | null; // DecimalField → string en DRF
   data_source?: string;
   responsible?: number;
   responsible_name?: string;
   responsible_cargo?: number;
   responsible_cargo_name?: string;
-  last_value?: number | null;
+  last_value?: string | null; // DecimalField → string en DRF
   last_measurement_date?: string | null;
   status_semaforo: SemaforoStatus;
   measurements_count?: number;
@@ -312,7 +367,7 @@ export interface MedicionKPI {
   id: number;
   kpi: number;
   period: string;
-  value: number;
+  value: string; // DecimalField → string en DRF
   notes?: string;
   evidence_file?: string;
   measured_by: number;

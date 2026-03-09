@@ -32,10 +32,10 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
         day: 'numeric',
       }),
       fullDate: m.period,
-      value: m.value,
-      target: kpi.target_value,
-      warning: kpi.warning_threshold,
-      critical: kpi.critical_threshold,
+      value: Number(m.value), // DecimalField → number para Recharts
+      target: Number(kpi.target_value),
+      warning: Number(kpi.warning_threshold),
+      critical: Number(kpi.critical_threshold),
       notes: m.notes,
     }));
 
@@ -52,32 +52,17 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
   return (
     <Card className="p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          {kpi.name}
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{kpi.name}</h3>
         {kpi.description && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {kpi.description}
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{kpi.description}</p>
         )}
       </div>
 
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart
-          data={chartData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
+        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-gray-300 dark:stroke-gray-700" />
-          <XAxis
-            dataKey="period"
-            className="text-sm"
-            tick={{ fill: 'currentColor' }}
-          />
-          <YAxis
-            className="text-sm"
-            tick={{ fill: 'currentColor' }}
-            domain={['auto', 'auto']}
-          />
+          <XAxis dataKey="period" className="text-sm" tick={{ fill: 'currentColor' }} />
+          <YAxis className="text-sm" tick={{ fill: 'currentColor' }} domain={['auto', 'auto']} />
           <Tooltip content={<CustomTooltip unit={kpi.unit} />} />
           <Legend />
 
@@ -94,7 +79,7 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
 
           {/* Línea de meta */}
           <ReferenceLine
-            y={kpi.target_value}
+            y={Number(kpi.target_value)}
             stroke="#10b981"
             strokeDasharray="5 5"
             label={{ value: 'Meta', position: 'right', fill: '#10b981' }}
@@ -103,7 +88,7 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
           {/* Línea de alerta */}
           {kpi.warning_threshold && (
             <ReferenceLine
-              y={kpi.warning_threshold}
+              y={Number(kpi.warning_threshold)}
               stroke="#f59e0b"
               strokeDasharray="3 3"
               label={{ value: 'Alerta', position: 'right', fill: '#f59e0b' }}
@@ -113,7 +98,7 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
           {/* Línea crítica */}
           {kpi.critical_threshold && (
             <ReferenceLine
-              y={kpi.critical_threshold}
+              y={Number(kpi.critical_threshold)}
               stroke="#ef4444"
               strokeDasharray="3 3"
               label={{ value: 'Crítico', position: 'right', fill: '#ef4444' }}
@@ -131,14 +116,14 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
         <div className="flex items-center gap-2">
           <div className="w-4 h-0.5 bg-green-500 border-dashed border-t-2 border-green-500" />
           <span className="text-gray-600 dark:text-gray-300">
-            Meta: {formatValue(kpi.target_value, kpi.unit)}
+            Meta: {formatValue(Number(kpi.target_value), kpi.unit)}
           </span>
         </div>
         {kpi.warning_threshold && (
           <div className="flex items-center gap-2">
             <div className="w-4 h-0.5 bg-yellow-500 border-dashed border-t-2 border-yellow-500" />
             <span className="text-gray-600 dark:text-gray-300">
-              Alerta: {formatValue(kpi.warning_threshold, kpi.unit)}
+              Alerta: {formatValue(Number(kpi.warning_threshold), kpi.unit)}
             </span>
           </div>
         )}
@@ -146,7 +131,7 @@ export function KPIProgressChart({ kpi, measurements }: KPIProgressChartProps) {
           <div className="flex items-center gap-2">
             <div className="w-4 h-0.5 bg-red-500 border-dashed border-t-2 border-red-500" />
             <span className="text-gray-600 dark:text-gray-300">
-              Crítico: {formatValue(kpi.critical_threshold, kpi.unit)}
+              Crítico: {formatValue(Number(kpi.critical_threshold), kpi.unit)}
             </span>
           </div>
         )}

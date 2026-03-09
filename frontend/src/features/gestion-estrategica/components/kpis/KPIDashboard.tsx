@@ -143,16 +143,16 @@ export function KPIDashboard({ objectiveId, onSelectKPI, onCreateKPI }: KPIDashb
 // =============================================================================
 
 function mapKPIToGaugeData(kpi: KPIObjetivo): KPIGaugeData {
+  const targetVal = Number(kpi.target_value) || 100;
   return {
     id: kpi.id,
     name: kpi.name,
     unit: kpi.unit || '%',
-    currentValue: kpi.last_value ?? 0,
-    targetValue: kpi.target_value ?? 100,
-    warningThreshold: kpi.warning_threshold ?? (kpi.target_value ? kpi.target_value * 0.8 : 80),
-    criticalThreshold: kpi.critical_threshold ?? (kpi.target_value ? kpi.target_value * 0.6 : 60),
+    currentValue: Number(kpi.last_value) || 0,
+    targetValue: targetVal,
+    warningThreshold: Number(kpi.warning_threshold) || targetVal * 0.8,
+    criticalThreshold: Number(kpi.critical_threshold) || targetVal * 0.6,
     trendType: kpi.trend_type as 'MAYOR_MEJOR' | 'MENOR_MEJOR' | 'EN_RANGO',
-    // Si tuviéramos histórico de mediciones, lo incluiríamos aquí
     historicalValues: undefined,
     projectedValue: undefined,
     lastPeriodValue: undefined,
@@ -173,10 +173,10 @@ function KPICard({ kpi, onClick }: KPICardProps) {
   const frequencyConfig = FREQUENCY_CONFIG[kpi.frequency];
   const progressColor = getProgressColor(kpi.status_semaforo);
 
-  // Calcular progreso visual (0-100)
+  // Calcular progreso visual (0-100) — last_value/target_value son string (DecimalField)
   const progress =
-    kpi.last_value !== null && kpi.last_value !== undefined
-      ? calculateVisualProgress(kpi.last_value, kpi.target_value, kpi.trend_type)
+    kpi.last_value != null
+      ? calculateVisualProgress(Number(kpi.last_value), Number(kpi.target_value), kpi.trend_type)
       : 0;
 
   // Icono de semáforo
@@ -206,15 +206,15 @@ function KPICard({ kpi, onClick }: KPICardProps) {
         {/* Valor Actual vs Meta */}
         <div className="text-center space-y-1">
           <div className="text-2xl font-bold">
-            {kpi.last_value !== null ? formatValue(kpi.last_value, kpi.unit) : 'Sin datos'}
+            {kpi.last_value != null ? formatValue(Number(kpi.last_value), kpi.unit) : 'Sin datos'}
           </div>
           <div className="text-sm text-muted-foreground">
-            Meta: {formatValue(kpi.target_value ?? 0, kpi.unit)}
+            Meta: {formatValue(Number(kpi.target_value), kpi.unit)}
           </div>
         </div>
 
         {/* Progress Bar */}
-        {kpi.last_value !== null && (
+        {kpi.last_value != null && (
           <div className="space-y-1">
             <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div

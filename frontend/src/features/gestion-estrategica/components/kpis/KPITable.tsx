@@ -6,7 +6,12 @@ import { Edit, TrendingUp, BarChart3, Plus } from 'lucide-react';
 import { Badge, Button } from '@/components/common';
 import { DataTableCard } from '@/components/layout';
 import type { KPIObjetivo } from '../../types/kpi.types';
-import { FREQUENCY_CONFIG, TREND_TYPE_CONFIG, SEMAFORO_CONFIG, getProgressColor } from '../../types/kpi.types';
+import {
+  FREQUENCY_CONFIG,
+  TREND_TYPE_CONFIG,
+  SEMAFORO_CONFIG,
+  getProgressColor,
+} from '../../types/kpi.types';
 
 interface KPITableProps {
   kpis: KPIObjetivo[];
@@ -16,7 +21,13 @@ interface KPITableProps {
   isLoading?: boolean;
 }
 
-export function KPITable({ kpis, onEdit, onAddMeasurement, onViewChart, isLoading }: KPITableProps) {
+export function KPITable({
+  kpis,
+  onEdit,
+  onAddMeasurement,
+  onViewChart,
+  isLoading,
+}: KPITableProps) {
   if (isLoading) {
     return (
       <DataTableCard isLoading={isLoading}>
@@ -85,10 +96,11 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
   const trendConfig = TREND_TYPE_CONFIG[kpi.trend_type];
   const progressColor = getProgressColor(kpi.status_semaforo);
 
-  // Calcular progreso (0-100)
-  const progress = kpi.last_value !== null
-    ? calculateProgress(kpi.last_value, kpi.target_value, kpi.trend_type)
-    : 0;
+  // Calcular progreso (0-100) — last_value/target_value son string (DecimalField)
+  const progress =
+    kpi.last_value != null
+      ? calculateProgress(Number(kpi.last_value), Number(kpi.target_value), kpi.trend_type)
+      : 0;
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
@@ -97,9 +109,7 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${semaforoConfig.bgColor}`} />
           <div>
-            <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
-              {kpi.name}
-            </div>
+            <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{kpi.name}</div>
             {kpi.description && (
               <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                 {kpi.description}
@@ -123,10 +133,10 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600 dark:text-gray-300">
-              {kpi.last_value !== null ? formatValue(kpi.last_value, kpi.unit) : 'Sin datos'}
+              {kpi.last_value != null ? formatValue(Number(kpi.last_value), kpi.unit) : 'Sin datos'}
             </span>
             <span className="text-gray-500 dark:text-gray-400 text-xs">
-              / {formatValue(kpi.target_value, kpi.unit)}
+              / {formatValue(Number(kpi.target_value), kpi.unit)}
             </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -167,12 +177,7 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
       <td className="px-6 py-4">
         <div className="flex items-center justify-end gap-2">
           {onViewChart && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onViewChart(kpi)}
-              title="Ver gráfico"
-            >
+            <Button variant="ghost" size="sm" onClick={() => onViewChart(kpi)} title="Ver gráfico">
               <BarChart3 className="h-4 w-4" />
             </Button>
           )}
@@ -187,12 +192,7 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
             </Button>
           )}
           {onEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit(kpi)}
-              title="Editar KPI"
-            >
+            <Button variant="ghost" size="sm" onClick={() => onEdit(kpi)} title="Editar KPI">
               <Edit className="h-4 w-4" />
             </Button>
           )}
@@ -206,11 +206,7 @@ function KPITableRow({ kpi, onEdit, onAddMeasurement, onViewChart }: KPITableRow
 // HELPERS
 // =============================================================================
 
-function calculateProgress(
-  currentValue: number,
-  targetValue: number,
-  trendType: string
-): number {
+function calculateProgress(currentValue: number, targetValue: number, trendType: string): number {
   if (trendType === 'MAYOR_MEJOR') {
     return Math.min((currentValue / targetValue) * 100, 100);
   } else if (trendType === 'MENOR_MEJOR') {

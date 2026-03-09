@@ -15,6 +15,7 @@ import type {
 } from '../types/kpi.types';
 
 const BASE_URL = '/planeacion/kpis';
+const MEDICIONES_URL = '/planeacion/mediciones';
 
 export const kpisApi = {
   // ==================== KPIs ====================
@@ -78,11 +79,8 @@ export const kpisApi = {
     page = 1,
     pageSize = 50
   ): Promise<PaginatedResponse<MedicionKPI>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/${kpiId}/measurements/`, {
-      params: {
-        page,
-        page_size: pageSize,
-      },
+    const response = await axiosInstance.get(`${MEDICIONES_URL}/`, {
+      params: { kpi: kpiId, page, page_size: pageSize },
     });
     return response.data;
   },
@@ -91,11 +89,12 @@ export const kpisApi = {
    * Crea una nueva medición para un KPI
    */
   createMeasurement: async (data: CreateMedicionKPIDTO): Promise<MedicionKPI> => {
-    const { kpi, evidence_file, ...rest } = data;
+    const { evidence_file, ...rest } = data;
 
     // Si hay archivo de evidencia, usar FormData
     if (evidence_file) {
       const formData = new FormData();
+      formData.append('kpi', String(rest.kpi));
       formData.append('period', rest.period);
       formData.append('value', rest.value.toString());
       if (rest.notes) {
@@ -103,16 +102,14 @@ export const kpisApi = {
       }
       formData.append('evidence_file', evidence_file);
 
-      const response = await axiosInstance.post(`${BASE_URL}/${kpi}/measurements/`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await axiosInstance.post(`${MEDICIONES_URL}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
     }
 
     // Sin archivo, enviar JSON normal
-    const response = await axiosInstance.post(`${BASE_URL}/${kpi}/measurements/`, rest);
+    const response = await axiosInstance.post(`${MEDICIONES_URL}/`, rest);
     return response.data;
   },
 
@@ -120,7 +117,7 @@ export const kpisApi = {
    * Actualiza una medición existente
    */
   updateMeasurement: async (id: number, data: UpdateMedicionKPIDTO): Promise<MedicionKPI> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/measurements/${id}/`, data);
+    const response = await axiosInstance.patch(`${MEDICIONES_URL}/${id}/`, data);
     return response.data;
   },
 
@@ -128,7 +125,7 @@ export const kpisApi = {
    * Elimina una medición
    */
   deleteMeasurement: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/measurements/${id}/`);
+    await axiosInstance.delete(`${MEDICIONES_URL}/${id}/`);
   },
 
   // ==================== HELPERS ====================

@@ -102,7 +102,7 @@ export const documentoApi = {
     tipo_documento?: number;
     estado?: string;
     formato?: 'json' | 'pdf' | 'excel';
-  }): Promise<Documento[]> => {
+  }): Promise<Record<string, { tipo: string; documentos: Documento[] }>> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/listado-maestro/`, { params });
     return response.data;
   },

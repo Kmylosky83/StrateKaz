@@ -476,7 +476,7 @@ export function useDocumentoContentType() {
     queryKey: ['documento-content-type'],
     queryFn: async () => {
       const response = await api.get(
-        '/gestion-estrategica/gestion-documental/documentos/content_type_id/'
+        '/gestion-estrategica/gestion-documental/documentos/content-type-id/'
       );
       return response.data;
     },

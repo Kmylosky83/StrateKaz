@@ -64,17 +64,12 @@ export function DocumentosSection({
     );
   }
 
-  const totalDocumentos =
-    listadoMaestro?.reduce(
-      (acc: number, tipo: { documentos: unknown[] }) => acc + tipo.documentos.length,
-      0
-    ) ?? 0;
-  const vigentes =
-    listadoMaestro?.reduce(
-      (acc: number, tipo: { documentos: { estado: string }[] }) =>
-        acc + tipo.documentos.filter((d) => d.estado === 'PUBLICADO').length,
-      0
-    ) ?? 0;
+  const listadoItems = listadoMaestro ? Object.values(listadoMaestro) : [];
+  const totalDocumentos = listadoItems.reduce((acc, tipo) => acc + tipo.documentos.length, 0);
+  const vigentes = listadoItems.reduce(
+    (acc, tipo) => acc + tipo.documentos.filter((d) => d.estado === 'PUBLICADO').length,
+    0
+  );
   const borradores = documentos?.filter((d) => d.estado === 'BORRADOR').length ?? 0;
   const enRevision = documentos?.filter((d) => d.estado === 'EN_REVISION').length ?? 0;
 

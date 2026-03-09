@@ -58,9 +58,7 @@ export function AsignarFirmantesModal({
   documentoId,
   documentoTitulo,
 }: AsignarFirmantesModalProps) {
-  const { data: colaboradores, isLoading: isLoadingColabs } = useColaboradores({
-    estado: 'activo',
-  });
+  const { data: colaboradores, isLoading: isLoadingColabs } = useSelectColaboradores();
   const { asignarFirmantes, isAsignandoFirmantes } = useWorkflowFirmas();
 
   const { control, handleSubmit, register, setValue, watch, reset } = useForm<FormValues>({
@@ -89,13 +87,13 @@ export function AsignarFirmantesModal({
     }
   }, [isOpen, reset]);
 
-  // Handle colaborador selection - auto-fill usuario_id and cargo_id
+  // Handle colaborador selection - auto-fill usuario_id and cargo_id desde extra
   const handleColaboradorChange = (index: number, colaboradorId: string) => {
-    const colab = colaboradores?.find((c) => c.id === colaboradorId);
+    const colab = colaboradores?.find((c) => String(c.id) === colaboradorId);
     if (colab) {
       setValue(`firmantes.${index}.colaborador_id`, colaboradorId);
-      setValue(`firmantes.${index}.usuario_id`, Number(colab.usuario?.id ?? 0));
-      setValue(`firmantes.${index}.cargo_id`, colab.cargo?.id ?? '');
+      setValue(`firmantes.${index}.usuario_id`, Number(colab.extra?.usuario_id ?? 0));
+      setValue(`firmantes.${index}.cargo_id`, colab.extra?.cargo_id ?? '');
     } else {
       setValue(`firmantes.${index}.colaborador_id`, '');
       setValue(`firmantes.${index}.usuario_id`, 0);
@@ -206,7 +204,7 @@ export function AsignarFirmantesModal({
           {/* Firmantes list */}
           {fields.map((field, index) => {
             const selectedColab = colaboradores?.find(
-              (c) => c.id === firmantesWatch?.[index]?.colaborador_id
+              (c) => String(c.id) === firmantesWatch?.[index]?.colaborador_id
             );
 
             return (
@@ -268,10 +266,10 @@ export function AsignarFirmantesModal({
                       <option disabled>Cargando...</option>
                     ) : (
                       colaboradores
-                        ?.filter((c) => c.usuario)
+                        ?.filter((c) => c.extra?.usuario_id)
                         ?.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.nombre_completo || `${c.primer_nombre} ${c.primer_apellido}`}
+                          <option key={c.id} value={String(c.id)}>
+                            {c.label}
                           </option>
                         ))
                     )}
@@ -288,7 +286,7 @@ export function AsignarFirmantesModal({
                 {/* Cargo info */}
                 {selectedColab && (
                   <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    Cargo: {selectedColab.cargo?.nombre ?? 'Sin cargo'}
+                    Cargo: {selectedColab.extra?.cargo ?? 'Sin cargo'}
                   </p>
                 )}
 

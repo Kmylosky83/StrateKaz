@@ -41,7 +41,7 @@ def select_colaboradores(request):
     ).select_related('cargo').values(
         'id', 'primer_nombre', 'segundo_nombre',
         'primer_apellido', 'segundo_apellido',
-        'numero_identificacion', 'cargo__name'
+        'numero_identificacion', 'cargo__name', 'cargo_id', 'usuario_id'
     ).order_by('primer_apellido', 'primer_nombre')[:500]
 
     results = []
@@ -53,8 +53,10 @@ def select_colaboradores(request):
             'id': c['id'],
             'label': nombre,
             'extra': {
-                'documento': c.get('numero_identificacion', ''),
-                'cargo': c.get('cargo__name', ''),
+                'documento': c.get('numero_identificacion', '') or '',
+                'cargo': c.get('cargo__name', '') or '',
+                'cargo_id': str(c['cargo_id']) if c.get('cargo_id') else '',
+                'usuario_id': str(c['usuario_id']) if c.get('usuario_id') else '',
             }
         })
 

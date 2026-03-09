@@ -13,7 +13,7 @@ import type {
   GameSession,
 } from '../types/game.types';
 
-const BASE_URL = '/api/talent-hub/formacion/juego-sst';
+const BASE_URL = '/talent-hub/formacion/juego-sst';
 
 export const sstGameApi = {
   /** Obtiene el progreso del jugador actual (lo crea si no existe) */

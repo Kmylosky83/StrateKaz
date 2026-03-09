@@ -6,7 +6,7 @@
  *
  * Guard: redirige a /dashboard si el usuario no tiene cliente vinculado.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import {
   Building2,
@@ -23,6 +23,7 @@ import {
   BarChart3,
   Star,
   BellRing,
+  Swords,
 } from 'lucide-react';
 import { AnimatedPage, Badge, Card, Skeleton, Tabs } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
@@ -38,6 +39,10 @@ import {
 } from '@/features/audit-system/hooks/useNotificaciones';
 import { cn } from '@/utils/cn';
 import type { ContactoCliente } from '../types';
+
+const GameEntryCard = lazy(() =>
+  import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
+);
 
 // ============================================================================
 // HELPERS
@@ -569,6 +574,7 @@ export default function ClientePortalPage() {
       { id: 'info', label: 'Mi Información', icon: <Building2 className="w-4 h-4" /> },
       { id: 'contactos', label: 'Contactos', icon: <Users className="w-4 h-4" /> },
       { id: 'scoring', label: 'Mi Scoring', icon: <BarChart3 className="w-4 h-4" /> },
+      { id: 'juego-sst', label: 'Héroes SST', icon: <Swords className="w-4 h-4" /> },
       { id: 'notificaciones', label: 'Notificaciones', icon: <BellRing className="w-4 h-4" /> },
       { id: 'cuenta', label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> },
     ],
@@ -631,6 +637,13 @@ export default function ClientePortalPage() {
           {activeTabId === 'info' && <TabInformacion />}
           {activeTabId === 'contactos' && <TabContactos />}
           {activeTabId === 'scoring' && <TabScoring />}
+          {activeTabId === 'juego-sst' && (
+            <Suspense
+              fallback={<div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>}
+            >
+              <GameEntryCard />
+            </Suspense>
+          )}
           {activeTabId === 'notificaciones' && <TabNotificaciones />}
           {activeTabId === 'cuenta' && <TabCuenta />}
         </div>

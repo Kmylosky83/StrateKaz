@@ -14,7 +14,7 @@
  *
  * Guard: redirige a /dashboard si el usuario no tiene proveedor vinculado
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import {
   Building2,
@@ -38,6 +38,7 @@ import {
   Briefcase,
   Wrench,
   BellRing,
+  Swords,
 } from 'lucide-react';
 import { AnimatedPage, Badge, Button, Card, Skeleton, Tabs } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
@@ -56,6 +57,10 @@ import {
 } from '@/features/audit-system/hooks/useNotificaciones';
 import { cn } from '@/utils/cn';
 import type { ContratoProveedor, EvaluacionProveedor, TipoProveedorCodigo } from '../types';
+
+const GameEntryCard = lazy(() =>
+  import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
+);
 
 // ============================================================================
 // CONFIGURACIÓN POR TIPO DE PROVEEDOR
@@ -533,6 +538,7 @@ function buildTabs(
   tabs.push(
     { id: 'contratos', label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
     { id: 'evaluaciones', label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'juego-sst', label: 'Héroes SST', icon: <Swords className="w-4 h-4" /> },
     { id: 'notificaciones', label: 'Notificaciones', icon: <BellRing className="w-4 h-4" /> },
     { id: 'mi-cuenta', label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> }
   );
@@ -700,6 +706,13 @@ export default function ProveedorPortalPage() {
           {activeTab === 'profesionales' && <TabProfesionales />}
           {activeTab === 'contratos' && <TabContratos />}
           {activeTab === 'evaluaciones' && <TabEvaluaciones />}
+          {activeTab === 'juego-sst' && (
+            <Suspense
+              fallback={<div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>}
+            >
+              <GameEntryCard />
+            </Suspense>
+          )}
           {activeTab === 'notificaciones' && <TabNotificaciones />}
           {activeTab === 'mi-cuenta' && <TabMiCuenta />}
         </div>

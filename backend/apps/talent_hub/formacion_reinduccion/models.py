@@ -1135,9 +1135,9 @@ class GameLevel(BaseCompanyModel):
     """
 
     codigo = models.CharField(
-        max_length=20,
+        max_length=50,
         verbose_name='Código del Nivel',
-        help_text='Código único del nivel (ej: NIVEL-01)'
+        help_text='Código único del nivel (ej: nivel-1-planta-industrial)'
     )
     nombre = models.CharField(
         max_length=150,

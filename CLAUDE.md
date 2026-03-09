@@ -104,8 +104,8 @@ C1 — FUNDACION (se configura 1 vez, afecta a todos)
   └── Identidad Corporativa (mision, vision, valores)     → gestion_estrategica/identidad
 
 C2 — MODULOS DE NEGOCIO (14 independientes)
-  Planeacion Estrategica  │ Gestion Documental    │ Cumplimiento Legal
-  Gestion de Riesgos      │ Workflows             │ HSEQ
+  Planeacion Estrategica  │ Sistema de Gestion    │ Cumplimiento Legal
+  Gestion de Riesgos      │ Workflows             │ Gestion HSEQ
   Auditoria Interna       │ Talent Hub (11 sub)   │ Supply Chain
   Production Ops          │ Logistics & Fleet     │ Sales CRM
   Admin Finance           │ Accounting
@@ -123,6 +123,23 @@ PORTALES (solo UI, sin logica propia)
 - **C3 SOLO LEE de C2** — via API endpoints, nunca escribe en tablas de C2.
 - **audit_system ≠ Auditoria Interna** — audit_system (C0) = logs/alertas. Auditoria Interna (C2) = auditorias ISO.
 
+### 6 Grupos Visuales (Sidebar + Dashboard)
+
+Las 5 capas arquitectónicas NO cambian. C2 se sub-agrupa en 4 para navegación:
+
+| Grupo | Code | Módulos | Color |
+|-------|------|---------|-------|
+| Fundación | NIVEL_C1 | fundacion | `#3B82F6` |
+| Planeación Estratégica | NIVEL_PE | planeacion_estrategica | `#6366F1` |
+| Sistema de Gestión | NIVEL_SGI | sistema_gestion, motor_cumplimiento, motor_riesgos | `#0EA5E9` |
+| Operaciones | NIVEL_OPS | hseq_management, supply_chain, production_ops, logistics_fleet, sales_crm, workflow_engine | `#10B981` |
+| Organización | NIVEL_ORG | talent_hub, admin_finance, accounting | `#F59E0B` |
+| Inteligencia | NIVEL_C3 | analytics, revision_direccion, audit_system | `#8B5CF6` |
+
+- Sidebar: 1-módulo layers → render directo (sin wrapper). 2+ módulos → `is_category: True`.
+- Dashboard: `/tree/` endpoint incluye `layers` → DashboardPage agrupa con headers.
+- Config: `SIDEBAR_LAYERS` en `viewsets_config.py`.
+
 ### Apps Django por modulo backend
 
 | Capa | Modulo Django | Sub-apps |
@@ -136,7 +153,7 @@ PORTALES (solo UI, sin logica propia)
 | C2 | motor_cumplimiento | matriz_legal, requisitos_legales, reglamentos_internos, evidencias |
 | C2 | motor_riesgos | riesgos_procesos, ipevr, aspectos_ambientales, riesgos_viales, seguridad_informacion, sagrilaft_ptee |
 | C2 | workflow_engine | disenador_flujos, ejecucion, monitoreo, firma_digital |
-| C2 | hseq_management | accidentalidad, seguridad_industrial, higiene_industrial, medicina_laboral, emergencias, gestion_ambiental, calidad, mejora_continua, gestion_comites |
+| C2 | hseq_management | accidentalidad, seguridad_industrial, higiene_industrial, medicina_laboral, emergencias, gestion_ambiental, gestion_comites |
 | C2 | supply_chain | catalogos, gestion_proveedores, compras, almacenamiento, programacion_abastecimiento |
 | C2 | production_ops | recepcion, procesamiento, producto_terminado, mantenimiento |
 | C2 | logistics_fleet | gestion_flota, gestion_transporte |

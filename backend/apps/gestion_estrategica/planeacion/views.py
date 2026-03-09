@@ -683,8 +683,12 @@ class KPIObjetivoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class MedicionKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para gestionar Mediciones de KPI"""
+class MedicionKPIViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestionar Mediciones de KPI.
+
+    MedicionKPI extiende TimestampedModel (sin is_active/SoftDelete),
+    por eso NO usa StandardViewSetMixin (FilterInactiveMixin fallaría).
+    """
 
     queryset = MedicionKPI.objects.select_related('kpi', 'measured_by').all()
     serializer_class = MedicionKPISerializer

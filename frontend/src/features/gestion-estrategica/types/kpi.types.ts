@@ -547,10 +547,21 @@ export function calculateProgress(
 }
 
 /**
- * Obtiene el color del progreso según el semáforo
+ * Clases Tailwind de fondo para la barra de progreso según semáforo
+ * (Para uso en className, no en style=)
+ */
+const SEMAFORO_PROGRESS_BG: Record<SemaforoStatus, string> = {
+  VERDE: 'bg-green-500',
+  AMARILLO: 'bg-yellow-500',
+  ROJO: 'bg-red-500',
+  SIN_DATOS: 'bg-gray-400',
+};
+
+/**
+ * Obtiene la clase Tailwind de fondo para la barra de progreso
  */
 export function getProgressColor(status: SemaforoStatus): string {
-  return SEMAFORO_COLORS[status];
+  return SEMAFORO_PROGRESS_BG[status];
 }
 
 /**

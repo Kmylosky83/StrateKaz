@@ -10,7 +10,7 @@ import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { useCreateMeasurement } from '../../hooks/useKPIs';
 import type { KPIObjetivo } from '../../types/kpi.types';
-import { SEMAFORO_CONFIG, getProgressColor } from '../../types/kpi.types';
+import { SEMAFORO_CONFIG, SEMAFORO_COLORS } from '../../types/kpi.types';
 import { TrendingUp, AlertTriangle, XCircle, HelpCircle, Upload } from 'lucide-react';
 
 interface KPIMeasurementFormModalProps {
@@ -40,7 +40,7 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
     if (isOpen) {
       setFormData({
         period: new Date().toISOString().split('T')[0],
-        value: kpi.last_value || 0,
+        value: Number(kpi.last_value) || 0, // DecimalField → string, convertir a number
         notes: '',
       });
       setEvidenceFile(null);
@@ -78,28 +78,34 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
   };
 
   // Calcular el semáforo resultante según el valor ingresado
+  // Usar Number() para comparar correctamente con DecimalField strings del backend
   const calculateStatus = (value: number): 'VERDE' | 'AMARILLO' | 'ROJO' | 'SIN_DATOS' => {
+    const target = Number(kpi.target_value);
+    const warning = Number(kpi.warning_threshold);
+    const critical = Number(kpi.critical_threshold);
+
     if (kpi.trend_type === 'MAYOR_MEJOR') {
-      if (value >= kpi.target_value) return 'VERDE';
-      if (value >= kpi.warning_threshold) return 'AMARILLO';
+      if (value >= target) return 'VERDE';
+      if (value >= warning) return 'AMARILLO';
       return 'ROJO';
     } else if (kpi.trend_type === 'MENOR_MEJOR') {
-      if (value <= kpi.target_value) return 'VERDE';
-      if (value <= kpi.warning_threshold) return 'AMARILLO';
+      if (value <= target) return 'VERDE';
+      if (value <= warning) return 'AMARILLO';
       return 'ROJO';
     } else {
       // EN_RANGO
-      const min = kpi.min_value || 0;
-      const max = kpi.max_value || 100;
+      const min = Number(kpi.min_value) || 0;
+      const max = Number(kpi.max_value) || 100;
       if (value >= min && value <= max) return 'VERDE';
-      if (value >= kpi.critical_threshold && value <= kpi.warning_threshold) return 'AMARILLO';
+      if (value >= critical && value <= warning) return 'AMARILLO';
       return 'ROJO';
     }
   };
 
   const previewStatus = calculateStatus(formData.value);
   const previewConfig = SEMAFORO_CONFIG[previewStatus];
-  const progressColor = getProgressColor(previewStatus);
+  // Hex color para la barra de progreso (style=, no className)
+  const progressColor = SEMAFORO_COLORS[previewStatus];
 
   const SemaforoIcon =
     previewStatus === 'VERDE'
@@ -139,16 +145,11 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información del KPI */}
-        <Alert variant="info">
-          <div className="text-sm">
-            <p>
-              <strong>Meta:</strong> {kpi.target_value} {kpi.unit}
-            </p>
-            <p>
-              <strong>Fórmula:</strong> {kpi.formula}
-            </p>
-          </div>
-        </Alert>
+        <Alert
+          variant="info"
+          title={`Meta: ${kpi.target_value} ${kpi.unit}`}
+          message={`Fórmula: ${kpi.formula}`}
+        />
 
         {/* Formulario */}
         <div className="space-y-4">
@@ -225,13 +226,14 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
               </Badge>
             </div>
 
-            {/* Progress Bar */}
+            {/* Progress Bar — usa style con color hex (SEMAFORO_COLORS) en lugar de clase Tailwind */}
             <div className="mt-3">
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className={`h-full ${progressColor} transition-all duration-300`}
+                  className="h-full transition-all duration-300"
                   style={{
-                    width: `${Math.min((formData.value / kpi.target_value) * 100, 100)}%`,
+                    backgroundColor: progressColor,
+                    width: `${Math.min((formData.value / Number(kpi.target_value)) * 100, 100)}%`,
                   }}
                 />
               </div>
@@ -239,15 +241,17 @@ export function KPIMeasurementFormModal({ kpi, isOpen, onClose }: KPIMeasurement
           </Card>
 
           {previewStatus === 'ROJO' && (
-            <Alert variant="danger">
-              Esta medición está en estado crítico. Se recomienda tomar acciones correctivas.
-            </Alert>
+            <Alert
+              variant="error"
+              message="Esta medición está en estado crítico. Se recomienda tomar acciones correctivas."
+            />
           )}
 
           {previewStatus === 'AMARILLO' && (
-            <Alert variant="warning">
-              Esta medición requiere atención. Está por debajo del umbral de alerta.
-            </Alert>
+            <Alert
+              variant="warning"
+              message="Esta medición requiere atención. Está por debajo del umbral de alerta."
+            />
           )}
         </div>
       </form>

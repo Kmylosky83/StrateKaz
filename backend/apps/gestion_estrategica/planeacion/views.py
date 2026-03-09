@@ -698,6 +698,10 @@ class MedicionKPIViewSet(viewsets.ModelViewSet):
     ordering_fields = ['period', 'created_at']
     ordering = ['-period']
 
+    def perform_create(self, serializer):
+        """Auto-asigna measured_by al usuario autenticado."""
+        serializer.save(measured_by=self.request.user)
+
 
 class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """

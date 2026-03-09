@@ -1158,9 +1158,10 @@ export const partesInteresadasApi = {
    * @returns Estadísticas del proceso (created, updated, errors)
    */
   generarMatrizComunicacionMasiva: async (grupoId?: number): Promise<GenerarMatrizResponse> => {
-    const params = grupoId ? `?grupo=${grupoId}` : '';
     const response = await apiClient.post<GenerarMatrizResponse>(
-      `${BASE_URL}/partes-interesadas/generar_matriz_comunicacion_masiva/${params}`
+      `${BASE_URL}/partes-interesadas/generar-matriz-comunicacion-masiva/`,
+      {},
+      { params: grupoId ? { grupo: grupoId } : undefined }
     );
     return response.data;
   },

@@ -151,15 +151,21 @@ class StrategicPlan(AuditModel, SoftDeleteModel):
 
     @classmethod
     def get_active(cls):
-        """Obtiene el plan estratégico activo"""
-        return cls.objects.filter(is_active=True).first()
+        """Obtiene el plan estratégico activo.
+        Prioriza is_active=True; cae en APROBADO como fallback para datos legados.
+        """
+        return (
+            cls.objects.filter(is_active=True).first()
+            or cls.objects.filter(status='APROBADO').order_by('-updated_at').first()
+        )
 
     def approve(self, user):
-        """Aprueba el plan estratégico"""
+        """Aprueba el plan estratégico y lo marca como activo."""
         self.approved_by = user
         self.approved_at = timezone.now()
         self.status = 'APROBADO'
-        self.save(update_fields=['approved_by', 'approved_at', 'status', 'updated_at'])
+        self.is_active = True  # activa el plan → save() desactiva los demás automáticamente
+        self.save(update_fields=['approved_by', 'approved_at', 'status', 'is_active', 'updated_at'])
 
 
 class StrategicObjective(AuditModel, SoftDeleteModel):

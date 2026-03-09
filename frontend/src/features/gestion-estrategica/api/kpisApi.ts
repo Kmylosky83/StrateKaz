@@ -27,7 +27,7 @@ export const kpisApi = {
     page = 1,
     pageSize = 20
   ): Promise<PaginatedResponse<KPIObjetivo>> => {
-    const response = await axiosInstance.get(BASE_URL, {
+    const response = await axiosInstance.get(`${BASE_URL}/`, {
       params: {
         ...filters,
         page,
@@ -49,7 +49,7 @@ export const kpisApi = {
    * Crea un nuevo KPI
    */
   create: async (data: CreateKPIObjetivoDTO): Promise<KPIObjetivo> => {
-    const response = await axiosInstance.post(BASE_URL, data);
+    const response = await axiosInstance.post(`${BASE_URL}/`, data);
     return response.data;
   },
 

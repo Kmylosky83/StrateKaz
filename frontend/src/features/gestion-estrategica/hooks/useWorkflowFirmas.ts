@@ -174,7 +174,7 @@ export function useWorkflowFirmas() {
       queryFn: async () => {
         const params = esMiTurno !== undefined ? { es_mi_turno: esMiTurno } : {};
         const response = await api.get<FirmaPendiente[]>(
-          '/workflows/firma-digital/firmas/mis_firmas_pendientes/',
+          '/workflows/firma-digital/firmas/mis-firmas-pendientes/',
           { params }
         );
         return response.data;

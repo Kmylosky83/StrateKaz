@@ -51,6 +51,7 @@ export const useNotificacionesNoLeidas = () => {
     enabled: !!user?.id,
     refetchInterval: 60000, // Refrescar cada minuto
     staleTime: 30000, // Considerar fresco por 30 segundos
+    retry: 0, // No reintentar en 401 — el interceptor ya maneja el refresh
   });
 };
 

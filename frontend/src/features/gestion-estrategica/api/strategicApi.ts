@@ -587,14 +587,14 @@ export const integracionesApi = {
   // Métodos custom
   testConnection: async (id: number): Promise<TestConnectionResult> => {
     const response = await apiClient.post(
-      `${CONFIGURACION_URL}/integraciones-externas/${id}/test_connection/`
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/test-connection/`
     );
     return response.data;
   },
 
   toggleStatus: async (id: number): Promise<IntegracionExterna> => {
     const response = await apiClient.post(
-      `${CONFIGURACION_URL}/integraciones-externas/${id}/toggle_status/`
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/toggle-status/`
     );
     return response.data.integracion;
   },

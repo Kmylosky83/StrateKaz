@@ -261,7 +261,7 @@ export function KPIFormModal({ kpi, objectiveId, isOpen, onClose }: KPIFormModal
             ))}
           </Select>
 
-          {errors.warning_threshold && <Alert variant="danger">{errors.warning_threshold}</Alert>}
+          {errors.warning_threshold && <Alert variant="error" message={errors.warning_threshold} />}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input

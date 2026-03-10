@@ -4,14 +4,21 @@ Views de Off-Boarding - Talent Hub
 ViewSets para la gestión completa del proceso de retiro de colaboradores.
 Incluye acciones personalizadas para procesos de negocio según legislación colombiana.
 """
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.db import connection
 from django.utils import timezone
 from django.db.models import Count, Q, Avg
 from decimal import Decimal
+from django_tenants.utils import schema_context
 
 from apps.core.base_models.mixins import get_tenant_empresa
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     TipoRetiro,
@@ -69,6 +76,7 @@ class TipoRetiroViewSet(viewsets.ModelViewSet):
     """
 
     queryset = TipoRetiro.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar tipos activos del tenant."""
@@ -120,6 +128,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
     """
 
     queryset = ProcesoRetiro.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar procesos activos del tenant."""
@@ -338,7 +347,14 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='cerrar-proceso')
     def cerrar_proceso(self, request, pk=None):
-        """Cerrar proceso completo."""
+        """
+        Cerrar proceso completo de retiro.
+
+        Al cerrar el proceso:
+        1. User (tenant) → is_active=False, estado_empleado='RETIRADO', fecha_retiro
+        2. TenantUserAccess (public) → is_active=False para este tenant
+        3. TenantUser (public) → is_active=False si no tiene otros accesos activos
+        """
         proceso = self.get_object()
 
         if proceso.estado == 'completado':
@@ -358,11 +374,104 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
         proceso.fecha_cierre = timezone.now()
         proceso.save()
 
+        # ── Revocar acceso del usuario al sistema ────────────────────────
+        self._revoke_user_access(proceso)
+
         serializer = self.get_serializer(proceso)
         return Response({
-            'message': 'Proceso cerrado exitosamente.',
+            'message': 'Proceso cerrado exitosamente. El acceso del usuario ha sido revocado.',
             'proceso': serializer.data
         })
+
+    def _revoke_user_access(self, proceso):
+        """
+        Revoca el acceso del colaborador al cerrar su proceso de retiro.
+
+        Flujo de desactivación (3 niveles):
+        1. User (schema tenant) — is_active=False, estado_empleado='RETIRADO'
+        2. TenantUserAccess (schema public) — is_active=False para este tenant
+        3. TenantUser (schema public) — is_active=False si no tiene otros accesos
+        """
+        colaborador = proceso.colaborador
+        user = getattr(colaborador, 'usuario', None)
+
+        if not user:
+            logger.warning(
+                'cerrar_proceso #%s: Colaborador #%s no tiene usuario vinculado. '
+                'No se revocó acceso.',
+                proceso.id, colaborador.id
+            )
+            return
+
+        # 1. Desactivar User en el tenant
+        user.is_active = False
+        user.estado_empleado = 'RETIRADO'
+        user.fecha_retiro = proceso.fecha_retiro_efectivo or timezone.now().date()
+        user.save(update_fields=[
+            'is_active', 'estado_empleado', 'fecha_retiro', 'updated_at'
+        ])
+
+        logger.info(
+            'cerrar_proceso #%s: User #%s (%s) desactivado — estado_empleado=RETIRADO',
+            proceso.id, user.id, user.email
+        )
+
+        # 2. Desactivar TenantUserAccess para este tenant
+        current_tenant = getattr(connection, 'tenant', None)
+        if not current_tenant:
+            logger.warning(
+                'cerrar_proceso #%s: No hay tenant activo, no se pudo revocar '
+                'TenantUserAccess.',
+                proceso.id
+            )
+            return
+
+        with schema_context('public'):
+            from apps.tenant.models import TenantUser, TenantUserAccess
+
+            try:
+                tenant_user = TenantUser.objects.get(
+                    email=user.email.lower().strip()
+                )
+            except TenantUser.DoesNotExist:
+                logger.warning(
+                    'cerrar_proceso #%s: No existe TenantUser para email %s',
+                    proceso.id, user.email
+                )
+                return
+
+            # Desactivar acceso al tenant actual
+            updated = TenantUserAccess.objects.filter(
+                tenant_user=tenant_user,
+                tenant=current_tenant,
+                is_active=True
+            ).update(is_active=False)
+
+            if updated:
+                logger.info(
+                    'cerrar_proceso #%s: TenantUserAccess revocado — '
+                    'TenantUser #%s ↛ Tenant "%s"',
+                    proceso.id, tenant_user.id, current_tenant.name
+                )
+
+            # 3. Si no tiene otros accesos activos, desactivar TenantUser globalmente
+            # (superadmins nunca se desactivan por offboarding de un tenant)
+            if tenant_user.is_superadmin:
+                return
+
+            has_other_active = TenantUserAccess.objects.filter(
+                tenant_user=tenant_user,
+                is_active=True
+            ).exists()
+
+            if not has_other_active:
+                tenant_user.is_active = False
+                tenant_user.save(update_fields=['is_active'])
+                logger.info(
+                    'cerrar_proceso #%s: TenantUser #%s (%s) desactivado '
+                    'globalmente (sin accesos activos restantes)',
+                    proceso.id, tenant_user.id, tenant_user.email
+                )
 
     @action(detail=True, methods=['get'])
     def estadisticas(self, request, pk=None):
@@ -414,6 +523,7 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
     """
 
     queryset = ChecklistRetiro.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar checklist activos del tenant."""
@@ -493,6 +603,7 @@ class PazSalvoViewSet(viewsets.ModelViewSet):
     """
 
     queryset = PazSalvo.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar paz y salvos activos del tenant."""
@@ -582,6 +693,7 @@ class ExamenEgresoViewSet(viewsets.ModelViewSet):
     """ViewSet para gestión de exámenes de egreso."""
 
     queryset = ExamenEgreso.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar examenes activos del tenant."""
@@ -625,6 +737,7 @@ class EntrevistaRetiroViewSet(viewsets.ModelViewSet):
     """
 
     queryset = EntrevistaRetiro.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar entrevistas activas del tenant."""
@@ -698,6 +811,7 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
     """
 
     queryset = LiquidacionFinal.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Filtrar liquidaciones activas del tenant."""
@@ -816,6 +930,7 @@ class CertificadoTrabajoViewSet(viewsets.ModelViewSet):
     """
 
     queryset = CertificadoTrabajo.objects.all()
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = CertificadoTrabajo.objects.filter(

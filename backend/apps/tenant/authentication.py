@@ -173,12 +173,36 @@ class HybridJWTAuthentication(JWTAuthentication):
 
     def _assert_tenant_access(self, tenant_user_id: int):
         """
-        Verifica que el TenantUser tiene TenantUserAccess activo al tenant actual.
+        Verifica que el TenantUser está activo y tiene TenantUserAccess
+        activo al tenant actual.
         Lanza AuthenticationFailed si no tiene acceso.
         """
         from django.db import connection
         from django_tenants.utils import schema_context
-        from apps.tenant.models import TenantUserAccess
+        from apps.tenant.models import TenantUser, TenantUserAccess
+
+        with schema_context('public'):
+            # Verificar que el TenantUser existe y está activo
+            try:
+                tenant_user = TenantUser.objects.only(
+                    'id', 'is_active', 'is_superadmin'
+                ).get(id=tenant_user_id)
+            except TenantUser.DoesNotExist:
+                raise AuthenticationFailed('Usuario no encontrado.')
+
+            if not tenant_user.is_active:
+                logger.warning(
+                    "TenantUser id=%s está desactivado — acceso denegado",
+                    tenant_user_id
+                )
+                raise AuthenticationFailed(
+                    'Tu cuenta ha sido desactivada. '
+                    'Contacta al administrador.'
+                )
+
+            # Superadmins pueden acceder a cualquier tenant
+            if tenant_user.is_superadmin:
+                return
 
         current_tenant = getattr(connection, 'tenant', None)
         if not current_tenant:
@@ -192,7 +216,7 @@ class HybridJWTAuthentication(JWTAuthentication):
             ).exists()
             if not has_access:
                 logger.warning(
-                    "TenantUser id=%s intentó acceder a tenant '%s' sin TenantUserAccess",
+                    "TenantUser id=%s intentó acceder a tenant '%s' sin TenantUserAccess activo",
                     tenant_user_id, current_tenant.schema_name
                 )
                 raise AuthenticationFailed(

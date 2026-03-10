@@ -96,8 +96,11 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
                     tenant_user.id, user.id, user.email
                 )
 
-        # Crear acceso al tenant actual si no existe
-        _access, access_created = TenantUserAccess.objects.get_or_create(
+        # Crear acceso al tenant actual si no existe.
+        # Si ya existe pero está inactivo (ej: offboarding previo), NO se
+        # reactiva automáticamente — requiere acción explícita de un admin
+        # para evitar bypass del proceso de retiro.
+        access, access_created = TenantUserAccess.objects.get_or_create(
             tenant_user=tenant_user,
             tenant=current_tenant,
             defaults={
@@ -108,6 +111,15 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
         if access_created:
             logger.info(
                 'TenantUserAccess creado: TenantUser #%s -> Tenant "%s"',
+                tenant_user.id, current_tenant.name
+            )
+        elif not access.is_active:
+            # El acceso existía pero estaba desactivado (offboarding u otra
+            # desactivación intencional). NO reactivar automáticamente.
+            logger.warning(
+                'TenantUserAccess INACTIVO encontrado para TenantUser #%s '
+                '-> Tenant "%s". El acceso NO fue reactivado '
+                'automáticamente. Requiere acción de un administrador.',
                 tenant_user.id, current_tenant.name
             )
 

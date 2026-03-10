@@ -392,6 +392,13 @@ class TenantMeView(APIView):
 
             tenant_user = TenantUser.objects.get(id=user_id)
 
+            # Verificar que el TenantUser esté activo
+            if not tenant_user.is_active:
+                return Response(
+                    {'detail': 'Tu cuenta ha sido desactivada. Contacta al administrador.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         except TenantUser.DoesNotExist:
             return Response(
                 {'detail': 'Usuario no encontrado'},

@@ -1186,7 +1186,18 @@ class User(AbstractUser):
         self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
 
     def restore(self):
-        """Restaura un usuario eliminado lógicamente"""
+        """
+        Restaura un usuario eliminado lógicamente.
+
+        Bloquea la restauración si el usuario fue retirado vía proceso de
+        offboarding (estado_empleado='RETIRADO'). En ese caso se requiere
+        un nuevo proceso de contratación.
+        """
+        if self.estado_empleado == 'RETIRADO':
+            raise ValidationError(
+                'No se puede restaurar un usuario retirado. '
+                'Debe pasar por un nuevo proceso de contratación.'
+            )
         self.deleted_at = None
         self.is_active = True
         self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])

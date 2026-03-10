@@ -635,11 +635,11 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             tenant_name = proveedor.nombre_comercial or proveedor.razon_social
 
             try:
-                primary_color = connection.tenant.primary_color or '#3b82f6'
-                secondary_color = connection.tenant.secondary_color or '#1e40af'
+                primary_color = connection.tenant.primary_color or '#ec268f'
+                secondary_color = connection.tenant.secondary_color or '#000000'
             except Exception:
-                primary_color = '#3b82f6'
-                secondary_color = '#1e40af'
+                primary_color = '#ec268f'
+                secondary_color = '#000000'
 
             send_setup_password_email_task.delay(
                 user_email=email,
@@ -738,11 +738,11 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                     setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
                     tenant_name = proveedor.nombre_comercial or proveedor.razon_social
                     try:
-                        primary_color = connection.tenant.primary_color or '#3b82f6'
-                        secondary_color = connection.tenant.secondary_color or '#1e40af'
+                        primary_color = connection.tenant.primary_color or '#ec268f'
+                        secondary_color = connection.tenant.secondary_color or '#000000'
                     except Exception:
-                        primary_color = '#3b82f6'
-                        secondary_color = '#1e40af'
+                        primary_color = '#ec268f'
+                        secondary_color = '#000000'
                     send_setup_password_email_task.delay(
                         user_email=email,
                         user_name=existing_user.get_full_name() or existing_user.username or tenant_name,

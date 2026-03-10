@@ -191,11 +191,11 @@ class ResendSetupPasswordView(APIView):
             tenant_name = getattr(current_tenant, 'name', 'StrateKaz')
 
             try:
-                primary_color = current_tenant.primary_color or '#3b82f6'
-                secondary_color = current_tenant.secondary_color or '#1e40af'
+                primary_color = current_tenant.primary_color or '#ec268f'
+                secondary_color = current_tenant.secondary_color or '#000000'
             except Exception:
-                primary_color = '#3b82f6'
-                secondary_color = '#1e40af'
+                primary_color = '#ec268f'
+                secondary_color = '#000000'
 
             send_setup_password_email_task.delay(
                 user_email=email,

@@ -172,8 +172,8 @@ def send_setup_password_email_task(
     cargo_name: str = '',
     setup_url: str = '',
     expiry_hours: int = 168,
-    primary_color: str = '#3b82f6',
-    secondary_color: str = '#1e40af',
+    primary_color: str = '#ec268f',
+    secondary_color: str = '#000000',
 ) -> Dict[str, Any]:
     """
     Envia email con enlace para configurar contraseña inicial.

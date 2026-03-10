@@ -512,15 +512,15 @@ class ForgotPasswordView(APIView):
 
             # Obtener branding del primer tenant del usuario
             tenant_name = 'StrateKaz'
-            primary_color = '#3b82f6'
-            secondary_color = '#1e40af'
+            primary_color = '#ec268f'
+            secondary_color = '#000000'
             try:
                 tenant_access = user.tenant_accesses.filter(is_active=True).select_related('tenant').first()
                 if tenant_access and tenant_access.tenant:
                     tenant = tenant_access.tenant
                     tenant_name = tenant.company_name or tenant.name or 'StrateKaz'
-                    primary_color = tenant.primary_color or '#3b82f6'
-                    secondary_color = tenant.secondary_color or '#1e40af'
+                    primary_color = tenant.primary_color or '#ec268f'
+                    secondary_color = tenant.secondary_color or '#000000'
             except Exception:
                 pass
 

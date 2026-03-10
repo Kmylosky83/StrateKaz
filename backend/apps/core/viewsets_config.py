@@ -25,6 +25,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.core.permissions import GranularActionPermission
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Prefetch
+from apps.core.utils.impersonation import get_effective_user
 
 # Modelos de core (sin dependencias externas)
 from .models import (
@@ -318,7 +319,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
     def _tree_inner(self, request):
         """Lógica interna del tree, envuelta en try/except en tree()."""
-        user = request.user
+        user = get_effective_user(request)
 
         # Super usuario ve todo
         # Usar getattr porque TenantUser no tiene is_superuser, pero User sí
@@ -496,7 +497,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             )
 
     def _sidebar_inner(self, request):
-        user = request.user
+        user = get_effective_user(request)
 
         # Super usuario ve todo
         # Usar getattr porque TenantUser no tiene is_superuser, pero User sí

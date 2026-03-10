@@ -1,6 +1,8 @@
-# Plantillas de Código - HSEQ Module
+# Plantillas de Codigo CRUD — Cualquier Modulo C2
 
-**Código listo para copiar y adaptar**
+**Codigo listo para copiar y adaptar a cualquier modulo de negocio (C2).**
+Los ejemplos usan HSEQ/Accidentalidad como caso concreto, pero el patron aplica a todos los modulos.
+Reemplazar nombres de app, modelos y campos segun el modulo destino.
 
 ---
 

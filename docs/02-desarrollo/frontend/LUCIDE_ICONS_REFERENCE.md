@@ -1,277 +1,194 @@
-# Referencia de Iconos Lucide React para HSEQ
+# Referencia de Iconos Lucide React — Todos los Modulos
 
-## 🎨 Iconos Utilizados en HSEQ Management
+**Version Lucide React:** 0.468+ | **Total disponibles:** ~1400+ iconos
+**Fuente de verdad:** `seed_estructura_final.py` (iconos se cargan desde seeds)
 
-| Módulo/Tab | Icono Actual | Alternativas Sugeridas |
-|------------|--------------|------------------------|
-| **HSEQ Management** | `ShieldCheck` | `Shield`, `ShieldAlert`, `Activity` |
-| Sistema Documental | `FolderTree` | `FileText`, `Folders`, `Archive` |
-| Planificación | `Calendar` | `CalendarCheck`, `Target`, `TrendingUp` |
-| Calidad | `Award` | `Star`, `Medal`, `CheckCircle2` |
-| Medicina Laboral | `Stethoscope` | `Heart`, `Cross`, `Pill` |
-| Seguridad Industrial | `HardHat` | `Shield`, `AlertTriangle`, `Construction` |
-| Higiene Industrial | `Droplet` | `Wind`, `Beaker`, `TestTube2` |
-| Comités HSEQ | `Users` | `UsersRound`, `Users2`, `MessageSquare` |
-| Accidentalidad | `AlertTriangle` | `AlertOctagon`, `AlertCircle`, `XCircle` |
-| Emergencias | `Siren` | `Ambulance`, `Phone`, `Bell` |
-| Gestión Ambiental | `Leaf` | `Trees`, `Recycle`, `Sprout` |
-| Mejora Continua | `TrendingUp` | `RefreshCw`, `ArrowUpCircle`, `BarChart3` |
+> **Regla:** NO emojis en UI. Solo Lucide React icons. PascalCase en BD y codigo.
 
-## 📚 Iconos por Categoría
+---
 
-### Seguridad y Protección
-```typescript
-ShieldCheck, Shield, ShieldAlert, ShieldX, ShieldQuestion,
-HardHat, Lock, LockKeyhole, Key, Eye, EyeOff
+## Iconos por Modulo
+
+### C0 — Plataforma
+| Elemento | Icono |
+|----------|-------|
+| Centro de Control (audit_system) | `Bell` |
+
+### C1 — Fundacion
+| Tab | Icono |
+|-----|-------|
+| Modulo fundacion | `Landmark` |
+| Configuracion | `Settings` |
+| Empresa | `Building2` |
+| Sedes | `MapPin` |
+| Integraciones | `Plug` |
+| Normas ISO | `Award` |
+| Modulos | `LayoutGrid` |
+| Estructura Org. | `Network` |
+| Procesos | `FolderTree` |
+| Mapa de Procesos | `Grid3x3` |
+| Consecutivos | `Hash` |
+| Identidad | `Award` |
+| Direccionamiento | `Eye` |
+| Valores | `Heart` |
+| Politicas | `FileCheck` |
+
+### C2 — Planeacion Estrategica
+| Tab | Icono |
+|-----|-------|
+| Modulo | `Target` |
+| Contexto | `Compass` |
+| Stakeholders | `Users` |
+| Encuestas PCI-POAM | `ClipboardList` |
+| DOFA | `Grid3X3` |
+| PESTEL | `Globe` |
+| Porter | `Layers` |
+| TOWS | `Lightbulb` |
+| Objetivos BSC | `Target` |
+| Mapa Estrategico | `Map` |
+| KPIs | `BarChart3` |
+| Gestion del Cambio | `RefreshCw` |
+| Riesgos y Oport. | `ShieldAlert` |
+| Proyectos PMI | `FolderKanban` |
+| Portafolio | `Briefcase` |
+| Iniciacion | `FileSignature` |
+| Planificacion | `CalendarRange` |
+| Ejecucion | `Activity` |
+| Cierre | `CheckCircle2` |
+
+### C2 — Sistema de Gestion
+| Tab | Icono |
+|-----|-------|
+| Modulo | `FolderCog` |
+| Planificacion | `Calendar` |
+| Documentos | `FileText` |
+| Auditorias | `Search` |
+| Acciones correctivas | `TrendingUp` |
+| Calidad | `Award` |
+
+### C2 — Motor Cumplimiento
+| Tab | Icono |
+|-----|-------|
+| Modulo | `Scale` |
+| Matriz Legal | `BookOpen` |
+| Requisitos | `FileCheck` |
+| Reglamentos | `Gavel` |
+
+### C2 — Motor Riesgos
+| Tab | Icono |
+|-----|-------|
+| Modulo | `AlertCircle` |
+| Riesgos de Proceso | `Building2` |
+| IPEVR | `GitBranch` |
+| Riesgos SST | `ShieldAlert` |
+| Aspectos Ambientales | `Leaf` |
+| Riesgos Viales | `Car` |
+| Seguridad Informacion | `Lock` |
+| SAGRILAFT/PTEE | `ShieldCheck` |
+
+### C2 — Workflows
+| Tab | Icono |
+|-----|-------|
+| Modulo | `GitBranch` |
+| Disenador | `PenTool` |
+| Ejecucion | `Play` |
+| Monitoreo | `Activity` |
+
+### C2 — Gestion HSEQ
+| Tab | Icono |
+|-----|-------|
+| Modulo | `ShieldCheck` |
+| Planificacion SGI | `Calendar` |
+| Calidad | `Award` |
+| Medicina Laboral | `Stethoscope` |
+| Seguridad Industrial | `HardHat` |
+| Higiene Industrial | `Droplet` |
+| Comites | `Users` |
+| Accidentalidad | `AlertTriangle` |
+| Emergencias | `Siren` |
+| Gestion Ambiental | `Leaf` |
+| Mejora Continua | `TrendingUp` |
+
+### C2 — Talent Hub
+| Tab | Icono |
+|-----|-------|
+| Modulo | `Users` |
+| Estructura Cargos | `Briefcase` |
+| Seleccion | `UserSearch` |
+| Colaboradores | `Users` |
+| Onboarding | `BookOpen` |
+| Formacion | `GraduationCap` |
+| Desempeno | `Star` |
+| Control Tiempo | `Clock` |
+| Novedades | `FileText` |
+| Proceso Disciplinario | `Gavel` |
+| Nomina | `DollarSign` |
+| Off-boarding | `LogOut` |
+
+### C2 — Supply Chain, Production, Logistics, Sales, Finance, Accounting
+> Iconos definidos en seeds. Consultar `seed_estructura_final.py` para referencia exacta.
+
+---
+
+## Iconos por Categoria (referencia rapida)
+
+### Seguridad y Proteccion
+```
+ShieldCheck, Shield, ShieldAlert, ShieldX, HardHat, Lock, Key, Eye, EyeOff
 ```
 
 ### Alertas y Emergencias
-```typescript
-AlertTriangle, AlertCircle, AlertOctagon, Siren, Ambulance,
-Bell, BellRing, Phone, PhoneCall, Radio
+```
+AlertTriangle, AlertCircle, AlertOctagon, Siren, Bell, BellRing, Phone
 ```
 
 ### Salud y Medicina
-```typescript
-Stethoscope, Heart, HeartPulse, Pill, Cross, Activity,
-Syringe, Thermometer, Bandaid
+```
+Stethoscope, Heart, HeartPulse, Pill, Cross, Activity, Thermometer
 ```
 
 ### Documentos y Archivos
-```typescript
-FileText, File, Files, Folder, FolderTree, Folders,
-Archive, Inbox, FileSearch, FilePlus, FileCheck
+```
+FileText, File, Files, Folder, FolderTree, Archive, FileSearch, FileCheck
 ```
 
-### Calendario y Planificación
-```typescript
-Calendar, CalendarCheck, CalendarClock, CalendarDays,
-Clock, Timer, Hourglass, Target, Milestone
+### Analisis y Metricas
 ```
-
-### Calidad y Certificación
-```typescript
-Award, Medal, Star, Badge, CheckCircle, CheckCircle2,
-Verified, BadgeCheck, Stamp
-```
-
-### Medio Ambiente
-```typescript
-Leaf, Trees, Sprout, Recycle, Wind, Droplet, Droplets,
-Cloud, CloudRain, Sun, Globe
+TrendingUp, TrendingDown, BarChart, BarChart3, PieChart, Activity, Gauge
 ```
 
 ### Usuarios y Equipos
-```typescript
-Users, UsersRound, Users2, User, UserCheck, UserPlus,
-MessageSquare, MessageCircle, Users, Group
+```
+Users, UsersRound, User, UserCheck, UserPlus, UserSearch, GraduationCap
 ```
 
-### Análisis y Métricas
-```typescript
-TrendingUp, TrendingDown, BarChart, BarChart3, PieChart,
-LineChart, Activity, Gauge, Percent
+### Medio Ambiente
+```
+Leaf, Trees, Sprout, Recycle, Wind, Droplet, Globe, Sun
 ```
 
 ### Procesos y Flujos
-```typescript
-RefreshCw, RotateCw, ArrowUpCircle, ArrowDownCircle,
-GitBranch, Workflow, Repeat, Shuffle
+```
+RefreshCw, GitBranch, Workflow, Play, Activity, PenTool, FolderKanban
 ```
 
-### Herramientas y Operaciones
-```typescript
-Wrench, Hammer, Tool, Settings, Sliders, Cog,
-Construction, Factory, Building, Building2
-```
+---
 
-### Inspección y Verificación
-```typescript
-Eye, EyeOff, Search, SearchCheck, Scan, ScanLine,
-CheckSquare, ClipboardCheck, ListChecks
-```
+## Como Cambiar un Icono
 
-## 🔧 Cómo Cambiar un Icono
+### Via seed (recomendado)
+Modificar `seed_estructura_final.py` → ejecutar `deploy_seeds_all_tenants --only estructura`
 
-### Método 1: Management Command
-```bash
-python manage.py update_hseq_icon <tab_code> <nuevo_icono>
-
-# Ejemplos:
-python manage.py update_hseq_icon emergencias Ambulance
-python manage.py update_hseq_icon calidad Star
-python manage.py update_hseq_icon medicina_laboral Heart
-```
-
-### Método 2: Directamente en Base de Datos
-```sql
-UPDATE core_module_tab
-SET icon = 'NuevoIcono'
-WHERE code = 'codigo_tab'
-AND module_id = (SELECT id FROM core_system_module WHERE code = 'hseq_management');
-```
-
-### Método 3: Django Shell
+### Via Django Shell (temporal)
 ```python
-python manage.py shell
-
 from apps.core.models import ModuleTab
-
 tab = ModuleTab.objects.get(code='emergencias', module__code='hseq_management')
 tab.icon = 'Ambulance'
 tab.save()
 ```
 
-## ✅ Verificar Iconos Disponibles
-
-### Online
-Visita: https://lucide.dev/icons/
-
-### En el Proyecto
-```bash
-cd frontend
-cat node_modules/lucide-react/dynamicIconImports.js | grep '"[a-z-]*":' | wc -l
-# Output: ~1400+ iconos disponibles
-```
-
-### Buscar Icono Específico
-```bash
-cat node_modules/lucide-react/dynamicIconImports.js | grep -i "término_buscar"
-
-# Ejemplos:
-cat node_modules/lucide-react/dynamicIconImports.js | grep -i "shield"
-cat node_modules/lucide-react/dynamicIconImports.js | grep -i "heart"
-cat node_modules/lucide-react/dynamicIconImports.js | grep -i "alert"
-```
-
-## 🎨 Mejores Prácticas
-
-### 1. Consistencia Visual
-- Usar iconos de la misma familia (solid/outline)
-- Mantener un estilo visual coherente
-- Evitar mezclar iconos muy detallados con muy simples
-
-### 2. Significado Claro
-- El icono debe ser intuitivo
-- Debe reflejar la función del módulo
-- Considerar contexto cultural y profesional
-
-### 3. Convenciones de Naming
-- **Lucide React**: PascalCase (`AlertTriangle`, `ShieldCheck`)
-- **Base de datos**: Mismo formato que Lucide (`AlertTriangle`)
-- **No usar**: snake_case, kebab-case
-
-### 4. Testing Visual
-Antes de confirmar un cambio:
-1. Verificar en https://lucide.dev/icons/
-2. Ver preview del icono
-3. Confirmar que existe en la versión instalada
-4. Probar en diferentes tamaños
-
-## 🔍 Ejemplos de Iconos Temáticos
-
-### Para SST (Seguridad y Salud en el Trabajo)
-```typescript
-// General SST
-ShieldCheck, Shield, HardHat, AlertTriangle
-
-// Medicina ocupacional
-Stethoscope, Heart, Activity, Cross
-
-// EPP (Equipos de Protección Personal)
-HardHat, Glasses, Shirt, Boot
-
-// Riesgos
-AlertTriangle, AlertCircle, Flame, Zap
-
-// Inspecciones
-Eye, Search, ClipboardCheck, ListChecks
-```
-
-### Para Calidad (ISO 9001)
-```typescript
-// Certificación
-Award, Medal, Badge, Star, Verified
-
-// Procesos
-GitBranch, Workflow, RefreshCw, ArrowUpCircle
-
-// Auditorías
-Search, Eye, ClipboardCheck, FileSearch
-
-// Mejora continua
-TrendingUp, RefreshCw, Target, BarChart3
-```
-
-### Para Medio Ambiente (ISO 14001)
-```typescript
-// Naturaleza
-Leaf, Trees, Sprout, Globe
-
-// Recursos
-Droplet, Wind, Sun, Cloud
-
-// Reciclaje
-Recycle, RotateCw, RefreshCw
-
-// Impactos
-AlertTriangle, TrendingDown, Wind
-```
-
-### Para Emergencias
-```typescript
-// Alertas
-Siren, Bell, BellRing, AlertOctagon
-
-// Respuesta
-Ambulance, Phone, PhoneCall, Radio
-
-// Evacuación
-DoorOpen, ArrowRight, Navigation
-
-// Primeros auxilios
-Cross, Heart, Activity, Pill
-```
-
-## 🚀 Quick Reference Commands
-
-```bash
-# Listar todos los tabs HSEQ
-python manage.py shell -c "
-from apps.core.models import ModuleTab
-tabs = ModuleTab.objects.filter(module__code='hseq_management')
-for t in tabs:
-    print(f'{t.code:25s} {t.icon:20s} {t.name}')
-"
-
-# Cambiar icono
-python manage.py update_hseq_icon emergencias Ambulance
-
-# Verificar cambio
-python manage.py verify_hseq_modules
-
-# Ver estructura en API
-curl http://localhost:8000/api/core/system-modules/sidebar/ | jq '.[] | select(.code == "hseq_management")'
-```
-
-## 📖 Referencias
-
-- **Lucide Icons**: https://lucide.dev/icons/
-- **Lucide React Docs**: https://lucide.dev/guide/packages/lucide-react
-- **Icon Search**: https://lucide.dev/icons (con buscador)
-- **GitHub**: https://github.com/lucide-icons/lucide
-- **NPM Package**: https://www.npmjs.com/package/lucide-react
-
-## 🎯 Recomendaciones Finales
-
-1. **Antes de cambiar**: Verificar que el icono existe en Lucide
-2. **Naming exacto**: Respetar PascalCase (`AlertTriangle`, no `alert-triangle`)
-3. **Preview**: Siempre ver el icono en https://lucide.dev antes de usarlo
-4. **Consistencia**: Mantener coherencia visual en todo el módulo
-5. **Feedback**: Probar con usuarios finales antes de confirmar
-
----
-
-**Versión de Lucide React en el proyecto**: `0.294.0` (verificado)
-**Total de iconos disponibles**: ~1400+
-**Iconos HSEQ actualmente en uso**: 12 únicos
+### Convenciones
+- **Formato BD:** PascalCase (`AlertTriangle`, NO `alert-triangle`)
+- **Import React:** `import { AlertTriangle } from 'lucide-react'`
+- **DynamicIcon:** Componente que resuelve icono desde string BD → componente React
+- **Buscar iconos:** https://lucide.dev/icons/

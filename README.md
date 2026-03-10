@@ -1,11 +1,11 @@
 # StrateKaz - Sistema Integrado de Gestion Empresarial
 
-Plataforma ERP SaaS multi-tenant para empresas colombianas con cumplimiento normativo integrado (SG-SST, PESV, ISO 9001/14001/45001). Arquitectura modular de 6 niveles con 17 modulos y ~103 sub-apps, aislamiento de datos por schema de PostgreSQL.
+Plataforma ERP SaaS multi-tenant para empresas colombianas con cumplimiento normativo integrado (SG-SST, PESV, ISO 9001/14001/45001). Arquitectura modular de 5 capas con 14 modulos de negocio y ~84 sub-apps, aislamiento de datos por schema de PostgreSQL.
 
 | Info | Valor |
 |------|-------|
-| **Version** | 4.0.0 |
-| **Ultima Actualizacion** | 6 Febrero 2026 |
+| **Versiones** | Root 3.7.1 · Frontend 5.1.0 · API 4.0.0 |
+| **Ultima Actualizacion** | 9 Marzo 2026 |
 | **Licencia** | Apache-2.0 |
 
 ---
@@ -30,44 +30,43 @@ Plataforma ERP SaaS multi-tenant para empresas colombianas con cumplimiento norm
 
 | Metrica | Backend | Frontend |
 |---------|---------|----------|
-| Apps/Features | 103 apps | 22 features |
-| Modelos/Componentes | 240+ modelos | 30+ reutilizables |
+| Apps/Features | ~84 apps | 22 features |
+| Modelos/Componentes | 240+ modelos | 100+ reutilizables |
 
 ---
 
-## Arquitectura de 6 Niveles
+## Arquitectura: 5 Capas + Portales
 
 ```
-NIVEL 0: CORE BASE
-├── core/    (Usuarios, RBAC, Menu, Sesiones, 2FA)
-└── tenant/  (Tenant, Domain, Plan - schema public)
+C0 — PLATAFORMA (infraestructura)
+├── core/         (Usuarios, RBAC, Menu, Permisos)
+├── tenant/       (Multi-tenant, Schemas, Domains, Plans)
+└── audit_system/ (Centro de Control: Logs, Alertas, Notificaciones)
 
-NIVEL 1: ESTRATEGICO (10 apps)
-└── gestion_estrategica/ (Configuracion, Organizacion, Identidad,
-    Planeacion, Contexto DOFA/PESTEL, Proyectos PMI, Gestion Documental)
+C1 — FUNDACION (se configura 1 vez)
+└── gestion_estrategica/ (Configuracion, Organizacion, Identidad)
 
-NIVEL 2: CUMPLIMIENTO (14 apps)
-├── motor_cumplimiento/  (Matriz Legal, Requisitos, Partes Interesadas)
-├── motor_riesgos/       (IPEVR, ISO 31000, Ambiental, Vial, SAGRILAFT)
-└── workflow_engine/     (BPMN, Firmas Digitales)
+C2 — MODULOS DE NEGOCIO (14 independientes)
+├── Planeacion Estrategica  (Contexto, Objetivos, Proyectos PMI)
+├── Sistema de Gestion      (Planificacion, Documentos, Calidad)
+├── Motor Cumplimiento      (Matriz Legal, Requisitos)
+├── Motor Riesgos           (IPEVR, ISO 31000, Ambiental, Vial, SAGRILAFT)
+├── Workflows               (BPMN, Firmas Digitales)
+├── HSEQ                    (SST, Ambiental, Comites, Emergencias)
+├── Talent Hub              (RRHH completo - 11 sub-apps)
+├── Supply Chain            (Proveedores, Compras, Almacen)
+├── Production Ops          (Recepcion, Procesamiento, Mantenimiento)
+├── Logistics & Fleet       (Flota, Transporte)
+├── Sales CRM               (Clientes, Ventas, Facturacion)
+├── Admin Finance           (Tesoreria, Presupuesto, Activos)
+└── Accounting              (Contabilidad)
 
-NIVEL 3: TORRE DE CONTROL (9 apps)
-└── hseq_management/     (Calidad, SST, Ambiental, Comites, Emergencias)
+C3 — INTELIGENCIA (lee de C2, NO modifica)
+├── analytics/              (KPIs, Dashboards, Informes, Tendencias)
+└── revision_direccion/     (Revision por la Direccion)
 
-NIVEL 4: CADENA DE VALOR (17 apps)
-├── supply_chain/        (Proveedores, Compras, Almacen)
-├── production_ops/      (Recepcion, Procesamiento, Mantenimiento)
-├── logistics_fleet/     (Flota, Transporte)
-└── sales_crm/           (Clientes, Ventas, Facturacion)
-
-NIVEL 5: HABILITADORES (19 apps)
-├── talent_hub/          (RRHH completo - 11 apps)
-├── admin_finance/       (Tesoreria, Presupuesto, Activos)
-└── accounting/          (Contabilidad)
-
-NIVEL 6: INTELIGENCIA (11 apps)
-├── analytics/           (KPIs, Dashboards, Informes)
-└── audit_system/        (Logs, Notificaciones, Alertas)
+PORTALES (solo UI, sin logica propia)
+  Mi Portal | Mi Equipo | Portal Proveedores | Portal Clientes | Admin Global
 ```
 
 ---
@@ -180,12 +179,10 @@ StrateKaz/
 
 | Seccion | Ruta | Contenido |
 |---------|------|-----------|
-| **Indice** | [docs/00-INDICE.md](docs/00-INDICE.md) | Punto de entrada y onboarding |
 | **Arquitectura** | [docs/01-arquitectura/](docs/01-arquitectura/) | Sistema, DB, multi-tenant, RBAC |
 | **Desarrollo** | [docs/02-desarrollo/](docs/02-desarrollo/) | Convenciones, testing, API, frontend/backend |
 | **Modulos** | [docs/03-modulos/](docs/03-modulos/) | Documentacion por modulo |
-| **DevOps** | [docs/04-devops/](docs/04-devops/) | Docker, CI/CD, Celery/Redis |
-| **Refactoring** | [docs/05-refactoring/](docs/05-refactoring/) | Estado actual, brechas, planes activos |
+| **DevOps** | [docs/04-devops/](docs/04-devops/) | Docker, CI/CD, Celery/Redis, deploy |
 
 ---
 

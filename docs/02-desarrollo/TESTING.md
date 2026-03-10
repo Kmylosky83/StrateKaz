@@ -15,6 +15,7 @@ Esta guía consolidada cubre todos los aspectos del testing en StrateKaz: prueba
 3. [Testing Manual](#testing-manual)
 4. [Referencia de Endpoints](#referencia-de-endpoints)
 5. [Troubleshooting](#troubleshooting)
+6. [Testing Multi-Tenant](#testing-multi-tenant)
 
 ---
 
@@ -882,6 +883,71 @@ python manage.py runserver
 
 # Frontend: Ctrl+C en la consola, luego:
 npm run dev
+```
+
+---
+
+## Testing Multi-Tenant
+
+### Consideraciones
+
+StrateKaz usa `django-tenants` con schemas PostgreSQL. Todo test que toque modelos tenant DEBE ejecutarse dentro de un schema tenant, no en `public`.
+
+### Setup con pytest-django
+
+```python
+import pytest
+from django_tenants.test.cases import TenantTestCase
+from django_tenants.test.client import TenantClient
+
+class TestMiModelo(TenantTestCase):
+    """Tests que corren automaticamente dentro del schema del tenant de prueba."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = TenantClient(self.tenant)
+
+    def test_crear_registro(self):
+        # Este test corre en el schema del tenant, NO en public
+        response = self.client.post('/api/mi-modulo/', data={...})
+        assert response.status_code == 201
+```
+
+### Reglas clave
+
+1. **NUNCA usar `TestCase` de Django** para modelos tenant — siempre `TenantTestCase`
+2. **Factories** deben usar `schema_context` si crean datos tenant:
+   ```python
+   from django_tenants.utils import schema_context
+   with schema_context(tenant.schema_name):
+       obj = MiModeloFactory()
+   ```
+3. **Settings de test** (`config/settings/testing.py`): Usa SQLite en-memory, Celery eager mode
+4. **Fixtures compartidas** (schema `public`): Tenant, Domain, Plan, TenantUser
+5. **Fixtures tenant** (schema tenant): Empresa, Users, Colaboradores, modelos C1-C2
+
+### Errores comunes
+
+| Error | Causa | Solucion |
+|-------|-------|----------|
+| `relation does not exist` | Test corriendo en schema `public` | Usar `TenantTestCase` |
+| `No tenant for hostname` | Client sin tenant header | Usar `TenantClient(self.tenant)` |
+| `IntegrityError: duplicate key` | Seed ya ejecutado en test | Usar `setUp` limpio o `@pytest.fixture` |
+
+### Ejecutar tests
+
+```bash
+# Todos los tests
+cd backend && pytest
+
+# Solo un modulo
+pytest apps/talent_hub/colaboradores/tests/
+
+# Con coverage
+pytest --cov=apps --cov-report=html
+
+# Excluir tests lentos
+pytest -m "not slow"
 ```
 
 ---

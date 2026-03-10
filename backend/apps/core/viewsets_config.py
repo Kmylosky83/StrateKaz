@@ -338,9 +338,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'layers': self._get_layers_config(),
             })
 
-        # Obtener section_ids autorizados para este cargo
+        # Obtener section_ids autorizados para este cargo (SOLO can_view=True)
         authorized_section_ids = set(
-            CargoSectionAccess.objects.filter(cargo=cargo)
+            CargoSectionAccess.objects.filter(cargo=cargo, can_view=True)
             .values_list('section_id', flat=True)
         )
 
@@ -511,9 +511,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             # Usuario sin cargo no ve nada
             return Response([])
 
-        # Obtener section_ids autorizados para este cargo
+        # Obtener section_ids autorizados para este cargo (SOLO can_view=True)
         authorized_section_ids = set(
-            CargoSectionAccess.objects.filter(cargo=cargo)
+            CargoSectionAccess.objects.filter(cargo=cargo, can_view=True)
             .values_list('section_id', flat=True)
         )
 

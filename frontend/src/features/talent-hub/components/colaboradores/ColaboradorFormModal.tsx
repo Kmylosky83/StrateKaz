@@ -245,6 +245,7 @@ export const ColaboradorFormModal = ({
       case 1: // Asignacion
         return !!(formData.cargo && formData.area && formData.fecha_ingreso);
       case 2: // Contratacion
+        if (formData.tipo_contrato === 'fijo' && !formData.fecha_fin_contrato) return false;
         return !!(formData.tipo_contrato && formData.salario);
       case 3: // Acceso al sistema (siempre valido - es opcional)
         if (!formData.crear_acceso) return true;
@@ -273,22 +274,26 @@ export const ColaboradorFormModal = ({
     if (!data.telefono_movil) delete data.telefono_movil;
     if (!data.observaciones) delete data.observaciones;
 
-    if (isEditing && colaborador) {
-      // En edicion, no enviar campos de acceso
-      delete data.crear_acceso;
-      delete data.email_corporativo;
-      delete data.username;
-      await updateMutation.mutateAsync({ id: colaborador.id, data });
-    } else {
-      // En creacion, limpiar campos de acceso si no se selecciono
-      if (!data.crear_acceso) {
+    try {
+      if (isEditing && colaborador) {
+        // En edicion, no enviar campos de acceso
         delete data.crear_acceso;
         delete data.email_corporativo;
         delete data.username;
+        await updateMutation.mutateAsync({ id: colaborador.id, data });
+      } else {
+        // En creacion, limpiar campos de acceso si no se selecciono
+        if (!data.crear_acceso) {
+          delete data.crear_acceso;
+          delete data.email_corporativo;
+          delete data.username;
+        }
+        await createMutation.mutateAsync(data);
       }
-      await createMutation.mutateAsync(data);
+      onClose();
+    } catch {
+      // Error manejado por onError en useMutation (toast ya mostrado)
     }
-    onClose();
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;

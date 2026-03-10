@@ -425,8 +425,8 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
 
   return (
     <div className="space-y-3">
-      {/* Barra de acciones */}
-      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+      {/* Barra de acciones — sticky para que no desaparezca al hacer scroll del modal */}
+      <div className="sticky top-0 z-10 flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <Layers className="h-4 w-4 text-primary-500" />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -485,8 +485,8 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
         </span>
       </div>
 
-      {/* Árbol de módulos */}
-      <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 max-h-[50vh] overflow-y-auto">
+      {/* Árbol de módulos — sin scroll propio, el modal body es el único scroll */}
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
         {modulesTree?.modules
           .filter((m) => m.is_enabled)
           .filter((m) => {

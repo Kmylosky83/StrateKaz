@@ -175,25 +175,9 @@ def current_user(request):
     """
     user = request.user
 
-    # Obtener permisos efectivos y secciones
-    if user.is_superuser:
-        # Superusuario tiene acceso total - no necesita lista de secciones ni permisos
-        section_ids = None
-        permission_codes = ['*']
-    else:
-        section_ids = []
-        permission_codes = []
-
-        # 1. Obtener section_ids del Cargo (si tiene)
-        if user.cargo:
-            from apps.core.models import CargoSectionAccess
-            section_ids = list(CargoSectionAccess.objects.filter(
-                cargo=user.cargo, can_view=True
-            ).values_list('section_id', flat=True))
-
-        # 2. Obtener códigos de permisos efectivos (RBAC Híbrido)
-        if hasattr(user, 'get_permisos_efectivos'):
-            permission_codes = user.get_permisos_efectivos()
+    # RBAC Unificado v4.0: fuente única de verdad desde CargoSectionAccess
+    from apps.core.utils.rbac import compute_user_rbac
+    section_ids, permission_codes = compute_user_rbac(user)
 
     # 3. Obtener empresa_nombre desde el Tenant actual
     # NOTA: El branding (incluyendo company_name) está ahora en el modelo Tenant

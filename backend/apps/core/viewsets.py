@@ -447,20 +447,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Computar RBAC del usuario target (misma lógica que current_user)
-        if target_user.is_superuser:
-            section_ids = None
-            permission_codes = ['*']
-        else:
-            section_ids = []
-            permission_codes = []
-            if target_user.cargo:
-                from apps.core.models import CargoSectionAccess
-                section_ids = list(CargoSectionAccess.objects.filter(
-                    cargo=target_user.cargo, can_view=True
-                ).values_list('section_id', flat=True))
-            if hasattr(target_user, 'get_permisos_efectivos'):
-                permission_codes = target_user.get_permisos_efectivos()
+        # RBAC Unificado v4.0: fuente única de verdad desde CargoSectionAccess
+        from apps.core.utils.rbac import compute_user_rbac
+        section_ids, permission_codes = compute_user_rbac(target_user)
 
         # Datos de contexto
         empresa_nombre = None

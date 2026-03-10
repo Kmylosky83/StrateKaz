@@ -264,61 +264,20 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def get_section_ids(self, obj):
         """
-        Retorna IDs de secciones autorizadas por el cargo del usuario.
-        - Super usuario: None (tiene acceso total, no necesita lista)
-        - Usuario normal: lista de section_ids autorizados (donde can_view=True)
+        Retorna IDs de secciones autorizadas (RBAC Unificado v4.0).
+        Delegado a compute_user_rbac() como fuente única de verdad.
         """
-        if obj.is_superuser:
-            return None  # Super usuario no necesita filtrado
-
-        cargo = getattr(obj, 'cargo', None)
-        if not cargo:
-            return []
-
-        return list(
-            CargoSectionAccess.objects.filter(cargo=cargo, can_view=True)
-            .values_list('section_id', flat=True)
-        )
+        from apps.core.utils.rbac import compute_user_rbac
+        section_ids, _ = compute_user_rbac(obj)
+        return section_ids
 
     def get_permission_codes(self, obj):
         """
-        Retorna códigos de permisos CRUD autorizados desde CargoSectionAccess.
-        Sistema RBAC Unificado v4.0 - permisos integrados en acceso a secciones.
-
-        Formato: "modulo.seccion.accion"
-        Ejemplo: "gestion_estrategica.empresa.edit"
-
-        - Super usuario: ['*'] (tiene todos los permisos)
-        - Usuario normal: lista de códigos derivados de CargoSectionAccess
+        Retorna códigos de permisos CRUD (RBAC Unificado v4.0).
+        Formato: "modulo.seccion.accion" — Delegado a compute_user_rbac().
         """
-        if obj.is_superuser:
-            return ['*']  # Super usuario tiene todos los permisos
-
-        cargo = getattr(obj, 'cargo', None)
-        if not cargo:
-            return []
-
-        # Obtener accesos con sus secciones y módulos
-        accesses = CargoSectionAccess.objects.filter(cargo=cargo).select_related(
-            'section__tab__module'
-        )
-
-        permission_codes = []
-        for access in accesses:
-            section = access.section
-            module_code = section.tab.module.code.lower()
-            section_code = section.code.lower()
-
-            # Generar códigos de permiso basados en las acciones habilitadas
-            if access.can_view:
-                permission_codes.append(f"{module_code}.{section_code}.view")
-            if access.can_create:
-                permission_codes.append(f"{module_code}.{section_code}.create")
-            if access.can_edit:
-                permission_codes.append(f"{module_code}.{section_code}.edit")
-            if access.can_delete:
-                permission_codes.append(f"{module_code}.{section_code}.delete")
-
+        from apps.core.utils.rbac import compute_user_rbac
+        _, permission_codes = compute_user_rbac(obj)
         return permission_codes
 
 

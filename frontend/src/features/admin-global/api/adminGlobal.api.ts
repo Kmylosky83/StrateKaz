@@ -332,10 +332,21 @@ export const tenantUsersApi = {
   },
 
   /**
-   * Elimina un usuario global
+   * Desactiva un usuario global (soft-delete).
+   * El backend marca is_active=False en vez de eliminar.
    */
   delete: async (id: number): Promise<void> => {
     await axiosInstance.delete(`${BASE_URL}/users/${id}/`);
+  },
+
+  /**
+   * Activa/desactiva un usuario global (toggle)
+   */
+  toggleActive: async (
+    id: number
+  ): Promise<{ id: number; is_active: boolean; message: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/users/${id}/toggle-active/`);
+    return response.data;
   },
 
   /**

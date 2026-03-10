@@ -684,6 +684,45 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    def perform_destroy(self, instance):
+        """
+        Soft-delete: desactiva el TenantUser en vez de eliminarlo.
+        Preserva trazabilidad, auditoría y datos de tenants asociados.
+        """
+        instance.is_active = False
+        with schema_context('public'):
+            instance.save(update_fields=['is_active'])
+
+    @action(detail=True, methods=['post'], url_path='toggle-active')
+    def toggle_active(self, request, pk=None):
+        """
+        Activa/desactiva un usuario global. Toggle simple.
+        Permite reactivar usuarios previamente desactivados.
+        """
+        user = self.get_object()
+
+        # Proteger contra desactivar al último superadmin
+        if user.is_superadmin and user.is_active:
+            remaining = TenantUser.objects.filter(
+                is_superadmin=True, is_active=True
+            ).exclude(id=user.id).count()
+            if remaining == 0:
+                return Response(
+                    {'detail': 'No se puede desactivar al último Super Admin del sistema.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        user.is_active = not user.is_active
+        with schema_context('public'):
+            user.save(update_fields=['is_active'])
+
+        action_text = 'activado' if user.is_active else 'desactivado'
+        return Response({
+            'id': user.id,
+            'is_active': user.is_active,
+            'message': f'Usuario {action_text} correctamente.',
+        })
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Estadísticas globales de usuarios."""

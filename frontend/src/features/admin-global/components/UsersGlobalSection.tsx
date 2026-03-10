@@ -4,7 +4,18 @@
  * Gestión de usuarios con acceso multi-tenant.
  */
 import { useState, useMemo } from 'react';
-import { Users, Plus, Search, Edit, Trash2, Shield, Building2, Mail, Clock } from 'lucide-react';
+import {
+  Users,
+  Plus,
+  Search,
+  Edit,
+  Shield,
+  Building2,
+  Mail,
+  Clock,
+  UserX,
+  UserCheck,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Card,
@@ -17,17 +28,17 @@ import {
 } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import { useTenantUsersList, useDeleteTenantUser } from '../hooks/useAdminGlobal';
+import { useTenantUsersList, useToggleTenantUserActive } from '../hooks/useAdminGlobal';
 import { TenantUserFormModal } from './TenantUserFormModal';
 import type { TenantUser } from '../types';
 
 interface UserRowProps {
   user: TenantUser;
   onEdit: (user: TenantUser) => void;
-  onDelete: (id: number) => void;
+  onToggleActive: (id: number) => void;
 }
 
-const UserRow = ({ user, onEdit, onDelete }: UserRowProps) => {
+const UserRow = ({ user, onEdit, onToggleActive }: UserRowProps) => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return 'Nunca';
     return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -132,10 +143,14 @@ const UserRow = ({ user, onEdit, onDelete }: UserRowProps) => {
             },
             { label: '', onClick: () => {}, divider: true },
             {
-              label: 'Eliminar',
-              icon: <Trash2 className="h-4 w-4" />,
-              onClick: () => onDelete(user.id),
-              variant: 'danger' as const,
+              label: user.is_active ? 'Desactivar' : 'Activar',
+              icon: user.is_active ? (
+                <UserX className="h-4 w-4" />
+              ) : (
+                <UserCheck className="h-4 w-4" />
+              ),
+              onClick: () => onToggleActive(user.id),
+              variant: user.is_active ? ('danger' as const) : undefined,
             },
           ]}
           align="right"
@@ -149,7 +164,7 @@ export const UsersGlobalSection = () => {
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
   const [filterSuperadmin, setFilterSuperadmin] = useState<boolean | undefined>(undefined);
-  const [userToDelete, setUserToDelete] = useState<number | null>(null);
+  const [userToToggle, setUserToToggle] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<TenantUser | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
 
@@ -159,7 +174,7 @@ export const UsersGlobalSection = () => {
     is_superadmin: filterSuperadmin,
   });
 
-  const deleteUser = useDeleteTenantUser();
+  const toggleActive = useToggleTenantUserActive();
 
   // Filtrar localmente
   const filteredUsers = useMemo(() => {
@@ -185,12 +200,14 @@ export const UsersGlobalSection = () => {
     setShowFormModal(true);
   };
 
-  const handleDelete = () => {
-    if (userToDelete) {
-      deleteUser.mutate(userToDelete);
-      setUserToDelete(null);
+  const handleToggleActive = () => {
+    if (userToToggle) {
+      toggleActive.mutate(userToToggle);
+      setUserToToggle(null);
     }
   };
+
+  const userToToggleData = users?.find((u) => u.id === userToToggle);
 
   if (isLoading) {
     return <BrandedSkeleton height="h-96" logoSize="xl" showText />;
@@ -285,7 +302,7 @@ export const UsersGlobalSection = () => {
                     key={user.id}
                     user={user}
                     onEdit={handleEditUser}
-                    onDelete={setUserToDelete}
+                    onToggleActive={setUserToToggle}
                   />
                 ))}
               </AnimatePresence>
@@ -304,16 +321,20 @@ export const UsersGlobalSection = () => {
         </div>
       )}
 
-      {/* Confirm Delete Dialog */}
+      {/* Confirm Toggle Active Dialog */}
       <ConfirmDialog
-        isOpen={!!userToDelete}
-        onClose={() => setUserToDelete(null)}
-        onConfirm={handleDelete}
-        title="Eliminar Usuario"
-        message="¿Estás seguro de que deseas eliminar este usuario? Perderá acceso a todas las empresas."
-        confirmText="Eliminar"
-        variant="danger"
-        isLoading={deleteUser.isPending}
+        isOpen={!!userToToggle}
+        onClose={() => setUserToToggle(null)}
+        onConfirm={handleToggleActive}
+        title={userToToggleData?.is_active ? 'Desactivar Usuario' : 'Activar Usuario'}
+        message={
+          userToToggleData?.is_active
+            ? `¿Estás seguro de que deseas desactivar a ${userToToggleData.first_name} ${userToToggleData.last_name}? No podrá iniciar sesión en ninguna empresa.`
+            : `¿Deseas reactivar a ${userToToggleData?.first_name} ${userToToggleData?.last_name}? Podrá iniciar sesión en las empresas asignadas.`
+        }
+        confirmText={userToToggleData?.is_active ? 'Desactivar' : 'Activar'}
+        variant={userToToggleData?.is_active ? 'danger' : 'primary'}
+        isLoading={toggleActive.isPending}
       />
 
       {/* User Form Modal - Editar datos del usuario */}

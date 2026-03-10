@@ -363,10 +363,29 @@ export const useDeleteTenantUser = () => {
     mutationFn: (id: number) => tenantUsersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
-      toast.success('Usuario eliminado correctamente');
+      toast.success('Usuario desactivado correctamente');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al eliminar el usuario');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al desactivar el usuario'
+      );
+    },
+  });
+};
+
+export const useToggleTenantUserActive = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => tenantUsersApi.toggleActive(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
+      toast.success(data.message);
+    },
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al cambiar estado del usuario'
+      );
     },
   });
 };

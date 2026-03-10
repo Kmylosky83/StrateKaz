@@ -79,10 +79,22 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
                 tenant_user.id, user.id, user.email
             )
         else:
-            logger.info(
-                'TenantUser existente #%s vinculado a User %s (%s)',
-                tenant_user.id, user.id, user.email
-            )
+            # Si el TenantUser existente estaba desactivado (soft-deleted),
+            # reactivarlo automáticamente — el usuario está siendo creado
+            # en un nuevo tenant, así que necesita poder hacer login.
+            if not tenant_user.is_active:
+                tenant_user.is_active = True
+                tenant_user.password = user.password  # Sincronizar password
+                tenant_user.save(update_fields=['is_active', 'password'])
+                logger.info(
+                    'TenantUser #%s REACTIVADO para User %s (%s) en tenant "%s"',
+                    tenant_user.id, user.id, user.email, current_tenant.name
+                )
+            else:
+                logger.info(
+                    'TenantUser existente #%s vinculado a User %s (%s)',
+                    tenant_user.id, user.id, user.email
+                )
 
         # Crear acceso al tenant actual si no existe
         _access, access_created = TenantUserAccess.objects.get_or_create(

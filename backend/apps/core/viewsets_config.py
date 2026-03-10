@@ -307,6 +307,17 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
         El filtrado es GRANULAR a nivel de sección.
         """
+        try:
+            return self._tree_inner(request)
+        except Exception as e:
+            logger.error(f'tree error: {type(e).__name__}: {e}', exc_info=True)
+            return Response(
+                {'error': f'Error cargando árbol de módulos: {type(e).__name__}: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _tree_inner(self, request):
+        """Lógica interna del tree, envuelta en try/except en tree()."""
         user = request.user
 
         # Super usuario ve todo
@@ -322,7 +333,8 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'modules': [],
                 'total_modules': 0,
                 'enabled_modules': 0,
-                'categories': []
+                'categories': [],
+                'layers': self._get_layers_config(),
             })
 
         # Obtener section_ids autorizados para este cargo
@@ -336,7 +348,8 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'modules': [],
                 'total_modules': 0,
                 'enabled_modules': 0,
-                'categories': []
+                'categories': [],
+                'layers': self._get_layers_config(),
             })
 
         # Excluir secciones restringidas a superadmin (ej: 'modulos')
@@ -351,7 +364,8 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'modules': [],
                 'total_modules': 0,
                 'enabled_modules': 0,
-                'categories': []
+                'categories': [],
+                'layers': self._get_layers_config(),
             })
 
         return self._get_filtered_tree(authorized_section_ids)

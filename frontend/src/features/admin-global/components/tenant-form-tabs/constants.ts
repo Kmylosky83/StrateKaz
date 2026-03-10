@@ -1,7 +1,7 @@
 /**
  * Constantes para los tabs del TenantFormModal.
  */
-import { Scale, FileText, Building2, Database, Users, Globe } from 'lucide-react';
+import { Landmark, Target, ShieldCheck, Factory, Building2, BrainCircuit } from 'lucide-react';
 import { createElement } from 'react';
 
 export const TIER_OPTIONS = [
@@ -34,20 +34,33 @@ export const MONEDA_OPTIONS = [
   { value: 'EUR', label: 'Euro (EUR)' },
 ];
 
+/**
+ * Etiquetas de categoría alineadas con SIDEBAR_LAYERS del backend.
+ * Mismos nombres, íconos y orden que el sidebar de la aplicación.
+ */
 export const CATEGORY_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
-  STRATEGIC: { label: 'Nivel Estrategico', icon: createElement(Scale, { className: 'h-4 w-4' }) },
-  COMPLIANCE: {
-    label: 'Motores de Cumplimiento',
-    icon: createElement(FileText, { className: 'h-4 w-4' }),
+  NIVEL_C1: {
+    label: 'Fundación',
+    icon: createElement(Landmark, { className: 'h-4 w-4 text-blue-500' }),
   },
-  INTEGRATED: {
-    label: 'Gestion Integral',
-    icon: createElement(Building2, { className: 'h-4 w-4' }),
+  NIVEL_PE: {
+    label: 'Planeación Estratégica',
+    icon: createElement(Target, { className: 'h-4 w-4 text-indigo-500' }),
   },
-  OPERATIONAL: {
+  NIVEL_SGI: {
+    label: 'Sistema de Gestión',
+    icon: createElement(ShieldCheck, { className: 'h-4 w-4 text-sky-500' }),
+  },
+  NIVEL_OPS: {
     label: 'Operaciones',
-    icon: createElement(Database, { className: 'h-4 w-4' }),
+    icon: createElement(Factory, { className: 'h-4 w-4 text-emerald-500' }),
   },
-  SUPPORT: { label: 'Soporte', icon: createElement(Users, { className: 'h-4 w-4' }) },
-  INTELLIGENCE: { label: 'Inteligencia', icon: createElement(Globe, { className: 'h-4 w-4' }) },
+  NIVEL_ORG: {
+    label: 'Organización',
+    icon: createElement(Building2, { className: 'h-4 w-4 text-amber-500' }),
+  },
+  NIVEL_C3: {
+    label: 'Inteligencia',
+    icon: createElement(BrainCircuit, { className: 'h-4 w-4 text-violet-500' }),
+  },
 };

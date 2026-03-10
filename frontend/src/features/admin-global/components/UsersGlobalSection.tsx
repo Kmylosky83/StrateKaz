@@ -333,7 +333,7 @@ export const UsersGlobalSection = () => {
             : `¿Deseas reactivar a ${userToToggleData?.first_name} ${userToToggleData?.last_name}? Podrá iniciar sesión en las empresas asignadas.`
         }
         confirmText={userToToggleData?.is_active ? 'Desactivar' : 'Activar'}
-        variant={userToToggleData?.is_active ? 'danger' : 'primary'}
+        variant={userToToggleData?.is_active ? 'danger' : 'info'}
         isLoading={toggleActive.isPending}
       />
 

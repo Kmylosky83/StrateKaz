@@ -22,6 +22,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from django_filters.rest_framework import DjangoFilterBackend
 from django_tenants.utils import schema_context
+from django.apps import apps as django_apps
 from django.db import models
 from django.db.models import Count
 from django.utils import timezone
@@ -688,16 +689,21 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         """
         Soft-delete: desactiva el TenantUser en vez de eliminarlo.
         Preserva trazabilidad, auditoría y datos de tenants asociados.
+        Cascadea la desactivación a los Users en los tenants asociados.
         """
         instance.is_active = False
         with schema_context('public'):
             instance.save(update_fields=['is_active'])
+
+        # Cascadear desactivación a Users en tenants
+        self._cascade_active_to_tenants(instance, is_active=False)
 
     @action(detail=True, methods=['post'], url_path='toggle-active')
     def toggle_active(self, request, pk=None):
         """
         Activa/desactiva un usuario global. Toggle simple.
         Permite reactivar usuarios previamente desactivados.
+        Cascadea el cambio de estado a los Users en los tenants asociados.
         """
         user = self.get_object()
 
@@ -716,12 +722,65 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         with schema_context('public'):
             user.save(update_fields=['is_active'])
 
+        # Cascadear cambio de estado a Users en tenants
+        self._cascade_active_to_tenants(user, is_active=user.is_active)
+
         action_text = 'activado' if user.is_active else 'desactivado'
         return Response({
             'id': user.id,
             'is_active': user.is_active,
             'message': f'Usuario {action_text} correctamente.',
         })
+
+    def _cascade_active_to_tenants(self, tenant_user, is_active):
+        """
+        Cascadea el cambio de is_active del TenantUser a los Users
+        dentro de cada tenant donde tiene acceso.
+
+        - Desactivar: User.is_active=False + TenantUserAccess.is_active=False
+        - Activar: User.is_active=True + TenantUserAccess.is_active=True
+        """
+        User = django_apps.get_model('core', 'User')
+        email = tenant_user.email.lower().strip()
+
+        with schema_context('public'):
+            accesses = TenantUserAccess.objects.filter(
+                tenant_user=tenant_user
+            ).select_related('tenant')
+
+            for access in accesses:
+                tenant = access.tenant
+                if not tenant or not tenant.is_active:
+                    continue
+
+                # Actualizar TenantUserAccess
+                if not is_active and access.is_active:
+                    access.is_active = False
+                    access.save(update_fields=['is_active'])
+                elif is_active and not access.is_active:
+                    access.is_active = True
+                    access.save(update_fields=['is_active'])
+
+                # Cascadear al User dentro del tenant schema
+                try:
+                    with schema_context(tenant.schema_name):
+                        user_qs = User.objects.filter(email=email)
+                        user = user_qs.first()
+                        if user and user.is_active != is_active:
+                            user.is_active = is_active
+                            update_fields = ['is_active', 'updated_at']
+                            user.save(update_fields=update_fields)
+                            logger.info(
+                                'Cascadeo Admin Global: User "%s" %s en tenant "%s"',
+                                email,
+                                'activado' if is_active else 'desactivado',
+                                tenant.schema_name,
+                            )
+                except Exception as e:
+                    logger.error(
+                        'Error cascadeando estado a User "%s" en tenant "%s": %s',
+                        email, tenant.schema_name, e,
+                    )
 
     @action(detail=False, methods=['get'])
     def stats(self, request):

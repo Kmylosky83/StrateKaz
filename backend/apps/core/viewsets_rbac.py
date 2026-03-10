@@ -607,7 +607,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     # ACCESO A SECCIONES (Matriz de Permisos por Cargo)
     # =========================================================================
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], url_path='section-accesses')
     def section_accesses(self, request, pk=None):
         """
         GET /api/core/cargos-rbac/{id}/section-accesses/
@@ -694,7 +694,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             'total_sections': len(accesses_data)
         })
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='assign-section-accesses')
     def assign_section_accesses(self, request, pk=None):
         """
         POST /api/core/cargos-rbac/{id}/assign-section-accesses/
@@ -857,7 +857,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             'total_sections': total_sections
         })
 
-    @action(detail=True, methods=['delete'])
+    @action(detail=True, methods=['delete'], url_path='clear-section-accesses')
     def clear_section_accesses(self, request, pk=None):
         """
         DELETE /api/core/cargos-rbac/{id}/clear-section-accesses/
@@ -1414,7 +1414,7 @@ class RiesgoOcupacionalViewSet(viewsets.ModelViewSet):
         ]
         return Response(clasificaciones)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='niveles-riesgo')
     def niveles_riesgo(self, request):
         """
         GET /api/core/riesgos-ocupacionales/niveles-riesgo/

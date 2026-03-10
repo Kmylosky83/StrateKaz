@@ -24,7 +24,7 @@ export function useCargo(id: number | null) {
   return useQuery({
     queryKey: ['cargo-rbac', id],
     queryFn: () => rbacAPI.getCargo(id!),
-    enabled: id !== null,
+    enabled: !!id,
   });
 }
 
@@ -260,7 +260,7 @@ export function useCargoSectionAccess(cargoId: number | null) {
   return useQuery<CargoSectionAccessResponse>({
     queryKey: ['cargo-section-access', cargoId],
     queryFn: () => rbacAPI.getCargoSectionAccess(cargoId!),
-    enabled: cargoId !== null,
+    enabled: !!cargoId,
     staleTime: 30 * 1000,
   });
 }

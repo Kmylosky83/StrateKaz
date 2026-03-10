@@ -511,7 +511,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             <div className="flex items-center gap-3 pt-2">
               <Switch
                 checked={watch('is_active') ?? true}
-                onChange={(checked) => setValue('is_active', checked, { shouldDirty: true })}
+                onCheckedChange={(checked) => setValue('is_active', checked, { shouldDirty: true })}
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Proveedor activo

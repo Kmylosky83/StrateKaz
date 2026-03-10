@@ -182,7 +182,7 @@ export const PlanFormModal = ({ plan, isOpen, onClose }: PlanFormModalProps) => 
           <Switch
             label="Plan Activo"
             checked={formData.is_active}
-            onChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
             description="Solo puede haber un plan activo a la vez"
           />
         )}

@@ -599,7 +599,7 @@ export const ColaboradorFormModal = ({
             <Switch
               label="Auxilio de Transporte"
               checked={formData.auxilio_transporte ?? true}
-              onChange={(checked) => updateField('auxilio_transporte', checked)}
+              onCheckedChange={(checked) => updateField('auxilio_transporte', checked)}
             />
 
             {/* Resumen (solo en modo edicion, ya que en creacion el resumen va en Step 4) */}
@@ -639,7 +639,7 @@ export const ColaboradorFormModal = ({
               <Switch
                 label="¿Crear acceso al sistema?"
                 checked={formData.crear_acceso ?? false}
-                onChange={(checked) => {
+                onCheckedChange={(checked) => {
                   updateField('crear_acceso', checked);
                   // Auto-rellenar sugerencias al activar
                   if (checked && !formData.email_corporativo && suggestedEmail) {

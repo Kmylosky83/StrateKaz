@@ -265,7 +265,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
           <Switch
             label="Módulo Core"
             checked={formData.is_core}
-            onChange={(checked) => setFormData({ ...formData, is_core: checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_core: checked })}
             description="Los módulos core no pueden ser desactivados por los usuarios"
           />
         )}

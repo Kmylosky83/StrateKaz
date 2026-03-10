@@ -329,6 +329,7 @@ class ColaboradorListSerializer(serializers.ModelSerializer):
             'estado_display',
             'tipo_contrato',
             'tipo_contrato_display',
+            'usuario',
             'email_personal',
             'telefono_movil',
             'foto',

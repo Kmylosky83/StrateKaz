@@ -153,7 +153,7 @@ class MisVacacionesView(APIView):
         )
         dias_acum = sum(getattr(p, 'dias_acumulados', 0) or 0 for p in periodos)
         dias_disf = sum(getattr(p, 'dias_disfrutados', 0) or 0 for p in periodos)
-        ultimo = periodos.order_by('-fecha_inicio').first()
+        ultimo = periodos.order_by('-ultimo_corte').first()
 
         solicitudes_pend = SolicitudVacaciones.objects.filter(
             colaborador=colaborador,
@@ -165,7 +165,7 @@ class MisVacacionesView(APIView):
             'dias_acumulados': Decimal(str(dias_acum)),
             'dias_disfrutados': Decimal(str(dias_disf)),
             'dias_disponibles': Decimal(str(dias_acum - dias_disf)),
-            'fecha_ultimo_periodo': getattr(ultimo, 'fecha_inicio', None),
+            'fecha_ultimo_periodo': getattr(ultimo, 'ultimo_corte', None),
             'solicitudes_pendientes': solicitudes_pend,
         }
         return Response(VacacionesSaldoESSSerializer(data).data)

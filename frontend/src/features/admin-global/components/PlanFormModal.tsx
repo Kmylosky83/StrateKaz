@@ -74,9 +74,7 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
     setErrors({});
   }, [plan, isOpen]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
@@ -147,7 +145,7 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
         await createPlan.mutateAsync(formData);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error manejado por el hook
     }
   };

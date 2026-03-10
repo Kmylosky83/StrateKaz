@@ -4,7 +4,7 @@
  * Muestra información sobre dónde está el usuario y qué puede hacer,
  * con enriquecimiento por IA generativa (Gemini).
  */
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Sparkles, BookOpen, Lightbulb, BarChart3 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -83,17 +83,15 @@ export const AIHelpModal = ({
   const moduleCode = propModuleCode || detectModuleFromPath(location.pathname);
   const tabCode = propTabCode || detectTabFromPath(location.pathname);
 
-  // Cargar ayuda al abrir
-  useEffect(() => {
-    if (isOpen) {
-      reset();
-      mutate({
-        module_code: moduleCode,
-        tab_code: tabCode,
-        section_name: sectionName,
-      });
-    }
-  }, [isOpen, moduleCode, tabCode, sectionName]); // eslint-disable-line react-hooks/exhaustive-deps
+  // El usuario debe hacer clic explícito para consumir cuota de IA
+  const handleAskAI = useCallback(() => {
+    reset();
+    mutate({
+      module_code: moduleCode,
+      tab_code: tabCode,
+      section_name: sectionName,
+    });
+  }, [moduleCode, tabCode, sectionName, mutate, reset]);
 
   return (
     <BaseModal
@@ -199,10 +197,22 @@ export const AIHelpModal = ({
           )}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-500 dark:text-gray-400">
-            Haz clic para obtener ayuda sobre esta sección.
+        <div className="text-center py-8 space-y-3">
+          <Sparkles className="h-8 w-8 text-purple-400 mx-auto" />
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            Obtén ayuda contextual sobre esta sección con IA
           </p>
+          <Button variant="primary" onClick={handleAskAI} className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Consultar asistente IA
+          </Button>
+          {usage && usage.today.remaining <= 10 && (
+            <p className="text-xs text-amber-500">
+              {usage.today.remaining === 0
+                ? 'Límite diario alcanzado'
+                : `Quedan ${usage.today.remaining} consultas hoy`}
+            </p>
+          )}
         </div>
       )}
     </BaseModal>

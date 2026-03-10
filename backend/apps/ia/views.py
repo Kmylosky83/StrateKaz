@@ -52,6 +52,7 @@ TEXT_ASSIST_ACTION_MAP = {
 def check_ai_quota(user):
     """
     Verifica si el usuario tiene cuota disponible de IA.
+    Solo cuenta llamadas REALES (no cache hits ni fallidas).
 
     Returns:
         tuple: (allowed: bool, daily_remaining: int, monthly_remaining: int, config: AIQuotaConfig)
@@ -65,13 +66,16 @@ def check_ai_quota(user):
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    daily_count = AICallLog.objects.filter(
-        user=user,
+    # Solo contar llamadas reales (excluir cache hits y fallidas)
+    real_calls_base = AICallLog.objects.filter(
+        user=user, was_cached=False, success=True,
+    )
+
+    daily_count = real_calls_base.filter(
         created_at__gte=today_start,
     ).count()
 
-    monthly_count = AICallLog.objects.filter(
-        user=user,
+    monthly_count = real_calls_base.filter(
         created_at__gte=month_start,
     ).count()
 
@@ -167,24 +171,26 @@ def context_help_view(request):
     )
 
     latency_ms = (time.time() - start_time) * 1000
+    is_cached = not result.get('ai_enhanced', False)
 
-    # Log the call (use a fake AIResult-like object for dict responses)
-    class _DictResult:
-        def __init__(self, d):
-            self.success = True
-            self.provider = ''
-            self.model = ''
-            self.tokens_used = d.get('tokens_used', 0)
-            self.error = ''
+    # Solo registrar llamadas reales (no cache hits) para no inflar el contador
+    if not is_cached:
+        class _DictResult:
+            def __init__(self, d):
+                self.success = True
+                self.provider = ''
+                self.model = ''
+                self.tokens_used = d.get('tokens_used', 0)
+                self.error = ''
 
-    log_ai_call(
-        user=request.user,
-        action='context_help',
-        result=_DictResult(result),
-        latency_ms=latency_ms,
-        module=serializer.validated_data.get('module_code', ''),
-        was_cached=not result.get('ai_enhanced', False),
-    )
+        log_ai_call(
+            user=request.user,
+            action='context_help',
+            result=_DictResult(result),
+            latency_ms=latency_ms,
+            module=serializer.validated_data.get('module_code', ''),
+            was_cached=False,
+        )
 
     return Response(result, status=status.HTTP_200_OK)
 
@@ -310,14 +316,16 @@ def usage_stats_view(request):
 
     config = AIQuotaConfig.get_config()
 
-    # Conteos
-    daily_count = AICallLog.objects.filter(
-        user=user,
+    # Conteos (solo llamadas reales, excluir cache hits y fallidas)
+    real_calls_base = AICallLog.objects.filter(
+        user=user, was_cached=False, success=True,
+    )
+
+    daily_count = real_calls_base.filter(
         created_at__gte=today_start,
     ).count()
 
-    monthly_count = AICallLog.objects.filter(
-        user=user,
+    monthly_count = real_calls_base.filter(
         created_at__gte=month_start,
     ).count()
 

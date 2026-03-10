@@ -317,11 +317,10 @@ export interface UpdateTenantDTO {
 export interface TenantStats {
   total: number;
   active: number;
-  inactive: number;
   trial: number;
   expiring_soon: number;
-  expired: number;
-  by_plan: Array<{ plan__name: string | null; count: number }>;
+  by_tier: Record<string, number>;
+  by_plan: Record<string | 'null', number>;
 }
 
 // =============================================================================
@@ -333,7 +332,7 @@ export interface TenantUser {
   email: string;
   first_name: string;
   last_name: string;
-  phone?: string | null;
+  full_name: string;
   is_active: boolean;
   is_superadmin: boolean;
   last_login?: string | null;
@@ -385,18 +384,18 @@ export interface CreateTenantUserDTO {
   password: string;
   first_name: string;
   last_name: string;
-  phone?: string;
   is_active?: boolean;
   is_superadmin?: boolean;
+  tenant_assignments?: Array<{ tenant_id: number }>;
 }
 
 export interface UpdateTenantUserDTO {
-  email?: string;
   first_name?: string;
   last_name?: string;
-  phone?: string;
+  password?: string;
   is_active?: boolean;
   is_superadmin?: boolean;
+  tenant_assignments?: Array<{ tenant_id: number }>;
 }
 
 /**
@@ -410,7 +409,6 @@ export interface AssignTenantDTO {
 export interface TenantUserStats {
   total: number;
   active: number;
-  inactive: number;
   superadmins: number;
   multi_tenant: number;
 }
@@ -420,12 +418,7 @@ export interface TenantUserStats {
 // =============================================================================
 
 export interface PlanStats {
-  plans: Array<{
-    id: number;
-    name: string;
-    code: string;
-    price_monthly: string;
-    tenant_count: number;
-    is_active: boolean;
-  }>;
+  total: number;
+  active: number;
+  by_plan: Record<string | 'null', number>;
 }

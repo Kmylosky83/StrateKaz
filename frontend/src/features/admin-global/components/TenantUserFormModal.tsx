@@ -26,9 +26,7 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
   const { data: tenants } = useTenantsList({ is_active: true });
 
   // NOTA: role ya no se usa - los permisos se manejan via User.cargo en el tenant
-  const [formData, setFormData] = useState<
-    CreateTenantUserDTO & { tenant_assignments: Array<{ tenant_id: number }> }
-  >({
+  const [formData, setFormData] = useState<CreateTenantUserDTO>({
     email: '',
     password: '',
     first_name: '',
@@ -146,7 +144,7 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
         await createUser.mutateAsync(formData);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error manejado por el hook
     }
   };
@@ -275,7 +273,7 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => {}}
+                          onChange={() => handleTenantToggle(tenant.id)}
                           className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">

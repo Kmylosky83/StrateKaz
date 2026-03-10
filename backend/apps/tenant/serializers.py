@@ -611,7 +611,7 @@ class TenantUserSerializer(serializers.ModelSerializer):
     """Serializer para TenantUser"""
     # Usamos 'accesses' como alias para el frontend
     accesses = TenantUserAccessSerializer(source='tenant_accesses', many=True, read_only=True)
-    tenant_count = serializers.SerializerMethodField()
+    tenant_count = serializers.IntegerField(source='_tenant_count', read_only=True, default=0)
     full_name = serializers.CharField(read_only=True)
 
     class Meta:
@@ -624,9 +624,6 @@ class TenantUserSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'last_login', 'created_at', 'updated_at']
-
-    def get_tenant_count(self, obj):
-        return obj.tenants.count()
 
 
 class TenantUserCreateSerializer(serializers.ModelSerializer):
@@ -723,6 +720,18 @@ class TenantUserUpdateSerializer(serializers.ModelSerializer):
             if tenant_id and not Tenant.objects.filter(id=tenant_id).exists():
                 raise serializers.ValidationError(
                     f"Tenant con ID {tenant_id} no existe."
+                )
+        return value
+
+    def validate_is_superadmin(self, value):
+        """Proteger contra demotar al último superadmin."""
+        if value is False and self.instance and self.instance.is_superadmin:
+            remaining = TenantUser.objects.filter(
+                is_superadmin=True, is_active=True
+            ).exclude(id=self.instance.id).count()
+            if remaining == 0:
+                raise serializers.ValidationError(
+                    'No se puede quitar el rol de Super Admin al último superadmin del sistema.'
                 )
         return value
 

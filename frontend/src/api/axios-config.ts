@@ -42,8 +42,19 @@ axiosInstance.interceptors.request.use(
 // ── Refresh Token Queue ─────────────────────────────────────────────────────
 // Previene race conditions cuando múltiples requests obtienen 401 simultáneamente.
 // Solo el PRIMER 401 dispara el refresh; los demás esperan el resultado.
+// Cross-tab: escucha cambios en localStorage para sincronizar tokens entre pestañas.
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
+
+// ── Cross-Tab Token Sync ────────────────────────────────────────────────────
+// Cuando otra pestaña refresca el token, actualiza el token en memoria sin logout.
+// Cuando otra pestaña hace logout, sincroniza el logout en todas las pestañas.
+window.addEventListener('storage', (event) => {
+  if (event.key === 'access_token' && event.newValue === null) {
+    // Otra pestaña hizo logout → sincronizar
+    useAuthStore.getState().forceLogout();
+  }
+});
 
 function doRefreshToken(): Promise<string> {
   const refreshToken = localStorage.getItem('refresh_token');
@@ -93,6 +104,17 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest);
         }
 
+        // Cross-tab: verificar si otra pestaña ya refrescó el token
+        // Si el token en localStorage es diferente al que causó el 401,
+        // otra pestaña ya lo actualizó → usar ese token sin hacer refresh
+        const currentStoredToken = localStorage.getItem('access_token');
+        const failedToken = originalRequest.headers?.Authorization?.replace('Bearer ', '');
+        if (currentStoredToken && failedToken && currentStoredToken !== failedToken) {
+          // Otra pestaña ya refrescó → reintentar con el token actualizado
+          originalRequest.headers.Authorization = `Bearer ${currentStoredToken}`;
+          return axiosInstance(originalRequest);
+        }
+
         // Primer request que detecta 401 → iniciar refresh
         isRefreshing = true;
         refreshPromise = doRefreshToken();
@@ -110,6 +132,15 @@ axiosInstance.interceptors.response.use(
           ?.status;
 
         if (refreshStatus === 401 || refreshStatus === 400) {
+          // Antes de logout, verificar una vez más si otra pestaña ya refrescó
+          const latestToken = localStorage.getItem('access_token');
+          const failedToken = originalRequest.headers?.Authorization?.replace('Bearer ', '');
+          if (latestToken && failedToken && latestToken !== failedToken) {
+            // Otra pestaña refrescó durante nuestro intento → reintentar
+            originalRequest.headers.Authorization = `Bearer ${latestToken}`;
+            return axiosInstance(originalRequest);
+          }
+
           // Token realmente inválido → logout
           // forceLogout limpia localStorage + Zustand + RQ cache.
           // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.

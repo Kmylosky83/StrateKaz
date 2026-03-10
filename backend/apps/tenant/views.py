@@ -17,6 +17,7 @@ django-tenants bloquea .save() fuera del schema propio del objeto.
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from django_filters.rest_framework import DjangoFilterBackend
@@ -273,7 +274,7 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=True, methods=['post'], url_path='toggle_active')
+    @action(detail=True, methods=['post'], url_path='toggle-active')
     def toggle_active(self, request, pk=None):
         """Activa/desactiva un tenant. Toggle simple."""
         tenant = self.get_object()
@@ -483,24 +484,6 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
             'message': 'Reintentando creación del schema...',
         })
 
-    @action(detail=True, methods=['post'])
-    def activate(self, request, pk=None):
-        """Activar un tenant."""
-        tenant = self.get_object()
-        tenant.is_active = True
-        with schema_context('public'):
-            tenant.save(update_fields=['is_active'])
-        return Response({'status': 'tenant activado'})
-
-    @action(detail=True, methods=['post'])
-    def deactivate(self, request, pk=None):
-        """Desactivar un tenant."""
-        tenant = self.get_object()
-        tenant.is_active = False
-        with schema_context('public'):
-            tenant.save(update_fields=['is_active'])
-        return Response({'status': 'tenant desactivado'})
-
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Estadísticas globales de tenants."""
@@ -607,9 +590,11 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     queryset = TenantUser.objects.all()
     authentication_classes = [TenantJWTAuthentication]
     permission_classes = [IsSuperAdmin]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'is_superadmin']
     search_fields = ['email', 'first_name', 'last_name']
+    ordering_fields = ['email', 'first_name', 'last_name', 'created_at']
+    ordering = ['-created_at']
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -619,7 +604,11 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         return TenantUserSerializer
 
     def get_queryset(self):
-        return TenantUser.objects.prefetch_related('tenant_accesses__tenant')
+        return TenantUser.objects.prefetch_related(
+            'tenant_accesses__tenant'
+        ).annotate(
+            _tenant_count=Count('tenants', distinct=True)
+        )
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):

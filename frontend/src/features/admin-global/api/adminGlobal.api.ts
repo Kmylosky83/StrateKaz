@@ -124,6 +124,7 @@ export interface TenantCreationStatus {
   schema_name?: string;
   error?: string;
   duration_seconds?: number;
+  current_migration?: string;
 }
 
 // =============================================================================
@@ -348,7 +349,7 @@ export const tenantUsersApi = {
     tenant: string;
     role: string;
   }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/assign-tenant/`, data);
+    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/grant-access/`, data);
     return response.data;
   },
 
@@ -356,7 +357,7 @@ export const tenantUsersApi = {
    * Remueve acceso de un usuario a un tenant
    */
   removeTenant: async (userId: number, tenantId: number): Promise<{ message: string }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/remove-tenant/`, {
+    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/revoke-access/`, {
       tenant_id: tenantId,
     });
     return response.data;

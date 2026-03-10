@@ -6,6 +6,35 @@ import { Input } from '@/components/forms/Input';
 import { ImageUpload } from './ImageUpload';
 import type { TabBrandingProps } from './types';
 
+interface ColorPickerFieldProps {
+  label: string;
+  value: string;
+  defaultValue: string;
+  onChange: (value: string) => void;
+}
+
+const ColorPickerField = ({ label, value, defaultValue, onChange }: ColorPickerFieldProps) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      {label}
+    </label>
+    <div className="flex gap-2">
+      <input
+        type="color"
+        value={value || defaultValue}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+        aria-label={label}
+      />
+      <Input
+        value={value || defaultValue}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={defaultValue}
+      />
+    </div>
+  </div>
+);
+
 export const TabBranding = ({
   formData,
   handleChange,
@@ -33,78 +62,30 @@ export const TabBranding = ({
           placeholder="Innovacion con proposito"
         />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Color Primario
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={formData.primary_color || '#6366F1'}
-            onChange={(e) => handleChange('primary_color', e.target.value)}
-            className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-          />
-          <Input
-            value={formData.primary_color || '#6366F1'}
-            onChange={(e) => handleChange('primary_color', e.target.value)}
-            placeholder="#6366F1"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Color Secundario
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={formData.secondary_color || '#10B981'}
-            onChange={(e) => handleChange('secondary_color', e.target.value)}
-            className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-          />
-          <Input
-            value={formData.secondary_color || '#10B981'}
-            onChange={(e) => handleChange('secondary_color', e.target.value)}
-            placeholder="#10B981"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Color de Acento
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={formData.accent_color || '#F59E0B'}
-            onChange={(e) => handleChange('accent_color', e.target.value)}
-            className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-          />
-          <Input
-            value={formData.accent_color || '#F59E0B'}
-            onChange={(e) => handleChange('accent_color', e.target.value)}
-            placeholder="#F59E0B"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Color de Fondo
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="color"
-            value={formData.background_color || '#F5F5F5'}
-            onChange={(e) => handleChange('background_color', e.target.value)}
-            className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-          />
-          <Input
-            value={formData.background_color || '#F5F5F5'}
-            onChange={(e) => handleChange('background_color', e.target.value)}
-            placeholder="#F5F5F5"
-          />
-        </div>
-      </div>
+      <ColorPickerField
+        label="Color Primario"
+        value={formData.primary_color || ''}
+        defaultValue="#6366F1"
+        onChange={(v) => handleChange('primary_color', v)}
+      />
+      <ColorPickerField
+        label="Color Secundario"
+        value={formData.secondary_color || ''}
+        defaultValue="#10B981"
+        onChange={(v) => handleChange('secondary_color', v)}
+      />
+      <ColorPickerField
+        label="Color de Acento"
+        value={formData.accent_color || ''}
+        defaultValue="#F59E0B"
+        onChange={(v) => handleChange('accent_color', v)}
+      />
+      <ColorPickerField
+        label="Color de Fondo"
+        value={formData.background_color || ''}
+        defaultValue="#F5F5F5"
+        onChange={(v) => handleChange('background_color', v)}
+      />
       {/* Seccion de Logos - Solo en edicion */}
       {isEditing && (
         <>

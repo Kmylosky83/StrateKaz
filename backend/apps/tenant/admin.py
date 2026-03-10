@@ -76,9 +76,22 @@ class TenantAdmin(TenantAdminMixin, admin.ModelAdmin):
         ('Estado y Suscripción', {
             'fields': ('is_active', 'is_trial', 'trial_ends_at', 'subscription_ends_at')
         }),
-        ('Branding', {
-            'fields': ('logo_url', 'primary_color'),
+        ('Branding — Logos', {
+            'fields': (
+                'company_slogan', 'logo', 'logo_white', 'logo_dark',
+                'favicon', 'login_background',
+            ),
             'classes': ('collapse',)
+        }),
+        ('Branding — Colores', {
+            'fields': (
+                'primary_color', 'secondary_color', 'accent_color',
+                'sidebar_color', 'background_color', 'showcase_background',
+            ),
+            'classes': ('collapse',)
+        }),
+        ('Notas Internas', {
+            'fields': ('notes',),
         }),
         ('Backups', {
             'fields': ('backup_enabled', 'backup_retention_days'),

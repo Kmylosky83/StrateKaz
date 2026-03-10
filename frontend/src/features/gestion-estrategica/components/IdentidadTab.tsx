@@ -866,17 +866,9 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
   const { data: identity, isLoading } = useActiveIdentity();
   const { canDo } = usePermissions();
 
-  const canEditIdentity = canDo(
-    Modules.GESTION_ESTRATEGICA,
-    Sections.IDENTIDAD_CORPORATIVA,
-    'edit'
-  );
-  const canEditValues = canDo(Modules.GESTION_ESTRATEGICA, Sections.VALORES, 'edit');
-  const canCreateIdentity = canDo(
-    Modules.GESTION_ESTRATEGICA,
-    Sections.IDENTIDAD_CORPORATIVA,
-    'create'
-  );
+  const canEditIdentity = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'edit');
+  const canEditValues = canDo(Modules.FUNDACION, Sections.VALORES, 'edit');
+  const canCreateIdentity = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'create');
 
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [editingIdentity, setEditingIdentity] = useState<CorporateIdentity | null>(null);

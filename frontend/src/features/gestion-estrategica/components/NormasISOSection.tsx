@@ -82,7 +82,7 @@ export const NormasISOSection = () => {
               </p>
             </div>
           </div>
-          {canDo(Modules.GESTION_ESTRATEGICA, Sections.NORMAS_ISO, 'create') && (
+          {canDo(Modules.FUNDACION, Sections.NORMAS_ISO, 'create') && (
             <Button variant="primary" size="sm" onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
               Agregar Norma
@@ -192,7 +192,7 @@ export const NormasISOSection = () => {
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <ActionButtons
-                            module={Modules.GESTION_ESTRATEGICA}
+                            module={Modules.FUNDACION}
                             section={Sections.NORMAS_ISO}
                             onEdit={() => handleEdit(norma)}
                             onDelete={
@@ -221,7 +221,7 @@ export const NormasISOSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue normas ISO, PESV, SG-SST u otras normativas aplicables a su organización
               </p>
-              {canDo(Modules.GESTION_ESTRATEGICA, Sections.NORMAS_ISO, 'create') && (
+              {canDo(Modules.FUNDACION, Sections.NORMAS_ISO, 'create') && (
                 <Button variant="primary" onClick={handleAdd}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Primera Norma

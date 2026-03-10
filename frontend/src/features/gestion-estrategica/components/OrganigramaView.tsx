@@ -32,7 +32,7 @@ export const OrganigramaView = ({
   showToolbar,
 }: OrganigramaViewProps) => {
   const { canDo } = usePermissions();
-  const canView = canDo(Modules.GESTION_ESTRATEGICA, Sections.ORGANIGRAMA, 'view');
+  const canView = canDo(Modules.FUNDACION, Sections.ORGANIGRAMA, 'view');
 
   if (!canView) {
     return (

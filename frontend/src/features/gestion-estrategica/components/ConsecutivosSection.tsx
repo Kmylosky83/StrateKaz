@@ -97,10 +97,10 @@ export const ConsecutivosSection = () => {
 
   // RBAC
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONSECUTIVOS, 'create');
-  const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONSECUTIVOS, 'update');
-  const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONSECUTIVOS, 'delete');
-  const isAdmin = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONSECUTIVOS, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'update');
+  const canDelete = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'delete');
+  const isAdmin = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'delete');
 
   // Filtros
   const filters = {

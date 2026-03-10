@@ -18,15 +18,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
-import {
-  Target,
-  Filter,
-  Plus,
-  Swords,
-  Users,
-  PieChart,
-  LayoutGrid,
-} from 'lucide-react';
+import { Target, Filter, Plus, Swords, Users, PieChart, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Alert } from '@/components/common/Alert';
 import { SectionHeader } from '@/components/common/SectionHeader';
@@ -59,14 +51,10 @@ interface FuerzasPorterSectionProps {
   triggerNewForm?: number;
 }
 
-export const FuerzasPorterSection = ({
-  triggerNewForm,
-}: FuerzasPorterSectionProps) => {
+export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionProps) => {
   const currentYear = new Date().getFullYear();
   const [viewMode, setViewMode] = useState<ViewMode>('radar');
-  const [selectedPeriodo, setSelectedPeriodo] = useState<string>(
-    currentYear.toString()
-  );
+  const [selectedPeriodo, setSelectedPeriodo] = useState<string>(currentYear.toString());
   const [selectedFuerza, setSelectedFuerza] = useState<FuerzaPorter | null>(null);
   const [preselectedTipo, setPreselectedTipo] = useState<TipoFuerzaPorter | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,19 +65,15 @@ export const FuerzasPorterSection = ({
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'create');
-  const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
 
   // Color del modulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries
-  const { data, isLoading } = useFuerzasPorter(
-    { periodo: selectedPeriodo },
-    1,
-    10
-  );
+  const { data, isLoading } = useFuerzasPorter({ periodo: selectedPeriodo }, 1, 10);
 
   // Generar opciones de periodo (últimos 5 años + próximo año)
   const periodoOptions = useMemo(() => {

@@ -207,7 +207,7 @@ const ModulosAndFeaturesSection = () => {
     !!moduleToDisable
   );
 
-  const canEditModules = canDo(Modules.GESTION_ESTRATEGICA, Sections.MODULOS, 'edit');
+  const canEditModules = canDo(Modules.FUNDACION, Sections.MODULOS, 'edit');
 
   // MM-003: Handler para toggle de módulo con confirmación
   const handleModuleToggle = (module: SystemModuleTree) => {

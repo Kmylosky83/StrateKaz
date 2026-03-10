@@ -86,7 +86,7 @@ export const SedesSection = () => {
               </p>
             </div>
           </div>
-          {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
+          {canDo(Modules.FUNDACION, Sections.SEDES, 'create') && (
             <Button variant="primary" size="sm" onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
               Agregar Sede
@@ -180,7 +180,7 @@ export const SedesSection = () => {
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <ActionButtons
-                            module={Modules.GESTION_ESTRATEGICA}
+                            module={Modules.FUNDACION}
                             section={Sections.SEDES}
                             onEdit={() => handleEdit(sede)}
                             onDelete={
@@ -221,7 +221,7 @@ export const SedesSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue la primera sede de su empresa para comenzar.
               </p>
-              {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
+              {canDo(Modules.FUNDACION, Sections.SEDES, 'create') && (
                 <Button variant="primary" onClick={handleAdd}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Primera Sede

@@ -12,7 +12,10 @@
 
 export const Modules = {
   CORE: 'core',
-  GESTION_ESTRATEGICA: 'gestion_estrategica',
+  FUNDACION: 'fundacion',
+  PLANEACION_ESTRATEGICA: 'planeacion_estrategica',
+  REVISION_DIRECCION: 'revision_direccion',
+  GESTION_ESTRATEGICA: 'gestion_estrategica', // @deprecated — use FUNDACION or PLANEACION_ESTRATEGICA
   MOTOR_CUMPLIMIENTO: 'motor_cumplimiento',
   MOTOR_RIESGOS: 'motor_riesgos',
   WORKFLOW_ENGINE: 'workflow_engine',
@@ -45,7 +48,7 @@ export const Sections = {
   POLITICAS: 'politicas',
   IDENTITY: 'identidad_corporativa', // Mapped to backend 'identidad_corporativa'
   IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
-  VALORES: 'valores_corporativos',
+  VALORES: 'valores',
   ALCANCE: 'alcance_sig',
   ESTRATEGIA: 'estrategia',
   ORGANIGRAMA: 'organigrama',

@@ -354,9 +354,9 @@ export const AreasTab = () => {
 
   // RBAC Permission Checks
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'create');
-  const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'edit');
-  const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.AREAS, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.AREAS, 'edit');
+  const canDelete = canDo(Modules.FUNDACION, Sections.AREAS, 'delete');
 
   // Lista de áreas
   const areas = areasData?.results || [];

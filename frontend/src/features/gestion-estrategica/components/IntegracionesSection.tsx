@@ -286,7 +286,7 @@ export const IntegracionesSection = () => {
               </p>
             </div>
           </div>
-          {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
+          {canDo(Modules.FUNDACION, Sections.INTEGRACIONES, 'create') && (
             <Button variant="primary" size="sm" onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
               Agregar Integración
@@ -442,12 +442,10 @@ export const IntegracionesSection = () => {
                               checked={integracion.is_active}
                               onChange={() => handleToggleStatus(integracion.id)}
                               size="sm"
-                              disabled={
-                                !canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'edit')
-                              }
+                              disabled={!canDo(Modules.FUNDACION, Sections.INTEGRACIONES, 'edit')}
                             />
                             <ActionButtons
-                              module={Modules.GESTION_ESTRATEGICA}
+                              module={Modules.FUNDACION}
                               section={Sections.INTEGRACIONES}
                               onEdit={() => handleEdit(integracion)}
                               onDelete={() => handleDeleteClick(integracion)}
@@ -505,7 +503,7 @@ export const IntegracionesSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue la primera integración para conectar con servicios externos.
               </p>
-              {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
+              {canDo(Modules.FUNDACION, Sections.INTEGRACIONES, 'create') && (
                 <Button variant="primary" onClick={handleAdd}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Primera Integración

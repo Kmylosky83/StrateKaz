@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Shield, ArrowLeft, Eye, Users, UserSearch } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
@@ -16,6 +17,7 @@ import { cn } from '@/utils/cn';
  */
 export const ImpersonationBanner = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isImpersonating = useAuthStore((state) => state.isImpersonating);
   const currentTenant = useAuthStore((state) => state.currentTenant);
   const impersonatedUserId = useAuthStore((state) => state.impersonatedUserId);
@@ -34,6 +36,8 @@ export const ImpersonationBanner = () => {
     if (isUserMode) {
       stopUserImpersonation();
     }
+    // Limpiar cache de módulos para que se recarguen con permisos del superadmin
+    queryClient.removeQueries({ queryKey: ['modules'] });
     stopImpersonation();
     navigate('/admin-global');
   };
@@ -41,6 +45,8 @@ export const ImpersonationBanner = () => {
   /** Cambiar usuario: sale de impersonación y abre modal para elegir otro */
   const handleChangeUser = () => {
     stopUserImpersonation();
+    // Limpiar cache de módulos para que se recarguen con permisos del superadmin
+    queryClient.removeQueries({ queryKey: ['modules'] });
     setPendingUserSelection(true);
     navigate('/dashboard');
   };

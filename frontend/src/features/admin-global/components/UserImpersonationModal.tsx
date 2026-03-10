@@ -7,7 +7,7 @@
  */
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Search, User as UserIcon, Briefcase, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Modal } from '@/components/common/Modal';
@@ -25,6 +25,7 @@ interface UserImpersonationModalProps {
 
 export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationModalProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState<number | null>(null);
   const startUserImpersonation = useAuthStore((state) => state.startUserImpersonation);
@@ -62,6 +63,8 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     try {
       setLoading(userId);
       await startUserImpersonation(userId);
+      // Limpiar cache de módulos para que se carguen con permisos del usuario impersonado
+      queryClient.removeQueries({ queryKey: ['modules'] });
 
       // Determinar destino ANTES de cerrar modal y navegar.
       // CRÍTICO: Usar cargo.code (via isPortalOnlyUser) en vez de user.proveedor

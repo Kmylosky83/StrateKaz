@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/common/Button';
@@ -41,6 +42,7 @@ import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 export default function UsersPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { color: moduleColor } = useModuleColor('USUARIOS');
   const { canDo } = usePermissions();
 
@@ -141,6 +143,8 @@ export default function UsersPage() {
   const handleImpersonate = async (user: User) => {
     try {
       await startUserImpersonation(user.id);
+      // Limpiar cache de módulos para que se carguen con permisos del usuario impersonado
+      queryClient.removeQueries({ queryKey: ['modules'] });
       // Navegar según tipo de usuario
       if (isPortalOnlyUser(user)) {
         const isCliente = user.cargo?.code === 'CLIENTE_PORTAL';

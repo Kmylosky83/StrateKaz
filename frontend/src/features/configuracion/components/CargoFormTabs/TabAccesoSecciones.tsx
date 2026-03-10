@@ -29,7 +29,7 @@ import {
   CheckCheck,
   Zap,
 } from 'lucide-react';
-import { Alert } from '@/components/common/Alert';
+import { toast } from 'sonner';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { cn } from '@/utils/cn';
@@ -340,35 +340,40 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
 
   // Guardar cambios
   const handleSave = async () => {
-    const accesses = Array.from(localAccesses.values());
-    await saveMutation.mutateAsync({ cargoId, accesses });
+    try {
+      const accesses = Array.from(localAccesses.values());
+      await saveMutation.mutateAsync({ cargoId, accesses });
 
-    // CRÍTICO: NO usar setInitialized(false) aquí.
-    // Causaría race condition: el useEffect de init se dispara con cargoAccessData
-    // stale (antes de que el refetch complete), sobreescribiendo localAccesses con
-    // datos vacíos/viejos. El usuario ve la UI vacía, guarda de nuevo, y con
-    // replace=true el backend borra TODOS los accesos del cargo.
-    //
-    // Solución: forzar refetch explícito y sincronizar localAccesses manualmente
-    // con los datos CONFIRMADOS del servidor.
-    const { data: freshData } = await refetchAccess();
-    if (freshData?.accesses) {
-      const newMap = new Map<number, SectionAccess>();
-      for (const access of freshData.accesses) {
-        newMap.set(access.section_id, {
-          section_id: access.section_id,
-          can_view: access.can_view,
-          can_create: access.can_create,
-          can_edit: access.can_edit,
-          can_delete: access.can_delete,
-          custom_actions: access.custom_actions || {},
-        });
+      // CRÍTICO: NO usar setInitialized(false) aquí.
+      // Causaría race condition: el useEffect de init se dispara con cargoAccessData
+      // stale (antes de que el refetch complete), sobreescribiendo localAccesses con
+      // datos vacíos/viejos. El usuario ve la UI vacía, guarda de nuevo, y con
+      // replace=true el backend borra TODOS los accesos del cargo.
+      //
+      // Solución: forzar refetch explícito y sincronizar localAccesses manualmente
+      // con los datos CONFIRMADOS del servidor.
+      const { data: freshData } = await refetchAccess();
+      if (freshData?.accesses) {
+        const newMap = new Map<number, SectionAccess>();
+        for (const access of freshData.accesses) {
+          newMap.set(access.section_id, {
+            section_id: access.section_id,
+            can_view: access.can_view,
+            can_create: access.can_create,
+            can_edit: access.can_edit,
+            can_delete: access.can_delete,
+            custom_actions: access.custom_actions || {},
+          });
+        }
+        setLocalAccesses(newMap);
+        // initialized permanece true: el useEffect de init NO sobreescribirá el estado
       }
-      setLocalAccesses(newMap);
-      // initialized permanece true: el useEffect de init NO sobreescribirá el estado
+      // Nota: useSaveCargoSectionAccess.onSuccess ya maneja refreshUserProfile()
+      // para el cargo del usuario actual. No duplicar aquí.
+      toast.success('Permisos guardados correctamente');
+    } catch {
+      toast.error('Error al guardar los permisos. Intenta de nuevo.');
     }
-    // Nota: useSaveCargoSectionAccess.onSuccess ya maneja refreshUserProfile()
-    // para el cargo del usuario actual. No duplicar aquí.
   };
 
   // Revertir cambios
@@ -757,12 +762,7 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
           })}
       </div>
 
-      {saveMutation.isError && (
-        <Alert variant="error" message="Error al guardar los accesos. Intenta de nuevo." />
-      )}
-      {saveMutation.isSuccess && (
-        <Alert variant="success" message="Accesos y permisos guardados correctamente." />
-      )}
+      {/* Toast notifications manejadas en handleSave() */}
     </div>
   );
 };

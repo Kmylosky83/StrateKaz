@@ -45,6 +45,8 @@ const PRIORIDAD_VARIANTS: Record<number, 'gray' | 'info' | 'warning' | 'danger'>
 const ProcesamientoTab = () => {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.ORDENES_PRODUCCION, 'create');
+  const canEdit = canDo(Modules.PRODUCTION_OPS, Sections.ORDENES_PRODUCCION, 'edit');
+  const canDelete = canDo(Modules.PRODUCTION_OPS, Sections.ORDENES_PRODUCCION, 'delete');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -171,10 +173,14 @@ const ProcesamientoTab = () => {
             title="Sin órdenes de producción"
             description="No hay órdenes registradas. Cree la primera para comenzar."
             icon={<Factory className="w-12 h-12" />}
-            action={{
-              label: 'Nueva Orden',
-              onClick: handleNew,
-            }}
+            action={
+              canCreate
+                ? {
+                    label: 'Nueva Orden',
+                    onClick: handleNew,
+                  }
+                : undefined
+            }
           />
         ) : (
           <div className="space-y-4">
@@ -257,16 +263,20 @@ const ProcesamientoTab = () => {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(orden)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(orden.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
+                            {canEdit && (
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(orden)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(orden.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

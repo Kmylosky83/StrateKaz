@@ -25,6 +25,7 @@ import ManifiestoFormModal from './ManifiestoFormModal';
 export function DespachosTab() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.ORDENES_DESPACHO, 'create');
+  const canEdit = canDo(Modules.LOGISTICS_FLEET, Sections.ORDENES_DESPACHO, 'edit');
 
   const [activeSubTab, setActiveSubTab] = useState('despachos');
 
@@ -138,7 +139,9 @@ export function DespachosTab() {
               icon={<Package className="w-16 h-16" />}
               title="No hay despachos registrados"
               description="Comience creando despachos para sus programaciones"
-              action={{ label: 'Nuevo Despacho', onClick: handleNewDespacho }}
+              action={
+                canCreate ? { label: 'Nuevo Despacho', onClick: handleNewDespacho } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -194,9 +197,15 @@ export function DespachosTab() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditDespacho(d)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditDespacho(d)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -230,7 +239,9 @@ export function DespachosTab() {
               icon={<FileText className="w-16 h-16" />}
               title="No hay manifiestos registrados"
               description="Genere manifiestos de carga para sus despachos"
-              action={{ label: 'Nuevo Manifiesto', onClick: handleNewManifiesto }}
+              action={
+                canCreate ? { label: 'Nuevo Manifiesto', onClick: handleNewManifiesto } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">

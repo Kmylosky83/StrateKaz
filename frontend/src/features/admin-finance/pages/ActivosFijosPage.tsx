@@ -90,6 +90,7 @@ const getEstadoBadge = (
 export default function ActivosFijosPage() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.INVENTARIO_ACTIVOS, 'create');
+  const canEdit = canDo(Modules.ADMIN_FINANCE, Sections.INVENTARIO_ACTIVOS, 'edit');
 
   const [activeTab, setActiveTab] = useState('inventario');
 
@@ -184,7 +185,11 @@ export default function ActivosFijosPage() {
               icon={<Building2 className="w-16 h-16" />}
               title="No hay activos registrados"
               description="Registre los activos fijos de su empresa"
-              action={{ label: 'Nuevo Activo', onClick: () => setActivoModal(true) }}
+              action={
+                canCreate
+                  ? { label: 'Nuevo Activo', onClick: () => setActivoModal(true) }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -250,16 +255,18 @@ export default function ActivosFijosPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedActivo(activo as unknown as ActivoFijo);
-                                setActivoModal(true);
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedActivo(activo as unknown as ActivoFijo);
+                                  setActivoModal(true);
+                                }}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -300,7 +307,11 @@ export default function ActivosFijosPage() {
               icon={<Wrench className="w-16 h-16" />}
               title="No hay programas de mantenimiento"
               description="Programe mantenimientos preventivos o correctivos para sus activos"
-              action={{ label: 'Programar Mantenimiento', onClick: () => setMantModal(true) }}
+              action={
+                canCreate
+                  ? { label: 'Programar Mantenimiento', onClick: () => setMantModal(true) }
+                  : undefined
+              }
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -463,7 +474,9 @@ export default function ActivosFijosPage() {
               icon={<FileText className="w-16 h-16" />}
               title="No hay registros en hojas de vida"
               description="Registre eventos de mantenimiento, reparaciones y traslados de activos"
-              action={{ label: 'Nuevo Evento', onClick: () => setHvModal(true) }}
+              action={
+                canCreate ? { label: 'Nuevo Evento', onClick: () => setHvModal(true) } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">

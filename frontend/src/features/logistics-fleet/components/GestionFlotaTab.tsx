@@ -50,6 +50,8 @@ const colorToBadge = (color: string): 'success' | 'warning' | 'danger' | 'info' 
 export function GestionFlotaTab() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.VEHICULOS, 'create');
+  const canEdit = canDo(Modules.LOGISTICS_FLEET, Sections.VEHICULOS, 'edit');
+  const canDelete = canDo(Modules.LOGISTICS_FLEET, Sections.VEHICULOS, 'delete');
 
   const [activeSubTab, setActiveSubTab] = useState('vehiculos');
 
@@ -197,7 +199,9 @@ export function GestionFlotaTab() {
               icon={<Truck className="w-16 h-16" />}
               title="No hay vehículos registrados"
               description="Comience registrando los vehículos de su flota"
-              action={{ label: 'Nuevo Vehículo', onClick: handleNewVehiculo }}
+              action={
+                canCreate ? { label: 'Nuevo Vehículo', onClick: handleNewVehiculo } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -326,16 +330,24 @@ export function GestionFlotaTab() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => handleEditVehiculo(v)}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeleteVehiculoId(v.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditVehiculo(v)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeleteVehiculoId(v.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -371,7 +383,11 @@ export function GestionFlotaTab() {
               icon={<Wrench className="w-16 h-16" />}
               title="No hay mantenimientos registrados"
               description="Programe mantenimientos para los vehículos de su flota"
-              action={{ label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }}
+              action={
+                canCreate
+                  ? { label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -431,13 +447,15 @@ export function GestionFlotaTab() {
                           ${new Intl.NumberFormat('es-CO').format(m.costo_total)}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditMantenimiento(m)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditMantenimiento(m)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}

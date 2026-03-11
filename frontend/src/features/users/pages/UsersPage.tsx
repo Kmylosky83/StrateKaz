@@ -36,12 +36,16 @@ import type {
 import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useAuthStore } from '@/store/authStore';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 export default function UsersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.CORE, Sections.USERS, 'create');
   const { color: moduleColor } = useModuleColor('USUARIOS');
 
   // Impersonación: solo disponible para superusers
@@ -231,7 +235,7 @@ export default function UsersPage() {
         title="Gestión de Usuarios"
         description="Administración de usuarios del sistema"
         actions={
-          canDo(Modules.CORE, Sections.USERS, 'create') ? (
+          canCreate ? (
             <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
               Nuevo Usuario
             </Button>

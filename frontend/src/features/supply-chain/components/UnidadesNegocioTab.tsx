@@ -42,6 +42,8 @@ const TIPOS_UNIDAD = [
 export function UnidadesNegocioTab() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'create');
+  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'edit');
+  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'delete');
 
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<UnidadNegocio | null>(null);
@@ -123,11 +125,15 @@ export function UnidadesNegocioTab() {
           icon={<Building2 className="w-16 h-16" />}
           title="No hay unidades de negocio"
           description="Registre sedes, plantas y centros de acopio"
-          action={{
-            label: 'Nueva Unidad',
-            onClick: () => setShowForm(true),
-            icon: <Building2 className="w-4 h-4" />,
-          }}
+          action={
+            canCreate
+              ? {
+                  label: 'Nueva Unidad',
+                  onClick: () => setShowForm(true),
+                  icon: <Building2 className="w-4 h-4" />,
+                }
+              : undefined
+          }
         />
       ) : (
         <Card variant="bordered" padding="none">
@@ -191,24 +197,28 @@ export function UnidadesNegocioTab() {
                     </td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditItem(un);
-                            setShowForm(true);
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteId(un.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 text-danger-600" />
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditItem(un);
+                              setShowForm(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteId(un.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 text-danger-600" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

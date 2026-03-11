@@ -34,6 +34,8 @@ import type { ClienteList, Cliente } from '../types';
 export default function ClientesPage() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.SALES_CRM, Sections.CLIENTES, 'create');
+  const canEdit = canDo(Modules.SALES_CRM, Sections.CLIENTES, 'edit');
+  const canDelete = canDo(Modules.SALES_CRM, Sections.CLIENTES, 'delete');
 
   const [showFormModal, setShowFormModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -150,30 +152,36 @@ export default function ClientesPage() {
         header: 'Acciones',
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setAccesoCliente(row.original)}
-              title="Crear Acceso Portal"
-            >
-              <KeyRound className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleEdit(row.original)}
-              title="Editar"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleDelete(row.original.id)}
-              title="Eliminar"
-            >
-              <Trash2 className="w-4 h-4 text-danger-500" />
-            </Button>
+            {canCreate && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAccesoCliente(row.original)}
+                title="Crear Acceso Portal"
+              >
+                <KeyRound className="w-4 h-4" />
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEdit(row.original)}
+                title="Editar"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(row.original.id)}
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4 text-danger-500" />
+              </Button>
+            )}
           </div>
         ),
         size: 130,
@@ -248,10 +256,14 @@ export default function ClientesPage() {
           icon={<Users className="w-16 h-16" />}
           title="No hay clientes registrados"
           description="Comience agregando clientes a su sistema CRM o importe desde Excel"
-          action={{
-            label: 'Nuevo Cliente',
-            onClick: handleCreate,
-          }}
+          action={
+            canCreate
+              ? {
+                  label: 'Nuevo Cliente',
+                  onClick: handleCreate,
+                }
+              : undefined
+          }
         />
       ) : (
         <Table

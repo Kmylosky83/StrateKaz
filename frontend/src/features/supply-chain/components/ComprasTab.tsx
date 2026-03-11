@@ -74,6 +74,10 @@ const getEstadoBadgeVariant = (
 // ==================== REQUISICIONES SECTION ====================
 
 const RequisicionesSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
+  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'edit');
+  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'delete');
   const { data, isLoading } = useRequisiciones();
   const { data: estadisticasData } = useEstadisticasCompras();
   const deleteMutation = useDeleteRequisicion();
@@ -167,11 +171,15 @@ const RequisicionesSection = () => {
           icon={<FileText className="w-16 h-16" />}
           title="No hay requisiciones registradas"
           description="Comience creando requisiciones de compra"
-          action={{
-            label: 'Nueva Requisición',
-            onClick: handleCreate,
-            icon: <Plus className="w-4 h-4" />,
-          }}
+          action={
+            canCreate
+              ? {
+                  label: 'Nueva Requisición',
+                  onClick: handleCreate,
+                  icon: <Plus className="w-4 h-4" />,
+                }
+              : undefined
+          }
         />
       ) : (
         <Card variant="bordered" padding="none">
@@ -235,22 +243,26 @@ const RequisicionesSection = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(req)}
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteId(req.id)}
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4 text-danger-600" />
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(req)}
+                            title="Editar"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteId(req.id)}
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4 text-danger-600" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -282,6 +294,9 @@ const RequisicionesSection = () => {
 // ==================== COTIZACIONES SECTION ====================
 
 const CotizacionesSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
+  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'edit');
   const { data, isLoading } = useCotizaciones();
   const cotizaciones = Array.isArray(data) ? data : (data?.results ?? []);
 
@@ -373,12 +388,16 @@ const CotizacionesSection = () => {
                         <Button variant="ghost" size="sm" title="Ver">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" title="Editar">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" title="Seleccionar">
-                          <CheckCircle className="w-4 h-4 text-success-600" />
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" title="Editar">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" title="Seleccionar">
+                            <CheckCircle className="w-4 h-4 text-success-600" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -395,6 +414,8 @@ const CotizacionesSection = () => {
 // ==================== ÓRDENES DE COMPRA SECTION ====================
 
 const OrdenesCompraSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
   const { data, isLoading } = useOrdenesCompra();
   const ordenes = Array.isArray(data) ? data : (data?.results ?? []);
 
@@ -506,6 +527,8 @@ const OrdenesCompraSection = () => {
 // ==================== CONTRATOS SECTION ====================
 
 const ContratosSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
   const { data, isLoading } = useContratos();
   const contratos = Array.isArray(data) ? data : (data?.results ?? []);
 
@@ -713,9 +736,6 @@ const RecepcionesSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ComprasTab() {
-  const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
-
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('requisiciones');
 

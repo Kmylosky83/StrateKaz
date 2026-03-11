@@ -124,27 +124,23 @@ jobs:
 
       - name: Run Django tests
         working-directory: ./backend
-        continue-on-error: true
         run: |
-          python manage.py test --verbosity=2 --keepdb || echo "⚠️ Some Django tests failed (non-blocking)"
+          python manage.py test --verbosity=2 --keepdb
 
       - name: Run pytest
         working-directory: ./backend
-        continue-on-error: true
         run: |
-          pytest -v --disable-warnings || echo "⚠️ Some pytest tests failed (non-blocking)"
+          pytest -v --disable-warnings
 
       - name: Check code formatting with Black
         working-directory: ./backend
-        continue-on-error: true
         run: |
-          black --check --diff . || echo "⚠️ Some files need Black formatting (non-blocking)"
+          black --check --diff .
 
       - name: Lint with Ruff
         working-directory: ./backend
-        continue-on-error: true
         run: |
-          ruff check . || echo "⚠️ Ruff found issues (non-blocking)"
+          ruff check .
 
       - name: Security audit with pip-audit
         working-directory: ./backend
@@ -189,7 +185,7 @@ jobs:
 
       - name: Run ESLint
         working-directory: ./frontend
-        run: npx eslint src --max-warnings 1500
+        run: npx eslint src --max-warnings 850
 
       - name: Security audit with npm audit
         working-directory: ./frontend

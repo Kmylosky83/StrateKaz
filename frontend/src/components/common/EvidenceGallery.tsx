@@ -58,7 +58,10 @@ export interface EvidenceGalleryProps {
   className?: string;
 }
 
-const ESTADO_BADGE_MAP: Record<EstadoEvidencia, { variant: 'success' | 'warning' | 'danger' | 'info' | 'secondary' }> = {
+const ESTADO_BADGE_MAP: Record<
+  EstadoEvidencia,
+  { variant: 'success' | 'warning' | 'danger' | 'info' | 'secondary' }
+> = {
   PENDIENTE: { variant: 'warning' },
   APROBADA: { variant: 'success' },
   RECHAZADA: { variant: 'danger' },
@@ -67,7 +70,8 @@ const ESTADO_BADGE_MAP: Record<EstadoEvidencia, { variant: 'success' | 'warning'
 };
 
 function getFileIcon(mimeType: string, className = 'h-8 w-8') {
-  if (mimeType.startsWith('image/')) return <ImageIcon className={cn(className, 'text-blue-500')} />;
+  if (mimeType.startsWith('image/'))
+    return <ImageIcon className={cn(className, 'text-blue-500')} />;
   if (mimeType === 'application/pdf') return <FileText className={cn(className, 'text-red-500')} />;
   if (mimeType.startsWith('video/')) return <Film className={cn(className, 'text-purple-500')} />;
   return <File className={cn(className, 'text-gray-500')} />;
@@ -113,13 +117,7 @@ export function EvidenceGallery({
   }
 
   if (!evidencias?.length) {
-    return (
-      <EmptyState
-        title="Sin evidencias"
-        description={emptyMessage}
-        className={className}
-      />
-    );
+    return <EmptyState title="Sin evidencias" description={emptyMessage} className={className} />;
   }
 
   const handleAction = async () => {
@@ -148,14 +146,31 @@ export function EvidenceGallery({
     const items = [];
     if (ev.estado === 'PENDIENTE') {
       items.push(
-        { label: 'Aprobar', icon: <CheckCircle2 className="h-4 w-4" />, onClick: () => setConfirmAction({ type: 'aprobar', evidencia: ev }) },
-        { label: 'Rechazar', icon: <XCircle className="h-4 w-4" />, onClick: () => setConfirmAction({ type: 'rechazar', evidencia: ev }) }
+        {
+          label: 'Aprobar',
+          icon: <CheckCircle2 className="h-4 w-4" />,
+          onClick: () => setConfirmAction({ type: 'aprobar', evidencia: ev }),
+        },
+        {
+          label: 'Rechazar',
+          icon: <XCircle className="h-4 w-4" />,
+          onClick: () => setConfirmAction({ type: 'rechazar', evidencia: ev }),
+        }
       );
     }
     if (ev.estado === 'APROBADA' || ev.estado === 'VENCIDA') {
-      items.push({ label: 'Archivar', icon: <Archive className="h-4 w-4" />, onClick: () => setConfirmAction({ type: 'archivar', evidencia: ev }) });
+      items.push({
+        label: 'Archivar',
+        icon: <Archive className="h-4 w-4" />,
+        onClick: () => setConfirmAction({ type: 'archivar', evidencia: ev }),
+      });
     }
-    items.push({ label: 'Eliminar', icon: <Trash2 className="h-4 w-4" />, onClick: () => setConfirmAction({ type: 'eliminar', evidencia: ev }), danger: true });
+    items.push({
+      label: 'Eliminar',
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: () => setConfirmAction({ type: 'eliminar', evidencia: ev }),
+      danger: true,
+    });
     return items;
   };
 
@@ -215,7 +230,10 @@ export function EvidenceGallery({
             {showActions && (
               <Dropdown
                 trigger={
-                  <button className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700">
+                  <button
+                    className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+                    aria-label="Más opciones"
+                  >
                     <MoreVertical className="h-4 w-4 text-gray-500" />
                   </button>
                 }
@@ -227,13 +245,19 @@ export function EvidenceGallery({
 
         <ConfirmDialog
           isOpen={!!confirmAction}
-          onClose={() => { setConfirmAction(null); setMotivoRechazo(''); }}
+          onClose={() => {
+            setConfirmAction(null);
+            setMotivoRechazo('');
+          }}
           onConfirm={handleAction}
           title={
-            confirmAction?.type === 'aprobar' ? 'Aprobar Evidencia' :
-            confirmAction?.type === 'rechazar' ? 'Rechazar Evidencia' :
-            confirmAction?.type === 'archivar' ? 'Archivar Evidencia' :
-            'Eliminar Evidencia'
+            confirmAction?.type === 'aprobar'
+              ? 'Aprobar Evidencia'
+              : confirmAction?.type === 'rechazar'
+                ? 'Rechazar Evidencia'
+                : confirmAction?.type === 'archivar'
+                  ? 'Archivar Evidencia'
+                  : 'Eliminar Evidencia'
           }
           message={
             confirmAction?.type === 'rechazar' ? (
@@ -251,12 +275,21 @@ export function EvidenceGallery({
               `¿${confirmAction?.type === 'eliminar' ? 'Eliminar' : confirmAction?.type === 'archivar' ? 'Archivar' : 'Aprobar'} la evidencia "${confirmAction?.evidencia.titulo}"?`
             )
           }
-          variant={confirmAction?.type === 'eliminar' ? 'danger' : confirmAction?.type === 'rechazar' ? 'warning' : 'default'}
+          variant={
+            confirmAction?.type === 'eliminar'
+              ? 'danger'
+              : confirmAction?.type === 'rechazar'
+                ? 'warning'
+                : 'default'
+          }
           confirmText={
-            confirmAction?.type === 'aprobar' ? 'Aprobar' :
-            confirmAction?.type === 'rechazar' ? 'Rechazar' :
-            confirmAction?.type === 'archivar' ? 'Archivar' :
-            'Eliminar'
+            confirmAction?.type === 'aprobar'
+              ? 'Aprobar'
+              : confirmAction?.type === 'rechazar'
+                ? 'Rechazar'
+                : confirmAction?.type === 'archivar'
+                  ? 'Archivar'
+                  : 'Eliminar'
           }
         />
       </div>
@@ -293,7 +326,9 @@ export function EvidenceGallery({
 
             {/* Info */}
             <div className="p-3 space-y-2">
-              <p className="text-sm font-medium truncate" title={ev.titulo}>{ev.titulo}</p>
+              <p className="text-sm font-medium truncate" title={ev.titulo}>
+                {ev.titulo}
+              </p>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span>{ev.tamano_legible}</span>
                 <span>&middot;</span>
@@ -303,7 +338,9 @@ export function EvidenceGallery({
               {ev.normas_relacionadas.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {ev.normas_relacionadas.map((n) => (
-                    <Badge key={n} variant="secondary" size="sm">{n.replace('_', ' ')}</Badge>
+                    <Badge key={n} variant="secondary" size="sm">
+                      {n.replace('_', ' ')}
+                    </Badge>
                   ))}
                 </div>
               )}
@@ -362,13 +399,19 @@ export function EvidenceGallery({
 
       <ConfirmDialog
         isOpen={!!confirmAction}
-        onClose={() => { setConfirmAction(null); setMotivoRechazo(''); }}
+        onClose={() => {
+          setConfirmAction(null);
+          setMotivoRechazo('');
+        }}
         onConfirm={handleAction}
         title={
-          confirmAction?.type === 'aprobar' ? 'Aprobar Evidencia' :
-          confirmAction?.type === 'rechazar' ? 'Rechazar Evidencia' :
-          confirmAction?.type === 'archivar' ? 'Archivar Evidencia' :
-          'Eliminar Evidencia'
+          confirmAction?.type === 'aprobar'
+            ? 'Aprobar Evidencia'
+            : confirmAction?.type === 'rechazar'
+              ? 'Rechazar Evidencia'
+              : confirmAction?.type === 'archivar'
+                ? 'Archivar Evidencia'
+                : 'Eliminar Evidencia'
         }
         message={
           confirmAction?.type === 'rechazar' ? (
@@ -386,12 +429,21 @@ export function EvidenceGallery({
             `¿${confirmAction?.type === 'eliminar' ? 'Eliminar' : confirmAction?.type === 'archivar' ? 'Archivar' : 'Aprobar'} la evidencia "${confirmAction?.evidencia.titulo}"?`
           )
         }
-        variant={confirmAction?.type === 'eliminar' ? 'danger' : confirmAction?.type === 'rechazar' ? 'warning' : 'default'}
+        variant={
+          confirmAction?.type === 'eliminar'
+            ? 'danger'
+            : confirmAction?.type === 'rechazar'
+              ? 'warning'
+              : 'default'
+        }
         confirmText={
-          confirmAction?.type === 'aprobar' ? 'Aprobar' :
-          confirmAction?.type === 'rechazar' ? 'Rechazar' :
-          confirmAction?.type === 'archivar' ? 'Archivar' :
-          'Eliminar'
+          confirmAction?.type === 'aprobar'
+            ? 'Aprobar'
+            : confirmAction?.type === 'rechazar'
+              ? 'Rechazar'
+              : confirmAction?.type === 'archivar'
+                ? 'Archivar'
+                : 'Eliminar'
         }
       />
     </div>

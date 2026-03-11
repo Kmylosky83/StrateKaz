@@ -67,12 +67,14 @@ export function GameHUD({ onPause, onQuit }: GameHUDProps) {
           <button
             onClick={onQuit}
             className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+            aria-label="Salir del juego"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <button
             onClick={onPause}
             className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-slate-400 hover:text-white"
+            aria-label="Pausar juego"
           >
             <Pause className="w-4 h-4" />
           </button>

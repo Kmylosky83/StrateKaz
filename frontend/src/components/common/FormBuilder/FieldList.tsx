@@ -83,6 +83,7 @@ function SortableFieldItem({
       <button
         type="button"
         className="cursor-grab active:cursor-grabbing p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        aria-label="Arrastrar para reordenar"
         {...attributes}
         {...listeners}
       >
@@ -118,6 +119,7 @@ function SortableFieldItem({
             onRemove();
           }}
           className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+          aria-label="Eliminar campo"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

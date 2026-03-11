@@ -80,13 +80,15 @@ export function IconPicker({
   const [searchQuery, setSearchQuery] = useState('');
 
   // Obtener iconos segun si hay categoria o no
-  const { icons: allIcons, categories, isLoading: isLoadingAll } = useIcons({
+  const {
+    icons: allIcons,
+    categories,
+    isLoading: isLoadingAll,
+  } = useIcons({
     enabled: !category,
   });
 
-  const { icons: categoryIcons, isLoading: isLoadingCategory } = useIconsByCategory(
-    category || ''
-  );
+  const { icons: categoryIcons, isLoading: isLoadingCategory } = useIconsByCategory(category || '');
 
   // Determinar que iconos usar
   const icons = category ? categoryIcons : allIcons;
@@ -189,6 +191,7 @@ export function IconPicker({
                 type="button"
                 onClick={clearSearch}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                aria-label="Limpiar búsqueda"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -262,7 +265,11 @@ export function IconPicker({
         {value && (
           <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-2 text-sm">
-              <DynamicIcon name={value} size={16} className="text-purple-600 dark:text-purple-400" />
+              <DynamicIcon
+                name={value}
+                size={16}
+                className="text-purple-600 dark:text-purple-400"
+              />
               <span className="text-gray-600 dark:text-gray-400">
                 Seleccionado: <strong className="text-gray-900 dark:text-gray-100">{value}</strong>
               </span>

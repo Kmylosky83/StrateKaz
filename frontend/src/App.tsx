@@ -3,7 +3,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useDynamicTheme } from '@/hooks/useDynamicTheme';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { AppRoutes } from '@/routes';
-import { OfflineIndicator, SplashScreen } from '@/components/common';
+import { ErrorBoundary, OfflineIndicator, SplashScreen } from '@/components/common';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
@@ -58,7 +58,7 @@ function App() {
   }, [isBrandingLoading, minTimeElapsed]);
 
   return (
-    <>
+    <ErrorBoundary>
       {/* Splash Screen - Logo FIJO de StrateKaz (identidad de marca) */}
       {/* Usa variante 'dark' en páginas de login para coincidir con NetworkBackground */}
       <SplashScreen
@@ -71,7 +71,7 @@ function App() {
       {/* Contenido principal */}
       <AppRoutes />
       <OfflineIndicator position="bottom" />
-    </>
+    </ErrorBoundary>
   );
 }
 

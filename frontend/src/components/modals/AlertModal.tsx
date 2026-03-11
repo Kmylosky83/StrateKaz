@@ -162,6 +162,7 @@ export const AlertModal = ({
                         type="button"
                         onClick={onClose}
                         className="p-1 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        aria-label="Cerrar"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -212,10 +213,10 @@ export const AlertModal = ({
                   variant === 'success'
                     ? 'bg-success-500'
                     : variant === 'error'
-                    ? 'bg-danger-500'
-                    : variant === 'warning'
-                    ? 'bg-warning-500'
-                    : 'bg-info-500'
+                      ? 'bg-danger-500'
+                      : variant === 'warning'
+                        ? 'bg-warning-500'
+                        : 'bg-info-500'
                 }`}
               />
             )}

@@ -123,6 +123,7 @@ export const SearchModal = ({
             <button
               onClick={handleClear}
               className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Limpiar búsqueda"
             >
               <X className="h-4 w-4 text-gray-400" />
             </button>

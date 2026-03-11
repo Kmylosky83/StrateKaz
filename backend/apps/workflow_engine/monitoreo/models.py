@@ -22,6 +22,8 @@ class MetricaFlujo(TenantModel):
     # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_metrica_flujo'
+        verbose_name = 'Métrica de Flujo'
+        verbose_name_plural = 'Métricas de Flujos'
         unique_together = [['plantilla', 'periodo', 'fecha_inicio', 'empresa_id']]
     def __str__(self):
         return f"{self.plantilla.nombre} - {self.periodo}"
@@ -46,6 +48,8 @@ class AlertaFlujo(TenantModel):
     # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_alerta_flujo'
+        verbose_name = 'Alerta de Flujo'
+        verbose_name_plural = 'Alertas de Flujos'
     def __str__(self):
         return self.titulo
 
@@ -64,6 +68,8 @@ class ReglaSLA(TenantModel):
     # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_regla_sla'
+        verbose_name = 'Regla SLA'
+        verbose_name_plural = 'Reglas SLA'
     def __str__(self):
         return self.nombre
 
@@ -82,6 +88,8 @@ class DashboardWidget(TenantModel):
     # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_dashboard_widget'
+        verbose_name = 'Widget de Dashboard'
+        verbose_name_plural = 'Widgets de Dashboard'
     def __str__(self):
         return self.titulo
 
@@ -102,5 +110,7 @@ class ReporteAutomatico(TenantModel):
     # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_reporte_automatico'
+        verbose_name = 'Reporte Automático'
+        verbose_name_plural = 'Reportes Automáticos'
     def __str__(self):
         return self.nombre

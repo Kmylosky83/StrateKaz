@@ -1,15 +1,27 @@
 """
-Modelos para Mejora Continua - hseq_management
-Semana 14: Auditorías internas, hallazgos y evaluación de cumplimiento
+Modelos para Mejora Continua — hseq_management
+Auditorías internas, hallazgos y evaluación de cumplimiento.
+
+Phase B: TenantModel + django-fsm + EventBus
 """
 from django.db import models
 from django.utils import timezone
+from django_fsm import FSMField, transition
+
+from utils.models import TenantModel
 
 
-class ProgramaAuditoria(models.Model):
+# ============================================================================
+# PROGRAMA DE AUDITORÍA
+# ============================================================================
+
+class ProgramaAuditoria(TenantModel):
     """
     Programa anual de auditorías internas.
     Define el cronograma y alcance de auditorías para cada año.
+
+    FSM: BORRADOR → APROBADO → EN_EJECUCION → COMPLETADO
+                                             ╲→ CANCELADO
     """
     ESTADO_CHOICES = [
         ('BORRADOR', 'Borrador'),
@@ -19,17 +31,17 @@ class ProgramaAuditoria(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
 
-    empresa_id = models.PositiveBigIntegerField(db_index=True)
-    codigo = models.CharField(max_length=50, blank=True)
+    estado = FSMField(
+        default='BORRADOR',
+        choices=ESTADO_CHOICES,
+        db_index=True,
+        protected=True,
+    )
+
+    codigo = models.CharField(max_length=50, unique=True, blank=True)
     nombre = models.CharField(max_length=255)
     año = models.PositiveIntegerField()
     version = models.PositiveIntegerField(default=1)
-
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADO_CHOICES,
-        default='BORRADOR'
-    )
 
     # Alcance y objetivos
     alcance = models.TextField(blank=True)
@@ -79,26 +91,15 @@ class ProgramaAuditoria(models.Model):
     fecha_inicio = models.DateField(null=True, blank=True)
     fecha_fin = models.DateField(null=True, blank=True)
 
-    # Auditoría de registro
+    # Observaciones
     observaciones = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='programas_auditoria_creados'
-    )
 
     class Meta:
         db_table = 'hseq_programa_auditoria'
         verbose_name = 'Programa de Auditoría'
         verbose_name_plural = 'Programas de Auditoría'
         ordering = ['-año', 'nombre']
-        unique_together = [['empresa_id', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id']),
             models.Index(fields=['año']),
             models.Index(fields=['estado']),
         ]
@@ -112,25 +113,34 @@ class ProgramaAuditoria(models.Model):
             auto_generate_codigo(self, 'PROGRAMA_AUDITORIA')
         super().save(*args, **kwargs)
 
+    # --- FSM Transiciones ---
+
+    @transition(field=estado, source='BORRADOR', target='APROBADO')
     def aprobar(self, usuario):
         """Aprueba el programa de auditoría."""
-        self.estado = 'APROBADO'
         self.aprobado_por = usuario
         self.fecha_aprobacion = timezone.now().date()
-        self.save()
 
+    @transition(field=estado, source='APROBADO', target='EN_EJECUCION')
     def iniciar(self):
         """Inicia la ejecución del programa."""
-        if self.estado == 'APROBADO':
-            self.estado = 'EN_EJECUCION'
-            self.fecha_inicio = timezone.now().date()
-            self.save()
+        self.fecha_inicio = timezone.now().date()
 
+    @transition(field=estado, source='EN_EJECUCION', target='COMPLETADO')
     def completar(self):
         """Marca el programa como completado."""
-        self.estado = 'COMPLETADO'
         self.fecha_fin = timezone.now().date()
-        self.save()
+
+    @transition(
+        field=estado,
+        source=['BORRADOR', 'APROBADO', 'EN_EJECUCION'],
+        target='CANCELADO'
+    )
+    def cancelar(self):
+        """Cancela el programa."""
+        pass
+
+    # --- Propiedades ---
 
     @property
     def porcentaje_avance(self):
@@ -142,10 +152,17 @@ class ProgramaAuditoria(models.Model):
         return round((completadas / total) * 100, 1)
 
 
-class Auditoria(models.Model):
+# ============================================================================
+# AUDITORÍA
+# ============================================================================
+
+class Auditoria(TenantModel):
     """
     Auditoría individual dentro de un programa.
     Puede ser interna o externa, abarcando uno o varios sistemas de gestión.
+
+    FSM: PROGRAMADA → PLANIFICADA → EN_EJECUCION → INFORME_PENDIENTE → CERRADA
+                                                                     ╲→ CANCELADA
     """
     TIPO_CHOICES = [
         ('INTERNA', 'Auditoría Interna'),
@@ -178,26 +195,26 @@ class Auditoria(models.Model):
         ('CANCELADA', 'Cancelada'),
     ]
 
-    empresa_id = models.PositiveBigIntegerField(db_index=True)
+    estado = FSMField(
+        default='PROGRAMADA',
+        choices=ESTADO_CHOICES,
+        db_index=True,
+        protected=True,
+    )
+
     programa = models.ForeignKey(
         ProgramaAuditoria,
         on_delete=models.CASCADE,
         related_name='auditorias'
     )
 
-    codigo = models.CharField(max_length=50, blank=True)
+    codigo = models.CharField(max_length=50, unique=True, blank=True)
     tipo = models.CharField(max_length=25, choices=TIPO_CHOICES)
     norma_principal = models.CharField(max_length=20, choices=NORMA_CHOICES)
     normas_adicionales = models.JSONField(
         default=list,
         blank=True,
         help_text="Otras normas incluidas en la auditoría"
-    )
-
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADO_CHOICES,
-        default='PROGRAMADA'
     )
 
     # Alcance específico
@@ -264,26 +281,15 @@ class Auditoria(models.Model):
         null=True
     )
 
-    # Auditoría de registro
+    # Observaciones internas
     observaciones_internas = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='auditorias_creadas'
-    )
 
     class Meta:
         db_table = 'hseq_auditoria'
         verbose_name = 'Auditoría'
         verbose_name_plural = 'Auditorías'
         ordering = ['-fecha_planificada_inicio']
-        unique_together = [['empresa_id', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id']),
             models.Index(fields=['programa']),
             models.Index(fields=['tipo']),
             models.Index(fields=['estado']),
@@ -299,19 +305,39 @@ class Auditoria(models.Model):
             auto_generate_codigo(self, 'AUDITORIA')
         super().save(*args, **kwargs)
 
+    # --- FSM Transiciones ---
+
+    @transition(field=estado, source='PROGRAMADA', target='PLANIFICADA')
+    def planificar(self):
+        """Marca la auditoría como planificada."""
+        pass
+
+    @transition(field=estado, source=['PROGRAMADA', 'PLANIFICADA'], target='EN_EJECUCION')
     def iniciar(self):
         """Inicia la ejecución de la auditoría."""
-        if self.estado in ['PROGRAMADA', 'PLANIFICADA']:
-            self.estado = 'EN_EJECUCION'
-            self.fecha_real_inicio = timezone.now().date()
-            self.save()
+        self.fecha_real_inicio = timezone.now().date()
 
+    @transition(field=estado, source='EN_EJECUCION', target='INFORME_PENDIENTE')
+    def solicitar_informe(self):
+        """Pasa a estado de informe pendiente."""
+        pass
+
+    @transition(field=estado, source='INFORME_PENDIENTE', target='CERRADA')
     def cerrar(self):
         """Cierra la auditoría."""
-        self.estado = 'CERRADA'
         self.fecha_real_fin = timezone.now().date()
         self._actualizar_metricas()
-        self.save()
+
+    @transition(
+        field=estado,
+        source=['PROGRAMADA', 'PLANIFICADA', 'EN_EJECUCION'],
+        target='CANCELADA'
+    )
+    def cancelar(self):
+        """Cancela la auditoría."""
+        pass
+
+    # --- Helpers ---
 
     def _actualizar_metricas(self):
         """Actualiza las métricas basadas en hallazgos."""
@@ -323,10 +349,16 @@ class Auditoria(models.Model):
         self.oportunidades_mejora = hallazgos.filter(tipo='OPORTUNIDAD_MEJORA').count()
 
 
-class Hallazgo(models.Model):
+# ============================================================================
+# HALLAZGO
+# ============================================================================
+
+class Hallazgo(TenantModel):
     """
     Hallazgo identificado durante una auditoría.
     Puede generar una No Conformidad que requiere acción correctiva.
+
+    FSM: IDENTIFICADO → COMUNICADO → EN_TRATAMIENTO → VERIFICADO → CERRADO
     """
     TIPO_CHOICES = [
         ('NO_CONFORMIDAD_MAYOR', 'No Conformidad Mayor'),
@@ -350,20 +382,21 @@ class Hallazgo(models.Model):
         ('BAJO', 'Bajo'),
     ]
 
-    empresa_id = models.PositiveBigIntegerField(db_index=True)
+    estado = FSMField(
+        default='IDENTIFICADO',
+        choices=ESTADO_CHOICES,
+        db_index=True,
+        protected=True,
+    )
+
     auditoria = models.ForeignKey(
         Auditoria,
         on_delete=models.CASCADE,
         related_name='hallazgos'
     )
 
-    codigo = models.CharField(max_length=50, blank=True)
+    codigo = models.CharField(max_length=50, unique=True, blank=True)
     tipo = models.CharField(max_length=25, choices=TIPO_CHOICES)
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADO_CHOICES,
-        default='IDENTIFICADO'
-    )
 
     # Descripción del hallazgo
     titulo = models.CharField(max_length=255)
@@ -425,13 +458,17 @@ class Hallazgo(models.Model):
     analisis_causa_raiz = models.TextField(blank=True)
     accion_propuesta = models.TextField(blank=True)
 
-    # Vinculación con No Conformidad del módulo Calidad
-    no_conformidad_generada = models.ForeignKey(
-        'calidad.NoConformidad',
-        on_delete=models.SET_NULL,
+    # Vinculación con No Conformidad (cross-module, sin FK directo)
+    no_conformidad_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='hallazgos_origen'
+        db_index=True,
+        help_text="ID de la NoConformidad generada en módulo Calidad"
+    )
+    no_conformidad_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Código cache de la NoConformidad vinculada"
     )
 
     # Verificación de eficacia
@@ -453,20 +490,15 @@ class Hallazgo(models.Model):
         null=True
     )
 
-    # Auditoría de registro
+    # Observaciones
     observaciones = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'hseq_hallazgo_auditoria'
         verbose_name = 'Hallazgo de Auditoría'
         verbose_name_plural = 'Hallazgos de Auditoría'
         ordering = ['-fecha_deteccion', 'tipo']
-        unique_together = [['empresa_id', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id']),
             models.Index(fields=['auditoria']),
             models.Index(fields=['tipo']),
             models.Index(fields=['estado']),
@@ -481,34 +513,37 @@ class Hallazgo(models.Model):
             auto_generate_codigo(self, 'HALLAZGO')
         super().save(*args, **kwargs)
 
-    def comunicar(self):
-        """Marca el hallazgo como comunicado."""
-        self.estado = 'COMUNICADO'
-        self.fecha_comunicacion = timezone.now().date()
-        self.save()
+    # --- FSM Transiciones ---
 
+    @transition(field=estado, source='IDENTIFICADO', target='COMUNICADO')
+    def comunicar(self):
+        """Marca el hallazgo como comunicado al responsable."""
+        self.fecha_comunicacion = timezone.now().date()
+
+    @transition(field=estado, source='COMUNICADO', target='EN_TRATAMIENTO')
     def iniciar_tratamiento(self):
         """Inicia el tratamiento del hallazgo."""
-        self.estado = 'EN_TRATAMIENTO'
-        self.save()
+        pass
 
-    def verificar(self, usuario, es_eficaz, observaciones=''):
+    @transition(field=estado, source='EN_TRATAMIENTO', target='VERIFICADO')
+    def verificar(self, usuario, es_eficaz, observaciones_verificacion=''):
         """Verifica la eficacia de las acciones tomadas."""
-        self.estado = 'VERIFICADO'
         self.es_eficaz = es_eficaz
         self.verificado_por = usuario
         self.fecha_verificacion = timezone.now().date()
-        self.verificacion_eficacia = observaciones
-        self.save()
+        self.verificacion_eficacia = observaciones_verificacion
 
+    @transition(
+        field=estado,
+        source='VERIFICADO',
+        target='CERRADO',
+        conditions=[lambda h: h.es_eficaz is True],
+    )
     def cerrar(self):
-        """Cierra el hallazgo."""
-        if self.estado == 'VERIFICADO' and self.es_eficaz:
-            self.estado = 'CERRADO'
-            self.fecha_cierre_real = timezone.now().date()
-            self.save()
-            return True
-        return False
+        """Cierra el hallazgo (solo si es eficaz)."""
+        self.fecha_cierre_real = timezone.now().date()
+
+    # --- Propiedades ---
 
     @property
     def requiere_accion_correctiva(self):
@@ -523,10 +558,16 @@ class Hallazgo(models.Model):
         return (timezone.now().date() - self.fecha_deteccion).days
 
 
-class EvaluacionCumplimiento(models.Model):
+# ============================================================================
+# EVALUACIÓN DE CUMPLIMIENTO
+# ============================================================================
+
+class EvaluacionCumplimiento(TenantModel):
     """
     Evaluación del cumplimiento de requisitos legales y otros requisitos.
     Vinculado con el Motor de Cumplimiento para verificar matriz legal.
+
+    NO usa FSM — resultado es una categoría, no un ciclo de vida.
     """
     TIPO_CHOICES = [
         ('LEGAL', 'Requisito Legal'),
@@ -553,21 +594,24 @@ class EvaluacionCumplimiento(models.Model):
         ('ANUAL', 'Anual'),
     ]
 
-    empresa_id = models.PositiveBigIntegerField(db_index=True)
-    codigo = models.CharField(max_length=50, blank=True)
+    codigo = models.CharField(max_length=50, unique=True, blank=True)
 
     # Tipo y alcance
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     nombre = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True)
 
-    # Vinculación con requisitos legales
-    requisito_legal = models.ForeignKey(
-        'requisitos_legales.RequisitoLegal',
-        on_delete=models.SET_NULL,
+    # Vinculación con requisitos legales (cross-module, sin FK directo)
+    requisito_legal_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='evaluaciones_cumplimiento'
+        db_index=True,
+        help_text="ID del RequisitoLegal en módulo Motor de Cumplimiento"
+    )
+    requisito_legal_nombre = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Nombre cache del requisito legal vinculado"
     )
 
     # Resultado de evaluación
@@ -621,7 +665,7 @@ class EvaluacionCumplimiento(models.Model):
     fecha_evaluacion = models.DateField()
     proxima_evaluacion = models.DateField(null=True, blank=True)
 
-    # Vinculación con hallazgos y acciones
+    # Vinculación con hallazgos (mismo módulo, FK directo ok)
     hallazgo_generado = models.ForeignKey(
         Hallazgo,
         on_delete=models.SET_NULL,
@@ -630,26 +674,15 @@ class EvaluacionCumplimiento(models.Model):
         related_name='evaluaciones_origen'
     )
 
-    # Auditoría de registro
+    # Observaciones
     observaciones = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='evaluaciones_creadas'
-    )
 
     class Meta:
         db_table = 'hseq_evaluacion_cumplimiento'
         verbose_name = 'Evaluación de Cumplimiento'
         verbose_name_plural = 'Evaluaciones de Cumplimiento'
         ordering = ['-fecha_evaluacion']
-        unique_together = [['empresa_id', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id']),
             models.Index(fields=['tipo']),
             models.Index(fields=['resultado']),
             models.Index(fields=['fecha_evaluacion']),

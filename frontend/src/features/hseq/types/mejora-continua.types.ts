@@ -2,6 +2,8 @@
  * Tipos TypeScript para Módulo de Mejora Continua - HSEQ Management
  * Sistema de Gestión StrateKaz
  *
+ * Phase B: Sincronizado con TenantModel + django-fsm
+ *
  * Incluye:
  * - Programa de Auditorías
  * - Auditorías Internas/Externas
@@ -87,12 +89,12 @@ export type PeriodicidadEvaluacion = 'MENSUAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'S
 
 export interface ProgramaAuditoria {
   id: number;
-  empresa_id: number;
   codigo: string;
   nombre: string;
   año: number;
   version: number;
   estado: EstadoProgramaAuditoria;
+  estado_display?: string;
   alcance: string;
   objetivos: string;
   criterios_auditoria: string;
@@ -100,21 +102,25 @@ export interface ProgramaAuditoria {
   equipo_auditor_interno: string[];
   recursos_necesarios: string;
   presupuesto: string | null;
-  responsable_programa: string;
+  responsable_programa: number;
   responsable_programa_nombre?: string;
-  aprobado_por: string | null;
+  aprobado_por: number | null;
   aprobado_por_nombre?: string;
   fecha_aprobacion: string | null;
   fecha_inicio: string | null;
   fecha_fin: string | null;
   observaciones: string;
   porcentaje_avance?: number;
-  total_auditorias?: number;
-  auditorias_completadas?: number;
-  is_active: boolean;
+  transiciones_disponibles?: string[];
+  auditorias?: AuditoriaList[];
+  created_by_nombre?: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
+  created_by: number;
+  updated_by: number | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: number | null;
 }
 
 export interface ProgramaAuditoriaList {
@@ -124,11 +130,19 @@ export interface ProgramaAuditoriaList {
   año: number;
   version: number;
   estado: EstadoProgramaAuditoria;
-  fecha_aprobacion: string | null;
-  porcentaje_avance?: number;
-  total_auditorias?: number;
-  auditorias_completadas?: number;
+  estado_display?: string;
+  alcance?: string;
+  normas_aplicables?: string[];
+  presupuesto?: string | null;
+  responsable_programa?: number;
   responsable_programa_nombre?: string;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string;
+  fecha_aprobacion: string | null;
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
+  porcentaje_avance?: number;
+  cantidad_auditorias?: number;
   created_at: string;
   updated_at: string;
 }
@@ -137,9 +151,9 @@ export interface ProgramaAuditoriaList {
 
 export interface Auditoria {
   id: number;
-  empresa_id: number;
   programa: number;
   programa_nombre?: string;
+  programa_codigo?: string;
   codigo: string;
   tipo: TipoAuditoria;
   tipo_display?: string;
@@ -147,6 +161,7 @@ export interface Auditoria {
   norma_principal_display?: string;
   normas_adicionales: string[];
   estado: EstadoAuditoria;
+  estado_display?: string;
   titulo: string;
   objetivo: string;
   alcance: string;
@@ -156,10 +171,10 @@ export interface Auditoria {
   fecha_planificada_fin: string;
   fecha_real_inicio: string | null;
   fecha_real_fin: string | null;
-  auditor_lider: string;
+  auditor_lider: number;
   auditor_lider_nombre?: string;
-  equipo_auditor: string[];
-  equipo_auditor_nombres?: string[];
+  equipo_auditor: number[];
+  equipo_auditor_info?: Array<{ id: number; nombre: string }>;
   resumen_ejecutivo: string;
   fortalezas: string;
   conclusiones: string;
@@ -173,12 +188,17 @@ export interface Auditoria {
   lista_verificacion: string | null;
   informe_auditoria: string | null;
   observaciones_internas: string;
-  hallazgos?: Hallazgo[];
+  hallazgos?: HallazgoList[];
+  transiciones_disponibles?: string[];
   dias_restantes?: number | null;
-  is_active: boolean;
+  created_by_nombre?: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
+  created_by: number;
+  updated_by: number | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: number | null;
 }
 
 export interface AuditoriaList {
@@ -191,13 +211,20 @@ export interface AuditoriaList {
   norma_principal: NormaAuditoria;
   norma_principal_display?: string;
   estado: EstadoAuditoria;
+  estado_display?: string;
   titulo: string;
+  objetivo?: string;
   fecha_planificada_inicio: string;
   fecha_planificada_fin: string;
+  fecha_real_inicio?: string | null;
+  fecha_real_fin?: string | null;
+  auditor_lider?: number;
   auditor_lider_nombre?: string;
   total_hallazgos: number;
   no_conformidades_mayores: number;
   no_conformidades_menores: number;
+  observaciones_count?: number;
+  oportunidades_mejora?: number;
   dias_restantes?: number | null;
   created_at: string;
   updated_at: string;
@@ -207,7 +234,6 @@ export interface AuditoriaList {
 
 export interface Hallazgo {
   id: number;
-  empresa_id: number;
   auditoria: number;
   auditoria_codigo?: string;
   auditoria_titulo?: string;
@@ -215,6 +241,7 @@ export interface Hallazgo {
   tipo: TipoHallazgo;
   tipo_display?: string;
   estado: EstadoHallazgo;
+  estado_display?: string;
   titulo: string;
   descripcion: string;
   evidencia: string;
@@ -226,9 +253,9 @@ export interface Hallazgo {
   impacto_display?: string;
   area_impactada: string;
   recomendacion: string;
-  identificado_por: string;
+  identificado_por: number;
   identificado_por_nombre?: string;
-  responsable_proceso: string | null;
+  responsable_proceso: number | null;
   responsable_proceso_nombre?: string;
   fecha_deteccion: string;
   fecha_comunicacion: string | null;
@@ -236,39 +263,59 @@ export interface Hallazgo {
   fecha_cierre_real: string | null;
   analisis_causa_raiz: string;
   accion_propuesta: string;
-  no_conformidad_generada: number | null;
-  no_conformidad_codigo?: string;
+  no_conformidad_id: number | null;
+  no_conformidad_codigo: string;
+  no_conformidad_info?: { id: number; codigo: string } | null;
   verificacion_eficacia: string;
   es_eficaz: boolean | null;
-  verificado_por: string | null;
+  verificado_por: number | null;
   verificado_por_nombre?: string;
   fecha_verificacion: string | null;
+  observaciones_verificacion: string;
   archivo_evidencia: string | null;
   observaciones: string;
   requiere_accion_correctiva?: boolean;
   dias_abierto?: number;
-  is_active: boolean;
+  transiciones_disponibles?: string[];
+  created_by_nombre?: string;
   created_at: string;
   updated_at: string;
+  created_by: number;
+  updated_by: number | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: number | null;
 }
 
 export interface HallazgoList {
   id: number;
   auditoria: number;
   auditoria_codigo?: string;
+  auditoria_titulo?: string;
   codigo: string;
   tipo: TipoHallazgo;
   tipo_display?: string;
   estado: EstadoHallazgo;
+  estado_display?: string;
   titulo: string;
+  descripcion?: string;
   proceso_area: string;
+  clausula_norma?: string;
+  norma_referencia?: string;
   impacto: ImpactoHallazgo | '';
   impacto_display?: string;
   area_impactada: string;
   recomendacion: string;
+  identificado_por?: number;
+  identificado_por_nombre?: string;
+  responsable_proceso?: number | null;
   responsable_proceso_nombre?: string;
   fecha_deteccion: string;
   fecha_cierre_esperada: string | null;
+  fecha_cierre_real?: string | null;
+  no_conformidad_id?: number | null;
+  no_conformidad_codigo?: string;
+  es_eficaz?: boolean | null;
   requiere_accion_correctiva?: boolean;
   dias_abierto?: number;
   created_at: string;
@@ -279,14 +326,14 @@ export interface HallazgoList {
 
 export interface EvaluacionCumplimiento {
   id: number;
-  empresa_id: number;
   codigo: string;
   tipo: TipoEvaluacionCumplimiento;
   tipo_display?: string;
   nombre: string;
   descripcion: string;
-  requisito_legal: number | null;
-  requisito_legal_nombre?: string;
+  requisito_legal_id: number | null;
+  requisito_legal_nombre: string;
+  requisito_legal_info?: { id: number; nombre: string } | null;
   resultado: ResultadoEvaluacionCumplimiento;
   resultado_display?: string;
   porcentaje_cumplimiento: number;
@@ -294,22 +341,27 @@ export interface EvaluacionCumplimiento {
   archivos_evidencia: string[];
   brechas_identificadas: string;
   acciones_requeridas: string;
-  evaluador: string;
+  evaluador: number;
   evaluador_nombre?: string;
-  responsable_cumplimiento: string | null;
+  responsable_cumplimiento: number | null;
   responsable_cumplimiento_nombre?: string;
   periodicidad: PeriodicidadEvaluacion;
+  periodicidad_display?: string;
   fecha_evaluacion: string;
   proxima_evaluacion: string | null;
   hallazgo_generado: number | null;
-  hallazgo_codigo?: string;
+  hallazgo_info?: { id: number; codigo: string; titulo: string; estado: string } | null;
   observaciones: string;
   estado_cumplimiento?: 'success' | 'warning' | 'danger' | 'info';
   dias_para_proxima_evaluacion?: number | null;
-  is_active: boolean;
+  created_by_nombre?: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
+  created_by: number;
+  updated_by: number | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: number | null;
 }
 
 export interface EvaluacionCumplimientoList {
@@ -318,12 +370,20 @@ export interface EvaluacionCumplimientoList {
   tipo: TipoEvaluacionCumplimiento;
   tipo_display?: string;
   nombre: string;
+  descripcion?: string;
   resultado: ResultadoEvaluacionCumplimiento;
   resultado_display?: string;
   porcentaje_cumplimiento: number;
+  periodicidad?: PeriodicidadEvaluacion;
+  periodicidad_display?: string;
   fecha_evaluacion: string;
   proxima_evaluacion: string | null;
+  evaluador?: number;
+  evaluador_nombre?: string;
+  responsable_cumplimiento?: number | null;
   responsable_cumplimiento_nombre?: string;
+  requisito_legal_id?: number | null;
+  requisito_legal_nombre?: string;
   estado_cumplimiento?: 'success' | 'warning' | 'danger' | 'info';
   dias_para_proxima_evaluacion?: number | null;
   created_at: string;
@@ -344,7 +404,7 @@ export interface CreateProgramaAuditoriaDTO {
   equipo_auditor_interno?: string[];
   recursos_necesarios?: string;
   presupuesto?: number;
-  responsable_programa: string;
+  responsable_programa: number;
   fecha_inicio?: string;
   fecha_fin?: string;
   observaciones?: string;
@@ -363,8 +423,8 @@ export interface CreateAuditoriaDTO {
   procesos_auditados?: string[];
   fecha_planificada_inicio: string;
   fecha_planificada_fin: string;
-  auditor_lider: string;
-  equipo_auditor?: string[];
+  auditor_lider: number;
+  equipo_auditor?: number[];
 }
 
 export interface CreateHallazgoDTO {
@@ -381,8 +441,8 @@ export interface CreateHallazgoDTO {
   impacto?: ImpactoHallazgo | '';
   area_impactada?: string;
   recomendacion?: string;
-  identificado_por: string;
-  responsable_proceso?: string;
+  identificado_por: number;
+  responsable_proceso?: number;
   fecha_deteccion: string;
   fecha_cierre_esperada?: string;
   analisis_causa_raiz?: string;
@@ -394,15 +454,15 @@ export interface CreateEvaluacionCumplimientoDTO {
   tipo: TipoEvaluacionCumplimiento;
   nombre: string;
   descripcion?: string;
-  requisito_legal?: number;
+  requisito_legal_id?: number;
   resultado: ResultadoEvaluacionCumplimiento;
   porcentaje_cumplimiento?: number;
   evidencia_cumplimiento?: string;
   archivos_evidencia?: string[];
   brechas_identificadas?: string;
   acciones_requeridas?: string;
-  evaluador: string;
-  responsable_cumplimiento?: string;
+  evaluador: number;
+  responsable_cumplimiento?: number;
   periodicidad?: PeriodicidadEvaluacion;
   fecha_evaluacion: string;
   observaciones?: string;
@@ -410,14 +470,15 @@ export interface CreateEvaluacionCumplimientoDTO {
 
 // ==================== DTOs - UPDATE ====================
 
+// Estado es FSM-protected — NO se puede asignar directamente.
+// Usar acciones de transición: /aprobar/, /iniciar/, /completar/, /cancelar/
+
 export interface UpdateProgramaAuditoriaDTO extends Partial<CreateProgramaAuditoriaDTO> {
-  estado?: EstadoProgramaAuditoria;
-  aprobado_por?: string;
+  aprobado_por?: number;
   fecha_aprobacion?: string;
 }
 
 export interface UpdateAuditoriaDTO extends Partial<CreateAuditoriaDTO> {
-  estado?: EstadoAuditoria;
   fecha_real_inicio?: string;
   fecha_real_fin?: string;
   resumen_ejecutivo?: string;
@@ -428,15 +489,16 @@ export interface UpdateAuditoriaDTO extends Partial<CreateAuditoriaDTO> {
 }
 
 export interface UpdateHallazgoDTO extends Partial<CreateHallazgoDTO> {
-  estado?: EstadoHallazgo;
   fecha_comunicacion?: string;
   fecha_cierre_real?: string;
-  no_conformidad_generada?: number;
+  no_conformidad_id?: number;
+  no_conformidad_codigo?: string;
   verificacion_eficacia?: string;
   es_eficaz?: boolean;
-  verificado_por?: string;
+  verificado_por?: number;
   fecha_verificacion?: string;
   observaciones?: string;
+  observaciones_verificacion?: string;
 }
 
 export interface UpdateEvaluacionCumplimientoDTO extends Partial<CreateEvaluacionCumplimientoDTO> {

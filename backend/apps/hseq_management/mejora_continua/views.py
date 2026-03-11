@@ -1,6 +1,8 @@
 """
-Views para Mejora Continua - hseq_management
-Auditorías internas, hallazgos y evaluación de cumplimiento
+Views para Mejora Continua — hseq_management
+Auditorías internas, hallazgos y evaluación de cumplimiento.
+
+Phase B: FSM transitions vía django-fsm + EventBus
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -9,8 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db.models import Q, Count
+from django_fsm import TransitionNotAllowed
 
-from apps.core.base_models.mixins import get_tenant_empresa
 from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 
 from .models import (
@@ -38,7 +40,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 
 # ============================================================================
-# PROGRAMA DE AUDITORIA
+# PROGRAMA DE AUDITORÍA
 # ============================================================================
 
 class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
@@ -51,7 +53,7 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
     ordering = ['-año', '-created_at']
 
     def get_queryset(self):
-        queryset = ProgramaAuditoria.objects.filter(is_active=True)
+        queryset = ProgramaAuditoria.objects.all()
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -71,7 +73,6 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
         return ProgramaAuditoriaListSerializer
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_prog = ProgramaAuditoria.objects.filter(
@@ -82,41 +83,81 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
         codigo = f'PAU-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        """Aprobar programa de auditoría"""
+        """Aprobar programa de auditoría (FSM: BORRADOR → APROBADO)"""
         programa = self.get_object()
-        if programa.estado != 'BORRADOR':
+        try:
+            programa.aprobar(usuario=request.user)
+            programa.save()
             return Response(
-                {'error': 'Solo se pueden aprobar programas en estado Borrador'},
+                ProgramaAuditoriaDetailSerializer(
+                    programa, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        programa.aprobar(request.user)
-        return Response({'status': 'Programa aprobado'})
 
     @action(detail=True, methods=['post'])
     def iniciar(self, request, pk=None):
-        """Iniciar ejecución del programa"""
+        """Iniciar ejecución del programa (FSM: APROBADO → EN_EJECUCION)"""
         programa = self.get_object()
-        if programa.estado != 'APROBADO':
+        try:
+            programa.iniciar()
+            programa.save()
             return Response(
-                {'error': 'Solo se pueden iniciar programas aprobados'},
+                ProgramaAuditoriaDetailSerializer(
+                    programa, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        programa.iniciar()
-        return Response({'status': 'Programa iniciado'})
 
     @action(detail=True, methods=['post'])
     def completar(self, request, pk=None):
-        """Marcar programa como completado"""
+        """Marcar programa como completado (FSM: EN_EJECUCION → COMPLETADO)"""
         programa = self.get_object()
-        programa.completar()
-        return Response({'status': 'Programa completado'})
+        try:
+            programa.completar()
+            programa.save()
+            return Response(
+                ProgramaAuditoriaDetailSerializer(
+                    programa, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def cancelar(self, request, pk=None):
+        """Cancelar programa (FSM: BORRADOR|APROBADO|EN_EJECUCION → CANCELADO)"""
+        programa = self.get_object()
+        try:
+            programa.cancelar()
+            programa.save()
+            return Response(
+                ProgramaAuditoriaDetailSerializer(
+                    programa, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
@@ -137,7 +178,7 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
 
 
 # ============================================================================
-# AUDITORIA
+# AUDITORÍA
 # ============================================================================
 
 class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
@@ -165,7 +206,6 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         cerradas = queryset.filter(estado='CERRADA').count()
 
-        # Hallazgos de estas auditorías
         auditoria_ids = queryset.values_list('id', flat=True)
         hallazgos = Hallazgo.objects.filter(auditoria_id__in=auditoria_ids)
         total_hallazgos = hallazgos.count()
@@ -191,7 +231,7 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         }
 
     def get_queryset(self):
-        queryset = Auditoria.objects.filter(is_active=True)
+        queryset = Auditoria.objects.all()
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -205,7 +245,6 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         if programa:
             queryset = queryset.filter(programa_id=programa)
 
-        # Filtro por auditor
         auditor = self.request.query_params.get('auditor', None)
         if auditor:
             queryset = queryset.filter(
@@ -222,7 +261,6 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         return AuditoriaListSerializer
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_aud = Auditoria.objects.filter(
@@ -233,29 +271,99 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         codigo = f'AUD-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
 
     @action(detail=True, methods=['post'])
-    def iniciar(self, request, pk=None):
-        """Iniciar ejecución de auditoría"""
+    def planificar(self, request, pk=None):
+        """Planificar auditoría (FSM: PROGRAMADA → PLANIFICADA)"""
         auditoria = self.get_object()
-        if auditoria.estado not in ['PROGRAMADA', 'PLANIFICADA']:
+        try:
+            auditoria.planificar()
+            auditoria.save()
             return Response(
-                {'error': 'Solo se pueden iniciar auditorías programadas o planificadas'},
+                AuditoriaDetailSerializer(
+                    auditoria, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        auditoria.iniciar()
-        return Response({'status': 'Auditoría iniciada'})
+
+    @action(detail=True, methods=['post'])
+    def iniciar(self, request, pk=None):
+        """Iniciar ejecución de auditoría (FSM: PROGRAMADA|PLANIFICADA → EN_EJECUCION)"""
+        auditoria = self.get_object()
+        try:
+            auditoria.iniciar()
+            auditoria.save()
+            return Response(
+                AuditoriaDetailSerializer(
+                    auditoria, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'], url_path='solicitar-informe')
+    def solicitar_informe(self, request, pk=None):
+        """Solicitar informe (FSM: EN_EJECUCION → INFORME_PENDIENTE)"""
+        auditoria = self.get_object()
+        try:
+            auditoria.solicitar_informe()
+            auditoria.save()
+            return Response(
+                AuditoriaDetailSerializer(
+                    auditoria, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'])
     def cerrar(self, request, pk=None):
-        """Cerrar auditoría"""
+        """Cerrar auditoría (FSM: INFORME_PENDIENTE → CERRADA)"""
         auditoria = self.get_object()
-        auditoria.cerrar()
-        return Response({'status': 'Auditoría cerrada'})
+        try:
+            auditoria.cerrar()
+            auditoria.save()
+            return Response(
+                AuditoriaDetailSerializer(
+                    auditoria, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def cancelar(self, request, pk=None):
+        """Cancelar auditoría (FSM: PROGRAMADA|PLANIFICADA|EN_EJECUCION → CANCELADA)"""
+        auditoria = self.get_object()
+        try:
+            auditoria.cancelar()
+            auditoria.save()
+            return Response(
+                AuditoriaDetailSerializer(
+                    auditoria, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=['get'])
     def calendario(self, request):
@@ -264,7 +372,6 @@ class AuditoriaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         auditorias = Auditoria.objects.filter(
             fecha_planificada_inicio__year=year,
-            is_active=True
         ).values(
             'id', 'codigo', 'titulo', 'tipo', 'estado',
             'fecha_planificada_inicio', 'fecha_planificada_fin'
@@ -311,7 +418,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_deteccion']
 
     def get_queryset(self):
-        queryset = Hallazgo.objects.filter(is_active=True)
+        queryset = Hallazgo.objects.all()
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -325,17 +432,14 @@ class HallazgoViewSet(viewsets.ModelViewSet):
         if auditoria:
             queryset = queryset.filter(auditoria_id=auditoria)
 
-        # Filtro por impacto
         impacto = self.request.query_params.get('impacto', None)
         if impacto:
             queryset = queryset.filter(impacto=impacto)
 
-        # Filtro por responsable
         responsable = self.request.query_params.get('responsable', None)
         if responsable:
             queryset = queryset.filter(responsable_proceso_id=responsable)
 
-        # Filtro por vencidos
         if self.request.query_params.get('vencidos', None) == 'true':
             queryset = queryset.filter(
                 estado__in=['IDENTIFICADO', 'COMUNICADO', 'EN_TRATAMIENTO'],
@@ -352,7 +456,6 @@ class HallazgoViewSet(viewsets.ModelViewSet):
         return HallazgoListSerializer
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_hall = Hallazgo.objects.filter(
@@ -363,48 +466,110 @@ class HallazgoViewSet(viewsets.ModelViewSet):
         codigo = f'HAL-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa=empresa,
+            created_by=self.request.user,
             codigo=codigo
         )
 
     @action(detail=True, methods=['post'])
     def comunicar(self, request, pk=None):
-        """Comunicar hallazgo al responsable"""
+        """Comunicar hallazgo (FSM: IDENTIFICADO → COMUNICADO)"""
         hallazgo = self.get_object()
-        hallazgo.comunicar()
-        return Response({'status': 'Hallazgo comunicado'})
+        try:
+            hallazgo.comunicar()
+            hallazgo.save()
+            return Response(
+                HallazgoDetailSerializer(
+                    hallazgo, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'], url_path='iniciar-tratamiento')
     def iniciar_tratamiento(self, request, pk=None):
-        """Iniciar tratamiento del hallazgo"""
+        """Iniciar tratamiento (FSM: COMUNICADO → EN_TRATAMIENTO)"""
         hallazgo = self.get_object()
-        hallazgo.iniciar_tratamiento()
-        return Response({'status': 'Tratamiento iniciado'})
+        try:
+            hallazgo.iniciar_tratamiento()
+            hallazgo.save()
+            return Response(
+                HallazgoDetailSerializer(
+                    hallazgo, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'])
     def verificar(self, request, pk=None):
-        """Verificar eficacia de acciones"""
+        """Verificar eficacia (FSM: EN_TRATAMIENTO → VERIFICADO)"""
         hallazgo = self.get_object()
         es_eficaz = request.data.get('es_eficaz', False)
         observaciones = request.data.get('observaciones', '')
-        hallazgo.verificar(request.user, es_eficaz, observaciones)
-        return Response({'status': 'Hallazgo verificado', 'es_eficaz': es_eficaz})
+        try:
+            hallazgo.verificar(
+                usuario=request.user,
+                es_eficaz=es_eficaz,
+                observaciones_verificacion=observaciones
+            )
+            hallazgo.save()
+            return Response(
+                HallazgoDetailSerializer(
+                    hallazgo, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'Transición no permitida desde el estado actual'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'])
     def cerrar(self, request, pk=None):
-        """Cerrar hallazgo"""
+        """Cerrar hallazgo (FSM: VERIFICADO → CERRADO, requiere es_eficaz=True)"""
         hallazgo = self.get_object()
-        if hallazgo.cerrar():
-            return Response({'status': 'Hallazgo cerrado'})
+        try:
+            hallazgo.cerrar()
+            hallazgo.save()
+            return Response(
+                HallazgoDetailSerializer(
+                    hallazgo, context={'request': request}
+                ).data
+            )
+        except TransitionNotAllowed:
+            return Response(
+                {'error': 'El hallazgo debe estar verificado como eficaz para cerrarse'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'], url_path='upload-evidencia')
+    def upload_evidencia(self, request, pk=None):
+        """Subir archivo de evidencia"""
+        hallazgo = self.get_object()
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'error': 'Se requiere un archivo'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        hallazgo.archivo_evidencia = archivo
+        hallazgo.save()
         return Response(
-            {'error': 'El hallazgo debe estar verificado como eficaz para cerrarse'},
-            status=status.HTTP_400_BAD_REQUEST
+            HallazgoDetailSerializer(
+                hallazgo, context={'request': request}
+            ).data
         )
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de hallazgos"""
-        hallazgos = Hallazgo.objects.filter(is_active=True)
+        hallazgos = Hallazgo.objects.all()
 
         abiertos = hallazgos.exclude(estado='CERRADO')
 
@@ -427,7 +592,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 
 
 # ============================================================================
-# EVALUACION DE CUMPLIMIENTO
+# EVALUACIÓN DE CUMPLIMIENTO
 # ============================================================================
 
 class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
@@ -440,7 +605,7 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_evaluacion']
 
     def get_queryset(self):
-        queryset = EvaluacionCumplimiento.objects.filter(is_active=True)
+        queryset = EvaluacionCumplimiento.objects.all()
 
         tipo = self.request.query_params.get('tipo', None)
         if tipo:
@@ -450,7 +615,6 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
         if resultado:
             queryset = queryset.filter(resultado=resultado)
 
-        # Filtro por próximas evaluaciones
         if self.request.query_params.get('proximas', None) == 'true':
             queryset = queryset.filter(
                 proxima_evaluacion__lte=timezone.now().date() + timezone.timedelta(days=30)
@@ -466,7 +630,6 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
         return EvaluacionCumplimientoListSerializer
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_eval = EvaluacionCumplimiento.objects.filter(
@@ -477,11 +640,9 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
         codigo = f'EVC-{year}-{new_num:04d}'
 
         instance = serializer.save(
-            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
-        # Calcular próxima evaluación automáticamente
         instance.calcular_proxima_evaluacion()
 
     @action(detail=True, methods=['post'], url_path='programar-siguiente')
@@ -497,7 +658,7 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de evaluaciones de cumplimiento"""
-        evaluaciones = EvaluacionCumplimiento.objects.filter(is_active=True)
+        evaluaciones = EvaluacionCumplimiento.objects.all()
 
         stats = {
             'total_evaluaciones': evaluaciones.count(),

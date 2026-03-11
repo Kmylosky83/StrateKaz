@@ -421,6 +421,9 @@ app.conf.task_routes = {
     'apps.audit_system.tareas_recordatorios.tasks.verificar_tareas_vencidas': {'queue': 'compliance'},
     'apps.audit_system.tareas_recordatorios.tasks.ejecutar_recordatorios': {'queue': 'notifications'},
     'apps.audit_system.tareas_recordatorios.tasks.enviar_resumen_tareas_diario': {'queue': 'notifications'},
+
+    # EventBus async dispatch
+    'utils.tasks.dispatch_event_async': {'queue': 'notifications'},
 }
 
 # Configuración de prioridades de cola

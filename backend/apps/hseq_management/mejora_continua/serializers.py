@@ -1,6 +1,8 @@
 """
-Serializers para Mejora Continua - hseq_management
-Auditorias internas, hallazgos y evaluacion de cumplimiento
+Serializers para Mejora Continua — hseq_management
+Auditorías internas, hallazgos y evaluación de cumplimiento.
+
+Phase B: Adaptados a TenantModel + django-fsm
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -15,11 +17,11 @@ User = get_user_model()
 
 
 # ============================================================================
-# PROGRAMA DE AUDITORIA
+# PROGRAMA DE AUDITORÍA
 # ============================================================================
 
 class ProgramaAuditoriaListSerializer(serializers.ModelSerializer):
-    """Serializer para listado de Programas de Auditoria"""
+    """Serializer para listado de Programas de Auditoría"""
 
     responsable_programa_nombre = serializers.CharField(
         source='responsable_programa.get_full_name',
@@ -27,7 +29,8 @@ class ProgramaAuditoriaListSerializer(serializers.ModelSerializer):
     )
     aprobado_por_nombre = serializers.CharField(
         source='aprobado_por.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     porcentaje_avance = serializers.ReadOnlyField()
@@ -43,16 +46,16 @@ class ProgramaAuditoriaListSerializer(serializers.ModelSerializer):
             'aprobado_por', 'aprobado_por_nombre',
             'fecha_aprobacion', 'fecha_inicio', 'fecha_fin',
             'porcentaje_avance', 'cantidad_auditorias',
-            'is_active', 'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo', 'estado', 'created_at', 'updated_at']
 
     def get_cantidad_auditorias(self, obj):
         return obj.auditorias.count()
 
 
 class ProgramaAuditoriaDetailSerializer(serializers.ModelSerializer):
-    """Serializer detallado para Programas de Auditoria"""
+    """Serializer detallado para Programas de Auditoría"""
 
     responsable_programa_nombre = serializers.CharField(
         source='responsable_programa.get_full_name',
@@ -60,34 +63,46 @@ class ProgramaAuditoriaDetailSerializer(serializers.ModelSerializer):
     )
     aprobado_por_nombre = serializers.CharField(
         source='aprobado_por.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
     created_by_nombre = serializers.CharField(
         source='created_by.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     porcentaje_avance = serializers.ReadOnlyField()
+    transiciones_disponibles = serializers.SerializerMethodField()
 
-    # Nested serializers para auditorias
+    # Nested auditorías
     auditorias = serializers.SerializerMethodField()
 
     class Meta:
         model = ProgramaAuditoria
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = [
+            'codigo', 'estado', 'created_at', 'updated_at',
+            'created_by', 'updated_by', 'is_deleted', 'deleted_at', 'deleted_by',
+        ]
 
     def get_auditorias(self, obj):
-        auditorias = obj.auditorias.all()[:10]  # Limitar a 10 para evitar sobrecarga
+        auditorias = obj.auditorias.all()[:10]
         return AuditoriaListSerializer(auditorias, many=True).data
+
+    def get_transiciones_disponibles(self, obj):
+        """Retorna transiciones FSM disponibles desde el estado actual."""
+        from django_fsm import get_available_FIELD_transitions
+        transitions = get_available_FIELD_transitions(obj, ProgramaAuditoria._meta.get_field('estado'))
+        return [t.name for t in transitions]
 
 
 # ============================================================================
-# AUDITORIA
+# AUDITORÍA
 # ============================================================================
 
 class AuditoriaListSerializer(serializers.ModelSerializer):
-    """Serializer para listado de Auditorias"""
+    """Serializer para listado de Auditorías"""
 
     programa_nombre = serializers.CharField(
         source='programa.nombre',
@@ -103,7 +118,6 @@ class AuditoriaListSerializer(serializers.ModelSerializer):
         read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-
     dias_restantes = serializers.SerializerMethodField()
 
     class Meta:
@@ -120,9 +134,9 @@ class AuditoriaListSerializer(serializers.ModelSerializer):
             'total_hallazgos', 'no_conformidades_mayores',
             'no_conformidades_menores', 'observaciones_count',
             'oportunidades_mejora', 'dias_restantes',
-            'is_active', 'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo', 'estado', 'created_at', 'updated_at']
 
     def get_dias_restantes(self, obj):
         from django.utils import timezone
@@ -133,7 +147,7 @@ class AuditoriaListSerializer(serializers.ModelSerializer):
 
 
 class AuditoriaDetailSerializer(serializers.ModelSerializer):
-    """Serializer detallado para Auditorias"""
+    """Serializer detallado para Auditorías"""
 
     programa_nombre = serializers.CharField(
         source='programa.nombre',
@@ -149,7 +163,8 @@ class AuditoriaDetailSerializer(serializers.ModelSerializer):
     )
     created_by_nombre = serializers.CharField(
         source='created_by.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -158,18 +173,22 @@ class AuditoriaDetailSerializer(serializers.ModelSerializer):
         read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    transiciones_disponibles = serializers.SerializerMethodField()
 
-    # Nested serializers para hallazgos
+    # Nested
     hallazgos = serializers.SerializerMethodField()
     equipo_auditor_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Auditoria
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = [
+            'codigo', 'estado', 'created_at', 'updated_at',
+            'created_by', 'updated_by', 'is_deleted', 'deleted_at', 'deleted_by',
+        ]
 
     def get_hallazgos(self, obj):
-        hallazgos = obj.hallazgos.all()[:20]  # Limitar a 20
+        hallazgos = obj.hallazgos.all()[:20]
         return HallazgoListSerializer(hallazgos, many=True).data
 
     def get_equipo_auditor_info(self, obj):
@@ -177,6 +196,11 @@ class AuditoriaDetailSerializer(serializers.ModelSerializer):
             {'id': u.id, 'nombre': u.get_full_name()}
             for u in obj.equipo_auditor.all()
         ]
+
+    def get_transiciones_disponibles(self, obj):
+        from django_fsm import get_available_FIELD_transitions
+        transitions = get_available_FIELD_transitions(obj, Auditoria._meta.get_field('estado'))
+        return [t.name for t in transitions]
 
 
 # ============================================================================
@@ -200,7 +224,8 @@ class HallazgoListSerializer(serializers.ModelSerializer):
     )
     responsable_proceso_nombre = serializers.CharField(
         source='responsable_proceso.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -223,9 +248,10 @@ class HallazgoListSerializer(serializers.ModelSerializer):
             'responsable_proceso', 'responsable_proceso_nombre',
             'fecha_deteccion', 'fecha_cierre_esperada', 'fecha_cierre_real',
             'requiere_accion_correctiva', 'dias_abierto',
-            'es_eficaz', 'is_active', 'created_at', 'updated_at'
+            'no_conformidad_id', 'no_conformidad_codigo',
+            'es_eficaz', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo', 'estado', 'created_at', 'updated_at']
 
 
 class HallazgoDetailSerializer(serializers.ModelSerializer):
@@ -245,11 +271,13 @@ class HallazgoDetailSerializer(serializers.ModelSerializer):
     )
     responsable_proceso_nombre = serializers.CharField(
         source='responsable_proceso.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
     verificado_por_nombre = serializers.CharField(
         source='verificado_por.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -258,28 +286,35 @@ class HallazgoDetailSerializer(serializers.ModelSerializer):
 
     requiere_accion_correctiva = serializers.ReadOnlyField()
     dias_abierto = serializers.ReadOnlyField()
+    transiciones_disponibles = serializers.SerializerMethodField()
 
-    # Info de no conformidad generada si existe
+    # Info de no conformidad (cross-module, campo integer + cache)
     no_conformidad_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Hallazgo
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = [
+            'codigo', 'estado', 'created_at', 'updated_at',
+            'created_by', 'updated_by', 'is_deleted', 'deleted_at', 'deleted_by',
+        ]
 
     def get_no_conformidad_info(self, obj):
-        if obj.no_conformidad_generada:
+        if obj.no_conformidad_id:
             return {
-                'id': obj.no_conformidad_generada.id,
-                'codigo': obj.no_conformidad_generada.codigo,
-                'titulo': obj.no_conformidad_generada.titulo,
-                'estado': obj.no_conformidad_generada.estado
+                'id': obj.no_conformidad_id,
+                'codigo': obj.no_conformidad_codigo,
             }
         return None
 
+    def get_transiciones_disponibles(self, obj):
+        from django_fsm import get_available_FIELD_transitions
+        transitions = get_available_FIELD_transitions(obj, Hallazgo._meta.get_field('estado'))
+        return [t.name for t in transitions]
+
 
 # ============================================================================
-# EVALUACION DE CUMPLIMIENTO
+# EVALUACIÓN DE CUMPLIMIENTO
 # ============================================================================
 
 class EvaluacionCumplimientoListSerializer(serializers.ModelSerializer):
@@ -291,7 +326,8 @@ class EvaluacionCumplimientoListSerializer(serializers.ModelSerializer):
     )
     responsable_cumplimiento_nombre = serializers.CharField(
         source='responsable_cumplimiento.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -312,8 +348,9 @@ class EvaluacionCumplimientoListSerializer(serializers.ModelSerializer):
             'fecha_evaluacion', 'proxima_evaluacion',
             'evaluador', 'evaluador_nombre',
             'responsable_cumplimiento', 'responsable_cumplimiento_nombre',
+            'requisito_legal_id', 'requisito_legal_nombre',
             'estado_cumplimiento', 'dias_para_proxima_evaluacion',
-            'is_active', 'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ]
         read_only_fields = ['codigo', 'created_at', 'updated_at']
 
@@ -327,11 +364,13 @@ class EvaluacionCumplimientoDetailSerializer(serializers.ModelSerializer):
     )
     responsable_cumplimiento_nombre = serializers.CharField(
         source='responsable_cumplimiento.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
     created_by_nombre = serializers.CharField(
         source='created_by.get_full_name',
-        read_only=True
+        read_only=True,
+        default=''
     )
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
@@ -341,22 +380,25 @@ class EvaluacionCumplimientoDetailSerializer(serializers.ModelSerializer):
     estado_cumplimiento = serializers.ReadOnlyField()
     dias_para_proxima_evaluacion = serializers.ReadOnlyField()
 
-    # Info de requisito legal si existe
+    # Info de requisito legal (cross-module, campo integer + cache)
     requisito_legal_info = serializers.SerializerMethodField()
 
-    # Info de hallazgo generado si existe
+    # Info de hallazgo generado (mismo módulo, FK directo)
     hallazgo_info = serializers.SerializerMethodField()
 
     class Meta:
         model = EvaluacionCumplimiento
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = [
+            'codigo', 'created_at', 'updated_at',
+            'created_by', 'updated_by', 'is_deleted', 'deleted_at', 'deleted_by',
+        ]
 
     def get_requisito_legal_info(self, obj):
-        if obj.requisito_legal:
+        if obj.requisito_legal_id:
             return {
-                'id': obj.requisito_legal.id,
-                'nombre': getattr(obj.requisito_legal, 'nombre', str(obj.requisito_legal)),
+                'id': obj.requisito_legal_id,
+                'nombre': obj.requisito_legal_nombre,
             }
         return None
 
@@ -366,6 +408,6 @@ class EvaluacionCumplimientoDetailSerializer(serializers.ModelSerializer):
                 'id': obj.hallazgo_generado.id,
                 'codigo': obj.hallazgo_generado.codigo,
                 'titulo': obj.hallazgo_generado.titulo,
-                'estado': obj.hallazgo_generado.estado
+                'estado': obj.hallazgo_generado.estado,
             }
         return None

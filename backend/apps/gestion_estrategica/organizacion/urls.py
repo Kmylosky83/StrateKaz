@@ -11,6 +11,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     AreaViewSet,
+    CaracterizacionProcesoViewSet,
     OrganigramaView,
     OrganigramaNodePositionView,
 )
@@ -19,6 +20,7 @@ from .viewsets_unidades import UnidadMedidaViewSet
 
 router = DefaultRouter()
 router.register(r'areas', AreaViewSet, basename='area')
+router.register(r'caracterizaciones', CaracterizacionProcesoViewSet, basename='caracterizacion')
 router.register(r'consecutivos', ConsecutivoConfigViewSet, basename='consecutivo')
 router.register(r'unidades-medida', UnidadMedidaViewSet, basename='unidad-medida')
 

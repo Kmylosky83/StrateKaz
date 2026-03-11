@@ -15,6 +15,7 @@
 // Importar componentes internos
 import { AreasTab } from './AreasTab';
 import { MapaProcesosSection } from './MapaProcesosSection';
+import { CaracterizacionesSection } from './CaracterizacionesSection';
 
 // Consecutivos migrados desde Configuración
 import { ConsecutivosSection } from './ConsecutivosSection';
@@ -35,6 +36,7 @@ interface OrganizacionTabProps {
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
+  caracterizaciones: CaracterizacionesSection,
   mapa_procesos: MapaProcesosSection,
   consecutivos: ConsecutivosSection,
 };

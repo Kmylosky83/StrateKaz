@@ -20,10 +20,12 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Area, OrganigramaNodePosition
+from .models import Area, OrganigramaNodePosition, CaracterizacionProceso
 from .serializers import (
     AreaSerializer, AreaTreeSerializer, AreaListSerializer,
     OrganigramaNodePositionSerializer,
+    CaracterizacionProcesoListSerializer,
+    CaracterizacionProcesoDetailSerializer,
 )
 from apps.core.models import Cargo, User
 from apps.core.permissions import GranularActionPermission
@@ -383,3 +385,62 @@ class OrganigramaNodePositionView(APIView):
 
         count, _ = qs.delete()
         return Response({'deleted': count}, status=status.HTTP_200_OK)
+
+
+# ==============================================================================
+# CARACTERIZACIÓN DE PROCESOS
+# ==============================================================================
+
+
+class CaracterizacionProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para Caracterización de Procesos (SIPOC)
+
+    Endpoints estándar:
+    - GET /api/organizacion/caracterizaciones/ - Lista
+    - POST /api/organizacion/caracterizaciones/ - Crear
+    - GET /api/organizacion/caracterizaciones/{id}/ - Detalle
+    - PUT/PATCH /api/organizacion/caracterizaciones/{id}/ - Actualizar
+    - DELETE /api/organizacion/caracterizaciones/{id}/ - Eliminar
+
+    Endpoints custom:
+    - GET /api/organizacion/caracterizaciones/by-area/{area_id}/ - Por área
+    """
+    queryset = CaracterizacionProceso.objects.select_related(
+        'area', 'lider_proceso', 'created_by'
+    ).all()
+    serializer_class = CaracterizacionProcesoDetailSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'caracterizaciones'
+
+    granular_action_map = {
+        'by_area': 'can_view',
+        'toggle_active': 'can_edit',
+        'bulk_activate': 'can_edit',
+        'bulk_deactivate': 'can_edit',
+        'bulk_delete': 'can_delete',
+    }
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['estado', 'area', 'is_active']
+    search_fields = ['area__name', 'area__code', 'objetivo', 'alcance']
+    ordering_fields = ['area__name', 'version', 'created_at', 'estado']
+    ordering = ['area__name']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CaracterizacionProcesoListSerializer
+        return CaracterizacionProcesoDetailSerializer
+
+    @action(detail=False, methods=['get'], url_path='by-area/(?P<area_id>[^/.]+)')
+    def by_area(self, request, area_id=None):
+        """Obtener caracterización de un área específica"""
+        try:
+            caracterizacion = self.get_queryset().get(area_id=area_id)
+            serializer = self.get_serializer(caracterizacion)
+            return Response(serializer.data)
+        except CaracterizacionProceso.DoesNotExist:
+            return Response(
+                {'detail': 'No existe caracterización para esta área.'},
+                status=status.HTTP_404_NOT_FOUND
+            )

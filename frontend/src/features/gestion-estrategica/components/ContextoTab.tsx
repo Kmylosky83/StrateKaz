@@ -1,25 +1,15 @@
 /**
  * Tab de Contexto Organizacional
  *
- * Secciones dinámicas desde BD (TabSection.code) - Orden lógico:
+ * Secciones simplificadas (REORG-C: 6→3):
  * 1. stakeholders: Identificación de partes interesadas
- * 2. encuestas_dofa: Encuestas PCI-POAM (fuente principal de datos DOFA+PESTEL)
- * 3. analisis_dofa: Visor de Matriz DOFA (solo lectura, alimentada desde Encuestas)
- * 4. analisis_pestel: Visor de Matriz PESTEL (solo lectura, alimentada desde Encuestas)
- * 5. fuerzas_porter: 5 Fuerzas de Porter
- * 6. estrategias_tows: Matriz TOWS (estrategias cruzadas)
+ * 2. analisis_contexto: Encuestas PCI/POAM + PESTEL + Porter (3 sub-tabs)
+ * 3. dofa_estrategias: Matriz DOFA + Estrategias TOWS (2 sub-tabs)
  *
- * Flujo: Encuestas → Consolidar → DOFA + PESTEL automáticos → Porter → TOWS
+ * Flujo: Recopilar (analisis_contexto) → Sintetizar (dofa) → Actuar (estrategias)
  */
 import { GenericSectionFallback } from '@/components/common';
-import {
-  StakeholdersSection,
-  EncuestasDofaSection,
-  AnalisisDofaSection,
-  AnalisisPestelSection,
-  FuerzasPorterSection,
-  EstrategiasTowsSection,
-} from './contexto';
+import { StakeholdersSection, AnalisisContextoSection, DofaEstrategiasSection } from './contexto';
 
 // =============================================================================
 // CODIGOS DE SECCION (deben coincidir con BD - TabSection.code)
@@ -27,11 +17,8 @@ import {
 
 const SECTION_KEYS = {
   STAKEHOLDERS: 'stakeholders',
-  ENCUESTAS_DOFA: 'encuestas_dofa',
-  ANALISIS_DOFA: 'analisis_dofa',
-  ANALISIS_PESTEL: 'analisis_pestel',
-  FUERZAS_PORTER: 'fuerzas_porter',
-  ESTRATEGIAS_TOWS: 'estrategias_tows',
+  ANALISIS_CONTEXTO: 'analisis_contexto',
+  DOFA_ESTRATEGIAS: 'dofa_estrategias',
 } as const;
 
 // =============================================================================
@@ -46,32 +33,21 @@ interface ContextoTabProps {
 }
 
 export const ContextoTab = ({ activeSection, triggerNewForm }: ContextoTabProps) => {
-  // Renderizar seccion segun activeSection
   const renderSection = () => {
     switch (activeSection) {
       case SECTION_KEYS.STAKEHOLDERS:
         return <StakeholdersSection triggerNewForm={triggerNewForm} />;
 
-      case SECTION_KEYS.ENCUESTAS_DOFA:
-        return <EncuestasDofaSection triggerNewForm={triggerNewForm} />;
+      case SECTION_KEYS.ANALISIS_CONTEXTO:
+        return <AnalisisContextoSection triggerNewForm={triggerNewForm} />;
 
-      case SECTION_KEYS.ANALISIS_DOFA:
-        return <AnalisisDofaSection triggerNewForm={triggerNewForm} />;
-
-      case SECTION_KEYS.ANALISIS_PESTEL:
-        return <AnalisisPestelSection triggerNewForm={triggerNewForm} />;
-
-      case SECTION_KEYS.FUERZAS_PORTER:
-        return <FuerzasPorterSection triggerNewForm={triggerNewForm} />;
-
-      case SECTION_KEYS.ESTRATEGIAS_TOWS:
-        return <EstrategiasTowsSection triggerNewForm={triggerNewForm} />;
+      case SECTION_KEYS.DOFA_ESTRATEGIAS:
+        return <DofaEstrategiasSection triggerNewForm={triggerNewForm} />;
 
       default:
-        // Si no hay seccion activa o no esta mapeada, mostrar fallback
         if (activeSection) {
           console.warn(
-            `[ContextoTab] Seccion "${activeSection}" no encontrada en SECTION_KEYS. ` +
+            `[ContextoTab] Sección "${activeSection}" no encontrada en SECTION_KEYS. ` +
               `Secciones disponibles: ${Object.values(SECTION_KEYS).join(', ')}`
           );
         }

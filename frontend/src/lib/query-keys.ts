@@ -91,6 +91,7 @@ export const queryKeys = {
   normasIso: createQueryKeys('normas_iso'),
   unidadesMedida: createQueryKeys('unidades-medida'),
   consecutivos: createQueryKeys('consecutivos'),
+  caracterizaciones: createQueryKeys('caracterizaciones'),
 
   // Planeación
   strategicPlans: createQueryKeys('strategic-plans'),

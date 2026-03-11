@@ -17,6 +17,9 @@ export * from './modules.types';
 // Organización (Normas ISO, Unidades, Consecutivos)
 export * from './organizacion.types';
 
+// Caracterización de Procesos (SIPOC)
+export * from './caracterizacion.types';
+
 // Gestión de Proyectos PMI
 export * from './proyectos.types';
 

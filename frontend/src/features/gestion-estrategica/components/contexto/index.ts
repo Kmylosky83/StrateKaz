@@ -24,6 +24,10 @@ export { AnalisisPestelSection } from './AnalisisPestelSection';
 export { FuerzasPorterSection } from './FuerzasPorterSection';
 export { EstrategiasTowsSection } from './EstrategiasTowsSection';
 
+// Wrappers fusionados (REORG-C: 6→3 secciones)
+export { AnalisisContextoSection } from './AnalisisContextoSection';
+export { DofaEstrategiasSection } from './DofaEstrategiasSection';
+
 // Matrices Interactivas
 export { DOFAMatrix } from './DOFAMatrix';
 export { TOWSMatrix } from './TOWSMatrix';

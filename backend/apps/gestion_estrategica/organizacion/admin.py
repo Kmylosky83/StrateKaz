@@ -4,8 +4,18 @@ Sistema de Gestión StrateKaz
 """
 from django.contrib import admin
 from .models import Area
+from .models_caracterizacion import CaracterizacionProceso
 from .models_consecutivos import ConsecutivoConfig
 from .models_unidades import UnidadMedida
+
+
+@admin.register(CaracterizacionProceso)
+class CaracterizacionProcesoAdmin(admin.ModelAdmin):
+    list_display = ['area', 'estado', 'version', 'lider_proceso', 'is_active', 'created_at']
+    list_filter = ['estado', 'is_active']
+    search_fields = ['area__name', 'area__code', 'objetivo']
+    raw_id_fields = ['area', 'lider_proceso', 'created_by']
+    readonly_fields = ['created_at', 'updated_at']
 
 
 @admin.register(Area)

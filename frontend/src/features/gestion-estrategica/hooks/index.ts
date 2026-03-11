@@ -36,6 +36,9 @@ export {
 } from './useAreas';
 export type { Area, AreaList, CreateAreaDTO, UpdateAreaDTO, AreaFilters } from './useAreas';
 
+// Caracterización de Procesos (SIPOC)
+export * from './useCaracterizaciones';
+
 // ============================================================================
 // GESTION DE PROYECTOS PMI
 // ============================================================================

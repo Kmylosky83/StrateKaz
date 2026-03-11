@@ -575,7 +575,10 @@ const PoliticasSection = ({ identity }: { identity: CorporateIdentity }) => {
 
   // Obtener documentos tipo POL (políticas) vigentes desde Gestión Documental
   const { data: documentosData, isLoading } = useDocumentos({ tipo_documento_codigo: 'POL' });
-  const documentos: Documento[] = Array.isArray(documentosData) ? documentosData : [];
+  const documentos: Documento[] = useMemo(
+    () => (Array.isArray(documentosData) ? documentosData : []),
+    [documentosData]
+  );
 
   // Verificar si hay cargos configurados (prerequisito para flujos de firma)
   const { data: cargos, isLoading: cargosLoading } = useSelectCargos();

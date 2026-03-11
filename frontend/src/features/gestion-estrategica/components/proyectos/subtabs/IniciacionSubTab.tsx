@@ -65,9 +65,14 @@ const useInitiationChecklist = (proyectoId: number | null, proyecto?: Proyecto) 
     proyectoId ? { proyecto: proyectoId, is_active: true } : undefined
   );
 
-  const charters = chartersData?.results ?? (Array.isArray(chartersData) ? chartersData : []);
-  const interesados =
-    interesadosData?.results ?? (Array.isArray(interesadosData) ? interesadosData : []);
+  const charters = useMemo(
+    () => chartersData?.results ?? (Array.isArray(chartersData) ? chartersData : []),
+    [chartersData]
+  );
+  const interesados = useMemo(
+    () => interesadosData?.results ?? (Array.isArray(interesadosData) ? interesadosData : []),
+    [interesadosData]
+  );
 
   const checklist: ChecklistItem[] = useMemo(() => {
     if (!proyecto) return [];
@@ -214,8 +219,10 @@ export const IniciacionSubTab = () => {
     is_active: true,
   });
 
-  const proyectos: Proyecto[] =
-    proyectosData?.results ?? (Array.isArray(proyectosData) ? proyectosData : []);
+  const proyectos: Proyecto[] = useMemo(
+    () => proyectosData?.results ?? (Array.isArray(proyectosData) ? proyectosData : []),
+    [proyectosData]
+  );
 
   // Auto-seleccionar primer proyecto
   useEffect(() => {

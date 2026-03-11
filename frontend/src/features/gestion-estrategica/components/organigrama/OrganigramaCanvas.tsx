@@ -173,6 +173,7 @@ const OrganigramaCanvasInner = ({
       fitView({ padding: 0.2, duration: 300 });
     }, 100);
   }, [
+    data,
     filteredData,
     viewMode,
     config,

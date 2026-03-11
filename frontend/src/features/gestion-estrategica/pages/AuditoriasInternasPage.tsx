@@ -217,7 +217,7 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
     null
   );
 
-  const programas = data?.results ?? [];
+  const programas = useMemo(() => data?.results ?? [], [data]);
 
   const stats = useMemo(
     () => ({
@@ -448,7 +448,7 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
     null
   );
 
-  const auditorias = data?.results ?? [];
+  const auditorias = useMemo(() => data?.results ?? [], [data]);
 
   const stats = useMemo(
     () => ({
@@ -715,7 +715,7 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
     observaciones: string;
   } | null>(null);
 
-  const hallazgos = data?.results ?? [];
+  const hallazgos = useMemo(() => data?.results ?? [], [data]);
 
   const stats = useMemo(
     () => ({
@@ -1026,7 +1026,7 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
   const deleteMutation = useDeleteEvaluacionCumplimiento();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const evaluaciones = data?.results ?? [];
+  const evaluaciones = useMemo(() => data?.results ?? [], [data]);
 
   const stats = useMemo(
     () => ({

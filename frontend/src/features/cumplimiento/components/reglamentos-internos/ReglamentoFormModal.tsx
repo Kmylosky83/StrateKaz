@@ -12,7 +12,7 @@
  * - Sistemas aplicables (SST, Ambiental, Calidad, PESV)
  * - Observaciones
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -25,7 +25,11 @@ import {
   useUpdateReglamentoWithFile,
   useTiposReglamento,
 } from '../../hooks/useReglamentos';
-import type { Reglamento, CreateReglamentoDTO, EstadoReglamento } from '../../types/cumplimiento.types';
+import type {
+  Reglamento,
+  CreateReglamentoDTO,
+  EstadoReglamento,
+} from '../../types/cumplimiento.types';
 
 interface ReglamentoFormModalProps {
   reglamento: Reglamento | null;
@@ -69,7 +73,7 @@ export const ReglamentoFormModal = ({
   const createMutation = useCreateReglamentoWithFile();
   const updateMutation = useUpdateReglamentoWithFile();
 
-  const tiposReglamento = tiposData?.results || [];
+  const tiposReglamento = useMemo(() => tiposData?.results || [], [tiposData]);
 
   useEffect(() => {
     if (reglamento) {
@@ -137,7 +141,12 @@ export const ReglamentoFormModal = ({
     }
 
     // Validar que al menos un sistema esté seleccionado
-    if (!formData.aplica_sst && !formData.aplica_ambiental && !formData.aplica_calidad && !formData.aplica_pesv) {
+    if (
+      !formData.aplica_sst &&
+      !formData.aplica_ambiental &&
+      !formData.aplica_calidad &&
+      !formData.aplica_pesv
+    ) {
       newErrors.sistemas = 'Debe seleccionar al menos un sistema de gestión';
     }
 
@@ -200,9 +209,7 @@ export const ReglamentoFormModal = ({
       onClose={onClose}
       title={isEditing ? 'Editar Reglamento Interno' : 'Nuevo Reglamento Interno'}
       subtitle={
-        isEditing
-          ? `Editando ${reglamento?.nombre}`
-          : 'Crear nuevo reglamento para la empresa'
+        isEditing ? `Editando ${reglamento?.nombre}` : 'Crear nuevo reglamento para la empresa'
       }
       size="3xl"
       footer={footer}
@@ -217,9 +224,7 @@ export const ReglamentoFormModal = ({
             <Select
               label="Tipo de Reglamento *"
               value={formData.tipo}
-              onChange={(e) =>
-                setFormData({ ...formData, tipo: parseInt(e.target.value) })
-              }
+              onChange={(e) => setFormData({ ...formData, tipo: parseInt(e.target.value) })}
               error={errors.tipo}
               required
             >
@@ -339,13 +344,7 @@ export const ReglamentoFormModal = ({
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
             Sistemas de Gestión Aplicables *
           </h3>
-          {errors.sistemas && (
-            <Alert
-              variant="danger"
-              message={errors.sistemas}
-              className="mb-4"
-            />
-          )}
+          {errors.sistemas && <Alert variant="danger" message={errors.sistemas} className="mb-4" />}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Checkbox
               checked={formData.aplica_sst}
@@ -403,9 +402,7 @@ export const ReglamentoFormModal = ({
                   <span>Documento actual: {reglamento.documento.split('/').pop()}</span>
                 </div>
               )}
-              <p className="text-xs text-gray-500">
-                PDF o DOC (Máx. 10MB)
-              </p>
+              <p className="text-xs text-gray-500">PDF o DOC (Máx. 10MB)</p>
             </div>
           </div>
         </div>

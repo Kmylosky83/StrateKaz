@@ -15,7 +15,7 @@ interface CurvaSChartProps {
 export const CurvaSChart = ({ proyectoId }: CurvaSChartProps) => {
   const { data: curvaData, isLoading } = useCurvaS(proyectoId);
 
-  const points = curvaData ?? [];
+  const points = useMemo(() => curvaData ?? [], [curvaData]);
 
   const option = useMemo(() => {
     if (points.length === 0) return {};

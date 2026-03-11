@@ -2,7 +2,7 @@
  * SubTab de Ejecución y Monitoreo — Workspace por proyecto
  * Selector de proyecto + Tabs: Dashboard | Actividades | Kanban | Gantt | Riesgos | Seguimiento | Calendario
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, Badge, EmptyState } from '@/components/common';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import { Tabs } from '@/components/common/Tabs';
@@ -263,11 +263,13 @@ export const MonitoreoSubTab = () => {
 
   const isLoading = loadingEjecucion || loadingMonitoreo;
 
-  const rawEjecucion =
-    proyectosEjecucion?.results ?? (Array.isArray(proyectosEjecucion) ? proyectosEjecucion : []);
-  const rawMonitoreo =
-    proyectosMonitoreo?.results ?? (Array.isArray(proyectosMonitoreo) ? proyectosMonitoreo : []);
-  const proyectos: Proyecto[] = [...rawEjecucion, ...rawMonitoreo];
+  const proyectos: Proyecto[] = useMemo(() => {
+    const rawEjecucion =
+      proyectosEjecucion?.results ?? (Array.isArray(proyectosEjecucion) ? proyectosEjecucion : []);
+    const rawMonitoreo =
+      proyectosMonitoreo?.results ?? (Array.isArray(proyectosMonitoreo) ? proyectosMonitoreo : []);
+    return [...rawEjecucion, ...rawMonitoreo];
+  }, [proyectosEjecucion, proyectosMonitoreo]);
 
   // Auto-select first project
   useEffect(() => {

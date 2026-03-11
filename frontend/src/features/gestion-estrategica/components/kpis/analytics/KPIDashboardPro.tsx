@@ -23,7 +23,7 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
     objectiveId ? { objective: objectiveId, is_active: true } : { is_active: true }
   );
 
-  const kpis = kpisData?.results || [];
+  const kpis = useMemo(() => kpisData?.results || [], [kpisData]);
 
   const stats = useMemo(() => {
     if (kpis.length === 0) {

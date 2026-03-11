@@ -9,7 +9,7 @@
  * - Upload de documento soporte
  * - Observaciones
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -22,7 +22,11 @@ import {
   useUpdateEmpresaRequisitoWithFile,
   useRequisitosLegales,
 } from '../../hooks/useRequisitos';
-import type { EmpresaRequisito, EmpresaRequisitoCreate, EstadoRequisito } from '../../types/requisitosLegales';
+import type {
+  EmpresaRequisito,
+  EmpresaRequisitoCreate,
+  EstadoRequisito,
+} from '../../types/requisitosLegales';
 
 interface RequisitoFormModalProps {
   requisito: EmpresaRequisito | null;
@@ -60,7 +64,7 @@ export const RequisitoFormModal = ({
   const createMutation = useCreateEmpresaRequisitoWithFile();
   const updateMutation = useUpdateEmpresaRequisitoWithFile();
 
-  const requisitosLegales = requisitosData?.results || [];
+  const requisitosLegales = useMemo(() => requisitosData?.results || [], [requisitosData]);
 
   useEffect(() => {
     if (requisito) {
@@ -104,8 +108,7 @@ export const RequisitoFormModal = ({
     }
 
     if (formData.estado === 'no_aplica' && !formData.justificacion_no_aplica?.trim()) {
-      newErrors.justificacion_no_aplica =
-        'Debe justificar por qué el requisito no aplica';
+      newErrors.justificacion_no_aplica = 'Debe justificar por qué el requisito no aplica';
     }
 
     setErrors(newErrors);
@@ -186,9 +189,7 @@ export const RequisitoFormModal = ({
           <Select
             label="Requisito *"
             value={formData.requisito}
-            onChange={(e) =>
-              setFormData({ ...formData, requisito: parseInt(e.target.value) })
-            }
+            onChange={(e) => setFormData({ ...formData, requisito: parseInt(e.target.value) })}
             error={errors.requisito}
             required
             disabled={isEditing}
@@ -236,9 +237,7 @@ export const RequisitoFormModal = ({
                 <Input
                   label="Número de Documento"
                   value={formData.numero_documento || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, numero_documento: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, numero_documento: e.target.value })}
                   placeholder="Ej: RUT-123456789"
                 />
 
@@ -294,9 +293,7 @@ export const RequisitoFormModal = ({
                       Documento actual: {requisito.documento_soporte.split('/').pop()}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500">
-                    PDF, DOC, DOCX, JPG, PNG (Máx. 10MB)
-                  </p>
+                  <p className="text-xs text-gray-500">PDF, DOC, DOCX, JPG, PNG (Máx. 10MB)</p>
                 </div>
               </div>
             </div>

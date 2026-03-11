@@ -2,7 +2,7 @@
  * SubTab de Planificación — Workspace por proyecto
  * Selector de proyecto + Tabs: WBS/Actividades | Kanban | Calendario | Gantt | Recursos | Fases
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, Badge, EmptyState } from '@/components/common';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
@@ -44,8 +44,10 @@ export const PlanificacionSubTab = () => {
     is_active: true,
   });
 
-  const proyectos: Proyecto[] =
-    proyectosData?.results ?? (Array.isArray(proyectosData) ? proyectosData : []);
+  const proyectos: Proyecto[] = useMemo(
+    () => proyectosData?.results ?? (Array.isArray(proyectosData) ? proyectosData : []),
+    [proyectosData]
+  );
 
   // Auto-select first project
   useEffect(() => {

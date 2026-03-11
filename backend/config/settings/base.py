@@ -375,10 +375,11 @@ CSRF_TRUSTED_ORIGINS = config(
 # SECURITY HEADERS (CSP)
 # =============================================================================
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")  # unsafe-inline requerido por Tailwind CSS + estilos dinámicos
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")  # unsafe-eval removido — no es necesario para Vite builds
 CSP_IMG_SRC = ("'self'", "data:", "https:")
 CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_CONNECT_SRC = ("'self'", "https://*.sentry.io")  # Sentry error reporting
 
 # =============================================================================
 # CELERY CONFIGURATION

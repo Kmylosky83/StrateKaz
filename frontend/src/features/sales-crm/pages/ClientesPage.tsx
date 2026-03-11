@@ -187,7 +187,7 @@ export default function ClientesPage() {
         size: 130,
       },
     ],
-    []
+    [canCreate, canEdit, canDelete]
   );
 
   // ── Render ──────────────────────────────────────────────────────────────

@@ -60,6 +60,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CheckCircle2,
 };
 
+// Secciones que no tienen StatsGrid
+const SECTIONS_WITHOUT_STATS = ['normas_iso', 'modulos'];
+
 export const ConfiguracionPage = () => {
   // Hook que maneja secciones localmente (sin HeaderContext)
   const {
@@ -80,9 +83,6 @@ export const ConfiguracionPage = () => {
 
   // Stats dinamicos segun seccion activa
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
-
-  // Secciones que no tienen StatsGrid
-  const SECTIONS_WITHOUT_STATS = ['normas_iso', 'modulos'];
 
   // Mapear stats del backend a StatItem[]
   const statsItems: StatItem[] = useMemo(() => {

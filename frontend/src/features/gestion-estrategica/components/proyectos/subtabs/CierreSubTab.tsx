@@ -2,7 +2,7 @@
  * SubTab de Cierre — Workspace por proyecto
  * Selector de proyecto + Tabs: Checklist | Lecciones Aprendidas | Acta de Cierre
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, Badge, Button, EmptyState } from '@/components/common';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
@@ -203,12 +203,14 @@ export const CierreSubTab = () => {
 
   const isLoading = loadingCierre || loadingCompletados;
 
-  const rawCierre =
-    proyectosCierre?.results ?? (Array.isArray(proyectosCierre) ? proyectosCierre : []);
-  const rawCompletados =
-    proyectosCompletados?.results ??
-    (Array.isArray(proyectosCompletados) ? proyectosCompletados : []);
-  const proyectos: Proyecto[] = [...rawCierre, ...rawCompletados];
+  const proyectos: Proyecto[] = useMemo(() => {
+    const rawCierre =
+      proyectosCierre?.results ?? (Array.isArray(proyectosCierre) ? proyectosCierre : []);
+    const rawCompletados =
+      proyectosCompletados?.results ??
+      (Array.isArray(proyectosCompletados) ? proyectosCompletados : []);
+    return [...rawCierre, ...rawCompletados];
+  }, [proyectosCierre, proyectosCompletados]);
 
   // Auto-select first project
   useEffect(() => {

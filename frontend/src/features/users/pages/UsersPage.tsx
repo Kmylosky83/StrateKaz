@@ -211,7 +211,7 @@ export default function UsersPage() {
     ...Object.entries(ORIGEN_LABELS).map(([value, label]) => ({ value, label })),
   ];
 
-  const users = usersData?.results || [];
+  const users = useMemo(() => usersData?.results || [], [usersData]);
   const totalUsers = usersData?.count || 0;
 
   // Calcular estadísticas para StatsGrid

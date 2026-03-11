@@ -8,7 +8,7 @@
  * - Vigencia (vigente/derogada)
  * - Año
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms';
@@ -25,10 +25,26 @@ interface NormaFiltersProps {
 }
 
 const SISTEMAS: Array<{ value: SistemaGestion; label: string; color: string }> = [
-  { value: 'SST', label: 'SST', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  { value: 'Ambiental', label: 'Ambiental', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  { value: 'Calidad', label: 'Calidad', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  { value: 'PESV', label: 'PESV', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
+  {
+    value: 'SST',
+    label: 'SST',
+    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  {
+    value: 'Ambiental',
+    label: 'Ambiental',
+    color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  },
+  {
+    value: 'Calidad',
+    label: 'Calidad',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  {
+    value: 'PESV',
+    label: 'PESV',
+    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  },
 ];
 
 export const NormaFilters = ({
@@ -40,10 +56,16 @@ export const NormaFilters = ({
   const [showFilters, setShowFilters] = useState(false);
   const { data: tiposNorma } = useTiposNorma();
 
+  // Refs para debounce sin deps inestables
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  onFiltersChangeRef.current = onFiltersChange;
+
   // Debounce para búsqueda
   useEffect(() => {
     const timer = setTimeout(() => {
-      onFiltersChange({ ...filters, search: localSearch });
+      onFiltersChangeRef.current({ ...filtersRef.current, search: localSearch });
     }, 300);
 
     return () => clearTimeout(timer);
@@ -119,11 +141,7 @@ export const NormaFilters = ({
         )}
 
         {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            onClick={handleClearFilters}
-            leftIcon={<X className="h-4 w-4" />}
-          >
+          <Button variant="ghost" onClick={handleClearFilters} leftIcon={<X className="h-4 w-4" />}>
             Limpiar
           </Button>
         )}
@@ -172,9 +190,7 @@ export const NormaFilters = ({
               label="Vigencia"
               value={filters.vigente === undefined ? '' : filters.vigente ? 'true' : 'false'}
               onChange={(e) =>
-                handleVigenciaChange(
-                  e.target.value === '' ? undefined : e.target.value === 'true'
-                )
+                handleVigenciaChange(e.target.value === '' ? undefined : e.target.value === 'true')
               }
             >
               <option value="">Todas</option>

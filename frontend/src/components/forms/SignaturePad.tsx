@@ -171,14 +171,16 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     const [canvasDimensions, setCanvasDimensions] = useState({ width: 600, height: height });
 
     // Auto-detect dark mode si no se especifica
-    const isDark = darkMode || (typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+    const isDark =
+      darkMode ||
+      (typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
     const effectivePenColor = isDark && penColor === '#000000' ? '#ffffff' : penColor;
     const bgColor = isDark ? 'bg-gray-800' : 'bg-white';
     const borderColor = error
       ? 'border-red-500'
       : touched && isEmpty && required
-      ? 'border-yellow-500'
-      : 'border-gray-300 dark:border-gray-600';
+        ? 'border-yellow-500'
+        : 'border-gray-300 dark:border-gray-600';
 
     /**
      * Calcula las dimensiones del canvas basándose en el contenedor real
@@ -202,7 +204,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
     // Calcular dimensiones iniciales después del primer render
     useLayoutEffect(() => {
       updateCanvasDimensions();
-    }, []);
+    }, [updateCanvasDimensions]);
 
     // Observar cambios de tamaño del contenedor
     useEffect(() => {
@@ -252,7 +254,8 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
         return signatureRef.current.getTrimmedCanvas().toDataURL(format, quality);
       },
       getBase64: () => {
-        const dataUrl = signatureRef.current?.getTrimmedCanvas().toDataURL(exportFormat, exportQuality) ?? '';
+        const dataUrl =
+          signatureRef.current?.getTrimmedCanvas().toDataURL(exportFormat, exportQuality) ?? '';
         return dataUrl.replace(/^data:image\/\w+;base64,/, '');
       },
       getTrimmedCanvas: () => {
@@ -282,7 +285,9 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
 
         if (!empty && onSignature) {
           try {
-            const dataUrl = signatureRef.current.getTrimmedCanvas().toDataURL(exportFormat, exportQuality);
+            const dataUrl = signatureRef.current
+              .getTrimmedCanvas()
+              .toDataURL(exportFormat, exportQuality);
             onSignature(dataUrl);
           } catch (error) {
             console.error('Error exporting signature:', error);
@@ -313,9 +318,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
 
         {/* Help Text */}
         {helpText && !error && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {helpText}
-          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{helpText}</p>
         )}
 
         {/* Signature Container */}
@@ -330,21 +333,14 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
           style={{ height: totalHeight }}
         >
           {/* Canvas Container - Área de firma (separada del footer) */}
-          <div
-            ref={canvasContainerRef}
-            className="relative w-full"
-            style={{ height: height }}
-          >
+          <div ref={canvasContainerRef} className="relative w-full" style={{ height: height }}>
             {/* Canvas de Firma - SIN clases CSS de tamaño */}
             <SignatureCanvas
               ref={signatureRef}
               canvasProps={{
                 width: canvasDimensions.width,
                 height: canvasDimensions.height,
-                className: clsx(
-                  'cursor-crosshair touch-none',
-                  disabled && 'pointer-events-none'
-                ),
+                className: clsx('cursor-crosshair touch-none', disabled && 'pointer-events-none'),
                 id: id,
                 style: {
                   // Asegurar que el canvas NO se escale con CSS
@@ -364,9 +360,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
             {/* Placeholder */}
             {isEmpty && !disabled && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="text-gray-400 dark:text-gray-500 text-sm">
-                  {placeholder}
-                </span>
+                <span className="text-gray-400 dark:text-gray-500 text-sm">{placeholder}</span>
               </div>
             )}
 
@@ -439,9 +433,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
 
         {/* Validation Warning */}
         {!error && touched && isEmpty && required && (
-          <p className="text-sm text-yellow-600 dark:text-yellow-400">
-            La firma es requerida
-          </p>
+          <p className="text-sm text-yellow-600 dark:text-yellow-400">La firma es requerida</p>
         )}
       </div>
     );

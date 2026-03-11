@@ -359,7 +359,7 @@ export const AreasTab = () => {
   const canDelete = canDo(Modules.FUNDACION, Sections.AREAS, 'delete');
 
   // Lista de áreas
-  const areas = areasData?.results || [];
+  const areas = useMemo(() => areasData?.results || [], [areasData]);
 
   // Organizar áreas por jerarquía para vista de árbol
   const rootAreas = useMemo(() => {

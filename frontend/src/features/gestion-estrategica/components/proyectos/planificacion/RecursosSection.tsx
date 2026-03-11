@@ -53,8 +53,10 @@ export const RecursosSection = ({ proyectoId }: RecursosSectionProps) => {
   const [editItem, setEditItem] = useState<RecursoProyecto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RecursoProyecto | null>(null);
 
-  const recursos: RecursoProyecto[] =
-    recursosData?.results ?? (Array.isArray(recursosData) ? recursosData : []);
+  const recursos: RecursoProyecto[] = useMemo(
+    () => recursosData?.results ?? (Array.isArray(recursosData) ? recursosData : []),
+    [recursosData]
+  );
 
   const stats = useMemo(() => {
     const totalPresupuesto = recursos.reduce((sum, r) => sum + parseFloat(r.costo_total || '0'), 0);

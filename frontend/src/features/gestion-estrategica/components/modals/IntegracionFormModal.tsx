@@ -338,7 +338,7 @@ export const IntegracionFormModal = ({
     if (!proveedorActualValido) {
       setFormData((prev) => ({ ...prev, proveedor: proveedoresDisponibles[0].value }));
     }
-  }, [formData.tipo_servicio]);
+  }, [formData.tipo_servicio, formData.proveedor]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -8,7 +8,7 @@
  * - Validación de campos con Zod
  * - Consecutivos del sistema tienen campos limitados
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -100,6 +100,7 @@ export const ConsecutivoFormModal = ({
   const createMutation = useCreateConsecutivo();
   const updateMutation = useUpdateConsecutivo();
   const previewMutation = usePreviewConsecutivo();
+  const previewRef = useRef(previewMutation);
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const isLoading = loadingConsecutivo || loadingChoices;
@@ -195,7 +196,7 @@ export const ConsecutivoFormModal = ({
     if (prefix) {
       const updatePreview = async () => {
         try {
-          const result = await previewMutation.mutateAsync({
+          const result = await previewRef.current.mutateAsync({
             prefix,
             suffix: suffix || undefined,
             separator: separator as SeparadorConsecutivo,

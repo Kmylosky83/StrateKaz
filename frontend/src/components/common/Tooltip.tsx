@@ -1,4 +1,4 @@
-import { ReactNode, useState, useRef, useEffect } from 'react';
+import { ReactNode, useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/utils/cn';
 
 export interface TooltipProps {
@@ -39,7 +39,7 @@ export const Tooltip = ({
     setIsVisible(false);
   };
 
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
@@ -68,7 +68,7 @@ export const Tooltip = ({
     }
 
     setCoords({ x, y });
-  };
+  }, [position]);
 
   useEffect(() => {
     if (isVisible) {
@@ -81,7 +81,7 @@ export const Tooltip = ({
         window.removeEventListener('resize', updatePosition);
       };
     }
-  }, [isVisible]);
+  }, [isVisible, updatePosition]);
 
   useEffect(() => {
     return () => {

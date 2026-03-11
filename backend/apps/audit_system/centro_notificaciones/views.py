@@ -71,14 +71,15 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     - Filtrado por estado y prioridad
     - Consulta de notificaciones no leídas
 
-    RBAC: Requiere acceso a sección 'centro_notificaciones'
+    RBAC: Acciones personales (no_leidas, marcar_leida) solo requieren IsAuthenticated.
+    CRUD admin requiere acceso a sección 'centro_notificaciones'.
     """
     queryset = Notificacion.objects.select_related('tipo', 'usuario')
     serializer_class = NotificacionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['usuario', 'esta_leida', 'prioridad']
 
-    # RBAC Configuration
+    # RBAC Configuration (aplica solo a CRUD admin)
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'centro_notificaciones'
     granular_action_map = {
@@ -88,10 +89,15 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         'update': 'can_edit',
         'partial_update': 'can_edit',
         'destroy': 'can_delete',
-        'marcar_leida': 'can_edit',
-        'marcar_todas_leidas': 'can_edit',
-        'no_leidas': 'can_view',
     }
+
+    # Acciones personales: solo IsAuthenticated (C0 plataforma)
+    PERSONAL_ACTIONS = ('no_leidas', 'marcar_leida', 'marcar_todas_leidas')
+
+    def get_permissions(self):
+        if self.action in self.PERSONAL_ACTIONS:
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     @extend_schema(
         summary='Marcar notificación como leída',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea, Checkbox } from '@/components/forms';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import { useCreateProgramaAuditoria, useUpdateProgramaAuditoria } from '../hooks/useMejoraContinua';
 import type {
   ProgramaAuditoriaList,
@@ -22,7 +23,7 @@ const INITIAL_FORM: CreateProgramaAuditoriaDTO = {
   criterios_auditoria: '',
   normas_aplicables: [],
   recursos_necesarios: '',
-  responsable_programa: '',
+  responsable_programa: 0,
   observaciones: '',
 };
 
@@ -45,6 +46,7 @@ export default function ProgramaAuditoriaFormModal({
 
   const createMutation = useCreateProgramaAuditoria();
   const updateMutation = useUpdateProgramaAuditoria();
+  const { data: usuarios = [] } = useSelectUsers();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -54,15 +56,15 @@ export default function ProgramaAuditoriaFormModal({
         codigo: item.codigo,
         nombre: item.nombre,
         año: item.año,
-        alcance: item.alcance,
-        objetivos: item.objetivos,
-        criterios_auditoria: item.criterios_auditoria || '',
-        normas_aplicables: item.normas_aplicables || [],
-        recursos_necesarios: item.recursos_necesarios || '',
-        responsable_programa: item.responsable_programa,
-        fecha_inicio: item.fecha_inicio || '',
-        fecha_fin: item.fecha_fin || '',
-        observaciones: item.observaciones || '',
+        alcance: item.alcance ?? '',
+        objetivos: item.objetivos ?? '',
+        criterios_auditoria: item.criterios_auditoria ?? '',
+        normas_aplicables: item.normas_aplicables ?? [],
+        recursos_necesarios: item.recursos_necesarios ?? '',
+        responsable_programa: item.responsable_programa ?? 0,
+        fecha_inicio: item.fecha_inicio ?? '',
+        fecha_fin: item.fecha_fin ?? '',
+        observaciones: item.observaciones ?? '',
       });
     } else {
       setFormData(INITIAL_FORM);
@@ -79,7 +81,7 @@ export default function ProgramaAuditoriaFormModal({
     }
   };
 
-  const handleChange = (field: keyof CreateProgramaAuditoriaDTO, value: any) => {
+  const handleChange = (field: keyof CreateProgramaAuditoriaDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -189,13 +191,19 @@ export default function ProgramaAuditoriaFormModal({
             />
           </div>
 
-          <Input
+          <Select
             label="Responsable del Programa *"
             value={formData.responsable_programa}
-            onChange={(e) => handleChange('responsable_programa', e.target.value)}
-            placeholder="Nombre del responsable"
+            onChange={(e) => handleChange('responsable_programa', parseInt(e.target.value))}
             required
-          />
+          >
+            <option value={0}>Seleccionar responsable...</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
+          </Select>
 
           <div />
 

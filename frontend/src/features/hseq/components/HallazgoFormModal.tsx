@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import { useCreateHallazgo, useUpdateHallazgo, useAuditorias } from '../hooks/useMejoraContinua';
 import type { HallazgoList, CreateHallazgoDTO } from '../types/mejora-continua.types';
 
@@ -24,8 +25,7 @@ const INITIAL_FORM: CreateHallazgoDTO = {
   impacto: '',
   area_impactada: '',
   recomendacion: '',
-  identificado_por: '',
-  responsable_proceso: '',
+  identificado_por: 0,
   fecha_deteccion: '',
   fecha_cierre_esperada: '',
   analisis_causa_raiz: '',
@@ -53,6 +53,7 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
   const createMutation = useCreateHallazgo();
   const updateMutation = useUpdateHallazgo();
   const { data: auditoriasData } = useAuditorias();
+  const { data: usuarios = [] } = useSelectUsers();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -63,21 +64,21 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
         codigo: item.codigo || '',
         tipo: item.tipo,
         titulo: item.titulo,
-        descripcion: item.descripcion,
-        evidencia: item.evidencia,
-        criterio: item.criterio,
+        descripcion: item.descripcion ?? '',
+        evidencia: item.evidencia ?? '',
+        criterio: item.criterio ?? '',
         proceso_area: item.proceso_area || '',
         clausula_norma: item.clausula_norma || '',
         norma_referencia: item.norma_referencia || '',
         impacto: item.impacto || '',
         area_impactada: item.area_impactada || '',
         recomendacion: item.recomendacion || '',
-        identificado_por: item.identificado_por,
-        responsable_proceso: item.responsable_proceso || '',
+        identificado_por: item.identificado_por ?? 0,
+        responsable_proceso: item.responsable_proceso ?? undefined,
         fecha_deteccion: item.fecha_deteccion,
         fecha_cierre_esperada: item.fecha_cierre_esperada || '',
-        analisis_causa_raiz: item.analisis_causa_raiz || '',
-        accion_propuesta: item.accion_propuesta || '',
+        analisis_causa_raiz: item.analisis_causa_raiz ?? '',
+        accion_propuesta: item.accion_propuesta ?? '',
       });
     } else {
       setFormData(INITIAL_FORM);
@@ -94,7 +95,7 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
     }
   };
 
-  const handleChange = (field: keyof CreateHallazgoDTO, value: any) => {
+  const handleChange = (field: keyof CreateHallazgoDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -144,7 +145,7 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
           </Select>
 
           <Input
-            label="Proceso"
+            label="Proceso/Área"
             value={formData.proceso_area}
             onChange={(e) => handleChange('proceso_area', e.target.value)}
             placeholder="Ej: Producción, Gestión de Calidad"
@@ -236,20 +237,35 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
             />
           </div>
 
-          <Input
+          <Select
             label="Identificado Por *"
             value={formData.identificado_por}
-            onChange={(e) => handleChange('identificado_por', e.target.value)}
-            placeholder="Nombre del auditor"
+            onChange={(e) => handleChange('identificado_por', parseInt(e.target.value))}
             required
-          />
+          >
+            <option value={0}>Seleccionar auditor...</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
+          </Select>
 
-          <Input
+          <Select
             label="Responsable del Proceso"
-            value={formData.responsable_proceso}
-            onChange={(e) => handleChange('responsable_proceso', e.target.value)}
-            placeholder="Nombre del responsable"
-          />
+            value={formData.responsable_proceso ?? 0}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              handleChange('responsable_proceso', val || undefined);
+            }}
+          >
+            <option value={0}>Seleccionar responsable...</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
+          </Select>
 
           <Input
             label="Fecha de Detección *"

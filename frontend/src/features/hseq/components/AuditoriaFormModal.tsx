@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import {
   useCreateAuditoria,
   useUpdateAuditoria,
@@ -25,7 +26,7 @@ const INITIAL_FORM: CreateAuditoriaDTO = {
   criterios: '',
   fecha_planificada_inicio: '',
   fecha_planificada_fin: '',
-  auditor_lider: '',
+  auditor_lider: 0,
 };
 
 const TIPO_OPTIONS = [
@@ -56,6 +57,7 @@ export default function AuditoriaFormModal({ item, isOpen, onClose }: AuditoriaF
   const createMutation = useCreateAuditoria();
   const updateMutation = useUpdateAuditoria();
   const { data: programasData } = useProgramasAuditoria();
+  const { data: usuarios = [] } = useSelectUsers();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -67,12 +69,12 @@ export default function AuditoriaFormModal({ item, isOpen, onClose }: AuditoriaF
         tipo: item.tipo,
         norma_principal: item.norma_principal,
         titulo: item.titulo,
-        objetivo: item.objetivo,
-        alcance: item.alcance,
-        criterios: item.criterios || '',
+        objetivo: item.objetivo ?? '',
+        alcance: item.alcance ?? '',
+        criterios: item.criterios ?? '',
         fecha_planificada_inicio: item.fecha_planificada_inicio,
         fecha_planificada_fin: item.fecha_planificada_fin,
-        auditor_lider: item.auditor_lider,
+        auditor_lider: item.auditor_lider ?? 0,
       });
     } else {
       setFormData(INITIAL_FORM);
@@ -89,7 +91,7 @@ export default function AuditoriaFormModal({ item, isOpen, onClose }: AuditoriaF
     }
   };
 
-  const handleChange = (field: keyof CreateAuditoriaDTO, value: any) => {
+  const handleChange = (field: keyof CreateAuditoriaDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -210,13 +212,19 @@ export default function AuditoriaFormModal({ item, isOpen, onClose }: AuditoriaF
           />
 
           <div className="md:col-span-2">
-            <Input
+            <Select
               label="Auditor Líder *"
               value={formData.auditor_lider}
-              onChange={(e) => handleChange('auditor_lider', e.target.value)}
-              placeholder="Nombre del auditor líder"
+              onChange={(e) => handleChange('auditor_lider', parseInt(e.target.value))}
               required
-            />
+            >
+              <option value={0}>Seleccionar auditor líder...</option>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.label}
+                </option>
+              ))}
+            </Select>
           </div>
         </div>
 

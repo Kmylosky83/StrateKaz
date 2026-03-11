@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import {
   useCreateEvaluacionCumplimiento,
   useUpdateEvaluacionCumplimiento,
@@ -26,8 +27,7 @@ const INITIAL_FORM: CreateEvaluacionCumplimientoDTO = {
   evidencia_cumplimiento: '',
   brechas_identificadas: '',
   acciones_requeridas: '',
-  evaluador: '',
-  responsable_cumplimiento: '',
+  evaluador: 0,
   periodicidad: 'SEMESTRAL',
   fecha_evaluacion: '',
   observaciones: '',
@@ -67,6 +67,7 @@ export default function EvaluacionCumplimientoFormModal({
 
   const createMutation = useCreateEvaluacionCumplimiento();
   const updateMutation = useUpdateEvaluacionCumplimiento();
+  const { data: usuarios = [] } = useSelectUsers();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -79,14 +80,14 @@ export default function EvaluacionCumplimientoFormModal({
         descripcion: item.descripcion || '',
         resultado: item.resultado,
         porcentaje_cumplimiento: item.porcentaje_cumplimiento || 0,
-        evidencia_cumplimiento: item.evidencia_cumplimiento || '',
-        brechas_identificadas: item.brechas_identificadas || '',
-        acciones_requeridas: item.acciones_requeridas || '',
-        evaluador: item.evaluador,
-        responsable_cumplimiento: item.responsable_cumplimiento || '',
+        evidencia_cumplimiento: item.evidencia_cumplimiento ?? '',
+        brechas_identificadas: item.brechas_identificadas ?? '',
+        acciones_requeridas: item.acciones_requeridas ?? '',
+        evaluador: item.evaluador ?? 0,
+        responsable_cumplimiento: item.responsable_cumplimiento ?? undefined,
         periodicidad: item.periodicidad,
         fecha_evaluacion: item.fecha_evaluacion,
-        observaciones: item.observaciones || '',
+        observaciones: item.observaciones ?? '',
       });
     } else {
       setFormData(INITIAL_FORM);
@@ -103,7 +104,7 @@ export default function EvaluacionCumplimientoFormModal({
     }
   };
 
-  const handleChange = (field: keyof CreateEvaluacionCumplimientoDTO, value: any) => {
+  const handleChange = (field: keyof CreateEvaluacionCumplimientoDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -209,20 +210,35 @@ export default function EvaluacionCumplimientoFormModal({
             />
           </div>
 
-          <Input
+          <Select
             label="Evaluador *"
             value={formData.evaluador}
-            onChange={(e) => handleChange('evaluador', e.target.value)}
-            placeholder="Nombre del evaluador"
+            onChange={(e) => handleChange('evaluador', parseInt(e.target.value))}
             required
-          />
+          >
+            <option value={0}>Seleccionar evaluador...</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
+          </Select>
 
-          <Input
+          <Select
             label="Responsable del Cumplimiento"
-            value={formData.responsable_cumplimiento}
-            onChange={(e) => handleChange('responsable_cumplimiento', e.target.value)}
-            placeholder="Responsable de implementar acciones"
-          />
+            value={formData.responsable_cumplimiento ?? 0}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              handleChange('responsable_cumplimiento', val || undefined);
+            }}
+          >
+            <option value={0}>Seleccionar responsable...</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
+          </Select>
 
           <Select
             label="Periodicidad *"

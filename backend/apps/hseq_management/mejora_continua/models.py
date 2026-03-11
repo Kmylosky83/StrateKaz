@@ -606,6 +606,7 @@ class EvaluacionCumplimiento(TenantModel):
         null=True,
         blank=True,
         db_index=True,
+        db_column='requisito_legal_ext_id',
         help_text="ID del RequisitoLegal en módulo Motor de Cumplimiento"
     )
     requisito_legal_nombre = models.CharField(

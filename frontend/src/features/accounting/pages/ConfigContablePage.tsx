@@ -32,6 +32,8 @@ import {
   ConfirmDialog,
 } from '@/components/common';
 import { Input, Select } from '@/components/forms';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import type {
   CuentaContableTree,
   CentroCostoContableTree,
@@ -77,10 +79,12 @@ const CuentaTreeItem = ({
   cuenta,
   level = 0,
   onEdit,
+  canEdit,
 }: {
   cuenta: CuentaContableTree;
   level?: number;
   onEdit: (id: number) => void;
+  canEdit: boolean;
 }) => {
   const [expanded, setExpanded] = useState(level < 1);
   const hasChildren = cuenta.children && cuenta.children.length > 0;
@@ -125,15 +129,23 @@ const CuentaTreeItem = ({
           </span>
         )}
 
-        <Button variant="ghost" size="sm" className="p-1" onClick={() => onEdit(cuenta.id)}>
-          <Edit2 className="w-4 h-4" />
-        </Button>
+        {canEdit && (
+          <Button variant="ghost" size="sm" className="p-1" onClick={() => onEdit(cuenta.id)}>
+            <Edit2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
       {expanded && hasChildren && (
         <div>
           {cuenta.children.map((hijo) => (
-            <CuentaTreeItem key={hijo.id} cuenta={hijo} level={level + 1} onEdit={onEdit} />
+            <CuentaTreeItem
+              key={hijo.id}
+              cuenta={hijo}
+              level={level + 1}
+              onEdit={onEdit}
+              canEdit={canEdit}
+            />
           ))}
         </div>
       )}
@@ -145,10 +157,12 @@ const CentroCostoTreeItem = ({
   centro,
   level = 0,
   onEdit,
+  canEdit,
 }: {
   centro: CentroCostoContableTree;
   level?: number;
   onEdit: (id: number) => void;
+  canEdit: boolean;
 }) => {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = centro.children && centro.children.length > 0;
@@ -185,14 +199,22 @@ const CentroCostoTreeItem = ({
             {formatCurrency(dec(centro.presupuesto_anual))}
           </span>
         )}
-        <Button variant="ghost" size="sm" className="p-1" onClick={() => onEdit(centro.id)}>
-          <Edit2 className="w-4 h-4" />
-        </Button>
+        {canEdit && (
+          <Button variant="ghost" size="sm" className="p-1" onClick={() => onEdit(centro.id)}>
+            <Edit2 className="w-4 h-4" />
+          </Button>
+        )}
       </div>
       {expanded &&
         hasChildren &&
         centro.children.map((sub) => (
-          <CentroCostoTreeItem key={sub.id} centro={sub} level={level + 1} onEdit={onEdit} />
+          <CentroCostoTreeItem
+            key={sub.id}
+            centro={sub}
+            level={level + 1}
+            onEdit={onEdit}
+            canEdit={canEdit}
+          />
         ))}
     </div>
   );
@@ -214,6 +236,23 @@ export default function ConfigContablePage() {
   // Delete states
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteType, setDeleteType] = useState<'tipo' | 'tercero' | 'centro' | null>(null);
+
+  // RBAC permissions
+  const { canDo } = usePermissions();
+  const canCreateCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'create');
+  const canEditCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'edit');
+  const canDeleteCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'delete');
+
+  const canCreateTipo = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'create');
+  const canEditTipo = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'edit');
+
+  const canCreateTercero = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'create');
+  const canEditTercero = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'edit');
+  const canDeleteTercero = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'delete');
+
+  const canCreateCentro = canDo(Modules.ACCOUNTING, Sections.CENTROS_COSTO, 'create');
+  const canEditCentro = canDo(Modules.ACCOUNTING, Sections.CENTROS_COSTO, 'edit');
+  const canDeleteCentro = canDo(Modules.ACCOUNTING, Sections.CENTROS_COSTO, 'delete');
 
   // Filter states
   const [filtroTipoTercero, setFiltroTipoTercero] = useState('');
@@ -266,16 +305,20 @@ export default function ConfigContablePage() {
       content: (
         <div className="space-y-4">
           <SectionToolbar
-            actions={[
-              {
-                label: 'Nueva Cuenta',
-                onClick: () => {
-                  setCuentaItem(null);
-                  setCuentaModal(true);
-                },
-                variant: 'primary' as const,
-              },
-            ]}
+            actions={
+              canCreateCuenta
+                ? [
+                    {
+                      label: 'Nueva Cuenta',
+                      onClick: () => {
+                        setCuentaItem(null);
+                        setCuentaModal(true);
+                      },
+                      variant: 'primary' as const,
+                    },
+                  ]
+                : []
+            }
           />
 
           {loadingArbol ? (
@@ -286,11 +329,15 @@ export default function ConfigContablePage() {
             <EmptyState
               title="Sin cuentas registradas"
               description="No hay cuentas en el plan de cuentas activo"
-              actionLabel="Crear Cuenta"
-              onAction={() => {
-                setCuentaItem(null);
-                setCuentaModal(true);
-              }}
+              actionLabel={canCreateCuenta ? 'Crear Cuenta' : undefined}
+              onAction={
+                canCreateCuenta
+                  ? () => {
+                      setCuentaItem(null);
+                      setCuentaModal(true);
+                    }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -313,6 +360,7 @@ export default function ConfigContablePage() {
                       setCuentaItem({ id } as CuentaContable);
                       setCuentaModal(true);
                     }}
+                    canEdit={canEditCuenta}
                   />
                 ))}
               </div>
@@ -335,16 +383,20 @@ export default function ConfigContablePage() {
       content: (
         <div className="space-y-4">
           <SectionToolbar
-            actions={[
-              {
-                label: 'Nuevo Tipo',
-                onClick: () => {
-                  setTipoDocItem(null);
-                  setTipoDocModal(true);
-                },
-                variant: 'primary' as const,
-              },
-            ]}
+            actions={
+              canCreateTipo
+                ? [
+                    {
+                      label: 'Nuevo Tipo',
+                      onClick: () => {
+                        setTipoDocItem(null);
+                        setTipoDocModal(true);
+                      },
+                      variant: 'primary' as const,
+                    },
+                  ]
+                : []
+            }
           />
 
           {loadingTipos ? (
@@ -355,11 +407,15 @@ export default function ConfigContablePage() {
             <EmptyState
               title="Sin tipos de documento"
               description="No hay tipos de documento contable registrados"
-              actionLabel="Crear Tipo"
-              onAction={() => {
-                setTipoDocItem(null);
-                setTipoDocModal(true);
-              }}
+              actionLabel={canCreateTipo ? 'Crear Tipo' : undefined}
+              onAction={
+                canCreateTipo
+                  ? () => {
+                      setTipoDocItem(null);
+                      setTipoDocModal(true);
+                    }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -424,17 +480,19 @@ export default function ConfigContablePage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1"
-                            onClick={() => {
-                              setTipoDocItem(tipo as unknown as TipoDocumentoContable);
-                              setTipoDocModal(true);
-                            }}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
+                          {canEditTipo && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1"
+                              onClick={() => {
+                                setTipoDocItem(tipo as unknown as TipoDocumentoContable);
+                                setTipoDocModal(true);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -464,16 +522,18 @@ export default function ConfigContablePage() {
               <option value="empleado">Empleados</option>
               <option value="otro">Otros</option>
             </Select>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                setTerceroItem(null);
-                setTerceroModal(true);
-              }}
-            >
-              Nuevo Tercero
-            </Button>
+            {canCreateTercero && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setTerceroItem(null);
+                  setTerceroModal(true);
+                }}
+              >
+                Nuevo Tercero
+              </Button>
+            )}
           </div>
 
           {loadingTerceros ? (
@@ -484,11 +544,15 @@ export default function ConfigContablePage() {
             <EmptyState
               title="Sin terceros registrados"
               description="No hay terceros contables registrados"
-              actionLabel="Crear Tercero"
-              onAction={() => {
-                setTerceroItem(null);
-                setTerceroModal(true);
-              }}
+              actionLabel={canCreateTercero ? 'Crear Tercero' : undefined}
+              onAction={
+                canCreateTercero
+                  ? () => {
+                      setTerceroItem(null);
+                      setTerceroModal(true);
+                    }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -559,28 +623,32 @@ export default function ConfigContablePage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1"
-                            onClick={() => {
-                              setTerceroItem(tercero as unknown as Tercero);
-                              setTerceroModal(true);
-                            }}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 text-red-500"
-                            onClick={() => {
-                              setDeleteId(tercero.id);
-                              setDeleteType('tercero');
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {canEditTercero && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1"
+                              onClick={() => {
+                                setTerceroItem(tercero as unknown as Tercero);
+                                setTerceroModal(true);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {canDeleteTercero && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 text-red-500"
+                              onClick={() => {
+                                setDeleteId(tercero.id);
+                                setDeleteType('tercero');
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -599,16 +667,20 @@ export default function ConfigContablePage() {
       content: (
         <div className="space-y-4">
           <SectionToolbar
-            actions={[
-              {
-                label: 'Nuevo Centro',
-                onClick: () => {
-                  setCentroItem(null);
-                  setCentroModal(true);
-                },
-                variant: 'primary' as const,
-              },
-            ]}
+            actions={
+              canCreateCentro
+                ? [
+                    {
+                      label: 'Nuevo Centro',
+                      onClick: () => {
+                        setCentroItem(null);
+                        setCentroModal(true);
+                      },
+                      variant: 'primary' as const,
+                    },
+                  ]
+                : []
+            }
           />
 
           {loadingCentros ? (
@@ -619,11 +691,15 @@ export default function ConfigContablePage() {
             <EmptyState
               title="Sin centros de costo"
               description="No hay centros de costo registrados"
-              actionLabel="Crear Centro"
-              onAction={() => {
-                setCentroItem(null);
-                setCentroModal(true);
-              }}
+              actionLabel={canCreateCentro ? 'Crear Centro' : undefined}
+              onAction={
+                canCreateCentro
+                  ? () => {
+                      setCentroItem(null);
+                      setCentroModal(true);
+                    }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -686,28 +762,32 @@ export default function ConfigContablePage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1"
-                            onClick={() => {
-                              setCentroItem(centro as unknown as CentroCostoContable);
-                              setCentroModal(true);
-                            }}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 text-red-500"
-                            onClick={() => {
-                              setDeleteId(centro.id);
-                              setDeleteType('centro');
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {canEditCentro && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1"
+                              onClick={() => {
+                                setCentroItem(centro as unknown as CentroCostoContable);
+                                setCentroModal(true);
+                              }}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {canDeleteCentro && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="p-1 text-red-500"
+                              onClick={() => {
+                                setDeleteId(centro.id);
+                                setDeleteType('centro');
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

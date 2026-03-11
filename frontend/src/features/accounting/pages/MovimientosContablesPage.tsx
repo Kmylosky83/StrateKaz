@@ -35,6 +35,8 @@ import {
   KpiCardSkeleton,
 } from '@/components/common';
 import { Select } from '@/components/forms';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useComprobantes,
   useDetallesComprobante,
@@ -115,6 +117,12 @@ export default function MovimientosContablesPage() {
   const aprobar = useAprobarComprobante();
   const generarComprobante = useGenerarComprobanteDesde();
 
+  // RBAC permissions
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'create');
+  const canEdit = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'edit');
+  const canDelete = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'delete');
+
   const comprobantes = extractResults<ComprobanteContableList>(comprobantesData);
   const tipos = extractResults<TipoDocumentoContableList>(tiposData);
   const detalles = extractResults<DetalleComprobante>(detallesData);
@@ -164,9 +172,11 @@ export default function MovimientosContablesPage() {
                 <option value="anulado">Anulado</option>
               </Select>
             </div>
-            <Button variant="primary" size="sm" onClick={() => setComprobanteModal(true)}>
-              Nuevo Comprobante
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={() => setComprobanteModal(true)}>
+                Nuevo Comprobante
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -179,8 +189,8 @@ export default function MovimientosContablesPage() {
                 <EmptyState
                   title="Sin comprobantes"
                   description="No se encontraron comprobantes con los filtros seleccionados"
-                  actionLabel="Crear Comprobante"
-                  onAction={() => setComprobanteModal(true)}
+                  actionLabel={canCreate ? 'Crear Comprobante' : undefined}
+                  onAction={canCreate ? () => setComprobanteModal(true) : undefined}
                 />
               ) : (
                 <Card variant="bordered" padding="none">
@@ -245,7 +255,7 @@ export default function MovimientosContablesPage() {
                                 <Button variant="ghost" size="sm" className="p-1">
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                                {comp.estado === 'borrador' && (
+                                {canEdit && comp.estado === 'borrador' && (
                                   <Button variant="ghost" size="sm" className="p-1">
                                     <Edit2 className="w-4 h-4" />
                                   </Button>
@@ -364,7 +374,7 @@ export default function MovimientosContablesPage() {
                       </div>
                     </div>
 
-                    {selected.estado === 'borrador' && (
+                    {canEdit && selected.estado === 'borrador' && (
                       <div className="flex gap-2 pt-2">
                         <Button
                           variant="primary"
@@ -377,7 +387,7 @@ export default function MovimientosContablesPage() {
                         </Button>
                       </div>
                     )}
-                    {selected.estado === 'pendiente_aprobacion' && (
+                    {canEdit && selected.estado === 'pendiente_aprobacion' && (
                       <div className="flex gap-2 pt-2">
                         <Button
                           variant="primary"
@@ -390,24 +400,25 @@ export default function MovimientosContablesPage() {
                         </Button>
                       </div>
                     )}
-                    {(selected.estado === 'contabilizado' || selected.estado === 'aprobado') && (
-                      <div className="flex gap-2 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
-                          onClick={() =>
-                            anular.mutate({
-                              id: selected.id,
-                              motivo_anulacion: 'Anulación solicitada',
-                            })
-                          }
-                          disabled={anular.isPending}
-                        >
-                          Anular
-                        </Button>
-                      </div>
-                    )}
+                    {canEdit &&
+                      (selected.estado === 'contabilizado' || selected.estado === 'aprobado') && (
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-red-600 border-red-300 hover:bg-red-50"
+                            onClick={() =>
+                              anular.mutate({
+                                id: selected.id,
+                                motivo_anulacion: 'Anulación solicitada',
+                              })
+                            }
+                            disabled={anular.isPending}
+                          >
+                            Anular
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 ) : (
                   <div className="text-center text-gray-500 py-8">
@@ -428,13 +439,17 @@ export default function MovimientosContablesPage() {
       content: (
         <div className="space-y-4">
           <SectionToolbar
-            actions={[
-              {
-                label: 'Nueva Plantilla',
-                onClick: () => setPlantillaModal(true),
-                variant: 'primary' as const,
-              },
-            ]}
+            actions={
+              canCreate
+                ? [
+                    {
+                      label: 'Nueva Plantilla',
+                      onClick: () => setPlantillaModal(true),
+                      variant: 'primary' as const,
+                    },
+                  ]
+                : []
+            }
           />
 
           {loadingPlant ? (
@@ -445,8 +460,8 @@ export default function MovimientosContablesPage() {
             <EmptyState
               title="Sin plantillas"
               description="No se encontraron plantillas de asiento"
-              actionLabel="Crear Plantilla"
-              onAction={() => setPlantillaModal(true)}
+              actionLabel={canCreate ? 'Crear Plantilla' : undefined}
+              onAction={canCreate ? () => setPlantillaModal(true) : undefined}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -556,17 +571,21 @@ export default function MovimientosContablesPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="outline" size="sm">
-                            Editar
-                          </Button>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => contabilizar.mutate(comp.id)}
-                            disabled={contabilizar.isPending}
-                          >
-                            Contabilizar
-                          </Button>
+                          {canEdit && (
+                            <Button variant="outline" size="sm">
+                              Editar
+                            </Button>
+                          )}
+                          {canEdit && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => contabilizar.mutate(comp.id)}
+                              disabled={contabilizar.isPending}
+                            >
+                              Contabilizar
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

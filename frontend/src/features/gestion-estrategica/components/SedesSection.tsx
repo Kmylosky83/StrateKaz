@@ -17,11 +17,14 @@ import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucid
 import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useSedes, useDeleteSede, useSetSedePrincipal } from '../hooks/useStrategic';
 import { SedeFormModal } from './modals/SedeFormModal';
 import type { SedeEmpresaList } from '../types/strategic.types';
 
 export const SedesSection = () => {
+  const { canDo } = usePermissions();
   const { data: sedesData, isLoading } = useSedes();
   const deleteMutation = useDeleteSede();
   const setPrincipalMutation = useSetSedePrincipal();

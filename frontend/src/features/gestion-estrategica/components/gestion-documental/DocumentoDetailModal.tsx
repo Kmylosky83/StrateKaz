@@ -3,6 +3,7 @@
  * Acciones contextuales según estado del documento.
  */
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
   FileText,
   Clock,
@@ -326,7 +327,9 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 <div className="prose dark:prose-invert max-w-none p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: documento.contenido || '<p><em>Sin contenido</em></p>',
+                      __html: DOMPurify.sanitize(
+                        documento.contenido || '<p><em>Sin contenido</em></p>'
+                      ),
                     }}
                   />
                 </div>

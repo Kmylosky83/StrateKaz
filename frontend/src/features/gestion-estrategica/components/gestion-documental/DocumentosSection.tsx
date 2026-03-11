@@ -25,6 +25,8 @@ import {
   ExportButton,
 } from '@/components/common';
 import { Input } from '@/components/forms';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 import {
   useDocumentos,
@@ -45,6 +47,11 @@ export function DocumentosSection({
   onEditDocumento,
   onViewDocumento,
 }: DocumentosSectionProps) {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'create');
+  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'edit');
+  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'delete');
+
   const { data: documentos, isLoading } = useDocumentos();
   const { data: listadoMaestro } = useListadoMaestro();
   const deleteDocumentoMutation = useDeleteDocumento();
@@ -141,13 +148,15 @@ export function DocumentosSection({
               leftIcon={<Search className="w-5 h-5" />}
             />
           </div>
-          <Button
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={onCreateDocumento}
-          >
-            Crear Documento
-          </Button>
+          {canCreate && (
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onCreateDocumento}
+            >
+              Crear Documento
+            </Button>
+          )}
           <ExportButton
             endpoint="/api/gestion-estrategica/gestion-documental/documentos/export/"
             filename="documentos"
@@ -160,11 +169,15 @@ export function DocumentosSection({
             icon={<FileText className="w-16 h-16" />}
             title="No hay documentos"
             description="Comienza creando tu primer documento usando una plantilla o desde cero."
-            action={{
-              label: 'Crear Documento',
-              onClick: onCreateDocumento,
-              icon: <Plus className="w-4 h-4" />,
-            }}
+            action={
+              canCreate
+                ? {
+                    label: 'Crear Documento',
+                    onClick: onCreateDocumento,
+                    icon: <Plus className="w-4 h-4" />,
+                  }
+                : undefined
+            }
           />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -222,35 +235,41 @@ export function DocumentosSection({
                       </Button>
                       {documento.estado === 'BORRADOR' && (
                         <>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            leftIcon={<PenTool className="w-4 h-4" />}
-                            onClick={() =>
-                              setAsignarFirmantesModal({
-                                documentoId: String(documento.id),
-                                titulo: documento.titulo,
-                              })
-                            }
-                          >
-                            Solicitar Firmas
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<Edit className="w-4 h-4" />}
-                            onClick={() => onEditDocumento(documento.id)}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<Trash2 className="w-4 h-4" />}
-                            onClick={() =>
-                              setConfirmDelete({ id: documento.id, titulo: documento.titulo })
-                            }
-                          />
+                          {canEdit && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              leftIcon={<PenTool className="w-4 h-4" />}
+                              onClick={() =>
+                                setAsignarFirmantesModal({
+                                  documentoId: String(documento.id),
+                                  titulo: documento.titulo,
+                                })
+                              }
+                            >
+                              Solicitar Firmas
+                            </Button>
+                          )}
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Edit className="w-4 h-4" />}
+                              onClick={() => onEditDocumento(documento.id)}
+                            >
+                              Editar
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Trash2 className="w-4 h-4" />}
+                              onClick={() =>
+                                setConfirmDelete({ id: documento.id, titulo: documento.titulo })
+                              }
+                            />
+                          )}
                         </>
                       )}
                     </div>

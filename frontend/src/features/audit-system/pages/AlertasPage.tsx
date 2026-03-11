@@ -34,6 +34,8 @@ import {
 } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useAlertasGeneradas,
   useAlertasPendientes,
@@ -260,6 +262,9 @@ function AlertasActivasTab() {
 
 function TiposTab() {
   const { data: tipos, isLoading } = useTiposAlerta();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.REGLAS_ALERTA, 'create');
+  const canEdit = canDo(Modules.AUDIT_SYSTEM, Sections.REGLAS_ALERTA, 'edit');
 
   if (isLoading) {
     return (
@@ -275,6 +280,7 @@ function TiposTab() {
         title="No hay tipos de alerta"
         description="Comienza creando un nuevo tipo de alerta"
         icon={FileText}
+        action={canCreate ? { label: 'Nuevo Tipo', onClick: () => {} } : undefined}
       />
     );
   }
@@ -288,9 +294,11 @@ function TiposTab() {
             Catálogo de tipos de alerta disponibles
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Tipo
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Nuevo Tipo
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -332,9 +340,11 @@ function TiposTab() {
                 </div>
               </div>
 
-              <Button variant="ghost" size="sm">
-                Editar
-              </Button>
+              {canEdit && (
+                <Button variant="ghost" size="sm">
+                  Editar
+                </Button>
+              )}
             </div>
           </Card>
         ))}
@@ -345,6 +355,9 @@ function TiposTab() {
 
 function ConfiguracionTab() {
   const { data: configuraciones, isLoading } = useConfiguracionesAlerta();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.REGLAS_ALERTA, 'create');
+  const canEdit = canDo(Modules.AUDIT_SYSTEM, Sections.REGLAS_ALERTA, 'edit');
 
   if (isLoading) {
     return (
@@ -360,6 +373,7 @@ function ConfiguracionTab() {
         title="No hay configuraciones"
         description="Crea una nueva configuración de alerta"
         icon={Settings}
+        action={canCreate ? { label: 'Nueva Configuración', onClick: () => {} } : undefined}
       />
     );
   }
@@ -375,9 +389,11 @@ function ConfiguracionTab() {
             Reglas de generación automática de alertas
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Configuración
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Nueva Configuración
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -431,9 +447,11 @@ function ConfiguracionTab() {
                 )}
               </div>
 
-              <Button variant="ghost" size="sm">
-                Editar
-              </Button>
+              {canEdit && (
+                <Button variant="ghost" size="sm">
+                  Editar
+                </Button>
+              )}
             </div>
           </Card>
         ))}

@@ -10,16 +10,7 @@
  * Datos reales desde hooks TanStack Query.
  */
 import { useState } from 'react';
-import {
-  BarChart3,
-  FileText,
-  Target,
-  Palette,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-} from 'lucide-react';
+import { BarChart3, FileText, Target, Palette, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
 import { Card } from '@/components/common/Card';
@@ -29,6 +20,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Input } from '@/components/forms';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useCatalogosKPI,
   useFichasTecnicas,
@@ -43,12 +36,7 @@ import { CatalogoKPIFormModal } from '../components/CatalogoKPIFormModal';
 import { FichaTecnicaFormModal } from '../components/FichaTecnicaFormModal';
 import { MetaKPIFormModal } from '../components/MetaKPIFormModal';
 import { SemaforoFormModal } from '../components/SemaforoFormModal';
-import type {
-  CatalogoKPI,
-  FichaTecnicaKPI,
-  MetaKPI,
-  ConfiguracionSemaforo,
-} from '../types';
+import type { CatalogoKPI, FichaTecnicaKPI, MetaKPI, ConfiguracionSemaforo } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -74,6 +62,11 @@ interface CatalogoSectionProps {
 }
 
 const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ANALYTICS, Sections.TIPOS_INDICADOR, 'create');
+  const canEdit = canDo(Modules.ANALYTICS, Sections.TIPOS_INDICADOR, 'edit');
+  const canDelete = canDo(Modules.ANALYTICS, Sections.TIPOS_INDICADOR, 'delete');
+
   const [searchTerm, setSearchTerm] = useState('');
   const { data: catalogosData, isLoading } = useCatalogosKPI();
   const deleteMutation = useDeleteCatalogoKPI();
@@ -88,7 +81,11 @@ const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
   );
 
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-[200px]"><Spinner size="lg" /></div>;
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
@@ -103,47 +100,97 @@ const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
             className="pl-10"
           />
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>
-          Nuevo KPI
-        </Button>
+        {canCreate && (
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={onNew}
+          >
+            Nuevo KPI
+          </Button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<BarChart3 className="w-12 h-12" />} title="Sin indicadores" description="Cree su primer KPI para comenzar" />
+        <EmptyState
+          icon={<BarChart3 className="w-12 h-12" />}
+          title="Sin indicadores"
+          description="Cree su primer KPI para comenzar"
+          action={canCreate ? { label: 'Nuevo KPI', onClick: onNew } : undefined}
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">BSC</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frecuencia</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Código
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Nombre
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Categoría
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    BSC
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Frecuencia
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {filtered.map((kpi: CatalogoKPI) => (
                   <tr key={kpi.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{kpi.codigo}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{kpi.nombre}</td>
-                    <td className="px-6 py-4">
-                      <Badge variant="gray" size="sm" className={getCategoriaColor(kpi.categoria)}>{kpi.categoria.toUpperCase()}</Badge>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      {kpi.codigo}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">{kpi.tipo_indicador}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">{kpi.perspectiva_bsc}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">{kpi.frecuencia_medicion}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {kpi.nombre}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant="gray" size="sm" className={getCategoriaColor(kpi.categoria)}>
+                        {kpi.categoria.toUpperCase()}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">
+                      {kpi.tipo_indicador}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">
+                      {kpi.perspectiva_bsc}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 capitalize">
+                      {kpi.frecuencia_medicion}
+                    </td>
                     <td className="px-6 py-4 text-center">
-                      <Badge variant={kpi.activo ? 'success' : 'gray'} size="sm">{kpi.activo ? 'Activo' : 'Inactivo'}</Badge>
+                      <Badge variant={kpi.activo ? 'success' : 'gray'} size="sm">
+                        {kpi.activo ? 'Activo' : 'Inactivo'}
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(kpi)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(kpi.id)}><Trash2 className="w-4 h-4 text-red-600" /></Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => onEdit(kpi)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteId(kpi.id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -157,7 +204,9 @@ const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
       <ConfirmDialog
         isOpen={deleteId !== null}
         onClose={() => setDeleteId(null)}
-        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) }); }}
+        onConfirm={() => {
+          if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+        }}
         title="Eliminar KPI"
         message="¿Está seguro de eliminar este indicador? Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
@@ -168,23 +217,57 @@ const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
   );
 };
 
-const FichasTecnicasSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit: (item: FichaTecnicaKPI) => void; onNew: () => void }) => {
+const FichasTecnicasSection = ({
+  kpis,
+  onEdit,
+  onNew,
+}: {
+  kpis: CatalogoKPI[];
+  onEdit: (item: FichaTecnicaKPI) => void;
+  onNew: () => void;
+}) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'create');
+  const canEdit = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'edit');
+  const canDelete = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'delete');
+
   const { data: fichasData, isLoading } = useFichasTecnicas();
   const deleteMutation = useDeleteFichaTecnica();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const fichas = Array.isArray(fichasData) ? fichasData : [];
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[200px]"><Spinner size="lg" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Spinner size="lg" />
+      </div>
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Fichas Técnicas de KPIs</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>Nueva Ficha</Button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Fichas Técnicas de KPIs
+        </h3>
+        {canCreate && (
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={onNew}
+          >
+            Nueva Ficha
+          </Button>
+        )}
       </div>
 
       {fichas.length === 0 ? (
-        <EmptyState icon={<FileText className="w-12 h-12" />} title="Sin fichas técnicas" description="Cree fichas técnicas para documentar sus KPIs" />
+        <EmptyState
+          icon={<FileText className="w-12 h-12" />}
+          title="Sin fichas técnicas"
+          description="Cree fichas técnicas para documentar sus KPIs"
+          action={canCreate ? { label: 'Nueva Ficha', onClick: onNew } : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {fichas.map((ficha: FichaTecnicaKPI) => (
@@ -192,27 +275,47 @@ const FichasTecnicasSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; o
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{ficha.kpi_nombre}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {ficha.kpi_nombre}
+                    </h4>
                     <p className="text-sm text-gray-500">{ficha.kpi_codigo}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(ficha)}><Edit className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(ficha.id)}><Trash2 className="w-4 h-4 text-red-600" /></Button>
+                    {canEdit && (
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(ficha)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(ficha.id)}>
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-gray-500 uppercase">Fórmula</label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1 font-mono bg-gray-50 dark:bg-gray-800 p-2 rounded">{ficha.formula}</p>
+                    <p className="text-sm text-gray-900 dark:text-white mt-1 font-mono bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                      {ficha.formula}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 uppercase">Fuente de Datos</label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1">{ficha.fuente_datos}</p>
+                    <label className="text-xs font-medium text-gray-500 uppercase">
+                      Fuente de Datos
+                    </label>
+                    <p className="text-sm text-gray-900 dark:text-white mt-1">
+                      {ficha.fuente_datos}
+                    </p>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase">Responsable de Medición</label>
-                  <p className="text-sm text-gray-900 dark:text-white mt-1">{ficha.responsable_nombre}</p>
+                  <label className="text-xs font-medium text-gray-500 uppercase">
+                    Responsable de Medición
+                  </label>
+                  <p className="text-sm text-gray-900 dark:text-white mt-1">
+                    {ficha.responsable_nombre}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -220,58 +323,138 @@ const FichasTecnicasSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; o
         </div>
       )}
 
-      <ConfirmDialog isOpen={deleteId !== null} onClose={() => setDeleteId(null)}
-        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) }); }}
-        title="Eliminar Ficha Técnica" message="¿Está seguro de eliminar esta ficha técnica?" confirmLabel="Eliminar" variant="danger" isLoading={deleteMutation.isPending} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+        }}
+        title="Eliminar Ficha Técnica"
+        message="¿Está seguro de eliminar esta ficha técnica?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
 
-const MetasSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit: (item: MetaKPI) => void; onNew: () => void }) => {
+const MetasSection = ({
+  kpis,
+  onEdit,
+  onNew,
+}: {
+  kpis: CatalogoKPI[];
+  onEdit: (item: MetaKPI) => void;
+  onNew: () => void;
+}) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'create');
+  const canEdit = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'edit');
+  const canDelete = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'delete');
+
   const { data: metasData, isLoading } = useMetasKPI();
   const deleteMutation = useDeleteMetaKPI();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const metas = Array.isArray(metasData) ? metasData : [];
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[200px]"><Spinner size="lg" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Spinner size="lg" />
+      </div>
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Metas por KPI</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>Nueva Meta</Button>
+        {canCreate && (
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={onNew}
+          >
+            Nueva Meta
+          </Button>
+        )}
       </div>
 
       {metas.length === 0 ? (
-        <EmptyState icon={<Target className="w-12 h-12" />} title="Sin metas" description="Configure metas para evaluar el desempeño de sus KPIs" />
+        <EmptyState
+          icon={<Target className="w-12 h-12" />}
+          title="Sin metas"
+          description="Configure metas para evaluar el desempeño de sus KPIs"
+          action={canCreate ? { label: 'Nueva Meta', onClick: onNew } : undefined}
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">KPI</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periodo</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Mínima</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Esperada</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Óptima</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    KPI
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Periodo
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Mínima
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Esperada
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Óptima
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {metas.map((meta: MetaKPI) => (
                   <tr key={meta.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4"><p className="text-sm font-medium text-gray-900 dark:text-white">{meta.kpi_nombre}</p><p className="text-xs text-gray-500">{meta.kpi_codigo}</p></td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{meta.periodo}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">{meta.meta_minima}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-right text-primary-600">{meta.meta_esperada}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-right text-green-600">{meta.meta_optima}</td>
-                    <td className="px-6 py-4 text-center"><Badge variant={meta.activa ? 'success' : 'gray'} size="sm">{meta.activa ? 'Activa' : 'Inactiva'}</Badge></td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {meta.kpi_nombre}
+                      </p>
+                      <p className="text-xs text-gray-500">{meta.kpi_codigo}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {meta.periodo}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">
+                      {meta.meta_minima}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-right text-primary-600">
+                      {meta.meta_esperada}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-right text-green-600">
+                      {meta.meta_optima}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant={meta.activa ? 'success' : 'gray'} size="sm">
+                        {meta.activa ? 'Activa' : 'Inactiva'}
+                      </Badge>
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(meta)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(meta.id)}><Trash2 className="w-4 h-4 text-red-600" /></Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => onEdit(meta)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteId(meta.id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -282,30 +465,73 @@ const MetasSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit: (i
         </Card>
       )}
 
-      <ConfirmDialog isOpen={deleteId !== null} onClose={() => setDeleteId(null)}
-        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) }); }}
-        title="Eliminar Meta" message="¿Está seguro de eliminar esta meta?" confirmLabel="Eliminar" variant="danger" isLoading={deleteMutation.isPending} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+        }}
+        title="Eliminar Meta"
+        message="¿Está seguro de eliminar esta meta?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
 
-const SemaforosSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit: (item: ConfiguracionSemaforo) => void; onNew: () => void }) => {
+const SemaforosSection = ({
+  kpis,
+  onEdit,
+  onNew,
+}: {
+  kpis: CatalogoKPI[];
+  onEdit: (item: ConfiguracionSemaforo) => void;
+  onNew: () => void;
+}) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'create');
+  const canEdit = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'edit');
+  const canDelete = canDo(Modules.ANALYTICS, Sections.INDICADORES, 'delete');
+
   const { data: semaforosData, isLoading } = useSemaforos();
   const deleteMutation = useDeleteSemaforo();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const semaforos = Array.isArray(semaforosData) ? semaforosData : [];
 
-  if (isLoading) return <div className="flex items-center justify-center min-h-[200px]"><Spinner size="lg" /></div>;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Spinner size="lg" />
+      </div>
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuración de Semáforos</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>Nuevo Semáforo</Button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Configuración de Semáforos
+        </h3>
+        {canCreate && (
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={onNew}
+          >
+            Nuevo Semáforo
+          </Button>
+        )}
       </div>
 
       {semaforos.length === 0 ? (
-        <EmptyState icon={<Palette className="w-12 h-12" />} title="Sin semáforos" description="Configure umbrales de semáforo para evaluar visualmente sus KPIs" />
+        <EmptyState
+          icon={<Palette className="w-12 h-12" />}
+          title="Sin semáforos"
+          description="Configure umbrales de semáforo para evaluar visualmente sus KPIs"
+          action={canCreate ? { label: 'Nuevo Semáforo', onClick: onNew } : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {semaforos.map((semaforo: ConfiguracionSemaforo) => (
@@ -313,27 +539,63 @@ const SemaforosSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{semaforo.kpi_nombre}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {semaforo.kpi_nombre}
+                    </h4>
                     <p className="text-sm text-gray-500">{semaforo.kpi_codigo}</p>
-                    {semaforo.logica_inversa && <Badge variant="info" size="sm" className="mt-2">Lógica Inversa</Badge>}
+                    {semaforo.logica_inversa && (
+                      <Badge variant="info" size="sm" className="mt-2">
+                        Lógica Inversa
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(semaforo)}><Edit className="w-4 h-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(semaforo.id)}><Trash2 className="w-4 h-4 text-red-600" /></Button>
+                    {canEdit && (
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(semaforo)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(semaforo.id)}>
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-3">
                   {[
-                    { label: 'Verde', color: 'bg-green-500', min: semaforo.umbral_verde_min, max: semaforo.umbral_verde_max, desc: 'Óptimo' },
-                    { label: 'Amarillo', color: 'bg-yellow-500', min: semaforo.umbral_amarillo_min, max: semaforo.umbral_amarillo_max, desc: 'Alerta' },
-                    { label: 'Rojo', color: 'bg-red-500', min: semaforo.umbral_rojo_min, max: semaforo.umbral_rojo_max, desc: 'Crítico' },
+                    {
+                      label: 'Verde',
+                      color: 'bg-green-500',
+                      min: semaforo.umbral_verde_min,
+                      max: semaforo.umbral_verde_max,
+                      desc: 'Óptimo',
+                    },
+                    {
+                      label: 'Amarillo',
+                      color: 'bg-yellow-500',
+                      min: semaforo.umbral_amarillo_min,
+                      max: semaforo.umbral_amarillo_max,
+                      desc: 'Alerta',
+                    },
+                    {
+                      label: 'Rojo',
+                      color: 'bg-red-500',
+                      min: semaforo.umbral_rojo_min,
+                      max: semaforo.umbral_rojo_max,
+                      desc: 'Crítico',
+                    },
                   ].map((u) => (
                     <div key={u.label} className="flex items-center gap-3">
-                      <div className={`w-16 h-16 ${u.color} rounded-lg flex items-center justify-center`}>
+                      <div
+                        className={`w-16 h-16 ${u.color} rounded-lg flex items-center justify-center`}
+                      >
                         <span className="text-white font-bold">{u.label}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{u.min ?? 0} - {u.max ?? '∞'}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {u.min ?? 0} - {u.max ?? '∞'}
+                        </p>
                         <p className="text-xs text-gray-500">{u.desc}</p>
                       </div>
                     </div>
@@ -345,9 +607,18 @@ const SemaforosSection = ({ kpis, onEdit, onNew }: { kpis: CatalogoKPI[]; onEdit
         </div>
       )}
 
-      <ConfirmDialog isOpen={deleteId !== null} onClose={() => setDeleteId(null)}
-        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) }); }}
-        title="Eliminar Semáforo" message="¿Está seguro de eliminar esta configuración?" confirmLabel="Eliminar" variant="danger" isLoading={deleteMutation.isPending} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+        }}
+        title="Eliminar Semáforo"
+        message="¿Está seguro de eliminar esta configuración?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -378,20 +649,101 @@ export default function ConfigIndicadoresPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Configuración de Indicadores" description="Administración del catálogo de KPIs, fichas técnicas, metas y semáforos" />
+      <PageHeader
+        title="Configuración de Indicadores"
+        description="Administración del catálogo de KPIs, fichas técnicas, metas y semáforos"
+      />
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
       <div className="mt-6">
-        {activeTab === 'catalogo' && <CatalogoKPISection onNew={() => { setSelectedCatalogo(null); setShowCatalogoModal(true); }} onEdit={(item) => { setSelectedCatalogo(item); setShowCatalogoModal(true); }} />}
-        {activeTab === 'fichas' && <FichasTecnicasSection kpis={kpis} onNew={() => { setSelectedFicha(null); setShowFichaModal(true); }} onEdit={(item) => { setSelectedFicha(item); setShowFichaModal(true); }} />}
-        {activeTab === 'metas' && <MetasSection kpis={kpis} onNew={() => { setSelectedMeta(null); setShowMetaModal(true); }} onEdit={(item) => { setSelectedMeta(item); setShowMetaModal(true); }} />}
-        {activeTab === 'semaforos' && <SemaforosSection kpis={kpis} onNew={() => { setSelectedSemaforo(null); setShowSemaforoModal(true); }} onEdit={(item) => { setSelectedSemaforo(item); setShowSemaforoModal(true); }} />}
+        {activeTab === 'catalogo' && (
+          <CatalogoKPISection
+            onNew={() => {
+              setSelectedCatalogo(null);
+              setShowCatalogoModal(true);
+            }}
+            onEdit={(item) => {
+              setSelectedCatalogo(item);
+              setShowCatalogoModal(true);
+            }}
+          />
+        )}
+        {activeTab === 'fichas' && (
+          <FichasTecnicasSection
+            kpis={kpis}
+            onNew={() => {
+              setSelectedFicha(null);
+              setShowFichaModal(true);
+            }}
+            onEdit={(item) => {
+              setSelectedFicha(item);
+              setShowFichaModal(true);
+            }}
+          />
+        )}
+        {activeTab === 'metas' && (
+          <MetasSection
+            kpis={kpis}
+            onNew={() => {
+              setSelectedMeta(null);
+              setShowMetaModal(true);
+            }}
+            onEdit={(item) => {
+              setSelectedMeta(item);
+              setShowMetaModal(true);
+            }}
+          />
+        )}
+        {activeTab === 'semaforos' && (
+          <SemaforosSection
+            kpis={kpis}
+            onNew={() => {
+              setSelectedSemaforo(null);
+              setShowSemaforoModal(true);
+            }}
+            onEdit={(item) => {
+              setSelectedSemaforo(item);
+              setShowSemaforoModal(true);
+            }}
+          />
+        )}
       </div>
 
-      <CatalogoKPIFormModal item={selectedCatalogo} isOpen={showCatalogoModal} onClose={() => { setShowCatalogoModal(false); setSelectedCatalogo(null); }} />
-      <FichaTecnicaFormModal item={selectedFicha} kpis={kpis} isOpen={showFichaModal} onClose={() => { setShowFichaModal(false); setSelectedFicha(null); }} />
-      <MetaKPIFormModal item={selectedMeta} kpis={kpis} isOpen={showMetaModal} onClose={() => { setShowMetaModal(false); setSelectedMeta(null); }} />
-      <SemaforoFormModal item={selectedSemaforo} kpis={kpis} isOpen={showSemaforoModal} onClose={() => { setShowSemaforoModal(false); setSelectedSemaforo(null); }} />
+      <CatalogoKPIFormModal
+        item={selectedCatalogo}
+        isOpen={showCatalogoModal}
+        onClose={() => {
+          setShowCatalogoModal(false);
+          setSelectedCatalogo(null);
+        }}
+      />
+      <FichaTecnicaFormModal
+        item={selectedFicha}
+        kpis={kpis}
+        isOpen={showFichaModal}
+        onClose={() => {
+          setShowFichaModal(false);
+          setSelectedFicha(null);
+        }}
+      />
+      <MetaKPIFormModal
+        item={selectedMeta}
+        kpis={kpis}
+        isOpen={showMetaModal}
+        onClose={() => {
+          setShowMetaModal(false);
+          setSelectedMeta(null);
+        }}
+      />
+      <SemaforoFormModal
+        item={selectedSemaforo}
+        kpis={kpis}
+        isOpen={showSemaforoModal}
+        onClose={() => {
+          setShowSemaforoModal(false);
+          setSelectedSemaforo(null);
+        }}
+      />
     </div>
   );
 }

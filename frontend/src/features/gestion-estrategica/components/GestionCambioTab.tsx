@@ -22,6 +22,8 @@ import { Select } from '@/components/forms/Select';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
 import { Alert } from '@/components/common/Alert';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { CambioFormModal } from './modals/CambioFormModal';
 import {
   useGestionCambios,
@@ -40,15 +42,16 @@ import type {
   ChangePriority,
   ChangeType,
 } from '../types/gestion-cambio.types';
-import {
-  PRIORITY_CONFIG,
-  STATUS_CONFIG,
-  TYPE_CONFIG,
-} from '../types/gestion-cambio.types';
+import { PRIORITY_CONFIG, STATUS_CONFIG, TYPE_CONFIG } from '../types/gestion-cambio.types';
 import type { StatItem } from '@/components/layout/StatsGrid';
 import { formatFechaLocal } from '@/utils/dateUtils';
 
 export const GestionCambioTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.GESTION_CAMBIO, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.GESTION_CAMBIO, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.GESTION_CAMBIO, 'delete');
+
   const [filters, setFilters] = useState<GestionCambioFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCambio, setSelectedCambio] = useState<GestionCambio | null>(null);
@@ -201,26 +204,34 @@ export const GestionCambioTab = () => {
   ];
 
   const actions = [
-    {
-      label: 'Convertir a Proyecto',
-      icon: 'FolderKanban',
-      onClick: handleConvertirAProyecto,
-      variant: 'ghost' as const,
-      className: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50',
-    },
-    {
-      label: 'Editar',
-      icon: 'Edit',
-      onClick: handleEdit,
-      variant: 'ghost' as const,
-    },
-    {
-      label: 'Eliminar',
-      icon: 'Trash2',
-      onClick: handleDelete,
-      variant: 'ghost' as const,
-      className: 'text-red-600 hover:text-red-700 hover:bg-red-50',
-    },
+    ...(canEdit
+      ? [
+          {
+            label: 'Convertir a Proyecto',
+            icon: 'FolderKanban',
+            onClick: handleConvertirAProyecto,
+            variant: 'ghost' as const,
+            className: 'text-blue-600 hover:text-blue-700 hover:bg-blue-50',
+          },
+          {
+            label: 'Editar',
+            icon: 'Edit',
+            onClick: handleEdit,
+            variant: 'ghost' as const,
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            label: 'Eliminar',
+            icon: 'Trash2',
+            onClick: handleDelete,
+            variant: 'ghost' as const,
+            className: 'text-red-600 hover:text-red-700 hover:bg-red-50',
+          },
+        ]
+      : []),
   ];
 
   if (error) {
@@ -240,9 +251,15 @@ export const GestionCambioTab = () => {
         title="Cambios"
         description="Registre y dé seguimiento a cambios estratégicos, organizacionales, de procesos o tecnológicos"
         actions={
-          <Button onClick={handleCreate} leftIcon={<DynamicIcon name="Plus" className="w-4 h-4" />} variant="primary">
-            Nuevo Cambio
-          </Button>
+          canCreate ? (
+            <Button
+              onClick={handleCreate}
+              leftIcon={<DynamicIcon name="Plus" className="w-4 h-4" />}
+              variant="primary"
+            >
+              Nuevo Cambio
+            </Button>
+          ) : undefined
         }
       />
 
@@ -309,11 +326,15 @@ export const GestionCambioTab = () => {
           icon={<DynamicIcon name="GitBranch" className="w-12 h-12" />}
           title="No hay cambios registrados"
           description="Comience creando su primer cambio organizacional"
-          action={{
-            label: 'Nuevo Cambio',
-            onClick: handleCreate,
-            icon: <DynamicIcon name="Plus" className="w-4 h-4" />,
-          }}
+          action={
+            canCreate
+              ? {
+                  label: 'Nuevo Cambio',
+                  onClick: handleCreate,
+                  icon: <DynamicIcon name="Plus" className="w-4 h-4" />,
+                }
+              : undefined
+          }
         />
       ) : (
         <DataTableCard
@@ -377,11 +398,7 @@ export const GestionCambioTab = () => {
       )}
 
       {/* Modal */}
-      <CambioFormModal
-        cambio={selectedCambio}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
+      <CambioFormModal cambio={selectedCambio} isOpen={isModalOpen} onClose={handleCloseModal} />
     </div>
   );
 };

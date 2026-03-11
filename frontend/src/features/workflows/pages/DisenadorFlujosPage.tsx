@@ -33,6 +33,8 @@ import {
 } from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { NODE_CONFIG } from '../components/nodes/BpmnNodes';
 import { WorkflowDesignerCanvas } from '../components/WorkflowDesignerCanvas';
 import PlantillaFormModal from '../components/PlantillaFormModal';
@@ -117,90 +119,100 @@ const PlantillaCard = ({
   onActivar,
   onNewVersion,
   onDelete,
-}: PlantillaCardProps) => (
-  <Card className="hover:shadow-md transition-shadow">
-    <div className="p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <GitBranch className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {plantilla.nombre}
-            </h3>
+}: PlantillaCardProps) => {
+  const { canDo } = usePermissions();
+  const canEdit = canDo(Modules.WORKFLOW_ENGINE, Sections.FLUJOS, 'edit');
+  const canDelete = canDo(Modules.WORKFLOW_ENGINE, Sections.FLUJOS, 'delete');
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <div className="p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <GitBranch className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {plantilla.nombre}
+              </h3>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{plantilla.codigo}</p>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{plantilla.codigo}</p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge variant="gray" size="sm">
+              v{plantilla.version}
+            </Badge>
+            <StatusBadge status={plantilla.estado} />
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="gray" size="sm">
-            v{plantilla.version}
-          </Badge>
-          <StatusBadge status={plantilla.estado} />
-        </div>
-      </div>
 
-      {plantilla.descripcion && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
-          {plantilla.descripcion}
-        </p>
-      )}
+        {plantilla.descripcion && (
+          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+            {plantilla.descripcion}
+          </p>
+        )}
 
-      {plantilla.categoria_detail && (
-        <div className="flex items-center gap-1.5 mb-3">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: plantilla.categoria_detail.color || '#8B5CF6' }}
-          />
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {plantilla.categoria_detail.nombre}
-          </span>
-        </div>
-      )}
+        {plantilla.categoria_detail && (
+          <div className="flex items-center gap-1.5 mb-3">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: plantilla.categoria_detail.color || '#8B5CF6' }}
+            />
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {plantilla.categoria_detail.nombre}
+            </span>
+          </div>
+        )}
 
-      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
-        <span className="flex items-center gap-1">
-          <FileText className="h-3 w-3" />
-          {plantilla.total_nodos ?? 0} nodos
-        </span>
-        <span className="flex items-center gap-1">
-          <GitBranch className="h-3 w-3" />
-          {plantilla.total_transiciones ?? 0} transiciones
-        </span>
-        {plantilla.tiempo_estimado_horas && (
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
           <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {plantilla.tiempo_estimado_horas}h
+            <FileText className="h-3 w-3" />
+            {plantilla.total_nodos ?? 0} nodos
           </span>
-        )}
-      </div>
+          <span className="flex items-center gap-1">
+            <GitBranch className="h-3 w-3" />
+            {plantilla.total_transiciones ?? 0} transiciones
+          </span>
+          {plantilla.tiempo_estimado_horas && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {plantilla.tiempo_estimado_horas}h
+            </span>
+          )}
+        </div>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button size="sm" variant="primary" onClick={() => onSelect(plantilla.id)}>
-          <Edit3 className="h-3.5 w-3.5 mr-1" />
-          Diseñar
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => onEdit(plantilla)}>
-          <Settings className="h-3.5 w-3.5 mr-1" />
-          Editar
-        </Button>
-        {plantilla.estado === 'BORRADOR' && (
-          <Button size="sm" variant="outline" onClick={() => onActivar(plantilla.id)}>
-            <Play className="h-3.5 w-3.5 mr-1" />
-            Activar
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button size="sm" variant="primary" onClick={() => onSelect(plantilla.id)}>
+            <Edit3 className="h-3.5 w-3.5 mr-1" />
+            Diseñar
           </Button>
-        )}
-        {plantilla.estado === 'ACTIVO' && (
-          <Button size="sm" variant="outline" onClick={() => onNewVersion(plantilla.id)}>
-            <Copy className="h-3.5 w-3.5 mr-1" />
-            Nueva Versión
-          </Button>
-        )}
-        <Button size="sm" variant="ghost" onClick={() => onDelete(plantilla)}>
-          <Trash2 className="h-3.5 w-3.5 text-red-500" />
-        </Button>
+          {canEdit && (
+            <Button size="sm" variant="outline" onClick={() => onEdit(plantilla)}>
+              <Settings className="h-3.5 w-3.5 mr-1" />
+              Editar
+            </Button>
+          )}
+          {canEdit && plantilla.estado === 'BORRADOR' && (
+            <Button size="sm" variant="outline" onClick={() => onActivar(plantilla.id)}>
+              <Play className="h-3.5 w-3.5 mr-1" />
+              Activar
+            </Button>
+          )}
+          {canEdit && plantilla.estado === 'ACTIVO' && (
+            <Button size="sm" variant="outline" onClick={() => onNewVersion(plantilla.id)}>
+              <Copy className="h-3.5 w-3.5 mr-1" />
+              Nueva Versión
+            </Button>
+          )}
+          {canDelete && (
+            <Button size="sm" variant="ghost" onClick={() => onDelete(plantilla)}>
+              <Trash2 className="h-3.5 w-3.5 text-red-500" />
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 // ============================================================
 // PAGINA PRINCIPAL
@@ -208,6 +220,9 @@ const PlantillaCard = ({
 
 export default function DisenadorFlujosPage() {
   const navigate = useNavigate();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.WORKFLOW_ENGINE, Sections.FLUJOS, 'create');
+  const canEdit = canDo(Modules.WORKFLOW_ENGINE, Sections.FLUJOS, 'edit');
   const [selectedPlantillaId, setSelectedPlantillaId] = useState<number | null>(null);
   const [filterEstado, setFilterEstado] = useState<EstadoPlantilla | ''>('');
 
@@ -285,7 +300,7 @@ export default function DisenadorFlujosPage() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Volver a Lista
               </Button>
-              {selectedPlantilla.estado === 'BORRADOR' && (
+              {canEdit && selectedPlantilla.estado === 'BORRADOR' && (
                 <Button
                   variant="primary"
                   onClick={() => activarMutation.mutate(selectedPlantilla.id)}
@@ -345,10 +360,12 @@ export default function DisenadorFlujosPage() {
               <Tags className="h-4 w-4 mr-2" />
               Categorías
             </Button>
-            <Button variant="primary" onClick={handleOpenNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Plantilla
-            </Button>
+            {canCreate && (
+              <Button variant="primary" onClick={handleOpenNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Plantilla
+              </Button>
+            )}
           </div>
         }
       />
@@ -398,6 +415,7 @@ export default function DisenadorFlujosPage() {
           icon={<GitBranch className="h-12 w-12" />}
           title="Sin plantillas de flujo"
           description="Crea tu primera plantilla para comenzar a diseñar flujos de trabajo."
+          action={canCreate ? { label: 'Nueva Plantilla', onClick: handleOpenNew } : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -9,6 +9,8 @@
  */
 import { useState, useEffect } from 'react';
 import { Edit, Eye, Trash2, Users, Shield, UserCheck } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -55,6 +57,10 @@ export function ProveedoresTable({
   onEdit,
   showFilters: externalShowFilters,
 }: ProveedoresTableProps) {
+  const { canDo } = usePermissions();
+  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.REGISTRO_PROVEEDORES, 'edit');
+  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.REGISTRO_PROVEEDORES, 'delete');
+
   const [filtros, setFiltros] = useState<Filtros>({});
   const [showFilters, setShowFilters] = useState(false);
 
@@ -267,7 +273,7 @@ export function ProveedoresTable({
                           <Eye className="w-4 h-4" />
                         </Button>
                       )}
-                      {onEdit && (
+                      {canEdit && onEdit && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -277,7 +283,7 @@ export function ProveedoresTable({
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
-                      {proveedor.is_active && (
+                      {canEdit && proveedor.is_active && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -295,14 +301,16 @@ export function ProveedoresTable({
                           )}
                         </Button>
                       )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(proveedor.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(proveedor.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>

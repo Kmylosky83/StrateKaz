@@ -15,6 +15,8 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner, ConfirmDialog } from '@/components/common';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 import {
   useTiposDocumento,
@@ -41,6 +43,14 @@ export function TiposPlantillasSection({
   onCreatePlantilla,
   onEditPlantilla,
 }: TiposPlantillasSectionProps) {
+  const { canDo } = usePermissions();
+  const canCreateTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'create');
+  const canEditTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'edit');
+  const canDeleteTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'delete');
+  const canCreatePlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'create');
+  const canEditPlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'edit');
+  const canDeletePlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'delete');
+
   const { data: tipos, isLoading: isLoadingTipos } = useTiposDocumento();
   const { data: plantillas, isLoading: isLoadingPlantillas } = usePlantillasDocumento();
   const deleteTipoMutation = useDeleteTipoDocumento();
@@ -72,14 +82,16 @@ export function TiposPlantillasSection({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Tipos de Documento
             </h3>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onCreateTipo}
-            >
-              Nuevo Tipo
-            </Button>
+            {canCreateTipo && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={onCreateTipo}
+              >
+                Nuevo Tipo
+              </Button>
+            )}
           </div>
 
           {!tipos || tipos.length === 0 ? (
@@ -87,11 +99,15 @@ export function TiposPlantillasSection({
               icon={<Files className="w-12 h-12" />}
               title="No hay tipos de documento"
               description="Crea tipos de documento para organizar tu sistema documental."
-              action={{
-                label: 'Crear Tipo',
-                onClick: onCreateTipo,
-                icon: <Plus className="w-4 h-4" />,
-              }}
+              action={
+                canCreateTipo
+                  ? {
+                      label: 'Crear Tipo',
+                      onClick: onCreateTipo,
+                      icon: <Plus className="w-4 h-4" />,
+                    }
+                  : undefined
+              }
             />
           ) : (
             <div className="space-y-2">
@@ -153,28 +169,32 @@ export function TiposPlantillasSection({
                             className="absolute right-0 top-8 z-50 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
-                              onClick={() => {
-                                onEditTipo(tipo);
-                                setTipoMenuOpen(null);
-                              }}
-                            >
-                              <Edit className="w-3 h-3" /> Editar
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
-                              onClick={() => {
-                                setConfirmDeleteTipo(tipo);
-                                setTipoMenuOpen(null);
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" /> Eliminar
-                            </Button>
+                            {canEditTipo && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
+                                onClick={() => {
+                                  onEditTipo(tipo);
+                                  setTipoMenuOpen(null);
+                                }}
+                              >
+                                <Edit className="w-3 h-3" /> Editar
+                              </Button>
+                            )}
+                            {canDeleteTipo && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
+                                onClick={() => {
+                                  setConfirmDeleteTipo(tipo);
+                                  setTipoMenuOpen(null);
+                                }}
+                              >
+                                <Trash2 className="w-3 h-3" /> Eliminar
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -190,14 +210,16 @@ export function TiposPlantillasSection({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onCreatePlantilla}
-            >
-              Nueva Plantilla
-            </Button>
+            {canCreatePlantilla && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={onCreatePlantilla}
+              >
+                Nueva Plantilla
+              </Button>
+            )}
           </div>
 
           {!plantillas || plantillas.length === 0 ? (
@@ -205,11 +227,15 @@ export function TiposPlantillasSection({
               icon={<Layout className="w-12 h-12" />}
               title="No hay plantillas"
               description="Crea plantillas reutilizables para generar documentos de forma rápida."
-              action={{
-                label: 'Crear Plantilla',
-                onClick: onCreatePlantilla,
-                icon: <Plus className="w-4 h-4" />,
-              }}
+              action={
+                canCreatePlantilla
+                  ? {
+                      label: 'Crear Plantilla',
+                      onClick: onCreatePlantilla,
+                      icon: <Plus className="w-4 h-4" />,
+                    }
+                  : undefined
+              }
             />
           ) : (
             <div className="space-y-2">
@@ -258,18 +284,20 @@ export function TiposPlantillasSection({
                         </Button>
                         {plantillaMenuOpen === plantilla.id && (
                           <div className="absolute right-0 top-8 z-50 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
-                              onClick={() => {
-                                onEditPlantilla(plantilla);
-                                setPlantillaMenuOpen(null);
-                              }}
-                            >
-                              <Edit className="w-3 h-3" /> Editar
-                            </Button>
-                            {plantilla.estado !== 'ACTIVA' && (
+                            {canEditPlantilla && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
+                                onClick={() => {
+                                  onEditPlantilla(plantilla);
+                                  setPlantillaMenuOpen(null);
+                                }}
+                              >
+                                <Edit className="w-3 h-3" /> Editar
+                              </Button>
+                            )}
+                            {canEditPlantilla && plantilla.estado !== 'ACTIVA' && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -282,17 +310,19 @@ export function TiposPlantillasSection({
                                 <CheckCircle className="w-3 h-3" /> Activar
                               </Button>
                             )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
-                              onClick={() => {
-                                setConfirmDeletePlantilla(plantilla);
-                                setPlantillaMenuOpen(null);
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3" /> Eliminar
-                            </Button>
+                            {canDeletePlantilla && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
+                                onClick={() => {
+                                  setConfirmDeletePlantilla(plantilla);
+                                  setPlantillaMenuOpen(null);
+                                }}
+                              >
+                                <Trash2 className="w-3 h-3" /> Eliminar
+                              </Button>
+                            )}
                           </div>
                         )}
                       </div>

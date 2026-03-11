@@ -17,6 +17,7 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import {
   Plus,
   Edit,
@@ -180,7 +181,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
                 'prose-p:leading-relaxed prose-p:text-base',
                 'prose-strong:text-gray-900 dark:prose-strong:text-white'
               )}
-              dangerouslySetInnerHTML={{ __html: identity.mission }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(identity.mission) }}
             />
           </div>
 
@@ -244,7 +245,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
                 'prose-p:leading-relaxed prose-p:text-base',
                 'prose-strong:text-gray-900 dark:prose-strong:text-white'
               )}
-              dangerouslySetInnerHTML={{ __html: identity.vision }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(identity.vision) }}
             />
           </div>
 

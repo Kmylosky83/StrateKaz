@@ -99,6 +99,7 @@ const getEstadoBadge = (
 export default function TesoreriaPage() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.FLUJO_CAJA, 'create');
+  const canEdit = canDo(Modules.ADMIN_FINANCE, Sections.FLUJO_CAJA, 'edit');
 
   const [activeTab, setActiveTab] = useState('bancos');
 
@@ -204,7 +205,11 @@ export default function TesoreriaPage() {
               icon={<CreditCard className="w-16 h-16" />}
               title="No hay cuentas bancarias"
               description="Registre las cuentas bancarias de su empresa"
-              action={{ label: 'Nueva Cuenta', onClick: () => setBancoModal(true) }}
+              action={
+                canCreate
+                  ? { label: 'Nueva Cuenta', onClick: () => setBancoModal(true) }
+                  : undefined
+              }
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -237,18 +242,20 @@ export default function TesoreriaPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedBanco(banco as unknown as Banco);
-                        setBancoModal(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4 mr-1" /> Editar
-                    </Button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedBanco(banco as unknown as Banco);
+                          setBancoModal(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" /> Editar
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -311,7 +318,9 @@ export default function TesoreriaPage() {
               icon={<ArrowUpRight className="w-16 h-16" />}
               title="No hay cuentas por pagar"
               description="Registre las obligaciones financieras de su empresa"
-              action={{ label: 'Nueva CxP', onClick: () => setCxpModal(true) }}
+              action={
+                canCreate ? { label: 'Nueva CxP', onClick: () => setCxpModal(true) } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -438,7 +447,9 @@ export default function TesoreriaPage() {
               icon={<ArrowDownRight className="w-16 h-16" />}
               title="No hay cuentas por cobrar"
               description="Registre las facturas pendientes de cobro"
-              action={{ label: 'Nueva CxC', onClick: () => setCxcModal(true) }}
+              action={
+                canCreate ? { label: 'Nueva CxC', onClick: () => setCxcModal(true) } : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -566,7 +577,11 @@ export default function TesoreriaPage() {
               icon={<ArrowUpRight className="w-16 h-16" />}
               title="No hay pagos registrados"
               description="Registre los pagos realizados a proveedores"
-              action={{ label: 'Registrar Pago', onClick: () => setPagoModal(true) }}
+              action={
+                canCreate
+                  ? { label: 'Registrar Pago', onClick: () => setPagoModal(true) }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">
@@ -655,7 +670,11 @@ export default function TesoreriaPage() {
               icon={<ArrowDownRight className="w-16 h-16" />}
               title="No hay recaudos registrados"
               description="Registre los cobros realizados a clientes"
-              action={{ label: 'Registrar Recaudo', onClick: () => setRecaudoModal(true) }}
+              action={
+                canCreate
+                  ? { label: 'Registrar Recaudo', onClick: () => setRecaudoModal(true) }
+                  : undefined
+              }
             />
           ) : (
             <Card variant="bordered" padding="none">

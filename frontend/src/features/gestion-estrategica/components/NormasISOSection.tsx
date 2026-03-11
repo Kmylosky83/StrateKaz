@@ -19,11 +19,14 @@ import { Plus, FileCheck, Lock } from 'lucide-react';
 import { Card, Badge, Button, BrandedSkeleton, DynamicIcon } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useNormasISO, useDeleteNormaISO } from '../hooks/useNormasISO';
 import { NormaISOFormModal } from './modals/NormaISOFormModal';
 import type { NormaISO } from '../api/strategicApi';
 
 export const NormasISOSection = () => {
+  const { canDo } = usePermissions();
   const { data: normasData, isLoading } = useNormasISO();
   const deleteMutation = useDeleteNormaISO();
 

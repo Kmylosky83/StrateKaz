@@ -10,6 +10,8 @@
  * - Seguimiento de tratamientos
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { cn } from '@/utils/cn';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import { Card } from '@/components/common/Card';
@@ -102,9 +104,7 @@ function KPICard({
         <div className="flex-1">
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
           <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{subtitle}</p>}
           {trend && (
             <div className="flex items-center gap-1 mt-2">
               {trend.isPositive ? (
@@ -189,29 +189,31 @@ const ESTADO_COLORS: Record<EstadoRiesgo, string> = {
 /**
  * ResumenSection - Dashboard ejecutivo de riesgos
  */
-function ResumenSection({ riesgos, oportunidades, tratamientos }: {
+function ResumenSection({
+  riesgos,
+  oportunidades,
+  tratamientos,
+}: {
   riesgos: RiesgoProceso[];
   oportunidades: Oportunidad[];
   tratamientos: TratamientoRiesgo[];
 }) {
   const stats = useMemo(() => {
     const totalRiesgos = riesgos.length;
-    const riesgosCriticos = riesgos.filter(r => r.nivel_residual >= 15).length;
-    const riesgosAltos = riesgos.filter(r => r.nivel_residual >= 10 && r.nivel_residual < 15).length;
-    const riesgosControlados = riesgos.filter(r => r.estado === 'controlado').length;
+    const riesgosCriticos = riesgos.filter((r) => r.nivel_residual >= 15).length;
+    const riesgosAltos = riesgos.filter(
+      (r) => r.nivel_residual >= 10 && r.nivel_residual < 15
+    ).length;
+    const riesgosControlados = riesgos.filter((r) => r.estado === 'controlado').length;
 
     const totalOportunidades = oportunidades.length;
     const oportunidadesEnEjecucion = oportunidades.filter(
-      o => o.estado === 'en_ejecucion' || o.estado === 'aprobada'
+      (o) => o.estado === 'en_ejecucion' || o.estado === 'aprobada'
     ).length;
 
     const totalTratamientos = tratamientos.length;
-    const tratamientosActivos = tratamientos.filter(
-      t => t.estado === 'en_proceso'
-    ).length;
-    const tratamientosCompletados = tratamientos.filter(
-      t => t.estado === 'completado'
-    ).length;
+    const tratamientosActivos = tratamientos.filter((t) => t.estado === 'en_proceso').length;
+    const tratamientosCompletados = tratamientos.filter((t) => t.estado === 'completado').length;
 
     // Calcular promedios
     const promedioNivelInherente =
@@ -312,7 +314,9 @@ function ResumenSection({ riesgos, oportunidades, tratamientos }: {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Completados</span>
-              <span className="text-sm font-medium text-green-600">{stats.tratamientosCompletados}</span>
+              <span className="text-sm font-medium text-green-600">
+                {stats.tratamientosCompletados}
+              </span>
             </div>
           </div>
         </Card>
@@ -331,12 +335,14 @@ function ResumenSection({ riesgos, oportunidades, tratamientos }: {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">En Ejecución</span>
-              <span className="text-sm font-medium text-blue-600">{stats.oportunidadesEnEjecucion}</span>
+              <span className="text-sm font-medium text-blue-600">
+                {stats.oportunidadesEnEjecucion}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Implementadas</span>
               <span className="text-sm font-medium text-green-600">
-                {oportunidades.filter(o => o.estado === 'implementada').length}
+                {oportunidades.filter((o) => o.estado === 'implementada').length}
               </span>
             </div>
           </div>
@@ -354,9 +360,9 @@ function ResumenSection({ riesgos, oportunidades, tratamientos }: {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {riesgos
-              .filter(r => r.nivel_residual >= 15)
+              .filter((r) => r.nivel_residual >= 15)
               .slice(0, 6)
-              .map(riesgo => (
+              .map((riesgo) => (
                 <RiesgoCard
                   key={riesgo.id}
                   codigo={riesgo.codigo}
@@ -378,7 +384,10 @@ function ResumenSection({ riesgos, oportunidades, tratamientos }: {
 /**
  * MapaCalorSection - Visualización de matriz de riesgos
  */
-function MapaCalorSection({ riesgos, onRiesgoClick }: {
+function MapaCalorSection({
+  riesgos,
+  onRiesgoClick,
+}: {
   riesgos: RiesgoProceso[];
   onRiesgoClick?: (riesgo: RiesgoProceso) => void;
 }) {
@@ -443,11 +452,7 @@ function MapaCalorSection({ riesgos, onRiesgoClick }: {
 
       {/* Mapa de calor */}
       <Card padding="lg">
-        <MapaCalorRiesgos
-          riesgos={riesgos}
-          tipo={tipoMapa}
-          onCellClick={handleCellClick}
-        />
+        <MapaCalorRiesgos riesgos={riesgos} tipo={tipoMapa} onCellClick={handleCellClick} />
       </Card>
 
       {/* Detalle de celda seleccionada */}
@@ -458,8 +463,8 @@ function MapaCalorSection({ riesgos, onRiesgoClick }: {
               Riesgos en celda seleccionada
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Probabilidad: {selectedCell.probabilidad} | Impacto: {selectedCell.impacto} |
-              Nivel: {selectedCell.probabilidad * selectedCell.impacto}
+              Probabilidad: {selectedCell.probabilidad} | Impacto: {selectedCell.impacto} | Nivel:{' '}
+              {selectedCell.probabilidad * selectedCell.impacto}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -485,10 +490,18 @@ function MapaCalorSection({ riesgos, onRiesgoClick }: {
 /**
  * RiesgosSection - Listado completo de riesgos
  */
-function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
+function RiesgosSection({
+  riesgos,
+  onRiesgoClick,
+  onCreateRiesgo,
+  canCreate,
+  canView,
+}: {
   riesgos: RiesgoProceso[];
   onRiesgoClick?: (riesgo: RiesgoProceso) => void;
   onCreateRiesgo?: () => void;
+  canCreate?: boolean;
+  canView?: boolean;
 }) {
   const [filtros, setFiltros] = useState({
     tipo: 'todos',
@@ -522,10 +535,12 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
             <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
               Filtros
             </Button>
-            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-              Exportar
-            </Button>
-            {onCreateRiesgo && (
+            {canView && (
+              <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                Exportar
+              </Button>
+            )}
+            {canCreate && onCreateRiesgo && (
               <Button size="sm" onClick={onCreateRiesgo} leftIcon={<Plus className="w-4 h-4" />}>
                 Nuevo Riesgo
               </Button>
@@ -539,7 +554,11 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
             variant="outline"
             size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 0 })}
-            className={filtros.nivelMinimo === 0 ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
+            className={
+              filtros.nivelMinimo === 0
+                ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400'
+                : ''
+            }
           >
             Todos
           </Button>
@@ -547,7 +566,11 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
             variant="outline"
             size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 15 })}
-            className={filtros.nivelMinimo === 15 ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400' : ''}
+            className={
+              filtros.nivelMinimo === 15
+                ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400'
+                : ''
+            }
           >
             Críticos
           </Button>
@@ -555,7 +578,11 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
             variant="outline"
             size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 10 })}
-            className={filtros.nivelMinimo === 10 ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400' : ''}
+            className={
+              filtros.nivelMinimo === 10
+                ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400'
+                : ''
+            }
           >
             Altos
           </Button>
@@ -582,15 +609,21 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
         <Card>
           <EmptyState
             icon={<AlertTriangle className="w-12 h-12" />}
-            title={riesgos.length === 0 ? 'No hay riesgos registrados' : 'No se encontraron riesgos'}
+            title={
+              riesgos.length === 0 ? 'No hay riesgos registrados' : 'No se encontraron riesgos'
+            }
             description={
               riesgos.length === 0
                 ? 'Comienza identificando los riesgos que pueden afectar los procesos de tu organización. Haz clic en "Nuevo Riesgo" para registrar el primero.'
                 : 'No hay riesgos que coincidan con los filtros aplicados. Intenta con otros criterios.'
             }
             action={
-              riesgos.length === 0 && onCreateRiesgo
-                ? { label: 'Nuevo Riesgo', onClick: onCreateRiesgo, icon: <Plus className="w-4 h-4" /> }
+              riesgos.length === 0 && canCreate && onCreateRiesgo
+                ? {
+                    label: 'Nuevo Riesgo',
+                    onClick: onCreateRiesgo,
+                    icon: <Plus className="w-4 h-4" />,
+                  }
                 : undefined
             }
           />
@@ -603,16 +636,24 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
 /**
  * OportunidadesSection - Gestión de oportunidades
  */
-function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOportunidad }: {
+function OportunidadesSection({
+  oportunidades,
+  onOportunidadClick,
+  onCreateOportunidad,
+  canCreate,
+  canView,
+}: {
   oportunidades: Oportunidad[];
   onOportunidadClick?: (oportunidad: Oportunidad) => void;
   onCreateOportunidad?: () => void;
+  canCreate?: boolean;
+  canView?: boolean;
 }) {
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
 
   const oportunidadesFiltradas = useMemo(() => {
     if (filtroEstado === 'todos') return oportunidades;
-    return oportunidades.filter(o => o.estado === filtroEstado);
+    return oportunidades.filter((o) => o.estado === filtroEstado);
   }, [oportunidades, filtroEstado]);
 
   const getEstadoColor = (estado: Oportunidad['estado']): string => {
@@ -650,11 +691,17 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-              Exportar
-            </Button>
-            {onCreateOportunidad && (
-              <Button size="sm" onClick={onCreateOportunidad} leftIcon={<Plus className="w-4 h-4" />}>
+            {canView && (
+              <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                Exportar
+              </Button>
+            )}
+            {canCreate && onCreateOportunidad && (
+              <Button
+                size="sm"
+                onClick={onCreateOportunidad}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
                 Nueva Oportunidad
               </Button>
             )}
@@ -667,7 +714,11 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('todos')}
-            className={filtroEstado === 'todos' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
+            className={
+              filtroEstado === 'todos'
+                ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400'
+                : ''
+            }
           >
             Todas
           </Button>
@@ -675,7 +726,11 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('en_ejecucion')}
-            className={filtroEstado === 'en_ejecucion' ? 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400' : ''}
+            className={
+              filtroEstado === 'en_ejecucion'
+                ? 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400'
+                : ''
+            }
           >
             En Ejecución
           </Button>
@@ -683,7 +738,11 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('implementada')}
-            className={filtroEstado === 'implementada' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400' : ''}
+            className={
+              filtroEstado === 'implementada'
+                ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400'
+                : ''
+            }
           >
             Implementadas
           </Button>
@@ -720,15 +779,18 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-500">Factibilidad:</span>
-                <p className={cn('font-medium capitalize', getFactibilidadColor(oportunidad.factibilidad))}>
+                <p
+                  className={cn(
+                    'font-medium capitalize',
+                    getFactibilidadColor(oportunidad.factibilidad)
+                  )}
+                >
                   {oportunidad.factibilidad}
                 </p>
               </div>
               <div>
                 <span className="text-gray-500 dark:text-gray-500">Impacto:</span>
-                <p className="font-medium">
-                  {oportunidad.impacto_beneficio}/5
-                </p>
+                <p className="font-medium">{oportunidad.impacto_beneficio}/5</p>
               </div>
               <div>
                 <span className="text-gray-500 dark:text-gray-500">Área:</span>
@@ -760,15 +822,23 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
         <Card>
           <EmptyState
             icon={<Target className="w-12 h-12" />}
-            title={oportunidades.length === 0 ? 'No hay oportunidades registradas' : 'No se encontraron oportunidades'}
+            title={
+              oportunidades.length === 0
+                ? 'No hay oportunidades registradas'
+                : 'No se encontraron oportunidades'
+            }
             description={
               oportunidades.length === 0
                 ? 'Las oportunidades son situaciones favorables que pueden mejorar los procesos. Identifica y registra oportunidades de mejora para tu organización.'
                 : 'No hay oportunidades que coincidan con el filtro seleccionado. Prueba con otro estado.'
             }
             action={
-              oportunidades.length === 0 && onCreateOportunidad
-                ? { label: 'Nueva Oportunidad', onClick: onCreateOportunidad, icon: <Plus className="w-4 h-4" /> }
+              oportunidades.length === 0 && canCreate && onCreateOportunidad
+                ? {
+                    label: 'Nueva Oportunidad',
+                    onClick: onCreateOportunidad,
+                    icon: <Plus className="w-4 h-4" />,
+                  }
                 : undefined
             }
           />
@@ -781,21 +851,30 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
 /**
  * TratamientosSection - Seguimiento de tratamientos
  */
-function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCreateTratamiento }: {
+function TratamientosSection({
+  tratamientos,
+  riesgos,
+  onTratamientoClick,
+  onCreateTratamiento,
+  canCreate,
+  canView,
+}: {
   tratamientos: TratamientoRiesgo[];
   riesgos: RiesgoProceso[];
   onTratamientoClick?: (tratamiento: TratamientoRiesgo) => void;
   onCreateTratamiento?: () => void;
+  canCreate?: boolean;
+  canView?: boolean;
 }) {
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
 
   const tratamientosFiltrados = useMemo(() => {
     if (filtroEstado === 'todos') return tratamientos;
-    return tratamientos.filter(t => t.estado === filtroEstado);
+    return tratamientos.filter((t) => t.estado === filtroEstado);
   }, [tratamientos, filtroEstado]);
 
   // Obtener riesgo asociado
-  const getRiesgo = (riesgoId: number) => riesgos.find(r => r.id === riesgoId);
+  const getRiesgo = (riesgoId: number) => riesgos.find((r) => r.id === riesgoId);
 
   const getEstadoColor = (estado: TratamientoRiesgo['estado']): string => {
     const colors = {
@@ -841,11 +920,17 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-              Exportar
-            </Button>
-            {onCreateTratamiento && (
-              <Button size="sm" onClick={onCreateTratamiento} leftIcon={<Plus className="w-4 h-4" />}>
+            {canView && (
+              <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                Exportar
+              </Button>
+            )}
+            {canCreate && onCreateTratamiento && (
+              <Button
+                size="sm"
+                onClick={onCreateTratamiento}
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
                 Nuevo Tratamiento
               </Button>
             )}
@@ -858,7 +943,11 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('todos')}
-            className={filtroEstado === 'todos' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
+            className={
+              filtroEstado === 'todos'
+                ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400'
+                : ''
+            }
           >
             Todos
           </Button>
@@ -866,7 +955,11 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('en_proceso')}
-            className={filtroEstado === 'en_proceso' ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400' : ''}
+            className={
+              filtroEstado === 'en_proceso'
+                ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400'
+                : ''
+            }
           >
             En Proceso
           </Button>
@@ -874,7 +967,11 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
             variant="outline"
             size="sm"
             onClick={() => setFiltroEstado('completado')}
-            className={filtroEstado === 'completado' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400' : ''}
+            className={
+              filtroEstado === 'completado'
+                ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400'
+                : ''
+            }
           >
             Completados
           </Button>
@@ -893,9 +990,7 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
             >
               <div className="flex items-start gap-4">
                 {/* Icono de tipo */}
-                <div className="flex-shrink-0 mt-1">
-                  {getTipoTratamientoIcon(tratamiento.tipo)}
-                </div>
+                <div className="flex-shrink-0 mt-1">{getTipoTratamientoIcon(tratamiento.tipo)}</div>
 
                 {/* Contenido principal */}
                 <div className="flex-1 min-w-0">
@@ -905,7 +1000,12 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
                         <span className="text-xs font-medium text-gray-500 uppercase">
                           {getTipoTratamientoLabel(tratamiento.tipo)}
                         </span>
-                        <span className={cn('text-xs px-2 py-0.5 rounded', getEstadoColor(tratamiento.estado))}>
+                        <span
+                          className={cn(
+                            'text-xs px-2 py-0.5 rounded',
+                            getEstadoColor(tratamiento.estado)
+                          )}
+                        >
                           {tratamiento.estado.replace('_', ' ')}
                         </span>
                       </div>
@@ -918,7 +1018,8 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
                     {tratamiento.responsable_detail && (
                       <div className="text-xs text-gray-500 text-right">
                         <Users className="w-4 h-4 inline mr-1" />
-                        {tratamiento.responsable_detail.first_name} {tratamiento.responsable_detail.last_name}
+                        {tratamiento.responsable_detail.first_name}{' '}
+                        {tratamiento.responsable_detail.last_name}
                       </div>
                     )}
                   </div>
@@ -973,7 +1074,8 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
                       <div>
                         <span className="text-gray-500 block">Tareas</span>
                         <span className="text-gray-900 dark:text-gray-100">
-                          {tratamiento.tareas.filter(t => t.completada).length}/{tratamiento.tareas.length}
+                          {tratamiento.tareas.filter((t) => t.completada).length}/
+                          {tratamiento.tareas.length}
                         </span>
                       </div>
                     )}
@@ -989,15 +1091,23 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
         <Card>
           <EmptyState
             icon={<Shield className="w-12 h-12" />}
-            title={tratamientos.length === 0 ? 'No hay planes de tratamiento registrados' : 'No se encontraron tratamientos'}
+            title={
+              tratamientos.length === 0
+                ? 'No hay planes de tratamiento registrados'
+                : 'No se encontraron tratamientos'
+            }
             description={
               tratamientos.length === 0
                 ? 'Los planes de tratamiento definen las acciones para mitigar, evitar, transferir o aceptar los riesgos identificados. Crea un plan para cada riesgo que requiera intervención.'
                 : 'No hay tratamientos que coincidan con el estado seleccionado. Prueba con otro filtro.'
             }
             action={
-              tratamientos.length === 0 && onCreateTratamiento
-                ? { label: 'Nuevo Tratamiento', onClick: onCreateTratamiento, icon: <Plus className="w-4 h-4" /> }
+              tratamientos.length === 0 && canCreate && onCreateTratamiento
+                ? {
+                    label: 'Nuevo Tratamiento',
+                    onClick: onCreateTratamiento,
+                    icon: <Plus className="w-4 h-4" />,
+                  }
                 : undefined
             }
           />
@@ -1024,6 +1134,10 @@ export function RiesgosOportunidadesTab({
   onCreateTratamiento,
   isLoading = false,
 }: RiesgosOportunidadesTabProps) {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.RIESGOS_PROCESO, 'create');
+  const canView = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.RIESGOS_PROCESO, 'view');
+
   const [activeSubTab, setActiveSubTab] = useState('resumen');
 
   const tabs = [
@@ -1048,12 +1162,7 @@ export function RiesgosOportunidadesTab({
   return (
     <div className="space-y-6">
       {/* Subtabs */}
-      <Tabs
-        tabs={tabs}
-        activeTab={activeSubTab}
-        onChange={setActiveSubTab}
-        variant="pills"
-      />
+      <Tabs tabs={tabs} activeTab={activeSubTab} onChange={setActiveSubTab} variant="pills" />
 
       {/* Contenido según subtab activo */}
       <div>
@@ -1074,6 +1183,8 @@ export function RiesgosOportunidadesTab({
             riesgos={riesgos}
             onRiesgoClick={onRiesgoClick}
             onCreateRiesgo={onCreateRiesgo}
+            canCreate={canCreate}
+            canView={canView}
           />
         )}
 
@@ -1082,6 +1193,8 @@ export function RiesgosOportunidadesTab({
             oportunidades={oportunidades}
             onOportunidadClick={onOportunidadClick}
             onCreateOportunidad={onCreateOportunidad}
+            canCreate={canCreate}
+            canView={canView}
           />
         )}
 
@@ -1091,6 +1204,8 @@ export function RiesgosOportunidadesTab({
             riesgos={riesgos}
             onTratamientoClick={onTratamientoClick}
             onCreateTratamiento={onCreateTratamiento}
+            canCreate={canCreate}
+            canView={canView}
           />
         )}
       </div>

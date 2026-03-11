@@ -35,6 +35,8 @@ import {
 } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useMisTareas,
   useTareas,
@@ -79,6 +81,8 @@ function MisTareasTab() {
   const { data: tareas, isLoading } = useMisTareas();
   const { data: resumen } = useResumenTareas();
   const completarMutation = useCompletarTarea();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.TAREAS, 'create');
 
   if (isLoading) {
     return (
@@ -142,9 +146,11 @@ function MisTareasTab() {
           <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
             Filtros
           </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Tarea
-          </Button>
+          {canCreate && (
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              Nueva Tarea
+            </Button>
+          )}
         </div>
       </div>
 
@@ -209,8 +215,8 @@ function MisTareasTab() {
                         tarea.porcentaje_avance === 100
                           ? 'bg-green-500'
                           : tarea.porcentaje_avance >= 50
-                          ? 'bg-blue-500'
-                          : 'bg-gray-400'
+                            ? 'bg-blue-500'
+                            : 'bg-gray-400'
                       )}
                       style={{ width: `${tarea.porcentaje_avance}%` }}
                     />
@@ -253,7 +259,11 @@ function MisTareasTab() {
                         Completar
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" leftIcon={<MessageSquare className="w-4 h-4" />}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<MessageSquare className="w-4 h-4" />}
+                    >
                       Comentarios
                     </Button>
                   </div>
@@ -274,6 +284,8 @@ function CalendarioTab() {
 
   const { data: eventos, isLoading } = useEventosPorMes(currentYear, currentMonth);
   const { data: misEventos } = useMisEventos();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.TAREAS, 'create');
 
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
@@ -297,9 +309,11 @@ function CalendarioTab() {
             {format(currentDate, 'MMMM yyyy', { locale: es })}
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Evento
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Nuevo Evento
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -348,9 +362,7 @@ function CalendarioTab() {
 
         {/* Events List */}
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Próximos Eventos
-          </h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Próximos Eventos</h4>
           {eventos && eventos.length > 0 ? (
             eventos.slice(0, 5).map((evento) => (
               <Card key={evento.id} variant="bordered" padding="sm">
@@ -391,6 +403,8 @@ function CalendarioTab() {
 
 function RecordatoriosTab() {
   const { data: recordatorios, isLoading } = useRecordatorios();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.TAREAS, 'create');
 
   if (isLoading) {
     return (
@@ -406,6 +420,7 @@ function RecordatoriosTab() {
         title="No hay recordatorios"
         description="Crea un nuevo recordatorio para recibir notificaciones programadas"
         icon={Bell}
+        action={canCreate ? { label: 'Nuevo Recordatorio', onClick: () => {} } : undefined}
       />
     );
   }
@@ -423,9 +438,11 @@ function RecordatoriosTab() {
             {activos.length} recordatorios activos
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Recordatorio
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Nuevo Recordatorio
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-3">
@@ -473,7 +490,8 @@ function RecordatoriosTab() {
                     <div className="text-xs text-gray-600 dark:text-gray-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Próxima ejecución: {format(new Date(recordatorio.proxima_ejecucion), 'PPp', { locale: es })}
+                        Próxima ejecución:{' '}
+                        {format(new Date(recordatorio.proxima_ejecucion), 'PPp', { locale: es })}
                       </span>
                     </div>
                   )}
@@ -498,6 +516,8 @@ function RecordatoriosTab() {
 
 function TodasTab() {
   const { data: tareas, isLoading } = useTareas();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.TAREAS, 'create');
 
   if (isLoading) {
     return (
@@ -521,9 +541,7 @@ function TodasTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Todas las Tareas
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Todas las Tareas</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Vista completa con filtros avanzados
           </p>
@@ -532,9 +550,11 @@ function TodasTab() {
           <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
             Filtros Avanzados
           </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Tarea
-          </Button>
+          {canCreate && (
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              Nueva Tarea
+            </Button>
+          )}
         </div>
       </div>
 

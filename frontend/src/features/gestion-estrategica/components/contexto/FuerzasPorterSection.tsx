@@ -65,8 +65,8 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'create');
-  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'edit');
 
   // Color del modulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');

@@ -1,32 +1,28 @@
 /**
  * Rutas: Sistema de Gestión
- * Gestión documental, planificación, auditorías internas, acciones de mejora, calidad
+ * Plan maestro de trabajo, gestión documental, auditorías internas, acciones de mejora
  *
  * Pages:
- * - GestionDocumental: features/gestion-estrategica/pages/
  * - Planificacion: features/gestion-estrategica/pages/PlanificacionSistemaPage
- * - Auditorías: features/gestion-estrategica/pages/ (consume hooks de hseq)
- * - Acciones Mejora: features/gestion-estrategica/pages/ (consume hooks de hseq)
- * - Calidad: features/hseq/ (migrada desde HSEQ → SGI)
+ * - GestionDocumental: features/gestion-estrategica/pages/GestionDocumentalPage
+ * - Auditorías: features/gestion-estrategica/pages/AuditoriasInternasPage
+ * - Acciones Mejora: features/gestion-estrategica/pages/AccionesMejoraPage
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
-const SGGestionDocumentalPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
-);
 const SGPlanificacionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/PlanificacionSistemaPage')
+);
+const SGGestionDocumentalPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
 );
 const SGAuditoriasPage = lazy(
   () => import('@/features/gestion-estrategica/pages/AuditoriasInternasPage')
 );
 const SGAccionesMejoraPage = lazy(
   () => import('@/features/gestion-estrategica/pages/AccionesMejoraPage')
-);
-const SGCalidadPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.CalidadPage }))
 );
 
 export const sistemaGestionRoutes = (
@@ -36,12 +32,12 @@ export const sistemaGestionRoutes = (
       element={<Navigate to="/sistema-gestion/planificacion" replace />}
     />
     <Route
-      path="/sistema-gestion/documentos"
-      element={withModuleGuard(SGGestionDocumentalPage, 'sistema_gestion')}
-    />
-    <Route
       path="/sistema-gestion/planificacion"
       element={withModuleGuard(SGPlanificacionPage, 'sistema_gestion')}
+    />
+    <Route
+      path="/sistema-gestion/documentos"
+      element={withModuleGuard(SGGestionDocumentalPage, 'sistema_gestion')}
     />
     <Route
       path="/sistema-gestion/auditorias"
@@ -50,10 +46,6 @@ export const sistemaGestionRoutes = (
     <Route
       path="/sistema-gestion/acciones"
       element={withModuleGuard(SGAccionesMejoraPage, 'sistema_gestion')}
-    />
-    <Route
-      path="/sistema-gestion/calidad"
-      element={withModuleGuard(SGCalidadPage, 'sistema_gestion')}
     />
   </>
 );

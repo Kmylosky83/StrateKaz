@@ -954,7 +954,7 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
 
 export const AuditoriasInternasPage = () => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLAN_AUDITORIAS, 'create');
+  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'create');
 
   const [activeTab, setActiveTab] = useState('programas');
   const [programaModalOpen, setProgramaModalOpen] = useState(false);

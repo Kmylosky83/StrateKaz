@@ -73,8 +73,8 @@ class Command(BaseCommand):
         # PASO 1: Migrar tabs de gestion_estrategica a nuevos módulos
         self._migrate_gestion_estrategica()
 
-        # PASO 1b: Migrar tab calidad de hseq_management a sistema_gestion
-        self._migrate_calidad_to_sistema_gestion()
+        # PASO 1b: Limpiar tab calidad obsoleto (eliminado en reorganización SGI)
+        self._cleanup_calidad_tab()
 
         # PASO 2: Configurar todos los módulos
         modules_config = self.get_modules_config()
@@ -308,29 +308,25 @@ class Command(BaseCommand):
                     f'  [WARN] No se pudo actualizar Plan.features: {e}'
                 ))
 
-    def _migrate_calidad_to_sistema_gestion(self):
+    def _cleanup_calidad_tab(self):
         """
-        Migra el tab 'calidad' de hseq_management a sistema_gestion.
-
-        Usa UPDATE de ModuleTab.module FK (no delete+create)
-        para preservar TabSection IDs → CargoSectionAccess intacto.
+        Elimina el tab 'calidad' que fue migrado a sistema_gestion y ahora es obsoleto.
+        La funcionalidad de calidad permea todo el SGI, no necesita tab propio.
         """
-        from apps.core.models import SystemModule, ModuleTab
-
-        try:
-            hseq = SystemModule.objects.get(code='hseq_management')
-            sg = SystemModule.objects.get(code='sistema_gestion')
-        except SystemModule.DoesNotExist:
-            return
-
-        calidad_tab = ModuleTab.objects.filter(module=hseq, code='calidad').first()
-        if calidad_tab:
-            calidad_tab.module = sg
-            calidad_tab.orden = 5
-            calidad_tab.save(update_fields=['module', 'orden'])
-            self.stdout.write(self.style.SUCCESS(
-                '  [OK] Tab calidad migrado de hseq_management → sistema_gestion'
-            ))
+        for module_code in ['sistema_gestion', 'hseq_management']:
+            try:
+                module = SystemModule.objects.get(code=module_code)
+                calidad_tab = ModuleTab.objects.filter(module=module, code='calidad').first()
+                if calidad_tab:
+                    sections_count = calidad_tab.sections.count()
+                    calidad_tab.sections.all().delete()
+                    calidad_tab.delete()
+                    self.stdout.write(self.style.SUCCESS(
+                        f'  [OK] Tab calidad eliminado de {module_code} '
+                        f'({sections_count} secciones limpiadas)'
+                    ))
+            except SystemModule.DoesNotExist:
+                continue
 
     def get_modules_config(self):
         """Retorna la configuración completa de los 16 módulos (3 capas)"""
@@ -372,8 +368,9 @@ class Command(BaseCommand):
                         'orden': 2,
                         'sections': [
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Gestión de áreas y departamentos'},
-                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 2, 'description': 'Visualización interactiva de la estructura de procesos'},
-                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 3, 'description': 'Numeración automática de documentos'},
+                            {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Ficha por proceso: objetivo, alcance, entradas/salidas, recursos, indicadores y riesgos vinculados'},
+                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 3, 'description': 'Visualización interactiva de la estructura de procesos'},
+                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 4, 'description': 'Numeración automática de documentos'},
                         ]
                     },
                     {
@@ -413,12 +410,9 @@ class Command(BaseCommand):
                         'route': 'contexto',
                         'orden': 1,
                         'sections': [
-                            {'code': 'stakeholders', 'name': 'Stakeholders', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
-                            {'code': 'encuestas_dofa', 'name': 'Encuestas', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Encuestas PCI-POAM para recopilar factores internos y externos del contexto organizacional'},
-                            {'code': 'analisis_dofa', 'name': 'DOFA', 'icon': 'Grid3X3', 'orden': 3, 'description': 'Matriz de Fortalezas, Oportunidades, Debilidades y Amenazas (alimentada desde Encuestas)'},
-                            {'code': 'analisis_pestel', 'name': 'PESTEL', 'icon': 'Globe', 'orden': 4, 'description': 'Matriz de factores Políticos, Económicos, Sociales, Tecnológicos, Ecológicos y Legales (alimentada desde Encuestas)'},
-                            {'code': 'fuerzas_porter', 'name': 'Porter', 'icon': 'Layers', 'orden': 5, 'description': 'Evalúa las 5 fuerzas competitivas que determinan la intensidad de la competencia'},
-                            {'code': 'estrategias_tows', 'name': 'TOWS', 'icon': 'Lightbulb', 'orden': 6, 'description': 'Define estrategias cruzando Fortalezas, Oportunidades, Debilidades y Amenazas'},
+                            {'code': 'stakeholders', 'name': 'Partes Interesadas', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
+                            {'code': 'analisis_contexto', 'name': 'Análisis del Contexto', 'icon': 'Compass', 'orden': 2, 'description': 'Herramientas de análisis interno y externo: PCI, POAM, PESTEL, Porter (sub-tabs integrados)'},
+                            {'code': 'dofa_estrategias', 'name': 'DOFA y Estrategias', 'icon': 'Grid3X3', 'orden': 3, 'description': 'Matriz DOFA (síntesis automática) + formulación de estrategias. Cada estrategia genera Proyecto, Acción o Cambio'},
                         ]
                     },
                     {
@@ -429,9 +423,8 @@ class Command(BaseCommand):
                         'orden': 2,
                         'sections': [
                             {'code': 'objetivos_bsc', 'name': 'Objetivos', 'icon': 'Target', 'orden': 1, 'description': 'Objetivos por perspectiva BSC vinculados al plan estratégico'},
-                            {'code': 'mapa_estrategico', 'name': 'Mapa', 'icon': 'Map', 'orden': 2, 'description': 'Visualización interactiva de objetivos y relaciones causa-efecto'},
-                            {'code': 'kpis', 'name': 'KPIs', 'icon': 'BarChart3', 'orden': 3, 'description': 'Indicadores de desempeño con metas y semáforos de seguimiento'},
-                            {'code': 'gestion_cambio', 'name': 'Cambios', 'icon': 'RefreshCw', 'orden': 4, 'description': 'Registre y dé seguimiento a cambios estratégicos, organizacionales, de procesos o tecnológicos'},
+                            {'code': 'mapa_estrategico', 'name': 'Mapa Estratégico', 'icon': 'Map', 'orden': 2, 'description': 'Visualización interactiva de objetivos y relaciones causa-efecto'},
+                            {'code': 'gestion_cambio', 'name': 'Gestión del Cambio', 'icon': 'RefreshCw', 'orden': 3, 'description': 'Registre y dé seguimiento a cambios estratégicos, organizacionales, de procesos o tecnológicos'},
                         ]
                     },
                     {
@@ -441,11 +434,8 @@ class Command(BaseCommand):
                         'route': 'riesgos-oportunidades',
                         'orden': 3,
                         'sections': [
-                            {'code': 'resumen', 'name': 'Resumen', 'icon': 'PieChart', 'orden': 1, 'description': 'Vista general de indicadores de riesgos y oportunidades'},
-                            {'code': 'mapa_calor', 'name': 'Mapa de Calor', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Visualización matricial de probabilidad vs impacto'},
-                            {'code': 'riesgos', 'name': 'Riesgos', 'icon': 'AlertTriangle', 'orden': 3, 'description': 'Identificación y gestión de riesgos organizacionales'},
-                            {'code': 'oportunidades', 'name': 'Oportunidades', 'icon': 'TrendingUp', 'orden': 4, 'description': 'Identificación y aprovechamiento de oportunidades'},
-                            {'code': 'tratamientos', 'name': 'Tratamientos', 'icon': 'ClipboardCheck', 'orden': 5, 'description': 'Planes de tratamiento y controles'},
+                            {'code': 'mapa_calor', 'name': 'Mapa de Calor', 'icon': 'Grid3X3', 'orden': 1, 'description': 'Vista consolidada: probabilidad vs impacto (lee Motor de Riesgos)'},
+                            {'code': 'riesgos_proceso', 'name': 'Riesgos por Proceso', 'icon': 'AlertTriangle', 'orden': 2, 'description': 'Riesgos vinculados a caracterización de procesos. Tratamientos generan Acción, Proyecto o Cambio'},
                         ]
                     },
                     {
@@ -466,12 +456,12 @@ class Command(BaseCommand):
             },
 
             # =====================================================================
-            # NIVEL 1.5: SISTEMA DE GESTIÓN (15) - Control Documental y Planificación ISO
+            # NIVEL_SGI: SISTEMA DE GESTIÓN (20) - Plan Maestro, Documental, Auditorías, Mejora
             # =====================================================================
             {
                 'code': 'sistema_gestion',
                 'name': 'Sistema de Gestión',
-                'description': 'Gestión documental, planificación, auditorías internas y acciones de mejora',
+                'description': 'Plan maestro de trabajo, gestión documental, auditorías internas y acciones de mejora',
                 'category': 'STRATEGIC',
                 'color': 'indigo',
                 'icon': 'FolderCog',
@@ -487,10 +477,8 @@ class Command(BaseCommand):
                         'route': 'planificacion',
                         'orden': 1,
                         'sections': [
-                            {'code': 'programas', 'name': 'Programas', 'icon': 'ListChecks', 'orden': 1, 'description': 'Programas de gestión (SST, Ambiental, Calidad)'},
-                            {'code': 'plan_auditorias', 'name': 'Plan de Auditorías', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Programación de auditorías internas'},
-                            {'code': 'objetivos_metas', 'name': 'Objetivos y Metas', 'icon': 'Target', 'orden': 3, 'description': 'Objetivos del sistema de gestión'},
-                            {'code': 'indicadores_gestion', 'name': 'Indicadores', 'icon': 'BarChart3', 'orden': 4, 'description': 'Indicadores de desempeño del sistema'},
+                            {'code': 'plan_trabajo', 'name': 'Plan de Trabajo', 'icon': 'CalendarRange', 'orden': 1, 'description': 'Cronograma unificado: actividades por proceso, programas, auditorías — todo en uno con categorías y filtros'},
+                            {'code': 'programas', 'name': 'Programas', 'icon': 'ListChecks', 'orden': 2, 'description': 'Programas de gestión (SST, Ambiental, Calidad) — sus actividades se integran al Plan de Trabajo'},
                         ]
                     },
                     {
@@ -509,13 +497,12 @@ class Command(BaseCommand):
                     {
                         'code': 'auditorias_internas',
                         'name': 'Auditorías Internas',
-                        'icon': 'Search',
+                        'icon': 'ClipboardCheck',
                         'route': 'auditorias',
                         'orden': 3,
                         'sections': [
-                            {'code': 'programacion', 'name': 'Programación', 'icon': 'CalendarDays', 'orden': 1, 'description': 'Calendario y asignación de auditores'},
-                            {'code': 'ejecucion_auditoria', 'name': 'Ejecución', 'icon': 'Play', 'orden': 2, 'description': 'Listas de verificación y hallazgos'},
-                            {'code': 'informes', 'name': 'Informes', 'icon': 'FileText', 'orden': 3, 'description': 'Informes de auditoría y conclusiones'},
+                            {'code': 'ejecucion_auditoria', 'name': 'Ejecución', 'icon': 'Play', 'orden': 1, 'description': 'Listas de verificación, ejecución de auditorías y registro de hallazgos'},
+                            {'code': 'informes', 'name': 'Informes', 'icon': 'FileText', 'orden': 2, 'description': 'Informes de auditoría, conclusiones y recomendaciones'},
                         ]
                     },
                     {
@@ -525,20 +512,10 @@ class Command(BaseCommand):
                         'route': 'acciones',
                         'orden': 4,
                         'sections': [
-                            {'code': 'no_conformidades', 'name': 'No Conformidades', 'icon': 'AlertCircle', 'orden': 1, 'description': 'Registro y tratamiento de NC'},
-                            {'code': 'acciones_correctivas', 'name': 'Acciones Correctivas', 'icon': 'CheckCircle', 'orden': 2, 'description': 'Plan de acciones correctivas'},
-                            {'code': 'acciones_preventivas', 'name': 'Acciones Preventivas', 'icon': 'Shield', 'orden': 3, 'description': 'Acciones para prevenir NC'},
-                            {'code': 'oportunidades_mejora', 'name': 'Oportunidades de Mejora', 'icon': 'Lightbulb', 'orden': 4, 'description': 'Ideas y proyectos de mejora'},
-                        ]
-                    },
-                    {
-                        'code': 'calidad',
-                        'name': 'Calidad',
-                        'icon': 'CheckCircle',
-                        'route': 'calidad',
-                        'orden': 5,
-                        'sections': [
-                            {'code': 'gestion_calidad', 'name': 'Gestión de Calidad', 'icon': 'CheckCircle', 'orden': 1, 'description': 'Control y aseguramiento de calidad'},
+                            {'code': 'no_conformidades', 'name': 'No Conformidades', 'icon': 'AlertCircle', 'orden': 1, 'description': 'Registro y tratamiento de NC desde auditorías, inspecciones o cualquier origen'},
+                            {'code': 'acciones_correctivas', 'name': 'Acciones Correctivas', 'icon': 'CheckCircle', 'orden': 2, 'description': 'Plan de acciones para eliminar la causa de no conformidades'},
+                            {'code': 'acciones_preventivas', 'name': 'Acciones Preventivas', 'icon': 'Shield', 'orden': 3, 'description': 'Acciones para prevenir no conformidades potenciales'},
+                            {'code': 'oportunidades_mejora', 'name': 'Oportunidades de Mejora', 'icon': 'Lightbulb', 'orden': 4, 'description': 'Ideas y proyectos de mejora continua'},
                         ]
                     },
                 ]
@@ -652,8 +629,9 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 30,
                 'tabs': [
-                    # NOTA: sistema_documental y planificacion_sistema movidos a sistema_gestion [15]
-                    # NOTA: calidad movido a sistema_gestion [paso 1b migración]
+                    # NOTA: sistema_documental y planificacion_sistema movidos a sistema_gestion [20]
+                    # NOTA: calidad eliminado (concepto transversal, no tab propio)
+                    # NOTA: mejora_continua (auditorías+hallazgos) → sistema_gestion/auditorias_internas+acciones_mejora
                     {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 1, 'sections': [
                         {'code': 'examenes_medicos', 'name': 'Exámenes Médicos', 'icon': 'Heart', 'orden': 1, 'description': 'Gestión de exámenes médicos ocupacionales'},
                         {'code': 'condiciones_salud', 'name': 'Condiciones de Salud', 'icon': 'Activity', 'orden': 2, 'description': 'Seguimiento de condiciones de salud'},
@@ -677,7 +655,7 @@ class Command(BaseCommand):
                     {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 7, 'sections': [
                         {'code': 'programas_ambientales', 'name': 'Programas Ambientales', 'icon': 'Leaf', 'orden': 1, 'description': 'Programas de gestión ambiental'},
                     ]},
-                    # NOTA: mejora_continua (auditorías + hallazgos) movido a sistema_gestion [20]
+                    # NOTA: mejora_continua → sistema_gestion (auditorías+acciones de mejora)
                 ]
             },
 

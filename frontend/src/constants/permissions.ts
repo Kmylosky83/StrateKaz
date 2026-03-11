@@ -14,8 +14,8 @@ export const Modules = {
   CORE: 'core',
   FUNDACION: 'fundacion',
   PLANEACION_ESTRATEGICA: 'planeacion_estrategica',
+  SISTEMA_GESTION: 'sistema_gestion',
   REVISION_DIRECCION: 'revision_direccion',
-  GESTION_ESTRATEGICA: 'gestion_estrategica', // @deprecated — use FUNDACION or PLANEACION_ESTRATEGICA
   MOTOR_CUMPLIMIENTO: 'motor_cumplimiento',
   MOTOR_RIESGOS: 'motor_riesgos',
   WORKFLOW_ENGINE: 'workflow_engine',
@@ -47,6 +47,7 @@ export const Sections = {
   NORMAS_ISO: 'normas_iso',
   MODULOS: 'modulos',
   AREAS: 'areas',
+  CARACTERIZACIONES: 'caracterizaciones',
   MAPA_PROCESOS: 'mapa_procesos',
   CONSECUTIVOS: 'consecutivos',
   MISION_VISION: 'mision_vision',
@@ -61,50 +62,41 @@ export const Sections = {
   ESTRATEGIA: 'estrategia',
 
   // ── PLANEACION ESTRATEGICA ──
-  // Contexto
+  // Contexto (simplificado: 6→3 secciones)
   STAKEHOLDERS: 'stakeholders',
-  ENCUESTAS_DOFA: 'encuestas_dofa',
-  ANALISIS_DOFA: 'analisis_dofa',
-  ANALISIS_PESTEL: 'analisis_pestel',
-  FUERZAS_PORTER: 'fuerzas_porter',
-  ESTRATEGIAS_TOWS: 'estrategias_tows',
-  CONTEXTO: 'contexto', // legacy alias
-  // Planeacion
+  ANALISIS_CONTEXTO: 'analisis_contexto',
+  DOFA_ESTRATEGIAS: 'dofa_estrategias',
+  // Planeacion (KPIs → Analytics C3)
   OBJETIVOS_BSC: 'objetivos_bsc',
   MAPA_ESTRATEGICO: 'mapa_estrategico',
-  KPIS: 'kpis',
   GESTION_CAMBIO: 'gestion_cambio',
-  // Riesgos y Oportunidades
-  RESUMEN_RIESGOS: 'resumen',
+  // Riesgos y Oportunidades (simplificado: 5→2 secciones)
   MAPA_CALOR: 'mapa_calor',
-  RIESGOS: 'riesgos',
-  OPORTUNIDADES: 'oportunidades',
-  TRATAMIENTOS: 'tratamientos',
+  RIESGOS_PROCESO: 'riesgos_proceso',
   // Gestion de Proyectos
   PORTAFOLIO: 'portafolio',
   INICIACION: 'iniciacion',
   PLANIFICACION: 'planificacion',
   EJECUCION_MONITOREO: 'ejecucion_monitoreo',
   CIERRE: 'cierre',
-  PROYECTOS: 'proyectos', // legacy alias
 
   // ── SISTEMA DE GESTION ──
+  // Planificación (plan maestro unificado)
+  PLAN_TRABAJO: 'plan_trabajo',
   PROGRAMAS: 'programas',
-  PLAN_AUDITORIAS: 'plan_auditorias',
-  OBJETIVOS_METAS: 'objetivos_metas',
-  INDICADORES_GESTION: 'indicadores_gestion',
+  // Gestión Documental
   TIPOS_DOCUMENTO: 'tipos_documento',
   DOCUMENTOS: 'documentos',
   CONTROL_CAMBIOS: 'control_cambios',
   DISTRIBUCION: 'distribucion',
-  PROGRAMACION_AUDITORIA: 'programacion',
+  // Auditorías Internas (solo ejecución — planificación en plan_trabajo)
   EJECUCION_AUDITORIA: 'ejecucion_auditoria',
   INFORMES_AUDITORIA: 'informes',
+  // Acciones de Mejora (motor de mejora continua)
   NO_CONFORMIDADES: 'no_conformidades',
   ACCIONES_CORRECTIVAS: 'acciones_correctivas',
   ACCIONES_PREVENTIVAS: 'acciones_preventivas',
   OPORTUNIDADES_MEJORA: 'oportunidades_mejora',
-  GESTION_CALIDAD: 'gestion_calidad',
 
   // ── MOTOR CUMPLIMIENTO ──
   NORMAS: 'normas',

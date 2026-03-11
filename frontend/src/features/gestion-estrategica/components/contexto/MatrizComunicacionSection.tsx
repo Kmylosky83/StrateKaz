@@ -370,9 +370,9 @@ export const MatrizComunicacionSection = ({
   }, [triggerNewForm]);
 
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'create');
-  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
-  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'delete');
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'delete');
 
   const {
     data: items,

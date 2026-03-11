@@ -140,9 +140,9 @@ export const EstrategiasTowsSection = ({ triggerNewForm }: EstrategiasTowsSectio
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'create');
-  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
-  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CONTEXTO, 'delete');
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.DOFA_ESTRATEGIAS, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.DOFA_ESTRATEGIAS, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.DOFA_ESTRATEGIAS, 'delete');
 
   // Color del modulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');

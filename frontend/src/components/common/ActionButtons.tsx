@@ -31,7 +31,7 @@ export interface ActionButtonsProps {
  *
  * @example
  * <ActionButtons
- *   module={Modules.GESTION_ESTRATEGICA} // Usar constantes siempre
+ *   module={Modules.FUNDACION} // Usar constantes siempre
  *   section={Sections.POLITICAS}
  *   onEdit={() => handleEdit(item)}
  *   onDelete={() => handleDelete(item)}

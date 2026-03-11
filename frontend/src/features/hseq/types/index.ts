@@ -8,9 +8,6 @@
 // Planificación General
 export * from './planificacion.types';
 
-// Calidad
-export * from './calidad.types';
-
 // Medicina Laboral
 export * from './medicina-laboral.types';
 
@@ -26,8 +23,11 @@ export * from './emergencias.types';
 // Gestión Ambiental
 export * from './gestion-ambiental.types';
 
-// Mejora Continua
-export * from './mejora-continua.types';
-
 // Gestión de Comités
 export * from './comites.types';
+
+// Calidad (usado por AccionesMejoraPage en sistema-gestion)
+export * from './calidad.types';
+
+// Mejora Continua (usado por AuditoriasInternasPage en sistema-gestion)
+export * from './mejora-continua.types';

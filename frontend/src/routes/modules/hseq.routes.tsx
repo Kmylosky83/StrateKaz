@@ -5,11 +5,10 @@
  * 7 tabs operativos: medicina, seguridad, higiene, comités,
  * accidentalidad, emergencias, ambiental.
  *
- * Redirects a Sistema de Gestión:
+ * Redirects legacy a Sistema de Gestión:
  * - /hseq/sistema-documental → /sistema-gestion/documentos
  * - /hseq/planificacion → /sistema-gestion/planificacion
  * - /hseq/mejora-continua → /sistema-gestion/auditorias
- * - /hseq/calidad → /sistema-gestion/calidad
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -56,9 +55,6 @@ export const hseqRoutes = (
       path="/hseq/mejora-continua"
       element={<Navigate to="/sistema-gestion/auditorias" replace />}
     />
-
-    {/* Redirect calidad → sistema-gestion (sprint sidebar-6-layers) */}
-    <Route path="/hseq/calidad" element={<Navigate to="/sistema-gestion/calidad" replace />} />
 
     {/* 7 tabs operativos HSEQ */}
     <Route

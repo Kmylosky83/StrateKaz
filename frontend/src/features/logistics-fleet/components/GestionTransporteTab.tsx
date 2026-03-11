@@ -4,6 +4,8 @@
  */
 import { useState } from 'react';
 import { MapPin, User, Calendar, AlertTriangle, Edit, Trash2, Route } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -43,6 +45,9 @@ const colorToBadge = (color: string): 'success' | 'warning' | 'danger' | 'info' 
 };
 
 export function GestionTransporteTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.RUTAS, 'create');
+
   const [activeSubTab, setActiveSubTab] = useState('programaciones');
 
   // Queries
@@ -203,7 +208,11 @@ export function GestionTransporteTab() {
             title="Programación de Rutas"
             subtitle="Asignación de vehículos y conductores a rutas"
             count={programaciones.length}
-            primaryAction={{ label: 'Nueva Programación', onClick: handleNewProgramacion }}
+            primaryAction={
+              canCreate
+                ? { label: 'Nueva Programación', onClick: handleNewProgramacion }
+                : undefined
+            }
           />
 
           {loadingProgramaciones ? (
@@ -300,7 +309,7 @@ export function GestionTransporteTab() {
             title="Rutas Predefinidas"
             subtitle="Gestión de rutas de recolección y entrega"
             count={rutas.length}
-            primaryAction={{ label: 'Nueva Ruta', onClick: handleNewRuta }}
+            primaryAction={canCreate ? { label: 'Nueva Ruta', onClick: handleNewRuta } : undefined}
           />
 
           {loadingRutas ? (
@@ -395,7 +404,9 @@ export function GestionTransporteTab() {
             title="Conductores"
             subtitle="Gestión de conductores y licencias"
             count={conductores.length}
-            primaryAction={{ label: 'Nuevo Conductor', onClick: handleNewConductor }}
+            primaryAction={
+              canCreate ? { label: 'Nuevo Conductor', onClick: handleNewConductor } : undefined
+            }
           />
 
           {loadingConductores ? (

@@ -15,6 +15,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   FileText,
   TrendingUp,
@@ -148,11 +150,15 @@ const RequisicionesSection = () => {
       <SectionToolbar
         title="Requisiciones de Compra"
         count={requisiciones.length}
-        primaryAction={{
-          label: 'Nueva Requisición',
-          onClick: handleCreate,
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Requisición',
+                onClick: handleCreate,
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -292,11 +298,15 @@ const CotizacionesSection = () => {
       <SectionToolbar
         title="Cotizaciones"
         count={cotizaciones.length}
-        primaryAction={{
-          label: 'Nueva Cotización',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Cotización',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {cotizaciones.length === 0 ? (
@@ -401,11 +411,15 @@ const OrdenesCompraSection = () => {
       <SectionToolbar
         title="Órdenes de Compra"
         count={ordenes.length}
-        primaryAction={{
-          label: 'Nueva Orden',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Orden',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {ordenes.length === 0 ? (
@@ -508,11 +522,15 @@ const ContratosSection = () => {
       <SectionToolbar
         title="Contratos"
         count={contratos.length}
-        primaryAction={{
-          label: 'Nuevo Contrato',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Contrato',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {contratos.length === 0 ? (
@@ -695,6 +713,9 @@ const RecepcionesSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ComprasTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
+
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('requisiciones');
 

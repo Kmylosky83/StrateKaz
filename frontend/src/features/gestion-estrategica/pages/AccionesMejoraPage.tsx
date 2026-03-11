@@ -9,6 +9,8 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -192,6 +194,9 @@ const extractArray = <T,>(data: unknown): T[] => {
 // ==================== MAIN COMPONENT ====================
 
 export const AccionesMejoraPage = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.OPORTUNIDADES_MEJORA, 'create');
+
   // ---- Tab state ----
   const [activeTab, setActiveTab] = useState('no-conformidades');
 
@@ -487,11 +492,15 @@ const NoConformidadesTab = ({
         searchValue={search}
         searchPlaceholder="Buscar por c\u00f3digo o t\u00edtulo..."
         onSearchChange={onSearchChange}
-        primaryAction={{
-          label: 'Nueva NC',
-          onClick: onCreate,
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva NC',
+                onClick: onCreate,
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -704,11 +713,15 @@ const AccionesCorrectivasTab = ({
         searchValue={search}
         searchPlaceholder="Buscar por c\u00f3digo o descripci\u00f3n..."
         onSearchChange={onSearchChange}
-        primaryAction={{
-          label: 'Nueva Acci\u00f3n',
-          onClick: onCreate,
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Acci\u00f3n',
+                onClick: onCreate,
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {/* Card-based layout */}

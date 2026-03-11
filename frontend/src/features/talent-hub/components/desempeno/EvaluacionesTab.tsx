@@ -13,6 +13,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { ClipboardCheck, Plus, Play, CheckCircle, Lock, Eye } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useCiclosEvaluacion,
   useEvaluacionesDesempeno,
@@ -59,6 +61,10 @@ const ESTADO_EVAL_OPTIONS = [
 ];
 
 export const EvaluacionesTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.EVALUACIONES_DESEMPENO, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [isCicloFormOpen, setIsCicloFormOpen] = useState(false);
@@ -99,17 +105,19 @@ export const EvaluacionesTab = () => {
               Ciclos de Evaluacion
             </h3>
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => {
-              setSelectedCiclo(null);
-              setIsCicloFormOpen(true);
-            }}
-          >
-            <Plus size={16} className="mr-1" />
-            Nuevo Ciclo
-          </Button>
+          {canCreate && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setSelectedCiclo(null);
+                setIsCicloFormOpen(true);
+              }}
+            >
+              <Plus size={16} className="mr-1" />
+              Nuevo Ciclo
+            </Button>
+          )}
         </div>
 
         {loadingCiclos ? (

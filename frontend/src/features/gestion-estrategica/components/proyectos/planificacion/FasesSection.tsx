@@ -7,6 +7,8 @@ import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { Card, Badge, Button, EmptyState } from '@/components/common';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Layers, Plus, Pencil, Trash2, Calendar } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useFases, useDeleteFase } from '../../../hooks/useProyectos';
 import { FaseFormModal } from './FaseFormModal';
 import type { FaseProyecto } from '../../../types/proyectos.types';
@@ -16,6 +18,11 @@ interface FasesSectionProps {
 }
 
 export const FasesSection = ({ proyectoId }: FasesSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'delete');
+
   const { data: fasesData, isLoading } = useFases({ proyecto: proyectoId, is_active: true });
   const deleteMutation = useDeleteFase();
 
@@ -50,15 +57,19 @@ export const FasesSection = ({ proyectoId }: FasesSectionProps) => {
         <SectionToolbar
           title="Fases del Proyecto"
           count={fases.length}
-          primaryAction={{
-            label: 'Nueva Fase',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Fase',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
         />
 
         {fases.length > 0 ? (
@@ -109,21 +120,27 @@ export const FasesSection = ({ proyectoId }: FasesSectionProps) => {
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditItem(fase);
-                          setShowForm(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(fase)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
+                    {(canEdit || canDelete) && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        {canEdit && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditItem(fase);
+                              setShowForm(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(fase)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Progress bar */}
@@ -147,17 +164,19 @@ export const FasesSection = ({ proyectoId }: FasesSectionProps) => {
             title="Sin fases definidas"
             description="Define las fases del proyecto para organizar las actividades (WBS nivel 1)"
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setEditItem(null);
-                  setShowForm(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Crear Primera Fase
-              </Button>
+              canCreate ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Crear Primera Fase
+                </Button>
+              ) : undefined
             }
           />
         )}

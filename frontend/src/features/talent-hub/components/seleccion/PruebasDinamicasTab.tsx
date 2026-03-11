@@ -37,6 +37,8 @@ import {
   BarChart3,
   Brain,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   usePlantillasPrueba,
   useAsignacionesPrueba,
@@ -70,6 +72,12 @@ type SubView = 'plantillas' | 'asignaciones';
 // ============================================================================
 
 export const PruebasDinamicasTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'edit');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'delete');
+
   const [subView, setSubView] = useState<SubView>('plantillas');
   const [estadoFilter, setEstadoFilter] = useState<EstadoAsignacionPrueba | ''>('');
 
@@ -231,17 +239,19 @@ export const PruebasDinamicasTab = () => {
               />
             )}
 
-            {subView === 'plantillas' ? (
-              <Button variant="primary" size="sm" onClick={handleCreatePlantilla}>
-                <Plus size={16} className="mr-1" />
-                Nueva Plantilla
-              </Button>
-            ) : (
-              <Button variant="primary" size="sm" onClick={() => setIsAsignarOpen(true)}>
-                <Send size={16} className="mr-1" />
-                Asignar Prueba
-              </Button>
-            )}
+            {subView === 'plantillas'
+              ? canCreate && (
+                  <Button variant="primary" size="sm" onClick={handleCreatePlantilla}>
+                    <Plus size={16} className="mr-1" />
+                    Nueva Plantilla
+                  </Button>
+                )
+              : canCreate && (
+                  <Button variant="primary" size="sm" onClick={() => setIsAsignarOpen(true)}>
+                    <Send size={16} className="mr-1" />
+                    Asignar Prueba
+                  </Button>
+                )}
           </div>
         }
       />
@@ -355,34 +365,40 @@ export const PruebasDinamicasTab = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditPlantilla(plantilla)}
-                            title="Editar"
-                          >
-                            <Pencil size={16} />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDuplicar(plantilla)}
-                            title="Duplicar"
-                          >
-                            <Copy size={16} />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeleteTarget(plantilla)}
-                            title="Eliminar"
-                            className="text-gray-400 hover:text-danger-600"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
+                          {canEdit && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPlantilla(plantilla)}
+                              title="Editar"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                          )}
+                          {canCreate && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDuplicar(plantilla)}
+                              title="Duplicar"
+                            >
+                              <Copy size={16} />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteTarget(plantilla)}
+                              title="Eliminar"
+                              className="text-gray-400 hover:text-danger-600"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -535,12 +551,7 @@ export const PruebasDinamicasTab = () => {
                           )}
                           {(asignacion.estado === 'completada' ||
                             asignacion.estado === 'calificada') && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              title="Ver resultados"
-                            >
+                            <Button type="button" variant="ghost" size="sm" title="Ver resultados">
                               <BarChart3 size={16} />
                             </Button>
                           )}

@@ -3,6 +3,8 @@
  * DS: SectionToolbar + StatsGrid + DataTableCard + Badge + Button
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import { DataTableCard } from '@/components/layout/DataTableCard';
@@ -37,6 +39,10 @@ const formatCurrency = (value: string | number) => {
 };
 
 export const RecursosSection = ({ proyectoId }: RecursosSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'delete');
   const { data: recursosData, isLoading } = useRecursos({
     proyecto: proyectoId,
     is_active: true,
@@ -122,19 +128,23 @@ export const RecursosSection = ({ proyectoId }: RecursosSectionProps) => {
       header: '',
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setEditItem(row.original);
-              setShowForm(true);
-            }}
-          >
-            Editar
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(row.original)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditItem(row.original);
+                setShowForm(true);
+              }}
+            >
+              Editar
+            </Button>
+          )}
+          {canDelete && (
+            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(row.original)}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          )}
         </div>
       ),
       size: 120,
@@ -147,15 +157,19 @@ export const RecursosSection = ({ proyectoId }: RecursosSectionProps) => {
         <SectionToolbar
           title="Recursos del Proyecto"
           count={recursos.length}
-          primaryAction={{
-            label: 'Agregar Recurso',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Agregar Recurso',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
         />
 
         {recursos.length > 0 && (
@@ -193,17 +207,19 @@ export const RecursosSection = ({ proyectoId }: RecursosSectionProps) => {
             title="Sin recursos asignados"
             description="Agrega recursos humanos, materiales, equipos o servicios al proyecto"
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setEditItem(null);
-                  setShowForm(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Agregar Primer Recurso
-              </Button>
+              canCreate ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Agregar Primer Recurso
+                </Button>
+              ) : undefined
             }
           />
         )}

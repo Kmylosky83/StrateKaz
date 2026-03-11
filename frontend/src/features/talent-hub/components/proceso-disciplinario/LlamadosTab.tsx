@@ -14,6 +14,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { AlertTriangle, Plus, Pencil, Trash2, CheckCircle, CircleDashed } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useLlamadosAtencion,
   useDeleteLlamadoAtencion,
@@ -26,6 +28,9 @@ import { LlamadoFormModal } from './LlamadoFormModal';
 const TIPO_OPTIONS = [{ value: '', label: 'Todos los tipos' }, ...tipoLlamadoOptions];
 
 export const LlamadosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CASOS_DISCIPLINARIOS, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [selectedLlamado, setSelectedLlamado] = useState<LlamadoAtencion | null>(null);
@@ -96,10 +101,12 @@ export const LlamadosTab = () => {
               options={TIPO_OPTIONS}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Registrar Llamado
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Registrar Llamado
+              </Button>
+            )}
           </div>
         }
       />

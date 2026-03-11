@@ -18,6 +18,8 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 
 import { EvaluacionProveedorForm } from './EvaluacionProveedorForm';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useEvaluaciones,
   useAprobarEvaluacion,
@@ -53,6 +55,9 @@ const formatDate = (dateString: string) =>
 // ==================== COMPONENTE ====================
 
 export function EvaluacionesTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.EVALUACIONES_PROV, 'create');
+
   const [showForm, setShowForm] = useState(false);
   const [editEvaluacion, setEditEvaluacion] = useState<EvaluacionProveedor | undefined>(undefined);
   const [showCriterios, setShowCriterios] = useState(false);
@@ -154,10 +159,14 @@ export function EvaluacionesTab() {
       <SectionToolbar
         title="Evaluaciones de Proveedores"
         count={evaluaciones.length}
-        primaryAction={{
-          label: 'Nueva Evaluación',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Evaluación',
+                onClick: handleNew,
+              }
+            : undefined
+        }
         extraActions={[
           {
             label: 'Criterios',

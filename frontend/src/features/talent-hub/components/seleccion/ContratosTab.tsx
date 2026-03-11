@@ -36,6 +36,8 @@ import {
   RefreshCw,
   Mail,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useHistorialContratos,
   useContratosPorVencer,
@@ -312,6 +314,11 @@ const contratoColumns: ResponsiveTableColumn<HistorialContratoList & Record<stri
 // ============================================================================
 
 export const ContratosTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CONTRATOS, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.CONTRATOS, 'edit');
+
   // Filtros
   const [filters, setFilters] = useState<HistorialContratoFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -407,10 +414,12 @@ export const ContratosTab = () => {
             Historial de Contratos
             <span className="text-xs text-gray-400 font-normal">(Ley 2466/2025)</span>
           </h3>
-          <Button size="sm" onClick={() => setShowFormModal(true)}>
-            <Plus size={14} className="mr-1" />
-            Nuevo Contrato
-          </Button>
+          {canCreate && (
+            <Button size="sm" onClick={() => setShowFormModal(true)}>
+              <Plus size={14} className="mr-1" />
+              Nuevo Contrato
+            </Button>
+          )}
         </div>
 
         {/* Filtros */}
@@ -479,7 +488,7 @@ export const ContratosTab = () => {
             }}
             renderActions={(item) => {
               const c = item as unknown as HistorialContratoList;
-              if (c.firmado) return null;
+              if (c.firmado || !canEdit) return null;
               return (
                 <div className="flex items-center gap-1">
                   <Button

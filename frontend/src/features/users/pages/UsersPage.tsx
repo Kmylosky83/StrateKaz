@@ -35,8 +35,7 @@ import type {
 } from '@/types/users.types';
 import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
+
 import { useAuthStore } from '@/store/authStore';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
 
@@ -44,7 +43,6 @@ export default function UsersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { color: moduleColor } = useModuleColor('USUARIOS');
-  const { canDo } = usePermissions();
 
   // Impersonación: solo disponible para superusers
   const currentUser = useAuthStore((s) => s.user);

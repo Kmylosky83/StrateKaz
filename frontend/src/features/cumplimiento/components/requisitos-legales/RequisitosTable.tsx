@@ -38,6 +38,8 @@ interface RequisitosTableProps {
   onEdit: (requisito: EmpresaRequisito) => void;
   onDelete: (requisito: EmpresaRequisito) => void;
   isLoading?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 const columnHelper = createColumnHelper<EmpresaRequisito>();
@@ -127,11 +129,7 @@ const DiasVencerBadge = ({ dias, estado }: { dias: number | null; estado: string
     return `${dias} días`;
   };
 
-  return (
-    <span className={cn('text-sm', getColor())}>
-      {getText()}
-    </span>
-  );
+  return <span className={cn('text-sm', getColor())}>{getText()}</span>;
 };
 
 export const RequisitosTable = ({
@@ -146,6 +144,8 @@ export const RequisitosTable = ({
   onEdit,
   onDelete,
   isLoading = false,
+  canEdit = true,
+  canDelete = true,
 }: RequisitosTableProps) => {
   const columns = useMemo(
     () => [
@@ -213,10 +213,7 @@ export const RequisitosTable = ({
       columnHelper.accessor('dias_para_vencer', {
         header: 'Días para Vencer',
         cell: (info) => (
-          <DiasVencerBadge
-            dias={info.getValue()}
-            estado={info.row.original.estado}
-          />
+          <DiasVencerBadge dias={info.getValue()} estado={info.row.original.estado} />
         ),
         size: 130,
       }),
@@ -232,11 +229,7 @@ export const RequisitosTable = ({
         cell: (info) => {
           const nombre = info.getValue();
           if (!nombre) return <span className="text-xs text-gray-400">-</span>;
-          return (
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {nombre}
-            </span>
-          );
+          return <span className="text-sm text-gray-600 dark:text-gray-400">{nombre}</span>;
         },
         size: 150,
       }),
@@ -246,31 +239,36 @@ export const RequisitosTable = ({
         header: 'Acciones',
         cell: (info) => {
           const requisito = info.row.original;
+          if (!canEdit && !canDelete) return null;
           return (
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(requisito)}
-                className="h-8 w-8 p-0"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(requisito)}
-                className="h-8 w-8 p-0 text-danger-600 hover:text-danger-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(requisito)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(requisito)}
+                  className="h-8 w-8 p-0 text-danger-600 hover:text-danger-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         },
         size: 100,
       }),
     ],
-    [onEdit, onDelete]
+    [onEdit, onDelete, canEdit, canDelete]
   );
 
   const pagination: PaginationState = {
@@ -398,7 +396,10 @@ export const RequisitosTable = ({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="py-1 text-sm"
-              options={[10, 25, 50, 100].map((size) => ({ value: size, label: `${size} por página` }))}
+              options={[10, 25, 50, 100].map((size) => ({
+                value: size,
+                label: `${size} por página`,
+              }))}
             />
           </div>
         </div>

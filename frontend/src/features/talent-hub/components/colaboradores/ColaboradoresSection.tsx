@@ -41,6 +41,8 @@ import {
   Shield,
   Upload,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useColaboradores,
   useColaboradoresEstadisticas,
@@ -102,6 +104,12 @@ const CONTRATO_LABELS: Record<TipoContratoColaborador, string> = {
 };
 
 export const ColaboradoresSection = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'edit');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'delete');
+
   // State
   const [filters, setFilters] = useState<ColaboradorFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -358,14 +366,18 @@ export const ColaboradoresSection = () => {
               options={ESTADO_OPTIONS}
               className="w-36"
             />
-            <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
-              <Upload size={16} className="mr-1" />
-              Importar
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <UserPlus size={16} className="mr-1" />
-              Nuevo
-            </Button>
+            {canCreate && (
+              <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
+                <Upload size={16} className="mr-1" />
+                Importar
+              </Button>
+            )}
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <UserPlus size={16} className="mr-1" />
+                Nuevo
+              </Button>
+            )}
           </div>
         }
       />
@@ -418,16 +430,18 @@ export const ColaboradoresSection = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(c as unknown as Colaborador)}
-                  title="Editar"
-                >
-                  <Pencil size={16} />
-                </Button>
-                {!c.usuario && c.estado === 'activo' && (
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(c as unknown as Colaborador)}
+                    title="Editar"
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                )}
+                {canCreate && !c.usuario && c.estado === 'activo' && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -439,7 +453,7 @@ export const ColaboradoresSection = () => {
                     <Shield size={16} />
                   </Button>
                 )}
-                {c.estado === 'activo' && (
+                {canDelete && c.estado === 'activo' && (
                   <Button
                     type="button"
                     variant="ghost"

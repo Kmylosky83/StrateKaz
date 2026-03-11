@@ -16,8 +16,13 @@ import { Clock, Plus, Pencil, Trash2, Moon } from 'lucide-react';
 import { useTurnos, useDeleteTurno } from '../../hooks/useControlTiempo';
 import type { Turno } from '../../types';
 import { TurnoFormModal } from './TurnoFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 export const TurnosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.TURNOS, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTurno, setSelectedTurno] = useState<Turno | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -76,10 +81,12 @@ export const TurnosTab = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-64"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nuevo Turno
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nuevo Turno
+              </Button>
+            )}
           </div>
         }
       />

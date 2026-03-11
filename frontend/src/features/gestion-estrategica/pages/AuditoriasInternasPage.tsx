@@ -5,6 +5,8 @@
  * MODULE_CODE = 'sistema_gestion'
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   ClipboardCheck,
   FileCheck,
@@ -167,7 +169,9 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
       {/* Actions */}
       <SectionToolbar
         title="Programas de Auditoría"
-        primaryAction={{ label: 'Nuevo Programa', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Programa', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -831,7 +835,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
       {/* Actions */}
       <SectionToolbar
         title="Evaluaciones de Cumplimiento"
-        primaryAction={{ label: 'Nueva Evaluación', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Evaluación', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -947,6 +953,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
 // ==================== MAIN PAGE ====================
 
 export const AuditoriasInternasPage = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLAN_AUDITORIAS, 'create');
+
   const [activeTab, setActiveTab] = useState('programas');
   const [programaModalOpen, setProgramaModalOpen] = useState(false);
   const [auditoriaModalOpen, setAuditoriaModalOpen] = useState(false);

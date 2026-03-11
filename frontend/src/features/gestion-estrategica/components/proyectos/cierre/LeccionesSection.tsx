@@ -12,6 +12,8 @@ import { useLecciones, useDeleteLeccion } from '../../../hooks/useProyectos';
 import { LeccionFormModal } from './LeccionFormModal';
 import type { LeccionAprendida } from '../../../types/proyectos.types';
 import type { ColumnDef } from '@tanstack/react-table';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface LeccionesSectionProps {
   proyectoId: number;
@@ -25,6 +27,9 @@ const TIPO_BADGE: Record<string, 'success' | 'danger' | 'warning' | 'info'> = {
 };
 
 export const LeccionesSection = ({ proyectoId }: LeccionesSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.CIERRE, 'create');
+
   const { data: leccionesData, isLoading } = useLecciones({
     proyecto: proyectoId,
     is_active: true,
@@ -116,15 +121,19 @@ export const LeccionesSection = ({ proyectoId }: LeccionesSectionProps) => {
         <SectionToolbar
           title="Lecciones Aprendidas"
           count={lecciones.length}
-          primaryAction={{
-            label: 'Nueva Lección',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Lección',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
         />
 
         {lecciones.length > 0 ? (

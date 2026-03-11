@@ -14,6 +14,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { BookOpen, Plus, Pencil, Trash2, Clock, CheckCircle } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useModulosInduccion, useDeleteModuloInduccion } from '../../hooks/useOnboardingInduccion';
 import type { ModuloInduccion, TipoModuloInduccion } from '../../types';
 import { ModuloFormModal } from './ModuloFormModal';
@@ -42,6 +44,12 @@ const FORMATO_LABELS: Record<string, string> = {
 };
 
 export const ModulosTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'edit');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'delete');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [selectedModulo, setSelectedModulo] = useState<ModuloInduccion | null>(null);
@@ -108,10 +116,12 @@ export const ModulosTab = () => {
               options={TIPO_OPTIONS}
               className="w-44"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nuevo Modulo
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nuevo Modulo
+              </Button>
+            )}
           </div>
         }
       />
@@ -216,25 +226,29 @@ export const ModulosTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(modulo)}
-                          title="Editar"
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteTarget(modulo)}
-                          title="Eliminar"
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(modulo)}
+                            title="Editar"
+                          >
+                            <Pencil size={16} />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(modulo)}
+                            title="Eliminar"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

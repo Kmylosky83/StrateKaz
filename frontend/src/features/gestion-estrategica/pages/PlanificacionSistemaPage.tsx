@@ -4,6 +4,8 @@
  * MODULE_CODE = 'sistema_gestion'
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   CalendarDays,
   ListChecks,
@@ -210,7 +212,9 @@ const PlanesTrabajoSection = ({ onOpenModal }: PlanesSectionProps) => {
 
       <SectionToolbar
         title="Planes de Trabajo Anuales"
-        primaryAction={{ label: 'Nuevo Plan', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Plan', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       <Card>
@@ -426,7 +430,9 @@ const ActividadesPlanSection = ({ onOpenModal }: ActividadesProps) => {
 
       <SectionToolbar
         title="Actividades del Plan"
-        primaryAction={{ label: 'Nueva Actividad', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Actividad', onClick: () => onOpenModal() } : undefined
+        }
       >
         <Select
           value={planFiltro}
@@ -635,7 +641,9 @@ const ObjetivosSistemaSection = ({ onOpenModal }: ObjetivosProps) => {
 
       <SectionToolbar
         title="Objetivos del Sistema"
-        primaryAction={{ label: 'Nuevo Objetivo', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Objetivo', onClick: () => onOpenModal() } : undefined
+        }
       >
         <Select
           value={planFiltro}
@@ -839,7 +847,9 @@ const ProgramasGestionSection = ({ onOpenModal }: ProgramasProps) => {
 
       <SectionToolbar
         title="Programas de Gestión"
-        primaryAction={{ label: 'Nuevo Programa', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Programa', onClick: () => onOpenModal() } : undefined
+        }
       >
         <Select
           value={planFiltro}
@@ -1074,6 +1084,9 @@ const CronogramaGanttSection = () => {
 // ==================== MAIN PAGE ====================
 
 export const PlanificacionSistemaPage = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PROGRAMAS, 'create');
+
   const [activeTab, setActiveTab] = useState('planes');
 
   // Modales state

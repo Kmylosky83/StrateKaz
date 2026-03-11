@@ -16,6 +16,8 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useUnidadesNegocio,
   useCreateUnidadNegocio,
@@ -38,6 +40,9 @@ const TIPOS_UNIDAD = [
 // ==================== COMPONENTE ====================
 
 export function UnidadesNegocioTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'create');
+
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<UnidadNegocio | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -100,13 +105,17 @@ export function UnidadesNegocioTab() {
       <SectionToolbar
         title="Unidades de Negocio"
         count={unidades.length}
-        primaryAction={{
-          label: 'Nueva Unidad',
-          onClick: () => {
-            setEditItem(null);
-            setShowForm(true);
-          },
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Unidad',
+                onClick: () => {
+                  setEditItem(null);
+                  setShowForm(true);
+                },
+              }
+            : undefined
+        }
       />
 
       {unidades.length === 0 ? (

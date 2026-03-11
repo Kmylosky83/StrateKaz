@@ -38,6 +38,8 @@ import {
   Globe,
   ExternalLink,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useVacantesActivas,
   useProcesoSeleccionEstadisticas,
@@ -63,6 +65,12 @@ import { VacanteFormModal } from './VacanteFormModal';
 // ============================================================================
 
 export const VacantesTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'edit');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'delete');
+
   // State
   const [filters, setFilters] = useState<VacanteActivaFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -323,10 +331,12 @@ export const VacantesTab = () => {
               <ExternalLink size={14} />
               Portal público
             </a>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nueva Vacante
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nueva Vacante
+              </Button>
+            )}
           </div>
         }
       />
@@ -375,16 +385,18 @@ export const VacantesTab = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleEdit(v as unknown as VacanteActiva)}
-                  title="Editar"
-                >
-                  <Pencil size={16} />
-                </Button>
-                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEdit(v as unknown as VacanteActiva)}
+                    title="Editar"
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                )}
+                {canEdit && (v.estado === 'abierta' || v.estado === 'en_proceso') && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -405,7 +417,7 @@ export const VacantesTab = () => {
                     <Globe size={16} />
                   </Button>
                 )}
-                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                {canDelete && (v.estado === 'abierta' || v.estado === 'en_proceso') && (
                   <Button
                     type="button"
                     variant="ghost"

@@ -3,6 +3,8 @@
  * Tabs: Activos, Mantenimiento, Depreciaciones, Hojas de Vida
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Building2,
   TrendingDown,
@@ -86,6 +88,9 @@ const getEstadoBadge = (
 // ==================== MAIN COMPONENT ====================
 
 export default function ActivosFijosPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.INVENTARIO_ACTIVOS, 'create');
+
   const [activeTab, setActiveTab] = useState('inventario');
 
   // Modal state
@@ -157,13 +162,17 @@ export default function ActivosFijosPage() {
           <SectionToolbar
             title="Inventario de Activos"
             count={activos.length}
-            primaryAction={{
-              label: 'Nuevo Activo',
-              onClick: () => {
-                setSelectedActivo(null);
-                setActivoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nuevo Activo',
+                    onClick: () => {
+                      setSelectedActivo(null);
+                      setActivoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingActivos ? (
@@ -269,13 +278,17 @@ export default function ActivosFijosPage() {
           <SectionToolbar
             title="Programas de Mantenimiento"
             count={mantenimientos.length}
-            primaryAction={{
-              label: 'Programar Mantenimiento',
-              onClick: () => {
-                setSelectedMant(null);
-                setMantModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Programar Mantenimiento',
+                    onClick: () => {
+                      setSelectedMant(null);
+                      setMantModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingMant ? (
@@ -428,13 +441,17 @@ export default function ActivosFijosPage() {
           <SectionToolbar
             title="Hojas de Vida"
             count={hojas.length}
-            primaryAction={{
-              label: 'Nuevo Evento',
-              onClick: () => {
-                setSelectedHv(null);
-                setHvModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nuevo Evento',
+                    onClick: () => {
+                      setSelectedHv(null);
+                      setHvModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingHv ? (

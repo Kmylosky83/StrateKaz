@@ -19,6 +19,8 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { SectionHeader, Button, ViewToggle, Badge, Spinner } from '@/components/common';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { PortafolioDashboard } from '../PortafolioDashboard';
@@ -496,6 +498,8 @@ export const PortafolioSubTab = () => {
   const [selectedProject, setSelectedProject] = useState<Proyecto | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { data: dashboard } = useProyectosDashboard();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PORTAFOLIO, 'create');
 
   const handleProjectClick = (proyecto: Proyecto) => {
     setSelectedProject(proyecto);
@@ -526,10 +530,12 @@ export const PortafolioSubTab = () => {
               options={VIEW_OPTIONS}
               moduleColor="purple"
             />
-            <Button variant="primary" size="sm" onClick={handleCreateProject}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Proyecto
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreateProject}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Proyecto
+              </Button>
+            )}
           </div>
         }
       />

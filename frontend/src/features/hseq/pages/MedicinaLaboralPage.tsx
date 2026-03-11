@@ -9,6 +9,8 @@
  * - Estadísticas y Reportes
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Stethoscope,
   AlertOctagon,
@@ -284,7 +286,7 @@ const ExamenesMedicosSection = () => {
         title="Exámenes Médicos"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Programar Examen', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Programar Examen', onClick: handleNew } : undefined}
       />
 
       {/* Examenes Table */}
@@ -527,7 +529,7 @@ const RestriccionesMedicasSection = () => {
       <SectionToolbar
         title="Restricciones Médicas"
         onFilter={() => {}}
-        primaryAction={{ label: 'Nueva Restricción', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Restricción', onClick: handleNew } : undefined}
       />
 
       {/* Restricciones Table */}
@@ -801,7 +803,7 @@ const VigilanciaEpidemiologicaSection = () => {
             icon: <ClipboardList className="w-4 h-4" />,
           },
         ]}
-        primaryAction={{ label: 'Nuevo Caso', onClick: handleNewCaso }}
+        primaryAction={canCreate ? { label: 'Nuevo Caso', onClick: handleNewCaso } : undefined}
       />
 
       {/* Casos Table */}
@@ -1018,7 +1020,7 @@ const DiagnosticosOcupacionalesSection = () => {
           searchValue={searchCIE10}
           searchPlaceholder="Buscar por código CIE-10 o nombre..."
           onSearchChange={setSearchCIE10}
-          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: handleNew }}
+          primaryAction={canCreate ? { label: 'Nuevo Diagnóstico', onClick: handleNew } : undefined}
         />
       </Card>
 
@@ -1431,6 +1433,9 @@ const EstadisticasReportesSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function MedicinaLaboralPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.EXAMENES_MEDICOS, 'create');
+
   const [activeTab, setActiveTab] = useState('examenes');
 
   const tabs = [

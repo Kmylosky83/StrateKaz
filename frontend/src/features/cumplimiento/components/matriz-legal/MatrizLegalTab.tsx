@@ -29,6 +29,8 @@ import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { NormaFilters } from './NormaFilters';
 import { NormasTable } from './NormasTable';
 import { NormaFormModal } from './NormaFormModal';
@@ -62,8 +64,16 @@ const TIPO_NORMA_CODES = {
 const SUBTABS = [
   { id: TIPO_NORMA_CODES.DECRETOS, label: 'Decretos', icon: <Scale className="h-4 w-4" /> },
   { id: TIPO_NORMA_CODES.LEYES, label: 'Leyes', icon: <BookOpen className="h-4 w-4" /> },
-  { id: TIPO_NORMA_CODES.RESOLUCIONES, label: 'Resoluciones', icon: <FileCheck className="h-4 w-4" /> },
-  { id: TIPO_NORMA_CODES.CIRCULARES, label: 'Circulares', icon: <MessageSquare className="h-4 w-4" /> },
+  {
+    id: TIPO_NORMA_CODES.RESOLUCIONES,
+    label: 'Resoluciones',
+    icon: <FileCheck className="h-4 w-4" />,
+  },
+  {
+    id: TIPO_NORMA_CODES.CIRCULARES,
+    label: 'Circulares',
+    icon: <MessageSquare className="h-4 w-4" />,
+  },
   { id: TIPO_NORMA_CODES.NTC, label: 'NTC', icon: <Award className="h-4 w-4" /> },
   { id: TIPO_NORMA_CODES.WEB_SCRAPING, label: 'Web Scraping', icon: <Globe className="h-4 w-4" /> },
 ];
@@ -73,6 +83,11 @@ const SUBTABS = [
 // =============================================================================
 
 export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'create');
+  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'edit');
+  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'delete');
+
   const [activeSubtab, setActiveSubtab] = useState(TIPO_NORMA_CODES.DECRETOS);
   const [filters, setFilters] = useState<NormasListParams>({
     page: 1,
@@ -89,16 +104,13 @@ export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
   // Agregar filtro por tipo de norma según el subtab activo
   const finalFilters: NormasListParams = {
     ...filters,
-    tipo_norma: activeSubtab !== TIPO_NORMA_CODES.WEB_SCRAPING
-      ? tiposNorma?.find((t) => t.codigo === activeSubtab)?.id
-      : undefined,
+    tipo_norma:
+      activeSubtab !== TIPO_NORMA_CODES.WEB_SCRAPING
+        ? tiposNorma?.find((t) => t.codigo === activeSubtab)?.id
+        : undefined,
   };
 
-  const {
-    data: normasData,
-    isLoading,
-    error,
-  } = useNormasLegales(finalFilters);
+  const { data: normasData, isLoading, error } = useNormasLegales(finalFilters);
 
   const normas = normasData?.results || [];
   const totalCount = normasData?.count || 0;
@@ -197,9 +209,7 @@ export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Normas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {totalCount}
-                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>
@@ -262,23 +272,22 @@ export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
               >
                 Exportar
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreate}
-                leftIcon={<Plus className="h-4 w-4" />}
-              >
-                Nueva Norma
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreate}
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  Nueva Norma
+                </Button>
+              )}
             </div>
           </div>
         </Card>
 
         {/* Filters */}
-        <NormaFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-        />
+        <NormaFilters filters={filters} onFiltersChange={handleFiltersChange} />
 
         {/* Table */}
         {error ? (
@@ -300,6 +309,8 @@ export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
             onEdit={handleEdit}
             onDelete={(norma) => setNormaToDelete(norma)}
             isLoading={isLoading}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         )}
       </div>
@@ -314,12 +325,7 @@ export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
     <>
       <div className="space-y-6">
         {/* Subtabs */}
-        <Tabs
-          tabs={SUBTABS}
-          activeTab={activeSubtab}
-          onChange={setActiveSubtab}
-          variant="pills"
-        />
+        <Tabs tabs={SUBTABS} activeTab={activeSubtab} onChange={setActiveSubtab} variant="pills" />
 
         {/* Content */}
         {activeSubtab === TIPO_NORMA_CODES.WEB_SCRAPING

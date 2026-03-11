@@ -16,6 +16,8 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Palmtree, Plus, Trash2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   usePeriodosVacaciones,
   useActualizarAcumulacion,
@@ -39,6 +41,9 @@ const ESTADO_BADGE: Record<string, 'gray' | 'warning' | 'info' | 'success' | 'da
 };
 
 export const VacacionesTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.REGISTRO_NOVEDADES, 'create');
+
   const [activeSection, setActiveSection] = useState<'periodos' | 'solicitudes'>('periodos');
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
@@ -255,10 +260,12 @@ export const VacacionesTab = () => {
                 className="w-40"
               />
             </div>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nueva Solicitud
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nueva Solicitud
+              </Button>
+            )}
           </div>
 
           <Card variant="bordered" padding="none">

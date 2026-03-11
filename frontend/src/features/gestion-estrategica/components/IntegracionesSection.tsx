@@ -52,8 +52,6 @@ import { Card, Badge, Button, BadgeVariant, BrandedSkeleton } from '@/components
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
 import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
 import {
@@ -184,7 +182,6 @@ const StatusBadge = ({ status, isActive }: { status: StatusIndicator; isActive: 
 };
 
 export const IntegracionesSection = () => {
-  const { canDo } = usePermissions();
   // Hooks de datos
   const { data: integracionesData, isLoading, error } = useIntegraciones();
   const deleteMutation = useDeleteIntegracion();

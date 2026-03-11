@@ -5,6 +5,8 @@
  * KPIs + SectionToolbar + Tabla profesional + CRUD completo
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -63,6 +65,9 @@ const RESULTADO_VARIANTS: Record<ResultadoLiberacion, 'warning' | 'success' | 'i
 // ==================== STOCK SECTION ====================
 
 const StockSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.LOTES, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -388,10 +393,14 @@ const LiberacionesSection = () => {
             setSearchTerm(val);
             setPage(1);
           }}
-          primaryAction={{
-            label: 'Nueva Liberación',
-            onClick: handleNew,
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Liberación',
+                  onClick: handleNew,
+                }
+              : undefined
+          }
         />
       </Card>
 

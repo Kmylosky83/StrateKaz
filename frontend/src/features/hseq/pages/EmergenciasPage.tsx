@@ -10,6 +10,8 @@
  * - Recursos de Emergencia
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Shield,
   FileText,
@@ -224,10 +226,14 @@ const AnalisisVulnerabilidadSection = () => {
         title="Análisis de Vulnerabilidad"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Análisis',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Análisis',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -391,10 +397,14 @@ const PlanesEmergenciaSection = () => {
       <SectionToolbar
         title="Planes de Emergencia"
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Plan',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Plan',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Plans Grid */}
@@ -559,10 +569,14 @@ const PlanosEvacuacionSection = () => {
       <SectionToolbar
         title="Planos de Evacuación"
         onFilter={() => {}}
-        primaryAction={{
-          label: 'Nuevo Plano',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Plano',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Planos Grid */}
@@ -752,10 +766,14 @@ const BrigadasSection = () => {
       <SectionToolbar
         title="Brigadas de Emergencia"
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nueva Brigada',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Brigada',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Brigadas Grid */}
@@ -956,10 +974,14 @@ const SimulacrosSection = () => {
         title="Simulacros de Emergencia"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Simulacro',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Simulacro',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -1172,10 +1194,14 @@ const RecursosEmergenciaSection = () => {
         title="Recursos de Emergencia"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Recurso',
-          onClick: handleNew,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Recurso',
+                onClick: handleNew,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -1307,6 +1333,9 @@ const RecursosEmergenciaSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function EmergenciasPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.PLAN_EMERGENCIAS, 'create');
+
   const [activeTab, setActiveTab] = useState('vulnerabilidad');
 
   const tabs = [

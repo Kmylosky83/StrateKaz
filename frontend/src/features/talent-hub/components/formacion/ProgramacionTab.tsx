@@ -14,6 +14,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { CalendarDays, Plus, Trash2, MapPin, Video, Users } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useProgramaciones, useDeleteProgramacion } from '../../hooks/useFormacionReinduccion';
 import type { ProgramacionCapacitacion } from '../../types';
 import { ProgramacionFormModal } from './ProgramacionFormModal';
@@ -28,6 +30,11 @@ const ESTADO_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'da
 };
 
 export const ProgramacionTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CAPACITACIONES, 'create');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.CAPACITACIONES, 'delete');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -94,10 +101,12 @@ export const ProgramacionTab = () => {
               ]}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={() => setIsFormOpen(true)}>
-              <Plus size={16} className="mr-1" />
-              Programar
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={() => setIsFormOpen(true)}>
+                <Plus size={16} className="mr-1" />
+                Programar
+              </Button>
+            )}
           </div>
         }
       />
@@ -204,16 +213,18 @@ export const ProgramacionTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteTarget(prog)}
-                          title="Eliminar"
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                        {canDelete && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(prog)}
+                            title="Eliminar"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

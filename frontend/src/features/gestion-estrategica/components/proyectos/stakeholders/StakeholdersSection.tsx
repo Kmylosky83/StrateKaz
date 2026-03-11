@@ -13,6 +13,8 @@ import { StakeholderFormModal } from './StakeholderFormModal';
 import { ImportarStakeholdersModal } from './ImportarStakeholdersModal';
 import type { InteresadoProyecto } from '../../../types/proyectos.types';
 import type { ColumnDef } from '@tanstack/react-table';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface StakeholdersSectionProps {
   proyectoId: number;
@@ -28,6 +30,9 @@ const NIVEL_BADGE: Record<string, 'success' | 'warning' | 'gray'> = {
 };
 
 export const StakeholdersSection = ({ proyectoId }: StakeholdersSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.INICIACION, 'create');
+
   const { data: interesadosData, isLoading } = useInteresados({
     proyecto: proyectoId,
     is_active: true,
@@ -121,15 +126,19 @@ export const StakeholdersSection = ({ proyectoId }: StakeholdersSectionProps) =>
         <SectionToolbar
           title="Interesados del Proyecto"
           count={interesados.length}
-          primaryAction={{
-            label: 'Agregar',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Agregar',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
           extraActions={[
             {
               label: 'Importar desde Contexto',

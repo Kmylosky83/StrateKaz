@@ -3,6 +3,8 @@
  * Tabs: Bancos, Cuentas por Pagar, Cuentas por Cobrar, Pagos y Recaudos
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Wallet,
   CreditCard,
@@ -95,6 +97,9 @@ const getEstadoBadge = (
 // ==================== MAIN COMPONENT ====================
 
 export default function TesoreriaPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.FLUJO_CAJA, 'create');
+
   const [activeTab, setActiveTab] = useState('bancos');
 
   // Modal state
@@ -177,13 +182,17 @@ export default function TesoreriaPage() {
           <SectionToolbar
             title="Cuentas Bancarias"
             count={bancos.length}
-            primaryAction={{
-              label: 'Nueva Cuenta',
-              onClick: () => {
-                setSelectedBanco(null);
-                setBancoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nueva Cuenta',
+                    onClick: () => {
+                      setSelectedBanco(null);
+                      setBancoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingBancos ? (
@@ -280,13 +289,17 @@ export default function TesoreriaPage() {
           <SectionToolbar
             title="Cuentas por Pagar"
             count={cxp.length}
-            primaryAction={{
-              label: 'Nueva CxP',
-              onClick: () => {
-                setSelectedCxp(null);
-                setCxpModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nueva CxP',
+                    onClick: () => {
+                      setSelectedCxp(null);
+                      setCxpModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingCxp ? (
@@ -403,13 +416,17 @@ export default function TesoreriaPage() {
           <SectionToolbar
             title="Cuentas por Cobrar"
             count={cxc.length}
-            primaryAction={{
-              label: 'Nueva CxC',
-              onClick: () => {
-                setSelectedCxc(null);
-                setCxcModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nueva CxC',
+                    onClick: () => {
+                      setSelectedCxc(null);
+                      setCxcModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingCxc ? (
@@ -527,13 +544,17 @@ export default function TesoreriaPage() {
           <SectionToolbar
             title="Pagos Realizados"
             count={pagos.length}
-            primaryAction={{
-              label: 'Registrar Pago',
-              onClick: () => {
-                setSelectedPago(null);
-                setPagoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Registrar Pago',
+                    onClick: () => {
+                      setSelectedPago(null);
+                      setPagoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingPagos ? (
@@ -612,13 +633,17 @@ export default function TesoreriaPage() {
           <SectionToolbar
             title="Recaudos"
             count={recaudos.length}
-            primaryAction={{
-              label: 'Registrar Recaudo',
-              onClick: () => {
-                setSelectedRecaudo(null);
-                setRecaudoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Registrar Recaudo',
+                    onClick: () => {
+                      setSelectedRecaudo(null);
+                      setRecaudoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingRecaudos ? (

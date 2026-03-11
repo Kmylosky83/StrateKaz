@@ -16,6 +16,8 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Scale, Plus, Pencil, Trash2, FileEdit, Gavel } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useDescargos,
   useDeleteDescargo,
@@ -41,6 +43,9 @@ const DECISION_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | '
 };
 
 export const DescargosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CASOS_DISCIPLINARIOS, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [selectedDescargo, setSelectedDescargo] = useState<Descargo | null>(null);
@@ -147,10 +152,12 @@ export const DescargosTab = () => {
               options={ESTADO_OPTIONS}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Crear Citacion
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Crear Citacion
+              </Button>
+            )}
           </div>
         }
       />

@@ -5,6 +5,8 @@
  * Deleted ALL stub/placeholder content
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Wind,
   FlaskConical,
@@ -146,7 +148,9 @@ const TiposAgenteSection = ({ onOpenModal }: TiposAgenteProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Tipos de Agentes de Riesgo"
-        primaryAction={{ label: 'Nuevo Tipo', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Tipo', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -314,7 +318,9 @@ const MedicionesAmbientalesSection = ({ onOpenModal }: MedicionesAmbientalesProp
       {/* Actions */}
       <SectionToolbar
         title="Mediciones Ambientales"
-        primaryAction={{ label: 'Nueva Medición', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Medición', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -499,7 +505,9 @@ const ControlesExposicionSection = ({ onOpenModal }: ControlesExposicionProps) =
       {/* Actions */}
       <SectionToolbar
         title="Controles de Exposición"
-        primaryAction={{ label: 'Nuevo Control', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Control', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -681,7 +689,9 @@ const MonitoreoBiologicoSection = ({ onOpenModal }: MonitoreoBiologicoProps) => 
       {/* Actions */}
       <SectionToolbar
         title="Monitoreo Biológico"
-        primaryAction={{ label: 'Nuevo Examen', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Examen', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -788,6 +798,9 @@ const MonitoreoBiologicoSection = ({ onOpenModal }: MonitoreoBiologicoProps) => 
 // ==================== MAIN PAGE ====================
 
 export default function HigieneIndustrialPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.MEDICIONES, 'create');
+
   const [activeTab, setActiveTab] = useState('tipos-agente');
   const [tipoAgenteModalOpen, setTipoAgenteModalOpen] = useState(false);
   const [medicionModalOpen, setMedicionModalOpen] = useState(false);

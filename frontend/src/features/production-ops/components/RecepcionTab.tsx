@@ -4,6 +4,8 @@
  * KPIs + SectionToolbar + Tabla profesional + CRUD completo
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -24,6 +26,9 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const RecepcionTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.RECEPCION_MP, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<Recepcion | null>(null);
@@ -142,10 +147,14 @@ const RecepcionTab = () => {
             setSearchTerm(val);
             setPage(1);
           }}
-          primaryAction={{
-            label: 'Nueva Recepción',
-            onClick: handleNew,
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Recepción',
+                  onClick: handleNew,
+                }
+              : undefined
+          }
         />
       </Card>
 

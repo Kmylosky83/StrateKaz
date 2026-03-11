@@ -17,6 +17,8 @@ import { useRegistrosAsistencia } from '../../hooks/useControlTiempo';
 import type { EstadoAsistencia } from '../../types';
 import { estadoAsistenciaOptions } from '../../types/controlTiempo.types';
 import { RegistroAsistenciaFormModal } from './RegistroAsistenciaFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const ESTADO_BADGE: Record<EstadoAsistencia, 'success' | 'danger' | 'warning' | 'info' | 'gray'> = {
   presente: 'success',
@@ -29,6 +31,9 @@ const ESTADO_BADGE: Record<EstadoAsistencia, 'success' | 'danger' | 'warning' | 
 };
 
 export const AsistenciaTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.AUSENCIAS, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -96,10 +101,12 @@ export const AsistenciaTab = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-48"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nuevo Registro
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nuevo Registro
+              </Button>
+            )}
           </div>
         }
       />

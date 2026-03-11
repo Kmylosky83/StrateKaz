@@ -4,6 +4,8 @@
  * KPIs + SectionToolbar + Tabla profesional + CRUD completo
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -41,6 +43,9 @@ const PRIORIDAD_VARIANTS: Record<number, 'gray' | 'info' | 'warning' | 'danger'>
 };
 
 const ProcesamientoTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.ORDENES_PRODUCCION, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<OrdenProduccion | null>(null);
@@ -144,10 +149,14 @@ const ProcesamientoTab = () => {
             setSearchTerm(val);
             setPage(1);
           }}
-          primaryAction={{
-            label: 'Nueva Orden',
-            onClick: handleNew,
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Orden',
+                  onClick: handleNew,
+                }
+              : undefined
+          }
         />
       </Card>
 

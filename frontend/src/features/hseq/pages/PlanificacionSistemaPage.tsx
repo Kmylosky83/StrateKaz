@@ -8,6 +8,8 @@
  * - Seguimiento de Cronograma
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Calendar,
   Target,
@@ -258,7 +260,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Actividades Programadas"
-        primaryAction={{ label: 'Nueva Actividad', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Actividad', onClick: handleNew } : undefined}
       />
 
       {/* Activities Table */}
@@ -498,7 +500,7 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Objetivos del Sistema"
-        primaryAction={{ label: 'Nuevo Objetivo', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Objetivo', onClick: handleNew } : undefined}
       />
 
       {/* Objectives Grid */}
@@ -715,7 +717,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Programas de Gestión"
-        primaryAction={{ label: 'Nuevo Programa', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Programa', onClick: handleNew } : undefined}
       />
 
       {/* Programs Grid */}
@@ -885,7 +887,7 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
       <SectionToolbar
         title="Dashboard de Planificación"
         subtitle="Seguimiento integral del plan de trabajo anual"
-        primaryAction={{ label: 'Descargar Reporte', onClick: () => {} }}
+        primaryAction={canCreate ? { label: 'Descargar Reporte', onClick: () => {} } : undefined}
       />
 
       {/* Main KPIs */}
@@ -1101,6 +1103,9 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function PlanificacionSistemaPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.INSPECCIONES, 'create');
+
   const [activeTab, setActiveTab] = useState('plan-trabajo');
   const { data: planes } = usePlanesTrabajo({ año: new Date().getFullYear() });
 

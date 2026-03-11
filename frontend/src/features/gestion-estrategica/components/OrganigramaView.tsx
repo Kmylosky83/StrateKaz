@@ -11,8 +11,6 @@
  */
 
 import { OrganigramaCanvas } from './organigrama';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Lock } from 'lucide-react';
 import type { ViewMode } from '../types/organigrama.types';
@@ -31,7 +29,6 @@ export const OrganigramaView = ({
   defaultMode,
   showToolbar,
 }: OrganigramaViewProps) => {
-  const { canDo } = usePermissions();
   const canView = canDo(Modules.FUNDACION, Sections.ORGANIGRAMA, 'view');
 
   if (!canView) {

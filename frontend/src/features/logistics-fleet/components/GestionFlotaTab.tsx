@@ -4,6 +4,8 @@
  */
 import { useState } from 'react';
 import { Truck, Wrench, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -46,6 +48,9 @@ const colorToBadge = (color: string): 'success' | 'warning' | 'danger' | 'info' 
 };
 
 export function GestionFlotaTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.VEHICULOS, 'create');
+
   const [activeSubTab, setActiveSubTab] = useState('vehiculos');
 
   // Queries
@@ -178,7 +183,9 @@ export function GestionFlotaTab() {
             title="Vehículos de la Flota"
             subtitle="Gestión completa de vehículos y documentos PESV"
             count={vehiculos.length}
-            primaryAction={{ label: 'Nuevo Vehículo', onClick: handleNewVehiculo }}
+            primaryAction={
+              canCreate ? { label: 'Nuevo Vehículo', onClick: handleNewVehiculo } : undefined
+            }
           />
 
           {loadingVehiculos ? (
@@ -348,7 +355,11 @@ export function GestionFlotaTab() {
             title="Mantenimientos"
             subtitle="Gestión de mantenimientos preventivos y correctivos"
             count={mantenimientos.length}
-            primaryAction={{ label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }}
+            primaryAction={
+              canCreate
+                ? { label: 'Nuevo Mantenimiento', onClick: handleNewMantenimiento }
+                : undefined
+            }
           />
 
           {loadingMantenimientos ? (

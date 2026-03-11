@@ -14,6 +14,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { GraduationCap, Plus, Pencil, Trash2, Clock, Send } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useCapacitaciones,
   useDeleteCapacitacion,
@@ -63,6 +65,12 @@ const MODALIDAD_LABELS: Record<string, string> = {
 };
 
 export const CapacitacionesTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CAPACITACIONES, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.CAPACITACIONES, 'edit');
+  const canDelete = canDo(Modules.TALENT_HUB, Sections.CAPACITACIONES, 'delete');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
@@ -138,10 +146,12 @@ export const CapacitacionesTab = () => {
               options={ESTADO_OPTIONS}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Nueva
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Nueva
+              </Button>
+            )}
           </div>
         }
       />
@@ -232,7 +242,7 @@ export const CapacitacionesTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {cap.estado === 'borrador' && (
+                        {canEdit && cap.estado === 'borrador' && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -244,25 +254,29 @@ export const CapacitacionesTab = () => {
                             <Send size={16} />
                           </Button>
                         )}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(cap)}
-                          title="Editar"
-                        >
-                          <Pencil size={16} />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteTarget(cap)}
-                          title="Eliminar"
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+                        {canEdit && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(cap)}
+                            title="Editar"
+                          >
+                            <Pencil size={16} />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(cap)}
+                            title="Eliminar"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

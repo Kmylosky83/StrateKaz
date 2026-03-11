@@ -15,6 +15,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Stethoscope, Plus, Pencil, Trash2, CheckCircle, XCircle, DollarSign } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useIncapacidades,
   useDeleteIncapacidad,
@@ -37,6 +39,9 @@ const ESTADO_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'da
 };
 
 export const IncapacidadesTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.REGISTRO_NOVEDADES, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [selectedIncapacidad, setSelectedIncapacidad] = useState<Incapacidad | null>(null);
@@ -138,10 +143,12 @@ export const IncapacidadesTab = () => {
               options={ESTADO_OPTIONS}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Registrar
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Registrar
+              </Button>
+            )}
           </div>
         }
       />

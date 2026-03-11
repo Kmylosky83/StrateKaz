@@ -14,6 +14,8 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Package,
   ArrowRightLeft,
@@ -119,11 +121,15 @@ const InventariosSection = () => {
       <SectionToolbar
         title="Inventarios"
         count={inventarios.length}
-        primaryAction={{
-          label: 'Nuevo Movimiento',
-          onClick: () => setIsMovimientoOpen(true),
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Movimiento',
+                onClick: () => setIsMovimientoOpen(true),
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -235,11 +241,15 @@ const MovimientosSection = () => {
       <SectionToolbar
         title="Movimientos de Inventario"
         count={movimientos.length}
-        primaryAction={{
-          label: 'Nuevo Movimiento',
-          onClick: () => setIsFormOpen(true),
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Movimiento',
+                onClick: () => setIsFormOpen(true),
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {movimientos.length === 0 ? (
@@ -367,12 +377,16 @@ const AlertasSection = () => {
       <SectionToolbar
         title="Alertas de Stock"
         count={alertas.length}
-        primaryAction={{
-          label: 'Generar Alertas',
-          onClick: () => generarAlertasMutation.mutate(),
-          icon: <Bell className="w-4 h-4" />,
-          disabled: generarAlertasMutation.isPending,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Generar Alertas',
+                onClick: () => generarAlertasMutation.mutate(),
+                icon: <Bell className="w-4 h-4" />,
+                disabled: generarAlertasMutation.isPending,
+              }
+            : undefined
+        }
       />
 
       {alertas.length === 0 ? (
@@ -501,11 +515,15 @@ const ConfiguracionSection = () => {
       <SectionToolbar
         title="Configuración de Stock"
         count={configuraciones.length}
-        primaryAction={{
-          label: 'Nueva Configuración',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Configuración',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {configuraciones.length === 0 ? (
@@ -579,6 +597,9 @@ const ConfiguracionSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function AlmacenamientoTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
+
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('inventarios');
 

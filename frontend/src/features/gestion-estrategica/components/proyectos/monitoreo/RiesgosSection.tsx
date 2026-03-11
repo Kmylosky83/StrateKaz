@@ -14,6 +14,8 @@ import { RiesgoFormModal } from './RiesgoFormModal';
 import { MatrizRiesgos as MatrizRiesgosView } from './MatrizRiesgos';
 import type { RiesgoProyecto } from '../../../types/proyectos.types';
 import type { ColumnDef } from '@tanstack/react-table';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface RiesgosSectionProps {
   proyectoId: number;
@@ -32,6 +34,9 @@ const TIPO_BADGE: Record<string, 'danger' | 'success'> = {
 };
 
 export const RiesgosSection = ({ proyectoId }: RiesgosSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.EJECUCION_MONITOREO, 'create');
+
   const { data: riesgosData, isLoading } = useRiesgosProyecto({
     proyecto: proyectoId,
     is_active: true,
@@ -166,15 +171,19 @@ export const RiesgosSection = ({ proyectoId }: RiesgosSectionProps) => {
           <SectionToolbar
             title="Riesgos del Proyecto"
             count={riesgos.length}
-            primaryAction={{
-              label: 'Nuevo Riesgo',
-              icon: <Plus className="h-4 w-4" />,
-              onClick: () => {
-                setEditItem(null);
-                setShowForm(true);
-              },
-              variant: 'primary',
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nuevo Riesgo',
+                    icon: <Plus className="h-4 w-4" />,
+                    onClick: () => {
+                      setEditItem(null);
+                      setShowForm(true);
+                    },
+                    variant: 'primary',
+                  }
+                : undefined
+            }
           />
           <ViewToggle value={viewMode} onChange={setViewMode} options={VIEW_OPTIONS} />
         </div>

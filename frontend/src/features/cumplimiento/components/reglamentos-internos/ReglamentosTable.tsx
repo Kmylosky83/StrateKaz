@@ -18,7 +18,17 @@ import {
   type PaginationState,
   type SortingState,
 } from '@tanstack/react-table';
-import { Edit, Trash2, FileText, CheckCircle2, Clock, FileCheck, AlertTriangle, XCircle, Download } from 'lucide-react';
+import {
+  Edit,
+  Trash2,
+  FileText,
+  CheckCircle2,
+  Clock,
+  FileCheck,
+  AlertTriangle,
+  XCircle,
+  Download,
+} from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Card } from '@/components/common/Card';
@@ -39,6 +49,8 @@ interface ReglamentosTableProps {
   onEdit: (reglamento: Reglamento) => void;
   onDelete: (reglamento: Reglamento) => void;
   isLoading?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 const columnHelper = createColumnHelper<Reglamento>();
@@ -133,7 +145,9 @@ const ProximaRevisionBadge = ({ fecha }: { fecha: string | null }) => {
 
   const fechaRevision = new Date(fecha);
   const hoy = new Date();
-  const diasRestantes = Math.ceil((fechaRevision.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+  const diasRestantes = Math.ceil(
+    (fechaRevision.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   const getColor = () => {
     if (diasRestantes < 0) return 'text-danger-600 dark:text-danger-400 font-semibold';
@@ -144,9 +158,7 @@ const ProximaRevisionBadge = ({ fecha }: { fecha: string | null }) => {
 
   return (
     <div className="flex flex-col">
-      <span className={cn('text-sm', getColor())}>
-        {fechaRevision.toLocaleDateString('es-CO')}
-      </span>
+      <span className={cn('text-sm', getColor())}>{fechaRevision.toLocaleDateString('es-CO')}</span>
       {diasRestantes < 30 && (
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {diasRestantes < 0 ? `Vencida (${Math.abs(diasRestantes)}d)` : `${diasRestantes} días`}
@@ -168,6 +180,8 @@ export const ReglamentosTable = ({
   onEdit,
   onDelete,
   isLoading = false,
+  canEdit = true,
+  canDelete = true,
 }: ReglamentosTableProps) => {
   const columns = useMemo(
     () => [
@@ -275,29 +289,33 @@ export const ReglamentosTable = ({
                   <Download className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(reglamento)}
-                className="h-8 w-8 p-0"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(reglamento)}
-                className="h-8 w-8 p-0 text-danger-600 hover:text-danger-700"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(reglamento)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(reglamento)}
+                  className="h-8 w-8 p-0 text-danger-600 hover:text-danger-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         },
         size: 120,
       }),
     ],
-    [onEdit, onDelete]
+    [onEdit, onDelete, canEdit, canDelete]
   );
 
   const pagination: PaginationState = {
@@ -425,7 +443,10 @@ export const ReglamentosTable = ({
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
               className="py-1 text-sm"
-              options={[10, 25, 50, 100].map((size) => ({ value: size, label: `${size} por página` }))}
+              options={[10, 25, 50, 100].map((size) => ({
+                value: size,
+                label: `${size} por página`,
+              }))}
             />
           </div>
         </div>

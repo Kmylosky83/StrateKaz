@@ -5,6 +5,8 @@
  * KPIs + SectionToolbar + Tabla profesional + CRUD completo
  */
 import { useState, useMemo } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -98,6 +100,9 @@ const PRIORIDAD_OT_VARIANTS: Record<number, 'danger' | 'warning' | 'info' | 'gra
 // ==================== ACTIVOS SECTION ====================
 
 const ActivosSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.PLAN_MANTENIMIENTO, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<ActivoProduccion | null>(null);
@@ -188,10 +193,14 @@ const ActivosSection = () => {
             setSearchTerm(val);
             setPage(1);
           }}
-          primaryAction={{
-            label: 'Nuevo Activo',
-            onClick: handleNew,
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nuevo Activo',
+                  onClick: handleNew,
+                }
+              : undefined
+          }
         />
       </Card>
 
@@ -416,10 +425,14 @@ const OrdenesTrabajoSection = () => {
             setSearchTerm(val);
             setPage(1);
           }}
-          primaryAction={{
-            label: 'Nueva OT',
-            onClick: handleNew,
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva OT',
+                  onClick: handleNew,
+                }
+              : undefined
+          }
         />
       </Card>
 

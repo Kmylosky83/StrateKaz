@@ -4,6 +4,8 @@
  */
 import { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Users,
   Star,
@@ -30,6 +32,9 @@ import { useClientes, useDeleteCliente, useClienteDashboard } from '../hooks';
 import type { ClienteList, Cliente } from '../types';
 
 export default function ClientesPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SALES_CRM, Sections.CLIENTES, 'create');
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Cliente | null>(null);
@@ -227,10 +232,14 @@ export default function ClientesPage() {
             variant: 'outline',
           },
         ]}
-        primaryAction={{
-          label: 'Nuevo Cliente',
-          onClick: handleCreate,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Cliente',
+                onClick: handleCreate,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}

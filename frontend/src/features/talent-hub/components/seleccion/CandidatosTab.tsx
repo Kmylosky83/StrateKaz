@@ -40,6 +40,8 @@ import {
   MapPin,
   Briefcase,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useCandidatos,
   useProcesoSeleccionEstadisticas,
@@ -57,6 +59,11 @@ import { HireFromCandidateModal } from './HireFromCandidateModal';
 // ============================================================================
 
 export const CandidatosTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'edit');
+
   // State
   const [filters, setFilters] = useState<CandidatoFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -318,10 +325,12 @@ export const CandidatosTab = () => {
               options={estadoOptions}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <UserPlus size={16} className="mr-1" />
-              Nuevo
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <UserPlus size={16} className="mr-1" />
+                Nuevo
+              </Button>
+            )}
           </div>
         }
       />
@@ -374,19 +383,21 @@ export const CandidatosTab = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(c as unknown as Candidato);
-                  }}
-                  title="Editar"
-                >
-                  <Pencil size={16} />
-                </Button>
-                {c.estado === 'aprobado' && (
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(c as unknown as Candidato);
+                    }}
+                    title="Editar"
+                  >
+                    <Pencil size={16} />
+                  </Button>
+                )}
+                {canEdit && c.estado === 'aprobado' && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -401,7 +412,7 @@ export const CandidatosTab = () => {
                     <Briefcase size={16} />
                   </Button>
                 )}
-                {c.estado !== 'contratado' && c.estado !== 'rechazado' && (
+                {canEdit && c.estado !== 'contratado' && c.estado !== 'rechazado' && (
                   <Button
                     type="button"
                     variant="ghost"

@@ -32,10 +32,16 @@ import { Select, Input } from '@/components/forms';
 import { ReglamentosTable } from './ReglamentosTable';
 import { ReglamentoFormModal } from './ReglamentoFormModal';
 import { useReglamentos } from '../../hooks/useReglamentos';
-import type { Reglamento, EstadoReglamento, ReglamentoFilters } from '../../types/cumplimiento.types';
+import type {
+  Reglamento,
+  EstadoReglamento,
+  ReglamentoFilters,
+} from '../../types/cumplimiento.types';
 import { useAuthStore } from '@/store/authStore';
 import { reglamentosApi } from '../../api/reglamentosApi';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface ReglamentosInternosTabProps {
   /** Código de la subsección activa (desde API/DynamicSections) */
@@ -52,6 +58,11 @@ interface FilterState extends ReglamentoFilters {
 // =============================================================================
 
 export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTabProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'create');
+  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'edit');
+  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'delete');
+
   const user = useAuthStore((state) => state.user);
   const empresaId = user?.empresa_id || 0;
 
@@ -68,12 +79,7 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Query de reglamentos
-  const {
-    data: reglamentosData,
-    isLoading,
-    error,
-    refetch,
-  } = useReglamentos(filters);
+  const { data: reglamentosData, isLoading, error, refetch } = useReglamentos(filters);
 
   const reglamentos = reglamentosData?.results || [];
   const totalCount = reglamentosData?.count || 0;
@@ -153,9 +159,7 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {totalCount}
-                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
               </div>
               <FileText className="h-8 w-8 text-blue-500" />
             </div>
@@ -237,14 +241,16 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
               >
                 Exportar
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreate}
-                leftIcon={<Plus className="h-4 w-4" />}
-              >
-                Nuevo Reglamento
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreate}
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  Nuevo Reglamento
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -303,7 +309,11 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             variant="outline"
             size="sm"
             onClick={() => handleFiltersChange({ estado: undefined })}
-            className={!filters.estado ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-300' : ''}
+            className={
+              !filters.estado
+                ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-300'
+                : ''
+            }
           >
             Todos ({totalCount})
           </Button>
@@ -313,7 +323,11 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'vigente' })}
             leftIcon={<CheckCircle2 className="h-3 w-3" />}
-            className={filters.estado === 'vigente' ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400 border-success-300' : ''}
+            className={
+              filters.estado === 'vigente'
+                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400 border-success-300'
+                : ''
+            }
           >
             Vigentes ({stats.vigentes})
           </Button>
@@ -323,7 +337,11 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'en_revision' })}
             leftIcon={<Clock className="h-3 w-3" />}
-            className={filters.estado === 'en_revision' ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400 border-warning-300' : ''}
+            className={
+              filters.estado === 'en_revision'
+                ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400 border-warning-300'
+                : ''
+            }
           >
             En Revisión ({stats.enRevision})
           </Button>
@@ -333,7 +351,11 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'aprobado' })}
             leftIcon={<FileCheck className="h-3 w-3" />}
-            className={filters.estado === 'aprobado' ? 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-400 border-info-300' : ''}
+            className={
+              filters.estado === 'aprobado'
+                ? 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-400 border-info-300'
+                : ''
+            }
           >
             Aprobados ({stats.aprobados})
           </Button>
@@ -343,7 +365,11 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             size="sm"
             onClick={() => handleFiltersChange({ estado: 'obsoleto' })}
             leftIcon={<XCircle className="h-3 w-3" />}
-            className={filters.estado === 'obsoleto' ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400 border-danger-300' : ''}
+            className={
+              filters.estado === 'obsoleto'
+                ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400 border-danger-300'
+                : ''
+            }
           >
             Obsoletos ({stats.obsoletos})
           </Button>
@@ -369,6 +395,8 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
             onEdit={handleEdit}
             onDelete={(reglamento) => setReglamentoToDelete(reglamento)}
             isLoading={isLoading}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         )}
       </div>

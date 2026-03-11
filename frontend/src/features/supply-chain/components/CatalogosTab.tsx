@@ -17,6 +17,8 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useCategoriasMateriaPrima,
   useCreateCategoriaMateriaPrima,
@@ -87,6 +89,9 @@ const CATALOGS: CatalogConfig[] = [
 // ==================== COMPONENTE ====================
 
 export function CatalogosTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.CATALOGOS_SC, 'create');
+
   const [selectedCatalog, setSelectedCatalog] = useState('categorias-mp');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<CatalogItem | null>(null);
@@ -273,13 +278,17 @@ export function CatalogosTab() {
       <SectionToolbar
         title={catalogConfig.label}
         count={items.length}
-        primaryAction={{
-          label: 'Nuevo',
-          onClick: () => {
-            setEditItem(null);
-            setShowForm(true);
-          },
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo',
+                onClick: () => {
+                  setEditItem(null);
+                  setShowForm(true);
+                },
+              }
+            : undefined
+        }
       />
 
       {/* Tabla */}

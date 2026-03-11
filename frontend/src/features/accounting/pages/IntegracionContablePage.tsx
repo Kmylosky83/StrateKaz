@@ -8,6 +8,8 @@
  * - Estadísticas: Métricas de integración
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Settings,
   Clock,
@@ -147,7 +149,7 @@ const ParametrosSection = () => {
         searchValue={searchTerm}
         searchPlaceholder="Buscar parámetro..."
         onSearchChange={setSearchTerm}
-        primaryAction={{ label: 'Nuevo Parámetro', onClick: openCreate }}
+        primaryAction={canCreate ? { label: 'Nuevo Parámetro', onClick: openCreate } : undefined}
       />
 
       <div className="flex items-center gap-3">
@@ -786,6 +788,9 @@ const EstadisticasSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function IntegracionContablePage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ACCOUNTING, Sections.INTEGRACION_CONTABLE, 'create');
+
   const { data: pendientesData } = useColaPendientes();
   const { data: erroresData } = useColaErrores();
   const pendientes = Array.isArray(pendientesData) ? pendientesData : [];

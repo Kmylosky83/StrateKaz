@@ -15,6 +15,8 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Shirt, Plus, Pencil, Trash2, Settings, Check } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useConfiguracionDotacion,
   useEntregasDotacion,
@@ -27,6 +29,9 @@ import { EntregaDotacionFormModal } from './EntregaDotacionFormModal';
 const PERIODO_OPTIONS = [{ value: '', label: 'Todos los periodos' }, ...periodoDotacionOptions];
 
 export const DotacionTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.REGISTRO_NOVEDADES, 'create');
+
   const [activeSection, setActiveSection] = useState<'config' | 'entregas'>('config');
   const [searchTerm, setSearchTerm] = useState('');
   const [periodoFilter, setPeriodoFilter] = useState('');
@@ -224,10 +229,12 @@ export const DotacionTab = () => {
                 className="w-32"
               />
             </div>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Registrar Entrega
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Registrar Entrega
+              </Button>
+            )}
           </div>
 
           <Card variant="bordered" padding="none">

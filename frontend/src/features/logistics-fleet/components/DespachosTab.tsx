@@ -4,6 +4,8 @@
  */
 import { useState } from 'react';
 import { Package, FileText, Edit, CheckCircle, Clock, Download } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -21,6 +23,9 @@ import DespachoFormModal from './DespachoFormModal';
 import ManifiestoFormModal from './ManifiestoFormModal';
 
 export function DespachosTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.ORDENES_DESPACHO, 'create');
+
   const [activeSubTab, setActiveSubTab] = useState('despachos');
 
   // Queries
@@ -119,7 +124,9 @@ export function DespachosTab() {
             title="Control de Despachos"
             subtitle="Gestión de despachos y entregas"
             count={despachos.length}
-            primaryAction={{ label: 'Nuevo Despacho', onClick: handleNewDespacho }}
+            primaryAction={
+              canCreate ? { label: 'Nuevo Despacho', onClick: handleNewDespacho } : undefined
+            }
           />
 
           {loadingDespachos ? (
@@ -209,7 +216,9 @@ export function DespachosTab() {
             title="Manifiestos de Carga"
             subtitle="Documentos RNDC para transporte de mercancía"
             count={manifiestos.length}
-            primaryAction={{ label: 'Nuevo Manifiesto', onClick: handleNewManifiesto }}
+            primaryAction={
+              canCreate ? { label: 'Nuevo Manifiesto', onClick: handleNewManifiesto } : undefined
+            }
           />
 
           {loadingManifiestos ? (

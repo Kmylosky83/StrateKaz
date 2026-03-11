@@ -8,6 +8,8 @@
  * - Investigaciones
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   AlertTriangle,
   Stethoscope,
@@ -204,7 +206,7 @@ const AccidentesTrabajoSection = () => {
         <SectionToolbar
           title="Accidentes de Trabajo Registrados"
           onFilter={() => {}}
-          primaryAction={{ label: 'Nuevo Accidente', onClick: handleNew }}
+          primaryAction={canCreate ? { label: 'Nuevo Accidente', onClick: handleNew } : undefined}
           className="flex-1"
         />
         <ExportButton
@@ -421,7 +423,9 @@ const EnfermedadesLaboralesSection = () => {
         title="Enfermedades Laborales Registradas"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: handleNew }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Enfermedad Laboral', onClick: handleNew } : undefined
+        }
       />
 
       {/* Enfermedades Grid */}
@@ -631,7 +635,7 @@ const IncidentesSection = () => {
         title="Incidentes Registrados"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nuevo Incidente', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Incidente', onClick: handleNew } : undefined}
       />
 
       {/* Incidentes Grid */}
@@ -830,7 +834,7 @@ const InvestigacionesSection = () => {
         title="Investigaciones ATEL"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Investigación', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Investigación', onClick: handleNew } : undefined}
       />
 
       {/* Investigaciones Table */}
@@ -936,6 +940,9 @@ const InvestigacionesSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function AccidentalidadPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.REGISTRO_ATEL, 'create');
+
   const [activeTab, setActiveTab] = useState('accidentes-trabajo');
 
   const tabs = [

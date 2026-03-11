@@ -10,6 +10,8 @@ import { Users, UserCheck, UserX, TrendingUp } from 'lucide-react';
 import { ProveedoresTable } from './ProveedoresTable';
 import { ProveedorForm } from './ProveedorForm';
 import ImportProveedoresModal from './ImportProveedoresModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useProveedor,
   useEstadisticasProveedores,
@@ -18,6 +20,9 @@ import {
 import type { ProveedorList } from '../types';
 
 export default function ProveedoresTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.REGISTRO_PROVEEDORES, 'create');
+
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [showProveedorForm, setShowProveedorForm] = useState(false);
   const [editProveedorId, setEditProveedorId] = useState<number | null>(null);
@@ -84,10 +89,14 @@ export default function ProveedoresTab() {
       <SectionToolbar
         title="Proveedores"
         count={(estadisticas?.total_proveedores as number) ?? undefined}
-        primaryAction={{
-          label: 'Nuevo Proveedor',
-          onClick: handleNewProveedor,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo Proveedor',
+                onClick: handleNewProveedor,
+              }
+            : undefined
+        }
         extraActions={[
           {
             label: 'Filtros',

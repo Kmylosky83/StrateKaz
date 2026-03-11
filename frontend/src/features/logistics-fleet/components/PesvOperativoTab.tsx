@@ -5,6 +5,8 @@
  */
 import { useState } from 'react';
 import { ClipboardCheck, DollarSign, CheckCircle, AlertTriangle, Clock, Edit } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -39,6 +41,9 @@ const colorToBadge = (color: string): 'success' | 'warning' | 'danger' | 'info' 
 };
 
 export function PesvOperativoTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.LOGISTICS_FLEET, Sections.PESV, 'create');
+
   const [activeSubTab, setActiveSubTab] = useState('verificaciones');
 
   // Queries
@@ -136,7 +141,11 @@ export function PesvOperativoTab() {
             title="Verificaciones PESV"
             subtitle="Inspecciones preoperacionales según Resolución 40595/2022"
             count={verificaciones.length}
-            primaryAction={{ label: 'Nueva Verificación', onClick: handleNewVerificacion }}
+            primaryAction={
+              canCreate
+                ? { label: 'Nueva Verificación', onClick: handleNewVerificacion }
+                : undefined
+            }
           />
 
           {loadingVerificaciones ? (
@@ -236,7 +245,9 @@ export function PesvOperativoTab() {
             title="Costos de Operación"
             subtitle={`Control de costos variables — Total: $${new Intl.NumberFormat('es-CO').format(totalCostos)}`}
             count={costos.length}
-            primaryAction={{ label: 'Nuevo Costo', onClick: handleNewCosto }}
+            primaryAction={
+              canCreate ? { label: 'Nuevo Costo', onClick: handleNewCosto } : undefined
+            }
           />
 
           {loadingCostos ? (

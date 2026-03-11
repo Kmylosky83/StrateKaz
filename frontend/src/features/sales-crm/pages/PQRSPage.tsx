@@ -18,6 +18,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import PQRSFormModal from '../components/PQRSFormModal';
 import { usePQRS, useDeletePQRS, usePQRSDashboard } from '../hooks';
 import type { PQRSList, PQRS, TipoPQRS, EstadoPQRS, PrioridadPQRS } from '../types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const TIPO_LABELS: Record<TipoPQRS, string> = {
   PETICION: 'Petición',
@@ -44,6 +46,9 @@ const PRIORIDAD_LABELS: Record<PrioridadPQRS, string> = {
 };
 
 export default function PQRSPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SALES_CRM, Sections.PQRS, 'create');
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingItem, setEditingItem] = useState<PQRS | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -284,10 +289,14 @@ export default function PQRSPage() {
       <SectionToolbar
         title="Tickets PQRS"
         count={pqrsList.length}
-        primaryAction={{
-          label: 'Nuevo PQRS',
-          onClick: handleCreate,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nuevo PQRS',
+                onClick: handleCreate,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}

@@ -12,6 +12,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, Badge, EmptyState, Button } from '@/components/common';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { Tabs } from '@/components/common/Tabs';
 import { Select } from '@/components/forms';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -203,6 +205,8 @@ export const IniciacionSubTab = () => {
   const [activeTab, setActiveTab] = useState('charter');
   const [showAdvanceConfirm, setShowAdvanceConfirm] = useState(false);
 
+  const { canDo } = usePermissions();
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.INICIACION, 'edit');
   const cambiarEstado = useCambiarEstadoProyecto();
 
   const { data: proyectosData, isLoading } = useProyectos({
@@ -302,14 +306,18 @@ export const IniciacionSubTab = () => {
       {selectedProyectoId && displayProyecto && (
         <>
           {/* Resumen del proyecto (inline, siempre visible) */}
-          <ProjectSummaryWithEvent proyecto={displayProyecto} proyectoId={selectedProyectoId} />
+          <ProjectSummaryWithEvent
+            proyecto={displayProyecto}
+            proyectoId={selectedProyectoId}
+            canEdit={canEdit}
+          />
 
           {/* Checklist de progreso (clickable) + botón avanzar */}
           <ProgressIndicator
             checklist={checklist}
             completedCount={completedCount}
             onItemClick={handleChecklistClick}
-            onAdvance={() => setShowAdvanceConfirm(true)}
+            onAdvance={canEdit ? () => setShowAdvanceConfirm(true) : undefined}
             isAdvancing={cambiarEstado.isPending}
           />
 
@@ -363,9 +371,11 @@ export const IniciacionSubTab = () => {
 const ProjectSummaryWithEvent = ({
   proyecto,
   proyectoId,
+  canEdit = true,
 }: {
   proyecto: Proyecto;
   proyectoId: number;
+  canEdit?: boolean;
 }) => {
   const [forceOpen, setForceOpen] = useState(false);
 
@@ -381,6 +391,7 @@ const ProjectSummaryWithEvent = ({
       proyectoId={proyectoId}
       forceOpen={forceOpen}
       onForceOpenHandled={() => setForceOpen(false)}
+      canEdit={canEdit}
     />
   );
 };
@@ -393,11 +404,13 @@ const ProjectSummaryControlled = ({
   proyectoId,
   forceOpen,
   onForceOpenHandled,
+  canEdit = true,
 }: {
   proyecto: Proyecto;
   proyectoId: number;
   forceOpen: boolean;
   onForceOpenHandled: () => void;
+  canEdit?: boolean;
 }) => {
   const updateProyecto = useUpdateProyecto();
   const queryClient = useQueryClient();
@@ -562,18 +575,20 @@ const ProjectSummaryControlled = ({
                   )}
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => setShowEdit(true)}
-                className={`p-1.5 rounded-md transition-colors ${
-                  hasMissing
-                    ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-                title="Editar datos del proyecto"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => setShowEdit(true)}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    hasMissing
+                      ? 'text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                  title="Editar datos del proyecto"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
 

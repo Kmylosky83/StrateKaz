@@ -16,6 +16,8 @@ import { useConceptosNomina, useDeleteConceptoNomina } from '../../hooks/useNomi
 import type { ConceptoNomina } from '../../types';
 import { tipoConceptoOptions, categoriaConceptoOptions } from '../../types';
 import { ConceptoFormModal } from './ConceptoFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const TIPO_OPTIONS = [{ value: '', label: 'Todos los tipos' }, ...tipoConceptoOptions];
 const CATEGORIA_OPTIONS = [
@@ -24,6 +26,9 @@ const CATEGORIA_OPTIONS = [
 ];
 
 export const ConceptosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.PRESTACIONES, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [categoriaFilter, setCategoriaFilter] = useState('');
@@ -86,10 +91,12 @@ export const ConceptosTab = () => {
           title="No hay conceptos de nómina"
           description="Crea los conceptos de devengados y deducciones para gestionar liquidaciones."
           action={
-            <Button onClick={handleCreate} className="mt-4">
-              <Plus size={16} className="mr-2" />
-              Nuevo Concepto
-            </Button>
+            canCreate ? (
+              <Button onClick={handleCreate} className="mt-4">
+                <Plus size={16} className="mr-2" />
+                Nuevo Concepto
+              </Button>
+            ) : undefined
           }
         />
         <ConceptoFormModal
@@ -107,10 +114,12 @@ export const ConceptosTab = () => {
         title="Conceptos de Nómina"
         description="Devengados y deducciones para liquidaciones de nómina"
       >
-        <Button onClick={handleCreate}>
-          <Plus size={16} className="mr-2" />
-          Nuevo Concepto
-        </Button>
+        {canCreate && (
+          <Button onClick={handleCreate}>
+            <Plus size={16} className="mr-2" />
+            Nuevo Concepto
+          </Button>
+        )}
       </SectionHeader>
 
       {/* Filters */}

@@ -15,6 +15,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   FileText,
   Plus,
@@ -45,6 +47,9 @@ const SANCION_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'd
 };
 
 export const MemorandosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.CASOS_DISCIPLINARIOS, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sancionFilter, setSancionFilter] = useState('');
   const [selectedMemorando, setSelectedMemorando] = useState<Memorando | null>(null);
@@ -131,10 +136,12 @@ export const MemorandosTab = () => {
               options={SANCION_OPTIONS}
               className="w-44"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Crear Memorando
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Crear Memorando
+              </Button>
+            )}
           </div>
         }
       />

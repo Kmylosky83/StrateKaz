@@ -32,52 +32,211 @@ export const Modules = {
 } as const;
 
 export const Sections = {
-  // CORE
-  USERS: 'usuarios', // Matches seed_permisos_rbac 'core' → 'usuarios'
+  // ── CORE ──
+  USERS: 'usuarios',
   USUARIOS: 'usuarios',
   COLABORADORES: 'colaboradores',
   ROLES: 'roles',
   CARGOS: 'cargos',
   GROUPS: 'groups',
 
-  // GESTION ESTRATEGICA
+  // ── FUNDACION (C1) ──
   EMPRESA: 'empresa',
   SEDES: 'sedes',
+  INTEGRACIONES: 'integraciones',
   NORMAS_ISO: 'normas_iso',
+  MODULOS: 'modulos',
   AREAS: 'areas',
-  POLITICAS: 'politicas',
-  IDENTITY: 'identidad_corporativa', // Mapped to backend 'identidad_corporativa'
-  IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
+  MAPA_PROCESOS: 'mapa_procesos',
+  CONSECUTIVOS: 'consecutivos',
+  MISION_VISION: 'mision_vision',
   VALORES: 'valores',
+  POLITICAS: 'politicas',
+  IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
+  IDENTITY: 'identidad_corporativa', // alias
+  BRANDING: 'branding',
+  UNIDADES_MEDIDA: 'unidades_medida',
+  ORGANIGRAMA: 'organigrama',
   ALCANCE: 'alcance_sig',
   ESTRATEGIA: 'estrategia',
-  ORGANIGRAMA: 'organigrama',
 
-  PROYECTOS: 'proyectos',
-  INTEGRACIONES: 'integraciones',
-  BRANDING: 'branding',
-  MODULOS: 'modulos',
-  UNIDADES_MEDIDA: 'unidades_medida',
-  CONSECUTIVOS: 'consecutivos',
-  CONTEXTO: 'contexto',
+  // ── PLANEACION ESTRATEGICA ──
+  // Contexto
+  STAKEHOLDERS: 'stakeholders',
   ENCUESTAS_DOFA: 'encuestas_dofa',
-
-  // CUMPLIMIENTO
-  MATRIZ_LEGAL: 'matriz_legal',
-  REQUISITOS: 'requisitos',
-  PARTES_INTERESADAS: 'partes_interesadas',
-
-  // RIESGOS
-  RIESGOS_PROCESOS: 'riesgos_procesos',
-  IPEVR: 'ipevr',
-  ASPECTOS_AMBIENTALES: 'aspectos_ambientales',
-
-  // SALES
-  CLIENTES: 'clientes',
+  ANALISIS_DOFA: 'analisis_dofa',
+  ANALISIS_PESTEL: 'analisis_pestel',
+  FUERZAS_PORTER: 'fuerzas_porter',
+  ESTRATEGIAS_TOWS: 'estrategias_tows',
+  CONTEXTO: 'contexto', // legacy alias
+  // Planeacion
+  OBJETIVOS_BSC: 'objetivos_bsc',
+  MAPA_ESTRATEGICO: 'mapa_estrategico',
+  KPIS: 'kpis',
+  GESTION_CAMBIO: 'gestion_cambio',
+  // Riesgos y Oportunidades
+  RESUMEN_RIESGOS: 'resumen',
+  MAPA_CALOR: 'mapa_calor',
+  RIESGOS: 'riesgos',
   OPORTUNIDADES: 'oportunidades',
+  TRATAMIENTOS: 'tratamientos',
+  // Gestion de Proyectos
+  PORTAFOLIO: 'portafolio',
+  INICIACION: 'iniciacion',
+  PLANIFICACION: 'planificacion',
+  EJECUCION_MONITOREO: 'ejecucion_monitoreo',
+  CIERRE: 'cierre',
+  PROYECTOS: 'proyectos', // legacy alias
 
-  // SUPPLY
-  PROVEEDORES: 'proveedores',
+  // ── SISTEMA DE GESTION ──
+  PROGRAMAS: 'programas',
+  PLAN_AUDITORIAS: 'plan_auditorias',
+  OBJETIVOS_METAS: 'objetivos_metas',
+  INDICADORES_GESTION: 'indicadores_gestion',
+  TIPOS_DOCUMENTO: 'tipos_documento',
+  DOCUMENTOS: 'documentos',
+  CONTROL_CAMBIOS: 'control_cambios',
+  DISTRIBUCION: 'distribucion',
+  PROGRAMACION_AUDITORIA: 'programacion',
+  EJECUCION_AUDITORIA: 'ejecucion_auditoria',
+  INFORMES_AUDITORIA: 'informes',
+  NO_CONFORMIDADES: 'no_conformidades',
+  ACCIONES_CORRECTIVAS: 'acciones_correctivas',
+  ACCIONES_PREVENTIVAS: 'acciones_preventivas',
+  OPORTUNIDADES_MEJORA: 'oportunidades_mejora',
+  GESTION_CALIDAD: 'gestion_calidad',
+
+  // ── MOTOR CUMPLIMIENTO ──
+  NORMAS: 'normas',
+  EVALUACION: 'evaluacion',
+  REQUISITOS: 'requisitos',
+  REGLAMENTOS: 'reglamentos',
+  MATRIZ_LEGAL: 'matriz_legal', // legacy alias
+  PARTES_INTERESADAS: 'partes_interesadas', // legacy alias
+
+  // ── MOTOR RIESGOS ──
+  MATRIZ_RIESGOS: 'matriz_riesgos',
+  CONTROLES: 'controles',
+  IDENTIFICACION_PELIGROS: 'identificacion_peligros',
+  MATRIZ_ASPECTOS: 'matriz_aspectos',
+  MATRIZ_VIAL: 'matriz_vial',
+  RIESGOS_LAFT: 'riesgos_laft',
+  ACTIVOS_INFO: 'activos_info',
+  RIESGOS_PROCESOS: 'riesgos_procesos', // legacy alias
+  IPEVR: 'ipevr', // legacy alias
+  ASPECTOS_AMBIENTALES: 'aspectos_ambientales', // legacy alias
+
+  // ── WORKFLOW ENGINE ──
+  FLUJOS: 'flujos',
+  INSTANCIAS: 'instancias',
+  METRICAS: 'metricas',
+
+  // ── HSEQ MANAGEMENT ──
+  EXAMENES_MEDICOS: 'examenes_medicos',
+  CONDICIONES_SALUD: 'condiciones_salud',
+  INSPECCIONES: 'inspecciones',
+  MEDICIONES: 'mediciones',
+  COMITES: 'comites',
+  REGISTRO_ATEL: 'registro_atel',
+  INVESTIGACION: 'investigacion',
+  PLAN_EMERGENCIAS: 'plan_emergencias',
+  PROGRAMAS_AMBIENTALES: 'programas_ambientales',
+
+  // ── SUPPLY CHAIN ──
+  REGISTRO_PROVEEDORES: 'registro_proveedores',
+  IMPORTACION_PROVEEDORES: 'importacion_proveedores',
+  PRECIOS_MATERIA_PRIMA: 'precios_materia_prima',
+  ORDENES_COMPRA: 'ordenes_compra',
+  INVENTARIO: 'inventario',
+  PROGRAMACION_SC: 'programacion_sc',
+  EVALUACIONES_PROV: 'evaluaciones_prov',
+  UNIDADES_NEGOCIO_SC: 'unidades_negocio_sc',
+  CATALOGOS_SC: 'catalogos_sc',
+  PROVEEDORES: 'proveedores', // legacy alias
+
+  // ── PRODUCTION OPS ──
+  RECEPCION_MP: 'recepcion_mp',
+  ORDENES_PRODUCCION: 'ordenes_produccion',
+  PLAN_MANTENIMIENTO: 'plan_mantenimiento',
+  LOTES: 'lotes',
+
+  // ── LOGISTICS FLEET ──
+  RUTAS: 'rutas',
+  ORDENES_DESPACHO: 'ordenes_despacho',
+  VEHICULOS: 'vehiculos',
+  PESV: 'pesv',
+
+  // ── SALES CRM ──
+  CLIENTES: 'clientes',
+  OPORTUNIDADES_VENTA: 'oportunidades_venta',
+  PEDIDOS: 'pedidos',
+  PQRS: 'pqrs',
+
+  // ── TALENT HUB ──
+  // cargos y organigrama ya en CORE
+  VACANTES: 'vacantes',
+  CANDIDATOS: 'candidatos',
+  CONTRATACION: 'contratacion',
+  DIRECTORIO: 'directorio',
+  HOJA_VIDA: 'hoja_vida',
+  CONTRATOS: 'contratos',
+  PROGRAMAS_INDUCCION: 'programas_induccion',
+  AFILIACIONES: 'afiliaciones',
+  PLAN_FORMACION: 'plan_formacion',
+  CAPACITACIONES: 'capacitaciones',
+  REINDUCCION: 'reinduccion',
+  EVALUACIONES_DESEMPENO: 'evaluaciones_desempeno',
+  PLANES_DESARROLLO: 'planes_desarrollo',
+  TURNOS: 'turnos',
+  MARCAJES: 'marcajes',
+  AUSENCIAS: 'ausencias',
+  REGISTRO_NOVEDADES: 'registro_novedades',
+  CASOS_DISCIPLINARIOS: 'casos_disciplinarios',
+  LIQUIDACION_NOMINA: 'liquidacion_nomina',
+  PRESTACIONES: 'prestaciones',
+  PROCESO_RETIRO: 'proceso_retiro',
+  LIQUIDACION_FINAL: 'liquidacion_final',
+
+  // ── ADMIN FINANCE ──
+  FLUJO_CAJA: 'flujo_caja',
+  CUENTAS_BANCARIAS: 'cuentas_bancarias',
+  PARTIDAS_PRESUPUESTALES: 'partidas_presupuestales',
+  EJECUCION_PRESUPUESTAL: 'ejecucion_presupuestal',
+  INVENTARIO_ACTIVOS: 'inventario_activos',
+  DEPRECIACION: 'depreciacion',
+  GESTION_SERVICIOS: 'gestion_servicios',
+
+  // ── ACCOUNTING ──
+  PLAN_CUENTAS: 'plan_cuentas',
+  CENTROS_COSTO: 'centros_costo',
+  PERIODOS_CONTABLES: 'periodos_contables',
+  COMPROBANTES: 'comprobantes',
+  LIBRO_DIARIO: 'libro_diario',
+  BALANCE_GENERAL: 'balance_general',
+  ESTADO_RESULTADOS: 'estado_resultados',
+  INTEGRACION_CONTABLE: 'integracion_contable',
+
+  // ── ANALYTICS ──
+  TIPOS_INDICADOR: 'tipos_indicador',
+  FUENTES_DATOS: 'fuentes_datos',
+  TABLEROS: 'tableros',
+  INDICADORES: 'indicadores',
+  MEDICIONES_IND: 'mediciones',
+  TENDENCIAS: 'tendencias',
+  PLANTILLAS_INFORME: 'plantillas_informe',
+  ACCIONES_MEJORA_IND: 'acciones_mejora_ind',
+  EXPORTACION: 'exportacion',
+
+  // ── REVISION POR LA DIRECCION ──
+  PROGRAMACION_REVISION: 'programacion',
+  ACTAS: 'actas',
+  COMPROMISOS: 'compromisos',
+
+  // ── AUDIT SYSTEM (C0) ──
+  LOGS_AUDITORIA: 'logs_auditoria',
+  NOTIFICACIONES: 'notificaciones',
+  REGLAS_ALERTA: 'reglas_alerta',
+  TAREAS: 'tareas',
 } as const;
 
 // ==================== CODIGOS DE PERMISOS ====================

@@ -13,6 +13,8 @@ import { SeguimientoFormModal } from './SeguimientoFormModal';
 import { CurvaSChart } from './CurvaSChart';
 import type { SeguimientoProyecto } from '../../../types/proyectos.types';
 import type { ColumnDef } from '@tanstack/react-table';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface SeguimientoSectionProps {
   proyectoId: number;
@@ -36,6 +38,9 @@ const formatCurrency = (value: string | number) => {
 };
 
 export const SeguimientoSection = ({ proyectoId }: SeguimientoSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.EJECUCION_MONITOREO, 'create');
+
   const { data: seguimientosData, isLoading } = useSeguimientos({ proyecto: proyectoId });
   const deleteMutation = useDeleteSeguimiento();
 
@@ -170,15 +175,19 @@ export const SeguimientoSection = ({ proyectoId }: SeguimientoSectionProps) => {
         <SectionToolbar
           title="Seguimiento EVM"
           count={seguimientos.length}
-          primaryAction={{
-            label: 'Nuevo Seguimiento',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nuevo Seguimiento',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
         />
 
         {/* KPIs inline */}

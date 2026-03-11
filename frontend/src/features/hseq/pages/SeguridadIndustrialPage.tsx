@@ -8,6 +8,8 @@
  * - Programas de Seguridad
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   FileText,
   ClipboardCheck,
@@ -202,7 +204,7 @@ const PermisosTrabajoSection = () => {
         title="Permisos de Trabajo"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nuevo Permiso', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Permiso', onClick: handleNew } : undefined}
       />
 
       {/* Permisos Grid */}
@@ -414,7 +416,7 @@ const InspeccionesSection = () => {
         title="Inspecciones de Seguridad"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Inspección', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Inspección', onClick: handleNew } : undefined}
       />
 
       {/* Inspecciones Table */}
@@ -640,7 +642,7 @@ const EntregasEPPSection = () => {
         title="Entregas de EPP"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Entrega', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Entrega', onClick: handleNew } : undefined}
       />
 
       {/* Entregas Table */}
@@ -873,7 +875,7 @@ const ProgramasSeguridadSection = () => {
         title="Programas de Seguridad"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nuevo Programa', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Programa', onClick: handleNew } : undefined}
       />
 
       {/* Programas Grid */}
@@ -1007,6 +1009,9 @@ const ProgramasSeguridadSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function SeguridadIndustrialPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.INSPECCIONES, 'create');
+
   const [activeTab, setActiveTab] = useState('permisos-trabajo');
 
   const tabs = [

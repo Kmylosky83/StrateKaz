@@ -30,6 +30,8 @@ import {
   Hash,
   User,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useAfiliaciones,
   useUpdateAfiliacion,
@@ -110,6 +112,11 @@ const StatsGrid = ({ afiliaciones }: { afiliaciones: AfiliacionSS[] }) => {
 // ============================================================================
 
 export const AfiliacionesTab = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.AFILIACIONES, 'create');
+  const canEdit = canDo(Modules.TALENT_HUB, Sections.AFILIACIONES, 'edit');
+
   // Filtros
   const [filters, setFilters] = useState<AfiliacionSSFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -185,10 +192,12 @@ export const AfiliacionesTab = () => {
             <Shield size={16} />
             Afiliaciones a Seguridad Social
           </h3>
-          <Button size="sm" onClick={() => setShowFormModal(true)}>
-            <Plus size={14} className="mr-1" />
-            Nueva Afiliacion
-          </Button>
+          {canCreate && (
+            <Button size="sm" onClick={() => setShowFormModal(true)}>
+              <Plus size={14} className="mr-1" />
+              Nueva Afiliacion
+            </Button>
+          )}
         </div>
 
         {/* Filtros */}
@@ -304,27 +313,28 @@ export const AfiliacionesTab = () => {
                     </td>
                     <td className="py-2.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {(afiliacion.estado === 'pendiente' ||
-                          afiliacion.estado === 'en_proceso') && (
-                          <>
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => handleConfirmar(afiliacion)}
-                              title="Confirmar afiliacion"
-                            >
-                              <CheckCircle size={14} className="text-green-500" />
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => handleRechazar(afiliacion.id)}
-                              title="Rechazar"
-                            >
-                              <XCircle size={14} className="text-red-500" />
-                            </Button>
-                          </>
-                        )}
+                        {canEdit &&
+                          (afiliacion.estado === 'pendiente' ||
+                            afiliacion.estado === 'en_proceso') && (
+                            <>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => handleConfirmar(afiliacion)}
+                                title="Confirmar afiliacion"
+                              >
+                                <CheckCircle size={14} className="text-green-500" />
+                              </Button>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() => handleRechazar(afiliacion.id)}
+                                title="Rechazar"
+                              >
+                                <XCircle size={14} className="text-red-500" />
+                              </Button>
+                            </>
+                          )}
                       </div>
                     </td>
                   </tr>

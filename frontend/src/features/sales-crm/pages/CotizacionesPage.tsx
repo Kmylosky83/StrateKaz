@@ -18,6 +18,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import CotizacionFormModal from '../components/CotizacionFormModal';
 import { useCotizaciones, useDeleteCotizacion } from '../hooks';
 import type { CotizacionList, Cotizacion, EstadoCotizacion } from '../types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
   BORRADOR: 'Borrador',
@@ -29,6 +31,9 @@ const ESTADO_LABELS: Record<EstadoCotizacion, string> = {
 };
 
 export default function CotizacionesPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SALES_CRM, Sections.PEDIDOS, 'create');
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Cotizacion | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -241,10 +246,14 @@ export default function CotizacionesPage() {
       <SectionToolbar
         title="Todas las Cotizaciones"
         count={cotizaciones.length}
-        primaryAction={{
-          label: 'Nueva Cotización',
-          onClick: handleCreate,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Cotización',
+                onClick: handleCreate,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}

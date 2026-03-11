@@ -37,6 +37,8 @@ import {
 } from '../../hooks/useRequisitos';
 import type { EmpresaRequisito, EstadoRequisito } from '../../types/requisitosLegales';
 import { useAuthStore } from '@/store/authStore';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 interface RequisitosLegalesTabProps {
   /** Código de la subsección activa (desde API/DynamicSections) */
@@ -57,6 +59,11 @@ interface FilterState {
 export const RequisitosLegalesTab = ({
   activeSection: _activeSection,
 }: RequisitosLegalesTabProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'create');
+  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'edit');
+  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'delete');
+
   const user = useAuthStore((state) => state.user);
   const empresaId = user?.empresa_id || 0;
 
@@ -205,14 +212,16 @@ export const RequisitosLegalesTab = ({
               >
                 Exportar
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreate}
-                leftIcon={<Plus className="h-4 w-4" />}
-              >
-                Nuevo Requisito
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreate}
+                  leftIcon={<Plus className="h-4 w-4" />}
+                >
+                  Nuevo Requisito
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -343,6 +352,8 @@ export const RequisitosLegalesTab = ({
             onEdit={handleEdit}
             onDelete={(requisito) => setRequisitoToDelete(requisito)}
             isLoading={isLoading}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         )}
       </div>

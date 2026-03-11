@@ -26,6 +26,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
+
 import { MatrizDOFAVisual } from '../contexto/MatrizDOFAVisual';
 import { EstrategiasTOWSGrid } from '../contexto/EstrategiasTOWSGrid';
 import { PESTELChart } from '../contexto/PESTELChart';

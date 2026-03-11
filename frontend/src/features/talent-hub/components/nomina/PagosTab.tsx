@@ -14,6 +14,8 @@ import { Plus, Trash2, Banknote } from 'lucide-react';
 import { usePagosNomina, useDeletePagoNomina } from '../../hooks/useNomina';
 import type { PagoNomina } from '../../types';
 import { PagoFormModal } from './PagoFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const formatCurrency = (value: number | undefined) => {
   if (!value && value !== 0) return '-';
@@ -38,6 +40,9 @@ const getMetodoPagoColor = (metodo: string) => {
 };
 
 export const PagosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.LIQUIDACION_NOMINA, 'create');
+
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -84,10 +89,12 @@ export const PagosTab = () => {
           title="No hay pagos registrados"
           description="Registra los pagos de nómina realizados."
           action={
-            <Button onClick={handleCreate} className="mt-4">
-              <Plus size={16} className="mr-2" />
-              Registrar Pago
-            </Button>
+            canCreate ? (
+              <Button onClick={handleCreate} className="mt-4">
+                <Plus size={16} className="mr-2" />
+                Registrar Pago
+              </Button>
+            ) : undefined
           }
         />
         <PagoFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
@@ -98,10 +105,12 @@ export const PagosTab = () => {
   return (
     <div className="space-y-4">
       <SectionHeader title="Pagos de Nómina" description="Registro de pagos realizados">
-        <Button onClick={handleCreate}>
-          <Plus size={16} className="mr-2" />
-          Registrar Pago
-        </Button>
+        {canCreate && (
+          <Button onClick={handleCreate}>
+            <Plus size={16} className="mr-2" />
+            Registrar Pago
+          </Button>
+        )}
       </SectionHeader>
 
       {/* Filters */}

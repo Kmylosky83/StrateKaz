@@ -5,6 +5,8 @@
  * Deleted ALL stub/placeholder content
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   ClipboardCheck,
   FileCheck,
@@ -161,7 +163,9 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
       {/* Actions */}
       <SectionToolbar
         title="Programas de Auditoría"
-        primaryAction={{ label: 'Nuevo Programa', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Programa', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -342,7 +346,9 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Auditorías Registradas"
-        primaryAction={{ label: 'Nueva Auditoría', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Auditoría', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -547,7 +553,9 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Hallazgos de Auditoría"
-        primaryAction={{ label: 'Nuevo Hallazgo', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nuevo Hallazgo', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -749,7 +757,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
       {/* Actions */}
       <SectionToolbar
         title="Evaluaciones de Cumplimiento"
-        primaryAction={{ label: 'Nueva Evaluación', onClick: () => onOpenModal() }}
+        primaryAction={
+          canCreate ? { label: 'Nueva Evaluación', onClick: () => onOpenModal() } : undefined
+        }
       />
 
       {/* Table */}
@@ -865,6 +875,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
 // ==================== MAIN PAGE ====================
 
 export default function MejoraContinuaPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.PROGRAMAS_AMBIENTALES, 'create');
+
   const [activeTab, setActiveTab] = useState('programas');
   const [programaModalOpen, setProgramaModalOpen] = useState(false);
   const [auditoriaModalOpen, setAuditoriaModalOpen] = useState(false);

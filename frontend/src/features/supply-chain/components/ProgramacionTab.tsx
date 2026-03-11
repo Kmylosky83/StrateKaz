@@ -15,6 +15,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Calendar,
   Truck,
@@ -146,11 +148,15 @@ const ProgramacionesSection = () => {
       <SectionToolbar
         title="Programaciones"
         count={programaciones.length}
-        primaryAction={{
-          label: 'Nueva Programación',
-          onClick: handleCreate,
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Programación',
+                onClick: handleCreate,
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}
@@ -283,11 +289,15 @@ const AsignacionesSection = () => {
       <SectionToolbar
         title="Asignación de Recursos"
         count={asignaciones.length}
-        primaryAction={{
-          label: 'Nueva Asignación',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Asignación',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {asignaciones.length === 0 ? (
@@ -379,11 +389,15 @@ const EjecucionesSection = () => {
       <SectionToolbar
         title="Ejecuciones"
         count={ejecuciones.length}
-        primaryAction={{
-          label: 'Nueva Ejecución',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Ejecución',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {ejecuciones.length === 0 ? (
@@ -492,11 +506,15 @@ const LiquidacionesSection = () => {
       <SectionToolbar
         title="Liquidaciones"
         count={liquidaciones.length}
-        primaryAction={{
-          label: 'Nueva Liquidación',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Liquidación',
+                onClick: () => {},
+                icon: <Plus className="w-4 h-4" />,
+              }
+            : undefined
+        }
       />
 
       {liquidaciones.length === 0 ? (
@@ -591,6 +609,9 @@ const CalendarioSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function ProgramacionTab() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.PROGRAMACION_SC, 'create');
+
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('programaciones');
 

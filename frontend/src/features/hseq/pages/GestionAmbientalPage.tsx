@@ -5,6 +5,8 @@
  * Emisiones Atmosféricas, Consumo de Recursos, Certificados Ambientales.
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Leaf,
   Trash2,
@@ -101,7 +103,13 @@ const AspectosAmbientalesSection = () => {
 
 // ==================== GESTIÓN DE RESIDUOS SECTION ====================
 
-const GestionResiduosSection = () => {
+const GestionResiduosSection = ({
+  canCreate,
+  canDelete,
+}: {
+  canCreate: boolean;
+  canDelete: boolean;
+}) => {
   const { data: residuos, isLoading } = useResiduos();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -127,7 +135,7 @@ const GestionResiduosSection = () => {
           icon={<Trash2 className="w-16 h-16" />}
           title="No hay registros de residuos"
           description="Comience registrando la generación y disposición de residuos"
-          action={{ label: 'Nuevo Registro', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Registro', onClick: handleNew } : undefined}
         />
         <RegistroResiduoFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       </>
@@ -168,7 +176,7 @@ const GestionResiduosSection = () => {
 
       <SectionToolbar
         title="Registros de Residuos"
-        primaryAction={{ label: 'Nuevo Registro', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Registro', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -216,9 +224,11 @@ const GestionResiduosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(residuo.id)}>
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
+                      {canDelete && (
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(residuo.id)}>
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -245,7 +255,13 @@ const GestionResiduosSection = () => {
 
 // ==================== VERTIMIENTOS SECTION ====================
 
-const VertimientosSection = () => {
+const VertimientosSection = ({
+  canCreate,
+  canDelete,
+}: {
+  canCreate: boolean;
+  canDelete: boolean;
+}) => {
   const { data: vertimientos, isLoading } = useVertimientos();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -271,7 +287,7 @@ const VertimientosSection = () => {
           icon={<Droplet className="w-16 h-16" />}
           title="No hay registros de vertimientos"
           description="Comience registrando los vertimientos de aguas residuales"
-          action={{ label: 'Nuevo Vertimiento', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Vertimiento', onClick: handleNew } : undefined}
         />
         <VertimientoFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       </>
@@ -317,7 +333,7 @@ const VertimientosSection = () => {
 
       <SectionToolbar
         title="Registros de Vertimientos"
-        primaryAction={{ label: 'Nuevo Vertimiento', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Vertimiento', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -370,9 +386,11 @@ const VertimientosSection = () => {
                     {v.cumple_normativa === null && <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(v.id)}>
-                      <Trash2 className="w-4 h-4 text-danger-600" />
-                    </Button>
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(v.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -398,7 +416,7 @@ const VertimientosSection = () => {
 
 // ==================== EMISIONES SECTION ====================
 
-const EmisionesSection = () => {
+const EmisionesSection = ({ canCreate, canDelete }: { canCreate: boolean; canDelete: boolean }) => {
   const { data: emisiones, isLoading } = useEmisiones();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -424,7 +442,7 @@ const EmisionesSection = () => {
           icon={<Wind className="w-16 h-16" />}
           title="No hay registros de emisiones"
           description="Comience registrando las emisiones atmosféricas de sus fuentes"
-          action={{ label: 'Nueva Medición', onClick: handleNew }}
+          action={canCreate ? { label: 'Nueva Medición', onClick: handleNew } : undefined}
         />
         <EmisionFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       </>
@@ -444,7 +462,7 @@ const EmisionesSection = () => {
 
       <SectionToolbar
         title="Emisiones Atmosféricas"
-        primaryAction={{ label: 'Nueva Medición', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Medición', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -487,9 +505,11 @@ const EmisionesSection = () => {
                     {e.cumple_normativa === null && <span className="text-gray-400">—</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(e.id)}>
-                      <Trash2 className="w-4 h-4 text-danger-600" />
-                    </Button>
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(e.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -515,7 +535,13 @@ const EmisionesSection = () => {
 
 // ==================== CONSUMO DE RECURSOS SECTION ====================
 
-const ConsumoRecursosSection = () => {
+const ConsumoRecursosSection = ({
+  canCreate,
+  canDelete,
+}: {
+  canCreate: boolean;
+  canDelete: boolean;
+}) => {
   const { data: consumos, isLoading } = useConsumos();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -541,7 +567,7 @@ const ConsumoRecursosSection = () => {
           icon={<Zap className="w-16 h-16" />}
           title="No hay registros de consumo"
           description="Comience registrando el consumo de recursos (agua, energía, etc.)"
-          action={{ label: 'Nuevo Consumo', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Consumo', onClick: handleNew } : undefined}
         />
         <ConsumoRecursoFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       </>
@@ -582,7 +608,7 @@ const ConsumoRecursosSection = () => {
 
       <SectionToolbar
         title="Consumo de Recursos"
-        primaryAction={{ label: 'Nuevo Registro', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Registro', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -629,9 +655,11 @@ const ConsumoRecursosSection = () => {
                     {c.emision_co2_kg || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(c.id)}>
-                      <Trash2 className="w-4 h-4 text-danger-600" />
-                    </Button>
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(c.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -657,7 +685,13 @@ const ConsumoRecursosSection = () => {
 
 // ==================== CERTIFICADOS SECTION ====================
 
-const CertificadosSection = () => {
+const CertificadosSection = ({
+  canCreate,
+  canDelete,
+}: {
+  canCreate: boolean;
+  canDelete: boolean;
+}) => {
   const { data: certificados, isLoading } = useCertificados();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -683,7 +717,7 @@ const CertificadosSection = () => {
           icon={<FileCheck className="w-16 h-16" />}
           title="No hay certificados ambientales"
           description="Registre los certificados de disposición y cumplimiento ambiental"
-          action={{ label: 'Nuevo Certificado', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Certificado', onClick: handleNew } : undefined}
         />
         <CertificadoAmbientalFormModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       </>
@@ -720,7 +754,7 @@ const CertificadosSection = () => {
 
       <SectionToolbar
         title="Certificados Ambientales"
-        primaryAction={{ label: 'Nuevo Certificado', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Certificado', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -783,9 +817,11 @@ const CertificadosSection = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteId(cert.id)}>
-                      <Trash2 className="w-4 h-4 text-danger-600" />
-                    </Button>
+                    {canDelete && (
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(cert.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -812,6 +848,9 @@ const CertificadosSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function GestionAmbientalPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.PROGRAMAS_AMBIENTALES, 'create');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.PROGRAMAS_AMBIENTALES, 'delete');
   const [activeTab, setActiveTab] = useState('aspectos');
 
   const tabs = [
@@ -838,11 +877,21 @@ export default function GestionAmbientalPage() {
 
       <div className="mt-6">
         {activeTab === 'aspectos' && <AspectosAmbientalesSection />}
-        {activeTab === 'residuos' && <GestionResiduosSection />}
-        {activeTab === 'vertimientos' && <VertimientosSection />}
-        {activeTab === 'emisiones' && <EmisionesSection />}
-        {activeTab === 'consumos' && <ConsumoRecursosSection />}
-        {activeTab === 'certificados' && <CertificadosSection />}
+        {activeTab === 'residuos' && (
+          <GestionResiduosSection canCreate={canCreate} canDelete={canDelete} />
+        )}
+        {activeTab === 'vertimientos' && (
+          <VertimientosSection canCreate={canCreate} canDelete={canDelete} />
+        )}
+        {activeTab === 'emisiones' && (
+          <EmisionesSection canCreate={canCreate} canDelete={canDelete} />
+        )}
+        {activeTab === 'consumos' && (
+          <ConsumoRecursosSection canCreate={canCreate} canDelete={canDelete} />
+        )}
+        {activeTab === 'certificados' && (
+          <CertificadosSection canCreate={canCreate} canDelete={canDelete} />
+        )}
       </div>
     </div>
   );

@@ -8,6 +8,8 @@
  * - Control de Cambios / Solicitudes (CRUD completo)
  */
 import { useState } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   AlertTriangle,
   CheckCircle,
@@ -187,7 +189,9 @@ const NoConformidadesSection = () => {
       <div className="flex items-center justify-between gap-2">
         <SectionToolbar
           title="No Conformidades Registradas"
-          primaryAction={{ label: 'Nueva No Conformidad', onClick: handleCreate }}
+          primaryAction={
+            canCreate ? { label: 'Nueva No Conformidad', onClick: handleCreate } : undefined
+          }
           className="flex-1"
         />
         <ExportButton
@@ -392,7 +396,7 @@ const AccionesCorrectivasSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Acciones Correctivas y Preventivas"
-        primaryAction={{ label: 'Nueva Acción', onClick: handleCreate }}
+        primaryAction={canCreate ? { label: 'Nueva Acción', onClick: handleCreate } : undefined}
       />
 
       {/* Actions Grid */}
@@ -623,7 +627,7 @@ const SalidasNoConformesSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Salidas No Conformes"
-        primaryAction={{ label: 'Nueva Salida NC', onClick: handleCreate }}
+        primaryAction={canCreate ? { label: 'Nueva Salida NC', onClick: handleCreate } : undefined}
       />
 
       {/* Salidas Table */}
@@ -829,7 +833,7 @@ const ControlCambiosSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Control de Cambios"
-        primaryAction={{ label: 'Nueva Solicitud', onClick: handleCreate }}
+        primaryAction={canCreate ? { label: 'Nueva Solicitud', onClick: handleCreate } : undefined}
       />
 
       {/* Cambios Table */}
@@ -930,6 +934,9 @@ const ControlCambiosSection = () => {
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function CalidadPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.GESTION_CALIDAD, 'create');
+
   const [activeTab, setActiveTab] = useState('no-conformidades');
 
   const tabs = [

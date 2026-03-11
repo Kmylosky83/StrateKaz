@@ -14,6 +14,8 @@ import { Tabs } from '@/components/common';
 import { Button } from '@/components/common';
 import { LayoutDashboard, Table2, AlertTriangle, Shield, Plus, Download, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // Hooks
 import {
@@ -235,9 +237,10 @@ function ResumenSection({ className }: ResumenSectionProps) {
 
 interface MatrizSectionProps {
   className?: string;
+  canCreate?: boolean;
 }
 
-function MatrizSection({ className }: MatrizSectionProps) {
+function MatrizSection({ className, canCreate = true }: MatrizSectionProps) {
   const [filters, _setFilters] = useState<{
     area?: string;
     cargo?: string;
@@ -278,9 +281,11 @@ function MatrizSection({ className }: MatrizSectionProps) {
           >
             Exportar Excel
           </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Valoración
-          </Button>
+          {canCreate && (
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+              Nueva Valoración
+            </Button>
+          )}
         </div>
       </div>
 
@@ -442,9 +447,10 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
 
 interface ControlesSectionProps {
   className?: string;
+  canCreate?: boolean;
 }
 
-function ControlesSection({ className }: ControlesSectionProps) {
+function ControlesSection({ className, canCreate = true }: ControlesSectionProps) {
   const { data: controlesData, isLoading: isLoadingControles } = useControlesSST();
   const { data: controlesPorTipo, isLoading: isLoadingPorTipo } = useControlesPorTipo();
 
@@ -480,9 +486,11 @@ function ControlesSection({ className }: ControlesSectionProps) {
             Controles implementados según la jerarquía de control de riesgos
           </p>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Control
-        </Button>
+        {canCreate && (
+          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            Nuevo Control
+          </Button>
+        )}
       </div>
 
       {/* Estadísticas por tipo */}
@@ -608,35 +616,36 @@ interface IPEVRTabProps {
 }
 
 export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
+  const { canDo } = usePermissions();
+  const canCreateIPEVR = canDo(Modules.MOTOR_RIESGOS, Sections.IDENTIFICACION_PELIGROS, 'create');
+  const canCreateControles = canDo(Modules.MOTOR_RIESGOS, Sections.CONTROLES, 'create');
+
   const [activeTab, setActiveTab] = useState<'resumen' | 'matriz' | 'peligros' | 'controles'>(
     'resumen'
   );
 
-  // Si se usa activeSection desde DynamicSections
-  const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
-    resumen: ResumenSection,
-    matriz: MatrizSection,
-    peligros: PeligrosSection,
-    controles: ControlesSection,
-  };
-
   // Si viene activeSection, renderizar directamente
   if (activeSection) {
-    const ActiveComponent = SECTION_COMPONENTS[activeSection];
+    const renderBySection = () => {
+      switch (activeSection) {
+        case 'resumen':
+          return <ResumenSection />;
+        case 'matriz':
+          return <MatrizSection canCreate={canCreateIPEVR} />;
+        case 'peligros':
+          return <PeligrosSection />;
+        case 'controles':
+          return <ControlesSection canCreate={canCreateControles} />;
+        default:
+          console.warn(
+            `[IPEVRTab] Sección "${activeSection}" no encontrada. ` +
+              `Secciones disponibles: resumen, matriz, peligros, controles`
+          );
+          return <ResumenSection />;
+      }
+    };
 
-    if (!ActiveComponent) {
-      console.warn(
-        `[IPEVRTab] Sección "${activeSection}" no encontrada. ` +
-          `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
-      );
-      return <ResumenSection />;
-    }
-
-    return (
-      <div className="space-y-6">
-        <ActiveComponent />
-      </div>
-    );
+    return <div className="space-y-6">{renderBySection()}</div>;
   }
 
   // Tabs para navegación interna
@@ -669,11 +678,11 @@ export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
       case 'resumen':
         return <ResumenSection />;
       case 'matriz':
-        return <MatrizSection />;
+        return <MatrizSection canCreate={canCreateIPEVR} />;
       case 'peligros':
         return <PeligrosSection />;
       case 'controles':
-        return <ControlesSection />;
+        return <ControlesSection canCreate={canCreateControles} />;
       default:
         return <ResumenSection />;
     }

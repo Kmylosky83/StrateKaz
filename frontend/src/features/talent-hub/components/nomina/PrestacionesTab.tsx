@@ -16,6 +16,8 @@ import { usePrestaciones, useDeletePrestacion } from '../../hooks/useNomina';
 import type { Prestacion } from '../../types';
 import { tipoPrestacionOptions, estadoPrestacionOptions } from '../../types';
 import { PrestacionFormModal } from './PrestacionFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const TIPO_OPTIONS = [{ value: '', label: 'Todos los tipos' }, ...tipoPrestacionOptions];
 const ESTADO_OPTIONS = [{ value: '', label: 'Todos los estados' }, ...estadoPrestacionOptions];
@@ -43,6 +45,9 @@ const getEstadoColor = (estado: string) => {
 };
 
 export const PrestacionesTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.PRESTACIONES, 'create');
+
   const [tipoFilter, setTipoFilter] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [anioFilter, setAnioFilter] = useState('');
@@ -98,10 +103,12 @@ export const PrestacionesTab = () => {
           title="No hay prestaciones sociales"
           description="Registra cesantías, prima de servicios y vacaciones."
           action={
-            <Button onClick={handleCreate} className="mt-4">
-              <Plus size={16} className="mr-2" />
-              Nueva Prestación
-            </Button>
+            canCreate ? (
+              <Button onClick={handleCreate} className="mt-4">
+                <Plus size={16} className="mr-2" />
+                Nueva Prestación
+              </Button>
+            ) : undefined
           }
         />
         <PrestacionFormModal
@@ -123,10 +130,12 @@ export const PrestacionesTab = () => {
         title="Prestaciones Sociales"
         description="Gestión de cesantías, prima de servicios y vacaciones"
       >
-        <Button onClick={handleCreate}>
-          <Plus size={16} className="mr-2" />
-          Nueva Prestación
-        </Button>
+        {canCreate && (
+          <Button onClick={handleCreate}>
+            <Plus size={16} className="mr-2" />
+            Nueva Prestación
+          </Button>
+        )}
       </SectionHeader>
 
       {/* Filters */}

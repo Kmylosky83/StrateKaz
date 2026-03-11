@@ -5,6 +5,8 @@
 import { useState } from 'react';
 import { Wrench, FileText, Zap, Edit, Clock, AlertTriangle, DollarSign } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -79,6 +81,9 @@ const getEstadoBadge = (
 // ==================== MAIN COMPONENT ====================
 
 export default function ServiciosGeneralesPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.GESTION_SERVICIOS, 'create');
+
   const [activeTab, setActiveTab] = useState('contratos');
 
   // Modal state
@@ -160,13 +165,17 @@ export default function ServiciosGeneralesPage() {
           <SectionToolbar
             title="Contratos de Servicios"
             count={contratos.length}
-            primaryAction={{
-              label: 'Nuevo Contrato',
-              onClick: () => {
-                setSelectedContrato(null);
-                setContratoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nuevo Contrato',
+                    onClick: () => {
+                      setSelectedContrato(null);
+                      setContratoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingContratos ? (
@@ -274,13 +283,17 @@ export default function ServiciosGeneralesPage() {
           <SectionToolbar
             title="Mantenimientos Locativos"
             count={mantenimientos.length}
-            primaryAction={{
-              label: 'Nueva Solicitud',
-              onClick: () => {
-                setSelectedMant(null);
-                setMantModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nueva Solicitud',
+                    onClick: () => {
+                      setSelectedMant(null);
+                      setMantModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingMant ? (
@@ -418,13 +431,17 @@ export default function ServiciosGeneralesPage() {
           <SectionToolbar
             title="Servicios Públicos"
             count={servicios.length}
-            primaryAction={{
-              label: 'Registrar Servicio',
-              onClick: () => {
-                setSelectedSp(null);
-                setSpModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Registrar Servicio',
+                    onClick: () => {
+                      setSelectedSp(null);
+                      setSpModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingSp ? (

@@ -5,6 +5,8 @@
 import { useState } from 'react';
 import { BarChart3, TrendingUp, CheckCircle, DollarSign, FolderTree, FileText } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
@@ -86,6 +88,9 @@ const getEstadoBadge = (
 // ==================== MAIN COMPONENT ====================
 
 export default function PresupuestoPage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.EJECUCION_PRESUPUESTAL, 'create');
+
   const [activeTab, setActiveTab] = useState('presupuestos');
 
   // Modal state
@@ -215,13 +220,17 @@ export default function PresupuestoPage() {
           <SectionToolbar
             title="Presupuestos por Área"
             count={presupuestos.length}
-            primaryAction={{
-              label: 'Nuevo Presupuesto',
-              onClick: () => {
-                setSelectedPresupuesto(null);
-                setPresupuestoModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nuevo Presupuesto',
+                    onClick: () => {
+                      setSelectedPresupuesto(null);
+                      setPresupuestoModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingP ? (
@@ -333,13 +342,17 @@ export default function PresupuestoPage() {
           <SectionToolbar
             title="Ejecuciones Presupuestales"
             count={ejecuciones.length}
-            primaryAction={{
-              label: 'Nueva Ejecución',
-              onClick: () => {
-                setSelectedEjecucion(null);
-                setEjecucionModal(true);
-              },
-            }}
+            primaryAction={
+              canCreate
+                ? {
+                    label: 'Nueva Ejecución',
+                    onClick: () => {
+                      setSelectedEjecucion(null);
+                      setEjecucionModal(true);
+                    },
+                  }
+                : undefined
+            }
           />
 
           {loadingEj ? (
@@ -429,13 +442,17 @@ export default function PresupuestoPage() {
             <SectionToolbar
               title="Centros de Costo"
               count={centros.length}
-              primaryAction={{
-                label: 'Nuevo Centro',
-                onClick: () => {
-                  setSelectedCentroCosto(null);
-                  setCentroCostoModal(true);
-                },
-              }}
+              primaryAction={
+                canCreate
+                  ? {
+                      label: 'Nuevo Centro',
+                      onClick: () => {
+                        setSelectedCentroCosto(null);
+                        setCentroCostoModal(true);
+                      },
+                    }
+                  : undefined
+              }
             />
 
             {loadingCC ? (
@@ -503,13 +520,17 @@ export default function PresupuestoPage() {
             <SectionToolbar
               title="Rubros Presupuestales"
               count={rubros.length}
-              primaryAction={{
-                label: 'Nuevo Rubro',
-                onClick: () => {
-                  setSelectedRubro(null);
-                  setRubroModal(true);
-                },
-              }}
+              primaryAction={
+                canCreate
+                  ? {
+                      label: 'Nuevo Rubro',
+                      onClick: () => {
+                        setSelectedRubro(null);
+                        setRubroModal(true);
+                      },
+                    }
+                  : undefined
+              }
             />
 
             {loadingR ? (

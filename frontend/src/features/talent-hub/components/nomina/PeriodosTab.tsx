@@ -12,6 +12,8 @@ import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
 import { Plus, Calendar, ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   usePeriodosNomina,
   useLiquidacionesNomina,
@@ -60,6 +62,9 @@ const formatCurrency = (value: number | undefined) => {
 };
 
 export const PeriodosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.LIQUIDACION_NOMINA, 'create');
+
   const [anioFilter, setAnioFilter] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [expandedPeriodo, setExpandedPeriodo] = useState<number | null>(null);
@@ -133,10 +138,12 @@ export const PeriodosTab = () => {
           title="No hay períodos de nómina"
           description="Crea el primer período para empezar a gestionar liquidaciones de nómina."
           action={
-            <Button onClick={handleCreatePeriodo} className="mt-4">
-              <Plus size={16} className="mr-2" />
-              Nuevo Período
-            </Button>
+            canCreate ? (
+              <Button onClick={handleCreatePeriodo} className="mt-4">
+                <Plus size={16} className="mr-2" />
+                Nuevo Período
+              </Button>
+            ) : undefined
           }
         />
         <PeriodoFormModal isOpen={isPeriodoFormOpen} onClose={() => setIsPeriodoFormOpen(false)} />
@@ -154,10 +161,12 @@ export const PeriodosTab = () => {
         title="Períodos de Nómina"
         description="Gestión de períodos y liquidaciones de nómina"
       >
-        <Button onClick={handleCreatePeriodo}>
-          <Plus size={16} className="mr-2" />
-          Nuevo Período
-        </Button>
+        {canCreate && (
+          <Button onClick={handleCreatePeriodo}>
+            <Plus size={16} className="mr-2" />
+            Nuevo Período
+          </Button>
+        )}
       </SectionHeader>
 
       {/* Filters */}

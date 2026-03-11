@@ -16,6 +16,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import OportunidadFormModal from '../components/OportunidadFormModal';
 import { useOportunidades, useDeleteOportunidad, usePipelineDashboard } from '../hooks';
 import type { OportunidadList, Oportunidad, EtapaVenta, PrioridadOportunidad } from '../types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 const ETAPA_LABELS: Record<EtapaVenta, string> = {
   PROSPECTO: 'Prospecto',
@@ -35,6 +37,9 @@ const PRIORIDAD_LABELS: Record<PrioridadOportunidad, string> = {
 };
 
 export default function PipelinePage() {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SALES_CRM, Sections.OPORTUNIDADES_VENTA, 'create');
+
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingItem, setEditingItem] = useState<Oportunidad | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -251,10 +256,14 @@ export default function PipelinePage() {
       <SectionToolbar
         title="Oportunidades"
         count={oportunidades.length}
-        primaryAction={{
-          label: 'Nueva Oportunidad',
-          onClick: handleCreate,
-        }}
+        primaryAction={
+          canCreate
+            ? {
+                label: 'Nueva Oportunidad',
+                onClick: handleCreate,
+              }
+            : undefined
+        }
       />
 
       {/* Table */}

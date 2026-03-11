@@ -64,6 +64,8 @@ import ComiteFormModal from '../components/ComiteFormModal';
 import MiembroComiteFormModal from '../components/MiembroComiteFormModal';
 import ActaReunionFormModal from '../components/ActaReunionFormModal';
 import VotacionFormModal from '../components/VotacionFormModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -110,6 +112,10 @@ const TiposComiteSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteTipoComite();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -138,7 +144,7 @@ const TiposComiteSection = () => {
           icon={<Users className="w-16 h-16" />}
           title="No hay tipos de comité configurados"
           description="Configure los tipos de comités que se utilizarán en la organización"
-          action={{ label: 'Nuevo Tipo de Comité', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Tipo de Comité', onClick: handleNew } : undefined}
         />
         <TipoComiteFormModal
           item={selectedItem}
@@ -153,7 +159,7 @@ const TiposComiteSection = () => {
     <div className="space-y-6">
       <SectionToolbar
         title="Tipos de Comité"
-        primaryAction={{ label: 'Nuevo Tipo', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Tipo', onClick: handleNew } : undefined}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,24 +207,30 @@ const TiposComiteSection = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Edit className="w-4 h-4" />}
-                  onClick={() => handleEdit(tipo)}
-                >
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
-                  onClick={() => setDeleteId(tipo.id)}
-                >
-                  Eliminar
-                </Button>
-              </div>
+              {(canEdit || canDelete) && (
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Edit className="w-4 h-4" />}
+                      onClick={() => handleEdit(tipo)}
+                    >
+                      Editar
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                      onClick={() => setDeleteId(tipo.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
         ))}
@@ -252,6 +264,10 @@ const ComitesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteComite();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -280,7 +296,7 @@ const ComitesSection = () => {
           icon={<Users className="w-16 h-16" />}
           title="No hay comités registrados"
           description="Comience conformando los comités de la organización"
-          action={{ label: 'Nuevo Comité', onClick: handleNew }}
+          action={canCreate ? { label: 'Nuevo Comité', onClick: handleNew } : undefined}
         />
         <ComiteFormModal
           item={selectedItem}
@@ -329,7 +345,7 @@ const ComitesSection = () => {
 
       <SectionToolbar
         title="Comités Activos"
-        primaryAction={{ label: 'Nuevo Comité', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nuevo Comité', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -388,12 +404,16 @@ const ComitesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(comite)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(comite.id)}>
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
+                      {canEdit && (
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(comite)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(comite.id)}>
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -427,6 +447,10 @@ const MiembrosSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteMiembroComite();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -455,7 +479,7 @@ const MiembrosSection = () => {
           icon={<UserPlus className="w-16 h-16" />}
           title="No hay miembros registrados"
           description="Agregue miembros a los comités conformados"
-          action={{ label: 'Agregar Miembro', onClick: handleNew }}
+          action={canCreate ? { label: 'Agregar Miembro', onClick: handleNew } : undefined}
         />
         <MiembroComiteFormModal
           item={selectedItem}
@@ -470,7 +494,7 @@ const MiembrosSection = () => {
     <div className="space-y-6">
       <SectionToolbar
         title="Miembros de Comités"
-        primaryAction={{ label: 'Agregar Miembro', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Agregar Miembro', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -543,12 +567,16 @@ const MiembrosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(miembro)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(miembro.id)}>
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
+                      {canEdit && (
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(miembro)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(miembro.id)}>
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -586,6 +614,9 @@ const ActasSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteActaReunion();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -610,7 +641,7 @@ const ActasSection = () => {
           icon={<FileText className="w-16 h-16" />}
           title="No hay actas registradas"
           description="Registre las actas de las reuniones de comité"
-          action={{ label: 'Nueva Acta', onClick: handleNew }}
+          action={canCreate ? { label: 'Nueva Acta', onClick: handleNew } : undefined}
         />
         <ActaReunionFormModal
           item={selectedItem}
@@ -666,7 +697,7 @@ const ActasSection = () => {
 
       <SectionToolbar
         title="Actas de Comité"
-        primaryAction={{ label: 'Nueva Acta', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Acta', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -730,11 +761,13 @@ const ActasSection = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(acta.id)}>
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
+                    {canDelete && (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(acta.id)}>
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -771,6 +804,9 @@ const VotacionesSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteVotacion();
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
+  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -795,7 +831,7 @@ const VotacionesSection = () => {
           icon={<Vote className="w-16 h-16" />}
           title="No hay votaciones registradas"
           description="Registre las votaciones para elecciones y decisiones de comité"
-          action={{ label: 'Nueva Votación', onClick: handleNew }}
+          action={canCreate ? { label: 'Nueva Votación', onClick: handleNew } : undefined}
         />
         <VotacionFormModal
           item={selectedItem}
@@ -837,7 +873,7 @@ const VotacionesSection = () => {
 
       <SectionToolbar
         title="Votaciones de Comité"
-        primaryAction={{ label: 'Nueva Votación', onClick: handleNew }}
+        primaryAction={canCreate ? { label: 'Nueva Votación', onClick: handleNew } : undefined}
       />
 
       <Card variant="bordered" padding="none">
@@ -900,11 +936,13 @@ const VotacionesSection = () => {
                     votos)
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(votacion.id)}>
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
+                    {canDelete && (
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteId(votacion.id)}>
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

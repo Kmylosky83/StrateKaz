@@ -8,6 +8,8 @@ import { DataTableCard } from '@/components/layout/DataTableCard';
 import { Badge, Button, EmptyState } from '@/components/common';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ListChecks, Plus, Trash2 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useActividades, useDeleteActividad } from '../../../hooks/useProyectos';
 import { ActividadFormModal } from './ActividadFormModal';
 import type { ActividadProyecto } from '../../../types/proyectos.types';
@@ -26,6 +28,11 @@ const ESTADO_BADGE: Record<string, 'success' | 'warning' | 'gray' | 'danger' | '
 };
 
 export const ActividadesSection = ({ proyectoId }: ActividadesSectionProps) => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'create');
+  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'edit');
+  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PLANIFICACION, 'delete');
+
   const { data: actividadesData, isLoading } = useActividades({
     proyecto: proyectoId,
     is_active: true,
@@ -132,19 +139,23 @@ export const ActividadesSection = ({ proyectoId }: ActividadesSectionProps) => {
       header: '',
       cell: ({ row }) => (
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setEditItem(row.original);
-              setShowForm(true);
-            }}
-          >
-            Editar
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(row.original)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
-          </Button>
+          {canEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditItem(row.original);
+                setShowForm(true);
+              }}
+            >
+              Editar
+            </Button>
+          )}
+          {canDelete && (
+            <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(row.original)}>
+              <Trash2 className="h-4 w-4 text-red-500" />
+            </Button>
+          )}
         </div>
       ),
       size: 120,
@@ -157,15 +168,19 @@ export const ActividadesSection = ({ proyectoId }: ActividadesSectionProps) => {
         <SectionToolbar
           title="Actividades / WBS"
           count={actividades.length}
-          primaryAction={{
-            label: 'Nueva Actividad',
-            icon: <Plus className="h-4 w-4" />,
-            onClick: () => {
-              setEditItem(null);
-              setShowForm(true);
-            },
-            variant: 'primary',
-          }}
+          primaryAction={
+            canCreate
+              ? {
+                  label: 'Nueva Actividad',
+                  icon: <Plus className="h-4 w-4" />,
+                  onClick: () => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  },
+                  variant: 'primary',
+                }
+              : undefined
+          }
         />
 
         {actividades.length > 0 ? (
@@ -176,17 +191,19 @@ export const ActividadesSection = ({ proyectoId }: ActividadesSectionProps) => {
             title="Sin actividades registradas"
             description="Crea actividades para desglosar el trabajo del proyecto (WBS)"
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setEditItem(null);
-                  setShowForm(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Crear Primera Actividad
-              </Button>
+              canCreate ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setEditItem(null);
+                    setShowForm(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Crear Primera Actividad
+                </Button>
+              ) : undefined
             }
           />
         )}

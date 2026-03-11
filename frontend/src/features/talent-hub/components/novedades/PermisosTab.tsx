@@ -15,6 +15,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Clock, Plus, Pencil, Trash2, CheckCircle, XCircle, Check } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   usePermisos,
   useDeletePermiso,
@@ -36,6 +38,9 @@ const ESTADO_BADGE: Record<string, 'gray' | 'warning' | 'success' | 'danger'> = 
 };
 
 export const PermisosTab = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.TALENT_HUB, Sections.REGISTRO_NOVEDADES, 'create');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
@@ -127,10 +132,12 @@ export const PermisosTab = () => {
               options={ESTADO_OPTIONS}
               className="w-40"
             />
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              Solicitar
-            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus size={16} className="mr-1" />
+                Solicitar
+              </Button>
+            )}
           </div>
         }
       />

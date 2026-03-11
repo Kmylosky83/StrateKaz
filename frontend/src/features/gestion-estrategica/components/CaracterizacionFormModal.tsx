@@ -114,11 +114,7 @@ function DynamicArraySection<T extends Record<string, unknown>>({
 
 // ==================== MAIN COMPONENT ====================
 
-export default function CaracterizacionFormModal({
-  item,
-  isOpen,
-  onClose,
-}: CaracterizacionFormModalProps) {
+export function CaracterizacionFormModal({ item, isOpen, onClose }: CaracterizacionFormModalProps) {
   const [formData, setFormData] = useState<CreateCaracterizacionDTO>(INITIAL_FORM);
   const [activeTab, setActiveTab] = useState('general');
 

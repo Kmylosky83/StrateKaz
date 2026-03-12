@@ -18,7 +18,6 @@ import {
   Download,
   Filter,
   CheckCircle2,
-  AlertTriangle,
   XCircle,
   FileCheck,
   Clock,
@@ -57,7 +56,9 @@ interface FilterState extends ReglamentoFilters {
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTabProps) => {
+export const ReglamentosInternosTab = ({
+  activeSection: _activeSection,
+}: ReglamentosInternosTabProps) => {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'create');
   const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'edit');

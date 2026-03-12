@@ -12,7 +12,7 @@ import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
 import { cn } from '@/utils/cn';
 import { useProcesosRetiro, useCerrarProcesoRetiro } from '../../hooks/useOffBoarding';
-import type { ProcesoRetiro, EstadoProceso } from '../../types';
+import type { EstadoProceso } from '../../types';
 import { estadoProcesoOptions, motivoRetiroOptions } from '../../types';
 import { ProcesoFormModal } from './ProcesoFormModal';
 

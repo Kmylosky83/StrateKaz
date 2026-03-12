@@ -42,15 +42,11 @@ import {
   useAtenderAlerta,
   useEscalarAlerta,
   useTiposAlerta,
-  useCreateTipoAlerta,
-  useUpdateTipoAlerta,
   useConfiguracionesAlerta,
-  useCreateConfiguracionAlerta,
-  useUpdateConfiguracionAlerta,
   useEscalamientosAlerta,
   useResumenAlertas,
 } from '../hooks/useAuditSystem';
-import type { AlertaGenerada, TipoAlerta, ConfiguracionAlerta, SeveridadAlerta } from '../types';
+import type { SeveridadAlerta } from '../types';
 
 const getSeveridadColor = (severidad: SeveridadAlerta) => {
   const colors = {

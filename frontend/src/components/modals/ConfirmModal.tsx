@@ -9,7 +9,7 @@
  * - Ideal para acciones destructivas
  */
 import { useState, useEffect } from 'react';
-import { AlertTriangle, AlertCircle, CheckCircle, Info, Trash2, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Trash2 } from 'lucide-react';
 import { BaseModal } from './BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -164,7 +164,11 @@ export const ConfirmModal = ({
         {confirmPhrase && (
           <div className="w-full mt-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-              Escribe <span className="font-mono font-semibold text-gray-700 dark:text-gray-200">"{confirmPhrase}"</span> para confirmar:
+              Escribe{' '}
+              <span className="font-mono font-semibold text-gray-700 dark:text-gray-200">
+                "{confirmPhrase}"
+              </span>{' '}
+              para confirmar:
             </p>
             <Input
               value={inputValue}

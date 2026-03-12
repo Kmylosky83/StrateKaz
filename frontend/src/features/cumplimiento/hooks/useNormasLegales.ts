@@ -3,11 +3,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { normasApi, tiposNormaApi, type NormasListParams } from '../api/normasApi';
-import type {
-  NormaLegal,
-  NormaLegalCreateUpdate,
-  TipoNormaCreate,
-} from '../types/matrizLegal';
+import type { NormaLegalCreateUpdate, TipoNormaCreate } from '../types/matrizLegal';
 
 // ============================================================================
 // QUERY KEYS

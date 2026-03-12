@@ -76,7 +76,12 @@ class StrategicStatsViewSet(viewsets.ViewSet):
         User = get_user_model()
 
         # === 1. DATOS BASE ===
-        active_identity = CorporateIdentity.objects.filter(is_active=True).first()
+        from django.db.models import Count, Q
+        active_identity = CorporateIdentity.objects.filter(
+            is_active=True
+        ).annotate(
+            active_values_count=Count('values', filter=Q(values__is_active=True))
+        ).first()
         active_plan = StrategicPlan.objects.filter(is_active=True).first()
 
         # === 2. OBJETIVOS ESTRATEGICOS ===
@@ -162,7 +167,7 @@ class StrategicStatsViewSet(viewsets.ViewSet):
             'has_active_identity': has_identity,
             'identity_is_signed': active_identity.is_signed if active_identity else False,
             'identity_version': active_identity.version if active_identity else 0,
-            'values_count': active_identity.values.filter(is_active=True).count() if active_identity else 0,
+            'values_count': active_identity.active_values_count if active_identity else 0,
             'policy_pending_signature': has_identity and not active_identity.is_signed,
 
             # Configuracion del sistema

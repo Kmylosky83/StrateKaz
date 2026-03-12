@@ -10,16 +10,14 @@
  * - Estados vacíos
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AreasTab } from '@/features/gestion-estrategica/components/AreasTab';
 import {
   render,
   createMockAreaList,
   createMockPaginatedResponse,
-  createTestQueryClient,
   clearToastMocks,
-  actWait,
 } from '@/__tests__/utils/test-utils';
 
 // Mock de los hooks de API
@@ -41,17 +39,14 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock del modal de formulario
-vi.mock(
-  '@/features/gestion-estrategica/components/modals/AreaFormModal',
-  () => ({
-    AreaFormModal: ({ isOpen, onClose }: any) =>
-      isOpen ? (
-        <div data-testid="area-form-modal">
-          <button onClick={onClose}>Close Modal</button>
-        </div>
-      ) : null,
-  })
-);
+vi.mock('@/features/gestion-estrategica/components/modals/AreaFormModal', () => ({
+  AreaFormModal: ({ isOpen, onClose }: any) =>
+    isOpen ? (
+      <div data-testid="area-form-modal">
+        <button onClick={onClose}>Close Modal</button>
+      </div>
+    ) : null,
+}));
 
 import {
   useAreas,
@@ -248,9 +243,7 @@ describe('AreasTab', () => {
       render(<AreasTab />);
 
       expect(screen.getByText(/sin áreas configuradas/i)).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: /crear primera área/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /crear primera área/i })).toBeInTheDocument();
     });
   });
 
@@ -315,9 +308,7 @@ describe('AreasTab', () => {
     it('debe mostrar botón de nueva área', () => {
       render(<AreasTab />);
 
-      expect(
-        screen.getByRole('button', { name: /nueva área/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /nueva área/i })).toBeInTheDocument();
     });
   });
 
@@ -350,9 +341,7 @@ describe('AreasTab', () => {
 
       // Buscar el botón de expansión (chevron) dentro del área
       const expandButtons = document.querySelectorAll('button');
-      const hasChevron = Array.from(expandButtons).some(
-        (btn) => btn.querySelector('svg') !== null
-      );
+      const hasChevron = Array.from(expandButtons).some((btn) => btn.querySelector('svg') !== null);
       expect(hasChevron).toBe(true);
     });
 
@@ -449,9 +438,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const searchInput = screen.getByPlaceholderText(
-        /buscar por código o nombre/i
-      );
+      const searchInput = screen.getByPlaceholderText(/buscar por código o nombre/i);
       await user.type(searchInput, 'Producción');
 
       // Simular que el API devuelve resultados filtrados
@@ -526,9 +513,7 @@ describe('AreasTab', () => {
       render(<AreasTab />);
 
       // Buscar el switch y hacer clic
-      const switchElement = screen
-        .getByText(/incluir inactivas/i)
-        .closest('label');
+      const switchElement = screen.getByText(/incluir inactivas/i).closest('label');
       const checkbox = switchElement?.querySelector('input[type="checkbox"]');
 
       if (checkbox) {
@@ -679,7 +664,6 @@ describe('AreasTab', () => {
 
   describe('Actualización de Datos', () => {
     it('debe mostrar indicador de carga al refrescar', async () => {
-      const user = userEvent.setup();
       const refetchMock = vi.fn();
 
       vi.mocked(useAreas).mockReturnValue({
@@ -775,17 +759,13 @@ describe('AreasTab', () => {
     it('debe tener placeholder descriptivo en búsqueda', () => {
       render(<AreasTab />);
 
-      expect(
-        screen.getByPlaceholderText(/buscar por código o nombre/i)
-      ).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/buscar por código o nombre/i)).toBeInTheDocument();
     });
 
     it('debe tener estructura semántica con headings', () => {
       render(<AreasTab />);
 
-      expect(
-        screen.getByRole('heading', { name: /áreas y departamentos/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /áreas y departamentos/i })).toBeInTheDocument();
     });
   });
 });

@@ -42,7 +42,7 @@ import {
   SectionHeader,
 } from '@/components/common';
 import { Input, Switch } from '@/components/forms';
-import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import { StatsGrid } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';

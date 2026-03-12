@@ -107,9 +107,9 @@ export const PreferenciasPage = () => {
   };
 
   // Watch current values for display
-  const currentLanguage = watch('language');
-  const currentTimezone = watch('timezone');
-  const currentDateFormat = watch('date_format');
+  const _currentLanguage = watch('language');
+  const _currentTimezone = watch('timezone');
+  const _currentDateFormat = watch('date_format');
 
   if (isLoading) {
     return (

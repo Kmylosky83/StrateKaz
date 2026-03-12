@@ -8,9 +8,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { mapasApi, causaEfectoApi } from '../api/mapaEstrategicoApi';
 import type {
-  MapaEstrategico,
-  MapaVisualizacionResponse,
-  CausaEfecto,
   CreateMapaEstrategicoDTO,
   UpdateMapaEstrategicoDTO,
   CreateCausaEfectoDTO,
@@ -93,7 +90,7 @@ export const useMapasList = (planId?: number) => {
  * Hook para crear un mapa estratégico
  */
 export const useCreateMapa = () => {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateMapaEstrategicoDTO) => mapasApi.create(data),
@@ -112,7 +109,7 @@ export const useCreateMapa = () => {
  * Hook para actualizar un mapa estratégico
  */
 export const useUpdateMapa = () => {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateMapaEstrategicoDTO }) =>
@@ -133,12 +130,12 @@ export const useUpdateMapa = () => {
  * Hook para guardar posiciones del canvas
  */
 export const useSaveCanvasPositions = () => {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, canvasData }: { id: number; canvasData: CanvasData }) =>
       mapasApi.updateCanvas(id, canvasData),
-    onSuccess: (_, variables) => {
+    onSuccess: (_, _variables) => {
       // No invalidamos para evitar re-render, solo actualizamos el cache local
       toast.success('Posiciones guardadas');
     },
@@ -267,11 +264,12 @@ export const useCreateRelacionesBatch = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (relations: CreateCausaEfectoDTO[]) =>
-      causaEfectoApi.createBatch(relations),
+    mutationFn: (relations: CreateCausaEfectoDTO[]) => causaEfectoApi.createBatch(relations),
     onSuccess: (data) => {
       if (data.length > 0) {
-        queryClient.invalidateQueries({ queryKey: mapaEstrategicoKeys.relacionesByMapa(data[0].mapa) });
+        queryClient.invalidateQueries({
+          queryKey: mapaEstrategicoKeys.relacionesByMapa(data[0].mapa),
+        });
         queryClient.invalidateQueries({ queryKey: mapaEstrategicoKeys.all });
       }
       toast.success(`${data.length} relaciones creadas`);

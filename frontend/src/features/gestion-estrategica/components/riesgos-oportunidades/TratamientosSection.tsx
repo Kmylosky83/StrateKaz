@@ -41,7 +41,7 @@ const EFECTIVIDAD_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'gray
   Baja: 'danger',
 };
 
-export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps) {
+export function TratamientosSection({ _triggerNewForm }: TratamientosSectionProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 

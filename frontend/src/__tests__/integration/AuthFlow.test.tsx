@@ -5,7 +5,7 @@
  * Since LoginPage has many external deps (framer-motion, NetworkBackground, etc.),
  * we focus on testing the login form schema validation and auth store logic.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
 

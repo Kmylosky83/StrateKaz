@@ -1,5 +1,6 @@
 /**
  * RiesgosOportunidadesTab - Tab principal para gestión de riesgos y oportunidades
+ * RiesgosOportunidadesTab - Tab principal para gestión de riesgos y oportunidades
  * Sistema de Gestión StrateKaz
  *
  * Incluye:
@@ -31,7 +32,6 @@ import {
   Shield,
   CheckCircle2,
   XCircle,
-  Clock,
   Users,
   Filter,
   Download,
@@ -44,9 +44,6 @@ import type {
   RiesgoProceso,
   Oportunidad,
   TratamientoRiesgo,
-  NivelRiesgo,
-  EstadoRiesgo,
-  TipoRiesgo,
 } from '@/features/riesgos/types/riesgos.types';
 
 // ==================== INTERFACES LOCALES ====================
@@ -80,6 +77,7 @@ interface KPICardProps {
 // ==================== SUB-COMPONENTES ====================
 
 /**
+ * KPICard - Tarjeta de indicador clave
  * KPICard - Tarjeta de indicador clave
  */
 function KPICard({
@@ -132,61 +130,33 @@ function KPICard({
 
 /**
  * getNivelRiesgoLabel - Retorna etiqueta de nivel de riesgo
+ * getNivelRiesgoLabel - Retorna etiqueta de nivel de riesgo
  */
-function getNivelRiesgoLabel(nivel: number): string {
-  if (nivel >= 15) return 'Critico';
-  if (nivel >= 10) return 'Alto';
-  if (nivel >= 5) return 'Moderado';
-  return 'Bajo';
-}
 
 /**
  * getNivelRiesgoColor - Retorna color según nivel
+ * getNivelRiesgoColor - Retorna color según nivel
  */
-function getNivelRiesgoColor(nivel: number): string {
-  if (nivel >= 15) return 'danger';
-  if (nivel >= 10) return 'warning';
-  if (nivel >= 5) return 'warning';
-  return 'success';
-}
 
 /**
  * TIPO_LABELS - Etiquetas para tipos de riesgo
+ * TIPO_LABELS - Etiquetas para tipos de riesgo
  */
-const TIPO_LABELS: Record<TipoRiesgo, string> = {
-  estrategico: 'Estratégico',
-  operativo: 'Operativo',
-  financiero: 'Financiero',
-  cumplimiento: 'Cumplimiento',
-  tecnologico: 'Tecnológico',
-  reputacional: 'Reputacional',
-};
 
 /**
  * ESTADO_LABELS - Etiquetas para estados de riesgo
+ * ESTADO_LABELS - Etiquetas para estados de riesgo
  */
-const ESTADO_LABELS: Record<EstadoRiesgo, string> = {
-  identificado: 'Identificado',
-  en_tratamiento: 'En Tratamiento',
-  controlado: 'Controlado',
-  materializado: 'Materializado',
-  cerrado: 'Cerrado',
-};
 
 /**
  * ESTADO_COLORS - Colores para estados
+ * ESTADO_COLORS - Colores para estados
  */
-const ESTADO_COLORS: Record<EstadoRiesgo, string> = {
-  identificado: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-  en_tratamiento: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  controlado: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  materializado: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  cerrado: 'bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
-};
 
 // ==================== SECCIONES ====================
 
 /**
+ * ResumenSection - Dashboard ejecutivo de riesgos
  * ResumenSection - Dashboard ejecutivo de riesgos
  */
 function ResumenSection({
@@ -383,6 +353,7 @@ function ResumenSection({
 
 /**
  * MapaCalorSection - Visualización de matriz de riesgos
+ * MapaCalorSection - Visualización de matriz de riesgos
  */
 function MapaCalorSection({
   riesgos,
@@ -488,6 +459,7 @@ function MapaCalorSection({
 }
 
 /**
+ * RiesgosSection - Listado completo de riesgos
  * RiesgosSection - Listado completo de riesgos
  */
 function RiesgosSection({
@@ -634,6 +606,7 @@ function RiesgosSection({
 }
 
 /**
+ * OportunidadesSection - Gestión de oportunidades
  * OportunidadesSection - Gestión de oportunidades
  */
 function OportunidadesSection({
@@ -849,6 +822,7 @@ function OportunidadesSection({
 }
 
 /**
+ * TratamientosSection - Seguimiento de tratamientos
  * TratamientosSection - Seguimiento de tratamientos
  */
 function TratamientosSection({
@@ -1120,6 +1094,7 @@ function TratamientosSection({
 // ==================== COMPONENTE PRINCIPAL ====================
 
 /**
+ * RiesgosOportunidadesTab - Componente principal
  * RiesgosOportunidadesTab - Componente principal
  */
 export function RiesgosOportunidadesTab({

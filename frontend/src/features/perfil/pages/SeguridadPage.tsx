@@ -13,7 +13,7 @@
  * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 6
  */
 import { useEffect, useState } from 'react';
-import { Shield, Key, Smartphone, CheckCircle, XCircle } from 'lucide-react';
+import { Key, Smartphone, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { useHeaderContext } from '@/contexts/HeaderContext';

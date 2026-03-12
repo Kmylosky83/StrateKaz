@@ -35,7 +35,7 @@ interface RequisitosTableProps {
   onPageSizeChange: (pageSize: number) => void;
   sorting?: SortingState;
   onSortingChange?: (sorting: SortingState) => void;
-  onEdit: (requisito: EmpresaRequisito) => void;
+  onEdit: (_requisito: EmpresaRequisito) => void;
   onDelete: (requisito: EmpresaRequisito) => void;
   isLoading?: boolean;
   canEdit?: boolean;
@@ -47,8 +47,8 @@ const columnHelper = createColumnHelper<EmpresaRequisito>();
 /**
  * Obtiene el badge de estado según días para vencer
  */
-const EstadoBadge = ({ requisito }: { requisito: EmpresaRequisito }) => {
-  const { estado, dias_para_vencer } = requisito;
+const EstadoBadge = ({ _requisito }: { requisito: EmpresaRequisito }) => {
+  const { estado, _dias_para_vencer } = requisito;
 
   const getVariantAndIcon = () => {
     switch (estado) {
@@ -170,7 +170,7 @@ export const RequisitosTable = ({
         id: 'sistemas',
         header: 'Sistemas',
         cell: (info) => {
-          const requisito = info.row.original;
+          const _requisito = info.row.original;
           // Los sistemas vienen del RequisitoLegal, no del EmpresaRequisito
           // Para esto necesitaríamos expandir la data, por ahora mostramos placeholder
           return (

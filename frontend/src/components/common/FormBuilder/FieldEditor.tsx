@@ -5,7 +5,6 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import { Button } from '../Button';
 import type { CampoFormulario, ColumnaTabla, TipoCampoFormulario } from './types';
 

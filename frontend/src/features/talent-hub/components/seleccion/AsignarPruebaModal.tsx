@@ -19,7 +19,7 @@ import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Checkbox } from '@/components/forms/Checkbox';
 import { Spinner } from '@/components/common/Spinner';
-import { Send, ClipboardCheck, Mail, Calendar } from 'lucide-react';
+import { Send, ClipboardCheck, Calendar } from 'lucide-react';
 import {
   usePlantillasPruebaActivas,
   useCandidatos,

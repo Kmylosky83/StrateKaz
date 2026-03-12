@@ -107,11 +107,7 @@ export const mockAxios = {
 };
 
 // Mock file upload
-export const createMockFile = (
-  name = 'test.pdf',
-  size = 1024,
-  type = 'application/pdf'
-) => {
+export const createMockFile = (name = 'test.pdf', _size = 1024, type = 'application/pdf') => {
   const blob = new Blob(['test content'], { type });
   return new File([blob], name, { type });
 };

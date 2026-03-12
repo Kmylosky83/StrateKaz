@@ -149,7 +149,7 @@ const RadarChart = ({ dimensiones, size = 280 }: RadarChartProps) => {
   const dataPath =
     dimensiones
       .map((d, i) => {
-        const pt = getPoint(i, d.porcentaje);
+        const _pt = getPoint(i, d.porcentaje);
         return `${i === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`;
       })
       .join(' ') + ' Z';
@@ -205,7 +205,7 @@ const RadarChart = ({ dimensiones, size = 280 }: RadarChartProps) => {
 
       {/* Data points */}
       {dimensiones.map((d, i) => {
-        const pt = getPoint(i, d.porcentaje);
+        const _pt = getPoint(i, d.porcentaje);
         return (
           <circle
             key={`point-${i}`}
@@ -240,7 +240,7 @@ const RadarChart = ({ dimensiones, size = 280 }: RadarChartProps) => {
 
       {/* Percentage values */}
       {dimensiones.map((d, i) => {
-        const pt = getPoint(i, d.porcentaje);
+        const _pt = getPoint(i, d.porcentaje);
         const labelPt = getPoint(i, d.porcentaje + 12);
         return (
           <text

@@ -15,6 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
 
 # Modelos de identidad y planeación
 from .models import CorporateIdentity, CorporateValue
@@ -75,8 +76,12 @@ class StrategicStatsViewSet(viewsets.ViewSet):
         User = get_user_model()
 
         # === 1. DATOS BASE - IDENTIDAD ===
-        active_identity = CorporateIdentity.objects.filter(is_active=True).first()
-        values_count = active_identity.values.filter(is_active=True).count() if active_identity else 0
+        active_identity = CorporateIdentity.objects.filter(
+            is_active=True
+        ).annotate(
+            active_values_count=Count('values', filter=Q(values__is_active=True))
+        ).first()
+        values_count = active_identity.active_values_count if active_identity else 0
 
         # === 2. DATOS BASE - PLANEACIÓN ===
         active_plan = None

@@ -28,7 +28,7 @@ export const ConceptoFormModal = ({ isOpen, onClose, concepto }: ConceptoFormMod
     register,
     handleSubmit,
     reset,
-    watch,
+    _watch,
     formState: { errors },
   } = useForm<ConceptoNominaFormData>({
     defaultValues: {

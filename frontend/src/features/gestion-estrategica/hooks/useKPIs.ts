@@ -126,7 +126,7 @@ export const useDeleteKPI = () => {
 export const useKPIMeasurements = (kpiId: number, page = 1, pageSize = 50) => {
   return useQuery({
     queryKey: kpisKeys.measurements(kpiId),
-    queryFn: () => kpisApi.getMeasurements(kpiId, page, pageSize),
+    queryFn: () => kpisApi.getMeasurements(_kpiId, page, pageSize),
     enabled: !!kpiId && kpiId > 0,
     staleTime: 1 * 60 * 1000, // 1 minuto - datos más dinámicos
     gcTime: 5 * 60 * 1000,
@@ -186,7 +186,7 @@ export const useUpdateMeasurement = () => {
 export const useDeleteMeasurement = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, kpiId }: { id: number; kpiId: number }) => kpisApi.deleteMeasurement(id),
+    mutationFn: ({ id, _kpiId }: { id: number; kpiId: number }) => kpisApi.deleteMeasurement(id),
     onSuccess: async (_, variables) => {
       // Forzar refetch del KPI relacionado
       await queryClient.refetchQueries({ queryKey: kpisKeys.detail(variables.kpiId) });

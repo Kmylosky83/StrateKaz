@@ -567,7 +567,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   modulos: ModulosAndFeaturesSection, // Activar/desactivar módulos dentro del tenant
 };
 
-export const ConfiguracionTab = ({ activeSection, searchQuery }: ConfiguracionTabProps) => {
+export const ConfiguracionTab = ({ activeSection, _searchQuery }: ConfiguracionTabProps) => {
   const isSuperAdmin = useIsSuperAdmin();
 
   // Secciones restringidas a superadmin (no se renderizan para usuarios normales)

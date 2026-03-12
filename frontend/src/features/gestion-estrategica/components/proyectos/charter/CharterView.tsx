@@ -3,7 +3,7 @@
  * DS: Card + Badge + Button + SectionToolbar
  */
 import { useState } from 'react';
-import { Card, Badge, Button, EmptyState } from '@/components/common';
+import { Card, Button, EmptyState } from '@/components/common';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 

@@ -10,24 +10,14 @@ import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { Workflow } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
-import { CHART_COLORS, CHART_AXIS_COLORS, BSC_COLORS as BSC_CHART_COLORS } from '@/constants/chart-colors';
+import { CHART_AXIS_COLORS } from '@/constants/chart-colors';
+import type { SankeyNode, SankeyLink } from './KPISankeyFlow.utils';
+import { TYPE_COLORS } from './KPISankeyFlow.utils';
 
 // ==================== TIPOS ====================
 
-export interface SankeyNode {
-  id: string;
-  name: string;
-  type: 'perspective' | 'objective' | 'kpi' | 'outcome';
-  value?: number;
-  color?: string;
-}
-
-export interface SankeyLink {
-  source: string;
-  target: string;
-  value: number;
-  label?: string;
-}
+export type { SankeyNode, SankeyLink } from './KPISankeyFlow.utils';
+export type { BSCStructure } from './KPISankeyFlow.utils';
 
 export interface KPISankeyFlowProps {
   nodes: SankeyNode[];
@@ -38,22 +28,6 @@ export interface KPISankeyFlowProps {
   className?: string;
   onNodeClick?: (node: SankeyNode) => void;
 }
-
-// ==================== COLORES ====================
-
-const TYPE_COLORS = {
-  perspective: CHART_COLORS[4],  // violet-500 (#8B5CF6)
-  objective: CHART_COLORS[0],    // blue-500   (#3B82F6)
-  kpi: CHART_COLORS[1],          // emerald-500 (#10B981)
-  outcome: CHART_COLORS[2],      // amber-500  (#F59E0B)
-};
-
-const BSC_COLORS: Record<string, string> = {
-  FINANCIERA: BSC_CHART_COLORS.clientes,
-  CLIENTES: BSC_CHART_COLORS.financiera,
-  PROCESOS: BSC_CHART_COLORS.procesos,
-  APRENDIZAJE: BSC_CHART_COLORS.aprendizaje,
-};
 
 // ==================== COMPONENTE ====================
 
@@ -69,7 +43,7 @@ export function KPISankeyFlow({
   // Preparar datos para ECharts
   const option = useMemo<EChartsOption>(() => {
     // Procesar nodos
-    const echartsNodes = nodes.map(node => ({
+    const echartsNodes = nodes.map((node) => ({
       name: node.name,
       itemStyle: {
         color: node.color || TYPE_COLORS[node.type],
@@ -83,7 +57,7 @@ export function KPISankeyFlow({
     }));
 
     // Procesar links
-    const echartsLinks = links.map(link => ({
+    const echartsLinks = links.map((link) => ({
       source: link.source,
       target: link.target,
       value: link.value,
@@ -118,7 +92,7 @@ export function KPISankeyFlow({
         textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
         formatter: (params: any) => {
           if (params.dataType === 'node') {
-            const node = nodes.find(n => n.name === params.name);
+            const node = nodes.find((n) => n.name === params.name);
             const typeLabels = {
               perspective: 'Perspectiva BSC',
               objective: 'Objetivo Estratégico',
@@ -135,18 +109,22 @@ export function KPISankeyFlow({
                   <span style="color: #6b7280;">Tipo:</span>
                   <span>${node ? typeLabels[node.type] : ''}</span>
                 </div>
-                ${node?.value !== undefined ? `
+                ${
+                  node?.value !== undefined
+                    ? `
                   <div style="display: flex; justify-content: space-between;">
                     <span style="color: #6b7280;">Valor:</span>
                     <strong>${node.value}</strong>
                   </div>
-                ` : ''}
+                `
+                    : ''
+                }
               </div>
             `;
           } else {
             // Es un enlace
             const link = links.find(
-              l => l.source === params.data.source && l.target === params.data.target
+              (l) => l.source === params.data.source && l.target === params.data.target
             );
 
             return `
@@ -166,11 +144,15 @@ export function KPISankeyFlow({
                   <span style="color: #6b7280;">Peso:</span>
                   <strong>${params.data.value}</strong>
                 </div>
-                ${link?.label ? `
+                ${
+                  link?.label
+                    ? `
                   <div style="margin-top: 4px; font-size: 11px; color: #6b7280;">
                     ${link.label}
                   </div>
-                ` : ''}
+                `
+                    : ''
+                }
               </div>
             `;
           }
@@ -237,7 +219,7 @@ export function KPISankeyFlow({
 
   const handleChartClick = (params: any) => {
     if (params.dataType === 'node' && onNodeClick) {
-      const node = nodes.find(n => n.name === params.name);
+      const node = nodes.find((n) => n.name === params.name);
       if (node) {
         onNodeClick(node);
       }
@@ -246,10 +228,13 @@ export function KPISankeyFlow({
 
   // Calcular estadísticas
   const stats = useMemo(() => {
-    const byType = nodes.reduce((acc, node) => {
-      acc[node.type] = (acc[node.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const byType = nodes.reduce(
+      (acc, node) => {
+        acc[node.type] = (acc[node.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const totalFlow = links.reduce((sum, link) => sum + link.value, 0);
 
@@ -287,13 +272,8 @@ export function KPISankeyFlow({
           };
           return (
             <div key={type} className="flex items-center gap-2">
-              <div
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: color }}
-              />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {labels[type]}
-              </span>
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: color }} />
+              <span className="text-sm text-gray-600 dark:text-gray-400">{labels[type]}</span>
             </div>
           );
         })}
@@ -334,74 +314,6 @@ export function KPISankeyFlow({
       </div>
     </Card>
   );
-}
-
-// ==================== HELPER: Generar datos desde estructura BSC ====================
-
-export interface BSCStructure {
-  perspectives: {
-    id: string;
-    name: string;
-    objectives: {
-      id: string;
-      name: string;
-      kpis: {
-        id: string;
-        name: string;
-        value?: number;
-      }[];
-    }[];
-  }[];
-}
-
-export function generateSankeyFromBSC(structure: BSCStructure): { nodes: SankeyNode[]; links: SankeyLink[] } {
-  const nodes: SankeyNode[] = [];
-  const links: SankeyLink[] = [];
-
-  structure.perspectives.forEach(perspective => {
-    // Agregar nodo de perspectiva
-    nodes.push({
-      id: perspective.id,
-      name: perspective.name,
-      type: 'perspective',
-      color: BSC_COLORS[perspective.id.toUpperCase()] || TYPE_COLORS.perspective,
-    });
-
-    perspective.objectives.forEach(objective => {
-      // Agregar nodo de objetivo
-      nodes.push({
-        id: objective.id,
-        name: objective.name,
-        type: 'objective',
-      });
-
-      // Link perspectiva -> objetivo
-      links.push({
-        source: perspective.name,
-        target: objective.name,
-        value: objective.kpis.length || 1,
-      });
-
-      objective.kpis.forEach(kpi => {
-        // Agregar nodo de KPI
-        nodes.push({
-          id: kpi.id,
-          name: kpi.name,
-          type: 'kpi',
-          value: kpi.value,
-        });
-
-        // Link objetivo -> KPI
-        links.push({
-          source: objective.name,
-          target: kpi.name,
-          value: kpi.value || 1,
-        });
-      });
-    });
-  });
-
-  return { nodes, links };
 }
 
 export default KPISankeyFlow;

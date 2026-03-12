@@ -6,33 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import catalogosApi from '../api/catalogos.api';
 import type {
-  CategoriaMateriaPrima,
-  TipoMateriaPrima,
-  TipoProveedor,
-  ModalidadLogistica,
-  FormaPago,
-  TipoCuentaBancaria,
-  TipoDocumentoIdentidad,
-  Departamento,
-  Ciudad,
   CreateCategoriaMateriaPrimaDTO,
   UpdateCategoriaMateriaPrimaDTO,
   CreateTipoMateriaPrimaDTO,
   UpdateTipoMateriaPrimaDTO,
   CreateTipoProveedorDTO,
-  UpdateTipoProveedorDTO,
-  CreateModalidadLogisticaDTO,
-  UpdateModalidadLogisticaDTO,
-  CreateFormaPagoDTO,
-  UpdateFormaPagoDTO,
-  CreateTipoCuentaBancariaDTO,
-  UpdateTipoCuentaBancariaDTO,
-  CreateTipoDocumentoIdentidadDTO,
-  UpdateTipoDocumentoIdentidadDTO,
-  CreateDepartamentoDTO,
-  UpdateDepartamentoDTO,
-  CreateCiudadDTO,
-  UpdateCiudadDTO,
 } from '../types';
 
 // ==================== QUERY KEYS ====================
@@ -47,7 +25,8 @@ export const catalogosKeys = {
   // Tipos de Materia Prima
   tipos: () => [...catalogosKeys.all, 'tipos-materia-prima'] as const,
   tiposActivos: () => [...catalogosKeys.tipos(), 'activos'] as const,
-  tiposPorCategoria: (categoriaId: number) => [...catalogosKeys.tipos(), 'categoria', categoriaId] as const,
+  tiposPorCategoria: (categoriaId: number) =>
+    [...catalogosKeys.tipos(), 'categoria', categoriaId] as const,
 
   // Tipos de Proveedor
   tiposProveedor: () => [...catalogosKeys.all, 'tipos-proveedor'] as const,
@@ -76,7 +55,8 @@ export const catalogosKeys = {
   // Ciudades
   ciudades: () => [...catalogosKeys.all, 'ciudades'] as const,
   ciudadesActivas: () => [...catalogosKeys.ciudades(), 'activas'] as const,
-  ciudadesPorDepartamento: (deptoId: number) => [...catalogosKeys.ciudades(), 'departamento', deptoId] as const,
+  ciudadesPorDepartamento: (deptoId: number) =>
+    [...catalogosKeys.ciudades(), 'departamento', deptoId] as const,
 };
 
 // ==================== CATEGORÍAS MATERIA PRIMA ====================
@@ -84,14 +64,18 @@ export const catalogosKeys = {
 export function useCategoriasMateriaPrima(params?: { is_active?: boolean }) {
   return useQuery({
     queryKey: params?.is_active ? catalogosKeys.categoriasActivas() : catalogosKeys.categorias(),
-    queryFn: () => (params?.is_active ? catalogosApi.categoriaMateriaPrima.getActivos() : catalogosApi.categoriaMateriaPrima.getAll()),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.categoriaMateriaPrima.getActivos()
+        : catalogosApi.categoriaMateriaPrima.getAll(),
   });
 }
 
 export function useCreateCategoriaMateriaPrima() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateCategoriaMateriaPrimaDTO) => catalogosApi.categoriaMateriaPrima.create(data),
+    mutationFn: (data: CreateCategoriaMateriaPrimaDTO) =>
+      catalogosApi.categoriaMateriaPrima.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
       toast.success('Categoría creada exitosamente');
@@ -199,8 +183,13 @@ export function useDeleteTipoMateriaPrima() {
 
 export function useTiposProveedor(params?: { is_active?: boolean }) {
   return useQuery({
-    queryKey: params?.is_active ? catalogosKeys.tiposProveedorActivos() : catalogosKeys.tiposProveedor(),
-    queryFn: () => (params?.is_active ? catalogosApi.tipoProveedor.getActivos() : catalogosApi.tipoProveedor.getAll()),
+    queryKey: params?.is_active
+      ? catalogosKeys.tiposProveedorActivos()
+      : catalogosKeys.tiposProveedor(),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.tipoProveedor.getActivos()
+        : catalogosApi.tipoProveedor.getAll(),
   });
 }
 
@@ -222,8 +211,13 @@ export function useCreateTipoProveedor() {
 
 export function useDepartamentos(params?: { is_active?: boolean }) {
   return useQuery({
-    queryKey: params?.is_active ? catalogosKeys.departamentosActivos() : catalogosKeys.departamentos(),
-    queryFn: () => (params?.is_active ? catalogosApi.departamento.getActivos() : catalogosApi.departamento.getAll()),
+    queryKey: params?.is_active
+      ? catalogosKeys.departamentosActivos()
+      : catalogosKeys.departamentos(),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.departamento.getActivos()
+        : catalogosApi.departamento.getAll(),
   });
 }
 
@@ -251,7 +245,8 @@ export function useCiudades(params?: { departamento?: number; is_active?: boolea
 export function useFormasPago(params?: { is_active?: boolean }) {
   return useQuery({
     queryKey: params?.is_active ? catalogosKeys.formasPagoActivas() : catalogosKeys.formasPago(),
-    queryFn: () => (params?.is_active ? catalogosApi.formaPago.getActivos() : catalogosApi.formaPago.getAll()),
+    queryFn: () =>
+      params?.is_active ? catalogosApi.formaPago.getActivos() : catalogosApi.formaPago.getAll(),
   });
 }
 
@@ -260,7 +255,10 @@ export function useFormasPago(params?: { is_active?: boolean }) {
 export function useTiposCuentaBancaria(params?: { is_active?: boolean }) {
   return useQuery({
     queryKey: params?.is_active ? catalogosKeys.tiposCuentaActivas() : catalogosKeys.tiposCuenta(),
-    queryFn: () => (params?.is_active ? catalogosApi.tipoCuentaBancaria.getActivos() : catalogosApi.tipoCuentaBancaria.getAll()),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.tipoCuentaBancaria.getActivos()
+        : catalogosApi.tipoCuentaBancaria.getAll(),
   });
 }
 
@@ -268,8 +266,13 @@ export function useTiposCuentaBancaria(params?: { is_active?: boolean }) {
 
 export function useTiposDocumento(params?: { is_active?: boolean }) {
   return useQuery({
-    queryKey: params?.is_active ? catalogosKeys.tiposDocumentoActivos() : catalogosKeys.tiposDocumento(),
-    queryFn: () => (params?.is_active ? catalogosApi.tipoDocumentoIdentidad.getActivos() : catalogosApi.tipoDocumentoIdentidad.getAll()),
+    queryKey: params?.is_active
+      ? catalogosKeys.tiposDocumentoActivos()
+      : catalogosKeys.tiposDocumento(),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.tipoDocumentoIdentidad.getActivos()
+        : catalogosApi.tipoDocumentoIdentidad.getAll(),
   });
 }
 
@@ -278,6 +281,9 @@ export function useTiposDocumento(params?: { is_active?: boolean }) {
 export function useModalidadesLogistica(params?: { is_active?: boolean }) {
   return useQuery({
     queryKey: params?.is_active ? catalogosKeys.modalidadesActivas() : catalogosKeys.modalidades(),
-    queryFn: () => (params?.is_active ? catalogosApi.modalidadLogistica.getActivos() : catalogosApi.modalidadLogistica.getAll()),
+    queryFn: () =>
+      params?.is_active
+        ? catalogosApi.modalidadLogistica.getActivos()
+        : catalogosApi.modalidadLogistica.getAll(),
   });
 }

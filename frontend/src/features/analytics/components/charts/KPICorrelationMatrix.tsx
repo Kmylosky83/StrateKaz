@@ -77,7 +77,7 @@ const CORRELATION_SCALE_NEGATIVE = ['#991B1B', '#DC2626', '#F87171', '#FCA5A5', 
 const CORRELATION_SCALE_POSITIVE = ['#DBEAFE', '#93C5FD', '#60A5FA', '#3B82F6', '#1E40AF'];
 const CORRELATION_NEUTRAL = '#F3F4F6';
 
-function getCorrelationColor(r: number): string {
+function _getCorrelationColor(r: number): string {
   const absR = Math.abs(r);
   if (r > 0) {
     // Correlación positiva (azules)
@@ -108,7 +108,7 @@ export function KPICorrelationMatrix({
   className,
   onCellClick,
 }: KPICorrelationMatrixProps) {
-  const [selectedCell, setSelectedCell] = useState<CorrelationResult | null>(null);
+  const [_selectedCell, setSelectedCell] = useState<CorrelationResult | null>(null);
 
   // Calcular matriz de correlaciones
   const { matrix, correlations, stats } = useMemo(() => {
@@ -148,10 +148,12 @@ export function KPICorrelationMatrix({
     correlations.sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
     // Estadísticas
-    const allCorrelations = correlations.map(c => c.correlation);
-    const positiveCount = correlations.filter(c => c.direction === 'positive').length;
-    const negativeCount = correlations.filter(c => c.direction === 'negative').length;
-    const strongCount = correlations.filter(c => c.strength === 'strong' || c.strength === 'very_strong').length;
+    const allCorrelations = correlations.map((c) => c.correlation);
+    const positiveCount = correlations.filter((c) => c.direction === 'positive').length;
+    const negativeCount = correlations.filter((c) => c.direction === 'negative').length;
+    const strongCount = correlations.filter(
+      (c) => c.strength === 'strong' || c.strength === 'very_strong'
+    ).length;
 
     return {
       matrix,
@@ -168,7 +170,7 @@ export function KPICorrelationMatrix({
 
   // Preparar datos para ECharts
   const option = useMemo<EChartsOption>(() => {
-    const labels = kpis.map(k => k.shortName || k.name.substring(0, 15));
+    const labels = kpis.map((k) => k.shortName || k.name.substring(0, 15));
 
     // Datos del heatmap
     const heatmapData: [number, number, number][] = [];
@@ -388,7 +390,9 @@ export function KPICorrelationMatrix({
           <p className="text-xs text-gray-500">Fuertes (|r|≥0.7)</p>
         </div>
         <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
-          <p className="text-xl font-bold text-green-600">{(stats.avgCorrelation * 100).toFixed(0)}%</p>
+          <p className="text-xl font-bold text-green-600">
+            {(stats.avgCorrelation * 100).toFixed(0)}%
+          </p>
           <p className="text-xs text-gray-500">Fuerza promedio</p>
         </div>
       </div>
@@ -438,7 +442,9 @@ export function KPICorrelationMatrix({
                   <Badge
                     variant={
                       corr.strength === 'very_strong' || corr.strength === 'strong'
-                        ? corr.direction === 'positive' ? 'info' : 'danger'
+                        ? corr.direction === 'positive'
+                          ? 'info'
+                          : 'danger'
                         : 'default'
                     }
                     size="sm"
@@ -458,9 +464,9 @@ export function KPICorrelationMatrix({
           <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-gray-600 dark:text-gray-400">
             <strong>Interpretación:</strong> El coeficiente de correlación (r) varía de -1 a +1.
-            Valores cercanos a +1 indican relación positiva fuerte (cuando uno sube, el otro también).
-            Valores cercanos a -1 indican relación negativa fuerte (cuando uno sube, el otro baja).
-            Valores cercanos a 0 indican poca o ninguna relación lineal.
+            Valores cercanos a +1 indican relación positiva fuerte (cuando uno sube, el otro
+            también). Valores cercanos a -1 indican relación negativa fuerte (cuando uno sube, el
+            otro baja). Valores cercanos a 0 indican poca o ninguna relación lineal.
           </div>
         </div>
       </div>

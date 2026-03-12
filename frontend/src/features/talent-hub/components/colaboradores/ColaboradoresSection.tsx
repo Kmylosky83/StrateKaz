@@ -69,7 +69,7 @@ const ESTADO_OPTIONS = [
 ];
 
 // Opciones de contrato para filtro
-const CONTRATO_OPTIONS = [
+const _CONTRATO_OPTIONS = [
   { value: '', label: 'Todos los contratos' },
   { value: 'indefinido', label: 'Indefinido' },
   { value: 'fijo', label: 'Término Fijo' },

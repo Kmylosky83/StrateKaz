@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import * as ss from 'simple-statistics';
-import { Card, Badge } from '@/components/common';
+import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { TrendingUp, TrendingDown, Minus, Target, Clock, Zap } from 'lucide-react';
 import type { EChartsOption } from 'echarts';

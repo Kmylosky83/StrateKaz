@@ -65,8 +65,10 @@ export type {
   CorrelationResult,
 } from './KPICorrelationMatrix';
 
-export { KPISankeyFlow, generateSankeyFromBSC } from './KPISankeyFlow';
-export type { KPISankeyFlowProps, SankeyNode, SankeyLink, BSCStructure } from './KPISankeyFlow';
+export { KPISankeyFlow } from './KPISankeyFlow';
+export type { KPISankeyFlowProps } from './KPISankeyFlow';
+export { generateSankeyFromBSC } from './KPISankeyFlow.utils';
+export type { SankeyNode, SankeyLink, BSCStructure } from './KPISankeyFlow.utils';
 
 // KPIGaugeAdvanced migrado a componentes compartidos — re-export para compatibilidad
 export { KPIGaugeAdvanced } from '@/components/data-display';

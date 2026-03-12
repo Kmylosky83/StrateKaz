@@ -41,8 +41,8 @@ export const PortafolioDashboard = () => {
     );
   }
 
-  const portafolios = portafoliosData?.results || [];
-  const programas = programasData?.results || [];
+  const _portafolios = portafoliosData?.results || [];
+  const _programas = programasData?.results || [];
   const stats = dashboardData;
 
   return (
@@ -127,14 +127,10 @@ export const PortafolioDashboard = () => {
                   </span>
                 </div>
               </div>
-              <p className="text-3xl font-bold text-green-600">
-                {stats?.proyectos_verde || 0}
-              </p>
+              <p className="text-3xl font-bold text-green-600">{stats?.proyectos_verde || 0}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {stats?.total_proyectos
-                  ? Math.round(
-                      ((stats?.proyectos_verde || 0) / stats.total_proyectos) * 100
-                    )
+                  ? Math.round(((stats?.proyectos_verde || 0) / stats.total_proyectos) * 100)
                   : 0}
                 % del total
               </p>
@@ -151,14 +147,10 @@ export const PortafolioDashboard = () => {
                   </span>
                 </div>
               </div>
-              <p className="text-3xl font-bold text-yellow-600">
-                {stats?.proyectos_amarillo || 0}
-              </p>
+              <p className="text-3xl font-bold text-yellow-600">{stats?.proyectos_amarillo || 0}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {stats?.total_proyectos
-                  ? Math.round(
-                      ((stats?.proyectos_amarillo || 0) / stats.total_proyectos) * 100
-                    )
+                  ? Math.round(((stats?.proyectos_amarillo || 0) / stats.total_proyectos) * 100)
                   : 0}
                 % del total
               </p>
@@ -175,14 +167,10 @@ export const PortafolioDashboard = () => {
                   </span>
                 </div>
               </div>
-              <p className="text-3xl font-bold text-red-600">
-                {stats?.proyectos_rojo || 0}
-              </p>
+              <p className="text-3xl font-bold text-red-600">{stats?.proyectos_rojo || 0}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {stats?.total_proyectos
-                  ? Math.round(
-                      ((stats?.proyectos_rojo || 0) / stats.total_proyectos) * 100
-                    )
+                  ? Math.round(((stats?.proyectos_rojo || 0) / stats.total_proyectos) * 100)
                   : 0}
                 % del total
               </p>

@@ -32,7 +32,7 @@ function getNivelLabel(nivel: number): string {
   return 'Bajo';
 }
 
-export function MapaCalorSection({ triggerNewForm }: MapaCalorSectionProps) {
+export function MapaCalorSection({ _triggerNewForm }: MapaCalorSectionProps) {
   const { data: mapaCalor, isLoading } = useMapaCalorRiesgos();
   const [hoveredCell, setHoveredCell] = useState<{ p: number; i: number } | null>(null);
 
@@ -64,7 +64,9 @@ export function MapaCalorSection({ triggerNewForm }: MapaCalorSectionProps) {
       {/* Leyenda */}
       <Card className="p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Niveles de Riesgo:</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Niveles de Riesgo:
+          </span>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded bg-green-200" />
             <span className="text-xs text-gray-600 dark:text-gray-400">Bajo (1-4)</span>
@@ -153,7 +155,8 @@ export function MapaCalorSection({ triggerNewForm }: MapaCalorSectionProps) {
                         {isHovered && cellData && cellData.riesgos.length > 0 && (
                           <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-60 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-xl pointer-events-none">
                             <p className="font-medium mb-1">
-                              {getNivelLabel(prob * impact)} - {cantidad} riesgo{cantidad !== 1 ? 's' : ''}
+                              {getNivelLabel(prob * impact)} - {cantidad} riesgo
+                              {cantidad !== 1 ? 's' : ''}
                             </p>
                             <ul className="space-y-0.5">
                               {cellData.riesgos.slice(0, 5).map((r) => (

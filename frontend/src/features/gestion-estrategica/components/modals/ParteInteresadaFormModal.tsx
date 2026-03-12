@@ -34,7 +34,6 @@ import {
   Landmark,
   Leaf,
   UserCircle,
-  Briefcase,
   LayoutGrid,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -382,7 +381,7 @@ const ParteInteresadaFormModalComponent = ({
     [handleFieldChange]
   );
 
-  const createSelectHandler = useCallback(
+  const _createSelectHandler = useCallback(
     (field: keyof FormData) => {
       return (e: React.ChangeEvent<HTMLSelectElement>) => {
         handleFieldChange(field, e.target.value);

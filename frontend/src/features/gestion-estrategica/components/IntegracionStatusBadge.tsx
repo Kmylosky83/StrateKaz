@@ -59,7 +59,7 @@ const statusConfig: Record<
 
 export const IntegracionStatusBadge = ({
   status,
-  lastConnection,
+  _lastConnection,
   errorCount = 0,
   size = 'md',
   showIcon = true,
@@ -73,9 +73,7 @@ export const IntegracionStatusBadge = ({
       <Badge variant={config.variant} size={size}>
         {showIcon && <Icon className="h-3 w-3 mr-1 inline-block" />}
         {config.label}
-        {errorCount > 0 && status === 'error' && (
-          <span className="ml-1">({errorCount})</span>
-        )}
+        {errorCount > 0 && status === 'error' && <span className="ml-1">({errorCount})</span>}
       </Badge>
     </div>
   );
@@ -84,6 +82,7 @@ export const IntegracionStatusBadge = ({
 /**
  * Helper para calcular el estado de salud basado en última conexión
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const calculateHealthStatus = (
   lastConnection: string | null,
   isActive: boolean,

@@ -11,7 +11,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, ChevronDown, Shield, Bell, Building2 } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Shield, Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 import { USER_MENU_LABELS, ROUTES } from '@/constants';
@@ -74,7 +74,7 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
       : user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
   // Solo el primer nombre para el saludo compacto
-  const firstName = user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
+  const _firstName = user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
   // Cargo y contexto organizacional
   const cargoName = user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;

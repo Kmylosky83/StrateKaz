@@ -185,7 +185,7 @@ jobs:
 
       - name: Run ESLint
         working-directory: ./frontend
-        run: npx eslint src --max-warnings 810
+        run: npx eslint src --max-warnings 442
 
       - name: Security audit with npm audit
         working-directory: ./frontend

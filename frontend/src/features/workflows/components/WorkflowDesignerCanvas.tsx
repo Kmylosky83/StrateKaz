@@ -11,7 +11,7 @@
  * - Auto-layout con dagre
  * - Toolbar con zoom, fit, guardar, validar
  */
-import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -31,17 +31,15 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Button, EmptyState, Spinner, Badge } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
 import {
   Save,
   ZoomIn,
   ZoomOut,
   Maximize2,
-  RefreshCw,
   Layout,
   CheckCircle2,
   AlertTriangle,
-  Undo2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import dagre from '@dagrejs/dagre';
@@ -88,14 +86,12 @@ function nodosToFlowNodes(
   roles: RolFlujo[],
   savedPositions?: Record<string, { x: number; y: number }>,
   onEdit?: (id: number) => void,
-  onDelete?: (id: number) => void,
+  onDelete?: (id: number) => void
 ): Node[] {
   return nodos.map((nodo) => {
     const nodeId = `nodo-${nodo.id}`;
     const saved = savedPositions?.[nodeId];
-    const rolDetail = nodo.rol_asignado
-      ? roles.find((r) => r.id === nodo.rol_asignado)
-      : undefined;
+    const rolDetail = nodo.rol_asignado ? roles.find((r) => r.id === nodo.rol_asignado) : undefined;
 
     return {
       id: nodeId,
@@ -182,30 +178,28 @@ interface CanvasInnerProps {
   onEditNode?: (nodoId: number) => void;
 }
 
-const CanvasInner = ({
-  plantilla,
-  nodos,
-  transiciones,
-  roles,
-  onEditNode,
-}: CanvasInnerProps) => {
+const CanvasInner = ({ plantilla, nodos, transiciones, roles, onEditNode }: CanvasInnerProps) => {
   const { fitView, zoomIn, zoomOut, getNodes, getViewport, screenToFlowPosition } = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // Mutations
   const createNodoMutation = useCreateNodo();
-  const updateNodoMutation = useUpdateNodo();
+  const _updateNodoMutation = useUpdateNodo();
   const deleteNodoMutation = useDeleteNodo();
   const createTransicionMutation = useCreateTransicion();
   const deleteTransicionMutation = useDeleteTransicion();
   const updatePlantillaMutation = useUpdatePlantilla();
 
   // Generar nodos y edges iniciales
-  const savedPositions = (plantilla.json_diagram as Record<string, { x: number; y: number }>) ?? undefined;
+  const savedPositions =
+    (plantilla.json_diagram as Record<string, { x: number; y: number }>) ?? undefined;
 
-  const handleDeleteNode = useCallback((nodoId: number) => {
-    deleteNodoMutation.mutate({ id: nodoId, plantillaId: plantilla.id });
-  }, [deleteNodoMutation, plantilla.id]);
+  const handleDeleteNode = useCallback(
+    (nodoId: number) => {
+      deleteNodoMutation.mutate({ id: nodoId, plantillaId: plantilla.id });
+    },
+    [deleteNodoMutation, plantilla.id]
+  );
 
   const initialNodes = useMemo(
     () => nodosToFlowNodes(nodos, roles, savedPositions, onEditNode, handleDeleteNode),
@@ -250,36 +244,42 @@ const CanvasInner = ({
   }, [getNodes, getViewport, updatePlantillaMutation, plantilla.id]);
 
   /** Crear conexion (transicion) */
-  const handleConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
 
-    const sourceId = parseInt(connection.source.replace('nodo-', ''));
-    const targetId = parseInt(connection.target.replace('nodo-', ''));
-    if (isNaN(sourceId) || isNaN(targetId)) return;
+      const sourceId = parseInt(connection.source.replace('nodo-', ''));
+      const targetId = parseInt(connection.target.replace('nodo-', ''));
+      if (isNaN(sourceId) || isNaN(targetId)) return;
 
-    // No duplicar
-    const exists = flowEdges.some(
-      (e) => e.source === connection.source && e.target === connection.target
-    );
-    if (exists) {
-      toast.error('Esta transicion ya existe');
-      return;
-    }
+      // No duplicar
+      const exists = flowEdges.some(
+        (e) => e.source === connection.source && e.target === connection.target
+      );
+      if (exists) {
+        toast.error('Esta transicion ya existe');
+        return;
+      }
 
-    createTransicionMutation.mutate({
-      plantilla: plantilla.id,
-      nodo_origen: sourceId,
-      nodo_destino: targetId,
-    });
-  }, [flowEdges, createTransicionMutation, plantilla.id]);
+      createTransicionMutation.mutate({
+        plantilla: plantilla.id,
+        nodo_origen: sourceId,
+        nodo_destino: targetId,
+      });
+    },
+    [flowEdges, createTransicionMutation, plantilla.id]
+  );
 
   /** Eliminar edge (doble clic) */
-  const handleEdgeDoubleClick = useCallback((_: React.MouseEvent, edge: Edge) => {
-    const t = (edge.data as WorkflowEdgeData)?.transicion;
-    if (t) {
-      deleteTransicionMutation.mutate({ id: t.id, plantillaId: plantilla.id });
-    }
-  }, [deleteTransicionMutation, plantilla.id]);
+  const handleEdgeDoubleClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      const t = (edge.data as WorkflowEdgeData)?.transicion;
+      if (t) {
+        deleteTransicionMutation.mutate({ id: t.id, plantillaId: plantilla.id });
+      }
+    },
+    [deleteTransicionMutation, plantilla.id]
+  );
 
   /** Auto-layout con dagre */
   const handleAutoLayout = useCallback(() => {
@@ -290,28 +290,31 @@ const CanvasInner = ({
   }, [flowNodes, flowEdges, setFlowNodes, fitView]);
 
   /** Drop de nodo desde sidebar */
-  const onDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    const tipo = event.dataTransfer.getData('application/bpmn-node') as TipoNodo;
-    if (!tipo) return;
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const tipo = event.dataTransfer.getData('application/bpmn-node') as TipoNodo;
+      if (!tipo) return;
 
-    const position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-    const config = NODE_CONFIG[tipo];
-    const codigo = `${tipo}_${Date.now()}`;
+      const config = NODE_CONFIG[tipo];
+      const codigo = `${tipo}_${Date.now()}`;
 
-    createNodoMutation.mutate({
-      plantilla: plantilla.id,
-      tipo,
-      codigo,
-      nombre: config?.label || tipo,
-      posicion_x: Math.round(position.x),
-      posicion_y: Math.round(position.y),
-    });
-  }, [screenToFlowPosition, createNodoMutation, plantilla.id]);
+      createNodoMutation.mutate({
+        plantilla: plantilla.id,
+        tipo,
+        codigo,
+        nombre: config?.label || tipo,
+        posicion_x: Math.round(position.x),
+        posicion_y: Math.round(position.y),
+      });
+    },
+    [screenToFlowPosition, createNodoMutation, plantilla.id]
+  );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -378,7 +381,12 @@ const CanvasInner = ({
           <Button variant="secondary" size="sm" onClick={() => zoomOut()} title="Alejar">
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => fitView({ padding: 0.2 })} title="Ajustar vista">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => fitView({ padding: 0.2 })}
+            title="Ajustar vista"
+          >
             <Maximize2 className="h-4 w-4" />
           </Button>
           <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 self-center" />
@@ -398,12 +406,17 @@ const CanvasInner = ({
         </Panel>
 
         {/* Validacion */}
-        <Panel position="top-right" className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 max-w-[200px]">
+        <Panel
+          position="top-right"
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 max-w-[200px]"
+        >
           <div className="flex items-center gap-2 mb-2">
             {validationErrors.length === 0 ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-xs font-medium text-green-700 dark:text-green-300">Flujo valido</span>
+                <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                  Flujo valido
+                </span>
               </>
             ) : (
               <>
@@ -417,7 +430,10 @@ const CanvasInner = ({
           {validationErrors.length > 0 && (
             <ul className="space-y-1">
               {validationErrors.map((err, i) => (
-                <li key={i} className="text-[10px] text-gray-600 dark:text-gray-400 flex items-start gap-1">
+                <li
+                  key={i}
+                  className="text-[10px] text-gray-600 dark:text-gray-400 flex items-start gap-1"
+                >
                   <span className="text-amber-500 mt-0.5">!</span>
                   {err}
                 </li>
@@ -430,9 +446,13 @@ const CanvasInner = ({
         </Panel>
 
         {/* Instrucciones */}
-        <Panel position="bottom-left" className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm p-2">
+        <Panel
+          position="bottom-left"
+          className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm p-2"
+        >
           <p className="text-[10px] text-gray-500 dark:text-gray-400">
-            Arrastra componentes desde el panel izquierdo | Conecta desde los puntos | Doble clic en linea para eliminar
+            Arrastra componentes desde el panel izquierdo | Conecta desde los puntos | Doble clic en
+            linea para eliminar
           </p>
         </Panel>
 
@@ -468,10 +488,7 @@ interface WorkflowDesignerCanvasProps {
   onEditNode?: (nodoId: number) => void;
 }
 
-export const WorkflowDesignerCanvas = ({
-  plantilla,
-  onEditNode,
-}: WorkflowDesignerCanvasProps) => {
+export const WorkflowDesignerCanvas = ({ plantilla, onEditNode }: WorkflowDesignerCanvasProps) => {
   const { data: nodosData, isLoading: loadingNodos } = useNodos(plantilla.id);
   const { data: transData, isLoading: loadingTrans } = useTransiciones(plantilla.id);
   const { data: rolesData } = useRolesFlujo();

@@ -62,7 +62,7 @@ export const AvatarUploadModal = ({ isOpen, onClose }: AvatarUploadModalProps) =
   };
 
   const handleFileSelect = (file: File) => {
-    const error = validateFile(file);
+    const _error = validateFile(file);
     if (error) {
       setValidationError(error);
       setSelectedFile(null);
@@ -125,7 +125,7 @@ export const AvatarUploadModal = ({ isOpen, onClose }: AvatarUploadModalProps) =
     try {
       await uploadPhotoMutation.mutateAsync(selectedFile);
       onClose();
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation's onError
     }
   };

@@ -23,13 +23,11 @@ import {
   ConnectionMode,
   MarkerType,
   type Connection,
-  type NodeChange,
-  type EdgeChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { Card, EmptyState, Spinner, Button, Badge } from '@/components/common';
-import { Map, Save, ZoomIn, ZoomOut, Maximize2, Download, Link2, RefreshCw } from 'lucide-react';
+import { Map, Save, ZoomIn, ZoomOut, Maximize2, Link2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 import ObjetivoNode from './ObjetivoNode';
@@ -97,13 +95,18 @@ function generateBSCLayout(
 
   // Configuración de layout
   const nodeWidth = 280;
-  const nodeHeight = 180;
+  const _nodeHeight = 180;
   const horizontalGap = 40;
-  const verticalGap = 80;
+  const _verticalGap = 80;
   const perspectiveStartY = [50, 280, 510, 740]; // Y inicial para cada perspectiva
 
   // Generar nodos para cada perspectiva
-  (Object.entries(BSC_PERSPECTIVE_CONFIG) as [BSCPerspective, typeof BSC_PERSPECTIVE_CONFIG[BSCPerspective]][])
+  (
+    Object.entries(BSC_PERSPECTIVE_CONFIG) as [
+      BSCPerspective,
+      (typeof BSC_PERSPECTIVE_CONFIG)[BSCPerspective],
+    ][]
+  )
     .sort((a, b) => a[1].order - b[1].order)
     .forEach(([perspective, config], perspectiveIndex) => {
       const perspectiveObjetivos = byPerspective[perspective];
@@ -114,7 +117,7 @@ function generateBSCLayout(
 
         // Usar posición guardada o calcular nueva
         const savedPos = savedPositions?.[nodeId];
-        const x = savedPos?.x ?? (index * (nodeWidth + horizontalGap) + 50);
+        const x = savedPos?.x ?? index * (nodeWidth + horizontalGap) + 50;
         const y = savedPos?.y ?? startY;
 
         nodes.push({
@@ -191,8 +194,8 @@ const MapaCanvasInner = ({
   const deleteRelacionMutation = useDeleteRelacion();
 
   // Estado del canvas
-  const [showGrid, setShowGrid] = useState(DEFAULT_MAPA_CONFIG.showGrid);
-  const [showMinimap, setShowMinimap] = useState(DEFAULT_MAPA_CONFIG.showMinimap);
+  const [showGrid, _setShowGrid] = useState(DEFAULT_MAPA_CONFIG.showGrid);
+  const [showMinimap, _setShowMinimap] = useState(DEFAULT_MAPA_CONFIG.showMinimap);
 
   // Generar nodos y edges iniciales
   const initialNodes = useMemo(
@@ -266,8 +269,7 @@ const MapaCanvasInner = ({
 
       // Verificar que no exista ya la relación
       const exists = edges.some(
-        (e) =>
-          e.source === connection.source && e.target === connection.target
+        (e) => e.source === connection.source && e.target === connection.target
       );
 
       if (exists) {
@@ -348,20 +350,10 @@ const MapaCanvasInner = ({
       >
         {/* Toolbar superior */}
         <Panel position="top-left" className="flex flex-wrap gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => zoomIn()}
-            title="Acercar"
-          >
+          <Button variant="secondary" size="sm" onClick={() => zoomIn()} title="Acercar">
             <ZoomIn className="h-4 w-4" />
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => zoomOut()}
-            title="Alejar"
-          >
+          <Button variant="secondary" size="sm" onClick={() => zoomOut()} title="Alejar">
             <ZoomOut className="h-4 w-4" />
           </Button>
           <Button
@@ -399,7 +391,12 @@ const MapaCanvasInner = ({
             Perspectivas BSC
           </p>
           <div className="space-y-1">
-            {(Object.entries(BSC_PERSPECTIVE_CONFIG) as [BSCPerspective, typeof BSC_PERSPECTIVE_CONFIG[BSCPerspective]][])
+            {(
+              Object.entries(BSC_PERSPECTIVE_CONFIG) as [
+                BSCPerspective,
+                (typeof BSC_PERSPECTIVE_CONFIG)[BSCPerspective],
+              ][]
+            )
               .sort((a, b) => a[1].order - b[1].order)
               .map(([key, config]) => (
                 <div key={key} className="flex items-center gap-2">
@@ -422,7 +419,10 @@ const MapaCanvasInner = ({
         </Panel>
 
         {/* Instrucciones */}
-        <Panel position="bottom-left" className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm p-2">
+        <Panel
+          position="bottom-left"
+          className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm p-2"
+        >
           <p className="text-[10px] text-gray-500 dark:text-gray-400">
             Arrastra nodos para mover | Conecta desde los puntos | Doble clic para editar
           </p>
@@ -454,12 +454,7 @@ const MapaCanvasInner = ({
 
         {/* Grid de fondo */}
         {showGrid && (
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            color="#d1d5db"
-          />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d1d5db" />
         )}
       </ReactFlow>
     </div>

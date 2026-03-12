@@ -91,7 +91,7 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
     control,
     reset,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, _isSubmitting },
   } = useForm<AreaFormData>({
     defaultValues: {
       code: '',

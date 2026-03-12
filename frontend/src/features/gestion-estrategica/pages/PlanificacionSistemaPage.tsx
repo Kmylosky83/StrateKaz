@@ -1085,7 +1085,7 @@ const CronogramaGanttSection = () => {
 
 export const PlanificacionSistemaPage = () => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PROGRAMAS, 'create');
+  const _canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.PROGRAMAS, 'create');
 
   const [activeTab, setActiveTab] = useState('planes');
 

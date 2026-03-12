@@ -16,7 +16,6 @@ import {
   Search,
   Filter,
   Download,
-  Upload,
   CheckCircle2,
   Clock,
   Eye,
@@ -180,13 +179,20 @@ export default function ReglamentosInternosPage() {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                      <div
+                        className="bg-green-600 h-2 rounded-full"
+                        style={{ width: '100%' }}
+                      ></div>
                     </div>
                     <span className="text-xs text-gray-600 dark:text-gray-400">100%</span>
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -226,7 +232,11 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -261,7 +271,11 @@ export default function ReglamentosInternosPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Pendiente</span>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -281,7 +295,9 @@ export default function ReglamentosInternosPage() {
                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   10/02/2024
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">Junta Directiva</td>
+                <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  Junta Directiva
+                </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                     <CheckCircle2 className="w-3 h-3" />
@@ -291,13 +307,20 @@ export default function ReglamentosInternosPage() {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-orange-600 h-2 rounded-full" style={{ width: '72%' }}></div>
+                      <div
+                        className="bg-orange-600 h-2 rounded-full"
+                        style={{ width: '72%' }}
+                      ></div>
                     </div>
                     <span className="text-xs text-gray-600 dark:text-gray-400">72%</span>
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -337,7 +360,11 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-700 p-1 h-auto"
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                 </td>
@@ -350,14 +377,23 @@ export default function ReglamentosInternosPage() {
         <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-t border-gray-200 dark:border-gray-600 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700 dark:text-gray-300">
-              Mostrando <span className="font-medium">1</span> a <span className="font-medium">5</span> de{' '}
-              <span className="font-medium">15</span> resultados
+              Mostrando <span className="font-medium">1</span> a{' '}
+              <span className="font-medium">5</span> de <span className="font-medium">15</span>{' '}
+              resultados
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">Anterior</Button>
-              <Button variant="primary" size="sm">1</Button>
-              <Button variant="outline" size="sm">2</Button>
-              <Button variant="outline" size="sm">Siguiente</Button>
+              <Button variant="outline" size="sm">
+                Anterior
+              </Button>
+              <Button variant="primary" size="sm">
+                1
+              </Button>
+              <Button variant="outline" size="sm">
+                2
+              </Button>
+              <Button variant="outline" size="sm">
+                Siguiente
+              </Button>
             </div>
           </div>
         </div>
@@ -378,8 +414,18 @@ export default function ReglamentosInternosPage() {
         </div>
         <div className="space-y-3">
           {[
-            { name: 'Reglamento Interno de Trabajo', code: 'RIT-001', dueDate: '15/01/2025', version: 'v3.0 → v4.0' },
-            { name: 'Política de Calidad', code: 'POL-CAL-001', dueDate: '05/04/2025', version: 'v2.0 → v3.0' },
+            {
+              name: 'Reglamento Interno de Trabajo',
+              code: 'RIT-001',
+              dueDate: '15/01/2025',
+              version: 'v3.0 → v4.0',
+            },
+            {
+              name: 'Política de Calidad',
+              code: 'POL-CAL-001',
+              dueDate: '05/04/2025',
+              version: 'v2.0 → v3.0',
+            },
           ].map((item, index) => (
             <div
               key={index}
@@ -400,7 +446,11 @@ export default function ReglamentosInternosPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{item.dueDate}</p>
-                <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto"
+                >
                   Programar revisión
                 </Button>
               </div>

@@ -102,7 +102,7 @@ export const EntregaDotacionFormModal = ({
         await createMutation.mutateAsync(formData);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select } from '@/components/forms';
 import {
   useCreateInspeccion,
   useUpdateInspeccion,

@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { Calendar, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { Card, Badge, Skeleton, Button } from '@/components/common';
+import { Card, Skeleton, Button } from '@/components/common';
 import { useMisVacaciones } from '../api/miPortalApi';
 import { VacacionesSolicitar } from './VacacionesSolicitar';
 
@@ -95,9 +95,7 @@ export function VacacionesSaldo() {
             <span>Ultimo periodo desde: {saldo.fecha_ultimo_periodo}</span>
           )}
         </div>
-        <Button onClick={() => setShowSolicitar(true)}>
-          Solicitar vacaciones
-        </Button>
+        <Button onClick={() => setShowSolicitar(true)}>Solicitar vacaciones</Button>
       </div>
 
       {/* Modal solicitar */}

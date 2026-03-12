@@ -195,7 +195,7 @@ const extractArray = <T,>(data: unknown): T[] => {
 
 export const AccionesMejoraPage = () => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.OPORTUNIDADES_MEJORA, 'create');
+  const _canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.OPORTUNIDADES_MEJORA, 'create');
 
   // ---- Tab state ----
   const [activeTab, setActiveTab] = useState('no-conformidades');

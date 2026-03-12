@@ -25,7 +25,6 @@ import {
   Calendar,
   Warehouse,
   CheckCircle2,
-  Search,
   type LucideIcon,
 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
@@ -79,7 +78,7 @@ export const ConfiguracionPage = () => {
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
 
   // Buscador local
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, _setSearchQuery] = useState('');
 
   // Stats dinamicos segun seccion activa
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);

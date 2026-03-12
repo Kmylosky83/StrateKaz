@@ -18,7 +18,7 @@ export interface KPIDashboardProProps {
   className?: string;
 }
 
-export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboardProProps) {
+export function KPIDashboardPro({ _planId, objectiveId, className }: KPIDashboardProProps) {
   const { data: kpisData, isLoading } = useKPIs(
     objectiveId ? { objective: objectiveId, is_active: true } : { is_active: true }
   );

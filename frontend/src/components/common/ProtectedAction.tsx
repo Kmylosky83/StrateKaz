@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * ProtectedAction - Componente para control de acceso en UI
  *

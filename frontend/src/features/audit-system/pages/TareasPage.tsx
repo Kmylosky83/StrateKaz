@@ -43,14 +43,10 @@ import {
   useTareasVencidas,
   useResumenTareas,
   useCompletarTarea,
-  useCancelarTarea,
   useEventosPorMes,
-  useMisEventos,
   useRecordatorios,
-  useCreateRecordatorio,
-  useUpdateRecordatorio,
 } from '../hooks/useAuditSystem';
-import type { Tarea, EventoCalendario, Recordatorio, PrioridadTarea } from '../types';
+import type { PrioridadTarea } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -278,12 +274,11 @@ function MisTareasTab() {
 }
 
 function CalendarioTab() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate] = useState(new Date());
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
 
   const { data: eventos, isLoading } = useEventosPorMes(currentYear, currentMonth);
-  const { data: misEventos } = useMisEventos();
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.AUDIT_SYSTEM, Sections.TAREAS, 'create');
 
@@ -566,9 +561,7 @@ function TodasTab() {
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400">
                   Código
                 </th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Tarea
-                </th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400"></th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400">
                   Asignado a
                 </th>

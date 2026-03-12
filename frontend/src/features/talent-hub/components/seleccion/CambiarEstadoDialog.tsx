@@ -17,7 +17,6 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Input } from '@/components/forms/Input';
 import { Alert } from '@/components/common/Alert';
 import { ArrowRight, Check } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import {
   useCambiarEstadoCandidato,
   useContratarCandidato,

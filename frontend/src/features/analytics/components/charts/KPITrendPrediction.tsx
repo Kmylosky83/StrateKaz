@@ -38,8 +38,8 @@ export interface KPITrendPredictionProps {
   kpi: KPITrendData;
   regressionType?: RegressionType;
   projectionPeriods?: number;
-  showConfidenceInterval?: boolean;
-  showAnnotations?: boolean;
+  _showConfidenceInterval?: boolean;
+  _showAnnotations?: boolean;
   height?: number;
   className?: string;
 }
@@ -47,51 +47,51 @@ export interface KPITrendPredictionProps {
 // ==================== COLORES ====================
 
 const COLORS = {
-  actual: CHART_COLORS[0],     // blue-500   (#3B82F6)
-  target: CHART_COLORS[1],     // emerald-500 (#10B981)
+  actual: CHART_COLORS[0], // blue-500   (#3B82F6)
+  target: CHART_COLORS[1], // emerald-500 (#10B981)
   warning: STATUS_COLORS.warning,
   critical: STATUS_COLORS.danger,
   prediction: CHART_COLORS[4], // violet-500 (#8B5CF6)
   confidence: 'rgba(139, 92, 246, 0.15)',
-  trend: CHART_COLORS[6],      // cyan-500   (#06B6D4)
+  trend: CHART_COLORS[6], // cyan-500   (#06B6D4)
 };
 
 // ==================== HELPERS ====================
 
 function linearRegression(data: number[][]) {
-  const xValues = data.map(d => d[0]);
-  const yValues = data.map(d => d[1]);
+  const xValues = data.map((d) => d[0]);
+  const yValues = data.map((d) => d[1]);
 
-  const result = ss.linearRegression(data.map(d => [d[0], d[1]]));
+  const result = ss.linearRegression(data.map((d) => [d[0], d[1]]));
   const regressionLine = ss.linearRegressionLine(result);
 
   // Calcular R² manualmente: 1 - (SS_res / SS_tot)
-  const predictedValues = xValues.map(x => regressionLine(x));
+  const predictedValues = xValues.map((x) => regressionLine(x));
   const yMean = ss.mean(yValues);
   const ssTot = yValues.reduce((acc, y) => acc + Math.pow(y - yMean, 2), 0);
   const ssRes = yValues.reduce((acc, y, i) => acc + Math.pow(y - predictedValues[i], 2), 0);
-  const rSquared = ssTot === 0 ? 0 : 1 - (ssRes / ssTot);
+  const rSquared = ssTot === 0 ? 0 : 1 - ssRes / ssTot;
 
   return {
     slope: result.m,
     intercept: result.b,
     rSquared: isNaN(rSquared) || rSquared < 0 ? 0 : rSquared,
     predict: (x: number) => regressionLine(x),
-    points: data.map(d => [d[0], regressionLine(d[0])]),
+    points: data.map((d) => [d[0], regressionLine(d[0])]),
   };
 }
 
-function polynomialRegression(data: number[][], order: number = 2) {
+function polynomialRegression(data: number[][], _order: number = 2) {
   // Implementación simple de regresión polinomial
-  const xValues = data.map(d => d[0]);
-  const yValues = data.map(d => d[1]);
+  const xValues = data.map((d) => d[0]);
+  const yValues = data.map((d) => d[1]);
 
   // Para orden 2, usar aproximación cuadrática
-  const n = data.length;
-  const sumX = ss.sum(xValues);
-  const sumY = ss.sum(yValues);
-  const sumX2 = ss.sum(xValues.map(x => x * x));
-  const sumXY = ss.sum(data.map(d => d[0] * d[1]));
+  const _n = data.length;
+  const _sumX = ss.sum(xValues);
+  const _sumY = ss.sum(yValues);
+  const _sumX2 = ss.sum(xValues.map((x) => x * x));
+  const _sumXY = ss.sum(data.map((d) => d[0] * d[1]));
 
   // Calcular coeficientes de regresión lineal como base
   const linear = linearRegression(data);
@@ -110,8 +110,8 @@ function calculateTrendDirection(measurements: KPIMeasurement[]): 'up' | 'down' 
   const firstHalf = recentValues.slice(0, Math.ceil(recentValues.length / 2));
   const secondHalf = recentValues.slice(Math.ceil(recentValues.length / 2));
 
-  const avgFirst = ss.mean(firstHalf.map(m => m.value));
-  const avgSecond = ss.mean(secondHalf.map(m => m.value));
+  const avgFirst = ss.mean(firstHalf.map((m) => m.value));
+  const avgSecond = ss.mean(secondHalf.map((m) => m.value));
 
   const changePercent = ((avgSecond - avgFirst) / avgFirst) * 100;
 
@@ -138,8 +138,8 @@ export function KPITrendPrediction({
   kpi,
   regressionType = 'linear',
   projectionPeriods = 3,
-  showConfidenceInterval = true,
-  showAnnotations = true,
+  showConfidenceInterval: _showConfidenceInterval = true,
+  showAnnotations: _showAnnotations = true,
   height = 450,
   className,
 }: KPITrendPredictionProps) {
@@ -155,12 +155,11 @@ export function KPITrendPrediction({
 
     // Preparar datos para regresión (x = índice, y = valor)
     const data: number[][] = measurements.map((m, i) => [i, m.value]);
-    const values = measurements.map(m => m.value);
+    const values = measurements.map((m) => m.value);
 
     // Calcular regresión
-    const regression = selectedRegression === 'polynomial'
-      ? polynomialRegression(data, 2)
-      : linearRegression(data);
+    const regression =
+      selectedRegression === 'polynomial' ? polynomialRegression(data, 2) : linearRegression(data);
 
     // Generar proyecciones
     const projections: { x: number; value: number; period: string }[] = [];
@@ -178,7 +177,7 @@ export function KPITrendPrediction({
 
     // Calcular intervalo de confianza (±2 desviaciones estándar)
     const stats = calculateStatistics(values);
-    const confidenceMargin = stats ? stats.stdDev * 1.96 : 0;
+    const _confidenceMargin = stats ? stats.stdDev * 1.96 : 0;
 
     // Determinar tendencia
     const trendDirection = calculateTrendDirection(measurements);
@@ -192,7 +191,8 @@ export function KPITrendPrediction({
     let periodsToTarget: number | null = null;
     if (projections.length > 0) {
       const currentValue = measurements[measurements.length - 1].value;
-      const projectedSlope = (projections[projections.length - 1].value - currentValue) / projectionPeriods;
+      const projectedSlope =
+        (projections[projections.length - 1].value - currentValue) / projectionPeriods;
 
       if (projectedSlope !== 0) {
         const periodsNeeded = (targetValue - currentValue) / projectedSlope;
@@ -218,23 +218,20 @@ export function KPITrendPrediction({
     if (!analysis) return {};
 
     const { measurements, targetValue, warningThreshold, criticalThreshold, unit, name } = kpi;
-    const { regression, projections, confidenceMargin, stats } = analysis;
+    const { regression, projections, confidenceMargin: _confidenceMargin, stats } = analysis;
 
     // Datos para las series
     const actualData = measurements.map((m, i) => [i, m.value]);
     const regressionData = regression.points;
 
     // Datos de proyección
-    const projectionData = projections.map(p => [p.x, p.value]);
+    const projectionData = projections.map((p) => [p.x, p.value]);
 
     // Combinar línea de regresión con proyecciones
-    const fullTrendLine = [...regressionData, ...projectionData];
+    const _fullTrendLine = [...regressionData, ...projectionData];
 
     // Etiquetas del eje X
-    const xLabels = [
-      ...measurements.map(m => m.period),
-      ...projections.map(p => p.period),
-    ];
+    const xLabels = [...measurements.map((m) => m.period), ...projections.map((p) => p.period)];
 
     return {
       title: {
@@ -401,8 +398,12 @@ export function KPITrendPrediction({
     );
   }
 
-  const TrendIcon = analysis.trendDirection === 'up' ? TrendingUp
-    : analysis.trendDirection === 'down' ? TrendingDown : Minus;
+  const TrendIcon =
+    analysis.trendDirection === 'up'
+      ? TrendingUp
+      : analysis.trendDirection === 'down'
+        ? TrendingDown
+        : Minus;
 
   const lastProjection = analysis.projections[analysis.projections.length - 1];
 
@@ -411,10 +412,12 @@ export function KPITrendPrediction({
       {/* Header con controles */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            'p-2 rounded-lg',
-            analysis.isTrendPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-          )}>
+          <div
+            className={cn(
+              'p-2 rounded-lg',
+              analysis.isTrendPositive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+            )}
+          >
             <TrendIcon className="w-5 h-5" />
           </div>
           <div>
@@ -427,7 +430,7 @@ export function KPITrendPrediction({
 
         {/* Selector de tipo de regresión */}
         <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-          {(['linear', 'polynomial'] as RegressionType[]).map(type => (
+          {(['linear', 'polynomial'] as RegressionType[]).map((type) => (
             <button
               key={type}
               onClick={() => setSelectedRegression(type)}
@@ -500,28 +503,48 @@ export function KPITrendPrediction({
           <div>
             <p className="text-gray-600 dark:text-gray-400">
               <strong>Tendencia:</strong>{' '}
-              <span className={cn('font-medium', analysis.isTrendPositive ? 'text-green-600' : 'text-red-600')}>
-                {analysis.trendDirection === 'up' ? 'Ascendente' : analysis.trendDirection === 'down' ? 'Descendente' : 'Estable'}
-              </span>
-              {' '}({analysis.isTrendPositive ? 'Favorable' : 'Requiere atención'})
+              <span
+                className={cn(
+                  'font-medium',
+                  analysis.isTrendPositive ? 'text-green-600' : 'text-red-600'
+                )}
+              >
+                {analysis.trendDirection === 'up'
+                  ? 'Ascendente'
+                  : analysis.trendDirection === 'down'
+                    ? 'Descendente'
+                    : 'Estable'}
+              </span>{' '}
+              ({analysis.isTrendPositive ? 'Favorable' : 'Requiere atención'})
             </p>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               <strong>Confiabilidad:</strong>{' '}
               <Badge
-                variant={analysis.regression.rSquared > 0.8 ? 'success' : analysis.regression.rSquared > 0.5 ? 'warning' : 'default'}
+                variant={
+                  analysis.regression.rSquared > 0.8
+                    ? 'success'
+                    : analysis.regression.rSquared > 0.5
+                      ? 'warning'
+                      : 'default'
+                }
                 size="sm"
               >
-                {analysis.regression.rSquared > 0.8 ? 'Alta' : analysis.regression.rSquared > 0.5 ? 'Media' : 'Baja'}
+                {analysis.regression.rSquared > 0.8
+                  ? 'Alta'
+                  : analysis.regression.rSquared > 0.5
+                    ? 'Media'
+                    : 'Baja'}
               </Badge>
             </p>
           </div>
           <div>
             <p className="text-gray-600 dark:text-gray-400">
-              <strong>Variabilidad:</strong> σ = {analysis.stats?.stdDev.toFixed(2) || 'N/A'} {kpi.unit}
+              <strong>Variabilidad:</strong> σ = {analysis.stats?.stdDev.toFixed(2) || 'N/A'}{' '}
+              {kpi.unit}
             </p>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              <strong>Rango histórico:</strong>{' '}
-              {analysis.stats?.min.toFixed(1)} - {analysis.stats?.max.toFixed(1)} {kpi.unit}
+              <strong>Rango histórico:</strong> {analysis.stats?.min.toFixed(1)} -{' '}
+              {analysis.stats?.max.toFixed(1)} {kpi.unit}
             </p>
           </div>
         </div>

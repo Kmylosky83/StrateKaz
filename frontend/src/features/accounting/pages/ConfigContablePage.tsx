@@ -31,7 +31,7 @@ import {
   EmptyState,
   ConfirmDialog,
 } from '@/components/common';
-import { Input, Select } from '@/components/forms';
+import { Select } from '@/components/forms';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import type {
@@ -153,7 +153,7 @@ const CuentaTreeItem = ({
   );
 };
 
-const CentroCostoTreeItem = ({
+const _CentroCostoTreeItem = ({
   centro,
   level = 0,
   onEdit,
@@ -241,7 +241,7 @@ export default function ConfigContablePage() {
   const { canDo } = usePermissions();
   const canCreateCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'create');
   const canEditCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'edit');
-  const canDeleteCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'delete');
+  const _canDeleteCuenta = canDo(Modules.ACCOUNTING, Sections.PLAN_CUENTAS, 'delete');
 
   const canCreateTipo = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'create');
   const canEditTipo = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'edit');

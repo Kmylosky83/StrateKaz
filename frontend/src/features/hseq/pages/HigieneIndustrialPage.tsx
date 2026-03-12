@@ -799,7 +799,7 @@ const MonitoreoBiologicoSection = ({ onOpenModal }: MonitoreoBiologicoProps) => 
 
 export default function HigieneIndustrialPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.MEDICIONES, 'create');
+  const _canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.MEDICIONES, 'create');
 
   const [activeTab, setActiveTab] = useState('tipos-agente');
   const [tipoAgenteModalOpen, setTipoAgenteModalOpen] = useState(false);

@@ -789,7 +789,7 @@ const EstadisticasSection = () => {
 
 export default function IntegracionContablePage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.ACCOUNTING, Sections.INTEGRACION_CONTABLE, 'create');
+  const _canCreate = canDo(Modules.ACCOUNTING, Sections.INTEGRACION_CONTABLE, 'create');
 
   const { data: pendientesData } = useColaPendientes();
   const { data: erroresData } = useColaErrores();

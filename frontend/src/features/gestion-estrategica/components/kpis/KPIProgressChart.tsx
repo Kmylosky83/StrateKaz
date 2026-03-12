@@ -158,7 +158,7 @@ interface CustomTooltipProps {
   unit: string;
 }
 
-function CustomTooltip({ active, payload, label, unit }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, _label, unit }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;

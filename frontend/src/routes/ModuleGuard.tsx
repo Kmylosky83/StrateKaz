@@ -8,7 +8,7 @@
  * - Backend: Middleware bloquea APIs de módulos desactivados (403)
  * - Frontend: ModuleGuard bloquea navegación a rutas de módulos desactivados
  */
-import { Navigate } from 'react-router-dom';
+
 import { useModuleEnabled } from '@/hooks/useModules';
 import { PageLoader } from '@/components/common/PageLoader';
 import { ShieldOff } from 'lucide-react';

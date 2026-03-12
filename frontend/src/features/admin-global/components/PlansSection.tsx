@@ -4,17 +4,7 @@
  * Gestión de planes de suscripción con precios y límites.
  */
 import { useState } from 'react';
-import {
-  CreditCard,
-  Plus,
-  Edit,
-  Trash2,
-  Users,
-  HardDrive,
-  Check,
-  Star,
-  Building2,
-} from 'lucide-react';
+import { CreditCard, Plus, Edit, Trash2, Users, HardDrive, Star, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton } from '@/components/common';
 import { usePlans, useDeletePlan } from '../hooks/useAdminGlobal';

@@ -18,9 +18,7 @@ import {
   Plus,
   Clock,
   XCircle,
-  Eye,
   Edit,
-  FileText,
   Calendar,
   TrendingUp,
   Activity,
@@ -941,7 +939,7 @@ const InvestigacionesSection = () => {
 
 export default function AccidentalidadPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.REGISTRO_ATEL, 'create');
+  const _canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.REGISTRO_ATEL, 'create');
 
   const [activeTab, setActiveTab] = useState('accidentes-trabajo');
 

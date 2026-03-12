@@ -69,7 +69,7 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
         await createMutation.mutateAsync(data);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };

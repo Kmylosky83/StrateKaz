@@ -94,7 +94,7 @@ export const IncapacidadFormModal = ({
         await createMutation.mutateAsync(data);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };

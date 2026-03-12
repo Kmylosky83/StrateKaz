@@ -3,7 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Textarea } from '@/components/forms';
 import { useCreateCuentaPorPagar } from '../hooks';
 import type { CuentaPorPagar } from '../types';
 

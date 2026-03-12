@@ -73,7 +73,7 @@ export const AdminGlobalPage = () => {
   // Stats queries
   const { data: tenantsStats, isLoading: loadingTenantsStats } = useTenantsStats();
   const { data: usersStats, isLoading: loadingUsersStats } = useTenantUsersStats();
-  const { data: plansStats, isLoading: loadingPlansStats } = usePlansStats();
+  const { data: _plansStats, isLoading: loadingPlansStats } = usePlansStats();
 
   const isStatsLoading = loadingTenantsStats || loadingUsersStats || loadingPlansStats;
 

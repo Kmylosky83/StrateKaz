@@ -6,7 +6,6 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'sonner';
 import { Button, Badge, Spinner } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
@@ -126,8 +125,8 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
 
       // Delete removed campos
       const deletedIds = [...existingIds].filter((id) => !currentIds.has(id));
-      for (const id of deletedIds) {
-        await deleteCampo.mutateAsync({ id, plantillaId: savedPlantillaId });
+      for (const _id of deletedIds) {
+        await deleteCampo.mutateAsync({ _id, plantillaId: savedPlantillaId });
       }
 
       // Create/update campos
@@ -135,20 +134,34 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         const campo = { ...localCampos[i], orden: i, plantilla: savedPlantillaId };
         if (campo.id && existingIds.has(campo.id)) {
           // Update existing
-          const { id, created_at, updated_at, created_by, created_by_detail, empresa_id, ...data } =
-            campo as CampoFormulario;
-          await updateCampo.mutateAsync({ id, data });
+          const {
+            _id,
+            _created_at,
+            _updated_at,
+            _created_by,
+            _created_by_detail,
+            _empresa_id,
+            ...data
+          } = campo as CampoFormulario;
+          await updateCampo.mutateAsync({ _id, data });
         } else {
           // Create new
-          const { id, created_at, updated_at, created_by, created_by_detail, empresa_id, ...data } =
-            campo as CampoFormulario;
+          const {
+            _id,
+            _created_at,
+            _updated_at,
+            _created_by,
+            _created_by_detail,
+            _empresa_id,
+            ...data
+          } = campo as CampoFormulario;
           await createCampo.mutateAsync(data);
         }
       }
 
       // Reorder if there are persisted campos
       const persistedCampos = localCampos
-        .map((c, i) => ({ id: c.id, orden: i }))
+        .map((c, i) => ({ id: c._id, orden: i }))
         .filter((c): c is { id: number; orden: number } => !!c.id);
       if (persistedCampos.length > 0) {
         await reorderCampos.mutateAsync({ plantillaId: savedPlantillaId, data: persistedCampos });

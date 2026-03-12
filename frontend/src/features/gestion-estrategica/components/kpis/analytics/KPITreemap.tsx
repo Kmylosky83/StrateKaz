@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Card, Spinner } from '@/components/common';
+import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import type { StrategicObjective } from '../../../types/strategic.types';
 import type { KPIObjetivo } from '../../../types/kpi.types';
@@ -52,9 +52,7 @@ export function KPITreemap({
 
     // Construir jerarquía: BSC → Objetivo → KPI
     const rootNodes: TreeNode[] = Object.entries(bscGroups).map(([perspective, objs]) => {
-      const perspectiveKPIs = kpis.filter((kpi) =>
-        objs.some((obj) => obj.id === kpi.objective)
-      );
+      const perspectiveKPIs = kpis.filter((kpi) => objs.some((obj) => obj.id === kpi.objective));
 
       const children: TreeNode[] = objs.map((obj) => {
         const objectiveKPIs = kpis.filter((kpi) => kpi.objective === obj.id);
@@ -69,9 +67,11 @@ export function KPITreemap({
           if (colorBy === 'progress') {
             // Color gradient según progreso
             if (progress >= 100) color = SEMAFORO_COLORS.VERDE;
-            else if (progress >= 75) color = '#84cc16'; // verde claro
+            else if (progress >= 75)
+              color = '#84cc16'; // verde claro
             else if (progress >= 50) color = SEMAFORO_COLORS.AMARILLO;
-            else if (progress >= 25) color = '#f97316'; // naranja
+            else if (progress >= 25)
+              color = '#f97316'; // naranja
             else color = SEMAFORO_COLORS.ROJO;
           } else if (colorBy === 'semaforo') {
             color = SEMAFORO_COLORS[kpi.status_semaforo];

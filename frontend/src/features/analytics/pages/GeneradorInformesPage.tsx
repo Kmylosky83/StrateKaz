@@ -39,7 +39,6 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input, Select } from '@/components/forms';
-import { cn } from '@/utils/cn';
 import {
   usePlantillasInforme,
   useInformesDinamicos,
@@ -115,7 +114,12 @@ const PlantillasSection = () => {
             Filtros
           </Button>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowFormModal(true)}>
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowFormModal(true)}
+        >
           Nueva Plantilla
         </Button>
       </div>
@@ -132,13 +136,27 @@ const PlantillasSection = () => {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Formato</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creado Por</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Código
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Nombre
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Formato
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Creado Por
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -147,9 +165,15 @@ const PlantillasSection = () => {
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                       {plantilla.codigo}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{plantilla.nombre}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {plantilla.nombre}
+                    </td>
                     <td className="px-6 py-4">
-                      <Badge variant="gray" size="sm" className={getTipoInformeColor(plantilla.tipo_informe)}>
+                      <Badge
+                        variant="gray"
+                        size="sm"
+                        className={getTipoInformeColor(plantilla.tipo_informe)}
+                      >
                         {plantilla.tipo_informe}
                       </Badge>
                     </td>
@@ -286,26 +310,46 @@ const InformesSection = () => {
       )}
 
       {informes.length === 0 ? (
-        <EmptyState icon={<FileText className="w-12 h-12" />} title="No hay informes generados" description="Genera tu primer informe dinámico" />
+        <EmptyState
+          icon={<FileText className="w-12 h-12" />}
+          title="No hay informes generados"
+          description="Genera tu primer informe dinámico"
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plantilla</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periodo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Generación</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Generado Por</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Plantilla
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Periodo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha Generación
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Generado Por
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {informes.map((informe) => (
                   <tr key={informe.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{informe.plantilla_nombre || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{informe.periodo}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {informe.plantilla_nombre || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {informe.periodo}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                       {informe.fecha_generacion || '-'}
                     </td>
@@ -320,8 +364,8 @@ const InformesSection = () => {
                             informe.estado === 'completado'
                               ? 'success'
                               : informe.estado === 'error'
-                              ? 'danger'
-                              : 'warning'
+                                ? 'danger'
+                                : 'warning'
                           }
                           size="sm"
                         >
@@ -372,8 +416,15 @@ const ProgramacionSection = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Programaciones Automáticas</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowFormModal(true)}>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Programaciones Automáticas
+        </h3>
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowFormModal(true)}
+        >
           Nueva Programación
         </Button>
       </div>
@@ -391,7 +442,9 @@ const ProgramacionSection = () => {
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{prog.plantilla_nombre || '-'}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {prog.plantilla_nombre || '-'}
+                    </h4>
                     <p className="text-sm text-gray-500 mt-1">
                       {prog.frecuencia} - {prog.hora_ejecucion}
                     </p>
@@ -412,11 +465,15 @@ const ProgramacionSection = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Próxima Ejecución:</span>
-                    <span className="text-gray-900 dark:text-white font-medium">{prog.proxima_ejecucion || '-'}</span>
+                    <span className="text-gray-900 dark:text-white font-medium">
+                      {prog.proxima_ejecucion || '-'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Última Ejecución:</span>
-                    <span className="text-gray-600 dark:text-gray-300">{prog.ultima_ejecucion || 'N/A'}</span>
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {prog.ultima_ejecucion || 'N/A'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Destinatarios:</span>
@@ -450,7 +507,10 @@ const ProgramacionSection = () => {
         </div>
       )}
 
-      <ProgramacionInformeFormModal isOpen={showFormModal} onClose={() => setShowFormModal(false)} />
+      <ProgramacionInformeFormModal
+        isOpen={showFormModal}
+        onClose={() => setShowFormModal(false)}
+      />
     </div>
   );
 };
@@ -510,29 +570,51 @@ const HistorialSection = () => {
       </div>
 
       {historial.length === 0 ? (
-        <EmptyState icon={<Clock className="w-12 h-12" />} title="No hay historial" description="El historial de ejecuciones aparecerá aquí" />
+        <EmptyState
+          icon={<Clock className="w-12 h-12" />}
+          title="No hay historial"
+          description="El historial de ejecuciones aparecerá aquí"
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Ejecución</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Duración (s)</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tamaño (MB)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha Ejecución
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Duración (s)
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Tamaño (MB)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Archivo
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {historial.map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{item.fecha_ejecucion || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {item.fecha_ejecucion || '-'}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-1">
                         {getEstadoInformeIcon(item.estado)}
                         <Badge
-                          variant={item.estado === 'completado' ? 'success' : item.estado === 'error' ? 'danger' : 'warning'}
+                          variant={
+                            item.estado === 'completado'
+                              ? 'success'
+                              : item.estado === 'error'
+                                ? 'danger'
+                                : 'warning'
+                          }
                           size="sm"
                         >
                           {item.estado}
@@ -545,7 +627,9 @@ const HistorialSection = () => {
                     <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-300">
                       {item.tamano_archivo || '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{item.archivo_generado || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {item.archivo_generado || '-'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

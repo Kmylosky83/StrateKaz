@@ -98,19 +98,13 @@ export function OfflineIndicator({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: position === 'top' ? -100 : 100, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className={cn(
-            'fixed z-50 px-4 py-2',
-            positionClasses[position],
-            className
-          )}
+          className={cn('fixed z-50 px-4 py-2', positionClasses[position], className)}
         >
           <div
             className={cn(
               'mx-auto max-w-md rounded-lg px-4 py-3 shadow-lg backdrop-blur-sm',
               'flex items-center justify-between gap-3',
-              !isOnline
-                ? 'bg-amber-500/90 text-white'
-                : 'bg-emerald-500/90 text-white'
+              !isOnline ? 'bg-amber-500/90 text-white' : 'bg-emerald-500/90 text-white'
             )}
           >
             <div className="flex items-center gap-3">
@@ -143,9 +137,7 @@ export function OfflineIndicator({
                   'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
-                <RefreshCw
-                  className={cn('h-4 w-4', isRetrying && 'animate-spin')}
-                />
+                <RefreshCw className={cn('h-4 w-4', isRetrying && 'animate-spin')} />
                 <span className="hidden sm:inline">Reintentar</span>
               </button>
             )}
@@ -159,6 +151,7 @@ export function OfflineIndicator({
 /**
  * Hook para detectar estado de conexión
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true

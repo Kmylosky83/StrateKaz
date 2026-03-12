@@ -22,7 +22,6 @@ import {
   UserCircle,
   Users,
   Building2,
-  Briefcase,
   Check,
 } from 'lucide-react';
 
@@ -447,7 +446,7 @@ export const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const tenantUser = useAuthStore((state) => state.tenantUser);
+
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
   const currentTenant = useAuthStore((state) => state.currentTenant);
   const accessibleTenants = useAuthStore((state) => state.accessibleTenants);

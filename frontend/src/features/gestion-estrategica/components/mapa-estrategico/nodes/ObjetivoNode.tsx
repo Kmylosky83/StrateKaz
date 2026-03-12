@@ -18,11 +18,7 @@ import { memo } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
 import { Target, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/common';
-import {
-  BSC_PERSPECTIVE_CONFIG,
-  OBJECTIVE_STATUS_CONFIG,
-  type ObjetivoNodeData,
-} from '../../../types/mapa-estrategico.types';
+import { type ObjetivoNodeData } from '../../../types/mapa-estrategico.types';
 import { cn } from '@/utils/cn';
 
 // ============================================================================
@@ -103,13 +99,14 @@ export const ObjetivoNode = memo(({ data, selected }: NodeProps<ObjetivoNodeData
     objetivo.name.length > 60 ? `${objetivo.name.substring(0, 57)}...` : objetivo.name;
 
   // Status icon
-  const StatusIcon = {
-    Clock: AlertCircle,
-    PlayCircle: TrendingUp,
-    CheckCircle: CheckCircle2,
-    XCircle: AlertCircle,
-    AlertTriangle: AlertCircle,
-  }[statusConfig.icon] || AlertCircle;
+  const StatusIcon =
+    {
+      Clock: AlertCircle,
+      PlayCircle: TrendingUp,
+      CheckCircle: CheckCircle2,
+      XCircle: AlertCircle,
+      AlertTriangle: AlertCircle,
+    }[statusConfig.icon] || AlertCircle;
 
   return (
     <>
@@ -169,7 +166,11 @@ export const ObjetivoNode = memo(({ data, selected }: NodeProps<ObjetivoNodeData
               color={perspectiveColor}
             />
             <div className="flex-1 space-y-1">
-              <Badge variant={statusConfig.color as any} size="sm" className="w-full justify-center">
+              <Badge
+                variant={statusConfig.color as any}
+                size="sm"
+                className="w-full justify-center"
+              >
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {statusConfig.label}
               </Badge>

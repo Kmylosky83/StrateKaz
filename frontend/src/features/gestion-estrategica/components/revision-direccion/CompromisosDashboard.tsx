@@ -296,14 +296,14 @@ export const CompromisosDashboard = () => {
   const [selectedCompromisoId, setSelectedCompromisoId] = useState<number | null>(null);
 
   // Hooks de datos
-  const { data: dashboardStats, isLoading: statsLoading } = useRevisionDireccionDashboard();
+  const { data: dashboardStats, isLoading: _statsLoading } = useRevisionDireccionDashboard();
   const { data: compromisosData, isLoading: compromisosLoading } = useCompromisos(filters);
   const { data: vencidosData } = useCompromisosVencidos();
   const { data: criticosData } = useCompromisosCriticos(5);
 
   const stats = dashboardStats?.stats_compromisos;
   const compromisos = compromisosData?.results || [];
-  const vencidos = vencidosData?.results || [];
+  const _vencidos = vencidosData?.results || [];
   const criticos = criticosData?.results || [];
 
   // Estadísticas para StatsGrid
@@ -439,7 +439,7 @@ export const CompromisosDashboard = () => {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Vencidos</p>
-                      <p className="font-medium text-red-600">{resp.vencidos}</p>
+                      <p className="font-medium text-red-600">{resp._vencidos}</p>
                     </div>
                   </div>
                 </div>

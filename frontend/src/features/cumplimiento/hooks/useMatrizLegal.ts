@@ -7,7 +7,7 @@
 import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { tiposNormaApi, normasLegalesApi, empresaNormasApi } from '../api';
+import { normasLegalesApi, empresaNormasApi } from '../api';
 import type { TipoNorma, NormaLegal, EmpresaNorma, CumplimientoLevel } from '../types';
 
 // Local filter types

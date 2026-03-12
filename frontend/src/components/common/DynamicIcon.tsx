@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * DynamicIcon - Componente para renderizar iconos de Lucide dinamicamente
  * Sistema de Gestion StrateKaz
@@ -59,7 +60,7 @@ function normalizeIconName(name: string): string {
   // Convertir kebab-case o snake_case a PascalCase
   normalized = normalized
     .split(/[-_]/)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join('');
 
   return normalized;
@@ -105,22 +106,12 @@ export const DynamicIcon = memo(function DynamicIcon({
     }
     // Fallback por defecto: icono Building2
     return (
-      <FallbackIcon
-        size={size}
-        className={className}
-        strokeWidth={strokeWidth}
-        color={color}
-      />
+      <FallbackIcon size={size} className={className} strokeWidth={strokeWidth} color={color} />
     );
   }
 
   return (
-    <IconComponent
-      size={size}
-      className={className}
-      strokeWidth={strokeWidth}
-      color={color}
-    />
+    <IconComponent size={size} className={className} strokeWidth={strokeWidth} color={color} />
   );
 });
 
@@ -139,7 +130,7 @@ export function isValidIconName(name: string): boolean {
  */
 export function getAvailableIconNames(): string[] {
   return Object.keys(Icons)
-    .filter(key => {
+    .filter((key) => {
       // Excluir utilidades y solo incluir PascalCase (nombres de iconos)
       return (
         /^[A-Z]/.test(key) &&

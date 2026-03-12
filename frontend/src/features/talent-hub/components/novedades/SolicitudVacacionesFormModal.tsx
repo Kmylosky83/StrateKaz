@@ -84,7 +84,7 @@ export const SolicitudVacacionesFormModal = ({
         await createMutation.mutateAsync(data);
       }
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     }
   };

@@ -82,7 +82,7 @@ const SUBTABS = [
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const MatrizLegalTab = ({ activeSection }: MatrizLegalTabProps) => {
+export const MatrizLegalTab = ({ activeSection: _activeSection }: MatrizLegalTabProps) => {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'create');
   const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'edit');

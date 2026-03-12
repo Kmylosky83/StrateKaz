@@ -23,7 +23,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button, Badge, Dropdown } from '@/components/common';
-import type { DropdownItem } from '@/components/common/Dropdown';
 import { Input } from '@/components/forms';
 import type {
   ViewMode,

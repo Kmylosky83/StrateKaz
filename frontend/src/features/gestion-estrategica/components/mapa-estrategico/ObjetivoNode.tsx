@@ -24,13 +24,16 @@ import {
  * Mapeo de token de color del Design System a clases Tailwind.
  * Usa los tokens semánticos definidos en tailwind.config.js
  */
-const COLOR_TOKEN_CLASSES: Record<string, {
-  bg: string;
-  bgLight: string;
-  border: string;
-  text: string;
-  progress: string;
-}> = {
+const COLOR_TOKEN_CLASSES: Record<
+  string,
+  {
+    bg: string;
+    bgLight: string;
+    border: string;
+    text: string;
+    progress: string;
+  }
+> = {
   success: {
     bg: 'bg-success-500',
     bgLight: 'from-success-50 to-success-100 dark:from-success-900/30 dark:to-success-900/20',
@@ -76,7 +79,7 @@ interface ObjetivoNodeProps {
 }
 
 const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
-  const { objetivo, perspectiveConfig, onEdit } = data;
+  const { objetivo, perspectiveConfig: _perspectiveConfig, onEdit } = data;
 
   // Obtener configuración de perspectiva BSC desde tokens semánticos
   const bscConfig = useMemo<BSCPerspectiveConfig>(() => {
@@ -101,9 +104,10 @@ const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
       className={`
         w-[260px] rounded-xl border-2 shadow-md transition-all duration-200
         bg-white dark:bg-gray-900
-        ${selected
-          ? 'border-primary-500 ring-2 ring-primary-200 dark:ring-primary-800 scale-105'
-          : `${colors.border} hover:shadow-lg`
+        ${
+          selected
+            ? 'border-primary-500 ring-2 ring-primary-200 dark:ring-primary-800 scale-105'
+            : `${colors.border} hover:shadow-lg`
         }
       `}
       onDoubleClick={() => onEdit?.(objetivo.id)}
@@ -116,7 +120,9 @@ const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
       />
 
       {/* Header con color de perspectiva */}
-      <div className={`px-3 py-2 bg-gradient-to-r ${colors.bgLight} rounded-t-xl border-b ${colors.border}`}>
+      <div
+        className={`px-3 py-2 bg-gradient-to-r ${colors.bgLight} rounded-t-xl border-b ${colors.border}`}
+      >
         <div className="flex items-center gap-2">
           <div className={`p-1.5 rounded-lg ${colors.bg} text-white shadow-sm`}>
             <DynamicIcon name={bscConfig.icon} size={14} className="text-white" />
@@ -125,9 +131,7 @@ const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
             <p className={`text-[10px] font-medium ${colors.text} uppercase tracking-wide`}>
               {bscConfig.shortLabel}
             </p>
-            <p className="text-xs font-mono text-gray-500 dark:text-gray-400">
-              {objetivo.code}
-            </p>
+            <p className="text-xs font-mono text-gray-500 dark:text-gray-400">{objetivo.code}</p>
           </div>
           <Badge variant={statusConfig.badgeVariant as BadgeVariant} size="sm">
             <DynamicIcon name={statusConfig.icon} size={12} className="mr-1" />
@@ -151,9 +155,7 @@ const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
             <span className="text-gray-500 dark:text-gray-400">
               {objetivo.current_value ?? 0} / {objetivo.target_value ?? 100} {objetivo.unit || '%'}
             </span>
-            <span className={`font-medium ${colors.text}`}>
-              {objetivo.progress}%
-            </span>
+            <span className={`font-medium ${colors.text}`}>{objetivo.progress}%</span>
           </div>
           <Progress
             value={progressWidth}
@@ -184,9 +186,7 @@ const ObjetivoNode = memo(({ data, selected }: ObjetivoNodeProps) => {
         {(objetivo.responsible_name || objetivo.due_date) && (
           <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-800">
             {objetivo.responsible_name && (
-              <span className="truncate max-w-[120px]">
-                {objetivo.responsible_name}
-              </span>
+              <span className="truncate max-w-[120px]">{objetivo.responsible_name}</span>
             )}
             {objetivo.due_date && (
               <span>

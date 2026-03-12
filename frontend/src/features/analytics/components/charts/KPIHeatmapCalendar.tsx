@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
-import { format, parseISO, startOfYear, endOfYear, eachDayOfInterval, getDay, getWeek } from 'date-fns';
+import { format, parseISO, startOfYear, endOfYear, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { EChartsOption } from 'echarts';
 import { CHART_AXIS_COLORS } from '@/constants/chart-colors';
@@ -47,7 +47,20 @@ const COLOR_SCHEMES = {
   semaforo: ['#ebedf0', '#fecaca', '#fde047', '#86efac', '#22c55e'],
 };
 
-const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTH_NAMES = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+];
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 // ==================== COMPONENTE ====================
@@ -75,17 +88,17 @@ export function KPIHeatmapCalendar({
 
     // Crear mapa de valores por fecha
     const valueMap = new Map<string, number>();
-    data.forEach(item => {
+    data.forEach((item) => {
       valueMap.set(item.date, item.value);
     });
 
     // Calcular min/max si no se proporcionan
-    const values = data.map(d => d.value);
+    const values = data.map((d) => d.value);
     const computedMin = minValue ?? (values.length > 0 ? Math.min(...values) : 0);
     const computedMax = maxValue ?? (values.length > 0 ? Math.max(...values) : 100);
 
     // Generar datos para ECharts Calendar
-    const calendarData: [string, number][] = allDays.map(day => {
+    const calendarData: [string, number][] = allDays.map((day) => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const value = valueMap.get(dateStr) ?? 0;
       return [dateStr, value];
@@ -270,11 +283,7 @@ export function KPIHeatmapCalendar({
       <div className="flex items-center justify-center gap-2 mt-4 text-xs text-gray-500">
         <span>Menos</span>
         {COLOR_SCHEMES[colorScheme].map((color, i) => (
-          <div
-            key={i}
-            className="w-3 h-3 rounded-sm"
-            style={{ backgroundColor: color }}
-          />
+          <div key={i} className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
         ))}
         <span>Más</span>
       </div>

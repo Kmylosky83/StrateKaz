@@ -27,13 +27,10 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
-import { DynamicIcon } from '@/components/common/DynamicIcon';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
-import { Select } from '@/components/forms/Select';
 import {
   Target,
-  TrendingUp,
   Users,
   Cog,
   GraduationCap,

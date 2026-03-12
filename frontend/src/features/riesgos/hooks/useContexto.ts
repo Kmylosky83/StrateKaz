@@ -5,13 +5,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dofaApi, pestelApi, porterApi } from '../api/contextoApi';
 import type {
-  AnalisisDOFA,
-  FactorDOFA,
-  EstrategiaTOWS,
-  AnalisisPESTEL,
-  FactorPESTEL,
-  AnalisisPorter,
-  FuerzaPorter,
   CreateAnalisisDOFADTO,
   UpdateAnalisisDOFADTO,
   CreateFactorDOFADTO,

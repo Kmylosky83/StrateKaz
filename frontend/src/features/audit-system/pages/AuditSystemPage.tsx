@@ -8,18 +8,14 @@
  * - Accesos rápidos a módulos
  */
 import {
-  Shield,
   Bell,
   AlertTriangle,
   CheckSquare,
   Activity,
-  FileText,
   Settings,
-  TrendingUp,
   Clock,
   Users,
   Database,
-  Calendar,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
@@ -27,7 +23,6 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
-import { useAuditSystemStats, useActividadReciente, useAlertasPendientes } from '../hooks/useAuditSystem';
 
 // ==================== MOCK DATA ====================
 
@@ -174,9 +169,7 @@ export default function AuditSystemPage() {
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 {stats.logs_hoy.toLocaleString()}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Eventos registrados
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Eventos registrados</p>
             </div>
             <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
               <Database className="w-7 h-7 text-blue-600" />
@@ -191,9 +184,7 @@ export default function AuditSystemPage() {
               <p className="text-3xl font-bold text-primary-600 mt-1">
                 {stats.notificaciones_sin_leer}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Sin leer
-              </p>
+              <p className="text-xs text-gray-500 mt-1">Sin leer</p>
             </div>
             <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <Bell className="w-7 h-7 text-primary-600" />
@@ -205,12 +196,8 @@ export default function AuditSystemPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Alertas Pendientes</p>
-              <p className="text-3xl font-bold text-warning-600 mt-1">
-                {stats.alertas_pendientes}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {stats.alertas_criticas} críticas
-              </p>
+              <p className="text-3xl font-bold text-warning-600 mt-1">{stats.alertas_pendientes}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats.alertas_criticas} críticas</p>
             </div>
             <div className="w-14 h-14 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-7 h-7 text-warning-600" />
@@ -222,12 +209,8 @@ export default function AuditSystemPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Tareas Vencidas</p>
-              <p className="text-3xl font-bold text-danger-600 mt-1">
-                {stats.tareas_vencidas}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {stats.tareas_hoy} programadas hoy
-              </p>
+              <p className="text-3xl font-bold text-danger-600 mt-1">{stats.tareas_vencidas}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats.tareas_hoy} programadas hoy</p>
             </div>
             <div className="w-14 h-14 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
               <CheckSquare className="w-7 h-7 text-danger-600" />
@@ -244,11 +227,7 @@ export default function AuditSystemPage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Actividad Reciente
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/auditoria/logs')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate('/auditoria/logs')}>
               Ver todo
             </Button>
           </div>
@@ -257,13 +236,15 @@ export default function AuditSystemPage() {
             {actividades.map((actividad) => (
               <Card key={actividad.id} variant="bordered" padding="sm">
                 <div className="flex items-start gap-3">
-                  <div className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                    actividad.tipo === 'alerta' && 'bg-orange-100 text-orange-600',
-                    actividad.tipo === 'log' && 'bg-blue-100 text-blue-600',
-                    actividad.tipo === 'notificacion' && 'bg-purple-100 text-purple-600',
-                    actividad.tipo === 'tarea' && 'bg-green-100 text-green-600',
-                  )}>
+                  <div
+                    className={cn(
+                      'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                      actividad.tipo === 'alerta' && 'bg-orange-100 text-orange-600',
+                      actividad.tipo === 'log' && 'bg-blue-100 text-blue-600',
+                      actividad.tipo === 'notificacion' && 'bg-purple-100 text-purple-600',
+                      actividad.tipo === 'tarea' && 'bg-green-100 text-green-600'
+                    )}
+                  >
                     {getTipoIcon(actividad.tipo)}
                   </div>
 
@@ -291,8 +272,11 @@ export default function AuditSystemPage() {
                       {actividad.severidad && (
                         <Badge
                           variant={
-                            actividad.severidad === 'critical' ? 'danger' :
-                            actividad.severidad === 'warning' ? 'warning' : 'info'
+                            actividad.severidad === 'critical'
+                              ? 'danger'
+                              : actividad.severidad === 'warning'
+                                ? 'warning'
+                                : 'info'
                           }
                           size="sm"
                         >
@@ -337,12 +321,14 @@ export default function AuditSystemPage() {
               >
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className={cn(
-                      'w-5 h-5 flex-shrink-0 mt-0.5',
-                      alerta.severidad === 'critical' && 'text-red-600',
-                      alerta.severidad === 'danger' && 'text-orange-600',
-                      alerta.severidad === 'warning' && 'text-yellow-600',
-                    )} />
+                    <AlertTriangle
+                      className={cn(
+                        'w-5 h-5 flex-shrink-0 mt-0.5',
+                        alerta.severidad === 'critical' && 'text-red-600',
+                        alerta.severidad === 'danger' && 'text-orange-600',
+                        alerta.severidad === 'warning' && 'text-yellow-600'
+                      )}
+                    />
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         {alerta.titulo}
@@ -353,16 +339,17 @@ export default function AuditSystemPage() {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         <Badge
                           variant={
-                            alerta.severidad === 'critical' ? 'danger' :
-                            alerta.severidad === 'danger' ? 'warning' : 'info'
+                            alerta.severidad === 'critical'
+                              ? 'danger'
+                              : alerta.severidad === 'danger'
+                                ? 'warning'
+                                : 'info'
                           }
                           size="sm"
                         >
                           {alerta.severidad}
                         </Badge>
-                        <span className="text-xs text-gray-500">
-                          {alerta.responsable}
-                        </span>
+                        <span className="text-xs text-gray-500">{alerta.responsable}</span>
                         <span className="text-xs text-gray-500">{alerta.fecha}</span>
                       </div>
                     </div>

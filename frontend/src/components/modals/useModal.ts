@@ -84,7 +84,7 @@ export function useModal<T = undefined>(): UseModalReturn<T> {
  * <EditModal isOpen={modals.isOpen('edit')} onClose={modals.close} data={modals.data} />
  */
 export function useModals<K extends string, T = unknown>(
-  keys: readonly K[]
+  _keys: readonly K[]
 ): {
   /** Modal actualmente abierto */
   activeModal: K | null;
@@ -102,10 +102,7 @@ export function useModals<K extends string, T = unknown>(
   const [activeModal, setActiveModal] = useState<K | null>(null);
   const [data, setData] = useState<T | undefined>(undefined);
 
-  const isOpen = useCallback(
-    (key: K) => activeModal === key,
-    [activeModal]
-  );
+  const isOpen = useCallback((key: K) => activeModal === key, [activeModal]);
 
   const open = useCallback((key: K, newData?: T) => {
     setData(newData);

@@ -22,7 +22,6 @@ import type {
   ColaboradorFormData,
   ColaboradorFilters,
   ColaboradorCompleto,
-  ColaboradorEstadisticas,
   HojaVida,
   HojaVidaFormData,
   InfoPersonal,

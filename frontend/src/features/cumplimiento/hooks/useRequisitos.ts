@@ -7,7 +7,7 @@
 import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { tiposRequisitoApi, requisitosLegalesApi, empresaRequisitosApi } from '../api';
+import { empresaRequisitosApi } from '../api';
 import type {
   TipoRequisito,
   RequisitoLegal,

@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import type {
   TenantConfig,
   TenantFeatures,
-  TenantUISettings,
   UpdateTenantFeaturesDTO,
   UpdateTenantUISettingsDTO,
 } from '../types/strategic.types';

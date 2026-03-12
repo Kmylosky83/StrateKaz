@@ -151,7 +151,6 @@ export interface RolesAdicionalesFilters {
 }
 
 // PaginatedResponse: importar desde '@/types'
-import type { PaginatedResponse } from '@/types';
 
 export interface PermisosEfectivos {
   user_id: number;
@@ -295,9 +294,12 @@ export const userRolesAdicionalesApi = {
   /**
    * Obtener certificaciones próximas a vencer de un usuario
    */
-  getCertificacionesPorVencer: async (userId: number, dias: number = 30): Promise<CertificacionPorVencer> => {
+  getCertificacionesPorVencer: async (
+    userId: number,
+    dias: number = 30
+  ): Promise<CertificacionPorVencer> => {
     const response = await axiosInstance.get(`/core/users/${userId}/certificaciones-por-vencer/`, {
-      params: { dias }
+      params: { dias },
     });
     return response.data;
   },
@@ -317,7 +319,9 @@ export const permisosApi = {
   /**
    * Obtener permisos agrupados por módulo
    */
-  getGrouped: async (): Promise<{ module: string; module_name: string; permissions: PermisoBasico[] }[]> => {
+  getGrouped: async (): Promise<
+    { module: string; module_name: string; permissions: PermisoBasico[] }[]
+  > => {
     const response = await axiosInstance.get('/core/permissions/grouped/');
     return response.data;
   },
@@ -337,16 +341,18 @@ export const cargosRbacApi = {
   /**
    * Obtener todos los cargos con información de permisos
    */
-  getAll: async (): Promise<{
-    id: number;
-    code: string;
-    name: string;
-    level: number;
-    level_display: string;
-    permissions_count: number;
-    users_count: number;
-    is_active: boolean;
-  }[]> => {
+  getAll: async (): Promise<
+    {
+      id: number;
+      code: string;
+      name: string;
+      level: number;
+      level_display: string;
+      permissions_count: number;
+      users_count: number;
+      is_active: boolean;
+    }[]
+  > => {
     const response = await axiosInstance.get('/core/cargos-rbac/');
     return Array.isArray(response.data) ? response.data : response.data.results;
   },
@@ -354,7 +360,9 @@ export const cargosRbacApi = {
   /**
    * Obtener detalle de un cargo con permisos
    */
-  getById: async (id: number): Promise<{
+  getById: async (
+    id: number
+  ): Promise<{
     id: number;
     code: string;
     name: string;

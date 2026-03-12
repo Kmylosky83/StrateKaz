@@ -139,7 +139,7 @@ async function calculateSHA256(data: string): Promise<string> {
 /**
  * Obtiene IP del cliente (aproximación)
  */
-async function getClientIP(): Promise<string | undefined> {
+async function _getClientIP(): Promise<string | undefined> {
   try {
     const response = await fetch('https://api.ipify.org?format=json');
     const data = await response.json();
@@ -260,7 +260,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
     }
   };
 
-  const handleClear = () => {
+  const _handleClear = () => {
     signatureRef.current?.clear();
     setError(null);
   };
@@ -300,9 +300,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
             <div>
               <span className="text-gray-500 dark:text-gray-400">Nombre:</span>
-              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">
-                {userName}
-              </span>
+              <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">{userName}</span>
             </div>
             {userEmail && (
               <div>
@@ -382,8 +380,8 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
 
         {/* Disclaimer */}
         <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-2">
-          Al firmar, acepta que esta firma electrónica tiene validez legal y será almacenada
-          de forma segura junto con sus datos de identificación y timestamp.
+          Al firmar, acepta que esta firma electrónica tiene validez legal y será almacenada de
+          forma segura junto con sus datos de identificación y timestamp.
         </div>
       </div>
     </BaseModal>

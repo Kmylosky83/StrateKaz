@@ -17,7 +17,6 @@ import {
   Link2,
   Plus,
   Edit,
-  Eye,
   CheckCircle,
   Clock,
   Play,

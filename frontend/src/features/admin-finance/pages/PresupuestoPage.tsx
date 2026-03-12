@@ -10,7 +10,6 @@ import { Modules, Sections } from '@/constants/permissions';
 import {
   Card,
   Badge,
-  Button,
   Tabs,
   Spinner,
   KpiCard,

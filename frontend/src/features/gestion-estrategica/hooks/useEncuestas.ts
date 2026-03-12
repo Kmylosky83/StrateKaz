@@ -33,9 +33,9 @@ export const encuestasKeys = {
   details: () => [...encuestasKeys.all, 'detail'] as const,
   detail: (id: number) => [...encuestasKeys.details(), id] as const,
   estadisticas: (id: number) => [...encuestasKeys.all, 'estadisticas', id] as const,
-  temas: (encuestaId: number) => [...encuestasKeys.all, 'temas', encuestaId] as const,
-  participantes: (encuestaId: number) =>
-    [...encuestasKeys.all, 'participantes', encuestaId] as const,
+  temas: (_encuestaId: number) => [...encuestasKeys.all, 'temas', _encuestaId] as const,
+  participantes: (_encuestaId: number) =>
+    [...encuestasKeys.all, 'participantes', _encuestaId] as const,
   respuestas: (filters?: RespuestaFilters) =>
     [...encuestasKeys.all, 'respuestas', filters] as const,
   publica: (token: string) => [...encuestasKeys.all, 'publica', token] as const,
@@ -271,11 +271,11 @@ export function useRegenerarTemas() {
 /**
  * Hook para listar temas de una encuesta
  */
-export function useTemasEncuesta(encuestaId: number | undefined) {
+export function useTemasEncuesta(_encuestaId: number | undefined) {
   return useQuery({
-    queryKey: encuestasKeys.temas(encuestaId!),
-    queryFn: () => temasApi.list(encuestaId!),
-    enabled: !!encuestaId,
+    queryKey: encuestasKeys.temas(_encuestaId!),
+    queryFn: () => temasApi.list(_encuestaId!),
+    enabled: !!_encuestaId,
   });
 }
 
@@ -286,14 +286,14 @@ export function useCreateTema() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ encuestaId, data }: { encuestaId: number; data: CreateTemaDTO }) =>
-      temasApi.create(encuestaId, data),
-    onSuccess: (_, { encuestaId }) => {
+    mutationFn: ({ _encuestaId, data }: { _encuestaId: number; data: CreateTemaDTO }) =>
+      temasApi.create(_encuestaId, data),
+    onSuccess: (_, { _encuestaId }) => {
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.temas(encuestaId),
+        queryKey: encuestasKeys.temas(_encuestaId),
       });
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.detail(encuestaId),
+        queryKey: encuestasKeys.detail(_encuestaId),
       });
       toast.success('Tema agregado');
     },
@@ -310,13 +310,13 @@ export function useDeleteTema() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, encuestaId }: { id: number; encuestaId: number }) => temasApi.delete(id),
-    onSuccess: (_, { encuestaId }) => {
+    mutationFn: ({ id, _encuestaId }: { id: number; _encuestaId: number }) => temasApi.delete(id),
+    onSuccess: (_, { _encuestaId }) => {
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.temas(encuestaId),
+        queryKey: encuestasKeys.temas(_encuestaId),
       });
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.detail(encuestaId),
+        queryKey: encuestasKeys.detail(_encuestaId),
       });
       toast.success('Tema eliminado');
     },
@@ -348,14 +348,14 @@ export function useAddParticipante() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ encuestaId, data }: { encuestaId: number; data: CreateParticipanteDTO }) =>
-      participantesApi.create(encuestaId, data),
-    onSuccess: (_, { encuestaId }) => {
+    mutationFn: ({ _encuestaId, data }: { _encuestaId: number; data: CreateParticipanteDTO }) =>
+      participantesApi.create(_encuestaId, data),
+    onSuccess: (_, { _encuestaId }) => {
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.participantes(encuestaId),
+        queryKey: encuestasKeys.participantes(_encuestaId),
       });
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.detail(encuestaId),
+        queryKey: encuestasKeys.detail(_encuestaId),
       });
       toast.success('Participante agregado');
     },
@@ -372,14 +372,14 @@ export function useDeleteParticipante() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, encuestaId }: { id: number; encuestaId: number }) =>
+    mutationFn: ({ id, _encuestaId }: { id: number; _encuestaId: number }) =>
       participantesApi.delete(id),
-    onSuccess: (_, { encuestaId }) => {
+    onSuccess: (_, { _encuestaId }) => {
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.participantes(encuestaId),
+        queryKey: encuestasKeys.participantes(_encuestaId),
       });
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.detail(encuestaId),
+        queryKey: encuestasKeys.detail(_encuestaId),
       });
       toast.success('Participante eliminado');
     },

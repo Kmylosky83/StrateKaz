@@ -35,7 +35,7 @@ export const useCreateUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario creado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       const message = error.response?.data?.message || 'Error al crear el usuario';
       toast.error(message);
     },
@@ -68,7 +68,7 @@ export const useUpdateUser = () => {
 
       toast.success('Usuario actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       const message = error.response?.data?.message || 'Error al actualizar el usuario';
       toast.error(message);
     },
@@ -86,7 +86,7 @@ export const useDeleteUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario eliminado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       const message = error.response?.data?.message || 'Error al eliminar el usuario';
       toast.error(message);
     },
@@ -105,7 +105,7 @@ export const useToggleUserStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Estado del usuario actualizado');
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       toast.error('Error al cambiar el estado del usuario');
     },
   });
@@ -125,7 +125,7 @@ export const useChangePassword = () => {
     onSuccess: () => {
       toast.success('Contraseña cambiada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       const message = error.response?.data?.message || 'Error al cambiar la contraseña';
       toast.error(message);
     },

@@ -9,7 +9,7 @@
  * 2. DOFA (este tab) → Solo visualizar la Matriz con los factores consolidados
  */
 import { useState, useMemo, useEffect } from 'react';
-import { LayoutGrid, FileSearch, ClipboardList, Info } from 'lucide-react';
+import { LayoutGrid, FileSearch } from 'lucide-react';
 import { Alert } from '@/components/common/Alert';
 import { EmptyState } from '@/components/common/EmptyState';
 import { SectionHeader } from '@/components/common/SectionHeader';

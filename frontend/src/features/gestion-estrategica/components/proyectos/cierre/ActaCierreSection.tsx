@@ -4,9 +4,8 @@
  * DS: SectionToolbar + Card + Badge + Button + ConfirmDialog
  */
 import { useState } from 'react';
-import { Card, Badge, Button, EmptyState } from '@/components/common';
+import { Card, Button, EmptyState } from '@/components/common';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { FileCheck, Pencil, ShieldCheck, Calendar, DollarSign, Clock, Target } from 'lucide-react';
 import { useActasCierre } from '../../../hooks/useProyectos';
 import { ActaCierreFormModal } from './ActaCierreFormModal';

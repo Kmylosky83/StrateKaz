@@ -26,7 +26,6 @@ import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/utils/cn';
@@ -93,7 +92,9 @@ const KPIListItem = ({ kpi, onRegistrarValor, onVerHistorial }: KPIListItemProps
               <span className="text-sm font-normal text-gray-500 ml-1">{unidad}</span>
             </p>
             {meta > 0 && (
-              <p className="text-xs text-gray-500">Meta: {meta} {unidad}</p>
+              <p className="text-xs text-gray-500">
+                Meta: {meta} {unidad}
+              </p>
             )}
           </div>
 
@@ -104,8 +105,8 @@ const KPIListItem = ({ kpi, onRegistrarValor, onVerHistorial }: KPIListItemProps
                 variacion > 0
                   ? 'bg-green-100 text-green-700'
                   : variacion < 0
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-gray-100 text-gray-700'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-gray-100 text-gray-700'
               )}
             >
               {getTendenciaIcon(tendencia)}
@@ -302,9 +303,7 @@ export default function IndicadoresAreaPage() {
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
       <div className="mt-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          {getTitulo()}
-        </h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{getTitulo()}</h2>
 
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[200px]">

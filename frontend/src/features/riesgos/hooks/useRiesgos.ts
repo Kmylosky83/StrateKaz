@@ -3,12 +3,13 @@
  * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { riesgosApi, controlesRiesgoApi, tratamientosApi, oportunidadesApi } from '../api/riesgosApi';
+import {
+  riesgosApi,
+  controlesRiesgoApi,
+  tratamientosApi,
+  oportunidadesApi,
+} from '../api/riesgosApi';
 import type {
-  RiesgoProceso,
-  ControlRiesgo,
-  TratamientoRiesgo,
-  Oportunidad,
   CreateRiesgoProcesoDTO,
   UpdateRiesgoProcesoDTO,
   CreateControlRiesgoDTO,

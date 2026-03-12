@@ -5,7 +5,6 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';

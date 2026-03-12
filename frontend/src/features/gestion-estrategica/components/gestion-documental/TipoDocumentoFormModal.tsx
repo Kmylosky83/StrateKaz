@@ -12,7 +12,6 @@ import {
   useTipoDocumento,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
 import type {
-  TipoDocumento,
   CreateTipoDocumentoDTO,
   NivelDocumento,
 } from '@/features/gestion-estrategica/types/gestion-documental.types';

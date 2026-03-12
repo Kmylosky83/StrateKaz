@@ -16,7 +16,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Button } from '@/components/common/Button';
 import { use2FA } from '@/hooks/use2FA';
-import { Lock, Smartphone, Key, Download } from 'lucide-react';
+import { Lock, Key, Download } from 'lucide-react';
 
 const passwordSchema = z.object({
   password: z.string().min(1, 'Contraseña requerida'),

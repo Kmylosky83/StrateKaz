@@ -149,7 +149,7 @@ export function ExportActaButton({
     lg: 20,
   };
 
-  const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  const _buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
 
   // ===========================================================================
   // RENDER

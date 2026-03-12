@@ -30,7 +30,7 @@ const MODULE_CODE = 'motor_cumplimiento';
 const TAB_CODE = 'matriz_legal';
 
 // Mapeo de nombres de iconos a componentes
-const ICON_MAP: Record<string, LucideIcon> = {
+const _ICON_MAP: Record<string, LucideIcon> = {
   BookOpen,
   ClipboardCheck,
   Scale,
@@ -248,7 +248,10 @@ const NormasSection = () => {
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                      <div
+                        className="bg-green-600 h-2 rounded-full"
+                        style={{ width: '100%' }}
+                      ></div>
                     </div>
                     <span className="text-xs text-gray-600 dark:text-gray-400">100%</span>
                   </div>
@@ -262,14 +265,23 @@ const NormasSection = () => {
         <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3 border-t border-gray-200 dark:border-gray-600 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700 dark:text-gray-300">
-              Mostrando <span className="font-medium">1</span> a <span className="font-medium">10</span> de{' '}
-              <span className="font-medium">127</span> resultados
+              Mostrando <span className="font-medium">1</span> a{' '}
+              <span className="font-medium">10</span> de <span className="font-medium">127</span>{' '}
+              resultados
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">Anterior</Button>
-              <Button variant="primary" size="sm">1</Button>
-              <Button variant="outline" size="sm">2</Button>
-              <Button variant="outline" size="sm">Siguiente</Button>
+              <Button variant="outline" size="sm">
+                Anterior
+              </Button>
+              <Button variant="primary" size="sm">
+                1
+              </Button>
+              <Button variant="outline" size="sm">
+                2
+              </Button>
+              <Button variant="outline" size="sm">
+                Siguiente
+              </Button>
             </div>
           </div>
         </div>
@@ -297,14 +309,14 @@ const NormasSection = () => {
                   area.color === 'orange'
                     ? 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400'
                     : area.color === 'green'
-                    ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400'
-                    : area.color === 'blue'
-                    ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400'
-                    : area.color === 'purple'
-                    ? 'border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400'
-                    : area.color === 'red'
-                    ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
-                    : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-400'
+                      ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400'
+                      : area.color === 'blue'
+                        ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400'
+                        : area.color === 'purple'
+                          ? 'border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400'
+                          : area.color === 'red'
+                            ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
+                            : 'border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-400'
                 }
               `}
             >
@@ -330,10 +342,15 @@ const EvaluacionSection = () => {
           Evaluación de Cumplimiento
         </h3>
         <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-          Aquí podrás evaluar el cumplimiento de cada artículo de las normas registradas,
-          documentar evidencias y generar reportes de estado.
+          Aquí podrás evaluar el cumplimiento de cada artículo de las normas registradas, documentar
+          evidencias y generar reportes de estado.
         </p>
-        <Button variant="primary" size="sm" className="mt-6" leftIcon={<Plus className="w-4 h-4" />}>
+        <Button
+          variant="primary"
+          size="sm"
+          className="mt-6"
+          leftIcon={<Plus className="w-4 h-4" />}
+        >
           Nueva Evaluación
         </Button>
       </div>
@@ -384,7 +401,10 @@ export default function MatrizLegalPage() {
       {/* PageHeader con título y tabs de secciones inline */}
       <PageHeader
         title="Matriz Legal"
-        description={activeSectionData.description || 'Gestión de decretos, leyes, resoluciones y normativa aplicable'}
+        description={
+          activeSectionData.description ||
+          'Gestión de decretos, leyes, resoluciones y normativa aplicable'
+        }
         sections={sections}
         activeSection={activeSection}
         onSectionChange={setActiveSection}

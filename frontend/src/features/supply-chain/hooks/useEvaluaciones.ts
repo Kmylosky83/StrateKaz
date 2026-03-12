@@ -5,10 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import evaluacionesApi from '../api/evaluaciones.api';
 import type {
-  CriterioEvaluacion,
   CreateCriterioEvaluacionDTO,
   UpdateCriterioEvaluacionDTO,
-  EvaluacionProveedor,
   CreateEvaluacionProveedorDTO,
   UpdateEvaluacionProveedorDTO,
   AprobarEvaluacionDTO,
@@ -21,9 +19,11 @@ export const evaluacionesKeys = {
   criterios: () => [...evaluacionesKeys.all, 'criterios'] as const,
   criteriosActivos: () => [...evaluacionesKeys.criterios(), 'activos'] as const,
   evaluaciones: () => [...evaluacionesKeys.all, 'list'] as const,
-  evaluacionesFiltered: (filters: Record<string, any>) => [...evaluacionesKeys.evaluaciones(), 'filtered', filters] as const,
+  evaluacionesFiltered: (filters: Record<string, any>) =>
+    [...evaluacionesKeys.evaluaciones(), 'filtered', filters] as const,
   evaluacion: (id: number) => [...evaluacionesKeys.all, 'detail', id] as const,
-  evaluacionesPorProveedor: (proveedorId: number) => [...evaluacionesKeys.all, 'proveedor', proveedorId] as const,
+  evaluacionesPorProveedor: (proveedorId: number) =>
+    [...evaluacionesKeys.all, 'proveedor', proveedorId] as const,
   estadisticas: () => [...evaluacionesKeys.all, 'estadisticas'] as const,
 };
 
@@ -31,15 +31,21 @@ export const evaluacionesKeys = {
 
 export function useCriterios(params?: { is_active?: boolean }) {
   return useQuery({
-    queryKey: params?.is_active ? evaluacionesKeys.criteriosActivos() : evaluacionesKeys.criterios(),
-    queryFn: () => (params?.is_active ? evaluacionesApi.criterioEvaluacion.getActivos() : evaluacionesApi.criterioEvaluacion.getAll()),
+    queryKey: params?.is_active
+      ? evaluacionesKeys.criteriosActivos()
+      : evaluacionesKeys.criterios(),
+    queryFn: () =>
+      params?.is_active
+        ? evaluacionesApi.criterioEvaluacion.getActivos()
+        : evaluacionesApi.criterioEvaluacion.getAll(),
   });
 }
 
 export function useCreateCriterio() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateCriterioEvaluacionDTO) => evaluacionesApi.criterioEvaluacion.create(data),
+    mutationFn: (data: CreateCriterioEvaluacionDTO) =>
+      evaluacionesApi.criterioEvaluacion.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.criterios() });
       toast.success('Criterio creado exitosamente');
@@ -83,7 +89,9 @@ export function useDeleteCriterio() {
 
 export function useEvaluaciones(params?: { proveedor?: number; estado?: string }) {
   return useQuery({
-    queryKey: params ? evaluacionesKeys.evaluacionesFiltered(params) : evaluacionesKeys.evaluaciones(),
+    queryKey: params
+      ? evaluacionesKeys.evaluacionesFiltered(params)
+      : evaluacionesKeys.evaluaciones(),
     queryFn: () => evaluacionesApi.evaluacionProveedor.getAll(params),
   });
 }
@@ -99,7 +107,8 @@ export function useEvaluacion(id: number) {
 export function useCreateEvaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateEvaluacionProveedorDTO) => evaluacionesApi.evaluacionProveedor.create(data),
+    mutationFn: (data: CreateEvaluacionProveedorDTO) =>
+      evaluacionesApi.evaluacionProveedor.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.evaluaciones() });
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.estadisticas() });

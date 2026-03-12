@@ -33,7 +33,6 @@ import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms/Input';
-import { cn } from '@/utils/cn';
 import {
   useVacantesPublicas,
   useBrandingPublicoHelpers,

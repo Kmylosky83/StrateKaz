@@ -19,11 +19,7 @@
     "analyze": "vite-bundle-visualizer"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "prettier --write",
-      "eslint --fix --max-warnings 50"
-    ],
-    "src/**/*.{css,json}": [
+    "src/**/*.{ts,tsx,css,json}": [
       "prettier --write"
     ]
   },

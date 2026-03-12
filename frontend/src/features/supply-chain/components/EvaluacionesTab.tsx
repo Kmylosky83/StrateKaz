@@ -3,7 +3,7 @@
  * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
-import { Plus, Edit, CheckCircle, XCircle, ClipboardCheck, Settings } from 'lucide-react';
+import { Plus, Edit, CheckCircle, XCircle, ClipboardCheck } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';

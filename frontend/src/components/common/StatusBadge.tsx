@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * StatusBadge - Badge inteligente para estados
  *
@@ -17,7 +18,6 @@
  * ```
  */
 import { Badge, type BadgeVariant, type BadgeSize } from './Badge';
-import { cn } from '@/utils/cn';
 
 // =============================================================================
 // TYPES

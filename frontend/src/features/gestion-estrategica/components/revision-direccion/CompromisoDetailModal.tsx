@@ -8,15 +8,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Textarea } from '@/components/forms/Textarea';
 import { Spinner } from '@/components/common/Spinner';
-import {
-  Calendar,
-  User,
-  Target,
-  CheckCircle,
-  AlertTriangle,
-  ShieldCheck,
-  Paperclip,
-} from 'lucide-react';
+import { Calendar, User, Target, CheckCircle, ShieldCheck, Paperclip } from 'lucide-react';
 import { EvidenceUploader, EvidenceGallery } from '@/components/common';
 import {
   useCompromiso,

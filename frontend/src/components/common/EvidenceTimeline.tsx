@@ -30,12 +30,24 @@ export interface EvidenceTimelineProps {
 
 const ACCION_CONFIG: Record<string, { icon: typeof Upload; color: string; bg: string }> = {
   CREADA: { icon: Upload, color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  APROBADA: { icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100 dark:bg-green-900/30' },
+  APROBADA: {
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+  },
   RECHAZADA: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30' },
-  RESUBIDA: { icon: RotateCcw, color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  RESUBIDA: {
+    icon: RotateCcw,
+    color: 'text-orange-600',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+  },
   ARCHIVADA: { icon: Archive, color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-gray-700' },
   VENCIDA: { icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-  METADATA_ACTUALIZADA: { icon: Edit3, color: 'text-indigo-600', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
+  METADATA_ACTUALIZADA: {
+    icon: Edit3,
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+  },
 };
 
 const ACCION_LABELS: Record<string, string> = {
@@ -72,9 +84,7 @@ export function EvidenceTimeline({ evidenciaId, className }: EvidenceTimelinePro
 
   if (!historial?.length) {
     return (
-      <p className={cn('text-sm text-gray-500 italic py-4', className)}>
-        Sin historial registrado
-      </p>
+      <p className={cn('text-sm text-gray-500 italic py-4', className)}>Sin historial registrado</p>
     );
   }
 
@@ -84,7 +94,7 @@ export function EvidenceTimeline({ evidenciaId, className }: EvidenceTimelinePro
       <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-gray-200 dark:bg-gray-700" />
 
       <div className="space-y-4">
-        {(historial as HistorialEvidencia[]).map((entry, index) => {
+        {(historial as HistorialEvidencia[]).map((entry, _index) => {
           const config = ACCION_CONFIG[entry.accion] || ACCION_CONFIG.CREADA;
           const Icon = config.icon;
           const label = ACCION_LABELS[entry.accion] || entry.accion;
@@ -107,16 +117,12 @@ export function EvidenceTimeline({ evidenciaId, className }: EvidenceTimelinePro
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {label}
                   </span>
-                  <span className="text-xs text-gray-500">
-                    {formatDateTime(entry.fecha)}
-                  </span>
+                  <span className="text-xs text-gray-500">{formatDateTime(entry.fecha)}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <User className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs text-gray-500">
-                    {entry.usuario_nombre}
-                  </span>
+                  <span className="text-xs text-gray-500">{entry.usuario_nombre}</span>
                 </div>
 
                 {entry.comentario && (

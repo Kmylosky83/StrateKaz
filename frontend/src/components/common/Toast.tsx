@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Toast Component - Wrapper sobre Sonner
  *
@@ -16,7 +17,13 @@ export interface ToastOptions {
   /** Duration in milliseconds */
   duration?: number;
   /** Position */
-  position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+  position?:
+    | 'top-left'
+    | 'top-center'
+    | 'top-right'
+    | 'bottom-left'
+    | 'bottom-center'
+    | 'bottom-right';
   /** Custom description */
   description?: string;
   /** Action button */
@@ -99,10 +106,7 @@ export const toast = {
   /**
    * Show a toast for a promise
    */
-  promise: <T,>(
-    promise: Promise<T> | (() => Promise<T>),
-    options: PromiseOptions<T>
-  ) => {
+  promise: <T,>(promise: Promise<T> | (() => Promise<T>), options: PromiseOptions<T>) => {
     return sonnerToast.promise(promise, {
       loading: options.loading,
       success: options.success,
@@ -150,8 +154,7 @@ export function Toaster() {
           toast:
             'group toast group-[.toaster]:bg-white group-[.toaster]:text-gray-900 group-[.toaster]:border-gray-200 group-[.toaster]:shadow-lg dark:group-[.toaster]:bg-gray-800 dark:group-[.toaster]:text-gray-100 dark:group-[.toaster]:border-gray-700',
           description: 'group-[.toast]:text-gray-500 dark:group-[.toast]:text-gray-400',
-          actionButton:
-            'group-[.toast]:bg-primary-500 group-[.toast]:text-white',
+          actionButton: 'group-[.toast]:bg-primary-500 group-[.toast]:text-white',
           cancelButton:
             'group-[.toast]:bg-gray-100 group-[.toast]:text-gray-500 dark:group-[.toast]:bg-gray-700 dark:group-[.toast]:text-gray-400',
         },

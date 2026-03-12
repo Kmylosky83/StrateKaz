@@ -13,7 +13,7 @@
  * @see docs/desarrollo/CATALOGO_VISTAS_UI.md
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
 import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';

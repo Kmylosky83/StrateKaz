@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Badge } from './Badge';
-import { Button } from './Button';
 import { Spinner } from './Spinner';
 import { EmptyState } from './EmptyState';
 import { ConfirmDialog } from './ConfirmDialog';

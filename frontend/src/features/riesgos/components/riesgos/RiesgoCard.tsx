@@ -22,7 +22,7 @@ const getNivelColor = (nivel: number): string => {
   return 'text-green-600 bg-green-100';
 };
 
-const getNivelLabel = (nivel: number): string => {
+const _getNivelLabel = (nivel: number): string => {
   if (nivel >= 15) return 'CRITICO';
   if (nivel >= 10) return 'ALTO';
   if (nivel >= 5) return 'MODERADO';
@@ -89,13 +89,13 @@ export function RiesgoCard({
 
       {/* Tipo y Niveles */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {TIPO_LABELS[tipo] || tipo}
-        </span>
+        <span className="text-xs text-muted-foreground">{TIPO_LABELS[tipo] || tipo}</span>
 
         <div className="flex items-center gap-2">
           {/* Nivel Inherente */}
-          <div className={cn('px-2 py-0.5 rounded text-xs font-medium', getNivelColor(nivelInherente))}>
+          <div
+            className={cn('px-2 py-0.5 rounded text-xs font-medium', getNivelColor(nivelInherente))}
+          >
             {nivelInherente}
           </div>
 
@@ -103,7 +103,9 @@ export function RiesgoCard({
           {getTendenciaIcon(nivelInherente, nivelResidual)}
 
           {/* Nivel Residual */}
-          <div className={cn('px-2 py-0.5 rounded text-xs font-medium', getNivelColor(nivelResidual))}>
+          <div
+            className={cn('px-2 py-0.5 rounded text-xs font-medium', getNivelColor(nivelResidual))}
+          >
             {nivelResidual}
           </div>
         </div>

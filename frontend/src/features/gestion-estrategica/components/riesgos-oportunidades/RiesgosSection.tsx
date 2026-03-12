@@ -45,7 +45,7 @@ function getNivelKey(nivel: number): string {
   return 'critico';
 }
 
-export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
+export function RiesgosSection({ _triggerNewForm }: RiesgosSectionProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 

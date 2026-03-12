@@ -97,7 +97,7 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionProps) => {
+const MisionVisionSection = ({ _identity, onEdit, canEdit }: MisionVisionSectionProps) => {
   const { primaryColor, secondaryColor, companyName } = useBrandingConfig();
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
@@ -569,7 +569,7 @@ const getFirmaStatus = (doc: Documento) => {
   return { status: 'pendiente' as const, firmadas: firmadasCount, total: totalFirmas };
 };
 
-const PoliticasSection = ({ identity }: { identity: CorporateIdentity }) => {
+const PoliticasSection = ({ identity: _identity }: { identity: CorporateIdentity }) => {
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 

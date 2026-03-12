@@ -6,15 +6,12 @@
  */
 import { useState } from 'react';
 import {
-  Database,
   Settings,
   LogIn,
   FileEdit,
   Search,
   Download,
   Filter,
-  Calendar,
-  User,
   Monitor,
   MapPin,
   Chrome,
@@ -28,13 +25,10 @@ import { Card, Button, Badge, Tabs, Spinner, EmptyState } from '@/components/com
 import { cn } from '@/utils/cn';
 import {
   useConfiguracionesAuditoria,
-  useCreateConfiguracionAuditoria,
-  useUpdateConfiguracionAuditoria,
   useLogsAcceso,
   useLogsCambio,
   useLogsConsulta,
 } from '../hooks/useAuditSystem';
-import type { ConfiguracionAuditoria, LogAcceso, LogCambio, LogConsulta } from '../types';
 
 // ==================== COMPONENTS ====================
 
@@ -333,8 +327,8 @@ function CambiosTab() {
                         log.accion === 'crear'
                           ? 'success'
                           : log.accion === 'modificar'
-                          ? 'info'
-                          : 'danger'
+                            ? 'info'
+                            : 'danger'
                       }
                       size="sm"
                     >
@@ -409,9 +403,7 @@ function ConsultasTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Logs de Consultas
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Logs de Consultas</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Historial de consultas, exportaciones y reportes
           </p>

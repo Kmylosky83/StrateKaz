@@ -177,8 +177,7 @@ export const useCreateMetaKPI = () => {
 export const useUpdateMetaKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
-      metasKPIApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) => metasKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['metas-kpi'] });
       queryClient.invalidateQueries({ queryKey: ['meta-kpi', variables.id] });
@@ -233,8 +232,7 @@ export const useCreateSemaforo = () => {
 export const useUpdateSemaforo = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
-      semaforosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) => semaforosApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['semaforos'] });
       queryClient.invalidateQueries({ queryKey: ['semaforo', variables.id] });
@@ -627,7 +625,6 @@ import {
   plantillasInformeApi,
   informesDinamicosApi,
   programacionesInformeApi,
-  historialInformesApi,
   planesAccionKPIApi,
   actividadesPlanKPIApi,
   seguimientosPlanKPIApi,
@@ -647,8 +644,15 @@ export const useAnalisisKPI = (params?: Record<string, unknown>) => {
 export const useGenerarAnalisisKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiId, periodo, tipoAnalisis }: { kpiId: number; periodo: string; tipoAnalisis: string }) =>
-      analisisKPIApi.generarAnalisis(kpiId, periodo, tipoAnalisis),
+    mutationFn: ({
+      kpiId,
+      periodo,
+      tipoAnalisis,
+    }: {
+      kpiId: number;
+      periodo: string;
+      tipoAnalisis: string;
+    }) => analisisKPIApi.generarAnalisis(kpiId, periodo, tipoAnalisis),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analisis-kpi'] });
     },
@@ -666,7 +670,12 @@ export const useTendenciasKPI = (params?: Record<string, unknown>) => {
 export const useCalcularTendencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ kpiId, periodoInicio, periodoFin, tipoTendencia }: {
+    mutationFn: ({
+      kpiId,
+      periodoInicio,
+      periodoFin,
+      tipoTendencia,
+    }: {
       kpiId: number;
       periodoInicio: string;
       periodoFin: string;
@@ -745,7 +754,11 @@ export const useInformesDinamicos = (params?: Record<string, unknown>) => {
 export const useGenerarInforme = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ plantillaId, periodo, parametros }: {
+    mutationFn: ({
+      plantillaId,
+      periodo,
+      parametros,
+    }: {
       plantillaId: number;
       periodo: string;
       parametros?: Record<string, unknown>;

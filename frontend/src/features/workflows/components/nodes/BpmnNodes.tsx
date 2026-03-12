@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Nodos BPMN personalizados para React Flow
  *
@@ -112,25 +113,25 @@ const InicioNode = memo(({ data, selected }: NodeProps) => {
   const Icon = config.icon;
 
   return (
-    <div className={`
+    <div
+      className={`
       flex flex-col items-center gap-1
       ${selected ? 'ring-2 ring-purple-500 ring-offset-2 rounded-full' : ''}
-    `}>
-      <div className={`
+    `}
+    >
+      <div
+        className={`
         w-16 h-16 rounded-full flex items-center justify-center
         border-2 ${config.bgColor} ${config.borderColor}
         shadow-sm hover:shadow-md transition-shadow cursor-pointer
-      `}>
+      `}
+      >
         <Icon className={`h-7 w-7 ${config.textColor}`} />
       </div>
       <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[100px] text-center truncate">
         {nodeData.nodo?.nombre || 'Inicio'}
       </span>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={handleActiveStyle}
-      />
+      <Handle type="source" position={Position.Bottom} style={handleActiveStyle} />
     </div>
   );
 });
@@ -146,20 +147,20 @@ const FinNode = memo(({ data, selected }: NodeProps) => {
   const Icon = config.icon;
 
   return (
-    <div className={`
+    <div
+      className={`
       flex flex-col items-center gap-1
       ${selected ? 'ring-2 ring-purple-500 ring-offset-2 rounded-full' : ''}
-    `}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={handleActiveStyle}
-      />
-      <div className={`
+    `}
+    >
+      <Handle type="target" position={Position.Top} style={handleActiveStyle} />
+      <div
+        className={`
         w-16 h-16 rounded-full flex items-center justify-center
         border-[3px] ${config.bgColor} ${config.borderColor}
         shadow-sm hover:shadow-md transition-shadow cursor-pointer
-      `}>
+      `}
+      >
         <Icon className={`h-7 w-7 ${config.textColor}`} />
       </div>
       <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[100px] text-center truncate">
@@ -181,19 +182,19 @@ const TareaNode = memo(({ data, selected }: NodeProps) => {
   const nodo = nodeData.nodo;
 
   return (
-    <div className={`
+    <div
+      className={`
       min-w-[200px] max-w-[260px]
       ${selected ? 'ring-2 ring-purple-500 ring-offset-2 rounded-lg' : ''}
-    `}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={handleActiveStyle}
-      />
-      <div className={`
+    `}
+    >
+      <Handle type="target" position={Position.Top} style={handleActiveStyle} />
+      <div
+        className={`
         rounded-lg border-2 ${config.borderColor} ${config.bgColor}
         shadow-sm hover:shadow-md transition-shadow cursor-pointer overflow-hidden
-      `}>
+      `}
+      >
         {/* Cabecera */}
         <div className={`px-3 py-2 border-b ${config.borderColor} flex items-center gap-2`}>
           <Icon className={`h-4 w-4 ${config.textColor} flex-shrink-0`} />
@@ -244,7 +245,10 @@ const TareaNode = memo(({ data, selected }: NodeProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); nodeData.onEdit!(nodo.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nodeData.onEdit!(nodo.id);
+                }}
                 className="p-1 h-auto min-h-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
                 title="Editar nodo"
               >
@@ -255,7 +259,10 @@ const TareaNode = memo(({ data, selected }: NodeProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => { e.stopPropagation(); nodeData.onDelete!(nodo.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nodeData.onDelete!(nodo.id);
+                }}
                 className="p-1 h-auto min-h-0 hover:bg-red-100 dark:hover:bg-red-900/30"
                 title="Eliminar nodo"
               >
@@ -265,11 +272,7 @@ const TareaNode = memo(({ data, selected }: NodeProps) => {
           </div>
         )}
       </div>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={handleActiveStyle}
-      />
+      <Handle type="source" position={Position.Bottom} style={handleActiveStyle} />
     </div>
   );
 });
@@ -289,21 +292,21 @@ const GatewayNodeBase = memo(({ data, selected, gatewayType }: GatewayNodeProps)
   const Icon = config.icon;
 
   return (
-    <div className={`
+    <div
+      className={`
       flex flex-col items-center gap-1
       ${selected ? 'ring-2 ring-purple-500 ring-offset-2 rounded-lg' : ''}
-    `}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={handleActiveStyle}
-      />
-      <div className={`
+    `}
+    >
+      <Handle type="target" position={Position.Top} style={handleActiveStyle} />
+      <div
+        className={`
         w-14 h-14 flex items-center justify-center
         border-2 ${config.borderColor} ${config.bgColor}
         shadow-sm hover:shadow-md transition-shadow cursor-pointer
         rotate-45 rounded-sm
-      `}>
+      `}
+      >
         <div className="-rotate-45">
           <Icon className={`h-5 w-5 ${config.textColor}`} />
         </div>
@@ -312,12 +315,7 @@ const GatewayNodeBase = memo(({ data, selected, gatewayType }: GatewayNodeProps)
         {nodeData.nodo?.nombre || config.label}
       </span>
       {/* Handles laterales para ramificacion */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-        style={handleActiveStyle}
-      />
+      <Handle type="source" position={Position.Bottom} id="bottom" style={handleActiveStyle} />
       <Handle
         type="source"
         position={Position.Right}
@@ -357,20 +355,20 @@ const EventoNode = memo(({ data, selected }: NodeProps) => {
   const tipoEvento = nodo?.configuracion?.tipo_evento as string | undefined;
 
   return (
-    <div className={`
+    <div
+      className={`
       flex flex-col items-center gap-1
       ${selected ? 'ring-2 ring-purple-500 ring-offset-2 rounded-full' : ''}
-    `}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={handleActiveStyle}
-      />
-      <div className={`
+    `}
+    >
+      <Handle type="target" position={Position.Top} style={handleActiveStyle} />
+      <div
+        className={`
         w-14 h-14 rounded-full flex items-center justify-center
         border-2 border-dashed ${config.borderColor} ${config.bgColor}
         shadow-sm hover:shadow-md transition-shadow cursor-pointer
-      `}>
+      `}
+      >
         {tipoEvento === 'temporizador' ? (
           <Clock className={`h-5 w-5 ${config.textColor}`} />
         ) : (
@@ -380,11 +378,7 @@ const EventoNode = memo(({ data, selected }: NodeProps) => {
       <span className="text-xs font-medium text-gray-700 dark:text-gray-300 max-w-[100px] text-center truncate">
         {nodo?.nombre || 'Evento'}
       </span>
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={handleActiveStyle}
-      />
+      <Handle type="source" position={Position.Bottom} style={handleActiveStyle} />
     </div>
   );
 });

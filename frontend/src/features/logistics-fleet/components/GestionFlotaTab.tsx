@@ -3,7 +3,7 @@
  * Sub-tabs: Vehículos, Mantenimientos
  */
 import { useState } from 'react';
-import { Truck, Wrench, AlertTriangle, CheckCircle, Clock, Edit, Trash2 } from 'lucide-react';
+import { Truck, Wrench, AlertTriangle, CheckCircle, Edit, Trash2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import {

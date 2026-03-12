@@ -598,7 +598,7 @@ const ConfiguracionSection = () => {
 
 export default function AlmacenamientoTab() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
+  const _canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
 
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('inventarios');

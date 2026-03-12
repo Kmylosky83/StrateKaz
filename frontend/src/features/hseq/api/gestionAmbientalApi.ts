@@ -55,7 +55,6 @@ import type {
   GenerarCertificadoDTO,
   CalcularHuellaInputDTO,
   ResumenGestionResiduos,
-  ConsumoRecursoResumen,
   PaginatedResponse,
 } from '../types/gestion-ambiental.types';
 

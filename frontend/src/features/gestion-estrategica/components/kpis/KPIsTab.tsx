@@ -2,8 +2,8 @@
  * Tab de KPIs y Seguimiento con selector de objetivo
  * Sistema de Gestión StrateKaz - Sprint 4
  */
-import { useState, useMemo } from 'react';
-import { Target, TrendingUp, BarChart3, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Target, BarChart3, Plus } from 'lucide-react';
 import { Tabs, EmptyState, Spinner, Card, Button } from '@/components/common';
 import type { Tab } from '@/components/common';
 import { Select } from '@/components/forms/Select';

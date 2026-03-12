@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { toast } from 'sonner';
+
 import { motion, type Variants } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
 import { Button } from '@/components/common/Button';
@@ -26,13 +26,7 @@ export const ForgotPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const {
-    companyName,
-    companySlogan,
-    logoWhite,
-    primaryColor,
-    isLoading: brandingLoading,
-  } = useBrandingConfig();
+  const { companyName, logoWhite, primaryColor, isLoading: brandingLoading } = useBrandingConfig();
 
   const {
     register,

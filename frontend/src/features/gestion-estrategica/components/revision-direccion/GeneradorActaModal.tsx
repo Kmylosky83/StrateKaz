@@ -101,7 +101,7 @@ export const GeneradorActaModal = ({ acta, isOpen, onClose }: GeneradorActaModal
 
   // Queries
   const { data: programaciones } = useProgramasRevision({ estado: 'PROGRAMADA' });
-  const { data: programacionChoices } = useProgramacionChoices();
+  const { data: _programacionChoices } = useProgramacionChoices();
   const { data: actaChoices } = useActaChoices();
   const { data: actaExistente } = useActaByProgramacion(selectedProgramacionId || 0);
 

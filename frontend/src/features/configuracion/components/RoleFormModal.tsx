@@ -103,7 +103,7 @@ export const RoleFormModal = ({ role, isOpen, onClose }: RoleFormModalProps) => 
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const isSystemRole = role?.is_system;
 
-  const title = (
+  const _title = (
     <div className="flex items-center gap-2">
       <span>{isEditing ? 'Editar Rol' : 'Nuevo Rol'}</span>
       {isSystemRole && (

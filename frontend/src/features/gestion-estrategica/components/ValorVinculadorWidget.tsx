@@ -16,25 +16,14 @@
  * ```
  */
 import { useState } from 'react';
-import {
-  Heart,
-  Plus,
-  X,
-  Check,
-  AlertCircle,
-  Star,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
-import { Card, Badge, Button, Alert } from '@/components/common';
+import { Heart, Plus, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card, Button } from '@/components/common';
 import { Textarea } from '@/components/forms';
 import { DynamicIcon } from '@/components/common/DynamicIcon';
 import { useValues } from '../hooks/useStrategic';
 import {
   useValoresPorAccion,
   useVincularValor,
-  useVincularMultiplesValores,
   useDeleteValorVivido,
   TIPOS_VINCULO_OPTIONS,
   NIVELES_IMPACTO_OPTIONS,

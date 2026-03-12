@@ -25,7 +25,6 @@ import {
   CheckCircle2,
   Clock,
   FileCheck,
-  AlertTriangle,
   XCircle,
   Download,
 } from 'lucide-react';

@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Activity,
-  Package,
   Calendar,
   User,
   Trash2,
@@ -1010,7 +1009,7 @@ const ProgramasSeguridadSection = () => {
 
 export default function SeguridadIndustrialPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.INSPECCIONES, 'create');
+  const _canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.INSPECCIONES, 'create');
 
   const [activeTab, setActiveTab] = useState('permisos-trabajo');
 

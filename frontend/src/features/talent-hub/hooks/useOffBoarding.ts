@@ -37,7 +37,6 @@ import type {
   PazSalvoFormData,
   PazSalvoFilter,
   AprobarPazSalvoData,
-  RechazarPazSalvoData,
   ExamenEgreso,
   ExamenEgresoFormData,
   ExamenEgresoFilter,

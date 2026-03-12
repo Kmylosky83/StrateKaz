@@ -375,7 +375,7 @@ interface ValoresDragDropProps {
   readOnly?: boolean;
   // Props controladas desde el padre (DataSection)
   viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
+  _onViewModeChange: (mode: ViewMode) => void;
   isCreating: boolean;
   onCreateToggle: (creating: boolean) => void;
 }
@@ -391,7 +391,7 @@ export const ValoresDragDrop = ({
   readOnly,
   // Props controladas desde el padre
   viewMode,
-  onViewModeChange,
+  _onViewModeChange,
   isCreating,
   onCreateToggle,
 }: ValoresDragDropProps) => {

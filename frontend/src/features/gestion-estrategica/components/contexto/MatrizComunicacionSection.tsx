@@ -46,6 +46,7 @@ import { useSelectCargos } from '@/hooks/useSelectLists';
 // CONSTANTES
 // =============================================================================
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const FRECUENCIAS = [
   { value: 'diaria', label: 'Diaria' },
   { value: 'semanal', label: 'Semanal' },
@@ -58,6 +59,7 @@ export const FRECUENCIAS = [
   { value: 'segun_necesidad', label: 'Según necesidad' },
 ];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const MEDIOS = [
   { value: 'email', label: 'Correo Electrónico', icon: Mail },
   { value: 'reunion', label: 'Reunión Presencial', icon: UsersIcon },

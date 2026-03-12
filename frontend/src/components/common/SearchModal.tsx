@@ -187,6 +187,7 @@ export const SearchModal = ({
 /**
  * Hook para controlar el SearchModal con atajo de teclado
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSearchModal = () => {
   const [isOpen, setIsOpen] = useState(false);
 

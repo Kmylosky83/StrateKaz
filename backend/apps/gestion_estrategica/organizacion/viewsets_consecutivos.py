@@ -70,7 +70,9 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
         from apps.core.base_models.mixins import get_tenant_empresa
 
         empresa = get_tenant_empresa()
-        queryset = ConsecutivoConfig.objects.filter(deleted_at__isnull=True)
+        queryset = ConsecutivoConfig.objects.filter(
+            deleted_at__isnull=True
+        ).select_related('created_by', 'updated_by')
 
         if empresa:
             queryset = queryset.filter(empresa_id=empresa.id)

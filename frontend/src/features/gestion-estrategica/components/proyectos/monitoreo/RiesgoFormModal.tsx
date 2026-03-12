@@ -8,7 +8,6 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
-import { Checkbox } from '@/components/forms/Checkbox';
 import { useSelectUsers } from '@/hooks/useSelectLists';
 import { useCreateRiesgo, useUpdateRiesgo } from '../../../hooks/useProyectos';
 import type {

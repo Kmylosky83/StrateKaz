@@ -13,8 +13,6 @@ import { useState, useEffect } from 'react';
 import {
   Target,
   Calendar,
-  Users,
-  Building2,
   Flag,
   TrendingUp,
   Shield,
@@ -26,7 +24,6 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';

@@ -5,10 +5,9 @@
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
-import { Mail, Phone, MapPin, Eye, Edit, Star } from 'lucide-react';
+import { Mail, Phone, MapPin, Eye, Edit } from 'lucide-react';
 import { ScoringBadge } from './ScoringBadge';
 import type { ClienteList, EstadoCliente, TipoCliente } from '../types';
-import { cn } from '@/utils/cn';
 
 interface ClienteCardProps {
   cliente: ClienteList;

@@ -218,7 +218,7 @@ const CatalogoKPISection = ({ onEdit, onNew }: CatalogoSectionProps) => {
 };
 
 const FichasTecnicasSection = ({
-  kpis,
+  kpis: _kpis,
   onEdit,
   onNew,
 }: {
@@ -340,7 +340,7 @@ const FichasTecnicasSection = ({
 };
 
 const MetasSection = ({
-  kpis,
+  kpis: _kpis,
   onEdit,
   onNew,
 }: {
@@ -482,7 +482,7 @@ const MetasSection = ({
 };
 
 const SemaforosSection = ({
-  kpis,
+  kpis: _kpis,
   onEdit,
   onNew,
 }: {

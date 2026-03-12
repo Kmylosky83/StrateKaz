@@ -20,7 +20,6 @@ import {
   useAprobarPazSalvo,
   useRechazarPazSalvo,
 } from '../../hooks/useOffBoarding';
-import type { EstadoItem, EstadoPazSalvo } from '../../types';
 import { estadoItemOptions, estadoPazSalvoOptions, areaPazSalvoOptions } from '../../types';
 import { ChecklistItemFormModal } from './ChecklistItemFormModal';
 import { PazSalvoFormModal } from './PazSalvoFormModal';

@@ -296,7 +296,7 @@ export const IntegracionFormModal = ({
 
   // Queries y mutations
   const { data: integracionDetail } = useIntegracion(integracion?.id || 0);
-  const { data: choices } = useIntegracionChoices();
+  const { data: _choices } = useIntegracionChoices();
   const createMutation = useCreateIntegracion();
   const updateMutation = useUpdateIntegracion();
 

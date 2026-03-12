@@ -14,7 +14,6 @@
 import { useState, useCallback } from 'react';
 import { Eye, Settings2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { Button } from '../Button';
 import { FieldPalette } from './FieldPalette';
 import { FieldList } from './FieldList';
 import { FieldEditor } from './FieldEditor';

@@ -17,7 +17,7 @@ import { BookOpen, Plus, Pencil, Trash2, Clock, CheckCircle } from 'lucide-react
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { useModulosInduccion, useDeleteModuloInduccion } from '../../hooks/useOnboardingInduccion';
-import type { ModuloInduccion, TipoModuloInduccion } from '../../types';
+import type { ModuloInduccion } from '../../types';
 import { ModuloFormModal } from './ModuloFormModal';
 
 const TIPO_OPTIONS = [

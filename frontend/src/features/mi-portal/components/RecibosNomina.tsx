@@ -3,7 +3,7 @@
  */
 
 import { DollarSign, FileText } from 'lucide-react';
-import { Card, Skeleton, EmptyState, Badge } from '@/components/common';
+import { Card, Skeleton, EmptyState } from '@/components/common';
 import { useMisRecibos } from '../api/miPortalApi';
 
 function formatCurrency(value: number): string {

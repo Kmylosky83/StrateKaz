@@ -3,8 +3,6 @@
  * Sistema de Gestión StrateKaz
  */
 
-import type { ISOStandard } from './strategic.types';
-
 // ==================== ENUMS ====================
 // Nota: Los valores son lowercase porque el backend Django TextChoices los almacena asi
 

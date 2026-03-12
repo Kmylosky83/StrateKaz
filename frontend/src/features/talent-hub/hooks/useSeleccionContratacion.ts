@@ -359,13 +359,13 @@ export function useCambiarEstadoCandidato() {
   return useMutation({
     mutationFn: ({
       id,
-      estado,
+      _estado,
       motivo,
     }: {
       id: number;
       estado: EstadoCandidato;
       motivo?: string;
-    }) => candidatoApi.cambiarEstado(id, estado, motivo),
+    }) => candidatoApi.cambiarEstado(id, _estado, motivo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
       queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
@@ -459,9 +459,9 @@ export function useCancelarEntrevista() {
   return useMutation({
     mutationFn: ({
       id,
-      estado,
+      _estado,
       motivo,
-      fecha_reprogramada,
+      _fecha_reprogramada,
     }: {
       id: number;
       estado: string;

@@ -2,7 +2,12 @@
  * Hooks para IPEVR - Matriz GTC-45
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ipevrApi, matrizIPEVRApi, controlSSTApi, clasificacionPeligroApi, peligroGTC45Api } from '../api/ipevrApi';
+import {
+  matrizIPEVRApi,
+  controlSSTApi,
+  clasificacionPeligroApi,
+  peligroGTC45Api,
+} from '../api/ipevrApi';
 import type {
   CreateMatrizIPEVRDTO,
   UpdateMatrizIPEVRDTO,
@@ -19,20 +24,30 @@ export const ipevrQueryKeys = {
   clasificaciones: () => [...ipevrQueryKeys.all, 'clasificaciones'] as const,
   clasificacionesPorCategoria: () => [...ipevrQueryKeys.clasificaciones(), 'porCategoria'] as const,
   peligros: () => [...ipevrQueryKeys.all, 'peligros'] as const,
-  peligrosPorClasificacion: (id?: number) => [...ipevrQueryKeys.peligros(), 'porClasificacion', id] as const,
+  peligrosPorClasificacion: (id?: number) =>
+    [...ipevrQueryKeys.peligros(), 'porClasificacion', id] as const,
   matrices: () => [...ipevrQueryKeys.all, 'matrices'] as const,
-  matricesList: (filters: MatrizIPEVRFilters) => [...ipevrQueryKeys.matrices(), 'list', filters] as const,
+  matricesList: (filters: MatrizIPEVRFilters) =>
+    [...ipevrQueryKeys.matrices(), 'list', filters] as const,
   matrizDetail: (id: number) => [...ipevrQueryKeys.matrices(), 'detail', id] as const,
-  matricesResumen: (empresaId?: number) => [...ipevrQueryKeys.matrices(), 'resumen', empresaId] as const,
-  matricesCriticos: (empresaId?: number) => [...ipevrQueryKeys.matrices(), 'criticos', empresaId] as const,
-  matricesPorArea: (empresaId?: number) => [...ipevrQueryKeys.matrices(), 'porArea', empresaId] as const,
-  matricesPorCargo: (empresaId?: number) => [...ipevrQueryKeys.matrices(), 'porCargo', empresaId] as const,
-  matricesPorPeligro: (empresaId?: number) => [...ipevrQueryKeys.matrices(), 'porPeligro', empresaId] as const,
+  matricesResumen: (empresaId?: number) =>
+    [...ipevrQueryKeys.matrices(), 'resumen', empresaId] as const,
+  matricesCriticos: (empresaId?: number) =>
+    [...ipevrQueryKeys.matrices(), 'criticos', empresaId] as const,
+  matricesPorArea: (empresaId?: number) =>
+    [...ipevrQueryKeys.matrices(), 'porArea', empresaId] as const,
+  matricesPorCargo: (empresaId?: number) =>
+    [...ipevrQueryKeys.matrices(), 'porCargo', empresaId] as const,
+  matricesPorPeligro: (empresaId?: number) =>
+    [...ipevrQueryKeys.matrices(), 'porPeligro', empresaId] as const,
   controles: () => [...ipevrQueryKeys.all, 'controles'] as const,
-  controlesList: (filters: ControlSSTFilters) => [...ipevrQueryKeys.controles(), 'list', filters] as const,
+  controlesList: (filters: ControlSSTFilters) =>
+    [...ipevrQueryKeys.controles(), 'list', filters] as const,
   controlDetail: (id: number) => [...ipevrQueryKeys.controles(), 'detail', id] as const,
-  controlesPendientes: (empresaId?: number) => [...ipevrQueryKeys.controles(), 'pendientes', empresaId] as const,
-  controlesPorTipo: (empresaId?: number) => [...ipevrQueryKeys.controles(), 'porTipo', empresaId] as const,
+  controlesPendientes: (empresaId?: number) =>
+    [...ipevrQueryKeys.controles(), 'pendientes', empresaId] as const,
+  controlesPorTipo: (empresaId?: number) =>
+    [...ipevrQueryKeys.controles(), 'porTipo', empresaId] as const,
 };
 
 // ==================== CLASIFICACIONES ====================

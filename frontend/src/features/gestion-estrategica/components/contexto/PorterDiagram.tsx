@@ -37,7 +37,6 @@ import {
   NIVEL_IMPACTO_CONFIG,
   type FuerzaPorter,
   type TipoFuerzaPorter,
-  type NivelImpacto,
 } from '../../types/contexto.types';
 import { cn } from '@/utils/cn';
 

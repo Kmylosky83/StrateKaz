@@ -5,7 +5,6 @@
  * ZERO HARDCODING - Todas las configuraciones centralizadas
  */
 
-import type { LucideIcon } from 'lucide-react';
 import type { PaginatedResponse } from '@/types';
 
 // Re-export para uso en API

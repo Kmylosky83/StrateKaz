@@ -158,11 +158,11 @@ export function useCrearVersionPlantilla() {
 // NODOS (Nodes)
 // ============================================================
 
-export function useNodos(plantillaId: number | null) {
+export function useNodos(_plantillaId: number | null) {
   return useQuery({
-    queryKey: nodoKeys.list({ plantilla: plantillaId }),
-    queryFn: () => nodosApi.getAll({ plantilla: plantillaId! }),
-    enabled: !!plantillaId,
+    queryKey: nodoKeys.list({ plantilla: _plantillaId }),
+    queryFn: () => nodosApi.getAll({ plantilla: _plantillaId! }),
+    enabled: !!_plantillaId,
   });
 }
 
@@ -181,8 +181,7 @@ export function useCreateNodo() {
 export function useUpdateNodo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateNodoDTO }) =>
-      nodosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateNodoDTO }) => nodosApi.update(id, data),
     onSuccess: (nodo) => {
       qc.invalidateQueries({ queryKey: nodoKeys.list({ plantilla: nodo.plantilla }) });
     },
@@ -192,12 +191,11 @@ export function useUpdateNodo() {
 export function useDeleteNodo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, plantillaId }: { id: number; plantillaId: number }) =>
-      nodosApi.delete(id),
-    onSuccess: (_, { plantillaId }) => {
-      qc.invalidateQueries({ queryKey: nodoKeys.list({ plantilla: plantillaId }) });
-      qc.invalidateQueries({ queryKey: transicionKeys.list({ plantilla: plantillaId }) });
-      qc.invalidateQueries({ queryKey: plantillaKeys.detail(plantillaId) });
+    mutationFn: ({ id, _plantillaId }: { id: number; _plantillaId: number }) => nodosApi.delete(id),
+    onSuccess: (_, { _plantillaId }) => {
+      qc.invalidateQueries({ queryKey: nodoKeys.list({ plantilla: _plantillaId }) });
+      qc.invalidateQueries({ queryKey: transicionKeys.list({ plantilla: _plantillaId }) });
+      qc.invalidateQueries({ queryKey: plantillaKeys.detail(_plantillaId) });
     },
     onError: () => toast.error('Error al eliminar el nodo'),
   });
@@ -207,11 +205,11 @@ export function useDeleteNodo() {
 // TRANSICIONES (Edges)
 // ============================================================
 
-export function useTransiciones(plantillaId: number | null) {
+export function useTransiciones(_plantillaId: number | null) {
   return useQuery({
-    queryKey: transicionKeys.list({ plantilla: plantillaId }),
-    queryFn: () => transicionesApi.getAll({ plantilla: plantillaId! }),
-    enabled: !!plantillaId,
+    queryKey: transicionKeys.list({ plantilla: _plantillaId }),
+    queryFn: () => transicionesApi.getAll({ plantilla: _plantillaId! }),
+    enabled: !!_plantillaId,
   });
 }
 
@@ -241,11 +239,11 @@ export function useUpdateTransicion() {
 export function useDeleteTransicion() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, plantillaId }: { id: number; plantillaId: number }) =>
+    mutationFn: ({ id, _plantillaId }: { id: number; _plantillaId: number }) =>
       transicionesApi.delete(id),
-    onSuccess: (_, { plantillaId }) => {
-      qc.invalidateQueries({ queryKey: transicionKeys.list({ plantilla: plantillaId }) });
-      qc.invalidateQueries({ queryKey: plantillaKeys.detail(plantillaId) });
+    onSuccess: (_, { _plantillaId }) => {
+      qc.invalidateQueries({ queryKey: transicionKeys.list({ plantilla: _plantillaId }) });
+      qc.invalidateQueries({ queryKey: plantillaKeys.detail(_plantillaId) });
     },
     onError: () => toast.error('Error al eliminar la transicion'),
   });
@@ -255,11 +253,11 @@ export function useDeleteTransicion() {
 // CAMPOS FORMULARIO
 // ============================================================
 
-export function useCamposFormulario(nodoId: number | null) {
+export function useCamposFormulario(_nodoId: number | null) {
   return useQuery({
-    queryKey: campoKeys.list({ nodo: nodoId }),
-    queryFn: () => camposApi.getAll({ nodo: nodoId! }),
-    enabled: !!nodoId,
+    queryKey: campoKeys.list({ nodo: _nodoId }),
+    queryFn: () => camposApi.getAll({ nodo: _nodoId! }),
+    enabled: !!_nodoId,
   });
 }
 
@@ -277,10 +275,9 @@ export function useCreateCampo() {
 export function useDeleteCampo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, nodoId }: { id: number; nodoId: number }) =>
-      camposApi.delete(id),
-    onSuccess: (_, { nodoId }) => {
-      qc.invalidateQueries({ queryKey: campoKeys.list({ nodo: nodoId }) });
+    mutationFn: ({ id, _nodoId }: { id: number; _nodoId: number }) => camposApi.delete(id),
+    onSuccess: (_, { _nodoId }) => {
+      qc.invalidateQueries({ queryKey: campoKeys.list({ nodo: _nodoId }) });
     },
     onError: () => toast.error('Error al eliminar el campo'),
   });

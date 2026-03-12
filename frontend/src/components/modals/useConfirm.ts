@@ -4,7 +4,7 @@
  * Permite mostrar modales de confirmación de forma imperativa
  * sin necesidad de declarar el componente en el JSX.
  */
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback } from 'react';
 import { ConfirmVariant } from './ConfirmModal';
 
 interface ConfirmOptions {

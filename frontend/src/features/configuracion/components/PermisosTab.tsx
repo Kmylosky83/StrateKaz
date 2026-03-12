@@ -71,15 +71,32 @@ export const PermisosTab = () => {
   const permissionStats: StatItem[] = useMemo(() => {
     const allPermissions = permissionGroups?.flatMap((g) => g.permissions) || [];
     const scopeAll = allPermissions.filter((p) => p.scope === 'ALL').length;
-    const scopeTeam = allPermissions.filter((p) => p.scope === 'TEAM').length;
+    const _scopeTeam = allPermissions.filter((p) => p.scope === 'TEAM').length;
     const scopeOwn = allPermissions.filter((p) => p.scope === 'OWN').length;
     const totalModules = permissionGroups?.length || 0;
 
     return [
-      { label: 'Total Permisos', value: allPermissions.length, icon: Key, iconColor: 'info' as const },
+      {
+        label: 'Total Permisos',
+        value: allPermissions.length,
+        icon: Key,
+        iconColor: 'info' as const,
+      },
       { label: 'Módulos', value: totalModules, icon: Layers, iconColor: 'info' as const },
-      { label: 'Alcance Global', value: scopeAll, icon: Shield, iconColor: 'success' as const, description: 'Acceso a todos' },
-      { label: 'Alcance Propio', value: scopeOwn, icon: Eye, iconColor: 'gray' as const, description: 'Solo propios' },
+      {
+        label: 'Alcance Global',
+        value: scopeAll,
+        icon: Shield,
+        iconColor: 'success' as const,
+        description: 'Acceso a todos',
+      },
+      {
+        label: 'Alcance Propio',
+        value: scopeOwn,
+        icon: Eye,
+        iconColor: 'gray' as const,
+        description: 'Solo propios',
+      },
     ];
   }, [permissionGroups]);
 

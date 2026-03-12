@@ -89,7 +89,7 @@ const EstrategiaCard = ({
   isLoading,
   readOnly,
 }: EstrategiaCardProps) => {
-  const tipoConfig = TIPO_ESTRATEGIA_TOWS_CONFIG[estrategia.tipo];
+  const _tipoConfig = TIPO_ESTRATEGIA_TOWS_CONFIG[estrategia.tipo];
   const estadoConfig = ESTADO_ESTRATEGIA_CONFIG[estrategia.estado];
   const prioridadConfig = estrategia.prioridad ? PRIORIDAD_CONFIG[estrategia.prioridad] : null;
 

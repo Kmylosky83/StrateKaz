@@ -121,7 +121,7 @@ export default function MovimientosContablesPage() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'create');
   const canEdit = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'edit');
-  const canDelete = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'delete');
+  const _canDelete = canDo(Modules.ACCOUNTING, Sections.COMPROBANTES, 'delete');
 
   const comprobantes = extractResults<ComprobanteContableList>(comprobantesData);
   const tipos = extractResults<TipoDocumentoContableList>(tiposData);

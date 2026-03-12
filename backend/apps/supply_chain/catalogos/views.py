@@ -30,3 +30,6 @@ class AlmacenViewSet(viewsets.ModelViewSet):
     filterset_fields = ['es_principal', 'permite_despacho', 'permite_recepcion', 'is_active']
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['codigo', 'nombre']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('empresa', 'created_by', 'updated_by')

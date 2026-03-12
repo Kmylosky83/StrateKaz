@@ -26,7 +26,6 @@ import {
   Briefcase,
   Clock,
   Calendar,
-  FileText,
   Pencil,
   ArrowRightLeft,
   Download,

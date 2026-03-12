@@ -16,7 +16,6 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
-import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import {
   useCreateFuerzaPorter,
@@ -178,7 +177,7 @@ export const FuerzaPorterFormModal = ({
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const selectedTipoConfig = TIPO_FUERZA_PORTER_CONFIG[formData.tipo];
-  const selectedNivelConfig = NIVEL_IMPACTO_CONFIG[formData.nivel];
+  const _selectedNivelConfig = NIVEL_IMPACTO_CONFIG[formData.nivel];
 
   // Footer con botones
   const footer = (
@@ -216,7 +215,7 @@ export const FuerzaPorterFormModal = ({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
             {TIPO_FUERZA_OPTIONS.map(({ value, label, icon: Icon }) => {
-              const config = TIPO_FUERZA_PORTER_CONFIG[value];
+              const _config = TIPO_FUERZA_PORTER_CONFIG[value];
               const isSelected = formData.tipo === value;
 
               return (

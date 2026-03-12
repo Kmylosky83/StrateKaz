@@ -6,7 +6,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Building2, ChevronDown, Check, Shield, Plus } from 'lucide-react';
+import { Building2, ChevronDown, Check, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 

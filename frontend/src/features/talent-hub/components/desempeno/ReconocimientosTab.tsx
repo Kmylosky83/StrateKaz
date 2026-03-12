@@ -20,7 +20,6 @@ import {
   useEntregarReconocimiento,
   usePublicarEnMuro,
 } from '../../hooks/useDesempeno';
-import type { Reconocimiento } from '../../types';
 import { ReconocimientoFormModal } from './ReconocimientoFormModal';
 
 const ESTADO_BADGE: Record<string, 'gray' | 'info' | 'warning' | 'success' | 'danger'> = {

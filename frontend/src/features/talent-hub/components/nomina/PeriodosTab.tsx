@@ -6,7 +6,6 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -22,11 +21,9 @@ import {
   useAprobarLiquidacion,
   usePagarLiquidacion,
 } from '../../hooks/useNomina';
-import type { PeriodoNomina, LiquidacionNomina } from '../../types';
 import { estadoPeriodoOptions } from '../../types';
 import { PeriodoFormModal } from './PeriodoFormModal';
 import { LiquidacionFormModal } from './LiquidacionFormModal';
-import { cn } from '@/utils/cn';
 
 const ESTADO_OPTIONS = [{ value: '', label: 'Todos los estados' }, ...estadoPeriodoOptions];
 

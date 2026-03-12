@@ -33,9 +33,9 @@ export class ExportError extends Error {
 // =============================================================================
 
 const EXPORT_PADDING = 20;
-const TITLE_HEIGHT = 60;
-const LEGEND_HEIGHT = 80;
-const DATE_HEIGHT = 30;
+const _TITLE_HEIGHT = 60;
+const _LEGEND_HEIGHT = 80;
+const _DATE_HEIGHT = 30;
 
 // =============================================================================
 // UTILIDADES DE TEMA
@@ -91,7 +91,7 @@ export const exportToPng = async (
     const panel = reactFlowContainer.querySelector('.react-flow__panel') as HTMLElement;
 
     const hiddenElements: HTMLElement[] = [];
-    [minimap, controls, panel].forEach(el => {
+    [minimap, controls, panel].forEach((el) => {
       if (el) {
         el.style.display = 'none';
         hiddenElements.push(el);
@@ -125,7 +125,7 @@ export const exportToPng = async (
     ]);
 
     // Restaurar elementos ocultos
-    hiddenElements.forEach(el => {
+    hiddenElements.forEach((el) => {
       el.style.display = '';
     });
 
@@ -149,7 +149,8 @@ export const exportToPng = async (
         errorMessage = 'La exportación tardó demasiado. Intenta con un organigrama más pequeño.';
       } else if (error.message.includes('permission') || error.message.includes('SecurityError')) {
         errorType = 'PERMISSION';
-        errorMessage = 'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
+        errorMessage =
+          'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
       } else if (error.message.includes('render') || error.message.includes('canvas')) {
         errorType = 'RENDER';
         errorMessage = 'Error al renderizar el organigrama. Intenta ajustar el zoom o el tamaño.';
@@ -364,14 +365,7 @@ export const exportToPdf = async (
     const finalHeight = Math.min(imgHeight, availableHeight);
     const finalWidth = (img.width * finalHeight) / img.height;
 
-    pdf.addImage(
-      dataUrl,
-      'PNG',
-      (pageWidth - finalWidth) / 2,
-      yPosition,
-      finalWidth,
-      finalHeight
-    );
+    pdf.addImage(dataUrl, 'PNG', (pageWidth - finalWidth) / 2, yPosition, finalWidth, finalHeight);
 
     yPosition += finalHeight + 5;
 
@@ -410,7 +404,8 @@ export const exportToPdf = async (
         errorMessage = 'La exportación tardó demasiado. Intenta con un organigrama más pequeño.';
       } else if (error.message.includes('permission') || error.message.includes('SecurityError')) {
         errorType = 'PERMISSION';
-        errorMessage = 'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
+        errorMessage =
+          'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
       } else if (error.message.includes('render') || error.message.includes('canvas')) {
         errorType = 'RENDER';
         errorMessage = 'Error al renderizar el organigrama. Intenta ajustar el zoom o el tamaño.';
@@ -458,7 +453,7 @@ export const exportOrganigrama = async (
 /**
  * Crea elemento de leyenda para exportación PNG
  */
-const createLegendElement = (stats?: OrganigramaStats): HTMLElement => {
+const _createLegendElement = (stats?: OrganigramaStats): HTMLElement => {
   const legend = document.createElement('div');
   legend.style.marginTop = '20px';
   legend.style.padding = '15px';

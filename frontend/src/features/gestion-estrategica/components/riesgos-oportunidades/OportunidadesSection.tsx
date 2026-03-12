@@ -34,7 +34,7 @@ const IMPACTO_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'gray'> =
   Bajo: 'success',
 };
 
-export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionProps) {
+export function OportunidadesSection({ _triggerNewForm }: OportunidadesSectionProps) {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 

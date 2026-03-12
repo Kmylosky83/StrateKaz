@@ -59,7 +59,7 @@ import type {
   EstadoEncuesta,
   TipoEncuesta,
 } from '../../types/encuestas.types';
-import { ESTADO_ENCUESTA_CONFIG, TIPO_ENCUESTA_CONFIG } from '../../types/encuestas.types';
+import { ESTADO_ENCUESTA_CONFIG } from '../../types/encuestas.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { Modules, Sections } from '@/constants/permissions';
@@ -88,7 +88,7 @@ interface EncuestasDofaSectionProps {
   triggerNewForm?: number;
 }
 
-export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionProps) => {
+export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionProps) => {
   const [filters, setFilters] = useState<EncuestaFilters>({});
   const [selectedEncuesta, setSelectedEncuesta] = useState<EncuestaDofa | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

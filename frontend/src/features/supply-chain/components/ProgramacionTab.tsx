@@ -610,7 +610,7 @@ const CalendarioSection = () => {
 
 export default function ProgramacionTab() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.PROGRAMACION_SC, 'create');
+  const _canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.PROGRAMACION_SC, 'create');
 
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('programaciones');

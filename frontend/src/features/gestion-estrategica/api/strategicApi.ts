@@ -30,20 +30,14 @@ import type {
   UpdateBrandingConfigDTO,
   StrategicStats,
   PaginatedResponse,
-  ObjectiveFilters,
-  ModuleFilters,
   SelectOption,
   SedeEmpresa,
-  SedeEmpresaList,
   CreateSedeEmpresaDTO,
   UpdateSedeEmpresaDTO,
-  SedeFilters,
   IntegracionExterna,
-  IntegracionExternaList,
   CreateIntegracionDTO,
   UpdateIntegracionDTO,
   UpdateCredencialesDTO,
-  IntegracionFilters,
   TestConnectionResult,
   IntegracionLog,
   IntegracionLogsFilters,
@@ -499,7 +493,7 @@ export const brandingApi = {
    * En multi-tenant, esto no es necesario ya que el branding se crea con el Tenant.
    * @deprecated El branding se configura al crear el Tenant
    */
-  create: async (data: CreateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
+  create: async (_data: CreateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
     throw new Error('El branding se configura al crear el Tenant. Use la API de Tenant.');
   },
 };
@@ -640,7 +634,6 @@ import type {
   AlcanceSistema,
   CreateAlcanceSistemaDTO,
   UpdateAlcanceSistemaDTO,
-  AlcanceSistemaFilters,
 } from '../types/strategic.types';
 
 // ✅ FACTORY: 18 líneas → reemplaza ~60 líneas de CRUD manual
@@ -1098,7 +1091,7 @@ export const currentTenantApi = {
 
   update: async (data: FormData | Partial<CurrentTenantData>): Promise<CurrentTenantData> => {
     const isFormData = data instanceof FormData;
-    const response = await apiClient.patch(`${TENANT_URL}/tenants/me/`, data, {
+    const response = await apiClient.patch(`${TENANT_URL}/tenants/me/`, _data, {
       headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
     });
     return response.data;

@@ -4,7 +4,7 @@
  * Wrappers de Framer Motion para componentes comunes
  * Uso: Reemplazar componentes estáticos por estos para animaciones
  */
-import { ReactNode, forwardRef, ComponentProps } from 'react';
+import { ReactNode, forwardRef } from 'react';
 import { motion, AnimatePresence, HTMLMotionProps } from 'framer-motion';
 import {
   pageVariants,
@@ -232,12 +232,7 @@ interface AnimatedListItemProps extends HTMLMotionProps<'div'> {
  */
 export const AnimatedListItem = forwardRef<HTMLDivElement, AnimatedListItemProps>(
   ({ children, className = '', ...props }, ref) => (
-    <motion.div
-      ref={ref}
-      variants={listItemVariants}
-      className={className}
-      {...props}
-    >
+    <motion.div ref={ref} variants={listItemVariants} className={className} {...props}>
       {children}
     </motion.div>
   )
@@ -299,7 +294,12 @@ interface AnimatedToastProps extends HTMLMotionProps<'div'> {
  *   <ToastContent />
  * </AnimatedToast>
  */
-export const AnimatedToast = ({ children, isVisible, className = '', ...props }: AnimatedToastProps) => (
+export const AnimatedToast = ({
+  children,
+  isVisible,
+  className = '',
+  ...props
+}: AnimatedToastProps) => (
   <AnimatePresence>
     {isVisible && (
       <motion.div
@@ -334,7 +334,12 @@ interface AnimatedDropdownProps extends HTMLMotionProps<'div'> {
  *   <DropdownItem>Opción 2</DropdownItem>
  * </AnimatedDropdown>
  */
-export const AnimatedDropdown = ({ children, isOpen, className = '', ...props }: AnimatedDropdownProps) => (
+export const AnimatedDropdown = ({
+  children,
+  isOpen,
+  className = '',
+  ...props
+}: AnimatedDropdownProps) => (
   <AnimatePresence>
     {isOpen && (
       <motion.div
@@ -375,7 +380,12 @@ interface AnimatedCollapseProps extends HTMLMotionProps<'div'> {
  *   <CollapsedContent />
  * </AnimatedCollapse>
  */
-export const AnimatedCollapse = ({ children, isOpen, className = '', ...props }: AnimatedCollapseProps) => (
+export const AnimatedCollapse = ({
+  children,
+  isOpen,
+  className = '',
+  ...props
+}: AnimatedCollapseProps) => (
   <AnimatePresence>
     {isOpen && (
       <motion.div
@@ -490,12 +500,7 @@ const roundedClasses = {
  * <Skeleton width={200} height={20} />
  * <Skeleton className="w-full h-10" rounded="lg" />
  */
-export const Skeleton = ({
-  className = '',
-  width,
-  height,
-  rounded = 'md',
-}: SkeletonProps) => (
+export const Skeleton = ({ className = '', width, height, rounded = 'md' }: SkeletonProps) => (
   <motion.div
     variants={skeletonVariants}
     initial="initial"
@@ -584,4 +589,5 @@ export const Presence = ({ children, mode = 'wait' }: PresenceProps) => (
 // RE-EXPORTS
 // ============================================
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { AnimatePresence, motion } from 'framer-motion';

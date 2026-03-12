@@ -20,7 +20,7 @@ export interface PaginationProps {
   /** Number of sibling pages to show */
   siblingCount?: number;
   /** Show first/last page buttons */
-  showFirstLast?: boolean;
+  _showFirstLast?: boolean;
   /** Custom className */
   className?: string;
   /** Size variant */
@@ -34,7 +34,7 @@ export function Pagination({
   totalPages,
   onPageChange,
   siblingCount = 1,
-  showFirstLast = true,
+  _showFirstLast = true,
   className,
   size = 'md',
   disabled = false,
@@ -120,10 +120,7 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <nav
-      className={cn('flex items-center gap-1', className)}
-      aria-label="Pagination"
-    >
+    <nav className={cn('flex items-center gap-1', className)} aria-label="Pagination">
       {/* Previous Button */}
       <button
         onClick={() => onPageChange(currentPage - 1)}

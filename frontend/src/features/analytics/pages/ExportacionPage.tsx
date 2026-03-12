@@ -25,7 +25,6 @@ import {
   Edit,
   Trash2,
   Eye,
-  Play,
   Search,
   Filter,
 } from 'lucide-react';
@@ -37,7 +36,6 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Input } from '@/components/forms';
-import { cn } from '@/utils/cn';
 import { useConfiguracionesExportacion, useLogsExportacion } from '../hooks/useAnalytics';
 import { ConfigExportacionFormModal } from '../components/ConfigExportacionFormModal';
 
@@ -47,7 +45,8 @@ const getTipoExportacionIcon = (tipo: string) => {
   if (tipo === 'excel') return <FileSpreadsheet className="w-5 h-5 text-green-600" />;
   if (tipo === 'pdf') return <FileText className="w-5 h-5 text-red-600" />;
   if (tipo === 'power_bi') return <Cloud className="w-5 h-5 text-yellow-600" />;
-  if (tipo === 'api_externa' || tipo === 'webhook') return <Webhook className="w-5 h-5 text-blue-600" />;
+  if (tipo === 'api_externa' || tipo === 'webhook')
+    return <Webhook className="w-5 h-5 text-blue-600" />;
   return <Download className="w-5 h-5 text-gray-600" />;
 };
 
@@ -123,7 +122,12 @@ const ConfiguracionSection = () => {
             Filtros
           </Button>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowFormModal(true)}>
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
+          onClick={() => setShowFormModal(true)}
+        >
           Nueva Configuración
         </Button>
       </div>
@@ -143,22 +147,40 @@ const ConfiguracionSection = () => {
                   <div className="flex items-start gap-3 flex-1">
                     <div className="mt-1">{getTipoExportacionIcon(config.tipo_exportacion)}</div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{config.nombre}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {config.nombre}
+                      </h4>
                       <p className="text-sm text-gray-500 mt-1">{config.codigo || '-'}</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="gray" size="sm" className={getTipoExportacionColor(config.tipo_exportacion)}>
+                        <Badge
+                          variant="gray"
+                          size="sm"
+                          className={getTipoExportacionColor(config.tipo_exportacion)}
+                        >
                           {config.tipo_exportacion.replace('_', ' ')}
                         </Badge>
-                        {config.incluir_graficos && <Badge variant="info" size="sm">Con Gráficos</Badge>}
-                        {config.incluir_analisis && <Badge variant="info" size="sm">Con Análisis</Badge>}
+                        {config.incluir_graficos && (
+                          <Badge variant="info" size="sm">
+                            Con Gráficos
+                          </Badge>
+                        )}
+                        {config.incluir_analisis && (
+                          <Badge variant="info" size="sm">
+                            Con Análisis
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {config.activa ? (
-                      <Badge variant="success" size="sm">Activa</Badge>
+                      <Badge variant="success" size="sm">
+                        Activa
+                      </Badge>
                     ) : (
-                      <Badge variant="gray" size="sm">Inactiva</Badge>
+                      <Badge variant="gray" size="sm">
+                        Inactiva
+                      </Badge>
                     )}
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="sm">
@@ -268,7 +290,9 @@ const HistorialSection = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Registros Exportados</p>
-              <p className="text-2xl font-bold text-primary-600 mt-1">{stats.registrosExportados}</p>
+              <p className="text-2xl font-bold text-primary-600 mt-1">
+                {stats.registrosExportados}
+              </p>
             </div>
             <FileText className="w-8 h-8 text-primary-500" />
           </div>
@@ -287,13 +311,27 @@ const HistorialSection = () => {
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Configuración</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Registros</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Duración (s)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Configuración
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Registros
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Duración (s)
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Archivo
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -329,8 +367,8 @@ const HistorialSection = () => {
                             log.estado === 'exitoso'
                               ? 'success'
                               : log.estado === 'fallido'
-                              ? 'danger'
-                              : 'warning'
+                                ? 'danger'
+                                : 'warning'
                           }
                           size="sm"
                         >
@@ -344,7 +382,9 @@ const HistorialSection = () => {
                           {log.archivo_generado || '-'}
                         </span>
                         {log.tamano_archivo && (
-                          <span className="text-xs text-gray-500 ml-2">{log.tamano_archivo} MB</span>
+                          <span className="text-xs text-gray-500 ml-2">
+                            {log.tamano_archivo} MB
+                          </span>
                         )}
                       </div>
                       {log.error_mensaje && (

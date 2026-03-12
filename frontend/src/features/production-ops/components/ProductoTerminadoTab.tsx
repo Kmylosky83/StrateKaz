@@ -66,7 +66,7 @@ const RESULTADO_VARIANTS: Record<ResultadoLiberacion, 'warning' | 'success' | 'i
 
 const StockSection = () => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PRODUCTION_OPS, Sections.LOTES, 'create');
+  const _canCreate = canDo(Modules.PRODUCTION_OPS, Sections.LOTES, 'create');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);

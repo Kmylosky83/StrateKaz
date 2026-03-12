@@ -82,7 +82,7 @@ export const timelineItemVariants = {
     opacity: 0,
     x: prefersReducedMotion ? 0 : -30,
   },
-  visible: (custom: 'left' | 'right') => ({
+  visible: (_custom: 'left' | 'right') => ({
     opacity: 1,
     x: 0,
     transition: {

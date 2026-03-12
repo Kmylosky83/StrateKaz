@@ -2,7 +2,7 @@
  * Tabla de KPIs con acciones
  * Sistema de Gestión StrateKaz - Sprint 4
  */
-import { Edit, TrendingUp, BarChart3, Plus } from 'lucide-react';
+import { Edit, BarChart3, Plus } from 'lucide-react';
 import { Badge, Button } from '@/components/common';
 import { DataTableCard } from '@/components/layout';
 import type { KPIObjetivo } from '../../types/kpi.types';

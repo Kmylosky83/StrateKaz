@@ -17,7 +17,6 @@ import { z } from 'zod';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import {

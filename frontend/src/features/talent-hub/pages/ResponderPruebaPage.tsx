@@ -420,7 +420,7 @@ export default function ResponderPruebaPage() {
     }
   };
 
-  const currentCampo = campos[currentQuestion];
+  const _currentCampo = campos[currentQuestion];
 
   return (
     <PublicLayout {...brandingProps}>

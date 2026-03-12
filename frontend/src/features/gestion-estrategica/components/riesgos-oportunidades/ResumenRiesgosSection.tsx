@@ -5,14 +5,7 @@
 import { useMemo } from 'react';
 import { Card, Spinner, EmptyState } from '@/components/common';
 import { StatsGrid, type StatItem } from '@/components/layout';
-import {
-  AlertTriangle,
-  TrendingUp,
-  Shield,
-  Target,
-  XCircle,
-  Activity,
-} from 'lucide-react';
+import { AlertTriangle, Shield, Target, XCircle, Activity } from 'lucide-react';
 import { useRiesgosResumen, useRiesgosCriticos } from '../../hooks/useRiesgosOportunidades';
 
 interface ResumenRiesgosSectionProps {
@@ -27,7 +20,7 @@ const ESTADO_LABELS: Record<string, string> = {
   cerrado: 'Cerrado',
 };
 
-export function ResumenRiesgosSection({ triggerNewForm }: ResumenRiesgosSectionProps) {
+export function ResumenRiesgosSection({ _triggerNewForm }: ResumenRiesgosSectionProps) {
   const { data: resumen, isLoading: resumenLoading } = useRiesgosResumen();
   const { data: criticos, isLoading: criticosLoading } = useRiesgosCriticos();
 
@@ -59,9 +52,10 @@ export function ResumenRiesgosSection({ triggerNewForm }: ResumenRiesgosSectionP
       },
       {
         label: 'Efectividad',
-        value: resumen.total > 0
-          ? `${Math.round(((resumen.total - resumen.criticos) / resumen.total) * 100)}%`
-          : '0%',
+        value:
+          resumen.total > 0
+            ? `${Math.round(((resumen.total - resumen.criticos) / resumen.total) * 100)}%`
+            : '0%',
         icon: Target,
         iconColor: 'text-primary-500',
         description: 'Riesgos bajo control',
@@ -180,7 +174,9 @@ export function ResumenRiesgosSection({ triggerNewForm }: ResumenRiesgosSectionP
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-gray-500">{riesgo.codigo}</span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{riesgo.nombre}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {riesgo.nombre}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {riesgo.tipo.replace(/_/g, ' ')} | Nivel residual: {riesgo.nivel_residual}

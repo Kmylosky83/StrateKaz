@@ -26,9 +26,12 @@ export default defineConfig({
         injectionPoint: undefined // No inyectar manifest
       },
       workbox: {
-        // Forzar activación inmediata del nuevo SW en cada deploy
-        skipWaiting: true,
-        clientsClaim: true,
+        // NO forzar activación inmediata — deja que el usuario elija cuándo recargar.
+        // Con skipWaiting:true + clientsClaim:true, un deploy forzaba reload en TODAS
+        // las pestañas abiertas via controllerchange, causando logouts inesperados.
+        // Ahora el nuevo SW espera hasta que el usuario recargue manualmente.
+        skipWaiting: false,
+        clientsClaim: false,
         cleanupOutdatedCaches: true,
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
@@ -82,7 +85,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true // Habilitar en desarrollo para testing
+        enabled: false // Deshabilitado en dev — el SW causa reloads confusos durante desarrollo
       }
     })
   ],

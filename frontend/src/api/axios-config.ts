@@ -56,6 +56,65 @@ window.addEventListener('storage', (event) => {
   }
 });
 
+// ── Proactive Token Refresh ──────────────────────────────────────────────────
+// Renueva el access token ANTES de que expire, evitando 401s por inactividad.
+// Se programa cada vez que se obtiene un nuevo token (login, refresh).
+// Refresca 5 minutos antes de la expiración (o a la mitad si es < 10 min).
+let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function getTokenExpirationMs(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp) {
+      return payload.exp * 1000 - Date.now();
+    }
+  } catch {
+    // Token malformado — no programar refresh
+  }
+  return null;
+}
+
+function scheduleProactiveRefresh(): void {
+  // Limpiar timer anterior
+  if (proactiveRefreshTimer) {
+    clearTimeout(proactiveRefreshTimer);
+    proactiveRefreshTimer = null;
+  }
+
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+
+  const msUntilExpiry = getTokenExpirationMs(token);
+  if (!msUntilExpiry || msUntilExpiry <= 0) return;
+
+  // Refrescar 5 minutos antes de expirar, o a la mitad del tiempo restante si queda poco
+  const refreshBeforeMs = Math.min(5 * 60 * 1000, msUntilExpiry / 2);
+  const refreshInMs = Math.max(msUntilExpiry - refreshBeforeMs, 10_000); // Mínimo 10 segundos
+
+  proactiveRefreshTimer = setTimeout(async () => {
+    // Solo refrescar si aún hay token y no estamos en página pública
+    const currentToken = localStorage.getItem('access_token');
+    if (!currentToken) return;
+
+    const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
+    const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
+    if (isPublicPage) return;
+
+    try {
+      await doRefreshToken();
+      // Programar siguiente refresh proactivo con el nuevo token
+      scheduleProactiveRefresh();
+    } catch {
+      // Si falla, no hacer logout — el interceptor de 401 se encargará cuando
+      // el usuario haga su próxima acción. Reintentar en 60 segundos.
+      proactiveRefreshTimer = setTimeout(scheduleProactiveRefresh, 60_000);
+    }
+  }, refreshInMs);
+}
+
+// Programar refresh proactivo al cargar si ya hay sesión activa
+scheduleProactiveRefresh();
+
 function doRefreshToken(): Promise<string> {
   const refreshToken = localStorage.getItem('refresh_token');
 
@@ -76,6 +135,9 @@ function doRefreshToken(): Promise<string> {
         localStorage.setItem('refresh_token', newRefreshToken);
       }
 
+      // Reprogramar refresh proactivo con el nuevo token
+      scheduleProactiveRefresh();
+
       return access;
     });
 }
@@ -91,7 +153,17 @@ axiosInstance.interceptors.response.use(
     const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
     const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isPublicPage) {
+    // Proteger contra 401 espúreos durante recarga de página (SW update, F5).
+    // Si no hay token en localStorage, es un request que salió antes de que
+    // Zustand rehidratara — no hacer refresh ni logout, dejar que ProtectedRoute maneje.
+    const hasTokenInStorage = !!localStorage.getItem('access_token');
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isPublicPage &&
+      hasTokenInStorage
+    ) {
       originalRequest._retry = true;
 
       try {

@@ -43,9 +43,28 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// PWA: Forzar recarga cuando el Service Worker se actualiza con nuevo build
+// PWA: Notificar al usuario cuando hay una actualización disponible.
+// NUNCA forzar reload automático — interrumpe trabajo en curso y causa logouts inesperados.
+// El usuario decide cuándo recargar via toast persistente.
 if ('serviceWorker' in navigator) {
+  let hasNotified = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    window.location.reload();
+    // Prevenir múltiples notificaciones si el evento se dispara más de una vez
+    if (hasNotified) return;
+    hasNotified = true;
+
+    // Importar toast dinámicamente para no bloquear el bundle inicial
+    import('sonner').then(({ toast }) => {
+      toast.info('Actualización disponible', {
+        description:
+          'Hay una nueva versión de la aplicación. Recarga cuando estés listo para aplicar los cambios.',
+        duration: Infinity, // Persistente hasta que el usuario actúe
+        action: {
+          label: 'Recargar ahora',
+          onClick: () => window.location.reload(),
+        },
+        dismissible: true,
+      });
+    });
   });
 }

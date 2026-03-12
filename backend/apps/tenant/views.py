@@ -1010,7 +1010,12 @@ class PublicTenantViewSet(viewsets.ViewSet):
             ]
 
         from django.http import JsonResponse
-        return JsonResponse(manifest_data, content_type='application/manifest+json')
+        response = JsonResponse(manifest_data, content_type='application/manifest+json')
+        # Evitar que el SW o el browser cacheen un manifest con branding incorrecto.
+        # Cada request debe traer datos frescos del tenant actual.
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        return response
 
     @action(detail=False, methods=['get'], url_path='check-domain')
     def check_domain(self, request):

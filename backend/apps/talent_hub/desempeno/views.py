@@ -463,7 +463,7 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Reconocimiento.objects.filter(
             is_active=True
-        ).select_related('colaborador', 'tipo_reconocimiento', 'nominado_por')
+        ).select_related('colaborador', 'tipo_reconocimiento', 'nominado_por', 'aprobado_por')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -546,7 +546,7 @@ class MuroReconocimientosViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return MuroReconocimientos.objects.filter(
             is_active=True
-        ).select_related('reconocimiento__colaborador', 'reconocimiento__tipo_reconocimiento')
+        ).select_related('reconocimiento__colaborador', 'reconocimiento__tipo_reconocimiento', 'reconocimiento__nominado_por')
 
     @action(detail=True, methods=['post'], url_path='dar-like')
     def dar_like(self, request, pk=None):

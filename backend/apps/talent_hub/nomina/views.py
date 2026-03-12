@@ -217,7 +217,7 @@ class PeriodoNominaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         if estado:
             queryset = queryset.filter(estado=estado)
 
-        return queryset.order_by('-anio', '-mes', 'tipo')
+        return queryset.select_related('cerrado_por').order_by('-anio', '-mes', 'tipo')
 
     def get_serializer_class(self):
         """Serializer según acción."""

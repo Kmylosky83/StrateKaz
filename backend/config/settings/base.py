@@ -25,6 +25,10 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(','
 # URL del frontend (para links en emails de reset de contraseña, notificaciones, etc.)
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3010')
 
+# Dominio base de la plataforma (para construir subdominios de tenants)
+# Ej: "stratekaz.com" → tenants serán "empresa.stratekaz.com"
+PLATFORM_DOMAIN = config('PLATFORM_DOMAIN', default='stratekaz.com')
+
 # Email subject prefix (Django default es "[Django] " — lo eliminamos)
 EMAIL_SUBJECT_PREFIX = ''
 

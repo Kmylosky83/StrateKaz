@@ -165,15 +165,9 @@ export const tenantsApi = {
    * @returns TenantCreateResponse con task_id para seguimiento
    */
   create: async (data: CreateTenantDTO): Promise<TenantCreateResponse> => {
-    // El backend espera "domain" en lugar de "subdomain"
-    const { subdomain, ...rest } = data;
-    const payload = {
-      ...rest,
-      domain: subdomain
-        ? `${subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'localhost'}`
-        : undefined,
-    };
-    const response = await axiosInstance.post(`${BASE_URL}/tenants/`, payload);
+    // El backend construye el dominio completo usando PLATFORM_DOMAIN
+    // Solo enviamos el subdomain limpio
+    const response = await axiosInstance.post(`${BASE_URL}/tenants/`, data);
     return response.data;
   },
 

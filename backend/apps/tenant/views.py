@@ -921,6 +921,7 @@ class PublicTenantViewSet(viewsets.ViewSet):
             'short_name': 'StrateKaz',
             'description': 'Sistema de Gestión Integral',
             'start_url': '/',
+            'scope': '/',
             'display': 'standalone',
             'background_color': '#FFFFFF',
             'theme_color': '#ec268f',

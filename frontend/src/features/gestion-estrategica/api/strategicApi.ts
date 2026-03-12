@@ -7,6 +7,7 @@
  */
 import { apiClient } from '@/lib/api-client';
 import { createApiClient } from '@/lib/api-factory';
+import { APP_VERSION } from '@/constants/brand';
 import type {
   CorporateIdentity,
   CreateCorporateIdentityDTO,
@@ -374,7 +375,7 @@ export const brandingApi = {
           gradient_vision: tenant.gradient_vision || '',
           gradient_policy: tenant.gradient_policy || '',
           gradient_values: tenant.gradient_values || [],
-          app_version: '2.4.0',
+          app_version: APP_VERSION,
           pwa_name: tenant.pwa_name || tenant.name,
           pwa_short_name: tenant.pwa_short_name || tenant.nombre_comercial || tenant.name,
           pwa_description: tenant.pwa_description || '',
@@ -449,7 +450,7 @@ export const brandingApi = {
       gradient_vision: tenant.gradient_vision || '',
       gradient_policy: tenant.gradient_policy || '',
       gradient_values: tenant.gradient_values || [],
-      app_version: '2.4.0',
+      app_version: APP_VERSION,
       pwa_name: tenant.pwa_name || tenant.name,
       pwa_short_name: tenant.pwa_short_name || tenant.nombre_comercial || tenant.name,
       pwa_description: tenant.pwa_description || '',

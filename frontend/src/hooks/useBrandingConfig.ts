@@ -45,7 +45,7 @@ const DEFAULT_BRANDING: Partial<BrandingConfig> = {
   gradient_policy: 'from-amber-500 to-orange-600',
   gradient_values: [],
 
-  app_version: '2.4.0',
+  app_version: '5.1.0',
 
   // PWA defaults - se usan favicon como fallback para iconos PWA
   pwa_name: 'StrateKaz',
@@ -116,7 +116,11 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
   // conservar datos stale del tenant anterior. Forzar null para usar defaults.
   // También limpiar cache localStorage para evitar flash con branding incorrecto
   if (isError) {
-    try { localStorage.removeItem('last_branding'); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem('last_branding');
+    } catch {
+      /* ignore */
+    }
   }
   const branding = isError ? null : rawBranding;
 
@@ -166,21 +170,32 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
 
   // PWA (Progressive Web App) - con fallback a defaults o favicon
   const pwaName = branding?.pwa_name || branding?.company_name || DEFAULT_BRANDING.pwa_name!;
-  const pwaShortName = branding?.pwa_short_name || branding?.company_short_name || DEFAULT_BRANDING.pwa_short_name!;
-  const pwaDescription = branding?.pwa_description || branding?.company_slogan || DEFAULT_BRANDING.pwa_description!;
-  const pwaThemeColor = branding?.pwa_theme_color || branding?.primary_color || DEFAULT_BRANDING.pwa_theme_color!;
-  const pwaBackgroundColor = branding?.pwa_background_color || DEFAULT_BRANDING.pwa_background_color!;
+  const pwaShortName =
+    branding?.pwa_short_name || branding?.company_short_name || DEFAULT_BRANDING.pwa_short_name!;
+  const pwaDescription =
+    branding?.pwa_description || branding?.company_slogan || DEFAULT_BRANDING.pwa_description!;
+  const pwaThemeColor =
+    branding?.pwa_theme_color || branding?.primary_color || DEFAULT_BRANDING.pwa_theme_color!;
+  const pwaBackgroundColor =
+    branding?.pwa_background_color || DEFAULT_BRANDING.pwa_background_color!;
 
   // Iconos PWA con fallback a favicon
-  const pwaIcon192 = branding?.pwa_icon_192 && branding.pwa_icon_192.trim() !== ''
-    ? branding.pwa_icon_192
-    : (branding?.favicon && branding.favicon.trim() !== '' ? branding.favicon : null);
-  const pwaIcon512 = branding?.pwa_icon_512 && branding.pwa_icon_512.trim() !== ''
-    ? branding.pwa_icon_512
-    : (branding?.favicon && branding.favicon.trim() !== '' ? branding.favicon : null);
-  const pwaIconMaskable = branding?.pwa_icon_maskable && branding.pwa_icon_maskable.trim() !== ''
-    ? branding.pwa_icon_maskable
-    : null;
+  const pwaIcon192 =
+    branding?.pwa_icon_192 && branding.pwa_icon_192.trim() !== ''
+      ? branding.pwa_icon_192
+      : branding?.favicon && branding.favicon.trim() !== ''
+        ? branding.favicon
+        : null;
+  const pwaIcon512 =
+    branding?.pwa_icon_512 && branding.pwa_icon_512.trim() !== ''
+      ? branding.pwa_icon_512
+      : branding?.favicon && branding.favicon.trim() !== ''
+        ? branding.favicon
+        : null;
+  const pwaIconMaskable =
+    branding?.pwa_icon_maskable && branding.pwa_icon_maskable.trim() !== ''
+      ? branding.pwa_icon_maskable
+      : null;
 
   // Función para obtener el logo correcto según el tema
   const getLogoForTheme = (theme: 'light' | 'dark'): string => {

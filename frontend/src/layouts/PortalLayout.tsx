@@ -17,6 +17,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
 import { Avatar } from '@/components/common';
+import { TenantSwitcher } from '@/components/common/TenantSwitcher';
 import { ChangePasswordModal } from '@/components/common/auth';
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
 import { cn } from '@/utils/cn';
@@ -81,6 +82,9 @@ export const PortalLayout = () => {
                 </p>
               )}
             </div>
+
+            {/* MB-TENANT: Selector de empresa para usuarios multi-tenant */}
+            <TenantSwitcher className="ml-1" />
           </div>
 
           {/* Acciones: tema + usuario */}

@@ -221,6 +221,67 @@ def send_setup_password_email_task(
         raise self.retry(exc=exc)
 
 
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def send_new_access_email_task(
+    self,
+    user_email: str,
+    user_name: str,
+    tenant_name: str,
+    cargo_name: str = '',
+    login_url: str = '',
+    primary_color: str = '#ec268f',
+    secondary_color: str = '#000000',
+) -> Dict[str, Any]:
+    """
+    Envía email de nuevo acceso concedido a un usuario que ya tiene password.
+
+    Se usa cuando un proveedor/cliente ya existe en otro tenant y se le crea
+    acceso en un tenant adicional. No necesita configurar contraseña.
+    """
+    try:
+        logger.info(f"[Task {self.request.id}] Enviando nuevo acceso a {user_email}")
+
+        html_content = render_to_string('emails/new_access_granted.html', {
+            'user_name': user_name,
+            'tenant_name': tenant_name,
+            'cargo_name': cargo_name,
+            'login_url': login_url,
+            'primary_color': primary_color,
+            'secondary_color': secondary_color,
+            'current_year': datetime.now().year,
+        })
+
+        text_content = strip_tags(html_content)
+
+        email = EmailMultiAlternatives(
+            subject=f'Nuevo acceso concedido — {tenant_name}',
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+
+        logger.info(f"[Task {self.request.id}] Email nuevo acceso enviado a {user_email}")
+
+        return {
+            'status': 'success',
+            'email': user_email,
+            'task_id': self.request.id,
+            'timestamp': datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+        logger.error(f"[Task {self.request.id}] Error enviando nuevo acceso a {user_email}: {exc}")
+        raise self.retry(exc=exc)
+
+
 @shared_task(bind=True, max_retries=3)
 def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any],
                             schema_name: str = None) -> Dict[str, Any]:

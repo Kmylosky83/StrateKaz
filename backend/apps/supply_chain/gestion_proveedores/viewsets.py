@@ -594,12 +594,17 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     # CREAR ACCESO — Crear usuario para un proveedor existente
     # ==========================================================================
 
-    def _create_user_for_proveedor(self, proveedor, email, username, cargo, created_by):
-        """Crea cuenta de usuario vinculada al proveedor y envía email de setup."""
-        temp_password = uuid.uuid4().hex
+    def _create_user_for_proveedor(self, proveedor, email, username, cargo, created_by,
+                                    existing_tenant_user=None):
+        """
+        Crea cuenta de usuario vinculada al proveedor.
+
+        Si existing_tenant_user se pasa (TenantUser con password usable),
+        copia el password hash y envía email de "nuevo acceso" en vez de "setup password".
+        """
+        from apps.core.utils.user_factory import _resolve_tenant_for_user
 
         # Generar document_number único por usuario (no por proveedor)
-        # Cada persona tiene su propio documento; placeholder hasta que lo actualice
         base_doc = proveedor.numero_documento or f'PROV-{proveedor.id}'
         doc_number = base_doc
         if User.objects.filter(document_number=base_doc).exists():
@@ -617,47 +622,66 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             created_by=created_by,
         )
         new_user._from_contratacion = True
-        new_user.set_password(temp_password)
 
-        setup_token = uuid.uuid4().hex
-        new_user.password_setup_token = setup_token
-        new_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
-        new_user.save()
+        if existing_tenant_user:
+            # Copiar password hash del TenantUser existente (ya configuró password en otro tenant)
+            new_user.password = existing_tenant_user.password
+            # NO generar setup token — el usuario ya tiene password funcional
+            new_user.save()
+        else:
+            # Flujo normal: password temporal + token de setup
+            temp_password = uuid.uuid4().hex
+            new_user.set_password(temp_password)
+            setup_token = uuid.uuid4().hex
+            new_user.password_setup_token = setup_token
+            new_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
+            new_user.save()
+
+        # Resolver tenant para branding del email
+        tenant_id, tenant_name_resolved, primary_color, secondary_color = _resolve_tenant_for_user(new_user)
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
 
         try:
-            from apps.core.tasks import send_setup_password_email_task
-            from django.db import connection
+            if existing_tenant_user:
+                # Email de "nuevo acceso concedido" (ya tiene password)
+                from apps.core.tasks import send_new_access_email_task
 
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            tenant_id = getattr(connection.tenant, 'id', '')
-            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
+                login_url = f"{frontend_url}/login"
+                send_new_access_email_task.delay(
+                    user_email=email,
+                    user_name=new_user.get_full_name() or new_user.username or proveedor.razon_social,
+                    tenant_name=tenant_name_resolved,
+                    cargo_name=cargo.name if cargo else '',
+                    login_url=login_url,
+                    primary_color=primary_color,
+                    secondary_color=secondary_color,
+                )
+                logger.info(
+                    'User %s creado para Proveedor %s (password existente), email de nuevo acceso enviado a %s',
+                    new_user.id, proveedor.id, email
+                )
+            else:
+                # Email de "configurar contraseña" (flujo normal)
+                from apps.core.tasks import send_setup_password_email_task
 
-            tenant_name = proveedor.nombre_comercial or proveedor.razon_social
-
-            try:
-                primary_color = connection.tenant.primary_color or '#ec268f'
-                secondary_color = connection.tenant.secondary_color or '#000000'
-            except Exception:
-                primary_color = '#ec268f'
-                secondary_color = '#000000'
-
-            send_setup_password_email_task.delay(
-                user_email=email,
-                user_name=new_user.get_full_name() or new_user.username or proveedor.razon_social,
-                tenant_name=tenant_name,
-                cargo_name=cargo.name if cargo else '',
-                setup_url=setup_url,
-                expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
-                primary_color=primary_color,
-                secondary_color=secondary_color,
-            )
-            logger.info(
-                'User %s creado para Proveedor %s, email de setup enviado a %s',
-                new_user.id, proveedor.id, email
-            )
+                setup_url = f"{frontend_url}/setup-password?token={new_user.password_setup_token}&email={email}&tenant_id={tenant_id}"
+                send_setup_password_email_task.delay(
+                    user_email=email,
+                    user_name=new_user.get_full_name() or new_user.username or proveedor.razon_social,
+                    tenant_name=tenant_name_resolved,
+                    cargo_name=cargo.name if cargo else '',
+                    setup_url=setup_url,
+                    expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
+                    primary_color=primary_color,
+                    secondary_color=secondary_color,
+                )
+                logger.info(
+                    'User %s creado para Proveedor %s, email de setup enviado a %s',
+                    new_user.id, proveedor.id, email
+                )
         except Exception as e:
             logger.error(
-                'Error enviando email de setup para User %s (Proveedor %s): %s',
+                'Error enviando email para User %s (Proveedor %s): %s',
                 new_user.id, proveedor.id, e, exc_info=True
             )
 
@@ -714,12 +738,14 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 cargo.is_externo = True
                 cargo.save(update_fields=['is_externo'])
 
-        # Verificar si el email ya existe
+        # Verificar si el email ya existe en este tenant
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             # Si el usuario existente tiene proveedor eliminado → reasignar
             old_prov = existing_user.proveedor
             if old_prov and old_prov.is_deleted:
+                from apps.core.utils.user_factory import _resolve_tenant_for_user
+
                 existing_user.proveedor = proveedor
                 existing_user.cargo = cargo
                 existing_user.is_active = True
@@ -729,24 +755,16 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 existing_user.password_setup_token = setup_token
                 existing_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
                 existing_user.save()
-                # Re-enviar email de setup
+                # Re-enviar email de setup (usando resolución robusta de tenant)
                 try:
                     from apps.core.tasks import send_setup_password_email_task
-                    from django.db import connection
                     frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-                    tenant_id = getattr(connection.tenant, 'id', '')
+                    tenant_id, tenant_name_r, primary_color, secondary_color = _resolve_tenant_for_user(existing_user)
                     setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
-                    tenant_name = proveedor.nombre_comercial or proveedor.razon_social
-                    try:
-                        primary_color = connection.tenant.primary_color or '#ec268f'
-                        secondary_color = connection.tenant.secondary_color or '#000000'
-                    except Exception:
-                        primary_color = '#ec268f'
-                        secondary_color = '#000000'
                     send_setup_password_email_task.delay(
                         user_email=email,
-                        user_name=existing_user.get_full_name() or existing_user.username or tenant_name,
-                        tenant_name=tenant_name,
+                        user_name=existing_user.get_full_name() or existing_user.username or tenant_name_r,
+                        tenant_name=tenant_name_r,
                         cargo_name=cargo.name if cargo else '',
                         setup_url=setup_url,
                         expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
@@ -779,8 +797,30 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        self._create_user_for_proveedor(proveedor, email, username, cargo, request.user)
+        # MB-TENANT: Detectar si ya existe TenantUser con password configurado
+        # (proveedor ya tiene cuenta en otro tenant → no forzar setup de password)
+        existing_tenant_user = None
+        try:
+            from apps.tenant.models import TenantUser
+            from django.contrib.auth.hashers import is_password_usable
 
+            tu = TenantUser.objects.filter(
+                user_email=email.lower().strip(), is_active=True
+            ).first()
+            if tu and tu.password and is_password_usable(tu.password):
+                existing_tenant_user = tu
+        except Exception:
+            pass
+
+        self._create_user_for_proveedor(
+            proveedor, email, username, cargo, request.user,
+            existing_tenant_user=existing_tenant_user,
+        )
+
+        if existing_tenant_user:
+            return Response({
+                'detail': 'Acceso al sistema creado exitosamente. Se envió un correo de notificación.',
+            })
         return Response({
             'detail': 'Acceso al sistema creado exitosamente. Se envió un correo para configurar la contraseña.',
         })

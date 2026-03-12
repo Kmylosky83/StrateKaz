@@ -286,7 +286,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user.restore()
         log_user_restored(self.request, user)
 
-        serializer = UserDetailSerializer(user)
+        serializer = UserDetailSerializer(user, context={'request': request})
         return Response(
             {
                 'message': 'Usuario restaurado exitosamente',
@@ -327,7 +327,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         GET /api/core/users/me/
         """
-        serializer = UserDetailSerializer(request.user)
+        serializer = UserDetailSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=False, methods=['put', 'patch'])
@@ -364,7 +364,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
             # Retornar perfil actualizado completo
             return Response(
-                UserDetailSerializer(user).data,
+                UserDetailSerializer(user, context={'request': request}).data,
                 status=status.HTTP_200_OK
             )
 

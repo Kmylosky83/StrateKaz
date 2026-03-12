@@ -62,7 +62,7 @@ export const AvatarUploadModal = ({ isOpen, onClose }: AvatarUploadModalProps) =
   };
 
   const handleFileSelect = (file: File) => {
-    const _error = validateFile(file);
+    const error = validateFile(file);
     if (error) {
       setValidationError(error);
       setSelectedFile(null);

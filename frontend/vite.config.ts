@@ -99,6 +99,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Proxy para archivos media (fotos de perfil, documentos subidos)
+      '/media': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   resolve: {

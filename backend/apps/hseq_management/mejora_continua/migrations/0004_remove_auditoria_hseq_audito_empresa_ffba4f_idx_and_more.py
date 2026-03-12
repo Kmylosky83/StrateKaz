@@ -30,21 +30,119 @@ class Migration(migrations.Migration):
             model_name='programaauditoria',
             name='hseq_progra_empresa_1e3729_idx',
         ),
-        migrations.AlterUniqueTogether(
-            name='auditoria',
-            unique_together=set(),
+        # SeparateDatabaseAndState: elimina unique_together solo si existe
+        # (tenant schemas pueden no tener la constraint si fueron creados via syncdb)
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(name='auditoria', unique_together=set()),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+DO $$ DECLARE v_con TEXT;
+BEGIN
+    SELECT tc.constraint_name INTO v_con
+    FROM information_schema.table_constraints tc
+    WHERE tc.table_name = 'hseq_auditoria'
+      AND tc.constraint_type = 'UNIQUE'
+      AND tc.table_schema = current_schema()
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'empresa_id')
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'codigo')
+    LIMIT 1;
+    IF v_con IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE hseq_auditoria DROP CONSTRAINT %I', v_con);
+    END IF;
+END $$;
+""",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
         ),
-        migrations.AlterUniqueTogether(
-            name='evaluacioncumplimiento',
-            unique_together=set(),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(name='evaluacioncumplimiento', unique_together=set()),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+DO $$ DECLARE v_con TEXT;
+BEGIN
+    SELECT tc.constraint_name INTO v_con
+    FROM information_schema.table_constraints tc
+    WHERE tc.table_name = 'hseq_evaluacion_cumplimiento'
+      AND tc.constraint_type = 'UNIQUE'
+      AND tc.table_schema = current_schema()
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'empresa_id')
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'codigo')
+    LIMIT 1;
+    IF v_con IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE hseq_evaluacion_cumplimiento DROP CONSTRAINT %I', v_con);
+    END IF;
+END $$;
+""",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
         ),
-        migrations.AlterUniqueTogether(
-            name='hallazgo',
-            unique_together=set(),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(name='hallazgo', unique_together=set()),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+DO $$ DECLARE v_con TEXT;
+BEGIN
+    SELECT tc.constraint_name INTO v_con
+    FROM information_schema.table_constraints tc
+    WHERE tc.table_name = 'hseq_hallazgo_auditoria'
+      AND tc.constraint_type = 'UNIQUE'
+      AND tc.table_schema = current_schema()
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'empresa_id')
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'codigo')
+    LIMIT 1;
+    IF v_con IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE hseq_hallazgo_auditoria DROP CONSTRAINT %I', v_con);
+    END IF;
+END $$;
+""",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
         ),
-        migrations.AlterUniqueTogether(
-            name='programaauditoria',
-            unique_together=set(),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.AlterUniqueTogether(name='programaauditoria', unique_together=set()),
+            ],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+DO $$ DECLARE v_con TEXT;
+BEGIN
+    SELECT tc.constraint_name INTO v_con
+    FROM information_schema.table_constraints tc
+    WHERE tc.table_name = 'hseq_programa_auditoria'
+      AND tc.constraint_type = 'UNIQUE'
+      AND tc.table_schema = current_schema()
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'empresa_id')
+      AND EXISTS (SELECT 1 FROM information_schema.key_column_usage kcu
+                  WHERE kcu.constraint_name = tc.constraint_name AND kcu.column_name = 'codigo')
+    LIMIT 1;
+    IF v_con IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE hseq_programa_auditoria DROP CONSTRAINT %I', v_con);
+    END IF;
+END $$;
+""",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
         ),
         migrations.AddField(
             model_name='auditoria',

@@ -446,8 +446,11 @@ export const useModuleCategories = () => {
 // ==================== BRANDING CONFIG ====================
 
 export const useActiveBranding = () => {
+  // MB-TENANT: Incluir tenant_id en la cache key para evitar servir branding
+  // del tenant anterior al cambiar de tenant (cross-tenant data leakage en cache)
+  const tenantId = localStorage.getItem('current_tenant_id') || 'public';
   return useQuery({
-    queryKey: strategicKeys.activeBranding,
+    queryKey: [...strategicKeys.activeBranding, tenantId],
     queryFn: brandingApi.getActive,
     retry: (failureCount, error) => {
       // No reintentar si es 404 (sin branding configurado) o 401/403 (sin auth)

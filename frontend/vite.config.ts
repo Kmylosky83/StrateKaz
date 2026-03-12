@@ -38,20 +38,10 @@ export default defineConfig({
         // Estrategias de cache para API
         runtimeCaching: [
           {
-            // Cache de API para consultas GET (NetworkFirst)
+            // MB-TENANT: API NUNCA se cachea en SW para evitar fuga cross-tenant.
+            // React Query maneja cache client-side con tenant_id en la key.
             urlPattern: /^https?:\/\/.*\/api\/.*$/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 // 24 horas
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              },
-              networkTimeoutSeconds: 10
-            }
+            handler: 'NetworkOnly',
           },
           {
             // Cache de imágenes (CacheFirst)

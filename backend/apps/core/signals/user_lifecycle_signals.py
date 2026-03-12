@@ -240,8 +240,25 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
         return
 
     # Obtener datos del tenant (nombre + colores para branding del email)
+    # MB-TENANT: connection.tenant puede ser None en contexto de señales/Celery.
+    # Fallback robusto: buscar tenant real desde TenantUser si connection falla.
     current_tenant = getattr(connection, 'tenant', None)
-    tenant_name = getattr(current_tenant, 'name', 'StrateKaz')
+    tenant_name = getattr(current_tenant, 'name', None)
+
+    if not tenant_name:
+        try:
+            from apps.tenant.models import TenantUser
+            tu = TenantUser.objects.filter(
+                user_email=user.email, is_active=True
+            ).select_related('tenant').first()
+            if tu and tu.tenant:
+                current_tenant = tu.tenant
+                tenant_name = tu.tenant.name
+        except Exception:
+            pass
+        if not tenant_name:
+            tenant_name = 'StrateKaz'
+
     primary_color = getattr(current_tenant, 'primary_color', '#ec268f') or '#ec268f'
     secondary_color = getattr(current_tenant, 'secondary_color', '#000000') or '#000000'
 

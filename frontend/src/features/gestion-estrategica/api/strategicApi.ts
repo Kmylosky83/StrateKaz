@@ -337,17 +337,18 @@ export const brandingApi = {
   /**
    * Obtiene la configuración de branding activa.
    *
-   * FLUJO (v3.11 - fix loop infinito):
-   * 1. Si hay token Y tenant seleccionado, obtener branding del tenant via API autenticada
-   * 2. Si no hay token o falla, usar endpoint público por dominio (no requiere auth)
-   * 3. Fallback a null para usar valores por defecto
+   * FLUJO (v4.0 - aislamiento multi-tenant):
+   * 1. Si hay token Y tenant seleccionado → endpoint autenticado (branding completo)
+   * 2. Si NO hay token PERO sí tenant_id → endpoint público por ID (setup/reset password)
+   * 3. Fallback: endpoint público por dominio (login en subdominio)
+   * 4. Fallback final: null → valores por defecto
    */
   getActive: async (): Promise<BrandingConfig | null> => {
     // Verificar si hay token de autenticación válido
     const accessToken = localStorage.getItem('access_token');
     const currentTenantId = localStorage.getItem('current_tenant_id');
 
-    // Solo intentar endpoint autenticado si hay token Y tenant seleccionado
+    // Paso 1: Endpoint autenticado si hay token Y tenant seleccionado
     if (accessToken && currentTenantId) {
       try {
         // Usar el endpoint de tenant que incluye branding
@@ -396,11 +397,24 @@ export const brandingApi = {
             localStorage.removeItem('current_tenant_id');
           }
         }
-        console.warn('[brandingApi] Failed to get tenant branding, falling back to domain');
+        console.warn('[brandingApi] Failed to get tenant branding, falling back to public');
       }
     }
 
-    // Usar endpoint público (no requiere autenticación)
+    // Paso 2: Si hay tenant_id pero NO token (setup-password, reset-password)
+    // Usar endpoint público que resuelve branding por tenant ID sin autenticación
+    if (!accessToken && currentTenantId) {
+      try {
+        const response = await apiClient.get(`${TENANT_URL}/public/branding-by-id/`, {
+          params: { tenant_id: currentTenantId },
+        });
+        return response.data;
+      } catch {
+        console.warn('[brandingApi] Failed to get branding by tenant_id, falling back to domain');
+      }
+    }
+
+    // Paso 3: Endpoint público por dominio (login en subdominio del tenant)
     try {
       const currentDomain = window.location.host;
       const response = await apiClient.get(`${TENANT_URL}/public/branding/`, {

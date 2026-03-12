@@ -42,6 +42,14 @@ export const ResetPasswordPage = () => {
 
   const token = searchParams.get('token');
   const email = searchParams.get('email');
+  const tenantIdParam = searchParams.get('tenant_id');
+
+  // MB-TENANT: Guardar tenant_id del URL para que el branding se resuelva correctamente
+  useEffect(() => {
+    if (tenantIdParam) {
+      localStorage.setItem('current_tenant_id', tenantIdParam);
+    }
+  }, [tenantIdParam]);
 
   const { companyName, logoWhite, primaryColor, isLoading: brandingLoading } = useBrandingConfig();
 

@@ -900,6 +900,37 @@ class PublicTenantViewSet(viewsets.ViewSet):
                 'pwa_background_color': '#FFFFFF',
             })
 
+    @action(detail=False, methods=['get'], url_path='branding-by-id')
+    def branding_by_id(self, request):
+        """
+        Obtener branding del tenant por ID (sin autenticación).
+
+        Query param: ?tenant_id=5
+
+        Usado por las páginas de setup-password y reset-password donde el usuario
+        NO tiene token JWT pero sí tiene el tenant_id en la URL.
+
+        IMPORTANTE: Solo expone datos visuales de branding, NO datos sensibles.
+        """
+        tenant_id = request.query_params.get('tenant_id')
+
+        if not tenant_id:
+            return Response(
+                {'detail': 'Parámetro tenant_id requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            tenant = Tenant.objects.get(id=tenant_id, is_active=True)
+            serializer = TenantBrandingSerializer(tenant, context={'request': request})
+            return Response(serializer.data)
+
+        except (Tenant.DoesNotExist, ValueError):
+            return Response(
+                {'detail': 'Tenant no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
     @action(detail=False, methods=['get'])
     def manifest(self, request):
         """

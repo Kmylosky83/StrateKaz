@@ -182,20 +182,11 @@ class ResendSetupPasswordView(APIView):
         # Enviar email de setup
         try:
             from apps.core.tasks import send_setup_password_email_task
+            from apps.core.utils.user_factory import _resolve_tenant_for_user
 
             frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            tenant_id = getattr(connection.tenant, 'id', '')
+            tenant_id, tenant_name, primary_color, secondary_color = _resolve_tenant_for_user(user)
             setup_url = f"{frontend_url}/setup-password?token={new_token}&email={email}&tenant_id={tenant_id}"
-
-            current_tenant = getattr(connection, 'tenant', None)
-            tenant_name = getattr(current_tenant, 'name', 'StrateKaz')
-
-            try:
-                primary_color = current_tenant.primary_color or '#ec268f'
-                secondary_color = current_tenant.secondary_color or '#000000'
-            except Exception:
-                primary_color = '#ec268f'
-                secondary_color = '#000000'
 
             send_setup_password_email_task.delay(
                 user_email=email,

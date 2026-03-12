@@ -465,6 +465,7 @@ class ForgotPasswordView(APIView):
 
     def post(self, request):
         email = request.data.get('email', '').lower().strip()
+        requested_tenant_id = request.data.get('tenant_id')  # MB-TENANT: opcional
         ip_address = self._get_client_ip(request)
 
         if not email:
@@ -493,8 +494,8 @@ class ForgotPasswordView(APIView):
         user.password_reset_expires = timezone.now() + timedelta(hours=1)
         user.save(update_fields=['password_reset_token', 'password_reset_expires'])
 
-        # Enviar email
-        self._send_reset_email(user, token)
+        # Enviar email con tenant_id si fue proporcionado
+        self._send_reset_email(user, token, requested_tenant_id=requested_tenant_id)
 
         security_logger.info(
             f"Password reset enviado a {email} - IP: {ip_address}"
@@ -502,27 +503,44 @@ class ForgotPasswordView(APIView):
 
         return Response({'message': success_message})
 
-    def _send_reset_email(self, user, token):
-        """Envia email de restablecimiento de contrasena con branding del tenant."""
+    def _send_reset_email(self, user, token, *, requested_tenant_id=None):
+        """Envia email de restablecimiento de contraseña con branding del tenant."""
         try:
             from apps.audit_system.centro_notificaciones.email_service import EmailService
 
             frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
 
-            # Obtener branding del primer tenant del usuario
+            # MB-TENANT: Resolver tenant específico si se proporcionó tenant_id
             tenant_name = 'StrateKaz'
             primary_color = '#ec268f'
             secondary_color = '#000000'
+            resolved_tenant_id = ''
             try:
-                tenant_access = user.tenant_accesses.filter(is_active=True).select_related('tenant').first()
+                if requested_tenant_id:
+                    # Preferir el tenant solicitado si el usuario tiene acceso
+                    tenant_access = user.tenant_accesses.filter(
+                        is_active=True, tenant_id=requested_tenant_id
+                    ).select_related('tenant').first()
+                else:
+                    tenant_access = user.tenant_accesses.filter(
+                        is_active=True
+                    ).select_related('tenant').first()
+
                 if tenant_access and tenant_access.tenant:
                     tenant = tenant_access.tenant
+                    resolved_tenant_id = tenant.id
                     tenant_name = tenant.company_name or tenant.name or 'StrateKaz'
                     primary_color = tenant.primary_color or '#ec268f'
                     secondary_color = tenant.secondary_color or '#000000'
             except Exception:
                 pass
+
+            # Incluir tenant_id en la URL para que la página muestre branding correcto
+            reset_url = (
+                f"{frontend_url}/reset-password?token={token}"
+                f"&email={user.email}"
+                f"&tenant_id={resolved_tenant_id}"
+            )
 
             EmailService.send_email(
                 to_email=user.email,
@@ -543,7 +561,10 @@ class ForgotPasswordView(APIView):
             try:
                 from django.core.mail import send_mail
                 frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-                reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
+                reset_url = (
+                    f"{frontend_url}/reset-password?token={token}"
+                    f"&email={user.email}"
+                )
                 send_mail(
                     subject='Restablecer contraseña — StrateKaz',
                     message=(

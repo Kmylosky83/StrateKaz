@@ -103,8 +103,11 @@ export const authAPI = {
    * Siempre retorna 200 por seguridad (no revela si el email existe)
    */
   forgotPassword: async (email: string): Promise<{ message: string }> => {
+    // MB-TENANT: Enviar tenant_id para branding correcto en el email de reset
+    const tenantId = localStorage.getItem('current_tenant_id');
     const response = await axios.post<{ message: string }>('/tenant/auth/forgot-password/', {
       email,
+      ...(tenantId ? { tenant_id: tenantId } : {}),
     });
     return response.data;
   },

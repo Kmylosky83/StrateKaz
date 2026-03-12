@@ -95,6 +95,40 @@ def create_external_user(
     return new_user, setup_token
 
 
+def _resolve_tenant_for_user(user):
+    """
+    Resuelve el tenant para un usuario de forma robusta.
+
+    Intenta connection.tenant primero; si es None (señales, Celery tasks),
+    busca en TenantUser como fallback.
+
+    Returns:
+        tuple: (tenant_id, tenant_name, primary_color, secondary_color)
+    """
+    current_tenant = getattr(connection, 'tenant', None)
+    tenant_id = getattr(current_tenant, 'id', None) or ''
+    tenant_name = getattr(current_tenant, 'name', None) or ''
+    primary_color = getattr(current_tenant, 'primary_color', '#ec268f') or '#ec268f'
+    secondary_color = getattr(current_tenant, 'secondary_color', '#000000') or '#000000'
+
+    # Fallback: buscar tenant real desde TenantUser si connection falla
+    if not tenant_id or not tenant_name:
+        try:
+            from apps.tenant.models import TenantUser
+            tu = TenantUser.objects.filter(
+                user_email=user.email, is_active=True
+            ).select_related('tenant').first()
+            if tu and tu.tenant:
+                tenant_id = tenant_id or tu.tenant.id
+                tenant_name = tenant_name or tu.tenant.name
+                primary_color = tu.tenant.primary_color or primary_color
+                secondary_color = tu.tenant.secondary_color or secondary_color
+        except Exception:
+            pass
+
+    return tenant_id, tenant_name or 'StrateKaz', primary_color, secondary_color
+
+
 def send_setup_password_email(user, *, entity_name, cargo_name=''):
     """
     Envía email de configuración de contraseña vía Celery task.
@@ -108,20 +142,13 @@ def send_setup_password_email(user, *, entity_name, cargo_name=''):
         from apps.core.tasks import send_setup_password_email_task
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-        tenant_id = getattr(connection.tenant, 'id', '')
+        tenant_id, _tenant_name, primary_color, secondary_color = _resolve_tenant_for_user(user)
         setup_url = (
             f"{frontend_url}/setup-password"
             f"?token={user.password_setup_token}"
             f"&email={user.email}"
             f"&tenant_id={tenant_id}"
         )
-
-        try:
-            primary_color = connection.tenant.primary_color or '#ec268f'
-            secondary_color = connection.tenant.secondary_color or '#000000'
-        except Exception:
-            primary_color = '#ec268f'
-            secondary_color = '#000000'
 
         send_setup_password_email_task.delay(
             user_email=user.email,

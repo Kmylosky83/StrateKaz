@@ -1147,13 +1147,13 @@ class MenuItemSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = [
             'id', 'code', 'name', 'path', 'icon',
-            'macroprocess', 'color', 'order', 'badge',
+            'macroprocess', 'color', 'orden', 'badge',
             'is_category', 'allow_all', 'is_active',
             'children'
         ]
 
     def get_children(self, obj):
-        children = obj.children.filter(is_active=True).order_by('order')
+        children = obj.children.filter(is_active=True).order_by('orden')
         return MenuItemSerializer(children, many=True).data
 
 
@@ -1180,7 +1180,7 @@ class MenuItemCreateSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = [
             'code', 'name', 'path', 'icon', 'parent',
-            'macroprocess', 'color', 'order', 'badge',
+            'macroprocess', 'color', 'orden', 'badge',
             'is_category', 'allow_all', 'is_active',
             'allowed_cargo_ids', 'allowed_role_ids', 'required_permission_ids'
         ]

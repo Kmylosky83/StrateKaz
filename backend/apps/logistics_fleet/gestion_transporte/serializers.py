@@ -4,14 +4,12 @@ from .models import TipoRuta, EstadoDespacho, Ruta, Conductor, ProgramacionRuta,
 class TipoRutaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoRuta
-        fields = ['id', 'codigo', 'nombre', 'descripcion', 'es_recoleccion', 'es_entrega', 'es_transferencia', 'requiere_cadena_frio', 'activo', 'orden', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ['id', 'codigo', 'nombre', 'descripcion', 'es_recoleccion', 'es_entrega', 'es_transferencia', 'requiere_cadena_frio', 'orden']
 
 class EstadoDespachoSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadoDespacho
-        fields = ['id', 'codigo', 'nombre', 'color', 'descripcion', 'en_transito', 'es_final', 'permite_edicion', 'activo', 'orden', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ['id', 'codigo', 'nombre', 'color', 'descripcion', 'en_transito', 'es_final', 'permite_edicion', 'orden']
 
 class RutaSerializer(serializers.ModelSerializer):
     tipo_ruta_nombre = serializers.CharField(source='tipo_ruta.nombre', read_only=True)

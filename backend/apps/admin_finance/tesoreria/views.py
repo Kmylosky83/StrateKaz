@@ -87,7 +87,7 @@ class CuentaPorPagarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = CuentaPorPagar.objects.all()
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['estado', 'proveedor']
+    filterset_fields = ['estado', 'proveedor_id']
     search_fields = ['codigo', 'concepto']
     ordering_fields = ['fecha_vencimiento', 'monto_total', 'created_at']
     ordering = ['fecha_vencimiento']
@@ -173,7 +173,7 @@ class CuentaPorCobrarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = CuentaPorCobrar.objects.all()
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['estado', 'cliente']
+    filterset_fields = ['estado', 'cliente_id']
     search_fields = ['codigo', 'concepto']
     ordering_fields = ['fecha_vencimiento', 'monto_total', 'created_at']
     ordering = ['fecha_vencimiento']

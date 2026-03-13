@@ -58,7 +58,7 @@ class MantenimientoLocativoViewSet(viewsets.ModelViewSet):
         'empresa', 'responsable'
     ).filter(is_active=True)
     serializer_class = MantenimientoLocativoSerializer
-    filterset_fields = ['tipo', 'estado', 'responsable', 'proveedor']
+    filterset_fields = ['tipo', 'estado', 'responsable', 'proveedor_id']
     search_fields = ['codigo', 'ubicacion', 'descripcion_trabajo']
     ordering_fields = ['fecha_solicitud', 'fecha_programada', 'costo_estimado']
     ordering = ['-fecha_solicitud']
@@ -340,7 +340,7 @@ class ContratoServicioViewSet(viewsets.ModelViewSet):
         'empresa'
     ).filter(is_active=True)
     serializer_class = ContratoServicioSerializer
-    filterset_fields = ['tipo_servicio', 'estado', 'proveedor']
+    filterset_fields = ['tipo_servicio', 'estado', 'proveedor_id']
     search_fields = ['codigo', 'objeto']
     ordering_fields = ['fecha_inicio', 'fecha_fin', 'valor_total']
     ordering = ['-fecha_inicio']

@@ -187,11 +187,11 @@ class RecepcionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'empresa', 'proveedor', 'tipo_recepcion', 'punto_recepcion',
-        'estado', 'programacion', 'recibido_por', 'is_active'
+        'empresa', 'proveedor_id', 'tipo_recepcion', 'punto_recepcion',
+        'estado', 'programacion_id', 'recibido_por', 'is_active'
     ]
     search_fields = [
-        'codigo', 'proveedor__nombre_comercial', 'proveedor__nit',
+        'codigo', 'proveedor_nombre',
         'vehiculo_proveedor', 'conductor_proveedor', 'observaciones'
     ]
     ordering_fields = [
@@ -590,7 +590,7 @@ class DetalleRecepcionViewSet(viewsets.ModelViewSet):
     serializer_class = DetalleRecepcionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['recepcion', 'tipo_materia_prima', 'unidad_medida']
+    filterset_fields = ['recepcion', 'tipo_materia_prima_id', 'unidad_medida']
     ordering_fields = ['cantidad', 'precio_unitario', 'subtotal', 'created_at']
     ordering = ['id']
 

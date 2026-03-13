@@ -123,7 +123,7 @@ class VertimientoCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Vertimiento
-        exclude = ['created_at', 'updated_at']
+        fields = '__all__'
 
     def validate(self, data):
         """Validaciones de parámetros según normativa"""

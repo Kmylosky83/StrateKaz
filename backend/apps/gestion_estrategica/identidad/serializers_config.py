@@ -50,7 +50,6 @@ class TipoPoliticaSerializer(serializers.ModelSerializer):
             'description',
             'prefijo_codigo',
             'requiere_firma',
-            'flujo_firma_default',
             'normas_iso_default_ids',
             'icon',
             'color',

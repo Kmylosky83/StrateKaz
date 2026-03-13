@@ -592,10 +592,10 @@ class PermisoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PermisoSerializer
     permission_classes = [IsAuthenticated, CanManageUsers]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['module', 'action', 'scope', 'is_active']
+    filterset_fields = ['modulo', 'accion', 'alcance', 'is_active']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['module', 'action', 'created_at']
-    ordering = ['module', 'action', 'scope']
+    ordering_fields = ['modulo', 'accion', 'created_at']
+    ordering = ['modulo', 'accion', 'alcance']
 
     def get_queryset(self):
         """Filtrar solo permisos activos por defecto"""
@@ -620,7 +620,8 @@ class PermisoViewSet(viewsets.ReadOnlyModelViewSet):
         result = defaultdict(list)
         
         for permiso in permisos:
-            result[permiso.module].append(PermisoSerializer(permiso).data)
+            key = permiso.modulo.code if permiso.modulo else 'sin_modulo'
+            result[key].append(PermisoSerializer(permiso).data)
 
         return Response(dict(result))
 

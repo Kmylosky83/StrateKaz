@@ -52,7 +52,7 @@ class AreaLightSerializer(serializers.ModelSerializer):
     """Serializer ligero para Area"""
     class Meta:
         model = Area
-        fields = ['id', 'codigo', 'nombre', 'nivel']
+        fields = ['id', 'code', 'name']
 
 
 class TipoAnalisisDOFASerializer(serializers.ModelSerializer):

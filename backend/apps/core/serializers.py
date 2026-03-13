@@ -547,9 +547,9 @@ class ChangePasswordSerializer(serializers.Serializer):
 class PermisoSerializer(serializers.ModelSerializer):
     """Serializer para Permisos"""
 
-    module_display = serializers.CharField(source='get_module_display', read_only=True)
-    action_display = serializers.CharField(source='get_action_display', read_only=True)
-    scope_display = serializers.CharField(source='get_scope_display', read_only=True)
+    modulo_code = serializers.CharField(source='modulo.code', read_only=True)
+    accion_code = serializers.CharField(source='accion.code', read_only=True)
+    alcance_code = serializers.CharField(source='alcance.code', read_only=True)
 
     class Meta:
         model = Permiso
@@ -558,12 +558,12 @@ class PermisoSerializer(serializers.ModelSerializer):
             'code',
             'name',
             'description',
-            'module',
-            'module_display',
-            'action',
-            'action_display',
-            'scope',
-            'scope_display',
+            'modulo',
+            'modulo_code',
+            'accion',
+            'accion_code',
+            'alcance',
+            'alcance_code',
             'is_active',
             'created_at',
         ]

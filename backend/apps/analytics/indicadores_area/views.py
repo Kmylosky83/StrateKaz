@@ -82,10 +82,10 @@ class ValorKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
 class AccionPorKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para AccionPorKPI"""
-    queryset = AccionPorKPI.objects.select_related('valor_kpi', 'responsable')
+    queryset = AccionPorKPI.objects.select_related('valor_kpi')
     serializer_class = AccionPorKPISerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['estado', 'tipo_accion', 'responsable', 'is_active']
+    filterset_fields = ['estado', 'tipo_accion', 'responsable_id', 'is_active']
     search_fields = ['descripcion', 'valor_kpi__kpi__codigo']
     ordering_fields = ['fecha_compromiso', 'created_at']
     ordering = ['fecha_compromiso']

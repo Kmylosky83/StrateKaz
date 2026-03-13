@@ -47,9 +47,8 @@ class NoConformidadListSerializer(serializers.ModelSerializer):
             'detectado_por', 'detectado_por_nombre',
             'responsable_analisis', 'responsable_analisis_nombre',
             'dias_abierta', 'cantidad_acciones',
-            'created_at', 'updated_at'
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo']
 
     def get_dias_abierta(self, obj):
         return obj.calcular_dias_abierta()
@@ -92,7 +91,7 @@ class NoConformidadDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = NoConformidad
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = ['codigo']
 
     def get_dias_abierta(self, obj):
         return obj.calcular_dias_abierta()
@@ -131,9 +130,8 @@ class AccionCorrectivaListSerializer(serializers.ModelSerializer):
             'no_conformidad_codigo', 'descripcion', 'fecha_planificada',
             'fecha_limite', 'responsable', 'responsable_nombre',
             'estado', 'estado_display', 'eficaz', 'esta_vencida',
-            'created_at', 'updated_at'
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo']
 
     def get_esta_vencida(self, obj):
         return obj.esta_vencida()
@@ -163,7 +161,7 @@ class AccionCorrectivaDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccionCorrectiva
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = ['codigo']
 
     def get_esta_vencida(self, obj):
         return obj.esta_vencida()
@@ -196,9 +194,8 @@ class SalidaNoConformeListSerializer(serializers.ModelSerializer):
             'bloqueada', 'riesgo_uso', 'estado', 'estado_display',
             'disposicion', 'disposicion_display',
             'detectado_por', 'detectado_por_nombre',
-            'created_at', 'updated_at'
         ]
-        read_only_fields = ['codigo', 'created_at', 'updated_at']
+        read_only_fields = ['codigo']
 
 
 class SalidaNoConformeDetailSerializer(serializers.ModelSerializer):
@@ -229,7 +226,7 @@ class SalidaNoConformeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalidaNoConforme
         fields = '__all__'
-        read_only_fields = ['codigo', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = ['codigo']
 
     def get_puede_liberar(self, obj):
         return obj.puede_liberar()
@@ -261,9 +258,8 @@ class SolicitudCambioListSerializer(serializers.ModelSerializer):
             'solicitante', 'solicitante_nombre', 'fecha_solicitud',
             'estado', 'estado_display', 'fecha_aprobacion',
             'fecha_implementacion_planificada', 'costo_estimado',
-            'created_at', 'updated_at'
         ]
-        read_only_fields = ['codigo', 'fecha_solicitud', 'created_at', 'updated_at']
+        read_only_fields = ['codigo', 'fecha_solicitud']
 
 
 class SolicitudCambioDetailSerializer(serializers.ModelSerializer):
@@ -296,7 +292,7 @@ class SolicitudCambioDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudCambio
         fields = '__all__'
-        read_only_fields = ['codigo', 'fecha_solicitud', 'created_at', 'updated_at', 'created_by']
+        read_only_fields = ['codigo', 'fecha_solicitud']
 
 
 # ============================================================================
@@ -321,9 +317,8 @@ class ControlCambioListSerializer(serializers.ModelSerializer):
             'id', 'solicitud_cambio', 'solicitud_codigo', 'solicitud_titulo',
             'fecha_inicio_implementacion', 'fecha_fin_implementacion',
             'capacitacion_realizada', 'verificacion_realizada', 'eficaz',
-            'costo_real', 'created_at', 'updated_at'
+            'costo_real'
         ]
-        read_only_fields = ['created_at', 'updated_at']
 
 
 class ControlCambioDetailSerializer(serializers.ModelSerializer):
@@ -337,4 +332,4 @@ class ControlCambioDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ControlCambio
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at', 'created_by']
+        read_only_fields = []

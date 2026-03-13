@@ -165,7 +165,7 @@ class AlertaVencimientoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     serializer_class = AlertaVencimientoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["empresa_requisito", "enviada", "is_active"]
+    filterset_fields = ["empresa_requisito", "enviada"]
 
     @action(detail=False, methods=["get"])
     def pendientes(self, request):

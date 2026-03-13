@@ -37,3 +37,6 @@ export * from './nomina.types';
 
 // Off-Boarding (Retiros, Paz y Salvos, Liquidación Final)
 export * from './offBoarding.types';
+
+// Consultores Externos
+export * from './consultor-externo.types';

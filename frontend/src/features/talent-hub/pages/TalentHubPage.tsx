@@ -37,6 +37,7 @@ import {
   Gavel,
   DollarSign,
   LogOut,
+  UserCog,
 } from 'lucide-react';
 
 // Secciones implementadas
@@ -51,6 +52,7 @@ import { NovedadesSection } from '../components/novedades';
 import { ProcesoDisciplinarioSection } from '../components/proceso-disciplinario';
 import { NominaSection } from '../components/nomina';
 import { OffBoardingSection } from '../components/off-boarding';
+import { ConsultoresExternosSection } from '../components/consultores-externos';
 
 // ============================================================================
 // Mapa de secciones por ruta
@@ -136,6 +138,12 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Proceso de salida, checklist de entrega, paz y salvo y liquidación final',
     icon: <LogOut className="w-5 h-5" />,
     component: OffBoardingSection,
+  },
+  'consultores-externos': {
+    title: 'Consultores Externos',
+    description: 'Consultores y contratistas externos vinculados a la organización',
+    icon: <UserCog className="w-5 h-5" />,
+    component: ConsultoresExternosSection,
   },
 };
 

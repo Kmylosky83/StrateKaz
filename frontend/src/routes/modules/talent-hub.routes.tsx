@@ -24,5 +24,9 @@ export const talentHubRoutes = (
     <Route path="/talento/disciplinario" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
     <Route path="/talento/nomina" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
     <Route path="/talento/off-boarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+    <Route
+      path="/talento/consultores-externos"
+      element={withModuleGuard(TalentHubPage, 'talent_hub')}
+    />
   </>
 );

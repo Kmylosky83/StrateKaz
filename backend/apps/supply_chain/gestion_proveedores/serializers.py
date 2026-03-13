@@ -219,7 +219,7 @@ class ProveedorListSerializer(serializers.ModelSerializer):
             'formas_pago', 'formas_pago_display', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'precios_materia_prima', 'es_proveedor_materia_prima',
-            'observaciones', 'is_active', 'created_by_nombre', 'created_at',
+            'observaciones', 'es_independiente', 'is_active', 'created_by_nombre', 'created_at',
             'usuarios_vinculados_count', 'tiene_acceso',
         ]
 
@@ -294,7 +294,7 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
             'telefono', 'email', 'direccion', 'ciudad', 'departamento',
             'unidad_negocio', 'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
-            'precios', 'observaciones', 'is_active'
+            'precios', 'observaciones', 'es_independiente', 'is_active'
         ]
 
     def validate_numero_documento(self, value):
@@ -473,7 +473,7 @@ class ProveedorUpdateSerializer(serializers.ModelSerializer):
             'unidad_negocio',
             'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
-            'observaciones', 'is_active'
+            'observaciones', 'es_independiente', 'is_active'
         ]
 
     def validate_email(self, value):

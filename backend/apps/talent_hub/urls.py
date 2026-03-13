@@ -60,6 +60,9 @@ urlpatterns = [
     # Portal Jefe (MSS - Manager Self-Service)
     path('mi-equipo/', include('apps.talent_hub.api.mss_urls')),
 
+    # Consultores Externos
+    path('consultores-externos/', include('apps.talent_hub.consultores_externos.urls')),
+
     # People Analytics
     path('people-analytics/', PeopleAnalyticsView.as_view(), name='people-analytics'),
 ]

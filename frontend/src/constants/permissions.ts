@@ -188,6 +188,7 @@ export const Sections = {
   PRESTACIONES: 'prestaciones',
   PROCESO_RETIRO: 'proceso_retiro',
   LIQUIDACION_FINAL: 'liquidacion_final',
+  CONSULTORES_EXTERNOS: 'consultores_externos',
 
   // ── ADMIN FINANCE ──
   FLUJO_CAJA: 'flujo_caja',

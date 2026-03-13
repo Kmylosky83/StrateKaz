@@ -103,6 +103,9 @@ export interface Proveedor {
   precios_materia_prima?: PrecioMateriaPrima[];
   es_proveedor_materia_prima: boolean;
 
+  // Consultor independiente
+  es_independiente: boolean;
+
   // Metadatos
   observaciones?: string;
   is_active: boolean;
@@ -150,6 +153,7 @@ export interface ProveedorList {
   titular_cuenta?: string;
   precios_materia_prima?: PrecioMateriaPrima[];
   es_proveedor_materia_prima: boolean;
+  es_independiente: boolean;
   observaciones?: string;
   is_active: boolean;
   created_by_nombre?: string;
@@ -183,6 +187,7 @@ export interface CreateProveedorDTO {
   numero_cuenta?: string;
   titular_cuenta?: string;
   precios?: Array<{ tipo_materia_id: number; precio_kg: string }>;
+  es_independiente?: boolean;
   observaciones?: string;
   is_active?: boolean;
 }

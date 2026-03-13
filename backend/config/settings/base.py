@@ -165,6 +165,7 @@ TENANT_APPS = [
     'apps.talent_hub.nomina',
     'apps.talent_hub.proceso_disciplinario',
     'apps.talent_hub.off_boarding',
+    'apps.talent_hub.consultores_externos',
 
     'apps.admin_finance.presupuesto',
     'apps.admin_finance.tesoreria',

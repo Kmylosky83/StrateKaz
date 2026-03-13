@@ -505,6 +505,14 @@ class Proveedor(models.Model):
     numero_cuenta = models.CharField(max_length=30, null=True, blank=True)
     titular_cuenta = models.CharField(max_length=200, null=True, blank=True)
 
+    # Consultor independiente vs firma consultora
+    es_independiente = models.BooleanField(
+        default=False,
+        verbose_name='Es independiente',
+        help_text='True = consultor/contratista independiente (persona natural). '
+                  'False = firma consultora/contratista con equipo.',
+    )
+
     # Metadatos
     observaciones = models.TextField(null=True, blank=True)
     is_active = models.BooleanField(default=True, db_index=True)

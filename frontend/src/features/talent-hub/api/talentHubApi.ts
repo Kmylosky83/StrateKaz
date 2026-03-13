@@ -196,6 +196,7 @@ const ESTRUCTURA_CARGOS_URL = '/talent-hub/estructura-cargos';
 const DESEMPENO_URL = '/talent-hub/desempeno';
 const FORMACION_URL = '/talent-hub/formacion';
 const OFF_BOARDING_URL = '/talent-hub/off-boarding';
+const CONSULTORES_EXTERNOS_URL = '/talent-hub/consultores-externos';
 
 // =============================================================================
 // SELECCION Y CONTRATACION — Catalogos
@@ -953,6 +954,39 @@ export const certificadoTrabajoApi = createApiClient<
 >(OFF_BOARDING_URL, 'certificados-trabajo');
 
 // =============================================================================
+// CONSULTORES EXTERNOS
+// =============================================================================
+
+export const consultorExternoApi = {
+  ...createApiClient<import('../types').ConsultorExternoList>(CONSULTORES_EXTERNOS_URL, ''),
+  // Override getAll para usar URL sin trailing endpoint
+  getAll: async (params?: Record<string, unknown>) => {
+    const response = await apiClient.get<
+      import('@/types').PaginatedResponse<import('../types').ConsultorExternoList>
+    >(`${CONSULTORES_EXTERNOS_URL}/`, { params });
+    return response.data;
+  },
+  getById: async (id: number) => {
+    const response = await apiClient.get<import('../types').ConsultorExternoDetail>(
+      `${CONSULTORES_EXTERNOS_URL}/${id}/`
+    );
+    return response.data;
+  },
+  getEstadisticas: async () => {
+    const response = await apiClient.get<import('../types').ConsultorExternoEstadisticas>(
+      `${CONSULTORES_EXTERNOS_URL}/estadisticas/`
+    );
+    return response.data;
+  },
+  toggleActivo: async (id: number) => {
+    const response = await apiClient.post<{ detail: string; is_active: boolean }>(
+      `${CONSULTORES_EXTERNOS_URL}/${id}/toggle-activo/`
+    );
+    return response.data;
+  },
+};
+
+// =============================================================================
 // EXPORTACION POR DEFECTO
 // =============================================================================
 
@@ -1045,6 +1079,8 @@ const talentHubApi = {
   entrevistaRetiro: entrevistaRetiroApi,
   liquidacionFinal: liquidacionFinalApi,
   certificadoTrabajo: certificadoTrabajoApi,
+  // Consultores Externos
+  consultorExterno: consultorExternoApi,
 };
 
 export default talentHubApi;

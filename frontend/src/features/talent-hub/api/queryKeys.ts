@@ -125,4 +125,8 @@ export const thKeys = {
   entrevistasRetiro: createQueryKeys('th-entrevistas-retiro'),
   liquidacionesFinales: createQueryKeys('th-liquidaciones-finales'),
   certificadosTrabajo: createQueryKeys('th-certificados-trabajo'),
+
+  // Consultores Externos
+  consultoresExternos: createQueryKeys('th-consultores-externos'),
+  estadisticasConsultores: createQueryKeys('th-estadisticas-consultores'),
 } as const;

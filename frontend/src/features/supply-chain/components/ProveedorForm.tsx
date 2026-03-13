@@ -54,6 +54,7 @@ const proveedorSchema = z.object({
   numero_cuenta: z.string().optional().default(''),
   titular_cuenta: z.string().optional().default(''),
   observaciones: z.string().optional().default(''),
+  es_independiente: z.boolean().default(false),
   is_active: z.boolean().default(true),
 });
 
@@ -160,6 +161,9 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const requiereModalidadLogistica =
     tipoProveedorSeleccionado?.requiere_modalidad_logistica ?? false;
   const esUnidadNegocio = tipoProveedorSeleccionado?.codigo === 'UNIDAD_NEGOCIO';
+  const esConsultorOContratista =
+    tipoProveedorSeleccionado?.codigo === 'CONSULTOR' ||
+    tipoProveedorSeleccionado?.codigo === 'CONTRATISTA';
 
   // ==================== EFECTOS ====================
 
@@ -187,6 +191,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
         numero_cuenta: proveedor.numero_cuenta || '',
         titular_cuenta: proveedor.titular_cuenta || '',
         observaciones: proveedor.observaciones || '',
+        es_independiente: proveedor.es_independiente ?? false,
         is_active: proveedor.is_active,
       });
     } else if (!proveedor && isOpen) {
@@ -311,6 +316,22 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
                 </option>
               ))}
             </Select>
+          )}
+
+          {esConsultorOContratista && (
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={watch('es_independiente')}
+                onChange={(e) =>
+                  setValue('es_independiente', e.target.checked, { shouldDirty: true })
+                }
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Consultor independiente (persona natural sin empresa)
+              </span>
+            </label>
           )}
 
           <div className="md:col-span-2">

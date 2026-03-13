@@ -846,6 +846,9 @@ class Command(BaseCommand):
                         {'code': 'proceso_retiro', 'name': 'Proceso de Retiro', 'icon': 'LogOut', 'orden': 1, 'description': 'Gestión del proceso de desvinculación'},
                         {'code': 'liquidacion_final', 'name': 'Liquidación Final', 'icon': 'FileText', 'orden': 2, 'description': 'Cálculo de liquidación definitiva'},
                     ]},
+                    {'code': 'consultores_externos', 'name': 'Consultores Externos', 'icon': 'UserCog', 'route': 'consultores-externos', 'orden': 12, 'sections': [
+                        {'code': 'consultores_externos', 'name': 'Consultores Externos', 'icon': 'UserCog', 'orden': 1, 'description': 'Consultores y contratistas externos vinculados a la organización'},
+                    ]},
                 ]
             },
             {

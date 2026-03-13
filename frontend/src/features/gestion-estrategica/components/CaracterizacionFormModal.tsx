@@ -88,7 +88,10 @@ function DynamicArraySection<T extends Record<string, unknown>>({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {title} <Badge label={String(items.length)} color="default" />
+          {title}{' '}
+          <Badge variant="gray" size="sm">
+            {items.length}
+          </Badge>
         </span>
         <Button type="button" variant="ghost" size="sm" onClick={addItem}>
           <Plus className="w-4 h-4 mr-1" /> Agregar

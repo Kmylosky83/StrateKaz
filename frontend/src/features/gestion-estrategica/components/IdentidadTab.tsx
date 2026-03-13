@@ -97,7 +97,7 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-const MisionVisionSection = ({ _identity, onEdit, canEdit }: MisionVisionSectionProps) => {
+const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionProps) => {
   const { primaryColor, secondaryColor, companyName } = useBrandingConfig();
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);

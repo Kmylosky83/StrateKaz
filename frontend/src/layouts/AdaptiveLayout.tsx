@@ -17,7 +17,7 @@
  * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente
  * a su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -25,7 +25,13 @@ import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 import { PortalLayout } from './PortalLayout';
 
-const MAX_PROFILE_RETRIES = 3;
+const MAX_PROFILE_RETRIES = 5;
+
+/** Delay progresivo entre reintentos (ms): 0, 2s, 4s, 8s, 16s */
+function getRetryDelay(attempt: number): number {
+  if (attempt <= 1) return 0; // Primer intento: inmediato
+  return Math.min(2000 * Math.pow(2, attempt - 2), 16_000);
+}
 
 /**
  * PortalRedirect — Navega imperativamente mostrando un spinner.
@@ -49,6 +55,7 @@ const PortalRedirect = ({ to }: { to: string }) => {
 export const AdaptiveLayout = () => {
   const location = useLocation();
   const retryCount = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auth state
   const currentTenantId = useAuthStore((s) => s.currentTenantId);
@@ -64,14 +71,42 @@ export const AdaptiveLayout = () => {
     }
   }, [user]);
 
+  // Cleanup retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Retry con backoff progresivo
+  const scheduleRetry = useCallback(() => {
+    const attempt = retryCount.current + 1;
+    const delay = getRetryDelay(attempt);
+
+    retryCount.current = attempt;
+
+    if (delay === 0) {
+      loadUserProfile();
+    } else {
+      retryTimerRef.current = setTimeout(() => {
+        retryTimerRef.current = null;
+        loadUserProfile();
+      }, delay);
+    }
+  }, [loadUserProfile]);
+
   // Cargar perfil del User cuando hay tenant pero no user
   // (Cubre: F5, navegación directa, primer acceso post-login)
-  // Limita reintentos para evitar loop infinito si el endpoint falla
+  // Limita reintentos con backoff progresivo para evitar logouts prematuros
   useEffect(() => {
     if (currentTenantId && !user && !isLoadingUser) {
+      // No re-disparar si hay un timer pendiente
+      if (retryTimerRef.current) return;
+
       if (retryCount.current < MAX_PROFILE_RETRIES) {
-        retryCount.current += 1;
-        loadUserProfile();
+        scheduleRetry();
       } else {
         // Reintentos agotados: la sesión no puede recuperarse → forzar logout
         console.error(
@@ -80,7 +115,7 @@ export const AdaptiveLayout = () => {
         forceLogout();
       }
     }
-  }, [currentTenantId, user, isLoadingUser, loadUserProfile, forceLogout]);
+  }, [currentTenantId, user, isLoadingUser, scheduleRetry, forceLogout]);
 
   // Mientras se carga el perfil, mostrar spinner
   if (isLoadingUser || (currentTenantId && !user)) {

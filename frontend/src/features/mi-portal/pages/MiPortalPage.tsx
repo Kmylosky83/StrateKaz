@@ -225,6 +225,110 @@ function AdminPortalView() {
 }
 
 // ============================================================================
+// USER PORTAL VIEW (usuario sin Colaborador pero con cargo)
+// ============================================================================
+
+function UserPortalView() {
+  const user = useAuthStore((s) => s.user);
+  const { primaryColor } = useBrandingConfig();
+  const { isExterno } = useIsExterno();
+  const { text: greetingText, Icon: GreetingIcon } = getGreeting();
+  const currentDate = getCurrentDateFormatted();
+
+  const firstName = user?.first_name || 'Usuario';
+  const fullName = user?.full_name || user?.first_name || 'Usuario';
+
+  return (
+    <AnimatedPage>
+      <div className="space-y-6">
+        {/* Hero con datos del User */}
+        <Card padding="none" className="overflow-hidden">
+          <div
+            className="h-1.5"
+            style={{ background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}80)` }}
+          />
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <Avatar
+                src={user?.photo_url || undefined}
+                name={fullName}
+                size="2xl"
+                status={isExterno ? 'external' : 'active'}
+                className="ring-4 ring-white dark:ring-gray-800 shadow-lg flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <GreetingIcon className="w-5 h-5 text-amber-500" />
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {greetingText}
+                  </span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate">
+                  {firstName}
+                </h1>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  {user?.cargo?.name && <span>{user.cargo.name}</span>}
+                  {user?.cargo?.name && user?.area_nombre && (
+                    <span className="hidden md:inline text-gray-300 dark:text-gray-600">|</span>
+                  )}
+                  {user?.area_nombre && <span>{user.area_nombre}</span>}
+                  {user?.proveedor_nombre && (
+                    <>
+                      <span className="hidden md:inline text-gray-300 dark:text-gray-600">|</span>
+                      <span>{user.proveedor_nombre}</span>
+                    </>
+                  )}
+                </div>
+                {isExterno && (
+                  <Badge variant="info" size="sm" className="mt-2">
+                    Colaborador Externo
+                  </Badge>
+                )}
+              </div>
+              <div className="hidden md:flex flex-col items-end gap-3 flex-shrink-0">
+                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{currentDate}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Info: perfil pendiente */}
+        <Card padding="none" className="overflow-hidden">
+          <div className="p-6 md:p-8 text-center space-y-4">
+            <div
+              className="mx-auto w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${primaryColor}15` }}
+            >
+              <User className="w-7 h-7" style={{ color: primaryColor }} />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Perfil en proceso de configuraci&oacute;n
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
+                Tu cuenta est&aacute; activa pero el &aacute;rea de talento humano a&uacute;n no ha
+                completado tu perfil de colaborador. Mientras tanto, puedes acceder a los
+                m&oacute;dulos asignados a tu cargo.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white font-medium text-sm transition-colors hover:opacity-90"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Ir al Dashboard
+              </Link>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </AnimatedPage>
+  );
+}
+
+// ============================================================================
 // MAIN PAGE
 // ============================================================================
 
@@ -321,12 +425,12 @@ export default function MiPortalPage() {
   // Si el tab activo fue filtrado, volver a 'perfil'
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
 
-  // ── Redirect cuando no hay Colaborador vinculado ──────────────────────────
+  // ── Sin Colaborador vinculado ─────────────────────────────────────────────
   // NOTA: Usuarios portal-only (proveedor + PROVEEDOR_PORTAL cargo) NUNCA
   // llegan aqui — AdaptiveLayout los redirige a /proveedor-portal antes.
   // Los profesionales colocados (proveedor + cargo real) SI pueden llegar.
   if (!perfilLoading && perfil == null) {
-    // Si el User aun no se ha cargado, mostrar skeleton (evitar redirect prematuro)
+    // Si el User aun no se ha cargado, mostrar skeleton (evitar render prematuro)
     if (isLoadingUser || !user) {
       return (
         <AnimatedPage>
@@ -336,13 +440,13 @@ export default function MiPortalPage() {
         </AnimatedPage>
       );
     }
-    // Super admin sin Colaborador → vista informativa
+    // Super admin sin Colaborador → vista informativa de admin
     if (isSuperAdmin) {
       return <AdminPortalView />;
     }
-    // Sin Colaborador → dashboard general
-    // (profesionales colocados sin Colaborador, o usuarios sin perfil HR)
-    return <Navigate to="/dashboard" replace />;
+    // Usuario sin Colaborador (consultores colocados, usuarios nuevos)
+    // → vista simplificada con datos del User
+    return <UserPortalView />;
   }
 
   return (

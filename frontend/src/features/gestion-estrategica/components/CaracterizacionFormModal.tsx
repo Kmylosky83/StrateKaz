@@ -178,7 +178,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
       isOpen={isOpen}
       onClose={onClose}
       title={item ? 'Editar Caracterización' : 'Nueva Caracterización de Proceso'}
-      size="large"
+      size="4xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
@@ -498,7 +498,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
           <Button type="submit" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Spinner size="small" className="mr-2" />
+                <Spinner size="sm" className="mr-2" />
                 Guardando...
               </>
             ) : (

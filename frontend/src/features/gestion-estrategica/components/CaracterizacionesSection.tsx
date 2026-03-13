@@ -34,7 +34,7 @@ export const CaracterizacionesSection = () => {
   // RBAC
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.FUNDACION, Sections.CARACTERIZACIONES, 'create');
-  const canEdit = canDo(Modules.FUNDACION, Sections.CARACTERIZACIONES, 'update');
+  const canEdit = canDo(Modules.FUNDACION, Sections.CARACTERIZACIONES, 'edit');
   const canDelete = canDo(Modules.FUNDACION, Sections.CARACTERIZACIONES, 'delete');
 
   // Data

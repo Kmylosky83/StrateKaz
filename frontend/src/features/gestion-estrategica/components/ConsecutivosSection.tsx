@@ -98,7 +98,7 @@ export const ConsecutivosSection = () => {
   // RBAC
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'create');
-  const canEdit = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'update');
+  const canEdit = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'edit');
   const canDelete = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'delete');
   const isAdmin = canDo(Modules.FUNDACION, Sections.CONSECUTIVOS, 'delete');
 

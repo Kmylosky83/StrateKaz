@@ -51,6 +51,8 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
 import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   useIntegraciones,
   useDeleteIntegracion,
@@ -179,6 +181,9 @@ const StatusBadge = ({ status, isActive }: { status: StatusIndicator; isActive: 
 };
 
 export const IntegracionesSection = () => {
+  // RBAC
+  const { canDo } = usePermissions();
+
   // Hooks de datos
   const { data: integracionesData, isLoading, error } = useIntegraciones();
   const deleteMutation = useDeleteIntegracion();

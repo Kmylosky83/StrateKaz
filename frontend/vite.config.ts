@@ -26,12 +26,12 @@ export default defineConfig({
         injectionPoint: undefined // No inyectar manifest
       },
       workbox: {
-        // NO forzar activación inmediata — deja que el usuario elija cuándo recargar.
-        // Con skipWaiting:true + clientsClaim:true, un deploy forzaba reload en TODAS
-        // las pestañas abiertas via controllerchange, causando logouts inesperados.
-        // Ahora el nuevo SW espera hasta que el usuario recargue manualmente.
-        skipWaiting: false,
-        clientsClaim: false,
+        // Activar SW inmediatamente para que el usuario reciba el código nuevo.
+        // El handler de controllerchange en main.tsx muestra un TOAST (no reload forzado)
+        // pidiendo al usuario que recargue cuando esté listo.
+        // Patrón estándar de Gmail/Slack/VS Code Web.
+        skipWaiting: true,
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],

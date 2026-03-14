@@ -65,7 +65,7 @@ export const TabBasico = ({
             />
           </div>
           <span className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap self-start mt-0">
-            .{import.meta.env.VITE_BASE_DOMAIN || 'localhost'}
+            .{import.meta.env.VITE_BASE_DOMAIN || 'stratekaz.com'}
           </span>
         </div>
       </div>

@@ -127,7 +127,7 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
                 <h3 className="font-semibold text-gray-900 dark:text-white">{tenant.name}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {tenant.primary_domain ||
-                    `${tenant.subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'localhost'}`}
+                    `${tenant.subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'stratekaz.com'}`}
                 </p>
               </div>
             </div>
@@ -736,8 +736,7 @@ export const TenantsSection = () => {
               </ul>
               <div className="pt-2">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Escriba{' '}
-                  <strong className="text-danger-600">"{tenantToHardDelete?.name}"</strong>{' '}
+                  Escriba <strong className="text-danger-600">"{tenantToHardDelete?.name}"</strong>{' '}
                   para confirmar:
                 </p>
                 <Input

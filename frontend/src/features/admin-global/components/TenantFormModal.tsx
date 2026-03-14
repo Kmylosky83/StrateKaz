@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Building2, FileText, Phone, MapPin, Palette, Smartphone, Boxes } from 'lucide-react';
 
+import { toast } from 'sonner';
 import { Button } from '@/components/common/Button';
 import { Tabs, Tab } from '@/components/common/Tabs';
 import { useCreateTenant, useUpdateTenant, usePlans, useTenant } from '../hooks/useAdminGlobal';
@@ -32,6 +33,106 @@ interface TenantFormModalProps {
 }
 
 type TabId = 'basico' | 'fiscal' | 'contacto' | 'regional' | 'branding' | 'pwa' | 'modulos';
+
+/** Mapeo de campos del backend al tab que los contiene (para auto-navegación en errores) */
+const FIELD_TAB_MAP: Record<string, TabId> = {
+  // Básico
+  name: 'basico',
+  code: 'basico',
+  subdomain: 'basico',
+  plan: 'basico',
+  tier: 'basico',
+  max_users: 'basico',
+  max_storage_gb: 'basico',
+  is_active: 'basico',
+  is_trial: 'basico',
+  trial_ends_at: 'basico',
+  subscription_ends_at: 'basico',
+  notes: 'basico',
+  // Fiscal
+  nit: 'fiscal',
+  razon_social: 'fiscal',
+  nombre_comercial: 'fiscal',
+  representante_legal: 'fiscal',
+  cedula_representante: 'fiscal',
+  tipo_sociedad: 'fiscal',
+  actividad_economica: 'fiscal',
+  regimen_tributario: 'fiscal',
+  descripcion_actividad: 'fiscal',
+  matricula_mercantil: 'fiscal',
+  camara_comercio: 'fiscal',
+  fecha_constitucion: 'fiscal',
+  fecha_inscripcion_registro: 'fiscal',
+  // Contacto
+  direccion_fiscal: 'contacto',
+  ciudad: 'contacto',
+  departamento: 'contacto',
+  pais: 'contacto',
+  codigo_postal: 'contacto',
+  telefono_principal: 'contacto',
+  telefono_secundario: 'contacto',
+  email_corporativo: 'contacto',
+  sitio_web: 'contacto',
+  // Regional
+  zona_horaria: 'regional',
+  formato_fecha: 'regional',
+  moneda: 'regional',
+  simbolo_moneda: 'regional',
+  separador_miles: 'regional',
+  separador_decimales: 'regional',
+  // Branding
+  primary_color: 'branding',
+  secondary_color: 'branding',
+  logo: 'branding',
+  logo_white: 'branding',
+  logo_dark: 'branding',
+  favicon: 'branding',
+  login_background: 'branding',
+  // PWA
+  pwa_name: 'pwa',
+  pwa_short_name: 'pwa',
+  pwa_description: 'pwa',
+  pwa_theme_color: 'pwa',
+  pwa_background_color: 'pwa',
+  pwa_icon_192: 'pwa',
+  pwa_icon_512: 'pwa',
+  pwa_icon_maskable: 'pwa',
+  // Módulos
+  enabled_modules: 'modulos',
+};
+
+/** Labels legibles de los tabs para mensajes de error */
+const TAB_LABELS: Record<TabId, string> = {
+  basico: 'Básico',
+  fiscal: 'Fiscal',
+  contacto: 'Contacto',
+  regional: 'Regional',
+  branding: 'Branding',
+  pwa: 'PWA',
+  modulos: 'Módulos',
+};
+
+/**
+ * Parsea la respuesta de error 400 de DRF.
+ * DRF retorna: { "campo": ["Mensaje de error"] } o { "campo": "Mensaje" }
+ * Retorna null si no es un error de validación de campos.
+ */
+const parseApiFieldErrors = (data: Record<string, unknown>): Record<string, string> | null => {
+  if (!data || typeof data !== 'object') return null;
+  // Si tiene 'detail' es un error genérico, no de campo
+  if ('detail' in data && Object.keys(data).length === 1) return null;
+
+  const fieldErrors: Record<string, string> = {};
+  for (const [field, messages] of Object.entries(data)) {
+    if (field === 'detail' || field === 'non_field_errors') continue;
+    if (Array.isArray(messages) && messages.length > 0) {
+      fieldErrors[field] = String(messages[0]);
+    } else if (typeof messages === 'string') {
+      fieldErrors[field] = messages;
+    }
+  }
+  return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
+};
 
 const TABS: Tab[] = [
   { id: 'basico', label: 'Basico', icon: <Building2 className="h-4 w-4" /> },
@@ -214,8 +315,39 @@ export const TenantFormModal = ({
         onCreationStarted?.(response.id, response.name);
         onClose();
       }
-    } catch {
-      // Error handled by hook
+    } catch (error: unknown) {
+      // Parsear errores de validación 400 del backend y mapearlos a campos
+      const axiosError = error as {
+        response?: { status?: number; data?: Record<string, unknown> };
+      };
+
+      if (axiosError.response?.status === 400 && axiosError.response.data) {
+        const fieldErrors = parseApiFieldErrors(axiosError.response.data);
+
+        if (fieldErrors) {
+          setErrors((prev) => ({ ...prev, ...fieldErrors }));
+
+          // Navegar al tab del primer campo con error
+          const firstErrorField = Object.keys(fieldErrors)[0];
+          const targetTab = FIELD_TAB_MAP[firstErrorField];
+          if (targetTab) setActiveTab(targetTab);
+
+          // Toast informativo con los tabs afectados
+          const affectedTabs = [
+            ...new Set(
+              Object.keys(fieldErrors)
+                .map((f) => FIELD_TAB_MAP[f])
+                .filter(Boolean)
+                .map((t) => TAB_LABELS[t])
+            ),
+          ];
+          toast.error(`Errores de validación en: ${affectedTabs.join(', ')}`, {
+            description: 'Revisa los campos marcados en rojo',
+          });
+          return; // Evitar que el hook muestre un toast genérico duplicado
+        }
+      }
+      // Para errores no-400 el hook ya muestra toast genérico
     }
   };
 

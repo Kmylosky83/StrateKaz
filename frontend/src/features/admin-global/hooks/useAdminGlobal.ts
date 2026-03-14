@@ -179,8 +179,24 @@ export const useCreateTenant = () => {
       // NO mostramos toast de éxito aquí porque la creación es asíncrona
       // El toast se mostrará cuando el schema esté listo
     },
-    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al crear la empresa');
+    onError: (error: {
+      response?: { status?: number; data?: Record<string, unknown> };
+      message?: string;
+    }) => {
+      // Para errores 400 con campos específicos, el formulario muestra el detalle
+      if (error.response?.status === 400) {
+        const data = error.response.data;
+        const hasFieldErrors =
+          data &&
+          typeof data === 'object' &&
+          Object.keys(data).some((k) => k !== 'detail' && k !== 'non_field_errors');
+        if (hasFieldErrors) return; // El TenantFormModal maneja estos errores
+      }
+      toast.error(
+        (error.response?.data as { detail?: string })?.detail ||
+          error.message ||
+          'Error al crear la empresa'
+      );
     },
   });
 };
@@ -245,9 +261,23 @@ export const useUpdateTenant = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       toast.success('Empresa actualizada correctamente');
     },
-    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+    onError: (error: {
+      response?: { status?: number; data?: Record<string, unknown> };
+      message?: string;
+    }) => {
+      // Para errores 400 con campos específicos, el formulario muestra el detalle
+      if (error.response?.status === 400) {
+        const data = error.response.data;
+        const hasFieldErrors =
+          data &&
+          typeof data === 'object' &&
+          Object.keys(data).some((k) => k !== 'detail' && k !== 'non_field_errors');
+        if (hasFieldErrors) return; // El TenantFormModal maneja estos errores
+      }
       toast.error(
-        error.response?.data?.detail || error.message || 'Error al actualizar la empresa'
+        (error.response?.data as { detail?: string })?.detail ||
+          error.message ||
+          'Error al actualizar la empresa'
       );
     },
   });

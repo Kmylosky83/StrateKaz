@@ -63,8 +63,11 @@ export const ESTADO_LABELS: Record<EstadoCaracterizacion, string> = {
   OBSOLETO: 'Obsoleto',
 };
 
-export const ESTADO_COLORS: Record<EstadoCaracterizacion, string> = {
-  BORRADOR: 'default',
+export const ESTADO_BADGE_VARIANTS: Record<
+  EstadoCaracterizacion,
+  'secondary' | 'success' | 'warning' | 'danger'
+> = {
+  BORRADOR: 'secondary',
   VIGENTE: 'success',
   EN_REVISION: 'warning',
   OBSOLETO: 'danger',

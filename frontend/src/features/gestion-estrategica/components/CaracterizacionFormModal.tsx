@@ -157,7 +157,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (item) {
-      updateMutation.mutate({ id: item.id, datos: formData }, { onSuccess: onClose });
+      updateMutation.mutate({ id: item.id, data: formData }, { onSuccess: onClose });
     } else {
       createMutation.mutate(formData, { onSuccess: onClose });
     }

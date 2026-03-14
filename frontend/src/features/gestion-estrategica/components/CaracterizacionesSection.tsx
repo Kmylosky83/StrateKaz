@@ -21,7 +21,7 @@ import type { ModuleColor } from '@/utils/moduleColors';
 import { useCaracterizaciones, useDeleteCaracterizacion } from '../hooks/useCaracterizaciones';
 import { CaracterizacionFormModal } from './CaracterizacionFormModal';
 import type { CaracterizacionProcesoList } from '../types/caracterizacion.types';
-import { ESTADO_LABELS, ESTADO_COLORS } from '../types/caracterizacion.types';
+import { ESTADO_LABELS, ESTADO_BADGE_VARIANTS } from '../types/caracterizacion.types';
 
 export const CaracterizacionesSection = () => {
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
@@ -104,20 +104,8 @@ export const CaracterizacionesSection = () => {
       priority: 2,
       render: (row) => {
         const item = row as unknown as CaracterizacionProcesoList;
-        const color = ESTADO_COLORS[item.estado] || 'default';
         return (
-          <Badge
-            variant={
-              color === 'green'
-                ? 'success'
-                : color === 'yellow'
-                  ? 'warning'
-                  : color === 'blue'
-                    ? 'info'
-                    : 'secondary'
-            }
-            size="sm"
-          >
+          <Badge variant={ESTADO_BADGE_VARIANTS[item.estado] || 'secondary'} size="sm">
             {ESTADO_LABELS[item.estado] || item.estado}
           </Badge>
         );

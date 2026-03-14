@@ -215,6 +215,7 @@ export const CaracterizacionesSection = () => {
           <ResponsiveTable
             columns={columns}
             data={items as (CaracterizacionProcesoList & Record<string, unknown>)[]}
+            keyExtractor={(item) => item.id as number}
           />
         )}
       </DataTableCard>

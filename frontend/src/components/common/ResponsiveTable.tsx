@@ -50,7 +50,7 @@ export interface ResponsiveTableProps<T> {
   /** Definición de columnas */
   columns: ResponsiveTableColumn<T>[];
   /** Key extractor */
-  keyExtractor: (item: T, index: number) => string | number;
+  keyExtractor?: (item: T, index: number) => string | number;
   /** Título para card view en móvil */
   mobileCardTitle?: (item: T) => ReactNode;
   /** Subtítulo para card view en móvil */
@@ -78,7 +78,8 @@ export interface ResponsiveTableProps<T> {
 export function ResponsiveTable<T extends Record<string, unknown>>({
   data,
   columns,
-  keyExtractor,
+  keyExtractor = (_item: T, index: number) =>
+    ((_item as Record<string, unknown>).id as number) ?? index,
   mobileCardTitle,
   mobileCardSubtitle,
   mobileCardAvatar,

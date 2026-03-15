@@ -45,55 +45,97 @@ from .serializers_config import (
 
 
 # =============================================================================
-# SIDEBAR: Agrupamiento por afinidad funcional (6 grupos)
-# C2 se sub-divide en PE / SGI / OPS / ORG para mejor navegación
-# Frontend Sidebar.tsx ya soporta is_category + NIVEL_ prefix
+# SIDEBAR: Cascada V2 — 11 capas visuales (14 niveles lógicos)
+# Orden = lógica de empresa colombiana (Planear → Hacer → Verificar → Actuar)
+# Frontend Sidebar.tsx renderiza en el orden recibido del backend.
+# Capas con 1 módulo → render directo (sin wrapper).
+# Capas con 2+ módulos → is_category: True (grupo expandible).
+# Fuente de verdad: docs/01-arquitectura/ARQUITECTURA-CASCADA-V2.md
 # =============================================================================
 SIDEBAR_LAYERS = [
+    # ═══════════════════════════════════════════════════════════════
+    # PLANEAR (P) — Constituir, documentar, vincular, planificar
+    # ═══════════════════════════════════════════════════════════════
     {
-        'code': 'NIVEL_C1',
+        'code': 'NIVEL_FUNDACION',
         'name': 'Fundación',
         'icon': 'Landmark',
         'color': '#3B82F6',
         'module_codes': ['fundacion'],
     },
     {
-        'code': 'NIVEL_PE',
-        'name': 'Planeación Estratégica',
+        # Gestión Documental + Workflows = infraestructura transversal
+        'code': 'NIVEL_INFRAESTRUCTURA',
+        'name': 'Infraestructura',
+        'icon': 'FileText',
+        'color': '#6366F1',
+        'module_codes': ['gestion_documental', 'workflow_engine'],
+    },
+    {
+        'code': 'NIVEL_EQUIPO',
+        'name': 'Mi Equipo',
+        'icon': 'UserPlus',
+        'color': '#0EA5E9',
+        'module_codes': ['mi_equipo'],
+    },
+    {
+        # Planificación Operativa + Planeación Estratégica
+        'code': 'NIVEL_PLANIFICACION',
+        'name': 'Planificación',
         'icon': 'Target',
         'color': '#6366F1',
-        'module_codes': ['planeacion_estrategica'],
+        'module_codes': ['planificacion_operativa', 'planeacion_estrategica'],
     },
+    # ═══════════════════════════════════════════════════════════════
+    # HACER (H) — Proteger, operar, gestionar talento, soportar
+    # ═══════════════════════════════════════════════════════════════
     {
-        'code': 'NIVEL_SGI',
-        'name': 'Sistema de Gestión',
+        'code': 'NIVEL_PROTECCION',
+        'name': 'Protección y Cumplimiento',
         'icon': 'ShieldCheck',
-        'color': '#0EA5E9',
-        'module_codes': ['sistema_gestion', 'motor_cumplimiento', 'motor_riesgos'],
+        'color': '#F59E0B',
+        'module_codes': ['proteccion_cumplimiento'],
     },
     {
-        'code': 'NIVEL_OPS',
-        'name': 'Operaciones',
-        'icon': 'Factory',
+        'code': 'NIVEL_HSEQ',
+        'name': 'Gestión Integral',
+        'icon': 'Shield',
+        'color': '#10B981',
+        'module_codes': ['gestion_integral'],
+    },
+    {
+        'code': 'NIVEL_CADENA',
+        'name': 'Cadena de Valor',
+        'icon': 'Package',
         'color': '#10B981',
         'module_codes': [
-            'hseq_management', 'supply_chain', 'production_ops',
-            'logistics_fleet', 'sales_crm', 'workflow_engine',
+            'supply_chain', 'production_ops',
+            'logistics_fleet', 'sales_crm',
         ],
     },
     {
-        'code': 'NIVEL_ORG',
-        'name': 'Organización',
-        'icon': 'Building2',
-        'color': '#F59E0B',
-        'module_codes': ['talent_hub', 'admin_finance', 'accounting'],
+        'code': 'NIVEL_TALENTO',
+        'name': 'Gestión del Talento',
+        'icon': 'GraduationCap',
+        'color': '#8B5CF6',
+        'module_codes': ['talent_hub'],
     },
     {
-        'code': 'NIVEL_C3',
+        'code': 'NIVEL_SOPORTE',
+        'name': 'Soporte',
+        'icon': 'Building2',
+        'color': '#F59E0B',
+        'module_codes': ['administracion', 'tesoreria', 'accounting'],
+    },
+    # ═══════════════════════════════════════════════════════════════
+    # VERIFICAR + ACTUAR (V/A) — Medir, revisar, mejorar
+    # ═══════════════════════════════════════════════════════════════
+    {
+        'code': 'NIVEL_INTELIGENCIA',
         'name': 'Inteligencia',
-        'icon': 'BrainCircuit',
+        'icon': 'BarChart3',
         'color': '#8B5CF6',
-        'module_codes': ['analytics', 'revision_direccion', 'audit_system'],
+        'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora'],
     },
 ]
 

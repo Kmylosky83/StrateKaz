@@ -1097,12 +1097,75 @@ Es una **metodología de implementación** embebida en software. La cascada guí
 
 Ningún competidor en el mercado colombiano ofrece esto.
 
-### Próximos pasos
+### Plan de Sprints — Migración V1 → V2
 
-1. Validar este documento con stakeholders
-2. Definir plan de migración técnica (sprints)
-3. Actualizar seed_estructura_final.py con la nueva estructura
-4. Actualizar SIDEBAR_LAYERS en viewsets_config.py
-5. Crear/mover features en frontend según nueva estructura
-6. Implementar wizard de autoservicio (Escenario C)
-7. Desarrollar plantillas por industria
+La migración se ejecuta en 6 sprints incrementales. Cada sprint es desplegable de forma independiente sin romper funcionalidad existente.
+
+#### Sprint CASCADA-S1: Seeds + SIDEBAR_LAYERS (Backend only)
+**Objetivo:** El backend refleja la nueva estructura. El sidebar muestra el nuevo orden.
+**Riesgo:** Bajo — solo cambia metadata, no modelos ni datos.
+
+- [ ] Actualizar `SIDEBAR_LAYERS` en `viewsets_config.py` ✅ (hecho)
+- [ ] Reescribir `seed_estructura_final.py` con los 19 módulos V2
+- [ ] Ajustar campo `orden` de cada SystemModule
+- [ ] Renombrar módulos: `hseq_management` → `gestion_integral`, etc.
+- [ ] Mover secciones entre tabs (contexto → fundación, PI → contexto, etc.)
+- [ ] Crear nuevos módulos en seed: `mi_equipo`, `gestion_documental`, `planificacion_operativa`, `proteccion_cumplimiento`, `acciones_mejora`, `administracion`, `tesoreria`
+- [ ] Ejecutar `deploy_seeds_all_tenants` en todos los schemas
+- [ ] Verificar sidebar con superuser y usuario normal
+- [ ] Actualizar `Modules` y `Sections` enums en `frontend/src/constants/permissions.ts`
+
+#### Sprint CASCADA-S2: Fundación reorganizada (4 tabs)
+**Objetivo:** Fundación tiene los 4 tabs nuevos con secciones reubicadas.
+
+- [ ] Tab 1 "Mi Empresa": agregar sección `unidades_negocio` (mover de Supply Chain)
+- [ ] Tab 2 "Mi Contexto e Identidad": mover `partes_interesadas` desde Tab 3, mover `analisis_contexto` desde Planeación Estratégica, reordenar misión/visión después de contexto
+- [ ] Tab 3 "Mi Organización": mantener procesos, cargos, organigrama, caracterizaciones, mapa. Agregar config de turnos y EPP requerido en cargos
+- [ ] Tab 4 "Mis Políticas y Reglamentos": nueva UI para políticas obligatorias colombianas + reglamento interno + contratos tipo
+- [ ] Frontend: reorganizar pages/components en `features/fundacion/`
+- [ ] Eliminar Tab 3 actual "Mi Sistema de Gestión" (módulos/consecutivos/integraciones → Configuración)
+
+#### Sprint CASCADA-S3: Gestión Documental + Mi Equipo (módulos nuevos)
+**Objetivo:** Dos módulos nuevos funcionando como independientes.
+
+- [ ] **Gestión Documental**: Extraer de `sistema_gestion/gestion_documental` → módulo propio. Agregar flujo de estados (Borrador→Vigente). Agregar asignación a cargos. Nueva feature `features/gestion-documental/`
+- [ ] **Mi Equipo**: Extraer de `talent_hub` tabs 0-3 (perfiles, selección, colaboradores, onboarding). Agregar entrega de activos/EPP en onboarding. Nueva feature `features/mi-equipo/`
+- [ ] Backend: crear apps si necesario o reusar apps existentes con nuevo module_code en seed
+- [ ] Frontend: mover/crear pages y hooks
+- [ ] RBAC: crear section codes nuevos, actualizar CargoSectionAccess
+
+#### Sprint CASCADA-S4: Protección + Planificación Operativa + Acciones de Mejora
+**Objetivo:** Módulos fusionados/nuevos funcionando.
+
+- [ ] **Protección y Cumplimiento**: Fusionar `motor_cumplimiento` + `motor_riesgos` → módulo unificado con 7 tabs
+- [ ] **Planificación Operativa**: Extraer `plan_trabajo` y `programas` de `sistema_gestion` → módulo propio
+- [ ] **Acciones de Mejora**: Extraer `acciones_mejora` de `sistema_gestion` → módulo propio. Agregar generación de planes de acción/proyectos
+- [ ] Frontend: crear features para los 3 módulos nuevos
+- [ ] Eliminar módulos vacíos (`motor_cumplimiento`, `motor_riesgos`, `sistema_gestion` si quedó vacío)
+
+#### Sprint CASCADA-S5: Soporte reorganizado + Cadena de Valor limpia
+**Objetivo:** Admin Finance se divide, Supply Chain se limpia.
+
+- [ ] **Administración**: Extraer activos + servicios generales + presupuesto de `admin_finance`. Catálogo maestro de activos (todos los tipos). Hoja de vida por activo
+- [ ] **Tesorería**: Extraer tesorería de `admin_finance`. Agregar confirmación de pagos (nómina, proveedores, honorarios)
+- [ ] **Supply Chain**: Eliminar tab `unidades_negocio` (ya en Fundación). Proveedores consume de PI
+- [ ] **Talent Hub**: Reducir a 6 tabs (gestión continua). Novedades + Nómina fusionados. Off boarding con paz y salvo + devolución activos
+- [ ] Eliminar `admin_finance` (reemplazado por `administracion` + `tesoreria`)
+
+#### Sprint CASCADA-S6: Dashboard + Wizard + Plantillas Industria
+**Objetivo:** UX completa de la cascada.
+
+- [ ] Dashboard horizontal por capas PHVA (ya parcialmente hecho)
+- [ ] Wizard de autoservicio para Fundación (12 pasos guiados)
+- [ ] Progreso por tab ("Mi Empresa 100% ✓")
+- [ ] Plantillas por industria en creación de tenant
+- [ ] Módulo Configuración (admin): módulos, consecutivos, integraciones, config indicadores
+- [ ] Infraestructura: notificaciones/tareas como transversales (no en sidebar)
+
+### Notas de migración
+
+- **No hay migraciones de DB en S1**: solo cambia metadata en SystemModule/ModuleTab/TabSection
+- **S2-S5 pueden requerir migraciones** si se crean nuevas apps Django
+- **Cada sprint se despliega independiente** — el sistema funciona con la estructura parcialmente migrada
+- **RBAC**: cada sprint actualiza `permissions.ts` + seeds de CargoSectionAccess
+- **Orden recomendado**: S1 → S2 → S3 → S4 → S5 → S6 (pero S4 y S5 podrían paralelizarse)

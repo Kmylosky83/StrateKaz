@@ -1,19 +1,12 @@
 /**
- * Estructura de Cargos - Componentes
+ * Estructura de Cargos - Componentes compartidos
  *
- * EstructuraSection es el componente principal con DynamicSections:
- * - Sub-tab Cargos: CRUD de cargos (CargosSection)
- * - Sub-tab Organigrama: Visualizacion jerarquica (OrganigramaSection)
- *
- * Los componentes originales siguen en features/configuracion/components/
- * y se re-exportan aqui hasta completar la migracion completa.
+ * REORG-B: Cargos y Organigrama se movieron a Fundación → Mi Organización.
+ * Solo quedan componentes auxiliares reutilizables.
  */
 
-// Componente principal con sub-navegacion
-export { EstructuraSection } from './EstructuraSection';
-
-// Sub-componentes (usados internamente por EstructuraSection)
-export { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';
-export { CargoFormModal } from '@/features/configuracion/components/CargoFormModal';
+// Badge de nivel jerárquico (usado en tablas de cargos y colaboradores)
 export { CargoLevelBadge } from './CargoLevelBadge';
-export { OrganigramaSection } from './OrganigramaSection';
+
+// Re-exports de configuracion (para consumo en Talent Hub donde aún se necesiten)
+export { CargoFormModal } from '@/features/configuracion/components/CargoFormModal';

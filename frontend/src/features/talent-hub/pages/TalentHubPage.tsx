@@ -9,8 +9,7 @@
  * NO usa tabs internos — el sidebar ES la navegacion.
  *
  * Secciones (ciclo de vida del empleado):
- * 1. Estructura de Cargos — CRUD cargos, profesiogramas, GTC-45
- * 2. Seleccion/Contratacion — Candidatos, entrevistas, pruebas
+ * 1. Seleccion/Contratacion — Candidatos, entrevistas, pruebas
  * 3. Colaboradores — CRUD empleados, hojas de vida, historial
  * 4. Onboarding/Induccion — Procesos de induccion, checklist, EPP
  * 5. Formacion/Reinduccion — LMS, capacitaciones, certificados
@@ -26,7 +25,6 @@ import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import {
-  Network,
   UserPlus,
   Users,
   Rocket,
@@ -41,7 +39,6 @@ import {
 } from 'lucide-react';
 
 // Secciones implementadas
-import { EstructuraSection } from '../components/estructura';
 import { SeleccionSection } from '../components/seleccion';
 import { ColaboradoresSection } from '../components/colaboradores';
 import { OnboardingSection } from '../components/onboarding';
@@ -72,12 +69,6 @@ interface SectionMeta {
  * A medida que se implementen, reemplazar null con el componente real.
  */
 const SECTION_MAP: Record<string, SectionMeta> = {
-  estructura: {
-    title: 'Estructura de Cargos',
-    description: 'Cargos, profesiogramas, organigrama y permisos RBAC',
-    icon: <Network className="w-5 h-5" />,
-    component: EstructuraSection,
-  },
   seleccion: {
     title: 'Selección y Contratación',
     description: 'Reclutamiento, candidatos, entrevistas, pruebas y contratación de personal',
@@ -155,8 +146,8 @@ export default function TalentHubPage() {
   const location = useLocation();
 
   // Extraer la seccion activa de la ruta: /talento/estructura -> "estructura"
-  const activeKey = location.pathname.split('/talento/')[1]?.split('/')[0] || 'estructura';
-  const section = SECTION_MAP[activeKey] || SECTION_MAP.estructura;
+  const activeKey = location.pathname.split('/talento/')[1]?.split('/')[0] || 'seleccion';
+  const section = SECTION_MAP[activeKey] || SECTION_MAP.seleccion;
 
   const SectionComponent = section.component;
 

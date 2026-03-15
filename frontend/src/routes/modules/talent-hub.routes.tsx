@@ -1,6 +1,9 @@
 /**
  * Rutas: Talent Hub (Centro de Talento Humano)
  * Capa 2 — Modulo de Negocio
+ *
+ * REORG-B: Estructura de Cargos se movió a Fundación → Mi Organización.
+ * Talent Hub ahora arranca desde Selección y Contratación.
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -12,8 +15,11 @@ const TalentHubPage = lazy(() =>
 
 export const talentHubRoutes = (
   <>
-    <Route path="/talento" element={<Navigate to="/talento/estructura" replace />} />
-    <Route path="/talento/estructura" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+    <Route path="/talento" element={<Navigate to="/talento/seleccion" replace />} />
+
+    {/* Legacy: /talento/estructura → Fundación (cargos ahora viven allí) */}
+    <Route path="/talento/estructura" element={<Navigate to="/fundacion/organizacion" replace />} />
+
     <Route path="/talento/seleccion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
     <Route path="/talento/colaboradores" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
     <Route path="/talento/onboarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />

@@ -1,22 +1,20 @@
 /**
  * Tab de Contexto Organizacional
  *
- * Secciones simplificadas (REORG-C: 6→3):
- * 1. stakeholders: Identificación de partes interesadas
- * 2. analisis_contexto: Encuestas PCI/POAM + PESTEL + Porter (3 sub-tabs)
- * 3. dofa_estrategias: Matriz DOFA + Estrategias TOWS (2 sub-tabs)
+ * Secciones (REORG-B: PI movido a Fundación → Mi Organización):
+ * 1. analisis_contexto: Encuestas PCI/POAM + PESTEL + Porter (3 sub-tabs)
+ * 2. dofa_estrategias: Matriz DOFA + Estrategias TOWS (2 sub-tabs)
  *
  * Flujo: Recopilar (analisis_contexto) → Sintetizar (dofa) → Actuar (estrategias)
  */
 import { GenericSectionFallback } from '@/components/common';
-import { StakeholdersSection, AnalisisContextoSection, DofaEstrategiasSection } from './contexto';
+import { AnalisisContextoSection, DofaEstrategiasSection } from './contexto';
 
 // =============================================================================
 // CODIGOS DE SECCION (deben coincidir con BD - TabSection.code)
 // =============================================================================
 
 const SECTION_KEYS = {
-  STAKEHOLDERS: 'stakeholders',
   ANALISIS_CONTEXTO: 'analisis_contexto',
   DOFA_ESTRATEGIAS: 'dofa_estrategias',
 } as const;
@@ -35,9 +33,6 @@ interface ContextoTabProps {
 export const ContextoTab = ({ activeSection, triggerNewForm }: ContextoTabProps) => {
   const renderSection = () => {
     switch (activeSection) {
-      case SECTION_KEYS.STAKEHOLDERS:
-        return <StakeholdersSection triggerNewForm={triggerNewForm} />;
-
       case SECTION_KEYS.ANALISIS_CONTEXTO:
         return <AnalisisContextoSection triggerNewForm={triggerNewForm} />;
 

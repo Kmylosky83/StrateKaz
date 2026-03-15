@@ -369,8 +369,11 @@ class Command(BaseCommand):
                         'orden': 2,
                         'sections': [
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Estructura jerárquica de áreas y procesos organizacionales'},
-                            {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Ficha SIPOC por proceso: objetivo, alcance, entradas, salidas y recursos'},
-                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 3, 'description': 'Visualización interactiva de la estructura de procesos'},
+                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Network', 'orden': 2, 'description': 'Gestión de cargos, manual de funciones y permisos del sistema'},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 3, 'description': 'Visualización interactiva de la jerarquía de cargos'},
+                            {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'icon': 'Users', 'orden': 4, 'description': 'Catálogo maestro de stakeholders: proveedores, clientes, colaboradores, entidades y comunidad'},
+                            {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 5, 'description': 'Ficha SIPOC por proceso: proveedores, entradas, actividades, salidas y clientes'},
+                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 6, 'description': 'Visualización interactiva de la estructura de procesos'},
                         ]
                     },
                     {
@@ -413,9 +416,8 @@ class Command(BaseCommand):
                         'route': 'contexto',
                         'orden': 1,
                         'sections': [
-                            {'code': 'stakeholders', 'name': 'Partes Interesadas', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
-                            {'code': 'analisis_contexto', 'name': 'Análisis del Contexto', 'icon': 'Compass', 'orden': 2, 'description': 'Herramientas de análisis interno y externo: PCI, POAM, PESTEL, Porter (sub-tabs integrados)'},
-                            {'code': 'dofa_estrategias', 'name': 'DOFA y Estrategias', 'icon': 'Grid3X3', 'orden': 3, 'description': 'Matriz DOFA (síntesis automática) + formulación de estrategias. Cada estrategia genera Proyecto, Acción o Cambio'},
+                            {'code': 'analisis_contexto', 'name': 'Análisis del Contexto', 'icon': 'Compass', 'orden': 1, 'description': 'Herramientas de análisis interno y externo: PCI, POAM, PESTEL, Porter (sub-tabs integrados)'},
+                            {'code': 'dofa_estrategias', 'name': 'DOFA y Estrategias', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Matriz DOFA (síntesis automática) + formulación de estrategias. Cada estrategia genera Proyecto, Acción o Cambio'},
                         ]
                     },
                     {
@@ -800,56 +802,49 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 15,
                 'tabs': [
-                    {
-                        'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'route': 'estructura', 'orden': 1,
-                        'sections': [
-                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Network', 'orden': 1, 'description': 'Gestión de cargos y niveles jerárquicos'},
-                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 2, 'description': 'Visualización interactiva de la jerarquía de cargos'},
-                        ]
-                    },
-                    {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2, 'sections': [
+                    {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 1, 'sections': [
                         {'code': 'vacantes', 'name': 'Vacantes', 'icon': 'Briefcase', 'orden': 1, 'description': 'Publicación y gestión de vacantes'},
                         {'code': 'candidatos', 'name': 'Candidatos', 'icon': 'UserPlus', 'orden': 2, 'description': 'Evaluación y seguimiento de candidatos'},
                         {'code': 'contratacion', 'name': 'Contratación', 'icon': 'FileSignature', 'orden': 3, 'description': 'Proceso de contratación y documentación'},
                     ]},
-                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3, 'sections': [
+                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 2, 'sections': [
                         {'code': 'directorio', 'name': 'Directorio', 'icon': 'Users', 'orden': 1, 'description': 'Listado y gestión de colaboradores activos'},
                         {'code': 'hoja_vida', 'name': 'Hoja de Vida', 'icon': 'FileText', 'orden': 2, 'description': 'Información personal, laboral y documentación'},
                         {'code': 'contratos', 'name': 'Contratos', 'icon': 'FileSignature', 'orden': 3, 'description': 'Gestión de contratos laborales'},
                     ]},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4, 'sections': [
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 3, 'sections': [
                         {'code': 'programas_induccion', 'name': 'Programas de Inducción', 'icon': 'Rocket', 'orden': 1, 'description': 'Configuración y seguimiento de programas de inducción'},
                         {'code': 'afiliaciones', 'name': 'Afiliaciones', 'icon': 'Shield', 'orden': 2, 'description': 'Gestión de afiliaciones a seguridad social'},
                     ]},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5, 'sections': [
+                    {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 4, 'sections': [
                         {'code': 'plan_formacion', 'name': 'Plan de Formación', 'icon': 'BookOpen', 'orden': 1, 'description': 'Planificación y cronograma de capacitaciones'},
                         {'code': 'capacitaciones', 'name': 'Capacitaciones', 'icon': 'GraduationCap', 'orden': 2, 'description': 'Registro y seguimiento de capacitaciones'},
                         {'code': 'reinduccion', 'name': 'Reinducción', 'icon': 'RefreshCw', 'orden': 3, 'description': 'Programas de reinducción periódica'},
                     ]},
-                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6, 'sections': [
+                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 5, 'sections': [
                         {'code': 'evaluaciones_desempeno', 'name': 'Evaluaciones', 'icon': 'Award', 'orden': 1, 'description': 'Evaluaciones de desempeño por período'},
                         {'code': 'planes_desarrollo', 'name': 'Planes de Desarrollo', 'icon': 'TrendingUp', 'orden': 2, 'description': 'Planes individuales de desarrollo profesional'},
                     ]},
-                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7, 'sections': [
+                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 6, 'sections': [
                         {'code': 'turnos', 'name': 'Turnos', 'icon': 'Clock', 'orden': 1, 'description': 'Configuración y asignación de turnos de trabajo'},
                         {'code': 'marcajes', 'name': 'Marcajes', 'icon': 'Timer', 'orden': 2, 'description': 'Registro de marcajes de entrada y salida'},
                         {'code': 'ausencias', 'name': 'Ausencias', 'icon': 'CalendarX', 'orden': 3, 'description': 'Gestión de ausencias e incapacidades'},
                     ]},
-                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8, 'sections': [
+                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 7, 'sections': [
                         {'code': 'registro_novedades', 'name': 'Registro de Novedades', 'icon': 'Bell', 'orden': 1, 'description': 'Novedades de nómina y situaciones laborales'},
                     ]},
-                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 9, 'sections': [
+                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 8, 'sections': [
                         {'code': 'casos_disciplinarios', 'name': 'Casos Disciplinarios', 'icon': 'Gavel', 'orden': 1, 'description': 'Gestión de procesos disciplinarios'},
                     ]},
-                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 10, 'sections': [
+                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 9, 'sections': [
                         {'code': 'liquidacion_nomina', 'name': 'Liquidación de Nómina', 'icon': 'DollarSign', 'orden': 1, 'description': 'Cálculo y liquidación de nómina'},
                         {'code': 'prestaciones', 'name': 'Prestaciones', 'icon': 'Gift', 'orden': 2, 'description': 'Gestión de prestaciones sociales'},
                     ]},
-                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 11, 'sections': [
+                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 10, 'sections': [
                         {'code': 'proceso_retiro', 'name': 'Proceso de Retiro', 'icon': 'LogOut', 'orden': 1, 'description': 'Gestión del proceso de desvinculación'},
                         {'code': 'liquidacion_final', 'name': 'Liquidación Final', 'icon': 'FileText', 'orden': 2, 'description': 'Cálculo de liquidación definitiva'},
                     ]},
-                    {'code': 'consultores_externos', 'name': 'Consultores Externos', 'icon': 'UserCog', 'route': 'consultores-externos', 'orden': 12, 'sections': [
+                    {'code': 'consultores_externos', 'name': 'Consultores Externos', 'icon': 'UserCog', 'route': 'consultores-externos', 'orden': 11, 'sections': [
                         {'code': 'consultores_externos', 'name': 'Consultores Externos', 'icon': 'UserCog', 'orden': 1, 'description': 'Consultores y contratistas externos vinculados a la organización'},
                     ]},
                 ]

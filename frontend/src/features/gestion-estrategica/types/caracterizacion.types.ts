@@ -1,55 +1,87 @@
 /**
  * Tipos TypeScript para Caracterización de Procesos (SIPOC)
  * Módulo: C1 — Fundación / Organización
+ *
+ * REORG-B6: Tipos relacionales reemplazan JSONField types.
+ * Matchean con backend serializers (CaracterizacionProveedorSerializer, etc.)
  */
 
-// ==================== SIPOC ITEM TYPES ====================
+// ==================== RELATIONAL ITEM TYPES (REORG-B5/B6) ====================
 
-export interface SIPOCProveedor {
+export interface ProveedorItem {
+  id?: number;
   nombre: string;
   tipo: 'interno' | 'externo';
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
+  orden?: number;
 }
 
-export interface SIPOCEntrada {
+export interface EntradaItem {
+  id?: number;
   descripcion: string;
   origen: string;
+  orden?: number;
 }
 
-export interface SIPOCActividad {
+export interface ActividadItem {
+  id?: number;
   descripcion: string;
   responsable: string;
+  responsable_cargo_id?: number | null;
+  responsable_cargo_nombre?: string;
+  orden?: number;
 }
 
-export interface SIPOCSalida {
+export interface SalidaItem {
+  id?: number;
   descripcion: string;
   destino: string;
+  orden?: number;
 }
 
-export interface SIPOCCliente {
+export interface ClienteItem {
+  id?: number;
   nombre: string;
   tipo: 'interno' | 'externo';
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
+  orden?: number;
 }
 
 export interface RecursoItem {
+  id?: number;
   tipo: 'humano' | 'tecnologico' | 'fisico' | 'financiero';
+  tipo_display?: string;
   descripcion: string;
+  orden?: number;
 }
 
-export interface IndicadorVinculado {
+export interface IndicadorItem {
+  id?: number;
   nombre: string;
   formula: string;
   meta: string;
+  indicador_id?: number | null;
+  orden?: number;
 }
 
-export interface RiesgoAsociado {
+export interface RiesgoItem {
+  id?: number;
   descripcion: string;
   nivel: 'alto' | 'medio' | 'bajo';
+  nivel_display?: string;
   tratamiento: string;
+  riesgo_id?: number | null;
+  orden?: number;
 }
 
-export interface DocumentoReferencia {
+export interface DocumentoItem {
+  id?: number;
   codigo: string;
   nombre: string;
+  documento_id?: number | null;
+  orden?: number;
 }
 
 // ==================== ENUMS ====================
@@ -110,17 +142,17 @@ export interface CaracterizacionProceso {
   alcance: string;
   lider_proceso: number | null;
   lider_proceso_nombre: string | null;
-  // SIPOC
-  proveedores: SIPOCProveedor[];
-  entradas: SIPOCEntrada[];
-  actividades_clave: SIPOCActividad[];
-  salidas: SIPOCSalida[];
-  clientes: SIPOCCliente[];
-  // Recursos y referencias
-  recursos: RecursoItem[];
-  indicadores_vinculados: IndicadorVinculado[];
-  riesgos_asociados: RiesgoAsociado[];
-  documentos_referencia: DocumentoReferencia[];
+  // SIPOC relacional (REORG-B5)
+  items_proveedores: ProveedorItem[];
+  items_entradas: EntradaItem[];
+  items_actividades: ActividadItem[];
+  items_salidas: SalidaItem[];
+  items_clientes: ClienteItem[];
+  items_recursos: RecursoItem[];
+  items_indicadores: IndicadorItem[];
+  items_riesgos: RiesgoItem[];
+  items_documentos: DocumentoItem[];
+  // Otros
   requisitos_normativos: string;
   observaciones: string;
   // Audit
@@ -140,15 +172,17 @@ export interface CreateCaracterizacionDTO {
   objetivo?: string;
   alcance?: string;
   lider_proceso?: number | null;
-  proveedores?: SIPOCProveedor[];
-  entradas?: SIPOCEntrada[];
-  actividades_clave?: SIPOCActividad[];
-  salidas?: SIPOCSalida[];
-  clientes?: SIPOCCliente[];
-  recursos?: RecursoItem[];
-  indicadores_vinculados?: IndicadorVinculado[];
-  riesgos_asociados?: RiesgoAsociado[];
-  documentos_referencia?: DocumentoReferencia[];
+  // SIPOC relacional (items_*)
+  items_proveedores?: ProveedorItem[];
+  items_entradas?: EntradaItem[];
+  items_actividades?: ActividadItem[];
+  items_salidas?: SalidaItem[];
+  items_clientes?: ClienteItem[];
+  items_recursos?: RecursoItem[];
+  items_indicadores?: IndicadorItem[];
+  items_riesgos?: RiesgoItem[];
+  items_documentos?: DocumentoItem[];
+  // Otros
   requisitos_normativos?: string;
   observaciones?: string;
 }

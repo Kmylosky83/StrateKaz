@@ -1,26 +1,31 @@
-import { useState, useEffect } from 'react';
+/**
+ * CaracterizacionFormModal — Modal SIPOC profesional
+ * REORG-B6: Consume items_* relacionales con lookups de PI y Cargo.
+ */
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, Button, Spinner, Tabs, Badge } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
-import { useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
-import { Plus, Trash2 } from 'lucide-react';
+import { useSelectUsers, useSelectAreas, useSelectCargos } from '@/hooks/useSelectLists';
+import { Plus, Trash2, Search, X } from 'lucide-react';
 import {
   useCaracterizacion,
   useCreateCaracterizacion,
   useUpdateCaracterizacion,
 } from '../hooks/useCaracterizaciones';
+import { usePartesInteresadas } from '../hooks/usePartesInteresadas';
 import type {
   CaracterizacionProcesoList,
   CaracterizacionProceso,
   CreateCaracterizacionDTO,
-  SIPOCProveedor,
-  SIPOCEntrada,
-  SIPOCActividad,
-  SIPOCSalida,
-  SIPOCCliente,
+  ProveedorItem,
+  EntradaItem,
+  ActividadItem,
+  SalidaItem,
+  ClienteItem,
   RecursoItem,
-  IndicadorVinculado,
-  RiesgoAsociado,
-  DocumentoReferencia,
+  IndicadorItem,
+  RiesgoItem,
+  DocumentoItem,
 } from '../types/caracterizacion.types';
 
 interface CaracterizacionFormModalProps {
@@ -35,15 +40,15 @@ const INITIAL_FORM: CreateCaracterizacionDTO = {
   objetivo: '',
   alcance: '',
   lider_proceso: null,
-  proveedores: [],
-  entradas: [],
-  actividades_clave: [],
-  salidas: [],
-  clientes: [],
-  recursos: [],
-  indicadores_vinculados: [],
-  riesgos_asociados: [],
-  documentos_referencia: [],
+  items_proveedores: [],
+  items_entradas: [],
+  items_actividades: [],
+  items_salidas: [],
+  items_clientes: [],
+  items_recursos: [],
+  items_indicadores: [],
+  items_riesgos: [],
+  items_documentos: [],
   requisitos_normativos: '',
   observaciones: '',
 };
@@ -77,13 +82,13 @@ function DynamicArraySection<T extends Record<string, unknown>>({
   renderRow: (
     item: T,
     index: number,
-    update: (field: string, value: string) => void
+    update: (field: string, value: unknown) => void
   ) => React.ReactNode;
   createEmpty: () => T;
 }) {
   const addItem = () => onChange([...items, createEmpty()]);
   const removeItem = (index: number) => onChange(items.filter((_, i) => i !== index));
-  const updateItem = (index: number, field: string, value: string) => {
+  const updateItem = (index: number, field: string, value: unknown) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
     onChange(updated);
@@ -120,6 +125,89 @@ function DynamicArraySection<T extends Record<string, unknown>>({
   );
 }
 
+// ==================== PI LOOKUP SELECTOR ====================
+
+function PILookupSelect({
+  value,
+  piNombre,
+  onSelect,
+  piList,
+}: {
+  value: number | null | undefined;
+  piNombre: string | undefined;
+  onSelect: (piId: number | null, piNombre: string) => void;
+  piList: { id: number; nombre: string }[];
+}) {
+  const [search, setSearch] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search) return piList.slice(0, 20);
+    const lower = search.toLowerCase();
+    return piList.filter((pi) => pi.nombre.toLowerCase().includes(lower)).slice(0, 20);
+  }, [piList, search]);
+
+  const handleSelect = (pi: { id: number; nombre: string }) => {
+    onSelect(pi.id, pi.nombre);
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  const handleClear = () => {
+    onSelect(null, '');
+    setSearch('');
+  };
+
+  if (value && piNombre) {
+    return (
+      <div className="flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700 px-2 py-1.5 text-sm">
+        <span className="truncate flex-1 text-blue-700 dark:text-blue-300">{piNombre}</span>
+        <button type="button" onClick={handleClear} className="text-blue-500 hover:text-blue-700">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar PI..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+          className="w-full rounded-md border border-gray-300 pl-7 pr-3 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        />
+      </div>
+      {isOpen && filtered.length > 0 && (
+        <ul className="absolute z-50 mt-1 w-full max-h-40 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800 dark:border-gray-600">
+          {filtered.map((pi) => (
+            <li
+              key={pi.id}
+              onMouseDown={() => handleSelect(pi)}
+              className="cursor-pointer px-3 py-1.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300"
+            >
+              {pi.nombre}
+            </li>
+          ))}
+        </ul>
+      )}
+      {isOpen && filtered.length === 0 && search && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white p-2 text-xs text-gray-500 dark:bg-gray-800 dark:border-gray-600">
+          Sin resultados
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ==================== MAIN COMPONENT ====================
 
 export function CaracterizacionFormModal({ item, isOpen, onClose }: CaracterizacionFormModalProps) {
@@ -130,8 +218,13 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
   const updateMutation = useUpdateCaracterizacion();
   const { data: usuarios = [] } = useSelectUsers();
   const { data: areas = [] } = useSelectAreas();
+  const { data: cargos = [] } = useSelectCargos();
 
-  // Fetch detalle completo al editar (el listado NO trae SIPOC)
+  // PI list para lookups en Proveedores y Clientes
+  const { data: piList } = usePartesInteresadas();
+  const piOptions = useMemo(() => piList.map((pi) => ({ id: pi.id, nombre: pi.nombre })), [piList]);
+
+  // Fetch detalle completo al editar
   const { data: fullDetail, isLoading: isLoadingDetail } = useCaracterizacion(
     isOpen && item ? item.id : undefined
   );
@@ -143,7 +236,6 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
     if (!isOpen) return;
 
     if (item && fullDetail) {
-      // El detalle completo incluye todos los campos SIPOC
       const detail = fullDetail as unknown as CaracterizacionProceso;
       setFormData({
         area: detail.area,
@@ -152,15 +244,15 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
         alcance: detail.alcance || '',
         lider_proceso: detail.lider_proceso,
         version: detail.version,
-        proveedores: detail.proveedores || [],
-        entradas: detail.entradas || [],
-        actividades_clave: detail.actividades_clave || [],
-        salidas: detail.salidas || [],
-        clientes: detail.clientes || [],
-        recursos: detail.recursos || [],
-        indicadores_vinculados: detail.indicadores_vinculados || [],
-        riesgos_asociados: detail.riesgos_asociados || [],
-        documentos_referencia: detail.documentos_referencia || [],
+        items_proveedores: detail.items_proveedores || [],
+        items_entradas: detail.items_entradas || [],
+        items_actividades: detail.items_actividades || [],
+        items_salidas: detail.items_salidas || [],
+        items_clientes: detail.items_clientes || [],
+        items_recursos: detail.items_recursos || [],
+        items_indicadores: detail.items_indicadores || [],
+        items_riesgos: detail.items_riesgos || [],
+        items_documentos: detail.items_documentos || [],
         requisitos_normativos: detail.requisitos_normativos || '',
         observaciones: detail.observaciones || '',
       });
@@ -291,11 +383,17 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
             {/* TAB: SIPOC */}
             {activeTab === 'sipoc' && (
               <div className="space-y-6">
-                <DynamicArraySection<SIPOCProveedor>
+                {/* Proveedores (S) — con lookup PI */}
+                <DynamicArraySection<ProveedorItem>
                   title="Proveedores (S)"
-                  items={(formData.proveedores ?? []) as SIPOCProveedor[]}
-                  onChange={(items) => handleChange('proveedores', items)}
-                  createEmpty={() => ({ nombre: '', tipo: 'interno' as const })}
+                  items={(formData.items_proveedores ?? []) as ProveedorItem[]}
+                  onChange={(items) => handleChange('items_proveedores', items)}
+                  createEmpty={() => ({
+                    nombre: '',
+                    tipo: 'externo' as const,
+                    parte_interesada_id: null,
+                    parte_interesada_nombre: '',
+                  })}
                   renderRow={(item, _, update) => (
                     <>
                       <Input
@@ -303,22 +401,34 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                         value={item.nombre}
                         onChange={(e) => update('nombre', e.target.value)}
                       />
-                      <select
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-600"
-                        value={item.tipo}
-                        onChange={(e) => update('tipo', e.target.value)}
-                      >
-                        <option value="interno">Interno</option>
-                        <option value="externo">Externo</option>
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          className="w-24 shrink-0 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-600"
+                          value={item.tipo}
+                          onChange={(e) => update('tipo', e.target.value)}
+                        >
+                          <option value="interno">Interno</option>
+                          <option value="externo">Externo</option>
+                        </select>
+                        <PILookupSelect
+                          value={item.parte_interesada_id}
+                          piNombre={item.parte_interesada_nombre}
+                          piList={piOptions}
+                          onSelect={(piId, piNombre) => {
+                            update('parte_interesada_id', piId);
+                            update('parte_interesada_nombre', piNombre);
+                          }}
+                        />
+                      </div>
                     </>
                   )}
                 />
 
-                <DynamicArraySection<SIPOCEntrada>
+                {/* Entradas (I) */}
+                <DynamicArraySection<EntradaItem>
                   title="Entradas (I)"
-                  items={(formData.entradas ?? []) as SIPOCEntrada[]}
-                  onChange={(items) => handleChange('entradas', items)}
+                  items={(formData.items_entradas ?? []) as EntradaItem[]}
+                  onChange={(items) => handleChange('items_entradas', items)}
                   createEmpty={() => ({ descripcion: '', origen: '' })}
                   renderRow={(item, _, update) => (
                     <>
@@ -336,31 +446,58 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   )}
                 />
 
-                <DynamicArraySection<SIPOCActividad>
+                {/* Actividades (P) — con lookup Cargo */}
+                <DynamicArraySection<ActividadItem>
                   title="Actividades Clave (P)"
-                  items={(formData.actividades_clave ?? []) as SIPOCActividad[]}
-                  onChange={(items) => handleChange('actividades_clave', items)}
-                  createEmpty={() => ({ descripcion: '', responsable: '' })}
+                  items={(formData.items_actividades ?? []) as ActividadItem[]}
+                  onChange={(items) => handleChange('items_actividades', items)}
+                  createEmpty={() => ({
+                    descripcion: '',
+                    responsable: '',
+                    responsable_cargo_id: null,
+                    responsable_cargo_nombre: '',
+                  })}
                   renderRow={(item, _, update) => (
                     <>
                       <Input
-                        placeholder="Descripción"
+                        placeholder="Descripción de la actividad"
                         value={item.descripcion}
                         onChange={(e) => update('descripcion', e.target.value)}
                       />
-                      <Input
-                        placeholder="Responsable"
-                        value={item.responsable}
-                        onChange={(e) => update('responsable', e.target.value)}
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Responsable (texto)"
+                          value={item.responsable}
+                          onChange={(e) => update('responsable', e.target.value)}
+                          className="flex-1"
+                        />
+                        <select
+                          className="w-36 shrink-0 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-600"
+                          value={item.responsable_cargo_id ?? ''}
+                          onChange={(e) => {
+                            const cargoId = parseInt(e.target.value) || null;
+                            const cargo = cargos.find((c) => c.id === cargoId);
+                            update('responsable_cargo_id', cargoId);
+                            update('responsable_cargo_nombre', cargo?.label ?? '');
+                          }}
+                        >
+                          <option value="">Cargo...</option>
+                          {cargos.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </>
                   )}
                 />
 
-                <DynamicArraySection<SIPOCSalida>
+                {/* Salidas (O) */}
+                <DynamicArraySection<SalidaItem>
                   title="Salidas (O)"
-                  items={(formData.salidas ?? []) as SIPOCSalida[]}
-                  onChange={(items) => handleChange('salidas', items)}
+                  items={(formData.items_salidas ?? []) as SalidaItem[]}
+                  onChange={(items) => handleChange('items_salidas', items)}
                   createEmpty={() => ({ descripcion: '', destino: '' })}
                   renderRow={(item, _, update) => (
                     <>
@@ -378,11 +515,17 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   )}
                 />
 
-                <DynamicArraySection<SIPOCCliente>
+                {/* Clientes (C) — con lookup PI */}
+                <DynamicArraySection<ClienteItem>
                   title="Clientes (C)"
-                  items={(formData.clientes ?? []) as SIPOCCliente[]}
-                  onChange={(items) => handleChange('clientes', items)}
-                  createEmpty={() => ({ nombre: '', tipo: 'interno' as const })}
+                  items={(formData.items_clientes ?? []) as ClienteItem[]}
+                  onChange={(items) => handleChange('items_clientes', items)}
+                  createEmpty={() => ({
+                    nombre: '',
+                    tipo: 'externo' as const,
+                    parte_interesada_id: null,
+                    parte_interesada_nombre: '',
+                  })}
                   renderRow={(item, _, update) => (
                     <>
                       <Input
@@ -390,14 +533,25 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                         value={item.nombre}
                         onChange={(e) => update('nombre', e.target.value)}
                       />
-                      <select
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-600"
-                        value={item.tipo}
-                        onChange={(e) => update('tipo', e.target.value)}
-                      >
-                        <option value="interno">Interno</option>
-                        <option value="externo">Externo</option>
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          className="w-24 shrink-0 rounded-md border border-gray-300 px-2 py-1.5 text-sm dark:bg-gray-800 dark:border-gray-600"
+                          value={item.tipo}
+                          onChange={(e) => update('tipo', e.target.value)}
+                        >
+                          <option value="interno">Interno</option>
+                          <option value="externo">Externo</option>
+                        </select>
+                        <PILookupSelect
+                          value={item.parte_interesada_id}
+                          piNombre={item.parte_interesada_nombre}
+                          piList={piOptions}
+                          onSelect={(piId, piNombre) => {
+                            update('parte_interesada_id', piId);
+                            update('parte_interesada_nombre', piNombre);
+                          }}
+                        />
+                      </div>
                     </>
                   )}
                 />
@@ -409,8 +563,8 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
               <div className="space-y-6">
                 <DynamicArraySection<RecursoItem>
                   title="Recursos"
-                  items={(formData.recursos ?? []) as RecursoItem[]}
-                  onChange={(items) => handleChange('recursos', items)}
+                  items={(formData.items_recursos ?? []) as RecursoItem[]}
+                  onChange={(items) => handleChange('items_recursos', items)}
                   createEmpty={() => ({ tipo: 'humano' as const, descripcion: '' })}
                   renderRow={(item, _, update) => (
                     <>
@@ -434,10 +588,10 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   )}
                 />
 
-                <DynamicArraySection<IndicadorVinculado>
+                <DynamicArraySection<IndicadorItem>
                   title="Indicadores Vinculados"
-                  items={(formData.indicadores_vinculados ?? []) as IndicadorVinculado[]}
-                  onChange={(items) => handleChange('indicadores_vinculados', items)}
+                  items={(formData.items_indicadores ?? []) as IndicadorItem[]}
+                  onChange={(items) => handleChange('items_indicadores', items)}
                   createEmpty={() => ({ nombre: '', formula: '', meta: '' })}
                   renderRow={(item, _, update) => (
                     <>
@@ -455,10 +609,10 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   )}
                 />
 
-                <DynamicArraySection<RiesgoAsociado>
+                <DynamicArraySection<RiesgoItem>
                   title="Riesgos Asociados"
-                  items={(formData.riesgos_asociados ?? []) as RiesgoAsociado[]}
-                  onChange={(items) => handleChange('riesgos_asociados', items)}
+                  items={(formData.items_riesgos ?? []) as RiesgoItem[]}
+                  onChange={(items) => handleChange('items_riesgos', items)}
                   createEmpty={() => ({
                     descripcion: '',
                     nivel: 'medio' as const,
@@ -484,10 +638,10 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   )}
                 />
 
-                <DynamicArraySection<DocumentoReferencia>
+                <DynamicArraySection<DocumentoItem>
                   title="Documentos de Referencia"
-                  items={(formData.documentos_referencia ?? []) as DocumentoReferencia[]}
-                  onChange={(items) => handleChange('documentos_referencia', items)}
+                  items={(formData.items_documentos ?? []) as DocumentoItem[]}
+                  onChange={(items) => handleChange('items_documentos', items)}
                   createEmpty={() => ({ codigo: '', nombre: '' })}
                   renderRow={(item, _, update) => (
                     <>

@@ -32,6 +32,10 @@ export {
 
 // Contexto Organizacional (DOFA, PESTEL, Porter, TOWS)
 export * from './contextoApi';
+
+// Partes Interesadas (REORG-B4: extraído de contextoApi, URL /organizacion/)
+export * from './partesInteresadasApi';
+
 export * from './encuestasApi';
 export * from './mapaEstrategicoApi';
 

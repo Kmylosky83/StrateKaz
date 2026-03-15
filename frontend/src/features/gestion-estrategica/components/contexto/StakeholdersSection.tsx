@@ -177,12 +177,12 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'create');
-  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'edit');
-  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.STAKEHOLDERS, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.PARTES_INTERESADAS, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.PARTES_INTERESADAS, 'edit');
+  const canDelete = canDo(Modules.FUNDACION, Sections.PARTES_INTERESADAS, 'delete');
 
   // Color del modulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('FUNDACION');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Sprint 17: Ref para input de archivo

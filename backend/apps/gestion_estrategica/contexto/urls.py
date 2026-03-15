@@ -2,7 +2,7 @@
 URLs para Contexto Organizacional - Gestión Estratégica
 =======================================================
 
-Configuración de rutas para los ViewSets de análisis estratégico.
+Configuración de rutas para análisis estratégico.
 
 Rutas base: /api/gestion-estrategica/contexto/
 
@@ -13,14 +13,8 @@ Endpoints disponibles:
 - /analisis-pestel/        - Análisis PESTEL
 - /factores-pestel/        - Factores PESTEL individuales
 - /fuerzas-porter/         - Análisis de 5 Fuerzas de Porter
-- /tipos-parte-interesada/ - Catálogo de tipos de stakeholders
-- /partes-interesadas/     - Partes interesadas (stakeholders)
-- /requisitos-pi/          - Requisitos de partes interesadas
-- /matriz-comunicacion/    - Matriz de comunicación
 
-Autor: Sistema ERP StrateKaz
-Fecha: 2025-12-26
-Actualizado: 2026-01-24 - Migrado a app independiente
+NOTA: Partes Interesadas se movieron a /api/organizacion/ (REORG-B3).
 """
 
 from django.urls import path, include
@@ -34,11 +28,6 @@ from .views import (
     AnalisisPESTELViewSet,
     FactorPESTELViewSet,
     FuerzaPorterViewSet,
-    GrupoParteInteresadaViewSet,
-    TipoParteInteresadaViewSet,
-    ParteInteresadaViewSet,
-    RequisitoParteInteresadaViewSet,
-    MatrizComunicacionViewSet
 )
 
 # Router para registrar automáticamente los ViewSets
@@ -55,13 +44,6 @@ router.register(r'estrategias-tows', EstrategiaTOWSViewSet, basename='estrategia
 router.register(r'analisis-pestel', AnalisisPESTELViewSet, basename='analisis-pestel')
 router.register(r'factores-pestel', FactorPESTELViewSet, basename='factor-pestel')
 router.register(r'fuerzas-porter', FuerzaPorterViewSet, basename='fuerza-porter')
-
-# Partes Interesadas (Stakeholders) - ISO 9001:2015 Cláusula 4.2
-router.register(r'grupos-parte-interesada', GrupoParteInteresadaViewSet, basename='grupo-parte-interesada')
-router.register(r'tipos-parte-interesada', TipoParteInteresadaViewSet, basename='tipo-parte-interesada')
-router.register(r'partes-interesadas', ParteInteresadaViewSet, basename='parte-interesada')
-router.register(r'requisitos-pi', RequisitoParteInteresadaViewSet, basename='requisito-pi')
-router.register(r'matriz-comunicacion', MatrizComunicacionViewSet, basename='matriz-comunicacion')
 
 # URLs finales
 urlpatterns = [

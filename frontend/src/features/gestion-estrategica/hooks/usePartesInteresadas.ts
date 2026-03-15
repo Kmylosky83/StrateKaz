@@ -24,7 +24,7 @@ import {
   type TipoParteInteresada,
   type ParteInteresadaFilters,
   type GenerarMatrizResponse,
-} from '../api/contextoApi';
+} from '../api/partesInteresadasApi';
 
 // Query keys (ACTUALIZADO - Sprint 17)
 const QUERY_KEYS = {

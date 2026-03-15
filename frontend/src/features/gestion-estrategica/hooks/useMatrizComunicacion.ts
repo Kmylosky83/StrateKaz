@@ -11,7 +11,7 @@ import {
   type MatrizComunicacion,
   type MatrizComunicacionFilters,
   type CreateMatrizComunicacionDTO,
-} from '../api/contextoApi';
+} from '../api/partesInteresadasApi';
 
 const QUERY_KEY = 'matriz-comunicacion';
 

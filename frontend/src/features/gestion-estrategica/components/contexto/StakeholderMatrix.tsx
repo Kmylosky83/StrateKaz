@@ -31,7 +31,7 @@ import {
 import { Zap, Shield, Bell, Eye, Users, Building2, Globe, AlertTriangle, Info } from 'lucide-react';
 import { Tooltip } from '@/components/common/Tooltip';
 import { Card } from '@/components/common/Card';
-import type { ParteInteresada } from '../../api/contextoApi';
+import type { ParteInteresada } from '../../api/partesInteresadasApi';
 
 // =============================================================================
 // TIPOS

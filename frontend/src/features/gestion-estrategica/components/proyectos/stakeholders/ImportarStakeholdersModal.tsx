@@ -12,7 +12,7 @@ import { Alert } from '@/components/common/Alert';
 import { Users, Download } from 'lucide-react';
 import { usePartesInteresadas } from '../../../hooks/usePartesInteresadas';
 import { useImportarStakeholders } from '../../../hooks/useProyectos';
-import type { ParteInteresada } from '../../../api/contextoApi';
+import type { ParteInteresada } from '../../../api/partesInteresadasApi';
 
 interface ImportarStakeholdersModalProps {
   proyectoId: number;

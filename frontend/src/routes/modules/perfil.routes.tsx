@@ -13,11 +13,15 @@ const SeguridadPage = lazy(() =>
 const PreferenciasPage = lazy(() =>
   import('@/features/perfil').then((m) => ({ default: m.PreferenciasPage }))
 );
+const MisNotificacionesPage = lazy(() =>
+  import('@/features/perfil').then((m) => ({ default: m.MisNotificacionesPage }))
+);
 
 export const perfilRoutes = (
   <>
     <Route path="/perfil" element={withSuspense(PerfilPage)} />
     <Route path="/perfil/seguridad" element={withSuspense(SeguridadPage)} />
     <Route path="/perfil/preferencias" element={withSuspense(PreferenciasPage)} />
+    <Route path="/perfil/notificaciones" element={withSuspense(MisNotificacionesPage)} />
   </>
 );

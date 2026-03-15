@@ -1,488 +1,41 @@
 /**
- * Página: Centro de Notificaciones
+ * Página: Administración de Notificaciones (Centro de Control)
  *
- * Gestión de notificaciones con tabs:
- * 1. Bandeja - Lista de notificaciones (Vista 2: Lista CRUD)
- * 2. Tipos - CRUD de tipos de notificación
- * 3. Preferencias - Configuración por usuario
- * 4. Masivas - Envío de notificaciones masivas
+ * Solo tabs administrativos:
+ * 1. Tipos - CRUD de tipos de notificación
+ * 2. Masivas - Envío de notificaciones masivas
+ *
+ * La bandeja personal y preferencias se encuentran en /perfil/notificaciones.
  *
  * MN-001: Conectado con backend real via React Query hooks
  *
  * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 2
  */
-import { useState, useEffect } from 'react';
-import {
-  Bell,
-  Mail,
-  MessageSquare,
-  Settings,
-  Send,
-  CheckCircle,
-  Archive,
-  Filter,
-  Plus,
-  Clock,
-  AlertTriangle,
-  CheckSquare,
-  Inbox,
-  Eye,
-  Trash2,
-} from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Mail, Settings, Send, Plus, Eye, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
-import { Input, Select, Textarea, Switch, Checkbox } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import { toast } from 'sonner';
 import {
-  useNotificaciones,
-  useNotificacionesNoLeidas,
-  useMarcarLeida,
-  useMarcarTodasLeidas,
-  useArchivarNotificacion,
   useTiposNotificacion,
   useCreateTipoNotificacion,
   useUpdateTipoNotificacion,
   useDeleteTipoNotificacion,
-  usePreferenciasNotificacion,
-  useUpdatePreferencia,
   useCreateNotificacionMasiva,
 } from '../hooks/useNotificaciones';
 import { useSelectCargos, useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
 import { TipoNotificacionModal } from '../components';
 import { Modal } from '@/components/common/Modal';
-import type { Notificacion, TipoNotificacion } from '../types/notificaciones.types';
+import { getCategoriaIcon, getCategoriaColor } from '../components/notificacion-utils';
+import type { TipoNotificacion } from '../types/notificaciones.types';
 
-// ==================== NOTIFICATION DETAIL MODAL ====================
+// ==================== TIPOS TAB ====================
 
-function NotificacionDetailModal({
-  notificacion,
-  isOpen,
-  onClose,
-}: {
-  notificacion: Notificacion | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  if (!notificacion) return null;
-
-  const categoria = notificacion.categoria || 'sistema';
-  const prioridadColor =
-    notificacion.prioridad === 'urgente'
-      ? 'text-red-600 bg-red-50 dark:bg-red-900/20'
-      : notificacion.prioridad === 'alta'
-        ? 'text-orange-600 bg-orange-50 dark:bg-orange-900/20'
-        : 'text-gray-600 bg-gray-50 dark:bg-gray-800';
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de Notificación" size="lg">
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-start gap-3">
-          <div className={cn('p-2 rounded-lg flex-shrink-0', getCategoriaColor(categoria))}>
-            {(() => {
-              const Icon = getCategoriaIcon(categoria);
-              return <Icon className="h-5 w-5" />;
-            })()}
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {notificacion.titulo}
-            </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="gray" size="sm">
-                {categoria}
-              </Badge>
-              <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', prioridadColor)}>
-                {notificacion.prioridad}
-              </span>
-              <Badge variant={notificacion.esta_leida ? 'gray' : 'success'} size="sm">
-                {notificacion.esta_leida ? 'Leída' : 'Nueva'}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Mensaje */}
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            {notificacion.mensaje}
-          </p>
-        </div>
-
-        {/* Metadata */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500 dark:text-gray-400">Fecha:</span>
-            <p className="font-medium text-gray-900 dark:text-white">
-              {new Date(notificacion.created_at).toLocaleDateString('es-CO', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </p>
-          </div>
-          {notificacion.tipo_nombre && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Tipo:</span>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {notificacion.tipo_nombre}
-              </p>
-            </div>
-          )}
-          {notificacion.fecha_lectura && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Leída el:</span>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {new Date(notificacion.fecha_lectura).toLocaleDateString('es-CO', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </p>
-            </div>
-          )}
-          {notificacion.esta_archivada && (
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Estado:</span>
-              <p className="font-medium text-orange-600">Archivada</p>
-            </div>
-          )}
-        </div>
-
-        {/* URL link */}
-        {notificacion.url && (
-          <a
-            href={notificacion.url}
-            className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
-          >
-            <Eye className="w-4 h-4" />
-            Ver recurso relacionado
-          </a>
-        )}
-      </div>
-    </Modal>
-  );
-}
-
-// ==================== UTILITY FUNCTIONS ====================
-
-const getCategoriaIcon = (categoria: string) => {
-  const icons: Record<string, typeof Bell> = {
-    sistema: Settings,
-    tarea: CheckSquare,
-    alerta: AlertTriangle,
-    recordatorio: Clock,
-    aprobacion: CheckCircle,
-  };
-  return icons[categoria] || Bell;
-};
-
-const getCategoriaColor = (categoria: string) => {
-  const colors: Record<string, string> = {
-    sistema: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    tarea: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
-    alerta: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
-    recordatorio: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-    aprobacion: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
-  };
-  return colors[categoria] || 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400';
-};
-
-// ==================== COMPONENTS ====================
-
-/**
- * BandejaTab - Vista 2: Lista CRUD (Table View)
- *
- * Estructura:
- * - Section Header fuera del Card (icono + título + contador + acciones)
- * - Data Table en Card con acciones por fila
- * - Empty State con CTA
- *
- * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 2
- */
-function BandejaTab() {
-  const { data: notificaciones, isLoading, error } = useNotificaciones();
-  const { data: noLeidas } = useNotificacionesNoLeidas();
-  const marcarLeida = useMarcarLeida();
-  const marcarTodasLeidas = useMarcarTodasLeidas();
-  const archivar = useArchivarNotificacion();
-  const [selectedNotif, setSelectedNotif] = useState<Notificacion | null>(null);
-
-  const countNoLeidas = noLeidas?.length || 0;
-  const notifList = notificaciones || [];
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {/* Section Header skeleton */}
-        <div className="flex items-center justify-between animate-pulse-subtle">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 w-10 h-10" />
-            <div>
-              <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded mt-1" />
-            </div>
-          </div>
-        </div>
-        {/* Table skeleton */}
-        <Card>
-          <div className="p-6 space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
-              />
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <Alert
-        variant="error"
-        message="Error al cargar las notificaciones. Intenta de nuevo más tarde."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Section Header - Por fuera del Card */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-            <Inbox className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Bandeja de Notificaciones
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {notifList.length} notificación{notifList.length !== 1 ? 'es' : ''} •{' '}
-              <span className="text-primary-600 dark:text-primary-400 font-medium">
-                {countNoLeidas} sin leer
-              </span>
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => marcarTodasLeidas.mutate()}
-            isLoading={marcarTodasLeidas.isPending}
-            disabled={countNoLeidas === 0}
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Marcar todas leídas
-          </Button>
-          <Button variant="outline" size="sm">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros
-          </Button>
-        </div>
-      </div>
-
-      {/* Data Table Card o Empty State */}
-      {notifList.length > 0 ? (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Notificación
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Categoría
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Prioridad
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Fecha
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Estado
-                  </th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {notifList.map((notif: Notificacion) => {
-                  const categoria = notif.categoria || 'sistema';
-                  const Icon = getCategoriaIcon(categoria);
-                  const isLeida = notif.esta_leida;
-
-                  return (
-                    <tr
-                      key={notif.id}
-                      onClick={() => {
-                        setSelectedNotif(notif);
-                        if (!isLeida) marcarLeida.mutate(notif.id);
-                      }}
-                      className={cn(
-                        'border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer',
-                        !isLeida && 'bg-primary-50/30 dark:bg-primary-900/10'
-                      )}
-                    >
-                      {/* Notificación: Icono + Título + Mensaje */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              'p-2 rounded-lg flex-shrink-0',
-                              getCategoriaColor(categoria)
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              {!isLeida && (
-                                <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0" />
-                              )}
-                              <span
-                                className={cn(
-                                  'font-medium truncate',
-                                  !isLeida
-                                    ? 'text-gray-900 dark:text-white'
-                                    : 'text-gray-700 dark:text-gray-300'
-                                )}
-                              >
-                                {notif.titulo}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                              {notif.mensaje}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Categoría */}
-                      <td className="py-3 px-4">
-                        <Badge variant="gray" size="sm">
-                          {categoria}
-                        </Badge>
-                      </td>
-
-                      {/* Prioridad */}
-                      <td className="py-3 px-4">
-                        <Badge
-                          variant={
-                            notif.prioridad === 'urgente'
-                              ? 'danger'
-                              : notif.prioridad === 'alta'
-                                ? 'warning'
-                                : 'gray'
-                          }
-                          size="sm"
-                        >
-                          {notif.prioridad}
-                        </Badge>
-                      </td>
-
-                      {/* Fecha */}
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(notif.created_at).toLocaleDateString('es-CO', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </td>
-
-                      {/* Estado */}
-                      <td className="py-3 px-4">
-                        <Badge variant={isLeida ? 'gray' : 'success'} size="sm">
-                          {isLeida ? 'Leída' : 'Nueva'}
-                        </Badge>
-                      </td>
-
-                      {/* Acciones */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {!isLeida && (
-                            <Button
-                              variant="ghost"
-                              className="p-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                              onClick={() => marcarLeida.mutate(notif.id)}
-                              title="Marcar como leída"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            className="p-0 w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                            onClick={() => archivar.mutate(notif.id)}
-                            title="Archivar"
-                          >
-                            <Archive className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      ) : (
-        /* Empty State */
-        <Card>
-          <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-              <Inbox className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No tienes notificaciones
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Tu bandeja está vacía. Las nuevas notificaciones aparecerán aquí.
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Detail Modal */}
-      <NotificacionDetailModal
-        notificacion={selectedNotif}
-        isOpen={!!selectedNotif}
-        onClose={() => setSelectedNotif(null)}
-      />
-    </div>
-  );
-}
-
-/**
- * TiposTab - Vista 2: Lista CRUD (Table View)
- *
- * Estructura:
- * - Section Header fuera del Card (icono + título + contador + botón crear)
- * - Data Table en Card con acciones por fila
- * - Empty State con CTA
- *
- * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 2
- */
 function TiposTab() {
   const { data: tipos, isLoading, error } = useTiposNotificacion();
   const createTipo = useCreateTipoNotificacion();
@@ -512,7 +65,6 @@ function TiposTab() {
     setShowDetailModal(true);
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -545,7 +97,7 @@ function TiposTab() {
 
   return (
     <div className="space-y-6">
-      {/* Section Header - Por fuera del Card */}
+      {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -567,7 +119,6 @@ function TiposTab() {
         </Button>
       </div>
 
-      {/* Data Table Card o Empty State */}
       {tiposList.length > 0 ? (
         <Card>
           <div className="overflow-x-auto">
@@ -597,7 +148,6 @@ function TiposTab() {
                     key={tipo.id}
                     className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    {/* Tipo: Icono + Nombre + Código */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div
@@ -606,11 +156,10 @@ function TiposTab() {
                             getCategoriaColor(tipo.categoria)
                           )}
                         >
-                          {getCategoriaIcon(tipo.categoria) &&
-                            (() => {
-                              const Icon = getCategoriaIcon(tipo.categoria);
-                              return <Icon className="h-4 w-4" />;
-                            })()}
+                          {(() => {
+                            const Icon = getCategoriaIcon(tipo.categoria);
+                            return <Icon className="h-4 w-4" />;
+                          })()}
                         </div>
                         <div className="min-w-0">
                           <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -622,15 +171,11 @@ function TiposTab() {
                         </div>
                       </div>
                     </td>
-
-                    {/* Categoría */}
                     <td className="py-3 px-4">
                       <Badge variant="gray" size="sm">
                         {tipo.categoria}
                       </Badge>
                     </td>
-
-                    {/* Canales */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         {tipo.es_email && (
@@ -651,15 +196,11 @@ function TiposTab() {
                         )}
                       </div>
                     </td>
-
-                    {/* Estado */}
                     <td className="py-3 px-4">
                       <Badge variant={tipo.is_active ? 'success' : 'gray'} size="sm">
                         {tipo.is_active ? 'Activo' : 'Inactivo'}
                       </Badge>
                     </td>
-
-                    {/* Acciones */}
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button
@@ -696,7 +237,6 @@ function TiposTab() {
           </div>
         </Card>
       ) : (
-        /* Empty State */
         <Card>
           <div className="text-center py-12">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
@@ -754,7 +294,7 @@ function TiposTab() {
         isLoading={updateTipo.isPending}
       />
 
-      {/* Modal de Detalle de Tipo */}
+      {/* Modal de Detalle */}
       {selectedTipo && showDetailModal && (
         <Modal
           isOpen={showDetailModal}
@@ -823,302 +363,8 @@ function TiposTab() {
   );
 }
 
-/**
- * PreferenciasTab - Vista 3: Panel de Activación (Toggle Grid)
- *
- * Estructura:
- * - Section Header fuera del Card
- * - Cards con toggles para activar/desactivar canales
- * - Configuración de horarios
- *
- * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 3
- */
-function PreferenciasTab() {
-  const { data: preferencias, isLoading, error } = usePreferenciasNotificacion();
-  const updatePreferencia = useUpdatePreferencia();
+// ==================== MASIVAS TAB ====================
 
-  // Estado local para manejar los valores del formulario
-  const [formValues, setFormValues] = useState({
-    recibir_app: true,
-    recibir_email: true,
-    recibir_push: false,
-    horario_inicio: '08:00',
-    horario_fin: '18:00',
-  });
-
-  // Flag para evitar re-sincronización después de guardar
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Actualizar form values cuando cargan las preferencias inicialmente
-  useEffect(() => {
-    if (preferencias && preferencias.length > 0 && !isSaving) {
-      const pref = preferencias[0];
-      setFormValues({
-        recibir_app: pref.recibir_app ?? true,
-        recibir_email: pref.recibir_email ?? true,
-        recibir_push: pref.recibir_push ?? false,
-        horario_inicio: pref.horario_inicio || '08:00',
-        horario_fin: pref.horario_fin || '18:00',
-      });
-    }
-  }, [preferencias, isSaving]);
-
-  const handleToggle = (key: 'recibir_app' | 'recibir_email' | 'recibir_push') => {
-    setFormValues((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleSavePreferencias = () => {
-    if (preferencias && preferencias.length > 0) {
-      const prefId = preferencias[0].id;
-      setIsSaving(true);
-
-      updatePreferencia.mutate(
-        {
-          id: prefId,
-          data: formValues,
-        },
-        {
-          onSettled: () => {
-            // Siempre resetear isSaving después de la operación
-            setTimeout(() => setIsSaving(false), 500);
-          },
-        }
-      );
-    }
-  };
-
-  const handleResetDefaults = () => {
-    const defaults = {
-      recibir_app: true,
-      recibir_email: true,
-      recibir_push: false,
-      horario_inicio: '08:00',
-      horario_fin: '18:00',
-    };
-    setFormValues(defaults);
-
-    // Guardar inmediatamente después de restaurar
-    if (preferencias && preferencias.length > 0) {
-      const prefId = preferencias[0].id;
-      setIsSaving(true);
-
-      updatePreferencia.mutate(
-        {
-          id: prefId,
-          data: defaults,
-        },
-        {
-          onSettled: () => {
-            // Siempre resetear isSaving después de la operación
-            setTimeout(() => setIsSaving(false), 500);
-          },
-        }
-      );
-    }
-  };
-
-  // Loading state con skeleton
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 animate-pulse-subtle">
-          <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 w-10 h-10" />
-          <div>
-            <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-4 w-36 bg-gray-200 dark:bg-gray-700 rounded mt-1" />
-          </div>
-        </div>
-        <Card>
-          <div className="p-6 space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
-              />
-            ))}
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <Alert variant="error" message="Error al cargar las preferencias." />;
-  }
-
-  const _prefList = preferencias || [];
-
-  // Canales disponibles para configurar
-  const canales = [
-    {
-      key: 'recibir_app',
-      icon: Bell,
-      title: 'Notificaciones en App',
-      description: 'Recibir alertas dentro de la aplicación',
-    },
-    {
-      key: 'recibir_email',
-      icon: Mail,
-      title: 'Notificaciones por Email',
-      description: 'Recibir notificaciones en tu correo electrónico',
-    },
-    {
-      key: 'recibir_push',
-      icon: MessageSquare,
-      title: 'Notificaciones Push',
-      description: 'Recibir notificaciones push en tu dispositivo',
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Section Header - Por fuera del Card */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-          <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Preferencias de Notificación
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Configura cómo quieres recibir notificaciones
-          </p>
-        </div>
-      </div>
-
-      {/* Card de Canales de Notificación */}
-      <Card>
-        <div className="p-6">
-          {/* Header del grupo */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-              <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Canales de Notificación
-              </h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Activa o desactiva los canales por los que deseas recibir notificaciones
-              </p>
-            </div>
-          </div>
-
-          {/* Lista de toggles para canales */}
-          <div className="space-y-4">
-            {canales.map((canal) => {
-              const Icon = canal.icon;
-              // Usar formValues para el estado del toggle
-              const isActive = formValues[canal.key as keyof typeof formValues] as boolean;
-
-              return (
-                <div
-                  key={canal.key}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-                      <Icon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{canal.title}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {canal.description}
-                      </p>
-                    </div>
-                  </div>
-                  {/* Toggle switch */}
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={() =>
-                      handleToggle(canal.key as 'recibir_app' | 'recibir_email' | 'recibir_push')
-                    }
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Card>
-
-      {/* Card de Horarios */}
-      <Card>
-        <div className="p-6">
-          {/* Header del grupo */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
-              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-                Horario de Notificaciones
-              </h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Define en qué horario deseas recibir notificaciones
-              </p>
-            </div>
-          </div>
-
-          {/* Configuración de horario */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              type="time"
-              label="Hora de inicio"
-              value={formValues.horario_inicio}
-              onChange={(e) =>
-                setFormValues((prev) => ({ ...prev, horario_inicio: e.target.value }))
-              }
-            />
-            <Input
-              type="time"
-              label="Hora de fin"
-              value={formValues.horario_fin}
-              onChange={(e) => setFormValues((prev) => ({ ...prev, horario_fin: e.target.value }))}
-            />
-          </div>
-
-          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            Las notificaciones fuera de este horario se acumularán y se entregarán al inicio del
-            próximo período.
-          </p>
-        </div>
-      </Card>
-
-      {/* Footer con acciones */}
-      <div className="flex justify-end gap-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleResetDefaults}
-          disabled={updatePreferencia.isPending}
-        >
-          Restaurar Predeterminados
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleSavePreferencias}
-          isLoading={updatePreferencia.isPending}
-        >
-          Guardar Preferencias
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * MasivasTab - Vista 5: Formulario de Acción (Action Form View)
- *
- * Estructura:
- * - Section Header fuera del Card
- * - Card único con formulario de acción
- * - Campos organizados en secciones lógicas
- * - Botones de acción al final
- *
- * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 5
- */
 function MasivasTab() {
   const createMasiva = useCreateNotificacionMasiva();
   const { data: cargosData } = useSelectCargos();
@@ -1129,16 +375,12 @@ function MasivasTab() {
   const areas = areasData || [];
   const users = usersData || [];
 
-  // Estado para vista previa
   const [showPreview, setShowPreview] = useState(false);
-
-  // Obtener tipos de notificación para el select
   const { data: tiposData, isLoading: tiposLoading } = useTiposNotificacion();
   const tipos = tiposData || [];
 
-  // Estado del formulario
   const [formData, setFormData] = useState({
-    tipo: '', // ID del tipo de notificación (requerido por backend)
+    tipo: '',
     titulo: '',
     mensaje: '',
     destinatarios_tipo: 'todos' as 'todos' | 'rol' | 'area' | 'usuarios_especificos',
@@ -1150,7 +392,6 @@ function MasivasTab() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación básica
     if (!formData.tipo.trim()) {
       toast.error('Selecciona un tipo de notificación');
       return;
@@ -1159,8 +400,6 @@ function MasivasTab() {
       toast.error('El título y mensaje son requeridos');
       return;
     }
-
-    // Validación de destinatarios
     if (formData.destinatarios_tipo === 'rol' && !formData.cargo_id) {
       toast.error('Debes seleccionar un cargo');
       return;
@@ -1177,7 +416,6 @@ function MasivasTab() {
       return;
     }
 
-    // Preparar datos según modelo backend
     const payload: any = {
       tipo: parseInt(formData.tipo),
       titulo: formData.titulo,
@@ -1185,24 +423,19 @@ function MasivasTab() {
       destinatarios_tipo: formData.destinatarios_tipo,
     };
 
-    // Agregar relaciones según tipo de destinatario
     if (formData.destinatarios_tipo === 'rol' && formData.cargo_id) {
-      // ManyToMany field 'roles' - enviar como array
       payload.roles = [parseInt(formData.cargo_id)];
     } else if (formData.destinatarios_tipo === 'area' && formData.area_id) {
-      // ManyToMany field 'areas' - enviar como array
       payload.areas = [parseInt(formData.area_id)];
     } else if (
       formData.destinatarios_tipo === 'usuarios_especificos' &&
       formData.usuarios_ids.length > 0
     ) {
-      // ManyToMany field 'usuarios' - enviar como array
       payload.usuarios = formData.usuarios_ids;
     }
 
     createMasiva.mutate(payload, {
       onSuccess: () => {
-        // Limpiar formulario
         setFormData({
           tipo: '',
           titulo: '',
@@ -1217,7 +450,6 @@ function MasivasTab() {
     });
   };
 
-  // Calcular texto de destinatarios
   const getDestinatariosText = () => {
     if (formData.destinatarios_tipo === 'todos') {
       return 'todos los usuarios';
@@ -1238,7 +470,7 @@ function MasivasTab() {
 
   return (
     <div className="space-y-6">
-      {/* Section Header - Por fuera del Card */}
+      {/* Section Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
           <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1253,10 +485,9 @@ function MasivasTab() {
         </div>
       </div>
 
-      {/* Card con formulario */}
       <Card>
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Sección: Contenido del Mensaje */}
+          {/* Contenido del Mensaje */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Contenido del Mensaje
@@ -1286,10 +517,9 @@ function MasivasTab() {
             </div>
           </div>
 
-          {/* Separador */}
           <div className="border-t border-gray-200 dark:border-gray-700" />
 
-          {/* Sección: Configuración de Envío */}
+          {/* Configuración de Envío */}
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Configuración de Envío
@@ -1344,7 +574,6 @@ function MasivasTab() {
               </Select>
             </div>
 
-            {/* Select condicional de cargo */}
             {formData.destinatarios_tipo === 'rol' && (
               <Select
                 label="Seleccionar Cargo"
@@ -1361,7 +590,6 @@ function MasivasTab() {
               </Select>
             )}
 
-            {/* Select condicional de área */}
             {formData.destinatarios_tipo === 'area' && (
               <Select
                 label="Seleccionar Área"
@@ -1378,7 +606,6 @@ function MasivasTab() {
               </Select>
             )}
 
-            {/* Checkboxes de usuarios específicos */}
             {formData.destinatarios_tipo === 'usuarios_especificos' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -1458,10 +685,9 @@ function MasivasTab() {
             )}
           </div>
 
-          {/* Separador */}
           <div className="border-t border-gray-200 dark:border-gray-700" />
 
-          {/* Acciones del formulario */}
+          {/* Acciones */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Se enviará a{' '}
@@ -1505,7 +731,6 @@ function MasivasTab() {
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Vista Previa de Notificación
@@ -1526,10 +751,7 @@ function MasivasTab() {
                 </svg>
               </Button>
             </div>
-
-            {/* Content */}
             <div className="p-6 space-y-6">
-              {/* Simulación de notificación */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
                 <div className="flex items-start gap-3">
                   <div className="p-2 rounded-lg flex-shrink-0 bg-blue-100 dark:bg-blue-900/30">
@@ -1548,8 +770,6 @@ function MasivasTab() {
                   </div>
                 </div>
               </div>
-
-              {/* Información de envío */}
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900 dark:text-white">Información de Envío</h4>
                 <div className="text-sm">
@@ -1562,8 +782,6 @@ function MasivasTab() {
                 </div>
               </div>
             </div>
-
-            {/* Footer */}
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
               <Button variant="outline" onClick={() => setShowPreview(false)}>
                 Cerrar
@@ -1572,7 +790,6 @@ function MasivasTab() {
                 variant="primary"
                 onClick={() => {
                   setShowPreview(false);
-                  // Trigger submit programáticamente
                   const form = document.querySelector('form') as HTMLFormElement;
                   if (form) {
                     form.requestSubmit();
@@ -1592,47 +809,28 @@ function MasivasTab() {
 
 // ==================== SECTIONS CONFIG ====================
 
-/**
- * Secciones para el PageHeader
- * Siguiendo Vista 2: Las secciones van en el header a la derecha
- */
 const PAGE_SECTIONS = [
-  { code: 'bandeja', name: 'Bandeja', icon: 'Bell' },
   { code: 'tipos', name: 'Tipos', icon: 'Settings' },
-  { code: 'preferencias', name: 'Preferencias', icon: 'Sliders' },
   { code: 'masivas', name: 'Masivas', icon: 'Send' },
 ];
 
 // ==================== MAIN COMPONENT ====================
 
-/**
- * NotificacionesPage - Vista 2: Lista CRUD
- *
- * Estructura:
- * - PageHeader con título y secciones a la derecha
- * - Contenido de cada sección con Section Header + Data Table
- *
- * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 2
- */
 export default function NotificacionesPage() {
-  const [activeSection, setActiveSection] = useState('bandeja');
+  const [activeSection, setActiveSection] = useState('tipos');
 
   return (
     <div className="space-y-6">
-      {/* PageHeader con secciones a la derecha - Vista 2 */}
       <PageHeader
-        title="Centro de Notificaciones"
-        description="Gestiona tus notificaciones, tipos y preferencias"
+        title="Administración de Notificaciones"
+        description="Configura tipos de notificación y envía comunicaciones masivas"
         sections={PAGE_SECTIONS}
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         moduleColor="blue"
       />
 
-      {/* Contenido de la sección activa */}
-      {activeSection === 'bandeja' && <BandejaTab />}
       {activeSection === 'tipos' && <TiposTab />}
-      {activeSection === 'preferencias' && <PreferenciasTab />}
       {activeSection === 'masivas' && <MasivasTab />}
     </div>
   );

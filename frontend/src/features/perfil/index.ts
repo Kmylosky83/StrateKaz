@@ -4,7 +4,8 @@
  * Páginas:
  * - PerfilPage: Información personal del usuario
  * - SeguridadPage: Configuración de seguridad (contraseña, sesiones, 2FA)
- * - PreferenciasPage: Preferencias de la aplicación (tema, notificaciones, idioma)
+ * - PreferenciasPage: Preferencias de la aplicación (idioma, zona horaria, formato fecha)
+ * - MisNotificacionesPage: Bandeja personal + preferencias de notificación
  *
  * MS-002-A: Añadidos hooks y API para sesiones de usuario
  */
@@ -13,6 +14,7 @@
 export { PerfilPage } from './pages/PerfilPage';
 export { SeguridadPage } from './pages/SeguridadPage';
 export { PreferenciasPage } from './pages/PreferenciasPage';
+export { MisNotificacionesPage } from './pages/MisNotificacionesPage';
 
 // Components
 export { ActiveSessionsCard } from './components/ActiveSessionsCard';

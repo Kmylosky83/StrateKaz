@@ -263,7 +263,7 @@ export const PreferenciasPage = () => {
       {/* Info note */}
       <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
         El tema de la interfaz se puede cambiar desde el icono en la barra superior. Las
-        preferencias de notificaciones están disponibles en el Centro de Notificaciones.
+        preferencias de notificaciones están disponibles en Mis Notificaciones.
       </p>
     </div>
   );

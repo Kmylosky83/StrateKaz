@@ -37,8 +37,8 @@ export const USER_MENU_LABELS = {
   DEFAULT_CARGO: 'Sin cargo asignado',
   /** Mi Perfil */
   PROFILE: 'Mi Perfil',
-  /** Notificaciones */
-  NOTIFICATIONS: 'Notificaciones',
+  /** Mis Notificaciones */
+  NOTIFICATIONS: 'Mis Notificaciones',
   /** Seguridad */
   SECURITY: 'Seguridad',
   /** Preferencias */
@@ -103,6 +103,7 @@ export const ROUTES = {
   PROFILE: '/perfil',
   PROFILE_SECURITY: '/perfil/seguridad',
   PROFILE_PREFERENCES: '/perfil/preferencias',
-  NOTIFICATIONS: '/auditoria/notificaciones',
+  NOTIFICATIONS: '/perfil/notificaciones',
+  NOTIFICATIONS_ADMIN: '/auditoria/notificaciones',
   PROVEEDOR_PORTAL: '/proveedor-portal',
 } as const;

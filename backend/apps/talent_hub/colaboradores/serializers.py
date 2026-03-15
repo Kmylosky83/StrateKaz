@@ -333,6 +333,8 @@ class ColaboradorListSerializer(serializers.ModelSerializer):
             'email_personal',
             'telefono_movil',
             'foto',
+            'parte_interesada_id',
+            'parte_interesada_nombre',
             # Computed
             'antiguedad_anios',
             'esta_activo',
@@ -398,6 +400,8 @@ class ColaboradorDetailSerializer(serializers.ModelSerializer):
             'telefono_movil',
             'foto',
             'observaciones',
+            'parte_interesada_id',
+            'parte_interesada_nombre',
             # Nested
             'hoja_vida',
             'info_personal',

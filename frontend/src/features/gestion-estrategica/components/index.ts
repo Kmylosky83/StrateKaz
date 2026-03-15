@@ -19,6 +19,7 @@ export { SedesSection } from './SedesSection';
 
 // Secciones autocontenidas — Mi Organización
 export { AreasTab } from './AreasTab';
+export { PILookupField } from './PILookupField';
 export { CaracterizacionesSection } from './CaracterizacionesSection';
 export { MapaProcesosSection } from './MapaProcesosSection';
 

@@ -48,6 +48,8 @@ export interface Cliente {
   canal_venta_nombre?: string;
   vendedor_asignado?: number;
   vendedor_asignado_nombre?: string;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
   observaciones?: string;
   fecha_alta: string;
   ultima_compra?: string;
@@ -74,6 +76,8 @@ export interface ClienteList {
   scoring_cliente: number;
   segmento_nombre?: string;
   vendedor_asignado_nombre?: string;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
   saldo_pendiente: number;
   total_compras: number;
   created_at: string;
@@ -648,6 +652,8 @@ export interface CreateClienteDTO {
   canal_venta?: number;
   vendedor_asignado?: number;
   observaciones?: string;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
 }
 
 export interface UpdateClienteDTO extends Partial<CreateClienteDTO> {

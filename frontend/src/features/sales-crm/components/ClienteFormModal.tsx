@@ -7,6 +7,7 @@ import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCreateCliente, useUpdateCliente, useSegmentos, useCanalesVenta } from '../hooks';
 import { useSelectUsers } from '@/hooks/useSelectLists';
+import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 import type { Cliente, CreateClienteDTO } from '../types';
 
 interface ClienteFormModalProps {
@@ -54,6 +55,8 @@ const TIPO_CLIENTE_OPTIONS = [
 
 export default function ClienteFormModal({ item, isOpen, onClose }: ClienteFormModalProps) {
   const [formData, setFormData] = useState<CreateClienteDTO>(INITIAL_FORM);
+  const [piId, setPiId] = useState<number | null>(null);
+  const [piNombre, setPiNombre] = useState('');
 
   const createMutation = useCreateCliente();
   const updateMutation = useUpdateCliente();
@@ -91,8 +94,12 @@ export default function ClienteFormModal({ item, isOpen, onClose }: ClienteFormM
         vendedor_asignado: item.vendedor_asignado || undefined,
         observaciones: item.observaciones || '',
       });
+      setPiId(item.parte_interesada_id ?? null);
+      setPiNombre(item.parte_interesada_nombre ?? '');
     } else {
       setFormData(INITIAL_FORM);
+      setPiId(null);
+      setPiNombre('');
     }
   }, [item, isOpen]);
 
@@ -103,7 +110,7 @@ export default function ClienteFormModal({ item, isOpen, onClose }: ClienteFormM
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload = { ...formData };
+    const payload = { ...formData, parte_interesada_id: piId, parte_interesada_nombre: piNombre };
 
     // Limpiar FK opcionales vacíos (evitar pk=0)
     if (!payload.segmento) delete payload.segmento;
@@ -342,6 +349,24 @@ export default function ClienteFormModal({ item, isOpen, onClose }: ClienteFormM
               ))}
             </Select>
           </div>
+        </div>
+
+        {/* Vínculo Parte Interesada */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Vínculo con Parte Interesada
+          </h4>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            Vincule este cliente con una Parte Interesada registrada en Fundación.
+          </p>
+          <PILookupField
+            value={piId}
+            displayName={piNombre}
+            onChange={(id, nombre) => {
+              setPiId(id);
+              setPiNombre(nombre);
+            }}
+          />
         </div>
 
         {/* Observaciones */}

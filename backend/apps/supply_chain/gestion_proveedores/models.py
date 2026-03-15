@@ -513,6 +513,21 @@ class Proveedor(models.Model):
                   'False = firma consultora/contratista con equipo.',
     )
 
+    # Vínculo con Parte Interesada (C1 — Fundación)
+    parte_interesada_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Parte Interesada',
+        help_text='ID de la Parte Interesada vinculada (gestion_estrategica.ParteInteresada)'
+    )
+    parte_interesada_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Parte Interesada',
+        help_text='Cache: nombre de la parte interesada vinculada'
+    )
+
     # Metadatos
     observaciones = models.TextField(null=True, blank=True)
     is_active = models.BooleanField(default=True, db_index=True)

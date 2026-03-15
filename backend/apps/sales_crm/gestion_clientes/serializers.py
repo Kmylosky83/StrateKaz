@@ -130,6 +130,8 @@ class ClienteListSerializer(serializers.ModelSerializer):
             'cantidad_pedidos',
             'dias_sin_comprar',
             'ticket_promedio',
+            'parte_interesada_id',
+            'parte_interesada_nombre',
             'is_active',
         ]
 
@@ -231,6 +233,8 @@ class ClienteSerializer(serializers.ModelSerializer):
             'total_compras_acumulado',
             'cantidad_pedidos',
             'observaciones',
+            'parte_interesada_id',
+            'parte_interesada_nombre',
             'contactos',
             'scoring_data',
             'nombre_completo',

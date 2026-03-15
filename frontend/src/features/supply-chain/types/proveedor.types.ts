@@ -106,6 +106,10 @@ export interface Proveedor {
   // Consultor independiente
   es_independiente: boolean;
 
+  // Vínculo Parte Interesada (C1)
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
+
   // Metadatos
   observaciones?: string;
   is_active: boolean;
@@ -154,6 +158,8 @@ export interface ProveedorList {
   precios_materia_prima?: PrecioMateriaPrima[];
   es_proveedor_materia_prima: boolean;
   es_independiente: boolean;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
   observaciones?: string;
   is_active: boolean;
   created_by_nombre?: string;
@@ -190,6 +196,8 @@ export interface CreateProveedorDTO {
   es_independiente?: boolean;
   observaciones?: string;
   is_active?: boolean;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
 }
 
 export type UpdateProveedorDTO = Partial<CreateProveedorDTO>;

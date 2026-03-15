@@ -386,6 +386,21 @@ class Cliente(BaseCompanyModel):
         help_text='Número total de pedidos realizados'
     )
 
+    # Vínculo con Parte Interesada (C1 — Fundación)
+    parte_interesada_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Parte Interesada',
+        help_text='ID de la Parte Interesada vinculada (gestion_estrategica.ParteInteresada)'
+    )
+    parte_interesada_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Parte Interesada',
+        help_text='Cache: nombre de la parte interesada vinculada'
+    )
+
     # Notas
     observaciones = models.TextField(
         blank=True,

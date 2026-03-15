@@ -34,6 +34,7 @@ import {
 import { cn } from '@/utils/cn';
 import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
 import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
+import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 import { CargoFormModal } from '../estructura';
 import type {
   Colaborador,
@@ -117,6 +118,8 @@ export const ColaboradorFormModal = ({
   const isEditing = colaborador !== null;
   const [activeStep, setActiveStep] = useState<number>(0);
   const [formData, setFormData] = useState<ColaboradorFormData>(INITIAL_FORM);
+  const [piId, setPiId] = useState<number | null>(null);
+  const [piNombre, setPiNombre] = useState('');
   const [showCargoModal, setShowCargoModal] = useState(false);
 
   // Dynamic steps: Step 4 (Acceso) only shown when creating
@@ -191,8 +194,12 @@ export const ColaboradorFormModal = ({
         telefono_movil: colaborador.telefono_movil || '',
         observaciones: colaborador.observaciones || '',
       });
+      setPiId(colaborador.parte_interesada_id ?? null);
+      setPiNombre(colaborador.parte_interesada_nombre ?? '');
     } else {
       setFormData(INITIAL_FORM);
+      setPiId(null);
+      setPiNombre('');
     }
     setActiveStep(0);
   }, [colaborador, isOpen]);
@@ -266,7 +273,11 @@ export const ColaboradorFormModal = ({
       if (!isStepValid(i)) return;
     }
 
-    const data = { ...formData };
+    const data: Record<string, unknown> = {
+      ...formData,
+      parte_interesada_id: piId,
+      parte_interesada_nombre: piNombre,
+    };
     // Clean optional fields
     if (!data.segundo_nombre) delete data.segundo_nombre;
     if (!data.segundo_apellido) delete data.segundo_apellido;
@@ -548,6 +559,24 @@ export const ColaboradorFormModal = ({
                 />
               </div>
             )}
+
+            {/* Vínculo Parte Interesada */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Vínculo con Parte Interesada
+              </h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Vincule este colaborador con una Parte Interesada de Fundación.
+              </p>
+              <PILookupField
+                value={piId}
+                displayName={piNombre}
+                onChange={(id, nombre) => {
+                  setPiId(id);
+                  setPiNombre(nombre);
+                }}
+              />
+            </div>
 
             <Textarea
               label="Observaciones"

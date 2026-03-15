@@ -124,6 +124,10 @@ export interface Colaborador {
   // Observaciones
   observaciones: string;
 
+  // Vínculo Parte Interesada (C1)
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
+
   // Propiedades calculadas
   antiguedad_dias?: number;
   antiguedad_anios?: number;
@@ -159,6 +163,8 @@ export interface ColaboradorFormData {
   email_personal?: string;
   telefono_movil?: string;
   observaciones?: string;
+  parte_interesada_id?: number | null;
+  parte_interesada_nombre?: string;
   usuario?: string;
 
   // Step 4: Acceso al sistema (write-only, no se almacena en Colaborador)

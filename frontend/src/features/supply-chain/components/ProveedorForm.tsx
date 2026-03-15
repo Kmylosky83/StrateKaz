@@ -4,7 +4,7 @@
  * Usa FormModal del design system con React Hook Form + Zod.
  * Alineado con ProveedorCreateSerializer/UpdateSerializer del backend.
  */
-import { useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ import {
   useUpdateProveedor,
   useUnidadesNegocio,
 } from '../hooks/useProveedores';
+import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 import type { Proveedor, CreateProveedorDTO, UpdateProveedorDTO } from '../types';
 
 // ==================== ZOD SCHEMA ====================
@@ -121,6 +122,10 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const updateMutation = useUpdateProveedor();
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
+  // Parte Interesada (cross-module link)
+  const [piId, setPiId] = useState<number | null>(null);
+  const [piNombre, setPiNombre] = useState('');
+
   // ==================== CATÁLOGOS NORMALIZADOS ====================
 
   const tipoProveedorList = useMemo(
@@ -194,8 +199,12 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
         es_independiente: proveedor.es_independiente ?? false,
         is_active: proveedor.is_active,
       });
+      setPiId(proveedor.parte_interesada_id ?? null);
+      setPiNombre(proveedor.parte_interesada_nombre ?? '');
     } else if (!proveedor && isOpen) {
       reset(DEFAULT_VALUES);
+      setPiId(null);
+      setPiNombre('');
     }
   }, [proveedor, isOpen, reset]);
 
@@ -211,7 +220,11 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
 
   const handleSubmit = async (data: ProveedorFormValues) => {
     // Limpiar payload antes de enviar al backend
-    const payload: Record<string, unknown> = { ...data };
+    const payload: Record<string, unknown> = {
+      ...data,
+      parte_interesada_id: piId,
+      parte_interesada_nombre: piNombre,
+    };
 
     // FK con valor 0 → eliminar (evita DRF "clave primaria '0' inválida")
     const fkFields = [
@@ -540,6 +553,24 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
             </div>
           </div>
         </div>
+      </Card>
+
+      {/* ==================== VÍNCULO PARTE INTERESADA ==================== */}
+      <Card variant="bordered" padding="md">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+          Vínculo con Parte Interesada
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+          Vincule este proveedor con una Parte Interesada registrada en Fundación.
+        </p>
+        <PILookupField
+          value={piId}
+          displayName={piNombre}
+          onChange={(id, nombre) => {
+            setPiId(id);
+            setPiNombre(nombre);
+          }}
+        />
       </Card>
 
       {/* ==================== OBSERVACIONES ==================== */}

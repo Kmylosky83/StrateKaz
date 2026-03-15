@@ -144,10 +144,12 @@ class Command(BaseCommand):
 
         # Mapeo: tab_code → nuevo módulo code
         TAB_MIGRATION = {
-            # C1 — Fundación
+            # C1 — Fundación (legacy + nuevos)
             'configuracion': 'fundacion',
             'organizacion': 'fundacion',
             'identidad': 'fundacion',
+            'mi_empresa': 'fundacion',
+            'sistema_gestion': 'fundacion',
             # C2 — Planeación Estratégica
             'contexto': 'planeacion_estrategica',
             'planeacion': 'planeacion_estrategica',
@@ -161,7 +163,7 @@ class Command(BaseCommand):
         new_modules_config = {
             'fundacion': {
                 'name': 'Fundación',
-                'description': 'Configuración organizacional, estructura y identidad corporativa',
+                'description': 'Constitución de la empresa: identidad, organización y sistema de gestión',
                 'category': 'STRATEGIC',
                 'color': 'blue',
                 'icon': 'Landmark',
@@ -337,7 +339,7 @@ class Command(BaseCommand):
             {
                 'code': 'fundacion',
                 'name': 'Fundación',
-                'description': 'Configuración organizacional, estructura y identidad corporativa',
+                'description': 'Constitución de la empresa: identidad, organización y sistema de gestión',
                 'category': 'STRATEGIC',
                 'color': 'blue',
                 'icon': 'Landmark',
@@ -347,42 +349,43 @@ class Command(BaseCommand):
                 'orden': 10,
                 'tabs': [
                     {
-                        'code': 'configuracion',
-                        'name': 'Configuración',
-                        'icon': 'Settings',
-                        'route': 'configuracion',
+                        'code': 'mi_empresa',
+                        'name': 'Mi Empresa',
+                        'icon': 'Building2',
+                        'route': 'mi-empresa',
                         'orden': 1,
                         'sections': [
-                            {'code': 'empresa', 'name': 'Empresa', 'icon': 'Building2', 'orden': 1, 'description': 'Datos generales de la empresa'},
-                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas de la empresa'},
-                            {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3, 'description': 'Conexiones con sistemas externos'},
-                            {'code': 'normas_iso', 'name': 'Normas', 'icon': 'Award', 'orden': 4, 'description': 'Normas ISO y sistemas de gestión'},
-                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 5, 'description': 'Activar o desactivar funcionalidades'},
+                            {'code': 'empresa', 'name': 'Empresa', 'icon': 'Building2', 'orden': 1, 'description': 'Datos generales, branding y configuración regional'},
+                            {'code': 'mision_vision', 'name': 'Direccionamiento', 'icon': 'Compass', 'orden': 2, 'description': 'Misión, visión y propósito organizacional'},
+                            {'code': 'valores', 'name': 'Valores', 'icon': 'Heart', 'orden': 3, 'description': 'Principios y valores corporativos'},
+                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 4, 'description': 'Ubicaciones físicas de la empresa'},
                         ]
                     },
                     {
                         'code': 'organizacion',
-                        'name': 'Organización',
+                        'name': 'Mi Organización',
                         'icon': 'Network',
                         'route': 'organizacion',
                         'orden': 2,
                         'sections': [
-                            {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Gestión de áreas y departamentos'},
-                            {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Ficha por proceso: objetivo, alcance, entradas/salidas, recursos, indicadores y riesgos vinculados'},
+                            {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Estructura jerárquica de áreas y procesos organizacionales'},
+                            {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Ficha SIPOC por proceso: objetivo, alcance, entradas, salidas y recursos'},
                             {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 3, 'description': 'Visualización interactiva de la estructura de procesos'},
-                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 4, 'description': 'Numeración automática de documentos'},
                         ]
                     },
                     {
-                        'code': 'identidad',
-                        'name': 'Identidad Corporativa',
-                        'icon': 'Award',
-                        'route': 'identidad',
+                        'code': 'sistema_gestion',
+                        'name': 'Mi Sistema de Gestión',
+                        'icon': 'ShieldCheck',
+                        'route': 'sistema-gestion',
                         'orden': 3,
                         'sections': [
-                            {'code': 'mision_vision', 'name': 'Direccionamiento', 'icon': 'Eye', 'orden': 1, 'description': 'Misión, visión y propósito organizacional'},
-                            {'code': 'valores', 'name': 'Valores', 'icon': 'Heart', 'orden': 2, 'description': 'Principios y valores corporativos'},
-                            {'code': 'politicas', 'name': 'Políticas', 'icon': 'FileCheck', 'orden': 3, 'description': 'Políticas organizacionales'},
+                            {'code': 'normas_iso', 'name': 'Normas', 'icon': 'Award', 'orden': 1, 'description': 'Normas ISO y sistemas de gestión aplicables'},
+                            {'code': 'alcance_sig', 'name': 'Alcance del SIG', 'icon': 'Target', 'orden': 2, 'description': 'Cobertura geográfica, procesos incluidos y exclusiones del Sistema Integrado de Gestión'},
+                            {'code': 'politicas', 'name': 'Políticas', 'icon': 'FileCheck', 'orden': 3, 'description': 'Políticas organizacionales (lectura desde Gestión Documental)'},
+                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 4, 'description': 'Numeración automática de documentos'},
+                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 5, 'description': 'Activar o desactivar funcionalidades del sistema'},
+                            {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 6, 'description': 'Conexiones con sistemas externos'},
                         ]
                     },
                 ]

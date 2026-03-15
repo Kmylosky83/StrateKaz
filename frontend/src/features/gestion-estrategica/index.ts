@@ -1,39 +1,57 @@
 /**
- * Index principal del módulo Dirección Estratégica
+ * Index principal del módulo Gestión Estratégica
  * Sistema de Gestión StrateKaz
  *
  * Arquitectura: Cada tab tiene su propia página (sin redundancia de tabs)
- * - ConfiguracionPage: Módulos, Branding, Consecutivos
- * - OrganizacionPage: Estructura, Cargos, Roles, Permisos
- * - IdentidadPage: Misión, Visión, Valores, Política
+ *
+ * FUNDACIÓN (C1):
+ * - MiEmpresaPage: Empresa, Misión/Visión, Valores, Sedes
+ * - OrganizacionPage: Procesos, Caracterizaciones, Mapa
+ * - MiSistemaGestionPage: Normas, Alcance SIG, Políticas, Consecutivos, Módulos, Integraciones
+ *
+ * PLANEACIÓN ESTRATÉGICA (C2):
  * - PlaneacionPage: Plan Estratégico, Objetivos BSC
  * - ProyectosPage: Gestión de Proyectos PMI
+ *
+ * INTELIGENCIA (C3):
  * - RevisionDireccionPage: Revisión por Dirección ISO 9.3
  */
 
-// Páginas individuales por tab (cada tab = ruta separada)
-export { ConfiguracionPage } from './pages/ConfiguracionPage';
+// Páginas — Fundación (C1)
+export { MiEmpresaPage } from './pages/MiEmpresaPage';
 export { OrganizacionPage } from './pages/OrganizacionPage';
-export { IdentidadPage } from './pages/IdentidadPage';
+export { MiSistemaGestionPage } from './pages/MiSistemaGestionPage';
+
+// Páginas — Planeación Estratégica (C2)
 export { PlaneacionPage } from './pages/PlaneacionPage';
 export { ProyectosPage } from './pages/ProyectosPage';
+
+// Páginas — Inteligencia (C3)
 export { RevisionDireccionPage } from './pages/RevisionDireccionPage';
 
-// Componentes principales (exportaciones explícitas para evitar colisiones)
+// Componentes principales
 export {
-  IdentidadTab,
-  PlaneacionTab,
+  // Tabs
+  MiEmpresaTab,
   OrganizacionTab,
-  ConfiguracionTab,
+  MiSistemaGestionTab,
+  PlaneacionTab,
   GestionProyectosTab,
   RevisionDireccionTab,
   CompromisosDashboard,
   GeneradorActaModal,
+  // Secciones
   IntegracionesSection,
   IntegracionFormModal,
   IntegracionStatusBadge,
   TestConnectionButton,
   CredencialesEditor,
+  NormasISOSection,
+  AlcanceSIGSection,
+  MisionVisionSection,
+  ValoresSection,
+  PoliticasSection,
+  ModulosSection,
 } from './components';
 
 // Hooks - Strategic
@@ -86,6 +104,3 @@ export {
   useProgramasRevision,
   useActasRevision,
 } from './hooks/useRevisionDireccion';
-
-// NOTA v4.0: Políticas eliminadas de Identidad.
-// Se gestionan desde Gestión Documental (tipo_documento=POL).

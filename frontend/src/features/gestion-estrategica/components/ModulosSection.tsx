@@ -1,15 +1,11 @@
 /**
- * Tab de Configuracion del Sistema
+ * Sección: Módulos y Funcionalidades — Autocontenida
  *
- * Muestra: Empresa, Sedes, Integraciones, Normas ISO, Modulos/Features
+ * Permite activar/desactivar módulos del sistema por tenant.
+ * Incluye UI settings (sidebar, dark mode, badges, tema).
+ * Solo accesible por superadmin.
  *
- * NOTA: UnidadesMedidaSection y ConsecutivosSection fueron migrados a OrganizacionTab
- *
- * Usa Design System:
- * - Card para contenedores
- * - Badge para estados
- * - FeatureToggleCard para toggle de modulos y features
- * - Button para acciones
+ * Se usa en: Tab "Mi Sistema de Gestión" → subtab "modulos"
  */
 import { useState, useMemo } from 'react';
 import {
@@ -31,7 +27,6 @@ import {
   Badge,
   FeatureToggleCard,
   FeatureToggleGrid,
-  GenericSectionFallback,
   ConfirmDialog,
   SectionHeader,
   BrandedSkeleton,
@@ -44,34 +39,16 @@ import {
   useModuleDependents,
 } from '../hooks/useModules';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '../types/modules.types';
-import type { SystemModuleTree } from '../types/modules.types';
+import type { SystemModuleTree, ModuleColor } from '../types/modules.types';
 import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
-import { SedesSection } from './SedesSection';
-import { IntegracionesSection } from './IntegracionesSection';
-import { NormasISOSection } from './NormasISOSection';
-import { EmpresaSection } from './EmpresaSection';
 import type { TenantUISettings } from '../types/strategic.types';
-import type { ModuleColor } from '../types/modules.types';
+import { GenericSectionFallback } from '@/components/common';
 
-// =============================================================================
-// MAPEO DE CLASES TAILWIND ESTÁTICAS (evita purge en producción)
-// =============================================================================
-
-/**
- * Clases Tailwind para colores de categorías
- * IMPORTANTE: No usar interpolación de strings con Tailwind (ej: `bg-${color}-100`)
- * porque las clases dinámicas son purgadas en producción.
- * Usar este mapeo estático en su lugar.
- */
+// Clases Tailwind estáticas para colores de categorías
 const CATEGORY_STYLE_CLASSES: Record<
   ModuleColor,
-  {
-    bgLight: string;
-    bgDark: string;
-    textLight: string;
-    textDark: string;
-  }
+  { bgLight: string; bgDark: string; textLight: string; textDark: string }
 > = {
   purple: {
     bgLight: 'bg-purple-100',
@@ -135,30 +112,13 @@ const CATEGORY_STYLE_CLASSES: Record<
   },
 };
 
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-/**
- * Helper para obtener el componente de icono de Lucide por nombre
- * Usa DynamicIcon del design system para reutilizar la lógica centralizada
- * Retorna Circle si el icono no existe o no se especifica
- */
 const getIconComponent = (iconName?: string): LucideIcon => {
   if (!iconName) return Circle;
   const icon = getDynamicIcon(iconName);
   return (icon as LucideIcon) ?? Circle;
 };
 
-// =============================================================================
-// SECCION DE MODULOS Y FEATURES (DINAMICO)
-// =============================================================================
-
-/**
- * Definicion de UI settings (configuraciones de interfaz)
- * Estos se mantienen como configuración estática por ahora
- * ya que son settings de UI, no módulos funcionales
- */
+// UI Settings definitions
 interface UISettingDefinition {
   key: keyof TenantUISettings;
   name: string;
@@ -193,14 +153,61 @@ const UI_SETTINGS_DEFINITIONS: UISettingDefinition[] = [
   },
 ];
 
-const ModulosAndFeaturesSection = () => {
+const UISettingsCard = () => {
+  const [uiSettings, setUiSettings] = useState<Partial<TenantUISettings>>({
+    sidebar_collapsed_default: false,
+    show_module_badges: true,
+    dark_mode_enabled: true,
+    custom_theme_enabled: false,
+  });
+
+  const handleToggle = (key: keyof TenantUISettings) => {
+    setUiSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <Card>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+            <Monitor className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Configuración de Interfaz
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Preferencias de visualización para todos los usuarios
+            </p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {UI_SETTINGS_DEFINITIONS.map((setting) => (
+            <FeatureToggleCard
+              key={setting.key}
+              icon={setting.icon}
+              title={setting.name}
+              description={setting.description}
+              checked={uiSettings[setting.key] ?? false}
+              onChange={() => handleToggle(setting.key)}
+              color="gray"
+              layout="row"
+            />
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export const ModulosSection = () => {
+  const isSuperAdmin = useIsSuperAdmin();
   const { canDo } = usePermissions();
   const { data: tree, isLoading } = useModulesTree();
   const toggleModule = useToggleModule();
   const toggleTab = useToggleTab();
   const toggleSection = useToggleSection();
 
-  // MM-003: Estado para confirmación de desactivación
   const [moduleToDisable, setModuleToDisable] = useState<SystemModuleTree | null>(null);
   const { data: dependentsInfo, isLoading: loadingDependents } = useModuleDependents(
     moduleToDisable?.id ?? 0,
@@ -209,18 +216,19 @@ const ModulosAndFeaturesSection = () => {
 
   const canEditModules = canDo(Modules.FUNDACION, Sections.MODULOS, 'edit');
 
-  // MM-003: Handler para toggle de módulo con confirmación
+  // Solo superadmin puede ver esta sección
+  if (!isSuperAdmin) {
+    return <GenericSectionFallback sectionCode="modulos" parentName="Mi Sistema de Gestión" />;
+  }
+
   const handleModuleToggle = (module: SystemModuleTree) => {
     if (module.is_enabled) {
-      // Si está habilitado y se quiere desactivar, mostrar confirmación
       setModuleToDisable(module);
     } else {
-      // Si está deshabilitado, activar directamente
       toggleModule.mutate({ id: module.id, isEnabled: true });
     }
   };
 
-  // MM-003: Confirmar desactivación
   const confirmDisable = () => {
     if (moduleToDisable) {
       toggleModule.mutate({ id: moduleToDisable.id, isEnabled: false });
@@ -228,7 +236,6 @@ const ModulosAndFeaturesSection = () => {
     }
   };
 
-  // Agrupar módulos por categoría usando useMemo para optimización
   const modulesByCategory = useMemo(() => {
     if (!tree) return {};
     return tree.modules.reduce(
@@ -250,14 +257,12 @@ const ModulosAndFeaturesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Section Header - fuera de cualquier contenedor */}
       <SectionHeader
         icon={<Blocks className="h-5 w-5" />}
         title="Módulos del Sistema"
         description="Personaliza qué módulos y funcionalidades estarán activos en tu organización"
       />
 
-      {/* Información contextual sobre el propósito */}
       <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
         <div className="flex items-start gap-3">
           <Blocks className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -275,7 +280,6 @@ const ModulosAndFeaturesSection = () => {
         </div>
       </div>
 
-      {/* Renderizar módulos agrupados por categoría */}
       {Object.entries(modulesByCategory).map(([category, modules]) => {
         const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'gray';
         const styleClasses = CATEGORY_STYLE_CLASSES[categoryColor];
@@ -283,7 +287,6 @@ const ModulosAndFeaturesSection = () => {
         return (
           <Card key={category}>
             <div className="p-6">
-              {/* Header de categoría */}
               <div className="flex items-center gap-3 mb-6">
                 <div className={`p-2 rounded-lg ${styleClasses.bgLight} ${styleClasses.bgDark}`}>
                   <Package
@@ -301,11 +304,9 @@ const ModulosAndFeaturesSection = () => {
                 </div>
               </div>
 
-              {/* Grid de módulos */}
               <FeatureToggleGrid columns={3}>
                 {modules.map((module) => {
                   const IconComponent = getIconComponent(module.icon);
-
                   return (
                     <FeatureToggleCard
                       key={module.id}
@@ -339,10 +340,8 @@ const ModulosAndFeaturesSection = () => {
                 })}
               </FeatureToggleGrid>
 
-              {/* Tabs y Secciones expandibles por módulo */}
               {modules.map((module) => {
                 if (module.tabs.length === 0) return null;
-
                 return (
                   <div
                     key={`tabs-${module.id}`}
@@ -357,14 +356,11 @@ const ModulosAndFeaturesSection = () => {
                         {module.enabled_tabs_count}/{module.total_tabs_count}
                       </Badge>
                     </div>
-
                     <div className="space-y-3 ml-6">
                       {module.tabs.map((tab) => {
                         const TabIcon = getIconComponent(tab.icon);
-
                         return (
                           <div key={tab.id} className="space-y-2">
-                            {/* Toggle del Tab */}
                             <FeatureToggleCard
                               layout="row"
                               icon={TabIcon}
@@ -382,13 +378,10 @@ const ModulosAndFeaturesSection = () => {
                                 !canEditModules || tab.is_core || isPending || !module.is_enabled
                               }
                             />
-
-                            {/* Secciones del tab (si existen) */}
                             {tab.sections.length > 0 && (
                               <div className="ml-8 space-y-2">
                                 {tab.sections.map((section) => {
                                   const SectionIcon = getIconComponent(section.icon);
-
                                   return (
                                     <FeatureToggleCard
                                       key={section.id}
@@ -427,10 +420,8 @@ const ModulosAndFeaturesSection = () => {
         );
       })}
 
-      {/* Configuración de Interfaz - UI Settings */}
       <UISettingsCard />
 
-      {/* MM-003: Diálogo de confirmación para desactivar módulo */}
       <ConfirmDialog
         isOpen={!!moduleToDisable}
         onClose={() => setModuleToDisable(null)}
@@ -479,131 +470,6 @@ const ModulosAndFeaturesSection = () => {
         variant="danger"
         isLoading={toggleModule.isPending}
       />
-    </div>
-  );
-};
-
-/**
- * Card separado para UI Settings
- * Mantiene la funcionalidad anterior para configuraciones de interfaz
- */
-const UISettingsCard = () => {
-  // TODO: Implementar hooks para UI settings cuando estén disponibles
-  // Por ahora, mostramos los settings como read-only o con localStorage
-  const [uiSettings, setUiSettings] = useState<Partial<TenantUISettings>>({
-    sidebar_collapsed_default: false,
-    show_module_badges: true,
-    dark_mode_enabled: true,
-    custom_theme_enabled: false,
-  });
-
-  const handleToggle = (key: keyof TenantUISettings) => {
-    setUiSettings((prev) => ({ ...prev, [key]: !prev[key] }));
-    // TODO: Llamar a API cuando esté disponible
-  };
-
-  return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
-            <Monitor className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Configuración de Interfaz
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Preferencias de visualización para todos los usuarios
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {UI_SETTINGS_DEFINITIONS.map((setting) => (
-            <FeatureToggleCard
-              key={setting.key}
-              icon={setting.icon}
-              title={setting.name}
-              description={setting.description}
-              checked={uiSettings[setting.key] ?? false}
-              onChange={() => handleToggle(setting.key)}
-              color="gray"
-              layout="row"
-            />
-          ))}
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// =============================================================================
-// COMPONENTE PRINCIPAL EXPORTADO
-// =============================================================================
-
-/**
- * Props del ConfiguracionTab
- * activeSection viene desde usePageHeader en la pagina padre
- */
-interface ConfiguracionTabProps {
-  /** Codigo de la seccion activa (desde API) */
-  activeSection?: string;
-  /** Query de busqueda desde el Header */
-  searchQuery?: string;
-}
-
-/**
- * Mapeo de códigos de sección a componentes
- * Los códigos deben coincidir con los de la BD (TabSection.code)
- * NOTA: Los códigos en BD están en minúsculas
- * NOTA: consecutivos y unidades_medida fueron migrados a OrganizacionTab
- */
-const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
-  empresa: EmpresaSection, // Datos fiscales, contacto, branding, regional
-  sedes: SedesSection,
-  integraciones: IntegracionesSection,
-  normas_iso: NormasISOSection,
-  modulos: ModulosAndFeaturesSection, // Activar/desactivar módulos dentro del tenant
-};
-
-export const ConfiguracionTab = ({ activeSection, _searchQuery }: ConfiguracionTabProps) => {
-  const isSuperAdmin = useIsSuperAdmin();
-
-  // Secciones restringidas a superadmin (no se renderizan para usuarios normales)
-  const SUPERADMIN_ONLY_SECTIONS = ['modulos'];
-
-  // Verificar acceso: si la seccion es solo-superadmin y el usuario no lo es
-  if (activeSection && SUPERADMIN_ONLY_SECTIONS.includes(activeSection) && !isSuperAdmin) {
-    return (
-      <div className="space-y-6">
-        <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />
-      </div>
-    );
-  }
-
-  // Renderizar el componente de la seccion activa
-  const ActiveComponent = activeSection ? SECTION_COMPONENTS[activeSection] : null;
-
-  // MM-002: Si hay sección activa pero no existe componente, mostrar fallback genérico
-  if (activeSection && !ActiveComponent) {
-    return (
-      <div className="space-y-6">
-        <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />
-      </div>
-    );
-  }
-
-  // Si no hay sección activa, mostrar sedes por defecto
-  if (!ActiveComponent) {
-    return <SedesSection />;
-  }
-
-  // TODO: Propagar searchQuery a los componentes que lo soporten
-  // Por ahora se pasa como contexto futuro
-  return (
-    <div className="space-y-6">
-      <ActiveComponent />
     </div>
   );
 };

@@ -13,15 +13,12 @@ import { Route, Navigate } from 'react-router-dom';
 export const gestionEstrategicaRoutes = (
   <>
     {/* Redirect raíz */}
-    <Route
-      path="/gestion-estrategica"
-      element={<Navigate to="/fundacion/configuracion" replace />}
-    />
+    <Route path="/gestion-estrategica" element={<Navigate to="/fundacion/mi-empresa" replace />} />
 
-    {/* C1 — Fundación */}
+    {/* C1 — Fundación (legacy → nuevas rutas) */}
     <Route
       path="/gestion-estrategica/configuracion"
-      element={<Navigate to="/fundacion/configuracion" replace />}
+      element={<Navigate to="/fundacion/mi-empresa" replace />}
     />
     <Route
       path="/gestion-estrategica/organizacion"
@@ -29,7 +26,7 @@ export const gestionEstrategicaRoutes = (
     />
     <Route
       path="/gestion-estrategica/identidad"
-      element={<Navigate to="/fundacion/identidad" replace />}
+      element={<Navigate to="/fundacion/mi-empresa" replace />}
     />
 
     {/* C2 — Planeación Estratégica */}

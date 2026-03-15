@@ -1,25 +1,23 @@
 /**
- * Página de Identidad - Tab 3 de Dirección Estratégica
+ * Página: Mi Sistema de Gestión — Tab 3 de Fundación
+ *
+ * "¿Con qué reglas opero?" — Normas, alcance, políticas y config técnica.
  *
  * Layout estandarizado:
- * 1. PageHeader (solo titulo y descripcion)
- * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 1. PageHeader (título y descripción dinámica)
+ * 2. DynamicSections (subtabs underline, color dinámico)
  * 3. Contenido de la sección activa
- *
- * Sin hardcoding - secciones cargadas desde API
  */
 import { PageHeader } from '@/components/layout';
 import { DynamicSections } from '@/components/common';
 import { useModuleColor } from '@/hooks/useModuleColor';
-import { IdentidadTab } from '../components/IdentidadTab';
+import { MiSistemaGestionTab } from '../components/MiSistemaGestionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
-// Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'fundacion';
-const TAB_CODE = 'identidad';
+const TAB_CODE = 'sistema_gestion';
 
-export const IdentidadPage = () => {
-  // Hook que maneja secciones localmente (igual que OrganizacionPage y ConfiguracionPage)
+export const MiSistemaGestionPage = () => {
   const {
     sections,
     activeSection,
@@ -33,7 +31,6 @@ export const IdentidadPage = () => {
 
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
 
-  // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {
     return (
       <div className="space-y-4">
@@ -45,10 +42,8 @@ export const IdentidadPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader solo titulo y descripcion */}
-      <PageHeader title="Identidad Corporativa" description={activeSectionData.description} />
+      <PageHeader title="Mi Sistema de Gestión" description={activeSectionData.description} />
 
-      {/* Sub-tabs debajo del header (underline, color dinamico) */}
       <DynamicSections
         sections={sections}
         activeSection={activeSection}
@@ -58,10 +53,9 @@ export const IdentidadPage = () => {
         moduleColor={moduleColor}
       />
 
-      {/* Contenido de la sección activa */}
-      {activeSection && <IdentidadTab activeSection={activeSection} />}
+      {activeSection && <MiSistemaGestionTab activeSection={activeSection} />}
     </div>
   );
 };
 
-export default IdentidadPage;
+export default MiSistemaGestionPage;

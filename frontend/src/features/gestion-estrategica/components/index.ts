@@ -1,13 +1,41 @@
 /**
- * Index de componentes del módulo Dirección Estratégica
+ * Index de componentes del módulo Gestión Estratégica
  */
 
-// Tabs principales
-export { IdentidadTab } from './IdentidadTab';
+// =============================================================================
+// FUNDACIÓN (C1) — Tabs y Secciones
+// =============================================================================
+
+// Tabs de Fundación
+export { MiEmpresaTab } from './MiEmpresaTab';
+export { OrganizacionTab } from './OrganizacionTab';
+export { MiSistemaGestionTab } from './MiSistemaGestionTab';
+
+// Secciones autocontenidas — Mi Empresa
+export { EmpresaSection } from './EmpresaSection';
+export { MisionVisionSection } from './MisionVisionSection';
+export { ValoresSection } from './ValoresSection';
+export { SedesSection } from './SedesSection';
+
+// Secciones autocontenidas — Mi Organización
+export { AreasTab } from './AreasTab';
+export { CaracterizacionesSection } from './CaracterizacionesSection';
+export { MapaProcesosSection } from './MapaProcesosSection';
+
+// Secciones autocontenidas — Mi Sistema de Gestión
+export { NormasISOSection } from './NormasISOSection';
+export { AlcanceSIGSection } from './AlcanceSIGSection';
+export { PoliticasSection } from './PoliticasSection';
+export { ConsecutivosSection } from './ConsecutivosSection';
+export { ModulosSection } from './ModulosSection';
+export { IntegracionesSection } from './IntegracionesSection';
+
+// =============================================================================
+// PLANEACIÓN ESTRATÉGICA (C2)
+// =============================================================================
+
 export { PlaneacionTab } from './PlaneacionTab';
 export { ContextoTab } from './ContextoTab';
-export { OrganizacionTab } from './OrganizacionTab';
-export { ConfiguracionTab } from './ConfiguracionTab';
 
 // Gestión de Proyectos PMI
 export { GestionProyectosTab } from './proyectos';
@@ -25,14 +53,12 @@ export {
 export * from './modals';
 
 // Integraciones Externas
-export { IntegracionesSection } from './IntegracionesSection';
 export { IntegracionFormModal } from './modals/IntegracionFormModal';
 export { IntegracionStatusBadge, calculateHealthStatus } from './IntegracionStatusBadge';
 export { TestConnectionButton } from './TestConnectionButton';
 export { CredencialesEditor } from './CredencialesEditor';
 
 // Normas ISO
-export { NormasISOSection } from './NormasISOSection';
 export { NormaISOFormModal } from './modals/NormaISOFormModal';
 
 // Contexto Organizacional (DOFA, PESTEL, Porter, TOWS)
@@ -52,13 +78,8 @@ export {
   ObjetivoNode,
 } from './mapa-estrategico';
 
-// KPIs y Seguimiento (Sprint 4)
-export {
-  KPIDashboard,
-  KPITable,
-  KPIProgressChart,
-  KPIsTab,
-} from './kpis';
+// KPIs y Seguimiento
+export { KPIDashboard, KPITable, KPIProgressChart, KPIsTab } from './kpis';
 
 // Gestión del Cambio
 export { GestionCambioTab } from './GestionCambioTab';

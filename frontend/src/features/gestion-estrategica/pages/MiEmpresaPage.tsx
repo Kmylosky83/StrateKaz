@@ -1,7 +1,7 @@
 /**
- * Página: Mi Organización — Tab 2 de Fundación
+ * Página: Mi Empresa — Tab 1 de Fundación
  *
- * "¿Cómo funciono?" — Procesos, caracterizaciones SIPOC y mapa.
+ * "¿Quién soy?" — Datos, identidad, valores y ubicaciones.
  *
  * Layout estandarizado:
  * 1. PageHeader (título y descripción dinámica)
@@ -11,13 +11,13 @@
 import { PageHeader } from '@/components/layout';
 import { DynamicSections } from '@/components/common';
 import { useModuleColor } from '@/hooks/useModuleColor';
-import { OrganizacionTab } from '../components/OrganizacionTab';
+import { MiEmpresaTab } from '../components/MiEmpresaTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
 const MODULE_CODE = 'fundacion';
-const TAB_CODE = 'organizacion';
+const TAB_CODE = 'mi_empresa';
 
-export const OrganizacionPage = () => {
+export const MiEmpresaPage = () => {
   const {
     sections,
     activeSection,
@@ -42,7 +42,7 @@ export const OrganizacionPage = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Mi Organización" description={activeSectionData.description} />
+      <PageHeader title="Mi Empresa" description={activeSectionData.description} />
 
       <DynamicSections
         sections={sections}
@@ -53,9 +53,9 @@ export const OrganizacionPage = () => {
         moduleColor={moduleColor}
       />
 
-      {activeSection && <OrganizacionTab activeSection={activeSection} />}
+      {activeSection && <MiEmpresaTab activeSection={activeSection} />}
     </div>
   );
 };
 
-export default OrganizacionPage;
+export default MiEmpresaPage;

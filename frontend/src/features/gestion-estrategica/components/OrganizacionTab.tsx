@@ -1,24 +1,16 @@
 /**
- * Tab de Organizacion - Modulo Direccion Estrategica
+ * Tab: Mi Organización — Tab 2 de Fundación
  *
- * Secciones (orden desde BD):
- * 1. Procesos (Areas) - Gestión de áreas/departamentos (Vista 7: Tree Cards)
- * 2. Mapa de Procesos - Visualización interactiva de áreas (modo 'areas' del canvas)
- * 3. Consecutivos - Configuración de consecutivos automáticos (Vista 2: Lista CRUD)
+ * Subtabs (orden lógico):
+ * 1. Procesos (Áreas) — Estructura jerárquica de áreas y procesos
+ * 2. Caracterizaciones — Ficha SIPOC por proceso
+ * 3. Mapa de Procesos — Visualización interactiva
  *
- * NOTA: 'Cargos' y 'Colaboradores' migrados a Talento Humano (Sprint 13).
- * NOTA: 'Organigrama de Cargos' migrado a TH > Estructura de Cargos (Sprint 13).
- * NOTA: 'Unidades de Medida' eliminado — catálogo del sistema cargado vía seeds,
- *        se consume desde modal de Sedes (choices endpoint), no requiere vista propia.
+ * Lógica: "¿Cómo funciono?" — Estructura operativa de la empresa.
  */
-
-// Importar componentes internos
 import { AreasTab } from './AreasTab';
 import { MapaProcesosSection } from './MapaProcesosSection';
 import { CaracterizacionesSection } from './CaracterizacionesSection';
-
-// Consecutivos migrados desde Configuración
-import { ConsecutivosSection } from './ConsecutivosSection';
 
 /**
  * Props del OrganizacionTab
@@ -38,7 +30,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
   caracterizaciones: CaracterizacionesSection,
   mapa_procesos: MapaProcesosSection,
-  consecutivos: ConsecutivosSection,
 };
 
 export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {

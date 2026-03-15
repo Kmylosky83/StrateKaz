@@ -802,6 +802,9 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 15,
                 'tabs': [
+                    {'code': 'perfiles_cargo', 'name': 'Perfiles de Cargo', 'icon': 'Briefcase', 'route': 'perfiles-cargo', 'orden': 0, 'sections': [
+                        {'code': 'perfiles_cargo', 'name': 'Perfiles de Cargo', 'icon': 'Briefcase', 'orden': 1, 'description': 'Requisitos, competencias y SST por cargo'},
+                    ]},
                     {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 1, 'sections': [
                         {'code': 'vacantes', 'name': 'Vacantes', 'icon': 'Briefcase', 'orden': 1, 'description': 'Publicación y gestión de vacantes'},
                         {'code': 'candidatos', 'name': 'Candidatos', 'icon': 'UserPlus', 'orden': 2, 'description': 'Evaluación y seguimiento de candidatos'},

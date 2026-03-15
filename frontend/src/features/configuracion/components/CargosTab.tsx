@@ -9,7 +9,7 @@
  *
  * RBAC Unificado v4.0:
  * - Verifica permisos CRUD desde CargoSectionAccess
- * - Códigos: gestion_estrategica.cargos.{view|create|edit|delete}
+ * - REORG-B2: Módulo FUNDACION (antes TALENT_HUB)
  */
 import { useState, useMemo } from 'react';
 import {
@@ -113,9 +113,9 @@ export const CargosTab = () => {
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.TALENT_HUB, Sections.CARGOS, 'create');
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.CARGOS, 'edit');
-  const canDelete = canDo(Modules.TALENT_HUB, Sections.CARGOS, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.CARGOS, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.CARGOS, 'edit');
+  const canDelete = canDo(Modules.FUNDACION, Sections.CARGOS, 'delete');
 
   // Color del módulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');

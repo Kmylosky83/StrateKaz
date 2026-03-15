@@ -36,9 +36,11 @@ import {
   DollarSign,
   LogOut,
   UserCog,
+  Briefcase,
 } from 'lucide-react';
 
 // Secciones implementadas
+import { PerfilesCargoSection } from '../components/perfiles-cargo';
 import { SeleccionSection } from '../components/seleccion';
 import { ColaboradoresSection } from '../components/colaboradores';
 import { OnboardingSection } from '../components/onboarding';
@@ -69,6 +71,12 @@ interface SectionMeta {
  * A medida que se implementen, reemplazar null con el componente real.
  */
 const SECTION_MAP: Record<string, SectionMeta> = {
+  'perfiles-cargo': {
+    title: 'Perfiles de Cargo',
+    description: 'Requisitos de formación, competencias, experiencia y SST por cargo',
+    icon: <Briefcase className="w-5 h-5" />,
+    component: PerfilesCargoSection,
+  },
   seleccion: {
     title: 'Selección y Contratación',
     description: 'Reclutamiento, candidatos, entrevistas, pruebas y contratación de personal',

@@ -408,6 +408,16 @@ class CaracterizacionProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet)
     """
     queryset = CaracterizacionProceso.objects.select_related(
         'area', 'lider_proceso', 'created_by'
+    ).prefetch_related(
+        'caracterizacionproveedors',
+        'caracterizacionentradas',
+        'caracterizacionactividads',
+        'caracterizacionsalidas',
+        'caracterizacionclientes',
+        'caracterizacionrecursos',
+        'caracterizacionindicadors',
+        'caracterizacionriesgos',
+        'caracterizaciondocumentos',
     ).all()
     serializer_class = CaracterizacionProcesoDetailSerializer
     permission_classes = [IsAuthenticated, GranularActionPermission]

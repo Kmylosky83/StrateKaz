@@ -15,7 +15,18 @@ from apps.core.base_models import (
 # Re-exportar modelos migrados para backward compatibility
 from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA, TODOS_CONSECUTIVOS_SISTEMA
 from .models_unidades import UnidadMedida, CATEGORIA_UNIDAD_CHOICES
-from .models_caracterizacion import CaracterizacionProceso
+from .models_caracterizacion import (
+    CaracterizacionProceso,
+    CaracterizacionProveedor,
+    CaracterizacionEntrada,
+    CaracterizacionActividad,
+    CaracterizacionSalida,
+    CaracterizacionCliente,
+    CaracterizacionRecurso,
+    CaracterizacionIndicador,
+    CaracterizacionRiesgo,
+    CaracterizacionDocumento,
+)
 
 __all__ = [
     'Area',
@@ -26,6 +37,15 @@ __all__ = [
     'UnidadMedida',
     'CATEGORIA_UNIDAD_CHOICES',
     'CaracterizacionProceso',
+    'CaracterizacionProveedor',
+    'CaracterizacionEntrada',
+    'CaracterizacionActividad',
+    'CaracterizacionSalida',
+    'CaracterizacionCliente',
+    'CaracterizacionRecurso',
+    'CaracterizacionIndicador',
+    'CaracterizacionRiesgo',
+    'CaracterizacionDocumento',
 ]
 
 

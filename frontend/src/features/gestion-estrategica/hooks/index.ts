@@ -18,6 +18,7 @@
 export * from './useStrategic';
 export * from './useTenantConfig';
 export * from './useModules';
+export * from './useFundacionProgress';
 
 // ============================================================================
 // AREAS Y ORGANIZACION

@@ -76,7 +76,7 @@ const getFirmaStatus = (doc: Documento) => {
 };
 
 export const PoliticasSection = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const { data: documentosData, isLoading } = useDocumentos({ tipo_documento_codigo: 'POL' });

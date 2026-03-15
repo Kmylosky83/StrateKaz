@@ -13,8 +13,7 @@
  * 4. Almacenamiento — Inventarios, movimientos, kardex, alertas
  * 5. Programación — Programación de abastecimiento
  * 6. Evaluaciones — Evaluación periódica de proveedores
- * 7. Unidades de Negocio — Proveedores internos (configuración)
- * 8. Catálogos — Catálogos dinámicos (configuración admin)
+ * 7. Catálogos — Catálogos dinámicos (configuración admin)
  */
 import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
@@ -27,7 +26,6 @@ import {
   Package,
   Calendar,
   ClipboardCheck,
-  Building2,
   FolderOpen,
 } from 'lucide-react';
 import {
@@ -37,7 +35,6 @@ import {
   AlmacenamientoTab,
   ProgramacionTab,
   EvaluacionesTab,
-  UnidadesNegocioTab,
   CatalogosTab,
 } from '../components';
 
@@ -88,12 +85,6 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Evaluación periódica de proveedores con criterios ponderados',
     icon: <ClipboardCheck className="w-5 h-5" />,
     component: EvaluacionesTab,
-  },
-  'unidades-negocio': {
-    title: 'Unidades de Negocio',
-    description: 'Gestión de proveedores internos tipo unidad de negocio',
-    icon: <Building2 className="w-5 h-5" />,
-    component: UnidadesNegocioTab,
   },
   catalogos: {
     title: 'Catálogos',

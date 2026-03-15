@@ -31,7 +31,7 @@ export const ContextoPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
 
   // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {

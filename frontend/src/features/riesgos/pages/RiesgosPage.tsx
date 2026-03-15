@@ -1,4 +1,13 @@
-import { Shield, TrendingUp, AlertTriangle, Leaf, Car, Landmark, Lock, FileCheck } from 'lucide-react';
+import {
+  Shield,
+  TrendingUp,
+  AlertTriangle,
+  Leaf,
+  Car,
+  Landmark,
+  Lock,
+  FileCheck,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { Spinner } from '@/components/common/Spinner';
@@ -63,7 +72,7 @@ const riskModules = [
 ];
 
 export default function RiesgosPage() {
-  const { color: moduleColor, isLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading } = useModuleColor('proteccion_cumplimiento');
 
   if (isLoading) {
     return (
@@ -81,7 +90,9 @@ export default function RiesgosPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Riesgos</h1>
-          <p className="text-gray-600">Motor de gestión integral de riesgos y oportunidades organizacionales</p>
+          <p className="text-gray-600">
+            Motor de gestión integral de riesgos y oportunidades organizacionales
+          </p>
         </div>
       </div>
 
@@ -89,10 +100,12 @@ export default function RiesgosPage() {
         {riskModules.map((module) => {
           const Icon = module.icon;
           const colorClasses = {
-            orange: 'bg-orange-50 border-orange-200 hover:border-orange-400 hover:shadow-orange-100',
+            orange:
+              'bg-orange-50 border-orange-200 hover:border-orange-400 hover:shadow-orange-100',
             green: 'bg-green-50 border-green-200 hover:border-green-400 hover:shadow-green-100',
             blue: 'bg-blue-50 border-blue-200 hover:border-blue-400 hover:shadow-blue-100',
-            purple: 'bg-purple-50 border-purple-200 hover:border-purple-400 hover:shadow-purple-100',
+            purple:
+              'bg-purple-50 border-purple-200 hover:border-purple-400 hover:shadow-purple-100',
             red: 'bg-red-50 border-red-200 hover:border-red-400 hover:shadow-red-100',
           };
 
@@ -114,7 +127,9 @@ export default function RiesgosPage() {
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Icon className={`h-10 w-10 ${iconColorClasses[module.color as keyof typeof iconColorClasses]}`} />
+                  <Icon
+                    className={`h-10 w-10 ${iconColorClasses[module.color as keyof typeof iconColorClasses]}`}
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{module.title}</h3>
@@ -132,12 +147,15 @@ export default function RiesgosPage() {
             <Shield className={`h-6 w-6 text-${moduleColor}-600`} />
           </div>
           <div className="flex-1">
-            <h3 className={`text-lg font-semibold text-${moduleColor}-900 mb-2`}>Acerca del Módulo de Riesgos</h3>
+            <h3 className={`text-lg font-semibold text-${moduleColor}-900 mb-2`}>
+              Acerca del Módulo de Riesgos
+            </h3>
             <p className={`text-${moduleColor}-800 text-sm leading-relaxed`}>
-              El Motor de Riesgos integra todas las metodologías de gestión de riesgos requeridas por las normas ISO 9001,
-              ISO 14001, ISO 45001, ISO 27001, y regulaciones colombianas como SAGRILAFT y PESV. Permite una visión
-              holística del contexto organizacional, identificación, evaluación y tratamiento de riesgos y oportunidades
-              en todos los niveles de la organización.
+              El Motor de Riesgos integra todas las metodologías de gestión de riesgos requeridas
+              por las normas ISO 9001, ISO 14001, ISO 45001, ISO 27001, y regulaciones colombianas
+              como SAGRILAFT y PESV. Permite una visión holística del contexto organizacional,
+              identificación, evaluación y tratamiento de riesgos y oportunidades en todos los
+              niveles de la organización.
             </p>
           </div>
         </div>

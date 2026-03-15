@@ -89,8 +89,8 @@ const getEstadoBadge = (
 
 export default function ActivosFijosPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.INVENTARIO_ACTIVOS, 'create');
-  const canEdit = canDo(Modules.ADMIN_FINANCE, Sections.INVENTARIO_ACTIVOS, 'edit');
+  const canCreate = canDo(Modules.ADMINISTRACION, Sections.INVENTARIO_ACTIVOS, 'create');
+  const canEdit = canDo(Modules.ADMINISTRACION, Sections.INVENTARIO_ACTIVOS, 'edit');
 
   const [activeTab, setActiveTab] = useState('inventario');
 

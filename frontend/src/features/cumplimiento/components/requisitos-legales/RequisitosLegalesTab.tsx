@@ -60,9 +60,9 @@ export const RequisitosLegalesTab = ({
   activeSection: _activeSection,
 }: RequisitosLegalesTabProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'create');
-  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'edit');
-  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REQUISITOS, 'delete');
+  const canCreate = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REQUISITOS, 'create');
+  const canEdit = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REQUISITOS, 'edit');
+  const canDelete = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REQUISITOS, 'delete');
 
   const user = useAuthStore((state) => state.user);
   const empresaId = user?.empresa_id || 0;

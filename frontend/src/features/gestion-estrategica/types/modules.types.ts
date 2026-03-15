@@ -110,6 +110,7 @@ export interface ModuleLayer {
   name: string;
   icon: string;
   color: string;
+  phase: 'PLANEAR' | 'HACER' | 'VERIFICAR_ACTUAR' | '';
   module_codes: string[];
 }
 

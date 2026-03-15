@@ -6,7 +6,7 @@
  * 2. DynamicSections (sub-tabs debajo del header, variante underline)
  * 3. Contenido de la sección activa
  *
- * Secciones desde BD (sistema_gestion > gestion_documental):
+ * Secciones desde BD (gestion_documental > gestion_documental):
  * - tipos_documento: Tipos de Documento y Plantillas
  * - documentos: Constructor y Listado Maestro de Documentos
  * - control_cambios: Control de Versiones y Firmas
@@ -37,7 +37,7 @@ import { Textarea } from '@/components/forms';
 
 import { GestionDocumentalTab } from '../components/gestion-documental/GestionDocumentalTab';
 
-const MODULE_CODE = 'sistema_gestion';
+const MODULE_CODE = 'gestion_documental';
 const TAB_CODE = 'gestion_documental';
 
 export const GestionDocumentalPage = () => {
@@ -52,7 +52,7 @@ export const GestionDocumentalPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('sistema_gestion');
+  const { color: moduleColor } = useModuleColor('gestion_documental');
   const user = useAuthStore((s) => s.user);
   const { firmarDocumento, rechazarFirma, isFirmando, isRechazando } = useWorkflowFirmas();
 

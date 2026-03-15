@@ -12,7 +12,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { IPEVRTab } from '../components/tabs/IPEVRTab';
 
 export default function IPEVRPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
 
   if (isColorLoading) {
     return (

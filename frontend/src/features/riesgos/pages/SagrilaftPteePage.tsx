@@ -51,7 +51,8 @@ import {
 } from '../types/sagrilaft-ptee.types';
 
 export default function SagrilaftPteePage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
   const [activeTab, setActiveTab] = useState('matrices');
 
   const {

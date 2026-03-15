@@ -51,7 +51,7 @@ interface MisionVisionContentProps {
 
 const MisionVisionContent = ({ identity, onEdit, canEdit }: MisionVisionContentProps) => {
   const { primaryColor, secondaryColor, companyName } = useBrandingConfig();
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const primaryRgb = useMemo(() => hexToRgb(primaryColor), [primaryColor]);

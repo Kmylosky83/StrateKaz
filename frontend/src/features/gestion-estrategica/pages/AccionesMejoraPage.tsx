@@ -4,7 +4,7 @@
  * Página del módulo Sistema de Gestión que muestra las no conformidades
  * y acciones correctivas/preventivas/mejora provenientes del backend HSEQ Calidad.
  *
- * MODULE_CODE: sistema_gestion
+ * MODULE_CODE: acciones_mejora
  */
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
@@ -64,7 +64,7 @@ import AccionCorrectivaFormModal from '@/features/hseq/components/AccionCorrecti
 
 // ==================== CONSTANTS ====================
 
-const MODULE_CODE = 'sistema_gestion';
+const MODULE_CODE = 'acciones_mejora';
 
 const TAB_LIST = [
   { id: 'no-conformidades', label: 'No Conformidades', icon: <ShieldAlert className="w-4 h-4" /> },
@@ -195,7 +195,7 @@ const extractArray = <T,>(data: unknown): T[] => {
 
 export const AccionesMejoraPage = () => {
   const { canDo } = usePermissions();
-  const _canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.OPORTUNIDADES_MEJORA, 'create');
+  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.OPORTUNIDADES_MEJORA, 'create');
 
   // ---- Tab state ----
   const [activeTab, setActiveTab] = useState('no-conformidades');

@@ -61,6 +61,7 @@ SIDEBAR_LAYERS = [
         'name': 'Fundación',
         'icon': 'Landmark',
         'color': '#3B82F6',
+        'phase': 'PLANEAR',
         'module_codes': ['fundacion'],
     },
     {
@@ -69,6 +70,7 @@ SIDEBAR_LAYERS = [
         'name': 'Infraestructura',
         'icon': 'FileText',
         'color': '#6366F1',
+        'phase': 'PLANEAR',
         'module_codes': ['gestion_documental', 'workflow_engine'],
     },
     {
@@ -76,6 +78,7 @@ SIDEBAR_LAYERS = [
         'name': 'Mi Equipo',
         'icon': 'UserPlus',
         'color': '#0EA5E9',
+        'phase': 'PLANEAR',
         'module_codes': ['mi_equipo'],
     },
     {
@@ -84,6 +87,7 @@ SIDEBAR_LAYERS = [
         'name': 'Planificación',
         'icon': 'Target',
         'color': '#6366F1',
+        'phase': 'PLANEAR',
         'module_codes': ['planificacion_operativa', 'planeacion_estrategica'],
     },
     # ═══════════════════════════════════════════════════════════════
@@ -94,6 +98,7 @@ SIDEBAR_LAYERS = [
         'name': 'Protección y Cumplimiento',
         'icon': 'ShieldCheck',
         'color': '#F59E0B',
+        'phase': 'HACER',
         'module_codes': ['proteccion_cumplimiento'],
     },
     {
@@ -101,6 +106,7 @@ SIDEBAR_LAYERS = [
         'name': 'Gestión Integral',
         'icon': 'Shield',
         'color': '#10B981',
+        'phase': 'HACER',
         'module_codes': ['gestion_integral'],
     },
     {
@@ -108,6 +114,7 @@ SIDEBAR_LAYERS = [
         'name': 'Cadena de Valor',
         'icon': 'Package',
         'color': '#10B981',
+        'phase': 'HACER',
         'module_codes': [
             'supply_chain', 'production_ops',
             'logistics_fleet', 'sales_crm',
@@ -118,6 +125,7 @@ SIDEBAR_LAYERS = [
         'name': 'Gestión del Talento',
         'icon': 'GraduationCap',
         'color': '#8B5CF6',
+        'phase': 'HACER',
         'module_codes': ['talent_hub'],
     },
     {
@@ -125,6 +133,7 @@ SIDEBAR_LAYERS = [
         'name': 'Soporte',
         'icon': 'Building2',
         'color': '#F59E0B',
+        'phase': 'HACER',
         'module_codes': ['administracion', 'tesoreria', 'accounting'],
     },
     # ═══════════════════════════════════════════════════════════════
@@ -135,6 +144,7 @@ SIDEBAR_LAYERS = [
         'name': 'Inteligencia',
         'icon': 'BarChart3',
         'color': '#8B5CF6',
+        'phase': 'VERIFICAR_ACTUAR',
         'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora'],
     },
 ]
@@ -421,6 +431,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'name': layer['name'],
                 'icon': layer['icon'],
                 'color': layer['color'],
+                'phase': layer.get('phase', ''),
                 'module_codes': layer['module_codes'],
             }
             for layer in SIDEBAR_LAYERS

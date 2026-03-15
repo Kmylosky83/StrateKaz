@@ -21,13 +21,13 @@ interface ModuleGuardProps {
 /**
  * Componente que protege rutas verificando que el módulo esté activo.
  *
- * @param moduleCode - Código del módulo en SystemModule (ej: 'hseq_management')
+ * @param moduleCode - Código del módulo en SystemModule (ej: 'gestion_integral')
  * @param children - Contenido a renderizar si el módulo está activo
  *
  * @example
  * ```tsx
  * <Route path="/hseq/*" element={
- *   <ModuleGuard moduleCode="hseq_management">
+ *   <ModuleGuard moduleCode="gestion_integral">
  *     <Outlet />
  *   </ModuleGuard>
  * } />

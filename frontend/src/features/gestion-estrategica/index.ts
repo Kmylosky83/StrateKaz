@@ -1,13 +1,12 @@
 /**
  * Index principal del módulo Gestión Estratégica
- * Sistema de Gestión StrateKaz
+ * Sistema de Gestión StrateKaz — Arquitectura Cascada V2
  *
- * Arquitectura: Cada tab tiene su propia página (sin redundancia de tabs)
- *
- * FUNDACIÓN (C1):
- * - MiEmpresaPage: Empresa, Misión/Visión, Valores, Sedes
- * - OrganizacionPage: Procesos, Caracterizaciones, Mapa
- * - MiSistemaGestionPage: Normas, Alcance SIG, Políticas, Consecutivos, Módulos, Integraciones
+ * FUNDACIÓN (C1) — 4 tabs:
+ * - MiEmpresaPage: Empresa, Sedes, Unidades de Negocio
+ * - ContextoIdentidadPage: Stakeholders, Contexto, Misión, Valores, Normas, Alcance
+ * - OrganizacionPage: Áreas, Cargos, Organigrama, Caracterizaciones, Mapa
+ * - PoliticasReglamentosPage: Políticas Obligatorias, Reglamento Interno, Contratos Tipo
  *
  * PLANEACIÓN ESTRATÉGICA (C2):
  * - PlaneacionPage: Plan Estratégico, Objetivos BSC
@@ -19,8 +18,9 @@
 
 // Páginas — Fundación (C1)
 export { MiEmpresaPage } from './pages/MiEmpresaPage';
+export { ContextoIdentidadPage } from './pages/ContextoIdentidadPage';
 export { OrganizacionPage } from './pages/OrganizacionPage';
-export { MiSistemaGestionPage } from './pages/MiSistemaGestionPage';
+export { PoliticasReglamentosPage } from './pages/PoliticasReglamentosPage';
 
 // Páginas — Planeación Estratégica (C2)
 export { PlaneacionPage } from './pages/PlaneacionPage';
@@ -29,12 +29,16 @@ export { ProyectosPage } from './pages/ProyectosPage';
 // Páginas — Inteligencia (C3)
 export { RevisionDireccionPage } from './pages/RevisionDireccionPage';
 
+// Wizard / Onboarding
+export { FundacionChecklist } from './components';
+
 // Componentes principales
 export {
-  // Tabs
+  // Tabs — Fundación
   MiEmpresaTab,
+  ContextoIdentidadTab,
   OrganizacionTab,
-  MiSistemaGestionTab,
+  PoliticasReglamentosTab,
   PlaneacionTab,
   GestionProyectosTab,
   RevisionDireccionTab,
@@ -104,3 +108,7 @@ export {
   useProgramasRevision,
   useActasRevision,
 } from './hooks/useRevisionDireccion';
+
+// Hooks - Fundación Progress
+export { useFundacionProgress } from './hooks/useFundacionProgress';
+export type { FundacionProgress, FundacionStep } from './hooks/useFundacionProgress';

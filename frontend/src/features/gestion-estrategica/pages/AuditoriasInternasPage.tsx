@@ -202,9 +202,9 @@ interface ProgramasAuditoriaProps {
 
 const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'create');
-  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'edit');
-  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'delete');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'create');
+  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'edit');
+  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'delete');
 
   const { data, isLoading } = useProgramasAuditoria();
   const deleteMutation = useDeleteProgramaAuditoria();
@@ -427,9 +427,9 @@ interface AuditoriasProps {
 
 const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'create');
-  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'edit');
-  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'delete');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'create');
+  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'edit');
+  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'delete');
 
   const [tipoFilter, setTipoFilter] = useState<TipoAuditoria | ''>('');
   const queryParams = useMemo(() => {
@@ -687,9 +687,9 @@ interface HallazgosProps {
 
 const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'create');
-  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'edit');
-  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'delete');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'create');
+  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'edit');
+  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'delete');
 
   const [impactoFilter, setImpactoFilter] = useState<ImpactoHallazgo | ''>('');
   const queryParams = useMemo(() => {
@@ -1018,9 +1018,9 @@ interface EvaluacionesCumplimientoProps {
 
 const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimientoProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'create');
-  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'edit');
-  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.EJECUCION_AUDITORIA, 'delete');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'create');
+  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'edit');
+  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.EJECUCION_AUDITORIA, 'delete');
 
   const { data, isLoading } = useEvaluacionesCumplimiento();
   const deleteMutation = useDeleteEvaluacionCumplimiento();

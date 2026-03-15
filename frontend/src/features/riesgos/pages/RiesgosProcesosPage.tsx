@@ -14,7 +14,8 @@ import { RiesgosOportunidadesTab } from '../components/tabs/RiesgosOportunidades
 import { useRiesgos, useOportunidades } from '../hooks/useRiesgos';
 
 export default function RiesgosProcesosPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
 
   const { data: riesgosData, isLoading: isLoadingRiesgos, error: riesgosError } = useRiesgos();
   const { data: oportunidadesData, isLoading: isLoadingOportunidades } = useOportunidades();

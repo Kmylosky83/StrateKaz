@@ -1,13 +1,12 @@
 /**
- * Tab: Mi Organización — Tab 2 de Fundación
+ * Tab: Mi Organización — Tab 3 de Fundación (Cascada V2)
  *
- * Subtabs (orden lógico empresarial):
- * 1. Procesos (Áreas) — Estructura jerárquica de áreas y procesos
+ * Subtabs:
+ * 1. Áreas — Estructura jerárquica de áreas y procesos
  * 2. Cargos — Gestión de cargos, manual de funciones y permisos RBAC
  * 3. Organigrama — Visualización interactiva de la jerarquía de cargos
- * 4. Partes Interesadas — Catálogo maestro de stakeholders
- * 5. Caracterizaciones — Ficha SIPOC por proceso
- * 6. Mapa de Procesos — Visualización interactiva
+ * 4. Caracterizaciones — Ficha SIPOC por proceso
+ * 5. Mapa de Procesos — Visualización interactiva
  *
  * Lógica: "¿Cómo funciono?" — Estructura operativa de la empresa.
  */
@@ -16,7 +15,6 @@ import { MapaProcesosSection } from './MapaProcesosSection';
 import { CaracterizacionesSection } from './CaracterizacionesSection';
 import { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';
 import { OrganigramaView } from './OrganigramaView';
-import { StakeholdersSection } from './contexto';
 
 /**
  * Wrapper para OrganigramaView con los modos de cargos
@@ -43,7 +41,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
   cargos: CargosSection,
   organigrama: OrganigramaSection,
-  partes_interesadas: StakeholdersSection,
   caracterizaciones: CaracterizacionesSection,
   mapa_procesos: MapaProcesosSection,
 };

@@ -1,7 +1,7 @@
 /**
  * PlanificacionSistemaPage — Planificación del Sistema de Gestión
  * 5 tabs: Planes de Trabajo, Actividades, Objetivos BSC, Programas, Cronograma Gantt
- * MODULE_CODE = 'sistema_gestion'
+ * MODULE_CODE = 'planificacion_operativa'
  */
 import { useState } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -73,7 +73,7 @@ import type {
   PerspectivaBSC,
 } from '../types/planificacion-sistema.types';
 
-const MODULE_CODE = 'sistema_gestion';
+const MODULE_CODE = 'planificacion_operativa';
 void MODULE_CODE;
 
 // ==================== UTILITY FUNCTIONS ====================

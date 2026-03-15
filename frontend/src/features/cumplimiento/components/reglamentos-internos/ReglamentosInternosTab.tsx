@@ -60,9 +60,9 @@ export const ReglamentosInternosTab = ({
   activeSection: _activeSection,
 }: ReglamentosInternosTabProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'create');
-  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'edit');
-  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.REGLAMENTOS, 'delete');
+  const canCreate = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REGLAMENTOS, 'create');
+  const canEdit = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REGLAMENTOS, 'edit');
+  const canDelete = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.REGLAMENTOS, 'delete');
 
   const user = useAuthStore((state) => state.user);
   const empresaId = user?.empresa_id || 0;

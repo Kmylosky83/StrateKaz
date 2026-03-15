@@ -82,7 +82,7 @@ const getEstadoBadge = (
 
 export default function ServiciosGeneralesPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.GESTION_SERVICIOS, 'create');
+  const canCreate = canDo(Modules.ADMINISTRACION, Sections.GESTION_SERVICIOS, 'create');
 
   const [activeTab, setActiveTab] = useState('contratos');
 

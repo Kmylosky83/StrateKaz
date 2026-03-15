@@ -35,16 +35,24 @@ import { fundacionRoutes } from './modules/fundacion.routes';
 import { planeacionEstrategicaRoutes } from './modules/planeacion-estrategica.routes';
 import { revisionDireccionRoutes } from './modules/revision-direccion.routes';
 import { gestionEstrategicaRoutes } from './modules/gestion-estrategica.routes';
+import { gestionDocumentalRoutes } from './modules/gestion-documental.routes';
 import { sistemaGestionRoutes } from './modules/sistema-gestion.routes';
+import { miEquipoRoutes } from './modules/mi-equipo.routes';
+import { planificacionOperativaRoutes } from './modules/planificacion-operativa.routes';
+import { proteccionCumplimientoRoutes } from './modules/proteccion-cumplimiento.routes';
+import { accionesMejoraRoutes } from './modules/acciones-mejora.routes';
 import { talentHubRoutes } from './modules/talent-hub.routes';
 import { cumplimientoRoutes } from './modules/cumplimiento.routes';
 import { riesgosRoutes } from './modules/riesgos.routes';
 import { workflowsRoutes } from './modules/workflows.routes';
+import { gestionIntegralRoutes } from './modules/gestion-integral.routes';
 import { hseqRoutes } from './modules/hseq.routes';
 import { supplyChainRoutes } from './modules/supply-chain.routes';
 import { productionOpsRoutes } from './modules/production-ops.routes';
 import { logisticsFleetRoutes } from './modules/logistics-fleet.routes';
 import { salesCrmRoutes } from './modules/sales-crm.routes';
+import { administracionRoutes } from './modules/administracion.routes';
+import { tesoreriaRoutes } from './modules/tesoreria.routes';
 import { adminFinanceRoutes } from './modules/admin-finance.routes';
 import { accountingRoutes } from './modules/accounting.routes';
 import { analyticsRoutes } from './modules/analytics.routes';
@@ -98,24 +106,44 @@ export const AppRoutes = () => {
           {/* C1 — Fundacion */}
           {fundacionRoutes}
 
+          {/* Infraestructura (PLANEAR) */}
+          {gestionDocumentalRoutes}
+
+          {/* Equipo (PLANEAR) */}
+          {miEquipoRoutes}
+
+          {/* Planificación (PLANEAR) */}
+          {planificacionOperativaRoutes}
+
           {/* C2 — Modulos de Negocio (independientes) */}
           {planeacionEstrategicaRoutes}
-          {sistemaGestionRoutes}
-          {talentHubRoutes}
-          {cumplimientoRoutes}
-          {riesgosRoutes}
+          {proteccionCumplimientoRoutes}
           {workflowsRoutes}
-          {hseqRoutes}
+          {gestionIntegralRoutes}
+
+          {/* Cadena de Valor (HACER) */}
           {supplyChainRoutes}
           {productionOpsRoutes}
           {logisticsFleetRoutes}
           {salesCrmRoutes}
-          {adminFinanceRoutes}
+
+          {/* Talento + Soporte (HACER) */}
+          {talentHubRoutes}
+          {administracionRoutes}
+          {tesoreriaRoutes}
           {accountingRoutes}
 
-          {/* C3 — Inteligencia */}
+          {/* Legacy redirects (V1 paths → V2 modules) */}
+          {cumplimientoRoutes}
+          {riesgosRoutes}
+          {hseqRoutes}
+          {sistemaGestionRoutes}
+          {adminFinanceRoutes}
+
+          {/* C3 — Inteligencia + Mejora Continua */}
           {analyticsRoutes}
           {revisionDireccionRoutes}
+          {accionesMejoraRoutes}
           {auditSystemRoutes}
 
           {/* Legacy redirects (gestion-estrategica → nuevas rutas) */}

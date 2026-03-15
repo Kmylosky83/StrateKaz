@@ -849,8 +849,8 @@ const CertificadosSection = ({
 
 export default function GestionAmbientalPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.PROGRAMAS_AMBIENTALES, 'create');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.PROGRAMAS_AMBIENTALES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.PROGRAMAS_AMBIENTALES, 'create');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.PROGRAMAS_AMBIENTALES, 'delete');
   const [activeTab, setActiveTab] = useState('aspectos');
 
   const tabs = [

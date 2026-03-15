@@ -28,7 +28,7 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { Spinner } from '@/components/common/Spinner';
 
 export default function CumplimientoPage() {
-  const { color: moduleColor, isLoading } = useModuleColor('MOTOR_CUMPLIMIENTO');
+  const { color: moduleColor, isLoading } = useModuleColor('proteccion_cumplimiento');
 
   if (isLoading) {
     return (

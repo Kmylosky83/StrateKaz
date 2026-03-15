@@ -2,9 +2,9 @@
  * Rutas: Supply Chain (Cadena de Suministro)
  * Capa 2 — Módulo de Negocio
  *
- * Página unificada con 8 tabs en flujo de negocio:
+ * Página unificada con 7 tabs en flujo de negocio:
  * proveedores → precios → compras → almacenamiento → programación →
- * evaluaciones → unidades-negocio → catálogos
+ * evaluaciones → catálogos
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -41,9 +41,10 @@ export const supplyChainRoutes = (
       path="/supply-chain/evaluaciones"
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
+    {/* unidades-negocio migrado a Fundación/Mi Empresa */}
     <Route
       path="/supply-chain/unidades-negocio"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={<Navigate to="/fundacion/mi-empresa" replace />}
     />
     <Route
       path="/supply-chain/catalogos"

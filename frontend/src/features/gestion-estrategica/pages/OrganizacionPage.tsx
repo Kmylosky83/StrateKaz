@@ -1,5 +1,5 @@
 /**
- * Página: Mi Organización — Tab 2 de Fundación
+ * Página: Mi Organización — Tab 3 de Fundación
  *
  * "¿Cómo funciono?" — Procesos, caracterizaciones SIPOC y mapa.
  *
@@ -29,7 +29,7 @@ export const OrganizacionPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
 
   if (!activeSection && sectionsLoading) {
     return (

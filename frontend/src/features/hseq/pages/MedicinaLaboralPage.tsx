@@ -1434,7 +1434,7 @@ const EstadisticasReportesSection = () => {
 
 export default function MedicinaLaboralPage() {
   const { canDo } = usePermissions();
-  const _canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.EXAMENES_MEDICOS, 'create');
+  const _canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.EXAMENES_MEDICOS, 'create');
 
   const [activeTab, setActiveTab] = useState('examenes');
 

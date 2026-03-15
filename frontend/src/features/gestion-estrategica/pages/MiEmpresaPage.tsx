@@ -1,7 +1,7 @@
 /**
  * Página: Mi Empresa — Tab 1 de Fundación
  *
- * "¿Quién soy?" — Datos, identidad, valores y ubicaciones.
+ * "¿Quién soy?" — Datos, sedes y unidades de negocio.
  *
  * Layout estandarizado:
  * 1. PageHeader (título y descripción dinámica)
@@ -29,7 +29,7 @@ export const MiEmpresaPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
 
   if (!activeSection && sectionsLoading) {
     return (

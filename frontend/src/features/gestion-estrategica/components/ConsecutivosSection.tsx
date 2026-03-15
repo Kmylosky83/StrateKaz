@@ -81,7 +81,7 @@ const CATEGORIA_LABELS: Record<CategoriaConsecutivo, string> = {
 
 export const ConsecutivosSection = () => {
   // Color del módulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const [selectedConsecutivo, setSelectedConsecutivo] = useState<ConsecutivoConfigList | null>(

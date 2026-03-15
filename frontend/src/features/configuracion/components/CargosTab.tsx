@@ -118,7 +118,7 @@ export const CargosTab = () => {
   const canDelete = canDo(Modules.FUNDACION, Sections.CARGOS, 'delete');
 
   // Color del módulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const { data, isLoading, error } = useCargos({ ...filters, page_size: 100 });

@@ -45,7 +45,8 @@ import {
 } from '../types/aspectos-ambientales.types';
 
 export default function AspectosAmbientalesPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
   const [activeTab, setActiveTab] = useState('aspectos');
 
   const {

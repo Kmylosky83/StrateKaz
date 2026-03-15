@@ -50,7 +50,8 @@ import {
 } from '../types/seguridad-informacion.types';
 
 export default function SeguridadInformacionPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
   const [activeTab, setActiveTab] = useState('activos');
 
   const {

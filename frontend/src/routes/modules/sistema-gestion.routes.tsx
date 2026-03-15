@@ -1,51 +1,41 @@
 /**
- * Rutas: Sistema de Gestión
- * Plan maestro de trabajo, gestión documental, auditorías internas, acciones de mejora
+ * Rutas: Sistema de Gestión (legacy — redirects a módulos V2)
  *
- * Pages:
- * - Planificacion: features/gestion-estrategica/pages/PlanificacionSistemaPage
- * - GestionDocumental: features/gestion-estrategica/pages/GestionDocumentalPage
- * - Auditorías: features/gestion-estrategica/pages/AuditoriasInternasPage
- * - Acciones Mejora: features/gestion-estrategica/pages/AccionesMejoraPage
+ * Cascada V2 dividió sistema_gestion en 4 módulos independientes:
+ * - gestion_documental → /gestion-documental/
+ * - planificacion_operativa → /planificacion-operativa/
+ * - acciones_mejora → /acciones-mejora/
+ * - auditorias_internas → /gestion-documental/auditorias
  */
-import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
-
-const SGPlanificacionPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/PlanificacionSistemaPage')
-);
-const SGGestionDocumentalPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
-);
-const SGAuditoriasPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/AuditoriasInternasPage')
-);
-const SGAccionesMejoraPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/AccionesMejoraPage')
-);
 
 export const sistemaGestionRoutes = (
   <>
     <Route
       path="/sistema-gestion"
-      element={<Navigate to="/sistema-gestion/planificacion" replace />}
+      element={<Navigate to="/gestion-documental/documentos" replace />}
     />
+
+    {/* Planificación → módulo independiente */}
     <Route
       path="/sistema-gestion/planificacion"
-      element={withModuleGuard(SGPlanificacionPage, 'sistema_gestion')}
+      element={<Navigate to="/planificacion-operativa/planificacion" replace />}
     />
+
+    {/* Acciones de Mejora → módulo independiente */}
+    <Route
+      path="/sistema-gestion/acciones"
+      element={<Navigate to="/acciones-mejora/no-conformidades" replace />}
+    />
+
+    {/* Gestión Documental → módulo independiente */}
     <Route
       path="/sistema-gestion/documentos"
-      element={withModuleGuard(SGGestionDocumentalPage, 'sistema_gestion')}
+      element={<Navigate to="/gestion-documental/documentos" replace />}
     />
     <Route
       path="/sistema-gestion/auditorias"
-      element={withModuleGuard(SGAuditoriasPage, 'sistema_gestion')}
-    />
-    <Route
-      path="/sistema-gestion/acciones"
-      element={withModuleGuard(SGAccionesMejoraPage, 'sistema_gestion')}
+      element={<Navigate to="/gestion-documental/auditorias" replace />}
     />
   </>
 );

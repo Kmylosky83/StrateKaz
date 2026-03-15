@@ -26,7 +26,7 @@ const TAB_CODE = 'revision_direccion';
 
 export const RevisionDireccionPage = () => {
   const { data: stats, isLoading: statsLoading } = useRevisionDireccionStats();
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('revision_direccion');
 
   const {
     sections,

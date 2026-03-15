@@ -25,7 +25,7 @@ export const AlcanceSIGSection = () => {
   const { canDo } = usePermissions();
   const canEdit = canDo(Modules.FUNDACION, Sections.ALCANCE, 'edit');
   const canCreate = canDo(Modules.FUNDACION, Sections.ALCANCE, 'create');
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const [showModal, setShowModal] = useState(false);

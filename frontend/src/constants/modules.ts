@@ -2,8 +2,10 @@
  * Constantes de módulos disponibles del sistema.
  *
  * Fuente de verdad única para módulos en PlanFormModal y TenantFormModal.
- * Las categorías reflejan exactamente los 6 grupos visuales del sidebar
+ * Las categorías reflejan los 10 grupos visuales del sidebar V2
  * (SIDEBAR_LAYERS en backend/apps/core/viewsets_config.py).
+ *
+ * Arquitectura Cascada V2 — 19 módulos organizados por ciclo PHVA.
  */
 
 export interface SystemModule {
@@ -13,63 +15,100 @@ export interface SystemModule {
 }
 
 /**
- * Categorías alineadas con SIDEBAR_LAYERS del backend.
- * NIVEL_C1  → Fundación
- * NIVEL_PE  → Planeación Estratégica
- * NIVEL_SGI → Sistema de Gestión (sistema_gestion + motor_cumplimiento + motor_riesgos)
- * NIVEL_OPS → Operaciones (hseq + supply_chain + production_ops + logistics + sales + workflow)
- * NIVEL_ORG → Organización (talent_hub + admin_finance + accounting)
- * NIVEL_C3  → Inteligencia (analytics + revision_direccion + audit_system)
+ * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.
+ * NIVEL_FUNDACION      → Fundación (C1)
+ * NIVEL_INFRAESTRUCTURA → Gestión Documental + Flujos de Trabajo
+ * NIVEL_EQUIPO         → Mi Equipo
+ * NIVEL_PLANIFICACION  → Planificación Operativa + Planeación Estratégica
+ * NIVEL_PROTECCION     → Protección y Cumplimiento
+ * NIVEL_HSEQ           → Gestión Integral HSEQ
+ * NIVEL_CADENA         → Supply Chain + Production + Logistics + Sales CRM
+ * NIVEL_TALENTO        → Talent Hub
+ * NIVEL_SOPORTE        → Administración + Tesorería + Contabilidad
+ * NIVEL_INTELIGENCIA   → Analytics + Revisión Dirección + Acciones Mejora + Audit System
  */
 export type ModuleCategory =
-  | 'NIVEL_C1'
-  | 'NIVEL_PE'
-  | 'NIVEL_SGI'
-  | 'NIVEL_OPS'
-  | 'NIVEL_ORG'
-  | 'NIVEL_C3';
+  | 'NIVEL_FUNDACION'
+  | 'NIVEL_INFRAESTRUCTURA'
+  | 'NIVEL_EQUIPO'
+  | 'NIVEL_PLANIFICACION'
+  | 'NIVEL_PROTECCION'
+  | 'NIVEL_HSEQ'
+  | 'NIVEL_CADENA'
+  | 'NIVEL_TALENTO'
+  | 'NIVEL_SOPORTE'
+  | 'NIVEL_INTELIGENCIA';
 
 /**
- * Lista completa de módulos del sistema StrateKaz.
+ * Lista completa de módulos del sistema StrateKaz V2.
  * Usada en PlanFormModal y TenantFormModal.
- * Orden y agrupación espeja SIDEBAR_LAYERS.
+ * Orden y agrupación espeja SIDEBAR_LAYERS V2.
  */
 export const AVAILABLE_MODULES: SystemModule[] = [
-  // NIVEL_C1 — Fundación (C1)
-  { code: 'fundacion', name: 'Fundación', category: 'NIVEL_C1' },
+  // ── PLANEAR ──
 
-  // NIVEL_PE — Planeación Estratégica (C2)
-  { code: 'planeacion_estrategica', name: 'Planeación Estratégica', category: 'NIVEL_PE' },
+  // NIVEL_FUNDACION — Fundación (C1)
+  { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION' },
 
-  // NIVEL_SGI — Sistema de Gestión (C2)
-  { code: 'sistema_gestion', name: 'Sistema de Gestión', category: 'NIVEL_SGI' },
-  { code: 'motor_cumplimiento', name: 'Cumplimiento Normativo', category: 'NIVEL_SGI' },
-  { code: 'motor_riesgos', name: 'Motor de Riesgos', category: 'NIVEL_SGI' },
+  // NIVEL_INFRAESTRUCTURA — Documentos + Flujos
+  { code: 'gestion_documental', name: 'Gestión Documental', category: 'NIVEL_INFRAESTRUCTURA' },
+  { code: 'workflow_engine', name: 'Flujos de Trabajo', category: 'NIVEL_INFRAESTRUCTURA' },
 
-  // NIVEL_OPS — Operaciones (C2)
-  { code: 'hseq_management', name: 'Gestión Integral HSEQ', category: 'NIVEL_OPS' },
-  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_OPS' },
-  { code: 'production_ops', name: 'Base de Operaciones', category: 'NIVEL_OPS' },
-  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_OPS' },
-  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_OPS' },
-  { code: 'workflow_engine', name: 'Flujos de Trabajo', category: 'NIVEL_OPS' },
+  // NIVEL_EQUIPO — Mi Equipo
+  { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO' },
 
-  // NIVEL_ORG — Organización (C2)
-  { code: 'talent_hub', name: 'Centro de Talento', category: 'NIVEL_ORG' },
-  { code: 'admin_finance', name: 'Administración', category: 'NIVEL_ORG' },
-  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_ORG' },
+  // NIVEL_PLANIFICACION — Planificación
+  {
+    code: 'planificacion_operativa',
+    name: 'Planificación Operativa',
+    category: 'NIVEL_PLANIFICACION',
+  },
+  {
+    code: 'planeacion_estrategica',
+    name: 'Planeación Estratégica',
+    category: 'NIVEL_PLANIFICACION',
+  },
 
-  // NIVEL_C3 — Inteligencia (C3)
-  { code: 'analytics', name: 'Inteligencia de Negocios', category: 'NIVEL_C3' },
-  { code: 'revision_direccion', name: 'Revisión por la Dirección', category: 'NIVEL_C3' },
-  { code: 'audit_system', name: 'Centro de Control', category: 'NIVEL_C3' },
+  // ── HACER ──
+
+  // NIVEL_PROTECCION — Protección y Cumplimiento
+  {
+    code: 'proteccion_cumplimiento',
+    name: 'Protección y Cumplimiento',
+    category: 'NIVEL_PROTECCION',
+  },
+
+  // NIVEL_HSEQ — Gestión Integral
+  { code: 'gestion_integral', name: 'Gestión Integral HSEQ', category: 'NIVEL_HSEQ' },
+
+  // NIVEL_CADENA — Cadena de Valor
+  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA' },
+  { code: 'production_ops', name: 'Base de Operaciones', category: 'NIVEL_CADENA' },
+  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_CADENA' },
+  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_CADENA' },
+
+  // NIVEL_TALENTO — Talent Hub
+  { code: 'talent_hub', name: 'Centro de Talento', category: 'NIVEL_TALENTO' },
+
+  // NIVEL_SOPORTE — Soporte Administrativo
+  { code: 'administracion', name: 'Administración', category: 'NIVEL_SOPORTE' },
+  { code: 'tesoreria', name: 'Tesorería', category: 'NIVEL_SOPORTE' },
+  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_SOPORTE' },
+
+  // ── VERIFICAR + ACTUAR ──
+
+  // NIVEL_INTELIGENCIA — Inteligencia y Mejora
+  { code: 'analytics', name: 'Inteligencia de Negocios', category: 'NIVEL_INTELIGENCIA' },
+  { code: 'revision_direccion', name: 'Revisión por la Dirección', category: 'NIVEL_INTELIGENCIA' },
+  { code: 'acciones_mejora', name: 'Acciones de Mejora', category: 'NIVEL_INTELIGENCIA' },
+  { code: 'audit_system', name: 'Centro de Control', category: 'NIVEL_INTELIGENCIA' },
 ];
 
 /** Módulos habilitados por defecto para nuevos tenants */
 export const DEFAULT_ENABLED_MODULES = [
   'fundacion',
+  'gestion_documental',
   'planeacion_estrategica',
-  'sistema_gestion',
-  'motor_cumplimiento',
-  'hseq_management',
+  'proteccion_cumplimiento',
+  'gestion_integral',
 ];

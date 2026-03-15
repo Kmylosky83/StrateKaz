@@ -45,7 +45,8 @@ import {
 } from '../types/riesgos-viales.types';
 
 export default function RiesgosVialesPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
   const [activeTab, setActiveTab] = useState('riesgos');
 
   const {

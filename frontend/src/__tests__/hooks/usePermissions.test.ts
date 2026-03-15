@@ -104,13 +104,13 @@ describe('usePermissions Hook', () => {
       useAuthStore.setState({
         user: {
           is_superuser: false,
-          permission_codes: ['motor_riesgos.matriz.create'],
+          permission_codes: ['proteccion_cumplimiento.matriz.create'],
         } as any,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
-      expect(result.current.canDo('motor_riesgos', 'matriz', 'create')).toBe(true);
-      expect(result.current.canDo('motor_riesgos', 'matriz', 'delete')).toBe(false);
+      expect(result.current.canDo('proteccion_cumplimiento', 'matriz', 'create')).toBe(true);
+      expect(result.current.canDo('proteccion_cumplimiento', 'matriz', 'delete')).toBe(false);
     });
   });
 

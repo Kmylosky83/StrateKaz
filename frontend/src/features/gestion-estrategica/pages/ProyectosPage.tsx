@@ -37,7 +37,7 @@ export const ProyectosPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
 
   // Calcular proyectos activos (en ejecución + monitoreo)
   const proyectosActivos = (dashboard?.en_ejecucion ?? 0) + (dashboard?.en_monitoreo ?? 0);

@@ -49,7 +49,6 @@ import { DesempenoSection } from '../components/desempeno';
 import { ControlTiempoSection } from '../components/control-tiempo';
 import { NovedadesSection } from '../components/novedades';
 import { ProcesoDisciplinarioSection } from '../components/proceso-disciplinario';
-import { NominaSection } from '../components/nomina';
 import { OffBoardingSection } from '../components/off-boarding';
 import { ConsultoresExternosSection } from '../components/consultores-externos';
 
@@ -114,10 +113,10 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     icon: <Clock className="w-5 h-5" />,
     component: ControlTiempoSection,
   },
-  novedades: {
-    title: 'Novedades',
-    description: 'Incapacidades, permisos, licencias, vacaciones y ausencias',
-    icon: <Bell className="w-5 h-5" />,
+  'novedades-nomina': {
+    title: 'Novedades y Nómina',
+    description: 'Novedades, liquidación de nómina, prestaciones y reportes',
+    icon: <DollarSign className="w-5 h-5" />,
     component: NovedadesSection,
   },
   disciplinario: {
@@ -125,12 +124,6 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Llamados de atención, descargos, memorandos e historial disciplinario',
     icon: <Gavel className="w-5 h-5" />,
     component: ProcesoDisciplinarioSection,
-  },
-  nomina: {
-    title: 'Nómina',
-    description: 'Configuración de conceptos, períodos de pago, liquidaciones y reportes',
-    icon: <DollarSign className="w-5 h-5" />,
-    component: NominaSection,
   },
   'off-boarding': {
     title: 'Off-Boarding',

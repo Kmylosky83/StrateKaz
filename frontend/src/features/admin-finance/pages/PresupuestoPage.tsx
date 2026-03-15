@@ -88,7 +88,7 @@ const getEstadoBadge = (
 
 export default function PresupuestoPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.EJECUCION_PRESUPUESTAL, 'create');
+  const canCreate = canDo(Modules.ADMINISTRACION, Sections.EJECUCION_PRESUPUESTAL, 'create');
 
   const [activeTab, setActiveTab] = useState('presupuestos');
 

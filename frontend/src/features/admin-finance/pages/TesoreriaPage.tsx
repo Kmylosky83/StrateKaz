@@ -98,8 +98,8 @@ const getEstadoBadge = (
 
 export default function TesoreriaPage() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.ADMIN_FINANCE, Sections.FLUJO_CAJA, 'create');
-  const canEdit = canDo(Modules.ADMIN_FINANCE, Sections.FLUJO_CAJA, 'edit');
+  const canCreate = canDo(Modules.TESORERIA, Sections.FLUJO_CAJA, 'create');
+  const canEdit = canDo(Modules.TESORERIA, Sections.FLUJO_CAJA, 'edit');
 
   const [activeTab, setActiveTab] = useState('bancos');
 

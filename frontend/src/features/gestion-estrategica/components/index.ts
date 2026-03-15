@@ -6,27 +6,35 @@
 // FUNDACIÓN (C1) — Tabs y Secciones
 // =============================================================================
 
-// Tabs de Fundación
+// Tabs de Fundación (Cascada V2 — 4 tabs)
 export { MiEmpresaTab } from './MiEmpresaTab';
+export { ContextoIdentidadTab } from './ContextoIdentidadTab';
 export { OrganizacionTab } from './OrganizacionTab';
-export { MiSistemaGestionTab } from './MiSistemaGestionTab';
+export { PoliticasReglamentosTab } from './PoliticasReglamentosTab';
 
-// Secciones autocontenidas — Mi Empresa
+// Wizard/Onboarding
+export { FundacionChecklist } from './FundacionChecklist';
+
+// Secciones autocontenidas — Tab 1: Mi Empresa
 export { EmpresaSection } from './EmpresaSection';
-export { MisionVisionSection } from './MisionVisionSection';
-export { ValoresSection } from './ValoresSection';
 export { SedesSection } from './SedesSection';
 
-// Secciones autocontenidas — Mi Organización
+// Secciones autocontenidas — Tab 2: Mi Contexto e Identidad
+export { MisionVisionSection } from './MisionVisionSection';
+export { ValoresSection } from './ValoresSection';
+export { NormasISOSection } from './NormasISOSection';
+export { AlcanceSIGSection } from './AlcanceSIGSection';
+
+// Secciones autocontenidas — Tab 3: Mi Organización
 export { AreasTab } from './AreasTab';
 export { PILookupField } from './PILookupField';
 export { CaracterizacionesSection } from './CaracterizacionesSection';
 export { MapaProcesosSection } from './MapaProcesosSection';
 
-// Secciones autocontenidas — Mi Sistema de Gestión
-export { NormasISOSection } from './NormasISOSection';
-export { AlcanceSIGSection } from './AlcanceSIGSection';
+// Secciones autocontenidas — Tab 4: Mis Políticas y Reglamentos
 export { PoliticasSection } from './PoliticasSection';
+
+// Secciones de configuración (futuro módulo Configuración)
 export { ConsecutivosSection } from './ConsecutivosSection';
 export { ModulosSection } from './ModulosSection';
 export { IntegracionesSection } from './IntegracionesSection';

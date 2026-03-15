@@ -69,7 +69,7 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
   const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'edit');
 
   // Color del modulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries

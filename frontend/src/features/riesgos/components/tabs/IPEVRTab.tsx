@@ -617,8 +617,12 @@ interface IPEVRTabProps {
 
 export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
   const { canDo } = usePermissions();
-  const canCreateIPEVR = canDo(Modules.MOTOR_RIESGOS, Sections.IDENTIFICACION_PELIGROS, 'create');
-  const canCreateControles = canDo(Modules.MOTOR_RIESGOS, Sections.CONTROLES, 'create');
+  const canCreateIPEVR = canDo(
+    Modules.PROTECCION_CUMPLIMIENTO,
+    Sections.IDENTIFICACION_PELIGROS,
+    'create'
+  );
+  const canCreateControles = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.CONTROLES, 'create');
 
   const [activeTab, setActiveTab] = useState<'resumen' | 'matriz' | 'peligros' | 'controles'>(
     'resumen'

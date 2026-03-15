@@ -19,7 +19,7 @@ from .views import (
     IconRegistryViewSet,
     NormaISOViewSet,
 )
-from .stats_views import config_stats_view
+from .stats_views import config_stats_view, fundacion_progress_view
 
 router = DefaultRouter()
 router.register(r'sedes', SedeEmpresaViewSet, basename='sede')
@@ -30,4 +30,5 @@ router.register(r'normas-iso', NormaISOViewSet, basename='norma-iso')
 urlpatterns = [
     path('', include(router.urls)),
     path('config-stats/', config_stats_view, name='config-stats'),
+    path('fundacion-progress/', fundacion_progress_view, name='fundacion-progress'),
 ]

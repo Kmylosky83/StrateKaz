@@ -320,7 +320,7 @@ const AreaCard = ({
 // =============================================================================
 export const AreasTab = () => {
   // Color del módulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const moduleColorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Estado local

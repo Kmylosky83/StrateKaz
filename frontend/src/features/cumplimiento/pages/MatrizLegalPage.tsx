@@ -26,7 +26,7 @@ import { Input } from '@/components/forms/Input';
 import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD
-const MODULE_CODE = 'motor_cumplimiento';
+const MODULE_CODE = 'proteccion_cumplimiento';
 const TAB_CODE = 'matriz_legal';
 
 // Mapeo de nombres de iconos a componentes

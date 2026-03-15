@@ -44,12 +44,12 @@ export function TiposPlantillasSection({
   onEditPlantilla,
 }: TiposPlantillasSectionProps) {
   const { canDo } = usePermissions();
-  const canCreateTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'create');
-  const canEditTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'edit');
-  const canDeleteTipo = canDo(Modules.SISTEMA_GESTION, Sections.TIPOS_DOCUMENTO, 'delete');
-  const canCreatePlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'create');
-  const canEditPlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'edit');
-  const canDeletePlantilla = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'delete');
+  const canCreateTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'create');
+  const canEditTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'edit');
+  const canDeleteTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'delete');
+  const canCreatePlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
+  const canEditPlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'edit');
+  const canDeletePlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'delete');
 
   const { data: tipos, isLoading: isLoadingTipos } = useTiposDocumento();
   const { data: plantillas, isLoading: isLoadingPlantillas } = usePlantillasDocumento();

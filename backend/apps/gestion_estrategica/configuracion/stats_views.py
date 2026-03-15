@@ -450,6 +450,135 @@ def calculate_normas_iso_stats():
     return stats
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fundacion_progress_view(request):
+    """
+    GET /api/strategic/configuracion/fundacion-progress/
+
+    Retorna progreso del onboarding de Fundación.
+    Cada paso tiene: key, label, done (bool), route (link a la sección).
+    overall_progress: 0-100.
+    """
+    try:
+        steps = _calculate_fundacion_steps()
+        done_count = sum(1 for s in steps if s['done'])
+        total = len(steps)
+        return Response({
+            'steps': steps,
+            'done_count': done_count,
+            'total': total,
+            'overall_progress': int((done_count / total) * 100) if total > 0 else 0,
+            'is_complete': done_count == total,
+        })
+    except Exception as e:
+        logger.error(f"Error calculando fundacion progress: {e}")
+        return Response(
+            {'error': 'Error al calcular progreso', 'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+def _calculate_fundacion_steps():
+    """Calcula los pasos de onboarding de Fundación."""
+    from django.db import connection
+    from .models import SedeEmpresa
+    from apps.gestion_estrategica.identidad.models import CorporateIdentity, CorporateValue
+    from apps.gestion_estrategica.organizacion.models import Area
+    from apps.core.models import Cargo
+
+    steps = []
+    tenant = getattr(connection, 'tenant', None)
+
+    # ── Tab 1: Mi Empresa ──
+
+    # Paso 1: Datos de empresa
+    empresa_ok = False
+    if tenant:
+        empresa_ok = bool(
+            getattr(tenant, 'nit', None)
+            and getattr(tenant, 'razon_social', None)
+        )
+    steps.append({
+        'key': 'empresa',
+        'label': 'Datos de la empresa',
+        'description': 'NIT, razón social, datos fiscales',
+        'done': empresa_ok,
+        'route': '/fundacion/mi-empresa',
+        'tab': 'mi_empresa',
+    })
+
+    # Paso 2: Al menos una sede
+    sedes_count = SedeEmpresa.objects.filter(deleted_at__isnull=True).count()
+    steps.append({
+        'key': 'sedes',
+        'label': 'Sedes de la empresa',
+        'description': 'Al menos una sede registrada',
+        'done': sedes_count > 0,
+        'route': '/fundacion/mi-empresa',
+        'tab': 'mi_empresa',
+    })
+
+    # ── Tab 2: Contexto e Identidad ──
+
+    # Paso 3: Identidad corporativa (misión + visión)
+    identity = CorporateIdentity.objects.filter(
+        deleted_at__isnull=True, is_active=True
+    ).first()
+    identity_ok = False
+    if identity:
+        identity_ok = bool(identity.mission and identity.vision)
+    steps.append({
+        'key': 'identidad',
+        'label': 'Misión y visión',
+        'description': 'Identidad corporativa activa',
+        'done': identity_ok,
+        'route': '/fundacion/contexto-identidad',
+        'tab': 'contexto_identidad',
+    })
+
+    # Paso 4: Al menos un valor corporativo
+    valores_count = 0
+    if identity:
+        valores_count = CorporateValue.objects.filter(
+            deleted_at__isnull=True, identity=identity
+        ).count()
+    steps.append({
+        'key': 'valores',
+        'label': 'Valores corporativos',
+        'description': 'Al menos un valor definido',
+        'done': valores_count > 0,
+        'route': '/fundacion/contexto-identidad',
+        'tab': 'contexto_identidad',
+    })
+
+    # ── Tab 3: Organización ──
+
+    # Paso 5: Al menos un área
+    areas_count = Area.objects.filter(deleted_at__isnull=True).count()
+    steps.append({
+        'key': 'areas',
+        'label': 'Áreas organizacionales',
+        'description': 'Estructura de áreas definida',
+        'done': areas_count > 0,
+        'route': '/fundacion/organizacion',
+        'tab': 'organizacion',
+    })
+
+    # Paso 6: Al menos un cargo
+    cargos_count = Cargo.objects.count()
+    steps.append({
+        'key': 'cargos',
+        'label': 'Cargos',
+        'description': 'Al menos un cargo creado',
+        'done': cargos_count > 0,
+        'route': '/fundacion/organizacion',
+        'tab': 'organizacion',
+    })
+
+    return steps
+
+
 def calculate_unidades_medida_stats():
     """Calcula estadisticas de la seccion Unidades de Medida"""
     # Modelo migrado a organizacion

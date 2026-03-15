@@ -113,9 +113,9 @@ const TiposComiteSection = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteTipoComite();
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
-  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -265,9 +265,9 @@ const ComitesSection = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteComite();
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
-  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -448,9 +448,9 @@ const MiembrosSection = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteMiembroComite();
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
-  const canEdit = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'edit');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'create');
+  const canEdit = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'edit');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -615,8 +615,8 @@ const ActasSection = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteActaReunion();
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'create');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);
@@ -805,8 +805,8 @@ const VotacionesSection = () => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const deleteMutation = useDeleteVotacion();
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'create');
-  const canDelete = canDo(Modules.HSEQ_MANAGEMENT, Sections.COMITES, 'delete');
+  const canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'create');
+  const canDelete = canDo(Modules.GESTION_INTEGRAL, Sections.COMITES, 'delete');
 
   const handleNew = () => {
     setSelectedItem(null);

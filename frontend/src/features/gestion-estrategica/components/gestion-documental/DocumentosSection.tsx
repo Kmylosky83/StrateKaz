@@ -48,9 +48,9 @@ export function DocumentosSection({
   onViewDocumento,
 }: DocumentosSectionProps) {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'create');
-  const canEdit = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'edit');
-  const canDelete = canDo(Modules.SISTEMA_GESTION, Sections.DOCUMENTOS, 'delete');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
+  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'edit');
+  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'delete');
 
   const { data: documentos, isLoading } = useDocumentos();
   const { data: listadoMaestro } = useListadoMaestro();

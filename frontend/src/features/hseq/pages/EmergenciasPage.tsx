@@ -1334,7 +1334,7 @@ const RecursosEmergenciaSection = () => {
 
 export default function EmergenciasPage() {
   const { canDo } = usePermissions();
-  const _canCreate = canDo(Modules.HSEQ_MANAGEMENT, Sections.PLAN_EMERGENCIAS, 'create');
+  const _canCreate = canDo(Modules.GESTION_INTEGRAL, Sections.PLAN_EMERGENCIAS, 'create');
 
   const [activeTab, setActiveTab] = useState('vulnerabilidad');
 

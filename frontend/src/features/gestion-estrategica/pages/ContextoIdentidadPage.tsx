@@ -1,23 +1,26 @@
 /**
- * Página: Mi Sistema de Gestión — Tab 3 de Fundación
+ * Página: Mi Contexto e Identidad — Tab 2 de Fundación
  *
- * "¿Con qué reglas opero?" — Normas, alcance, políticas y config técnica.
+ * "¿Dónde estoy y quién soy?" — Diagnóstico del entorno y direccionamiento estratégico.
  *
- * Layout estandarizado:
- * 1. PageHeader (título y descripción dinámica)
- * 2. DynamicSections (subtabs underline, color dinámico)
- * 3. Contenido de la sección activa
+ * Secciones (desde BD: fundacion > contexto_identidad):
+ * 1. partes_interesadas — Catálogo maestro de stakeholders
+ * 2. analisis_contexto — Herramientas PCI, POAM, PESTEL, Porter
+ * 3. mision_vision — Direccionamiento estratégico
+ * 4. valores — Principios y valores corporativos
+ * 5. normas_iso — Normas ISO aplicables
+ * 6. alcance_sig — Cobertura del Sistema Integrado de Gestión
  */
 import { PageHeader } from '@/components/layout';
 import { DynamicSections } from '@/components/common';
 import { useModuleColor } from '@/hooks/useModuleColor';
-import { MiSistemaGestionTab } from '../components/MiSistemaGestionTab';
+import { ContextoIdentidadTab } from '../components/ContextoIdentidadTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
 const MODULE_CODE = 'fundacion';
-const TAB_CODE = 'sistema_gestion';
+const TAB_CODE = 'contexto_identidad';
 
-export const MiSistemaGestionPage = () => {
+export const ContextoIdentidadPage = () => {
   const {
     sections,
     activeSection,
@@ -29,7 +32,7 @@ export const MiSistemaGestionPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
 
   if (!activeSection && sectionsLoading) {
     return (
@@ -42,7 +45,7 @@ export const MiSistemaGestionPage = () => {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Mi Sistema de Gestión" description={activeSectionData.description} />
+      <PageHeader title="Mi Contexto e Identidad" description={activeSectionData.description} />
 
       <DynamicSections
         sections={sections}
@@ -53,9 +56,9 @@ export const MiSistemaGestionPage = () => {
         moduleColor={moduleColor}
       />
 
-      {activeSection && <MiSistemaGestionTab activeSection={activeSection} />}
+      {activeSection && <ContextoIdentidadTab activeSection={activeSection} />}
     </div>
   );
 };
 
-export default MiSistemaGestionPage;
+export default ContextoIdentidadPage;

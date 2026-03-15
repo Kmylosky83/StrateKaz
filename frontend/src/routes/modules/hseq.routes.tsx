@@ -1,83 +1,53 @@
 /**
- * Rutas: HSEQ Management (Gestión HSEQ)
- * Capa 2 — Módulo de Negocio (Operaciones)
+ * Rutas: HSEQ (legacy — redirects a Gestión Integral V2)
  *
- * 7 tabs operativos: medicina, seguridad, higiene, comités,
- * accidentalidad, emergencias, ambiental.
- *
- * Redirects legacy a Sistema de Gestión:
- * - /hseq/sistema-documental → /sistema-gestion/documentos
- * - /hseq/planificacion → /sistema-gestion/planificacion
- * - /hseq/mejora-continua → /sistema-gestion/auditorias
+ * Cascada V2 renombró hseq_management → gestion_integral
+ * Ruta canónica: /gestion-integral/
  */
-import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
-
-const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
-const MedicinaLaboralPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.MedicinaLaboralPage }))
-);
-const SeguridadIndustrialPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.SeguridadIndustrialPage }))
-);
-const HigieneIndustrialPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.HigieneIndustrialPage }))
-);
-const GestionComitesPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.GestionComitesPage }))
-);
-const AccidentalidadPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.AccidentalidadPage }))
-);
-const EmergenciasPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.EmergenciasPage }))
-);
-const GestionAmbientalPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.GestionAmbientalPage }))
-);
 
 export const hseqRoutes = (
   <>
-    <Route path="/hseq" element={<Navigate to="/hseq/dashboard" replace />} />
-    <Route path="/hseq/dashboard" element={withModuleGuard(HSEQPage, 'hseq_management')} />
-
-    {/* Redirects a Sistema de Gestión (sprint sistema-gestion-hseq-1) */}
-    <Route
-      path="/hseq/sistema-documental"
-      element={<Navigate to="/sistema-gestion/documentos" replace />}
-    />
-    <Route
-      path="/hseq/planificacion"
-      element={<Navigate to="/sistema-gestion/planificacion" replace />}
-    />
-    <Route
-      path="/hseq/mejora-continua"
-      element={<Navigate to="/sistema-gestion/auditorias" replace />}
-    />
-
-    {/* 7 tabs operativos HSEQ */}
+    <Route path="/hseq" element={<Navigate to="/gestion-integral/medicina-laboral" replace />} />
+    <Route path="/hseq/dashboard" element={<Navigate to="/gestion-integral/dashboard" replace />} />
     <Route
       path="/hseq/medicina-laboral"
-      element={withModuleGuard(MedicinaLaboralPage, 'hseq_management')}
+      element={<Navigate to="/gestion-integral/medicina-laboral" replace />}
     />
     <Route
       path="/hseq/seguridad-industrial"
-      element={withModuleGuard(SeguridadIndustrialPage, 'hseq_management')}
+      element={<Navigate to="/gestion-integral/seguridad-industrial" replace />}
     />
     <Route
       path="/hseq/higiene-industrial"
-      element={withModuleGuard(HigieneIndustrialPage, 'hseq_management')}
+      element={<Navigate to="/gestion-integral/higiene-industrial" replace />}
     />
-    <Route path="/hseq/comites" element={withModuleGuard(GestionComitesPage, 'hseq_management')} />
+    <Route path="/hseq/comites" element={<Navigate to="/gestion-integral/comites" replace />} />
     <Route
       path="/hseq/accidentalidad"
-      element={withModuleGuard(AccidentalidadPage, 'hseq_management')}
+      element={<Navigate to="/gestion-integral/accidentalidad" replace />}
     />
-    <Route path="/hseq/emergencias" element={withModuleGuard(EmergenciasPage, 'hseq_management')} />
+    <Route
+      path="/hseq/emergencias"
+      element={<Navigate to="/gestion-integral/emergencias" replace />}
+    />
     <Route
       path="/hseq/gestion-ambiental"
-      element={withModuleGuard(GestionAmbientalPage, 'hseq_management')}
+      element={<Navigate to="/gestion-integral/gestion-ambiental" replace />}
+    />
+
+    {/* Legacy redirects a módulos V2 independientes */}
+    <Route
+      path="/hseq/sistema-documental"
+      element={<Navigate to="/gestion-documental/documentos" replace />}
+    />
+    <Route
+      path="/hseq/planificacion"
+      element={<Navigate to="/planificacion-operativa/planificacion" replace />}
+    />
+    <Route
+      path="/hseq/mejora-continua"
+      element={<Navigate to="/acciones-mejora/no-conformidades" replace />}
     />
   </>
 );

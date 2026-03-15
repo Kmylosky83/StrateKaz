@@ -12,7 +12,8 @@ import { Spinner } from '@/components/common/Spinner';
 import { ContextoOrganizacionalTab } from '../components/tabs/ContextoOrganizacionalTab';
 
 export default function ContextoOrganizacionalPage() {
-  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const { color: moduleColor, isLoading: isColorLoading } =
+    useModuleColor('proteccion_cumplimiento');
 
   if (isColorLoading) {
     return (

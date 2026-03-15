@@ -145,7 +145,7 @@ export const EstrategiasTowsSection = ({ triggerNewForm }: EstrategiasTowsSectio
   const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.DOFA_ESTRATEGIAS, 'delete');
 
   // Color del modulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries y mutations

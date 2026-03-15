@@ -1,19 +1,17 @@
 /**
- * Tab: Mi Empresa — Tab 1 de Fundación
+ * Tab: Mi Empresa — Tab 1 de Fundación (Cascada V2)
  *
- * Subtabs (orden empresarial):
+ * Subtabs:
  * 1. Empresa — Datos generales, branding y configuración regional
- * 2. Direccionamiento — Misión, visión y propósito organizacional
- * 3. Valores — Principios y valores corporativos
- * 4. Sedes — Ubicaciones físicas de la empresa
+ * 2. Sedes — Ubicaciones físicas de la empresa
+ * 3. Unidades de Negocio — Divisiones operativas
  *
  * Lógica: "¿Quién soy?" — Lo primero que configura un empresario.
  */
 import { GenericSectionFallback } from '@/components/common';
 import { EmpresaSection } from './EmpresaSection';
-import { MisionVisionSection } from './MisionVisionSection';
-import { ValoresSection } from './ValoresSection';
 import { SedesSection } from './SedesSection';
+import { UnidadesNegocioTab as UnidadesNegocioSection } from '@/features/supply-chain/components/UnidadesNegocioTab';
 
 interface MiEmpresaTabProps {
   activeSection?: string;
@@ -21,9 +19,8 @@ interface MiEmpresaTabProps {
 
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresa: EmpresaSection,
-  mision_vision: MisionVisionSection,
-  valores: ValoresSection,
   sedes: SedesSection,
+  unidades_negocio: UnidadesNegocioSection,
 };
 
 export const MiEmpresaTab = ({ activeSection }: MiEmpresaTabProps) => {

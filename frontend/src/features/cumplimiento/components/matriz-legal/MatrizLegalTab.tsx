@@ -84,9 +84,9 @@ const SUBTABS = [
 
 export const MatrizLegalTab = ({ activeSection: _activeSection }: MatrizLegalTabProps) => {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'create');
-  const canEdit = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'edit');
-  const canDelete = canDo(Modules.MOTOR_CUMPLIMIENTO, Sections.NORMAS, 'delete');
+  const canCreate = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.NORMAS, 'create');
+  const canEdit = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.NORMAS, 'edit');
+  const canDelete = canDo(Modules.PROTECCION_CUMPLIMIENTO, Sections.NORMAS, 'delete');
 
   const [activeSubtab, setActiveSubtab] = useState(TIPO_NORMA_CODES.DECRETOS);
   const [filters, setFilters] = useState<NormasListParams>({

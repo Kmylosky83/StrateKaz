@@ -11,24 +11,46 @@
 // ==================== CODIGOS DE MODULOS Y SECCIONES ====================
 
 export const Modules = {
+  // ── Infraestructura ──
   CORE: 'core',
+  AUDIT_SYSTEM: 'audit_system',
+
+  // ── PLANEAR ──
   FUNDACION: 'fundacion',
-  PLANEACION_ESTRATEGICA: 'planeacion_estrategica',
-  SISTEMA_GESTION: 'sistema_gestion',
-  REVISION_DIRECCION: 'revision_direccion',
-  MOTOR_CUMPLIMIENTO: 'motor_cumplimiento',
-  MOTOR_RIESGOS: 'motor_riesgos',
+  GESTION_DOCUMENTAL: 'gestion_documental',
   WORKFLOW_ENGINE: 'workflow_engine',
-  HSEQ_MANAGEMENT: 'hseq_management',
+  MI_EQUIPO: 'mi_equipo',
+  PLANIFICACION_OPERATIVA: 'planificacion_operativa',
+  PLANEACION_ESTRATEGICA: 'planeacion_estrategica',
+
+  // ── HACER ──
+  PROTECCION_CUMPLIMIENTO: 'proteccion_cumplimiento',
+  GESTION_INTEGRAL: 'gestion_integral',
   SUPPLY_CHAIN: 'supply_chain',
   PRODUCTION_OPS: 'production_ops',
   LOGISTICS_FLEET: 'logistics_fleet',
   SALES_CRM: 'sales_crm',
   TALENT_HUB: 'talent_hub',
-  ADMIN_FINANCE: 'admin_finance',
+  ADMINISTRACION: 'administracion',
+  TESORERIA: 'tesoreria',
   ACCOUNTING: 'accounting',
+
+  // ── VERIFICAR + ACTUAR ──
   ANALYTICS: 'analytics',
-  AUDIT_SYSTEM: 'audit_system',
+  REVISION_DIRECCION: 'revision_direccion',
+  ACCIONES_MEJORA: 'acciones_mejora',
+
+  // ── Legacy aliases (V1 → V2, para compatibilidad durante migración) ──
+  /** @deprecated Use GESTION_INTEGRAL */
+  HSEQ_MANAGEMENT: 'gestion_integral',
+  /** @deprecated Use PROTECCION_CUMPLIMIENTO */
+  MOTOR_CUMPLIMIENTO: 'proteccion_cumplimiento',
+  /** @deprecated Use PROTECCION_CUMPLIMIENTO */
+  MOTOR_RIESGOS: 'proteccion_cumplimiento',
+  /** @deprecated Use GESTION_DOCUMENTAL */
+  SISTEMA_GESTION: 'gestion_documental',
+  /** @deprecated Use ADMINISTRACION */
+  ADMIN_FINANCE: 'administracion',
 } as const;
 
 export const Sections = {
@@ -41,90 +63,104 @@ export const Sections = {
   PERFILES_CARGO: 'perfiles_cargo',
   GROUPS: 'groups',
 
-  // ── FUNDACION (C1) ──
+  // ── FUNDACION — Tab 1: Mi Empresa ──
   EMPRESA: 'empresa',
   SEDES: 'sedes',
-  INTEGRACIONES: 'integraciones',
-  NORMAS_ISO: 'normas_iso',
-  MODULOS: 'modulos',
-  AREAS: 'areas',
-  CARACTERIZACIONES: 'caracterizaciones',
-  MAPA_PROCESOS: 'mapa_procesos',
-  CONSECUTIVOS: 'consecutivos',
+  UNIDADES_NEGOCIO: 'unidades_negocio',
+
+  // ── FUNDACION — Tab 2: Mi Contexto e Identidad ──
+  PARTES_INTERESADAS: 'partes_interesadas',
+  ANALISIS_CONTEXTO: 'analisis_contexto',
   MISION_VISION: 'mision_vision',
   VALORES: 'valores',
-  POLITICAS: 'politicas',
+  NORMAS_ISO: 'normas_iso',
+  ALCANCE: 'alcance_sig',
+
+  // ── FUNDACION — Tab 3: Mi Organización ──
+  AREAS: 'areas',
+  CARGOS: 'cargos',
+  ORGANIGRAMA: 'organigrama',
+  CARACTERIZACIONES: 'caracterizaciones',
+  MAPA_PROCESOS: 'mapa_procesos',
+
+  // ── FUNDACION — Tab 4: Mis Políticas y Reglamentos ──
+  POLITICAS_OBLIGATORIAS: 'politicas_obligatorias',
+  REGLAMENTO_INTERNO: 'reglamento_interno',
+  CONTRATOS_TIPO: 'contratos_tipo',
+
+  // ── FUNDACION — Legacy aliases ──
+  POLITICAS: 'politicas_obligatorias',
+  CONSECUTIVOS: 'consecutivos',
+  MODULOS: 'modulos',
+  INTEGRACIONES: 'integraciones',
   IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
-  IDENTITY: 'identidad_corporativa', // alias
+  IDENTITY: 'identidad_corporativa',
   BRANDING: 'branding',
   UNIDADES_MEDIDA: 'unidades_medida',
-  ORGANIGRAMA: 'organigrama',
-  ALCANCE: 'alcance_sig',
   ESTRATEGIA: 'estrategia',
 
-  // ── PLANEACION ESTRATEGICA ──
-  // Contexto (simplificado: 6→3 secciones)
-  STAKEHOLDERS: 'stakeholders',
-  ANALISIS_CONTEXTO: 'analisis_contexto',
-  DOFA_ESTRATEGIAS: 'dofa_estrategias',
-  // Planeacion (KPIs → Analytics C3)
-  OBJETIVOS_BSC: 'objetivos_bsc',
-  MAPA_ESTRATEGICO: 'mapa_estrategico',
-  GESTION_CAMBIO: 'gestion_cambio',
-  // Riesgos y Oportunidades (simplificado: 5→2 secciones)
-  MAPA_CALOR: 'mapa_calor',
-  RIESGOS_PROCESO: 'riesgos_proceso',
-  // Gestion de Proyectos
-  PORTAFOLIO: 'portafolio',
-  INICIACION: 'iniciacion',
-  PLANIFICACION: 'planificacion',
-  EJECUCION_MONITOREO: 'ejecucion_monitoreo',
-  CIERRE: 'cierre',
-
-  // ── SISTEMA DE GESTION ──
-  // Planificación (plan maestro unificado)
-  PLAN_TRABAJO: 'plan_trabajo',
-  PROGRAMAS: 'programas',
-  // Gestión Documental
+  // ── GESTIÓN DOCUMENTAL ──
   TIPOS_DOCUMENTO: 'tipos_documento',
   DOCUMENTOS: 'documentos',
   CONTROL_CAMBIOS: 'control_cambios',
   DISTRIBUCION: 'distribucion',
-  // Auditorías Internas (solo ejecución — planificación en plan_trabajo)
   EJECUCION_AUDITORIA: 'ejecucion_auditoria',
   INFORMES_AUDITORIA: 'informes',
-  // Acciones de Mejora (motor de mejora continua)
-  NO_CONFORMIDADES: 'no_conformidades',
-  ACCIONES_CORRECTIVAS: 'acciones_correctivas',
-  ACCIONES_PREVENTIVAS: 'acciones_preventivas',
-  OPORTUNIDADES_MEJORA: 'oportunidades_mejora',
-
-  // ── MOTOR CUMPLIMIENTO ──
-  NORMAS: 'normas',
-  EVALUACION: 'evaluacion',
-  REQUISITOS: 'requisitos',
-  REGLAMENTOS: 'reglamentos',
-  MATRIZ_LEGAL: 'matriz_legal', // legacy alias
-  PARTES_INTERESADAS: 'partes_interesadas', // legacy alias
-
-  // ── MOTOR RIESGOS ──
-  MATRIZ_RIESGOS: 'matriz_riesgos',
-  CONTROLES: 'controles',
-  IDENTIFICACION_PELIGROS: 'identificacion_peligros',
-  MATRIZ_ASPECTOS: 'matriz_aspectos',
-  MATRIZ_VIAL: 'matriz_vial',
-  RIESGOS_LAFT: 'riesgos_laft',
-  ACTIVOS_INFO: 'activos_info',
-  RIESGOS_PROCESOS: 'riesgos_procesos', // legacy alias
-  IPEVR: 'ipevr', // legacy alias
-  ASPECTOS_AMBIENTALES: 'aspectos_ambientales', // legacy alias
 
   // ── WORKFLOW ENGINE ──
   FLUJOS: 'flujos',
   INSTANCIAS: 'instancias',
   METRICAS: 'metricas',
 
-  // ── HSEQ MANAGEMENT ──
+  // ── MI EQUIPO ──
+  PERFILES_CARGO: 'perfiles_cargo',
+  VACANTES: 'vacantes',
+  CANDIDATOS: 'candidatos',
+  CONTRATACION: 'contratacion',
+  DIRECTORIO: 'directorio',
+  HOJA_VIDA: 'hoja_vida',
+  CONTRATOS: 'contratos',
+  PROGRAMAS_INDUCCION: 'programas_induccion',
+  AFILIACIONES: 'afiliaciones',
+  ENTREGA_DOTACION: 'entrega_dotacion',
+
+  // ── PLANIFICACIÓN OPERATIVA ──
+  PLAN_TRABAJO: 'plan_trabajo',
+  PROGRAMAS: 'programas',
+  RECURSOS_PROCESO: 'recursos_proceso',
+
+  // ── PLANEACIÓN ESTRATÉGICA ──
+  DOFA_ESTRATEGIAS: 'dofa_estrategias',
+  OBJETIVOS_BSC: 'objetivos_bsc',
+  MAPA_ESTRATEGICO: 'mapa_estrategico',
+  GESTION_CAMBIO: 'gestion_cambio',
+  MAPA_CALOR: 'mapa_calor',
+  RIESGOS_PROCESO: 'riesgos_proceso',
+  PORTAFOLIO: 'portafolio',
+  INICIACION: 'iniciacion',
+  PLANIFICACION: 'planificacion',
+  EJECUCION_MONITOREO: 'ejecucion_monitoreo',
+  CIERRE: 'cierre',
+  STAKEHOLDERS: 'stakeholders',
+
+  // ── PROTECCIÓN Y CUMPLIMIENTO ──
+  NORMAS: 'normas',
+  REQUISITOS: 'requisitos',
+  REGLAMENTOS: 'reglamentos',
+  EVALUACION: 'evaluacion',
+  MATRIZ_RIESGOS: 'matriz_riesgos',
+  CONTROLES: 'controles',
+  IDENTIFICACION_PELIGROS: 'identificacion_peligros',
+  MATRIZ_ASPECTOS: 'matriz_aspectos',
+  MATRIZ_VIAL: 'matriz_vial',
+  ACTIVOS_INFO: 'activos_info',
+  RIESGOS_LAFT: 'riesgos_laft',
+  MATRIZ_LEGAL: 'matriz_legal',
+  RIESGOS_PROCESOS: 'riesgos_procesos',
+  IPEVR: 'ipevr',
+  ASPECTOS_AMBIENTALES: 'aspectos_ambientales',
+
+  // ── GESTIÓN INTEGRAL (HSEQ) ──
   EXAMENES_MEDICOS: 'examenes_medicos',
   CONDICIONES_SALUD: 'condiciones_salud',
   INSPECCIONES: 'inspecciones',
@@ -143,9 +179,10 @@ export const Sections = {
   INVENTARIO: 'inventario',
   PROGRAMACION_SC: 'programacion_sc',
   EVALUACIONES_PROV: 'evaluaciones_prov',
-  UNIDADES_NEGOCIO_SC: 'unidades_negocio_sc',
   CATALOGOS_SC: 'catalogos_sc',
-  PROVEEDORES: 'proveedores', // legacy alias
+  PROVEEDORES: 'proveedores',
+  /** @deprecated Moved to Fundación/Mi Empresa */
+  UNIDADES_NEGOCIO_SC: 'unidades_negocio_sc',
 
   // ── PRODUCTION OPS ──
   RECEPCION_MP: 'recepcion_mp',
@@ -165,16 +202,7 @@ export const Sections = {
   PEDIDOS: 'pedidos',
   PQRS: 'pqrs',
 
-  // ── TALENT HUB ──
-  // cargos y organigrama ya en CORE
-  VACANTES: 'vacantes',
-  CANDIDATOS: 'candidatos',
-  CONTRATACION: 'contratacion',
-  DIRECTORIO: 'directorio',
-  HOJA_VIDA: 'hoja_vida',
-  CONTRATOS: 'contratos',
-  PROGRAMAS_INDUCCION: 'programas_induccion',
-  AFILIACIONES: 'afiliaciones',
+  // ── TALENT HUB (gestión continua) ──
   PLAN_FORMACION: 'plan_formacion',
   CAPACITACIONES: 'capacitaciones',
   REINDUCCION: 'reinduccion',
@@ -184,21 +212,28 @@ export const Sections = {
   MARCAJES: 'marcajes',
   AUSENCIAS: 'ausencias',
   REGISTRO_NOVEDADES: 'registro_novedades',
-  CASOS_DISCIPLINARIOS: 'casos_disciplinarios',
   LIQUIDACION_NOMINA: 'liquidacion_nomina',
   PRESTACIONES: 'prestaciones',
+  CASOS_DISCIPLINARIOS: 'casos_disciplinarios',
   PROCESO_RETIRO: 'proceso_retiro',
   LIQUIDACION_FINAL: 'liquidacion_final',
+  PAZ_SALVO: 'paz_salvo',
   CONSULTORES_EXTERNOS: 'consultores_externos',
 
-  // ── ADMIN FINANCE ──
-  FLUJO_CAJA: 'flujo_caja',
-  CUENTAS_BANCARIAS: 'cuentas_bancarias',
-  PARTIDAS_PRESUPUESTALES: 'partidas_presupuestales',
-  EJECUCION_PRESUPUESTAL: 'ejecucion_presupuestal',
+  // ── ADMINISTRACIÓN ──
   INVENTARIO_ACTIVOS: 'inventario_activos',
+  HOJAS_VIDA: 'hojas_vida',
   DEPRECIACION: 'depreciacion',
   GESTION_SERVICIOS: 'gestion_servicios',
+  PARTIDAS_PRESUPUESTALES: 'partidas_presupuestales',
+  EJECUCION_PRESUPUESTAL: 'ejecucion_presupuestal',
+
+  // ── TESORERÍA ──
+  FLUJO_CAJA: 'flujo_caja',
+  CUENTAS_BANCARIAS: 'cuentas_bancarias',
+  PAGOS_PROVEEDORES: 'pagos_proveedores',
+  PAGOS_NOMINA: 'pagos_nomina',
+  PAGOS_HONORARIOS: 'pagos_honorarios',
 
   // ── ACCOUNTING ──
   PLAN_CUENTAS: 'plan_cuentas',
@@ -210,23 +245,32 @@ export const Sections = {
   ESTADO_RESULTADOS: 'estado_resultados',
   INTEGRACION_CONTABLE: 'integracion_contable',
 
-  // ── ANALYTICS ──
-  TIPOS_INDICADOR: 'tipos_indicador',
-  FUENTES_DATOS: 'fuentes_datos',
+  // ── ANALYTICS (sin config_indicadores ni exportacion — van a Configuración) ──
   TABLEROS: 'tableros',
   INDICADORES: 'indicadores',
   MEDICIONES_IND: 'mediciones',
   TENDENCIAS: 'tendencias',
   PLANTILLAS_INFORME: 'plantillas_informe',
   ACCIONES_MEJORA_IND: 'acciones_mejora_ind',
+  /** @deprecated Moved to Configuración */
+  TIPOS_INDICADOR: 'tipos_indicador',
+  /** @deprecated Moved to Configuración */
+  FUENTES_DATOS: 'fuentes_datos',
+  /** @deprecated Moved to Configuración */
   EXPORTACION: 'exportacion',
 
-  // ── REVISION POR LA DIRECCION ──
+  // ── REVISIÓN POR LA DIRECCIÓN ──
   PROGRAMACION_REVISION: 'programacion',
   ACTAS: 'actas',
   COMPROMISOS: 'compromisos',
 
-  // ── AUDIT SYSTEM (C0) ──
+  // ── ACCIONES DE MEJORA ──
+  NO_CONFORMIDADES: 'no_conformidades',
+  ACCIONES_CORRECTIVAS: 'acciones_correctivas',
+  ACCIONES_PREVENTIVAS: 'acciones_preventivas',
+  OPORTUNIDADES_MEJORA: 'oportunidades_mejora',
+
+  // ── AUDIT SYSTEM (Infraestructura) ──
   LOGS_AUDITORIA: 'logs_auditoria',
   NOTIFICACIONES: 'notificaciones',
   REGLAS_ALERTA: 'reglas_alerta',

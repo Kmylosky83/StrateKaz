@@ -24,7 +24,7 @@ import type { CaracterizacionProcesoList } from '../types/caracterizacion.types'
 import { ESTADO_LABELS, ESTADO_BADGE_VARIANTS } from '../types/caracterizacion.types';
 
 export const CaracterizacionesSection = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const [selectedItem, setSelectedItem] = useState<CaracterizacionProcesoList | null>(null);

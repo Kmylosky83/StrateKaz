@@ -36,7 +36,7 @@ export const AnalisisDofaSection = ({
   const [selectedAnalisis, setSelectedAnalisis] = useState<AnalisisDOFA | null>(null);
 
   // Color del módulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Query: todos los análisis DOFA

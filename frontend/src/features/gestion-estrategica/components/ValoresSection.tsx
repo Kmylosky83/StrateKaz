@@ -32,7 +32,7 @@ export const ValoresSection = () => {
   const { data: identity, isLoading: identityLoading } = useActiveIdentity();
   const { canDo } = usePermissions();
   const canEdit = canDo(Modules.FUNDACION, Sections.VALORES, 'edit');
-  const canCreate = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'create');
+  const canCreate = canDo(Modules.FUNDACION, Sections.VALORES, 'create');
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
   const { primaryColor } = useBrandingConfig();

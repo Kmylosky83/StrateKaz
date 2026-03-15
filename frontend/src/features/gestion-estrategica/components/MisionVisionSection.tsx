@@ -202,8 +202,8 @@ const MisionVisionContent = ({ identity, onEdit, canEdit }: MisionVisionContentP
 export const MisionVisionSection = () => {
   const { data: identity, isLoading } = useActiveIdentity();
   const { canDo } = usePermissions();
-  const canEdit = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'edit');
-  const canCreate = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.MISION_VISION, 'edit');
+  const canCreate = canDo(Modules.FUNDACION, Sections.MISION_VISION, 'create');
 
   const [showModal, setShowModal] = useState(false);
   const [editingIdentity, setEditingIdentity] = useState<CorporateIdentity | null>(null);

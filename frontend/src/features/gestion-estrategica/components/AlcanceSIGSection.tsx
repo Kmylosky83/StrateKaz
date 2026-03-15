@@ -23,8 +23,8 @@ import { cn } from '@/utils/cn';
 export const AlcanceSIGSection = () => {
   const { data: identity, isLoading } = useActiveIdentity();
   const { canDo } = usePermissions();
-  const canEdit = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'edit');
-  const canCreate = canDo(Modules.FUNDACION, Sections.IDENTIDAD_CORPORATIVA, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.ALCANCE, 'edit');
+  const canCreate = canDo(Modules.FUNDACION, Sections.ALCANCE, 'create');
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 

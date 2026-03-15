@@ -59,8 +59,6 @@ export const Sections = {
   USUARIOS: 'usuarios',
   COLABORADORES: 'colaboradores',
   ROLES: 'roles',
-  CARGOS: 'cargos',
-  PERFILES_CARGO: 'perfiles_cargo',
   GROUPS: 'groups',
 
   // ── FUNDACION — Tab 1: Mi Empresa ──

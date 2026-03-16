@@ -116,6 +116,7 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
+            'codigo',
             'created_at',
             'updated_at',
             'deleted_at',
@@ -923,7 +924,7 @@ class NormaISOSerializer(serializers.ModelSerializer):
             'es_sistema',
             'is_active',
         ]
-        read_only_fields = ['es_sistema']
+        read_only_fields = ['code', 'es_sistema']
 
 
 class NormaISOListSerializer(serializers.ModelSerializer):
@@ -990,36 +991,30 @@ class TipoContratoListSerializer(serializers.ModelSerializer):
 class UnidadNegocioSerializer(serializers.ModelSerializer):
     """Serializer para Unidad de Negocio."""
     tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
+    departamento_display = serializers.CharField(source='get_departamento_display', read_only=True)
     responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
-    departamento_nombre = serializers.CharField(source='departamento.nombre', read_only=True)
     is_deleted = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = UnidadNegocio
         fields = [
             'id', 'codigo', 'nombre', 'tipo_unidad', 'tipo_unidad_display',
-            'direccion', 'ciudad', 'departamento', 'departamento_nombre',
+            'direccion', 'ciudad', 'departamento', 'departamento_display',
             'responsable', 'responsable_nombre',
             'is_active', 'is_deleted', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-    def validate_codigo(self, value):
-        value = value.upper().strip()
-        unidad_id = self.instance.id if self.instance else None
-        if UnidadNegocio.objects.filter(codigo=value).exclude(id=unidad_id).exists():
-            raise serializers.ValidationError('Ya existe una unidad de negocio con este código')
-        return value
+        read_only_fields = ['id', 'codigo', 'created_at', 'updated_at']
 
 
 class UnidadNegocioListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listados."""
     tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
+    departamento_display = serializers.CharField(source='get_departamento_display', read_only=True)
     responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
 
     class Meta:
         model = UnidadNegocio
         fields = [
             'id', 'codigo', 'nombre', 'tipo_unidad', 'tipo_unidad_display',
-            'ciudad', 'responsable_nombre', 'is_active'
+            'ciudad', 'departamento_display', 'responsable_nombre', 'is_active'
         ]

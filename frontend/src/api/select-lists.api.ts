@@ -84,4 +84,9 @@ export const selectListsAPI = {
     const response = await apiClient.get<SelectListItem[]>(`${BASE}/unidades-negocio/`);
     return response.data;
   },
+
+  getIndicadores: async (): Promise<SelectListItem[]> => {
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/indicadores/`);
+    return response.data;
+  },
 };

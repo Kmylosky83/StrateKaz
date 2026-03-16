@@ -119,13 +119,13 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
         help_text='Código del centro de costo asociado'
     )
     manager = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'core.Cargo',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='managed_areas',
-        verbose_name='Responsable',
-        help_text='Usuario responsable del proceso'
+        related_name='areas_responsable',
+        verbose_name='Cargo Responsable',
+        help_text='Cargo responsable del proceso'
     )
     icon = models.CharField(
         max_length=50,

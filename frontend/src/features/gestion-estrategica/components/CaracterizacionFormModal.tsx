@@ -3,15 +3,22 @@
  * REORG-B6: Consume items_* relacionales con lookups de PI y Cargo.
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Modal, Button, Spinner, Tabs, Badge } from '@/components/common';
+import { Button, Spinner, Tabs, Badge } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
-import { useSelectUsers, useSelectAreas, useSelectCargos } from '@/hooks/useSelectLists';
+import {
+  useSelectUsers,
+  useSelectAreas,
+  useSelectCargos,
+  useSelectIndicadores,
+} from '@/hooks/useSelectLists';
 import { Plus, Trash2, Search, X } from 'lucide-react';
 import {
   useCaracterizacion,
   useCreateCaracterizacion,
   useUpdateCaracterizacion,
 } from '../hooks/useCaracterizaciones';
+import { useAreas } from '../hooks/useAreas';
 import { usePartesInteresadas } from '../hooks/usePartesInteresadas';
 import type {
   CaracterizacionProcesoList,
@@ -217,8 +224,13 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
   const createMutation = useCreateCaracterizacion();
   const updateMutation = useUpdateCaracterizacion();
   const { data: usuarios = [] } = useSelectUsers();
-  const { data: areas = [] } = useSelectAreas();
+  const { data: areasSelect = [] } = useSelectAreas();
   const { data: cargos = [] } = useSelectCargos();
+  const { data: indicadoresCatalogo = [] } = useSelectIndicadores();
+
+  // Full areas data para pre-fill de objetivo y responsable
+  const { data: areasFullData } = useAreas({ is_active: true });
+  const areasFull = areasFullData?.results || [];
 
   // PI list para lookups en Proveedores y Clientes
   const { data: piList } = usePartesInteresadas();
@@ -275,6 +287,22 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Pre-fill objetivo y líder al seleccionar un proceso (solo al crear)
+  const handleAreaSelect = (areaId: number) => {
+    handleChange('area', areaId);
+    if (!item && areaId) {
+      const selectedArea = areasFull.find((a) => a.id === areaId);
+      if (selectedArea) {
+        setFormData((prev) => ({
+          ...prev,
+          area: areaId,
+          objetivo: prev.objetivo || selectedArea.objetivo || '',
+          lider_proceso: prev.lider_proceso || selectedArea.manager || null,
+        }));
+      }
+    }
+  };
+
   const tabs = [
     { id: 'general', label: 'General' },
     { id: 'sipoc', label: 'SIPOC' },
@@ -282,11 +310,28 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
   ];
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={item ? 'Editar Caracterización' : 'Nueva Caracterización de Proceso'}
+      subtitle="Defina el SIPOC, recursos, indicadores y documentos del proceso"
       size="4xl"
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={isLoading || (!!item && isLoadingDetail)}
+            isLoading={isLoading}
+          >
+            {item ? 'Actualizar' : 'Crear'} Caracterización
+          </Button>
+        </>
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
@@ -309,12 +354,12 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                 <Select
                   label="Proceso / Área *"
                   value={formData.area}
-                  onChange={(e) => handleChange('area', parseInt(e.target.value))}
+                  onChange={(e) => handleAreaSelect(parseInt(e.target.value))}
                   required
                   disabled={!!item}
                 >
                   <option value={0}>Seleccionar proceso...</option>
-                  {areas.map((a) => (
+                  {areasSelect.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.label}
                     </option>
@@ -592,19 +637,36 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                   title="Indicadores Vinculados"
                   items={(formData.items_indicadores ?? []) as IndicadorItem[]}
                   onChange={(items) => handleChange('items_indicadores', items)}
-                  createEmpty={() => ({ nombre: '', formula: '', meta: '' })}
+                  createEmpty={() => ({ nombre: '', formula: '', meta: '', indicador_id: null })}
                   renderRow={(item, _, update) => (
                     <>
-                      <Input
-                        placeholder="Nombre"
-                        value={item.nombre}
-                        onChange={(e) => update('nombre', e.target.value)}
-                      />
-                      <Input
-                        placeholder="Meta"
-                        value={item.meta}
-                        onChange={(e) => update('meta', e.target.value)}
-                      />
+                      <div className="col-span-2 flex gap-2">
+                        <select
+                          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:bg-gray-800 dark:border-gray-600"
+                          value={item.indicador_id ?? ''}
+                          onChange={(e) => {
+                            const id = parseInt(e.target.value) || null;
+                            const ind = indicadoresCatalogo.find((i) => i.id === id);
+                            update('indicador_id', id);
+                            if (ind) {
+                              update('nombre', ind.label);
+                            }
+                          }}
+                        >
+                          <option value="">Seleccionar del catálogo...</option>
+                          {indicadoresCatalogo.map((ind) => (
+                            <option key={ind.id} value={ind.id}>
+                              {ind.label}
+                            </option>
+                          ))}
+                        </select>
+                        <Input
+                          placeholder="Meta"
+                          value={item.meta}
+                          onChange={(e) => update('meta', e.target.value)}
+                          className="w-32 shrink-0"
+                        />
+                      </div>
                     </>
                   )}
                 />
@@ -678,23 +740,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
             )}
           </>
         )}
-
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading || (!!item && isLoadingDetail)}>
-            {isLoading ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                Guardando...
-              </>
-            ) : (
-              <>{item ? 'Actualizar' : 'Crear'} Caracterización</>
-            )}
-          </Button>
-        </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

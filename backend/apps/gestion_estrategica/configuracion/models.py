@@ -323,9 +323,10 @@ class NormaISO(TimestampedModel, SoftDeleteModel):
     code = models.CharField(
         max_length=30,
         unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
-        help_text='Código único de la norma (ej: ISO_9001, PESV)'
+        help_text='Código único autogenerado para normas custom'
     )
     name = models.CharField(
         max_length=150,
@@ -388,6 +389,24 @@ class NormaISO(TimestampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def _generate_code(cls):
+        """Genera código secuencial NORMA-001, NORMA-002, etc."""
+        last = cls.objects.filter(code__startswith='NORMA_').order_by('-id').values_list('code', flat=True).first()
+        if last:
+            try:
+                num = int(last.split('_')[1]) + 1
+            except (ValueError, IndexError):
+                num = cls.objects.count() + 1
+        else:
+            num = cls.objects.count() + 1
+        return f'NORMA_{num:03d}'
 
     @classmethod
     def cargar_normas_sistema(cls):
@@ -530,9 +549,10 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     codigo = models.CharField(
         max_length=20,
         unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
-        help_text='Código único de la sede (ej: SEDE-001, PLANTA-BOG)'
+        help_text='Código único autogenerado (ej: SEDE-001)'
     )
     nombre = models.CharField(
         max_length=150,
@@ -702,6 +722,24 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def _generate_code(cls):
+        """Genera código secuencial SEDE-001, SEDE-002, etc."""
+        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
+        if last and last.startswith('SEDE-'):
+            try:
+                num = int(last.split('-')[1]) + 1
+            except (ValueError, IndexError):
+                num = cls.objects.count() + 1
+        else:
+            num = cls.objects.count() + 1
+        return f'SEDE-{num:03d}'
 
     # is_deleted: heredado de SoftDeleteModel como property
 
@@ -2491,7 +2529,7 @@ class UnidadNegocio(AuditModel, SoftDeleteModel):
         unique=True,
         db_index=True,
         verbose_name='Código',
-        help_text='Código único de la unidad de negocio (ej: PLANTA-BOG-01)'
+        help_text='Código único autogenerado (ej: UN-001)'
     )
     nombre = models.CharField(
         max_length=150,
@@ -2513,17 +2551,17 @@ class UnidadNegocio(AuditModel, SoftDeleteModel):
         blank=True,
         default=''
     )
-    departamento = models.ForeignKey(
-        'core.Departamento',
-        on_delete=models.PROTECT,
-        null=True,
+    departamento = models.CharField(
+        max_length=30,
+        choices=DEPARTAMENTOS_COLOMBIA,
         blank=True,
-        related_name='unidades_negocio',
-        verbose_name='Departamento'
+        default='',
+        verbose_name='Departamento',
+        help_text='Departamento de Colombia donde se ubica'
     )
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='unidades_negocio_responsable',
@@ -2539,3 +2577,21 @@ class UnidadNegocio(AuditModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def _generate_code(cls):
+        """Genera código secuencial UN-001, UN-002, etc."""
+        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
+        if last and last.startswith('UN-'):
+            try:
+                num = int(last.split('-')[1]) + 1
+            except (ValueError, IndexError):
+                num = cls.objects.count() + 1
+        else:
+            num = cls.objects.count() + 1
+        return f'UN-{num:03d}'

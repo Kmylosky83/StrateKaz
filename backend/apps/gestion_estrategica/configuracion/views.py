@@ -848,7 +848,7 @@ class UnidadNegocioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'unidades_negocio'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['tipo_unidad', 'is_active', 'responsable', 'departamento']
+    filterset_fields = ['tipo_unidad', 'is_active', 'departamento']
     search_fields = ['codigo', 'nombre', 'ciudad']
     ordering_fields = ['codigo', 'nombre', 'created_at']
     ordering = ['codigo']
@@ -858,7 +858,7 @@ class UnidadNegocioViewSet(viewsets.ModelViewSet):
         include_deleted = self.request.query_params.get('include_deleted', 'false')
         if include_deleted.lower() != 'true':
             queryset = queryset.filter(deleted_at__isnull=True)
-        return queryset.select_related('responsable', 'departamento')
+        return queryset.select_related('responsable')
 
     def get_serializer_class(self):
         if self.action == 'list':

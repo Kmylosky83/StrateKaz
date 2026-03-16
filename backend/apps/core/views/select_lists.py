@@ -403,3 +403,36 @@ def select_tipos_epp(request):
         }
         for t in qs
     ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_indicadores(request):
+    """
+    Lista de indicadores (KPIs) del catálogo para dropdowns.
+    Usado por: Caracterización de Procesos (indicadores vinculados)
+    """
+    CatalogoKPI = _safe_get_model('config_indicadores', 'CatalogoKPI')
+    if not CatalogoKPI:
+        return Response([])
+
+    qs = CatalogoKPI.objects.filter(
+        is_active=True
+    ).values(
+        'id', 'codigo', 'nombre', 'categoria', 'tipo_indicador',
+        'frecuencia_medicion'
+    ).order_by('categoria', 'nombre')[:300]
+
+    return Response([
+        {
+            'id': i['id'],
+            'label': f"{i['codigo']} - {i['nombre']}" if i.get('codigo') else i['nombre'],
+            'extra': {
+                'codigo': i.get('codigo', ''),
+                'categoria': i.get('categoria', ''),
+                'tipo': i.get('tipo_indicador', ''),
+                'frecuencia': i.get('frecuencia_medicion', ''),
+            }
+        }
+        for i in qs
+    ])

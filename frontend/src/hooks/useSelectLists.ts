@@ -30,6 +30,7 @@ export const selectListKeys = {
   tiposMateriaPrima: () => [...selectListKeys.all, 'tipos-materia-prima'] as const,
   tiposEPP: () => [...selectListKeys.all, 'tipos-epp'] as const,
   unidadesNegocio: () => [...selectListKeys.all, 'unidades-negocio'] as const,
+  indicadores: () => [...selectListKeys.all, 'indicadores'] as const,
 };
 
 // ============================================================================
@@ -161,6 +162,16 @@ export const useSelectUnidadesNegocio = (enabled = true) => {
   return useQuery<SelectListItem[]>({
     queryKey: selectListKeys.unidadesNegocio(),
     queryFn: selectListsAPI.getUnidadesNegocio,
+    staleTime: 1000 * 60 * 5,
+    enabled,
+  });
+};
+
+/** Indicadores (KPIs) del catálogo */
+export const useSelectIndicadores = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.indicadores(),
+    queryFn: selectListsAPI.getIndicadores,
     staleTime: 1000 * 60 * 5,
     enabled,
   });

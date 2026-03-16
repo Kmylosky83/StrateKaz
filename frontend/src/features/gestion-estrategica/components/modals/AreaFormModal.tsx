@@ -7,7 +7,7 @@
  * Features:
  * - Crear/Editar área
  * - Selector de área padre (jerarquía)
- * - Selector de responsable (usuario)
+ * - Selector de responsable (cargo)
  * - Centro de costo opcional
  * - Icono y color dinámicos
  * - Validación de código único
@@ -26,7 +26,7 @@ import {
   type Area,
   type CreateAreaDTO,
 } from '../../hooks/useAreas';
-import { useSelectUsers } from '@/hooks/useSelectLists';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 
 // ==================== TYPES ====================
 
@@ -91,8 +91,8 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
   // Query para obtener áreas (para selector de padre)
   const { data: areasData } = useAreas({ is_active: true });
 
-  // Query para obtener usuarios (para selector de responsable)
-  const { data: usersData } = useSelectUsers();
+  // Query para obtener cargos (para selector de responsable)
+  const { data: cargosData } = useSelectCargos();
 
   // Formulario
   const {
@@ -175,17 +175,17 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
     ];
   }, [areasData?.results, area]);
 
-  // Opciones de responsables
+  // Opciones de responsables (cargos)
   const managerOptions = useMemo(() => {
-    const users = usersData || [];
+    const cargos = cargosData || [];
     return [
-      { value: '', label: 'Sin responsable asignado' },
-      ...users.map((u) => ({
-        value: String(u.id),
-        label: u.label,
+      { value: '', label: 'Sin cargo responsable' },
+      ...cargos.map((c) => ({
+        value: String(c.id),
+        label: c.label,
       })),
     ];
-  }, [usersData]);
+  }, [cargosData]);
 
   // Submit handler
   const onSubmit = async (data: AreaFormData) => {
@@ -399,7 +399,7 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
                   label="Responsable"
                   options={managerOptions}
                   placeholder="Seleccionar responsable"
-                  helperText="Usuario responsable del proceso"
+                  helperText="Cargo responsable del proceso"
                   {...field}
                   disabled={isPending}
                 />

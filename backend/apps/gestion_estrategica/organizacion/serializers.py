@@ -16,7 +16,7 @@ from .models import (
 class AreaSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Area"""
     parent_name = serializers.CharField(source='parent.name', read_only=True)
-    manager_name = serializers.CharField(source='manager.get_full_name', read_only=True)
+    manager_name = serializers.CharField(source='manager.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     children_count = serializers.IntegerField(read_only=True)
     full_path = serializers.CharField(read_only=True)
@@ -61,7 +61,7 @@ class AreaSerializer(serializers.ModelSerializer):
 class AreaTreeSerializer(serializers.ModelSerializer):
     """Serializer para árbol jerárquico de áreas"""
     children = serializers.SerializerMethodField()
-    manager_name = serializers.CharField(source='manager.get_full_name', read_only=True)
+    manager_name = serializers.CharField(source='manager.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
 
     class Meta:
@@ -93,7 +93,7 @@ class AreaTreeSerializer(serializers.ModelSerializer):
 class AreaListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listas"""
     parent_name = serializers.CharField(source='parent.name', read_only=True)
-    manager_name = serializers.CharField(source='manager.get_full_name', read_only=True)
+    manager_name = serializers.CharField(source='manager.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
 
     class Meta:

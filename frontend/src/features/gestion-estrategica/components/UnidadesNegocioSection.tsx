@@ -1,8 +1,9 @@
 /**
- * Seccion Unidades de Negocio - CRUD de sedes, plantas y centros (Tipo B — tabla simple)
+ * Sección Unidades de Negocio - CRUD (Tipo B — tabla simple)
  * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  *
- * Fundacion Tab 1 — Mi Empresa
+ * Fundación Tab 1 — Mi Empresa
+ * Código autogenerado por backend (UN-001, UN-002...)
  */
 import { useState } from 'react';
 import { Edit, Trash2, Building2 } from 'lucide-react';
@@ -31,12 +32,47 @@ import type { UnidadNegocio } from '../types/unidad-negocio.types';
 // ==================== CONSTANTES ====================
 
 const TIPOS_UNIDAD = [
-  { value: 'SEDE', label: 'Sede' },
+  { value: 'SEDE', label: 'Sede Administrativa' },
   { value: 'SUCURSAL', label: 'Sucursal' },
-  { value: 'PLANTA', label: 'Planta' },
+  { value: 'PLANTA', label: 'Planta de Producción' },
   { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
-  { value: 'ALMACEN', label: 'Almacen' },
+  { value: 'ALMACEN', label: 'Almacén' },
   { value: 'OTRO', label: 'Otro' },
+];
+
+const DEPARTAMENTOS_COLOMBIA = [
+  { value: 'AMAZONAS', label: 'Amazonas' },
+  { value: 'ANTIOQUIA', label: 'Antioquia' },
+  { value: 'ARAUCA', label: 'Arauca' },
+  { value: 'ATLANTICO', label: 'Atlántico' },
+  { value: 'BOLIVAR', label: 'Bolívar' },
+  { value: 'BOYACA', label: 'Boyacá' },
+  { value: 'CALDAS', label: 'Caldas' },
+  { value: 'CAQUETA', label: 'Caquetá' },
+  { value: 'CASANARE', label: 'Casanare' },
+  { value: 'CAUCA', label: 'Cauca' },
+  { value: 'CESAR', label: 'Cesar' },
+  { value: 'CHOCO', label: 'Chocó' },
+  { value: 'CORDOBA', label: 'Córdoba' },
+  { value: 'CUNDINAMARCA', label: 'Cundinamarca' },
+  { value: 'GUAINIA', label: 'Guainía' },
+  { value: 'GUAVIARE', label: 'Guaviare' },
+  { value: 'HUILA', label: 'Huila' },
+  { value: 'LA_GUAJIRA', label: 'La Guajira' },
+  { value: 'MAGDALENA', label: 'Magdalena' },
+  { value: 'META', label: 'Meta' },
+  { value: 'NARINO', label: 'Nariño' },
+  { value: 'NORTE_DE_SANTANDER', label: 'Norte de Santander' },
+  { value: 'PUTUMAYO', label: 'Putumayo' },
+  { value: 'QUINDIO', label: 'Quindío' },
+  { value: 'RISARALDA', label: 'Risaralda' },
+  { value: 'SAN_ANDRES', label: 'San Andrés y Providencia' },
+  { value: 'SANTANDER', label: 'Santander' },
+  { value: 'SUCRE', label: 'Sucre' },
+  { value: 'TOLIMA', label: 'Tolima' },
+  { value: 'VALLE_DEL_CAUCA', label: 'Valle del Cauca' },
+  { value: 'VAUPES', label: 'Vaupés' },
+  { value: 'VICHADA', label: 'Vichada' },
 ];
 
 // ==================== COMPONENTE ====================
@@ -66,16 +102,12 @@ export function UnidadesNegocioSection() {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    const responsableVal = fd.get('responsable') ? Number(fd.get('responsable')) : undefined;
-    const departamentoVal = fd.get('departamento') ? Number(fd.get('departamento')) : undefined;
     const data = {
-      codigo: String(fd.get('codigo')),
       nombre: String(fd.get('nombre')),
       tipo_unidad: String(fd.get('tipo_unidad')) as UnidadNegocio['tipo_unidad'],
       direccion: String(fd.get('direccion') || ''),
       ciudad: String(fd.get('ciudad') || ''),
-      ...(departamentoVal ? { departamento: departamentoVal } : {}),
-      ...(responsableVal ? { responsable: responsableVal } : {}),
+      departamento: String(fd.get('departamento') || ''),
       is_active: true,
     };
 
@@ -144,7 +176,7 @@ export function UnidadesNegocioSection() {
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Codigo
+                    Código
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Nombre
@@ -153,13 +185,10 @@ export function UnidadesNegocioSection() {
                     Tipo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Direccion
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Ciudad
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Responsable
+                    Departamento
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
@@ -184,13 +213,10 @@ export function UnidadesNegocioSection() {
                       </Badge>
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {un.direccion || '-'}
-                    </td>
-                    <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
                       {un.ciudad || '-'}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {un.responsable_nombre || '-'}
+                      {un.departamento_display || '-'}
                     </td>
                     <td className="px-6 py-3 text-center">
                       <Badge variant={un.is_active ? 'success' : 'gray'} size="sm">
@@ -264,24 +290,14 @@ export function UnidadesNegocioSection() {
         }
       >
         <form id="unidad-form" onSubmit={handleSave} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Codigo *"
-              type="text"
-              name="codigo"
-              required
-              defaultValue={editItem?.codigo || ''}
-              placeholder="Ej: UN-001"
-            />
-            <Input
-              label="Nombre *"
-              type="text"
-              name="nombre"
-              required
-              defaultValue={editItem?.nombre || ''}
-              placeholder="Nombre de la unidad"
-            />
-          </div>
+          <Input
+            label="Nombre *"
+            type="text"
+            name="nombre"
+            required
+            defaultValue={editItem?.nombre || ''}
+            placeholder="Nombre de la unidad"
+          />
 
           <Select
             label="Tipo de Unidad *"
@@ -299,28 +315,34 @@ export function UnidadesNegocioSection() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Direccion *"
+              label="Dirección"
               type="text"
               name="direccion"
-              required
               defaultValue={editItem?.direccion || ''}
             />
-            <Input
-              label="Ciudad *"
-              type="text"
-              name="ciudad"
-              required
-              defaultValue={editItem?.ciudad || ''}
-            />
+            <Input label="Ciudad" type="text" name="ciudad" defaultValue={editItem?.ciudad || ''} />
           </div>
+
+          <Select
+            label="Departamento"
+            name="departamento"
+            defaultValue={editItem?.departamento || ''}
+          >
+            <option value="">Seleccione...</option>
+            {DEPARTAMENTOS_COLOMBIA.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
+            ))}
+          </Select>
         </form>
       </BaseModal>
 
-      {/* Confirmar eliminacion */}
+      {/* Confirmar eliminación */}
       <ConfirmDialog
         isOpen={!!deleteId}
         title="Eliminar Unidad de Negocio"
-        message="Esta seguro de eliminar esta unidad de negocio? Esta accion no se puede deshacer."
+        message="¿Está seguro de eliminar esta unidad de negocio? Esta acción no se puede deshacer."
         variant="danger"
         confirmText="Eliminar"
         onConfirm={handleConfirmDelete}

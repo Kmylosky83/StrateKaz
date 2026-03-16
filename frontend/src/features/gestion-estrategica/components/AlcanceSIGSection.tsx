@@ -16,7 +16,7 @@ import type { ModuleColor } from '@/utils/moduleColors';
 import { useActiveIdentity } from '../hooks/useStrategic';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
-import { IdentityFormModal } from './modals/IdentityFormModal';
+import { AlcanceFormModal } from './modals/AlcanceFormModal';
 import type { CorporateIdentity } from '../types/strategic.types';
 import { cn } from '@/utils/cn';
 
@@ -67,7 +67,7 @@ export const AlcanceSIGSection = () => {
               : undefined
           }
         />
-        <IdentityFormModal identity={null} isOpen={showModal} onClose={() => setShowModal(false)} />
+        <AlcanceFormModal identity={null} isOpen={showModal} onClose={() => setShowModal(false)} />
       </>
     );
   }
@@ -90,7 +90,7 @@ export const AlcanceSIGSection = () => {
               : undefined
           }
         />
-        <IdentityFormModal
+        <AlcanceFormModal
           identity={editingIdentity}
           isOpen={showModal}
           onClose={() => {
@@ -229,7 +229,7 @@ export const AlcanceSIGSection = () => {
         </div>
       </div>
 
-      <IdentityFormModal
+      <AlcanceFormModal
         identity={editingIdentity}
         isOpen={showModal}
         onClose={() => {

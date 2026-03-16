@@ -61,6 +61,18 @@ from .models import (
     RequisitoParteInteresada,
     MatrizComunicacion
 )
+from apps.core.base_models.mixins import get_tenant_empresa
+
+
+class EmpresaAutoAssignMixin:
+    """Auto-asigna empresa y created_by al crear objetos BaseCompanyModel."""
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+        )
+
+
 from .serializers import (
     TipoAnalisisDOFASerializer,
     AnalisisDOFASerializer,
@@ -99,7 +111,7 @@ class TipoAnalisisDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['orden', 'nombre']
 
 
-class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
+class AnalisisDOFAViewSet(EmpresaAutoAssignMixin, ResumenRevisionMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de análisis DOFA.
 
@@ -301,7 +313,7 @@ class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.M
         return Response(stats)
 
 
-class FactorDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class FactorDOFAViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de factores DOFA."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -320,7 +332,7 @@ class FactorDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['analisis', 'tipo', 'orden']
 
 
-class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class EstrategiaTOWSViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de estrategias TOWS."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -527,7 +539,7 @@ class TipoAnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['orden', 'nombre']
 
 
-class AnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class AnalisisPESTELViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de análisis PESTEL."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -605,7 +617,7 @@ class AnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return Response(stats)
 
 
-class FactorPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class FactorPESTELViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de factores PESTEL."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -624,7 +636,7 @@ class FactorPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['analisis', 'tipo', 'orden']
 
 
-class FuerzaPorterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class FuerzaPorterViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de fuerzas de Porter."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -722,7 +734,7 @@ class TipoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ordering = ['grupo__orden', 'orden', 'nombre']
 
 
-class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class ParteInteresadaViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de Partes Interesadas (Stakeholders).
 
@@ -1409,7 +1421,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class RequisitoParteInteresadaViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de Requisitos de Partes Interesadas."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -1426,7 +1438,7 @@ class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSe
     ordering = ['-prioridad', 'tipo']
 
 
-class MatrizComunicacionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class MatrizComunicacionViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de Matriz de Comunicación."""
 
     permission_classes = [IsAuthenticated, GranularActionPermission]

@@ -2,6 +2,7 @@
  * Index de modales del módulo Dirección Estratégica
  */
 export { IdentityFormModal } from './IdentityFormModal';
+export { AlcanceFormModal } from './AlcanceFormModal';
 export { ValueFormModal } from './ValueFormModal';
 export { PlanFormModal } from './PlanFormModal';
 export { ObjectiveFormModal } from './ObjectiveFormModal';

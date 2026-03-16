@@ -1,5 +1,5 @@
 /**
- * Tipos para Unidades de Negocio — Fundacion Tab 1 (Mi Empresa)
+ * Tipos para Unidades de Negocio — Fundación Tab 1 (Mi Empresa)
  * Backend: apps/gestion_estrategica/configuracion/models.py
  */
 
@@ -13,8 +13,8 @@ export interface UnidadNegocio {
   tipo_unidad_display?: string;
   direccion: string;
   ciudad: string;
-  departamento?: number;
-  departamento_nombre?: string;
+  departamento?: string;
+  departamento_display?: string;
   responsable?: number;
   responsable_nombre?: string;
   is_active: boolean;
@@ -24,12 +24,11 @@ export interface UnidadNegocio {
 }
 
 export interface CreateUnidadNegocioDTO {
-  codigo: string;
   nombre: string;
   tipo_unidad: TipoUnidad;
   direccion?: string;
   ciudad?: string;
-  departamento?: number;
+  departamento?: string;
   responsable?: number;
   is_active?: boolean;
 }

@@ -87,13 +87,13 @@ TENANT_APPS = [
     'apps.gestion_estrategica.organizacion',
     'apps.gestion_estrategica.identidad',
     'apps.gestion_estrategica.contexto',
+    'apps.gestion_estrategica.encuestas',  # PCI-POAM — parte de Análisis del Contexto (C1)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 15: PLANEACIÓN ESTRATÉGICA
     # Descomentar cuando Level 10 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.gestion_estrategica.planeacion',
-    # 'apps.gestion_estrategica.encuestas',
     # 'apps.gestion_estrategica.gestion_proyectos',
     # 'apps.gestion_estrategica.gestion_documental',
     # 'apps.gestion_estrategica.planificacion_sistema',

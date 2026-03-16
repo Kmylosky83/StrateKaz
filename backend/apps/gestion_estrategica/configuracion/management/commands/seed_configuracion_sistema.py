@@ -21,6 +21,7 @@ from apps.gestion_estrategica.configuracion.models import (
     TipoSede,
     TipoServicioIntegracion,
     ProveedorIntegracion,
+    IconRegistry,
 )
 # Modelo migrado a organizacion
 from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
@@ -57,6 +58,9 @@ class Command(BaseCommand):
                 # 4. Cargar unidades de medida
                 unidades = self._cargar_unidades()
 
+                # 5. Cargar iconos del sistema
+                iconos = self._cargar_iconos()
+
                 # Resumen
                 self.stdout.write('\n' + '=' * 70)
                 self.stdout.write(self.style.SUCCESS('RESUMEN'))
@@ -65,6 +69,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Tipos de Servicio: {tipos_servicio} creados')
                 self.stdout.write(f'  Proveedores: {proveedores} creados')
                 self.stdout.write(f'  Unidades de Medida: {unidades} creadas')
+                self.stdout.write(f'  Iconos del Sistema: {iconos} creados')
                 self.stdout.write('\n' + self.style.SUCCESS(
                     '[COMPLETADO] Configuración del sistema cargada\n'
                 ))
@@ -110,5 +115,15 @@ class Command(BaseCommand):
         total = UnidadMedida.objects.filter(es_sistema=True).count()
         self.stdout.write(self.style.SUCCESS(
             f'  + {creados} nuevas unidades de medida ({total} total del sistema)'
+        ))
+        return creados
+
+    def _cargar_iconos(self):
+        """Carga iconos del sistema (Lucide) para IconPicker"""
+        self.stdout.write('Cargando iconos del sistema...')
+        creados = IconRegistry.cargar_iconos_sistema()
+        total = IconRegistry.objects.filter(es_sistema=True).count()
+        self.stdout.write(self.style.SUCCESS(
+            f'  + {creados} nuevos iconos ({total} total del sistema)'
         ))
         return creados

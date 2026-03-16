@@ -26,8 +26,8 @@ import { DataSection } from '@/components/data-display';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
-import { useDocumentos } from '../hooks/useGestionDocumental';
-import type { Documento } from '../types/gestion-documental.types';
+import { useDocumentos } from '@/features/gestion-documental/hooks/useGestionDocumental';
+import type { Documento } from '@/features/gestion-documental/types/gestion-documental.types';
 import { useSelectCargos } from '@/hooks/useSelectLists';
 import { cn } from '@/utils/cn';
 

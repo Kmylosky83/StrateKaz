@@ -3,17 +3,17 @@
  * Nivel 2 — Infraestructura (PLANEAR)
  *
  * 2 tabs: Documentos + Auditorías Internas
- * Pages en features/gestion-estrategica/pages/ (mismo backend)
+ * Pages en features/gestion-documental/pages/
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const GestionDocumentalPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
+  () => import('@/features/gestion-documental/pages/GestionDocumentalPage')
 );
 const AuditoriasInternasPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/AuditoriasInternasPage')
+  () => import('@/features/gestion-documental/pages/AuditoriasInternasPage')
 );
 
 export const gestionDocumentalRoutes = (

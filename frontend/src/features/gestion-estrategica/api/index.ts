@@ -9,17 +9,6 @@ export * from './proyectosApi';
 // Revision por Direccion (ISO 9.3)
 export * from './revisionDireccionApi';
 
-// Gestion Documental (migrado de HSEQ a N1)
-export {
-  tipoDocumentoApi,
-  plantillaDocumentoApi,
-  documentoApi,
-  versionDocumentoApi,
-  campoFormularioApi,
-  controlDocumentalApi,
-  default as gestionDocumentalApi,
-} from './gestionDocumentalApi';
-
 // Planificacion del Sistema (migrado de HSEQ a N1)
 export {
   planTrabajoApi,

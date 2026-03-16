@@ -16,10 +16,10 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Briefcase, UserPlus, Users, Rocket } from 'lucide-react';
 
-import { PerfilesCargoSection } from '@/features/talent-hub/components/perfiles-cargo';
-import { SeleccionSection } from '@/features/talent-hub/components/seleccion';
-import { ColaboradoresSection } from '@/features/talent-hub/components/colaboradores';
-import { OnboardingSection } from '@/features/talent-hub/components/onboarding';
+import { PerfilesCargoSection } from '../components/perfiles-cargo';
+import { SeleccionSection } from '../components/seleccion';
+import { ColaboradoresSection } from '../components/colaboradores';
+import { OnboardingSection } from '../components/onboarding';
 
 interface SectionMeta {
   title: string;

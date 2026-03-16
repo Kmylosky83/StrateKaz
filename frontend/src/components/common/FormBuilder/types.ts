@@ -9,7 +9,7 @@ import type {
   CampoFormulario,
   ColumnaTabla,
   CondicionVisibilidad,
-} from '@/features/gestion-estrategica/types/gestion-documental.types';
+} from '@/features/gestion-documental/types/gestion-documental.types';
 import type { LucideIcon } from 'lucide-react';
 import {
   Type,

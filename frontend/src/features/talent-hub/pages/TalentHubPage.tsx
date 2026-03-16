@@ -24,26 +24,9 @@ import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
-import {
-  UserPlus,
-  Users,
-  Rocket,
-  BookOpen,
-  Award,
-  Clock,
-  Bell,
-  Gavel,
-  DollarSign,
-  LogOut,
-  UserCog,
-  Briefcase,
-} from 'lucide-react';
+import { BookOpen, Award, Clock, Gavel, DollarSign, LogOut, UserCog } from 'lucide-react';
 
-// Secciones implementadas
-import { PerfilesCargoSection } from '../components/perfiles-cargo';
-import { SeleccionSection } from '../components/seleccion';
-import { ColaboradoresSection } from '../components/colaboradores';
-import { OnboardingSection } from '../components/onboarding';
+// Secciones implementadas (perfiles-cargo, seleccion, colaboradores, onboarding → mi-equipo)
 import { FormacionSection } from '../components/formacion';
 import { DesempenoSection } from '../components/desempeno';
 import { ControlTiempoSection } from '../components/control-tiempo';
@@ -70,31 +53,6 @@ interface SectionMeta {
  * A medida que se implementen, reemplazar null con el componente real.
  */
 const SECTION_MAP: Record<string, SectionMeta> = {
-  'perfiles-cargo': {
-    title: 'Perfiles de Cargo',
-    description: 'Requisitos de formación, competencias, experiencia y SST por cargo',
-    icon: <Briefcase className="w-5 h-5" />,
-    component: PerfilesCargoSection,
-  },
-  seleccion: {
-    title: 'Selección y Contratación',
-    description: 'Reclutamiento, candidatos, entrevistas, pruebas y contratación de personal',
-    icon: <UserPlus className="w-5 h-5" />,
-    component: SeleccionSection,
-  },
-  colaboradores: {
-    title: 'Colaboradores',
-    description: 'Directorio de empleados, hojas de vida, información personal e historial laboral',
-    icon: <Users className="w-5 h-5" />,
-    component: ColaboradoresSection,
-  },
-  onboarding: {
-    title: 'Onboarding e Inducción',
-    description:
-      'Procesos de inducción, checklist de actividades, entregas de EPP y firma de documentos',
-    icon: <Rocket className="w-5 h-5" />,
-    component: OnboardingSection,
-  },
   formacion: {
     title: 'Formación y Reinducción',
     description: 'Planes de formación, capacitaciones, gamificación, certificados y reinducciones',
@@ -147,8 +105,8 @@ export default function TalentHubPage() {
   const location = useLocation();
 
   // Extraer la seccion activa de la ruta: /talento/estructura -> "estructura"
-  const activeKey = location.pathname.split('/talento/')[1]?.split('/')[0] || 'seleccion';
-  const section = SECTION_MAP[activeKey] || SECTION_MAP.seleccion;
+  const activeKey = location.pathname.split('/talento/')[1]?.split('/')[0] || 'formacion';
+  const section = SECTION_MAP[activeKey] || SECTION_MAP.formacion;
 
   const SectionComponent = section.component;
 

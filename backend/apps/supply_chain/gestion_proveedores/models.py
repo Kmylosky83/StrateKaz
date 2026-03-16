@@ -305,92 +305,8 @@ class TipoCuentaBancaria(models.Model):
 # MODELOS PRINCIPALES
 # ==============================================================================
 
-class UnidadNegocio(models.Model):
-    """
-    Unidad de Negocio - Unidades internas de la organización.
-    Ejemplos: Plantas de producción, Sucursales, Sedes administrativas
-    """
-    TIPO_UNIDAD_CHOICES = [
-        ('SEDE', 'Sede Administrativa'),
-        ('SUCURSAL', 'Sucursal'),
-        ('PLANTA', 'Planta de Producción'),
-        ('CENTRO_ACOPIO', 'Centro de Acopio'),
-        ('ALMACEN', 'Almacén'),
-        ('OTRO', 'Otro'),
-    ]
-
-    codigo = models.CharField(
-        max_length=20,
-        unique=True,
-        db_index=True,
-        verbose_name='Código',
-        help_text='Código único de la unidad de negocio (ej: PLANTA_BOG_01)'
-    )
-    nombre = models.CharField(
-        max_length=150,
-        verbose_name='Nombre'
-    )
-    tipo_unidad = models.CharField(
-        max_length=20,
-        choices=TIPO_UNIDAD_CHOICES,
-        verbose_name='Tipo de unidad'
-    )
-    direccion = models.TextField(
-        verbose_name='Dirección'
-    )
-    ciudad = models.CharField(
-        max_length=100,
-        verbose_name='Ciudad'
-    )
-    departamento = models.ForeignKey(
-        Departamento,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='unidades_negocio',
-        verbose_name='Departamento',
-        help_text='Departamento de Colombia (desde catálogo dinámico)'
-    )
-    responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='sc_unidades_negocio_responsable',
-        null=True,
-        blank=True,
-        verbose_name='Responsable'
-    )
-    is_active = models.BooleanField(default=True, db_index=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'supply_chain_unidad_negocio'
-        verbose_name = 'Unidad de Negocio'
-        verbose_name_plural = 'Unidades de Negocio'
-        ordering = ['codigo']
-        indexes = [
-            models.Index(fields=['codigo']),
-            models.Index(fields=['is_active', 'tipo_unidad']),
-            models.Index(fields=['deleted_at']),
-        ]
-
-    def __str__(self):
-        return f"{self.nombre} ({self.codigo})"
-
-    @property
-    def is_deleted(self):
-        return self.deleted_at is not None
-
-    def soft_delete(self):
-        self.deleted_at = timezone.now()
-        self.is_active = False
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
-
-    def restore(self):
-        self.deleted_at = None
-        self.is_active = True
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
+# UnidadNegocio → Migrado a Fundación (apps.gestion_estrategica.configuracion.models)
+# Endpoint: /api/fundacion/configuracion/unidades-negocio/
 
 
 class Proveedor(models.Model):
@@ -473,14 +389,19 @@ class Proveedor(models.Model):
         verbose_name='Departamento'
     )
 
-    # Relación con Unidad de Negocio
-    unidad_negocio = models.ForeignKey(
-        UnidadNegocio,
-        on_delete=models.PROTECT,
-        related_name='proveedores',
+    # Cross-module: UnidadNegocio vive en Fundación (configuracion)
+    unidad_negocio_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        verbose_name='Unidad de negocio'
+        db_index=True,
+        db_column='unidad_negocio_id',
+        verbose_name='Unidad de negocio (ID)'
+    )
+    unidad_negocio_nombre = models.CharField(
+        max_length=150,
+        blank=True,
+        default='',
+        verbose_name='Unidad de negocio (nombre cache)'
     )
 
     # Información financiera (M2M dinámico)

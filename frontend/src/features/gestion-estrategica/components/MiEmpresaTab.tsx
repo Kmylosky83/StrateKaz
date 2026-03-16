@@ -11,7 +11,7 @@
 import { GenericSectionFallback } from '@/components/common';
 import { EmpresaSection } from './EmpresaSection';
 import { SedesSection } from './SedesSection';
-import { UnidadesNegocioTab as UnidadesNegocioSection } from '@/features/supply-chain/components/UnidadesNegocioTab';
+import { UnidadesNegocioSection } from './UnidadesNegocioSection';
 
 interface MiEmpresaTabProps {
   activeSection?: string;

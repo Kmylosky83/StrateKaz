@@ -19,12 +19,7 @@ export {
 
 // ==================== PROVEEDORES ====================
 export { default as proveedoresApi } from './proveedores.api';
-export {
-  unidadNegocioApi,
-  proveedorApi,
-  historialPrecioApi,
-  condicionComercialApi,
-} from './proveedores.api';
+export { proveedorApi, historialPrecioApi, condicionComercialApi } from './proveedores.api';
 
 // ==================== EVALUACIONES ====================
 export { default as evaluacionesApi } from './evaluaciones.api';

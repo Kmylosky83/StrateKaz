@@ -532,18 +532,9 @@ class Command(BaseCommand):
                             {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 5, 'description': 'Visualización interactiva de la estructura de procesos (estratégicos, misionales, apoyo)'},
                         ]
                     },
-                    {
-                        'code': 'politicas_reglamentos',
-                        'name': 'Mis Políticas y Reglamentos',
-                        'icon': 'FileCheck',
-                        'route': 'politicas-reglamentos',
-                        'orden': 4,
-                        'sections': [
-                            {'code': 'politicas_obligatorias', 'name': 'Políticas Obligatorias', 'icon': 'FileCheck', 'orden': 1, 'description': 'Política Integral, Habeas Data, Acoso Laboral, Desconexión Laboral, Seguridad de la Información'},
-                            {'code': 'reglamento_interno', 'name': 'Reglamento Interno', 'icon': 'Gavel', 'orden': 2, 'description': 'Reglamento Interno de Trabajo (CST Art. 104-125). Obligatorio antes del primer empleado'},
-                            {'code': 'contratos_tipo', 'name': 'Contratos Tipo', 'icon': 'FileSignature', 'orden': 3, 'description': 'Plantillas de contratos laborales: término fijo, indefinido, obra o labor, prestación de servicios'},
-                        ]
-                    },
+                    # Tab 4 "Políticas y Reglamentos" ELIMINADO — se gestiona
+                    # desde Gestión Documental (Nivel 2) que tiene motor completo
+                    # de estados, versionamiento y firma digital.
                 ]
             },
 

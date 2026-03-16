@@ -43,6 +43,8 @@ from openpyxl.utils import get_column_letter
 from io import BytesIO
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.permissions import GranularActionPermission
+from rest_framework.permissions import IsAuthenticated
 from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import (
     TipoAnalisisDOFA,
@@ -115,6 +117,9 @@ class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.M
     - GET /analisis-dofa/{id}/matriz-completa/ - Matriz DOFA completa con factores y estrategias
     - GET /analisis-dofa/estadisticas/ - Estadísticas generales
     """
+
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
 
     queryset = AnalisisDOFA.objects.select_related(
         'tipo_analisis',
@@ -299,6 +304,9 @@ class AnalisisDOFAViewSet(ResumenRevisionMixin, StandardViewSetMixin, viewsets.M
 class FactorDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de factores DOFA."""
 
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
+
     queryset = FactorDOFA.objects.select_related(
         'analisis',
         'empresa',
@@ -314,6 +322,9 @@ class FactorDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
 class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de estrategias TOWS."""
+
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
 
     queryset = EstrategiaTOWS.objects.select_related(
         'analisis',
@@ -519,6 +530,9 @@ class TipoAnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 class AnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de análisis PESTEL."""
 
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
+
     queryset = AnalisisPESTEL.objects.select_related(
         'tipo_analisis',
         'responsable',
@@ -594,6 +608,9 @@ class AnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 class FactorPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de factores PESTEL."""
 
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
+
     queryset = FactorPESTEL.objects.select_related(
         'analisis',
         'empresa',
@@ -609,6 +626,9 @@ class FactorPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
 class FuerzaPorterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de fuerzas de Porter."""
+
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'analisis_contexto'
 
     queryset = FuerzaPorter.objects.select_related(
         'empresa',
@@ -715,6 +735,9 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     - Matriz Poder-Interés (4 cuadrantes)
     - Estadísticas por grupo, tipo, sistema
     """
+
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'partes_interesadas'
 
     queryset = ParteInteresada.objects.select_related(
         'tipo', 'tipo__grupo', 'cargo_responsable', 'area_responsable'
@@ -1389,6 +1412,9 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de Requisitos de Partes Interesadas."""
 
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'partes_interesadas'
+
     queryset = RequisitoParteInteresada.objects.select_related('parte_interesada').all()
     serializer_class = RequisitoParteInteresadaSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -1402,6 +1428,9 @@ class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSe
 
 class MatrizComunicacionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de Matriz de Comunicación."""
+
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'partes_interesadas'
 
     queryset = MatrizComunicacion.objects.select_related(
         'parte_interesada', 'responsable'

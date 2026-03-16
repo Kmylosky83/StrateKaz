@@ -69,7 +69,6 @@ const TAB_ROUTES: Record<string, string> = {
   mi_empresa: 'mi-empresa',
   contexto_identidad: 'contexto-identidad',
   organizacion: 'organizacion',
-  politicas_reglamentos: 'politicas-reglamentos',
   // ── Gestión Documental ──
   gestion_documental: 'documentos',
   auditorias_internas: 'auditorias',

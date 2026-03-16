@@ -79,13 +79,7 @@ export const Sections = {
   CARACTERIZACIONES: 'caracterizaciones',
   MAPA_PROCESOS: 'mapa_procesos',
 
-  // ── FUNDACION — Tab 4: Mis Políticas y Reglamentos ──
-  POLITICAS_OBLIGATORIAS: 'politicas_obligatorias',
-  REGLAMENTO_INTERNO: 'reglamento_interno',
-  CONTRATOS_TIPO: 'contratos_tipo',
-
   // ── FUNDACION — Legacy aliases ──
-  POLITICAS: 'politicas_obligatorias',
   CONSECUTIVOS: 'consecutivos',
   MODULOS: 'modulos',
   INTEGRACIONES: 'integraciones',
@@ -177,8 +171,6 @@ export const Sections = {
   EVALUACIONES_PROV: 'evaluaciones_prov',
   CATALOGOS_SC: 'catalogos_sc',
   PROVEEDORES: 'proveedores',
-  /** @deprecated Moved to Fundación/Mi Empresa */
-  UNIDADES_NEGOCIO_SC: 'unidades_negocio_sc',
 
   // ── PRODUCTION OPS ──
   RECEPCION_MP: 'recepcion_mp',

@@ -10,9 +10,6 @@ import type {
   ProveedorList,
   CreateProveedorDTO,
   UpdateProveedorDTO,
-  UnidadNegocio,
-  CreateUnidadNegocioDTO,
-  UpdateUnidadNegocioDTO,
   PrecioMateriaPrima,
   HistorialPrecioProveedor,
   CambiarPrecioDTO,
@@ -24,72 +21,6 @@ import type {
 } from '../types';
 
 const BASE_URL = '/supply-chain';
-
-// ==================== UNIDADES DE NEGOCIO ====================
-
-export const unidadNegocioApi = {
-  /**
-   * Listar unidades de negocio
-   */
-  getAll: async (params?: {
-    page?: number;
-    page_size?: number;
-    search?: string;
-    is_active?: boolean;
-    tipo_unidad?: string;
-  }): Promise<PaginatedResponse<UnidadNegocio>> => {
-    const response = await apiClient.get<PaginatedResponse<UnidadNegocio>>(
-      `${BASE_URL}/unidades-negocio/`,
-      { params }
-    );
-    return response.data;
-  },
-
-  /**
-   * Obtener unidad de negocio por ID
-   */
-  getById: async (id: number): Promise<UnidadNegocio> => {
-    const response = await apiClient.get<UnidadNegocio>(`${BASE_URL}/unidades-negocio/${id}/`);
-    return response.data;
-  },
-
-  /**
-   * Crear unidad de negocio
-   */
-  create: async (data: CreateUnidadNegocioDTO): Promise<UnidadNegocio> => {
-    const response = await apiClient.post<UnidadNegocio>(`${BASE_URL}/unidades-negocio/`, data);
-    return response.data;
-  },
-
-  /**
-   * Actualizar unidad de negocio
-   */
-  update: async (id: number, data: UpdateUnidadNegocioDTO): Promise<UnidadNegocio> => {
-    const response = await apiClient.patch<UnidadNegocio>(
-      `${BASE_URL}/unidades-negocio/${id}/`,
-      data
-    );
-    return response.data;
-  },
-
-  /**
-   * Eliminar unidad de negocio
-   */
-  delete: async (id: number): Promise<void> => {
-    await apiClient.delete(`${BASE_URL}/unidades-negocio/${id}/`);
-  },
-
-  /**
-   * Obtener unidades activas
-   */
-  getActivas: async (): Promise<UnidadNegocio[]> => {
-    const response = await apiClient.get<PaginatedResponse<UnidadNegocio>>(
-      `${BASE_URL}/unidades-negocio/`,
-      { params: { is_active: true, page_size: 1000 } }
-    );
-    return response.data.results;
-  },
-};
 
 // ==================== PROVEEDORES ====================
 
@@ -435,7 +366,6 @@ export const condicionComercialApi = {
 // ==================== EXPORT DEFAULT ====================
 
 export default {
-  unidadNegocio: unidadNegocioApi,
   proveedor: proveedorApi,
   historialPrecio: historialPrecioApi,
   condicionComercial: condicionComercialApi,

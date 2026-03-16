@@ -7,7 +7,7 @@ from django.contrib import admin
 from .models import (
     SedeEmpresa, IntegracionExterna,
     TipoSede, TipoServicioIntegracion, ProveedorIntegracion, NormaISO, TipoCambio,
-    TipoContrato,
+    TipoContrato, UnidadNegocio,
 )
 
 
@@ -281,3 +281,29 @@ class ProveedorIntegracionAdmin(admin.ModelAdmin):
         if obj and obj.es_sistema:
             return False
         return super().has_delete_permission(request, obj)
+
+
+@admin.register(UnidadNegocio)
+class UnidadNegocioAdmin(admin.ModelAdmin):
+    """Admin para Unidades de Negocio — Fundación."""
+    list_display = ['codigo', 'nombre', 'tipo_unidad', 'ciudad', 'is_active']
+    list_filter = ['tipo_unidad', 'is_active', 'departamento']
+    search_fields = ['codigo', 'nombre', 'ciudad']
+    ordering = ['codigo']
+    raw_id_fields = ['responsable', 'departamento']
+    readonly_fields = ['created_at', 'updated_at', 'deleted_at']
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('codigo', 'nombre', 'tipo_unidad', 'responsable')
+        }),
+        ('Ubicación', {
+            'fields': ('direccion', 'ciudad', 'departamento')
+        }),
+        ('Estado', {
+            'fields': ('is_active', 'deleted_at')
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

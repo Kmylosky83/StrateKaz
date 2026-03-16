@@ -6,11 +6,10 @@
 // FUNDACIÓN (C1) — Tabs y Secciones
 // =============================================================================
 
-// Tabs de Fundación (Cascada V2 — 4 tabs)
+// Tabs de Fundación (Cascada V2 — 3 tabs)
 export { MiEmpresaTab } from './MiEmpresaTab';
 export { ContextoIdentidadTab } from './ContextoIdentidadTab';
 export { OrganizacionTab } from './OrganizacionTab';
-export { PoliticasReglamentosTab } from './PoliticasReglamentosTab';
 
 // Wizard/Onboarding
 export { FundacionChecklist } from './FundacionChecklist';
@@ -30,13 +29,6 @@ export { AreasTab } from './AreasTab';
 export { PILookupField } from './PILookupField';
 export { CaracterizacionesSection } from './CaracterizacionesSection';
 export { MapaProcesosSection } from './MapaProcesosSection';
-
-// Secciones autocontenidas — Tab 4: Mis Políticas y Reglamentos
-export { PoliticasSection } from './PoliticasSection';
-export { ReglamentoInternoSection } from './ReglamentoInternoSection';
-export { ReglamentoFormModal } from './ReglamentoFormModal';
-export { ContratosTipoSection } from './ContratosTipoSection';
-export { ContratoTipoFormModal } from './ContratoTipoFormModal';
 
 // =============================================================================
 // PLANEACIÓN ESTRATÉGICA (C2)

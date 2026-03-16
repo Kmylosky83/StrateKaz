@@ -1,6 +1,8 @@
 /**
- * Tab Unidades de Negocio - CRUD de sedes, plantas y centros (Tipo B — tabla simple)
+ * Seccion Unidades de Negocio - CRUD de sedes, plantas y centros (Tipo B — tabla simple)
  * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
+ *
+ * Fundacion Tab 1 — Mi Empresa
  */
 import { useState } from 'react';
 import { Edit, Trash2, Building2 } from 'lucide-react';
@@ -23,8 +25,8 @@ import {
   useCreateUnidadNegocio,
   useUpdateUnidadNegocio,
   useDeleteUnidadNegocio,
-} from '../hooks/useProveedores';
-import type { UnidadNegocio } from '../types';
+} from '../hooks/useUnidadesNegocio';
+import type { UnidadNegocio } from '../types/unidad-negocio.types';
 
 // ==================== CONSTANTES ====================
 
@@ -33,17 +35,17 @@ const TIPOS_UNIDAD = [
   { value: 'SUCURSAL', label: 'Sucursal' },
   { value: 'PLANTA', label: 'Planta' },
   { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
-  { value: 'ALMACEN', label: 'Almacén' },
+  { value: 'ALMACEN', label: 'Almacen' },
   { value: 'OTRO', label: 'Otro' },
 ];
 
 // ==================== COMPONENTE ====================
 
-export function UnidadesNegocioTab() {
+export function UnidadesNegocioSection() {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'create');
-  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'edit');
-  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.UNIDADES_NEGOCIO_SC, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.UNIDADES_NEGOCIO, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.UNIDADES_NEGOCIO, 'edit');
+  const canDelete = canDo(Modules.FUNDACION, Sections.UNIDADES_NEGOCIO, 'delete');
 
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<UnidadNegocio | null>(null);
@@ -142,7 +144,7 @@ export function UnidadesNegocioTab() {
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Código
+                    Codigo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Nombre
@@ -151,7 +153,7 @@ export function UnidadesNegocioTab() {
                     Tipo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Dirección
+                    Direccion
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Ciudad
@@ -264,7 +266,7 @@ export function UnidadesNegocioTab() {
         <form id="unidad-form" onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Código *"
+              label="Codigo *"
               type="text"
               name="codigo"
               required
@@ -297,7 +299,7 @@ export function UnidadesNegocioTab() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Dirección *"
+              label="Direccion *"
               type="text"
               name="direccion"
               required
@@ -314,11 +316,11 @@ export function UnidadesNegocioTab() {
         </form>
       </BaseModal>
 
-      {/* Confirmar eliminación */}
+      {/* Confirmar eliminacion */}
       <ConfirmDialog
         isOpen={!!deleteId}
         title="Eliminar Unidad de Negocio"
-        message="¿Está seguro de eliminar esta unidad de negocio? Esta acción no se puede deshacer."
+        message="Esta seguro de eliminar esta unidad de negocio? Esta accion no se puede deshacer."
         variant="danger"
         confirmText="Eliminar"
         onConfirm={handleConfirmDelete}

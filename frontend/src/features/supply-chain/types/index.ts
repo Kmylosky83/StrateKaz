@@ -51,11 +51,6 @@ export type {
 // ==================== PROVEEDORES Y PRECIOS ====================
 
 export type {
-  // Unidad de Negocio
-  UnidadNegocio,
-  CreateUnidadNegocioDTO,
-  UpdateUnidadNegocioDTO,
-
   // Proveedor
   Proveedor,
   ProveedorList,

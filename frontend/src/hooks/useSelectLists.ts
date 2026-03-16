@@ -29,6 +29,7 @@ export const selectListKeys = {
   tiposDocumento: () => [...selectListKeys.all, 'tipos-documento'] as const,
   tiposMateriaPrima: () => [...selectListKeys.all, 'tipos-materia-prima'] as const,
   tiposEPP: () => [...selectListKeys.all, 'tipos-epp'] as const,
+  unidadesNegocio: () => [...selectListKeys.all, 'unidades-negocio'] as const,
 };
 
 // ============================================================================
@@ -150,6 +151,16 @@ export const useSelectTiposEPP = (enabled = true) => {
   return useQuery<SelectListItem[]>({
     queryKey: selectListKeys.tiposEPP(),
     queryFn: selectListsAPI.getTiposEPP,
+    staleTime: 1000 * 60 * 5,
+    enabled,
+  });
+};
+
+/** Unidades de negocio activas */
+export const useSelectUnidadesNegocio = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.unidadesNegocio(),
+    queryFn: selectListsAPI.getUnidadesNegocio,
     staleTime: 1000 * 60 * 5,
     enabled,
   });

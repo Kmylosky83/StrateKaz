@@ -101,7 +101,8 @@ C0 — PLATAFORMA (infraestructura, nunca se toca en sprints de modulo)
 C1 — FUNDACION (se configura 1 vez, afecta a todos)
   ├── Configuracion Organizacional (empresa, parametros)  → gestion_estrategica/configuracion
   ├── Estructura Organizacional (areas, procesos)         → gestion_estrategica/organizacion
-  └── Identidad Corporativa (mision, vision, valores)     → gestion_estrategica/identidad
+  ├── Identidad Corporativa (mision, vision, valores)     → gestion_estrategica/identidad
+  └── Contexto Organizacional (partes interesadas, DOFA)  → gestion_estrategica/contexto
 
 C2 — MODULOS DE NEGOCIO (14 independientes)
   Planeacion Estrategica  │ Sistema de Gestion    │ Cumplimiento Legal
@@ -147,8 +148,8 @@ Las 5 capas arquitectónicas NO cambian. C2 se sub-agrupa en 4 para navegación:
 | C0 | core | users, rbac, menu, middleware, permissions |
 | C0 | tenant | schemas, domains, plans |
 | C0 | audit_system | logs_sistema, config_alertas, centro_notificaciones, tareas_recordatorios |
-| C1 | gestion_estrategica | configuracion, organizacion, identidad |
-| C2 | gestion_estrategica | planeacion, contexto, encuestas, gestion_proyectos, gestion_documental, planificacion_sistema |
+| C1 | gestion_estrategica | configuracion, organizacion, identidad, contexto |
+| C2 | gestion_estrategica | planeacion, encuestas, gestion_proyectos, gestion_documental, planificacion_sistema |
 | C2 | gestion_estrategica | revision_direccion (UI en C3) |
 | C2 | motor_cumplimiento | matriz_legal, requisitos_legales, reglamentos_internos, evidencias |
 | C2 | motor_riesgos | riesgos_procesos, ipevr, aspectos_ambientales, riesgos_viales, seguridad_informacion, sagrilaft_ptee |

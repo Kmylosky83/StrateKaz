@@ -51,32 +51,56 @@ __all__ = [
 
 class Area(AuditModel, SoftDeleteModel, OrderedModel):
     """
-    Modelo para gestionar áreas/departamentos de la organización.
+    Proceso organizacional — estructura jerárquica de la empresa.
 
-    Estructura jerárquica que permite definir la estructura organizacional
-    con centros de costo y responsables asignados.
+    Representa los procesos del SGI clasificados por tipo (ISO 9001:2015 §4.4):
+    - Estratégico: Dirección, calidad, planeación
+    - Misional: Operaciones core del negocio
+    - Apoyo: Soporte administrativo, TI, talento
+    - Evaluación: Auditoría, medición, mejora
 
     Hereda de:
     - AuditModel: created_at, updated_at, created_by, updated_by
     - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
     - OrderedModel: orden, move_up(), move_down()
     """
+    TIPO_PROCESO_CHOICES = [
+        ('ESTRATEGICO', 'Estratégico'),
+        ('MISIONAL', 'Misional'),
+        ('APOYO', 'Apoyo'),
+        ('EVALUACION', 'Evaluación'),
+    ]
+
     code = models.CharField(
         max_length=20,
         unique=True,
         verbose_name='Código',
-        help_text='Código único del área (ej: GER, OPE, ADM)'
+        help_text='Código único del proceso (ej: GER, OPE, ADM)'
     )
     name = models.CharField(
         max_length=100,
         verbose_name='Nombre',
-        help_text='Nombre del área o departamento'
+        help_text='Nombre del proceso'
     )
     description = models.TextField(
         blank=True,
         null=True,
         verbose_name='Descripción',
-        help_text='Descripción de las funciones del área'
+        help_text='Descripción de las funciones del proceso'
+    )
+    tipo = models.CharField(
+        max_length=15,
+        choices=TIPO_PROCESO_CHOICES,
+        default='APOYO',
+        db_index=True,
+        verbose_name='Tipo de proceso',
+        help_text='Clasificación según ISO 9001:2015 (estratégico, misional, apoyo, evaluación)'
+    )
+    objetivo = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Objetivo del proceso',
+        help_text='Objetivo que persigue este proceso dentro del SGI'
     )
     parent = models.ForeignKey(
         'self',
@@ -84,8 +108,8 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
         null=True,
         blank=True,
         related_name='children',
-        verbose_name='Área Padre',
-        help_text='Área superior en la jerarquía'
+        verbose_name='Proceso Padre',
+        help_text='Proceso superior en la jerarquía'
     )
     cost_center = models.CharField(
         max_length=50,
@@ -101,7 +125,7 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
         blank=True,
         related_name='managed_areas',
         verbose_name='Responsable',
-        help_text='Usuario responsable del área'
+        help_text='Usuario responsable del proceso'
     )
     icon = models.CharField(
         max_length=50,
@@ -113,7 +137,7 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
         max_length=20,
         default='purple',
         verbose_name='Color',
-        help_text='Color del área (ej: purple, blue, green, red, amber, gray)'
+        help_text='Color del proceso (ej: purple, blue, green, red, amber, gray)'
     )
 
     class Meta:

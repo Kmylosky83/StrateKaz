@@ -10,8 +10,6 @@ import proveedoresApi from '../api/proveedores.api';
 import type {
   CreateProveedorDTO,
   UpdateProveedorDTO,
-  CreateUnidadNegocioDTO,
-  UpdateUnidadNegocioDTO,
   CambiarPrecioDTO,
   CreateCondicionComercialDTO,
   UpdateCondicionComercialDTO,
@@ -29,10 +27,6 @@ export const proveedoresKeys = {
   proveedor: (id: number) => [...proveedoresKeys.all, 'detail', id] as const,
   estadisticas: () => [...proveedoresKeys.all, 'estadisticas'] as const,
 
-  // Unidades de Negocio
-  unidades: () => [...proveedoresKeys.all, 'unidades-negocio'] as const,
-  unidad: (id: number) => [...proveedoresKeys.unidades(), id] as const,
-
   // Precios e Historial
   historialPrecio: (proveedorId: number) =>
     [...proveedoresKeys.all, 'historial-precio', proveedorId] as const,
@@ -42,73 +36,6 @@ export const proveedoresKeys = {
   condicionesPorProveedor: (proveedorId: number) =>
     [...proveedoresKeys.condiciones(), 'proveedor', proveedorId] as const,
 };
-
-// ==================== UNIDADES DE NEGOCIO ====================
-
-export function useUnidadesNegocio(params?: { is_active?: boolean }) {
-  return useQuery({
-    queryKey: proveedoresKeys.unidades(),
-    queryFn: () =>
-      params?.is_active
-        ? proveedoresApi.unidadNegocio.getActivas()
-        : proveedoresApi.unidadNegocio.getAll(),
-  });
-}
-
-export function useUnidadNegocio(id: number) {
-  return useQuery({
-    queryKey: proveedoresKeys.unidad(id),
-    queryFn: () => proveedoresApi.unidadNegocio.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateUnidadNegocio() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateUnidadNegocioDTO) => proveedoresApi.unidadNegocio.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidades() });
-      toast.success('Unidad de negocio creada exitosamente');
-    },
-    onError: (error: unknown) => {
-      const apiError = error as { response?: { data?: { detail?: string } } };
-      toast.error(apiError?.response?.data?.detail || 'Error al crear unidad de negocio');
-    },
-  });
-}
-
-export function useUpdateUnidadNegocio() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUnidadNegocioDTO }) =>
-      proveedoresApi.unidadNegocio.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidades() });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidad(id) });
-      toast.success('Unidad de negocio actualizada exitosamente');
-    },
-    onError: (error: unknown) => {
-      const apiError = error as { response?: { data?: { detail?: string } } };
-      toast.error(apiError?.response?.data?.detail || 'Error al actualizar unidad de negocio');
-    },
-  });
-}
-
-export function useDeleteUnidadNegocio() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => proveedoresApi.unidadNegocio.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.unidades() });
-      toast.success('Unidad de negocio eliminada exitosamente');
-    },
-    onError: (error: unknown) => {
-      const apiError = error as { response?: { data?: { detail?: string } } };
-      toast.error(apiError?.response?.data?.detail || 'Error al eliminar unidad de negocio');
-    },
-  });
-}
 
 // ==================== PROVEEDORES ====================
 

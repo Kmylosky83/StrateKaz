@@ -15,8 +15,8 @@ from .viewsets import (
     TipoCuentaBancariaViewSet,
     # NOTA: TipoDocumentoIdentidad, Departamento, Ciudad → migrados a Core (C0)
     # NOTA: PruebaAcidez → migrada a Production Ops Recepción
+    # NOTA: UnidadNegocioViewSet → Migrado a Fundación (configuracion)
     # Modelos principales
-    UnidadNegocioViewSet,
     ProveedorViewSet,
     HistorialPrecioViewSet,
     CondicionComercialViewSet,
@@ -80,12 +80,7 @@ router.register(
 # RUTAS DE MODELOS PRINCIPALES
 # ==============================================================================
 
-# Unidades de Negocio
-router.register(
-    r'unidades-negocio',
-    UnidadNegocioViewSet,
-    basename='unidad-negocio'
-)
+# NOTA: Unidades de Negocio → Migrado a /api/fundacion/configuracion/unidades-negocio/
 
 # Proveedores
 router.register(

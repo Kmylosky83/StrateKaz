@@ -15,7 +15,6 @@ export { default as ProveedoresTab } from './ProveedoresTab';
 export { PreciosTab } from './PreciosTab';
 export { EvaluacionesTab } from './EvaluacionesTab';
 export { CatalogosTab } from './CatalogosTab';
-export { UnidadesNegocioTab } from './UnidadesNegocioTab';
 export { default as ProgramacionTab } from './ProgramacionTab';
 export { default as ComprasTab } from './ComprasTab';
 export { default as AlmacenamientoTab } from './AlmacenamientoTab';

@@ -4,42 +4,6 @@
  * Serializers: backend/apps/supply_chain/gestion_proveedores/serializers.py
  */
 
-// ==================== UNIDAD DE NEGOCIO ====================
-
-/**
- * Unidad de Negocio (plantas/sucursales internas que venden a otras unidades)
- */
-export interface UnidadNegocio {
-  id: number;
-  codigo: string;
-  nombre: string;
-  tipo_unidad: 'SEDE' | 'SUCURSAL' | 'PLANTA' | 'CENTRO_ACOPIO' | 'ALMACEN' | 'OTRO';
-  tipo_unidad_display?: string;
-  direccion: string;
-  ciudad: string;
-  departamento?: number;
-  departamento_nombre?: string;
-  responsable?: number;
-  responsable_nombre?: string;
-  is_active: boolean;
-  is_deleted?: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateUnidadNegocioDTO {
-  codigo: string;
-  nombre: string;
-  tipo_unidad: 'SEDE' | 'SUCURSAL' | 'PLANTA' | 'CENTRO_ACOPIO' | 'ALMACEN' | 'OTRO';
-  direccion: string;
-  ciudad: string;
-  departamento?: number;
-  responsable?: number;
-  is_active?: boolean;
-}
-
-export type UpdateUnidadNegocioDTO = Partial<CreateUnidadNegocioDTO>;
-
 // ==================== PROVEEDOR ====================
 
 /**

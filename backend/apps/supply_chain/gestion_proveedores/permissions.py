@@ -134,36 +134,8 @@ class CanModifyPrecioProveedor(permissions.BasePermission):
         return False
 
 
-class CanManageUnidadesNegocio(permissions.BasePermission):
-    """
-    Permiso para gestionar unidades de negocio.
-
-    Solo Admin (nivel 3) y SuperAdmin pueden gestionar unidades de negocio.
-    """
-
-    message = 'Solo Administradores y SuperAdmin pueden gestionar unidades de negocio.'
-
-    def has_permission(self, request, view):
-        """Verificar permiso a nivel de vista."""
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        # SuperAdmin tiene todos los permisos
-        if request.user.is_superuser:
-            return True
-
-        if not hasattr(request.user, 'has_cargo_level'):
-            return False
-
-        # Para lectura (GET), permitir desde nivel 2+ (Coordinación)
-        if request.method in permissions.SAFE_METHODS:
-            return request.user.has_cargo_level(2)
-
-        # Para creación/modificación/eliminación, requiere nivel 3+ (Dirección)
-        if request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return request.user.has_cargo_level(3)
-
-        return False
+# CanManageUnidadesNegocio → Eliminado. UnidadNegocio migrado a Fundación (configuracion).
+# Ahora usa GranularActionPermission con section_code='unidades_negocio'.
 
 
 class CanViewProveedores(permissions.BasePermission):

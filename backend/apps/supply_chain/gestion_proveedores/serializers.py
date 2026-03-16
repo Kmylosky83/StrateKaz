@@ -20,7 +20,7 @@ from .models import (
     FormaPago,
     TipoCuentaBancaria,
     # Modelos principales
-    UnidadNegocio,
+    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
@@ -118,34 +118,8 @@ class TipoCuentaBancariaSerializer(serializers.ModelSerializer):
 
 
 # ==============================================================================
-# SERIALIZERS DE UNIDAD DE NEGOCIO
+# NOTA: UnidadNegocioSerializer → Migrado a Fundación (configuracion)
 # ==============================================================================
-
-class UnidadNegocioSerializer(serializers.ModelSerializer):
-    """Serializer para Unidad de Negocio."""
-
-    tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
-    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
-    departamento_nombre = serializers.CharField(source='departamento.nombre', read_only=True)
-    is_deleted = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = UnidadNegocio
-        fields = [
-            'id', 'codigo', 'nombre', 'tipo_unidad', 'tipo_unidad_display',
-            'direccion', 'ciudad', 'departamento', 'departamento_nombre',
-            'responsable', 'responsable_nombre',
-            'is_active', 'is_deleted', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-
-    def validate_codigo(self, value):
-        """Validar código único."""
-        value = value.upper()
-        unidad_id = self.instance.id if self.instance else None
-        if UnidadNegocio.objects.filter(codigo=value).exclude(id=unidad_id).exists():
-            raise serializers.ValidationError('Ya existe una unidad de negocio con este código')
-        return value
 
 
 # ==============================================================================
@@ -183,9 +157,7 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     modalidad_logistica_nombre = serializers.CharField(
         source='modalidad_logistica.nombre', read_only=True, allow_null=True
     )
-    unidad_negocio_nombre = serializers.CharField(
-        source='unidad_negocio.nombre', read_only=True, allow_null=True
-    )
+    unidad_negocio_nombre = serializers.CharField(read_only=True)
     departamento_nombre = serializers.CharField(
         source='departamento.nombre', read_only=True, allow_null=True
     )
@@ -215,7 +187,7 @@ class ProveedorListSerializer(serializers.ModelSerializer):
             'nombre_comercial', 'razon_social', 'tipo_documento', 'tipo_documento_nombre',
             'numero_documento', 'nit', 'telefono', 'email', 'direccion', 'ciudad',
             'departamento', 'departamento_nombre',
-            'unidad_negocio', 'unidad_negocio_nombre',
+            'unidad_negocio_id', 'unidad_negocio_nombre',
             'formas_pago', 'formas_pago_display', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'precios_materia_prima', 'es_proveedor_materia_prima',
@@ -251,7 +223,8 @@ class ProveedorDetailSerializer(serializers.ModelSerializer):
     )
     tipo_documento_data = TipoDocumentoIdentidadSerializer(source='tipo_documento', read_only=True)
     departamento_data = DepartamentoSerializer(source='departamento', read_only=True)
-    unidad_negocio_data = UnidadNegocioSerializer(source='unidad_negocio', read_only=True)
+    unidad_negocio_id = serializers.IntegerField(required=False, allow_null=True)
+    unidad_negocio_nombre = serializers.CharField(read_only=True)
     formas_pago_data = FormaPagoSerializer(source='formas_pago', many=True, read_only=True)
     tipo_cuenta_data = TipoCuentaBancariaSerializer(source='tipo_cuenta', read_only=True)
     created_by_nombre = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -293,7 +266,7 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
             'tipo_proveedor', 'tipos_materia_prima', 'modalidad_logistica',
             'nombre_comercial', 'razon_social', 'tipo_documento', 'numero_documento', 'nit',
             'telefono', 'email', 'direccion', 'ciudad', 'departamento',
-            'unidad_negocio', 'formas_pago', 'dias_plazo_pago',
+            'unidad_negocio_id', 'unidad_negocio_nombre', 'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'precios', 'observaciones', 'es_independiente', 'is_active',
             'parte_interesada_id', 'parte_interesada_nombre',
@@ -472,7 +445,7 @@ class ProveedorUpdateSerializer(serializers.ModelSerializer):
             'nombre_comercial', 'razon_social', 'nit', 'telefono', 'email',
             'direccion', 'ciudad', 'departamento',
             'tipos_materia_prima', 'modalidad_logistica',
-            'unidad_negocio',
+            'unidad_negocio_id', 'unidad_negocio_nombre',
             'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'observaciones', 'es_independiente', 'is_active',

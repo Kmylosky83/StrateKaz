@@ -45,6 +45,8 @@ interface AreaFormData {
   code: string;
   name: string;
   description: string;
+  tipo: string;
+  objetivo: string;
   parent: string; // string para el select, se convierte a number
   cost_center: string;
   manager: string; // string para el select, se convierte a number
@@ -53,6 +55,14 @@ interface AreaFormData {
   is_active: boolean;
   orden: number;
 }
+
+// Opciones de tipo de proceso (ISO 9001:2015 §4.4)
+const TIPO_PROCESO_OPTIONS = [
+  { value: 'ESTRATEGICO', label: 'Estratégico' },
+  { value: 'MISIONAL', label: 'Misional' },
+  { value: 'APOYO', label: 'Apoyo' },
+  { value: 'EVALUACION', label: 'Evaluación' },
+];
 
 // Opciones de colores disponibles
 const COLOR_OPTIONS = [
@@ -97,6 +107,8 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
       code: '',
       name: '',
       description: '',
+      tipo: 'APOYO',
+      objetivo: '',
       parent: '',
       cost_center: '',
       manager: '',
@@ -119,6 +131,8 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
           code: area.code,
           name: area.name,
           description: area.description || '',
+          tipo: area.tipo || 'APOYO',
+          objetivo: area.objetivo || '',
           parent: area.parent?.toString() || '',
           cost_center: area.cost_center || '',
           manager: area.manager?.toString() || '',
@@ -132,6 +146,8 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
           code: '',
           name: '',
           description: '',
+          tipo: 'APOYO',
+          objetivo: '',
           parent: '',
           cost_center: '',
           manager: '',
@@ -177,6 +193,8 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
       code: data.code.toUpperCase().trim(),
       name: data.name.trim(),
       description: data.description?.trim() || undefined,
+      tipo: data.tipo as CreateAreaDTO['tipo'],
+      objetivo: data.objetivo?.trim() || '',
       parent: data.parent ? parseInt(data.parent, 10) : undefined,
       cost_center: data.cost_center?.trim() || undefined,
       manager: data.manager ? parseInt(data.manager, 10) : undefined,
@@ -278,6 +296,37 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
                 maxLength: {
                   value: 100,
                   message: 'Máximo 100 caracteres',
+                },
+              })}
+              disabled={isPending}
+            />
+          </div>
+
+          {/* Tipo de Proceso y Objetivo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Controller
+              name="tipo"
+              control={control}
+              rules={{ required: 'El tipo de proceso es obligatorio' }}
+              render={({ field }) => (
+                <Select
+                  label="Tipo de Proceso *"
+                  options={TIPO_PROCESO_OPTIONS}
+                  helperText="Clasificación ISO 9001:2015"
+                  {...field}
+                  disabled={isPending}
+                />
+              )}
+            />
+
+            <Input
+              label="Objetivo del Proceso"
+              placeholder="Ej: Garantizar la satisfacción del cliente..."
+              error={errors.objetivo?.message}
+              {...register('objetivo', {
+                maxLength: {
+                  value: 500,
+                  message: 'Máximo 500 caracteres',
                 },
               })}
               disabled={isPending}

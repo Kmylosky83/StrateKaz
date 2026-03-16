@@ -5,11 +5,12 @@
  * Módulo: fundacion
  * Se configura 1 vez, afecta a todos los demás módulos
  *
- * 4 Tabs (flujo empresarial PHVA):
+ * 3 Tabs (flujo empresarial):
  * 1. Mi Empresa — ¿Quién soy? (datos, sedes, unidades de negocio)
  * 2. Mi Contexto e Identidad — ¿Dónde estoy? (stakeholders, contexto, misión, valores, normas, alcance)
  * 3. Mi Organización — ¿Cómo funciono? (procesos, cargos, organigrama, caracterizaciones, mapa)
- * 4. Mis Políticas y Reglamentos — ¿Con qué reglas opero? (políticas, reglamento, contratos tipo)
+ *
+ * Políticas y Reglamentos se gestionan desde Gestión Documental (Nivel 2)
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -21,9 +22,6 @@ const ContextoIdentidadPage = lazy(
 );
 const OrganizacionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/OrganizacionPage')
-);
-const PoliticasReglamentosPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/PoliticasReglamentosPage')
 );
 
 export const fundacionRoutes = (
@@ -43,12 +41,6 @@ export const fundacionRoutes = (
     <Route
       path="/fundacion/organizacion"
       element={withModuleGuard(OrganizacionPage, 'fundacion')}
-    />
-
-    {/* Tab 4: Mis Políticas y Reglamentos (políticas obligatorias, reglamento interno, contratos tipo) */}
-    <Route
-      path="/fundacion/politicas-reglamentos"
-      element={withModuleGuard(PoliticasReglamentosPage, 'fundacion')}
     />
   </>
 );

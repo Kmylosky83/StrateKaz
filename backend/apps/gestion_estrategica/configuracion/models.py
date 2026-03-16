@@ -2462,3 +2462,80 @@ class TipoContrato(BaseCompanyModel, OrderedModel):
 
     def __str__(self):
         return f"{self.nombre} ({self.get_tipo_display()})"
+
+
+# ==============================================================================
+# MODELO UNIDAD DE NEGOCIO
+# ==============================================================================
+
+class UnidadNegocio(AuditModel, SoftDeleteModel):
+    """
+    Unidad de Negocio — Divisiones operativas de la empresa.
+
+    Fundación Tab 1 (Mi Empresa). Dato maestro que consumen:
+    Supply Chain (proveedores), Contabilidad (centros de costo), Presupuesto.
+
+    Ejemplos: Planta de producción, Sucursal, Centro de acopio, Almacén.
+    """
+    TIPO_UNIDAD_CHOICES = [
+        ('SEDE', 'Sede Administrativa'),
+        ('SUCURSAL', 'Sucursal'),
+        ('PLANTA', 'Planta de Producción'),
+        ('CENTRO_ACOPIO', 'Centro de Acopio'),
+        ('ALMACEN', 'Almacén'),
+        ('OTRO', 'Otro'),
+    ]
+
+    codigo = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        verbose_name='Código',
+        help_text='Código único de la unidad de negocio (ej: PLANTA-BOG-01)'
+    )
+    nombre = models.CharField(
+        max_length=150,
+        verbose_name='Nombre'
+    )
+    tipo_unidad = models.CharField(
+        max_length=20,
+        choices=TIPO_UNIDAD_CHOICES,
+        verbose_name='Tipo de unidad'
+    )
+    direccion = models.TextField(
+        verbose_name='Dirección',
+        blank=True,
+        default=''
+    )
+    ciudad = models.CharField(
+        max_length=100,
+        verbose_name='Ciudad',
+        blank=True,
+        default=''
+    )
+    departamento = models.ForeignKey(
+        'core.Departamento',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='unidades_negocio',
+        verbose_name='Departamento'
+    )
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='unidades_negocio_responsable',
+        verbose_name='Responsable'
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+
+    class Meta:
+        db_table = 'fundacion_unidad_negocio'
+        verbose_name = 'Unidad de Negocio'
+        verbose_name_plural = 'Unidades de Negocio'
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.codigo})"

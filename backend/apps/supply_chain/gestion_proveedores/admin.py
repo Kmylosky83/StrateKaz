@@ -16,7 +16,7 @@ from .models import (
     FormaPago,
     TipoCuentaBancaria,
     # Modelos principales
-    UnidadNegocio,
+    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
@@ -103,37 +103,7 @@ class TipoCuentaBancariaAdmin(CatalogoBaseAdmin):
 # ADMIN PARA MODELOS PRINCIPALES
 # ==============================================================================
 
-@admin.register(UnidadNegocio)
-class UnidadNegocioAdmin(admin.ModelAdmin):
-    """Admin para Unidades de Negocio."""
-    list_display = ['codigo', 'nombre', 'tipo_unidad', 'ciudad', 'departamento', 'is_active', 'is_deleted_display']
-    list_filter = ['tipo_unidad', 'is_active', 'departamento']
-    search_fields = ['codigo', 'nombre', 'ciudad']
-    ordering = ['codigo']
-    raw_id_fields = ['responsable', 'departamento']
-    readonly_fields = ['created_at', 'updated_at', 'deleted_at']
-
-    fieldsets = (
-        ('Información Básica', {
-            'fields': ('codigo', 'nombre', 'tipo_unidad', 'responsable')
-        }),
-        ('Ubicación', {
-            'fields': ('direccion', 'ciudad', 'departamento')
-        }),
-        ('Estado', {
-            'fields': ('is_active', 'deleted_at')
-        }),
-        ('Auditoría', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def is_deleted_display(self, obj):
-        if obj.is_deleted:
-            return format_html('<span style="color: red;">Eliminado</span>')
-        return format_html('<span style="color: green;">Activo</span>')
-    is_deleted_display.short_description = 'Estado'
+# NOTA: UnidadNegocioAdmin → Migrado a Fundación (configuracion)
 
 
 class PrecioMateriaPrimaInline(admin.TabularInline):
@@ -156,7 +126,7 @@ class ProveedorAdmin(admin.ModelAdmin):
     ordering = ['nombre_comercial']
     raw_id_fields = [
         'tipo_proveedor', 'tipo_documento', 'modalidad_logistica',
-        'departamento', 'tipo_cuenta', 'unidad_negocio', 'created_by'
+        'departamento', 'tipo_cuenta', 'created_by'
     ]
     filter_horizontal = ['tipos_materia_prima', 'formas_pago']
     readonly_fields = ['codigo_interno', 'created_at', 'updated_at', 'deleted_at', 'created_by']
@@ -173,7 +143,7 @@ class ProveedorAdmin(admin.ModelAdmin):
             'fields': ('telefono', 'email', 'direccion', 'ciudad', 'departamento')
         }),
         ('Relaciones', {
-            'fields': ('unidad_negocio',)
+            'fields': ('unidad_negocio_id', 'unidad_negocio_nombre')
         }),
         ('Información Financiera', {
             'fields': ('formas_pago', 'dias_plazo_pago', 'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta')

@@ -29,8 +29,8 @@ from .models import (
     FormaPago,
     TipoCuentaBancaria,
     # NOTA: TipoDocumentoIdentidad, Departamento, Ciudad → migrados a Core (C0)
+    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
     # Modelos principales
-    UnidadNegocio,
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
@@ -50,8 +50,7 @@ from .serializers import (
     FormaPagoSerializer,
     TipoCuentaBancariaSerializer,
     # NOTA: TipoDocumentoIdentidad/Departamento/Ciudad serializers → Core (C0)
-    # Unidad de Negocio
-    UnidadNegocioSerializer,
+    # NOTA: UnidadNegocioSerializer → Migrado a Fundación (configuracion)
     # Proveedor
     ProveedorListSerializer,
     ProveedorDetailSerializer,
@@ -77,7 +76,6 @@ User = get_user_model()
 from .permissions import (
     CanManageProveedores,
     CanModifyPrecioProveedor,
-    CanManageUnidadesNegocio,
     CanManageCondicionesComerciales,
     CanManageCatalogos,
 )
@@ -260,59 +258,9 @@ class TipoCuentaBancariaViewSet(CatalogoBaseViewSet):
 
 
 # ==============================================================================
-# VIEWSET DE UNIDAD DE NEGOCIO
+# NOTA: UnidadNegocioViewSet → Migrado a Fundación (configuracion)
+# Endpoint: /api/fundacion/configuracion/unidades-negocio/
 # ==============================================================================
-
-class UnidadNegocioViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Unidades de Negocio.
-
-    Endpoints:
-    - GET /api/supply-chain/unidades-negocio/ - Lista de unidades
-    - POST /api/supply-chain/unidades-negocio/ - Crear unidad (Admin+)
-    - GET /api/supply-chain/unidades-negocio/{id}/ - Detalle
-    - PUT/PATCH /api/supply-chain/unidades-negocio/{id}/ - Actualizar (Admin+)
-    - DELETE /api/supply-chain/unidades-negocio/{id}/ - Soft delete (Admin+)
-    - POST /api/supply-chain/unidades-negocio/{id}/restore/ - Restaurar
-    """
-
-    queryset = UnidadNegocio.objects.all()
-    serializer_class = UnidadNegocioSerializer
-    permission_classes = [IsAuthenticated, CanManageUnidadesNegocio]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['tipo_unidad', 'is_active', 'responsable', 'departamento']
-    search_fields = ['codigo', 'nombre', 'ciudad']
-    ordering_fields = ['codigo', 'nombre', 'created_at']
-    ordering = ['codigo']
-
-    def get_queryset(self):
-        """Excluir unidades eliminadas por defecto."""
-        queryset = super().get_queryset()
-
-        include_deleted = self.request.query_params.get('include_deleted', 'false')
-        if include_deleted.lower() != 'true':
-            queryset = queryset.filter(deleted_at__isnull=True)
-
-        return queryset.select_related('responsable', 'departamento')
-
-    def perform_destroy(self, instance):
-        """Soft delete de unidad de negocio."""
-        instance.soft_delete()
-
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanManageUnidadesNegocio])
-    def restore(self, request, pk=None):
-        """Restaurar unidad de negocio eliminada."""
-        unidad = self.get_object()
-
-        if not unidad.is_deleted:
-            return Response(
-                {'detail': 'La unidad de negocio no está eliminada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        unidad.restore()
-        serializer = self.get_serializer(unidad)
-        return Response(serializer.data)
 
 
 # ==============================================================================
@@ -398,7 +346,6 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             'modalidad_logistica',
             'departamento',
             'tipo_cuenta',
-            'unidad_negocio',
             'created_by'
         ).prefetch_related(
             'tipos_materia_prima',

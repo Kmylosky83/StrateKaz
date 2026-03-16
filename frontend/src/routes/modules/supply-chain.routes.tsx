@@ -41,11 +41,6 @@ export const supplyChainRoutes = (
       path="/supply-chain/evaluaciones"
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}
     />
-    {/* unidades-negocio migrado a Fundación/Mi Empresa */}
-    <Route
-      path="/supply-chain/unidades-negocio"
-      element={<Navigate to="/fundacion/mi-empresa" replace />}
-    />
     <Route
       path="/supply-chain/catalogos"
       element={withModuleGuard(SupplyChainPage, 'supply_chain')}

@@ -2,11 +2,10 @@
  * Index principal del módulo Gestión Estratégica
  * Sistema de Gestión StrateKaz — Arquitectura Cascada V2
  *
- * FUNDACIÓN (C1) — 4 tabs:
+ * FUNDACIÓN (C1) — 3 tabs:
  * - MiEmpresaPage: Empresa, Sedes, Unidades de Negocio
  * - ContextoIdentidadPage: Stakeholders, Contexto, Misión, Valores, Normas, Alcance
  * - OrganizacionPage: Áreas, Cargos, Organigrama, Caracterizaciones, Mapa
- * - PoliticasReglamentosPage: Políticas Obligatorias, Reglamento Interno, Contratos Tipo
  *
  * PLANEACIÓN ESTRATÉGICA (C2):
  * - PlaneacionPage: Plan Estratégico, Objetivos BSC
@@ -20,7 +19,6 @@
 export { MiEmpresaPage } from './pages/MiEmpresaPage';
 export { ContextoIdentidadPage } from './pages/ContextoIdentidadPage';
 export { OrganizacionPage } from './pages/OrganizacionPage';
-export { PoliticasReglamentosPage } from './pages/PoliticasReglamentosPage';
 
 // Páginas — Planeación Estratégica (C2)
 export { PlaneacionPage } from './pages/PlaneacionPage';
@@ -38,7 +36,6 @@ export {
   MiEmpresaTab,
   ContextoIdentidadTab,
   OrganizacionTab,
-  PoliticasReglamentosTab,
   PlaneacionTab,
   GestionProyectosTab,
   RevisionDireccionTab,
@@ -53,7 +50,6 @@ export {
   AlcanceSIGSection,
   MisionVisionSection,
   ValoresSection,
-  PoliticasSection,
 } from './components';
 
 // Hooks - Strategic

@@ -18,11 +18,16 @@ import type { PaginatedResponse } from '@/types';
 
 // ==================== AREA TYPES ====================
 
+export type TipoProceso = 'ESTRATEGICO' | 'MISIONAL' | 'APOYO' | 'EVALUACION';
+
 export interface Area {
   id: number;
   code: string;
   name: string;
   description?: string;
+  tipo: TipoProceso;
+  tipo_display: string;
+  objetivo: string;
   parent?: number;
   parent_name?: string;
   cost_center?: string;
@@ -43,6 +48,9 @@ export interface AreaList {
   id: number;
   code: string;
   name: string;
+  tipo: TipoProceso;
+  tipo_display: string;
+  objetivo: string;
   parent?: number;
   parent_name?: string;
   manager?: number;
@@ -56,6 +64,8 @@ export interface CreateAreaDTO {
   code: string;
   name: string;
   description?: string;
+  tipo?: TipoProceso;
+  objetivo?: string;
   parent?: number;
   cost_center?: string;
   manager?: number;

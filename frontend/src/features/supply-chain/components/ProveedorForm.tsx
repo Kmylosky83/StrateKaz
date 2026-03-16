@@ -23,11 +23,8 @@ import {
   useFormasPago,
   useTiposCuentaBancaria,
 } from '../hooks/useCatalogos';
-import {
-  useCreateProveedor,
-  useUpdateProveedor,
-  useUnidadesNegocio,
-} from '../hooks/useProveedores';
+import { useCreateProveedor, useUpdateProveedor } from '../hooks/useProveedores';
+import { useSelectUnidadesNegocio } from '@/hooks/useSelectLists';
 import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 import type { Proveedor, CreateProveedorDTO, UpdateProveedorDTO } from '../types';
 
@@ -116,7 +113,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
   const { data: departamentos } = useDepartamentos({ is_active: true });
   const { data: formasPago } = useFormasPago({ is_active: true });
   const { data: tiposCuenta } = useTiposCuentaBancaria({ is_active: true });
-  const { data: unidadesNegocio } = useUnidadesNegocio({ is_active: true });
+  const { data: unidadesNegocio } = useSelectUnidadesNegocio();
 
   const createMutation = useCreateProveedor();
   const updateMutation = useUpdateProveedor();
@@ -325,7 +322,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
               <option value="">Seleccionar...</option>
               {unidadesList.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.nombre}
+                  {u.label}
                 </option>
               ))}
             </Select>

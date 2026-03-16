@@ -342,6 +342,38 @@ def select_tipos_documento(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def select_unidades_negocio(request):
+    """
+    Lista de unidades de negocio activas para dropdowns.
+    Usado por: Supply Chain (proveedores), Contabilidad (centros de costo)
+    """
+    UnidadNegocio = _safe_get_model('configuracion', 'UnidadNegocio')
+    if not UnidadNegocio:
+        return Response([])
+
+    qs = UnidadNegocio.objects.filter(
+        is_active=True,
+        deleted_at__isnull=True,
+    ).values(
+        'id', 'codigo', 'nombre', 'tipo_unidad', 'ciudad'
+    ).order_by('nombre')[:200]
+
+    return Response([
+        {
+            'id': u['id'],
+            'label': f"{u['nombre']} ({u['codigo']})",
+            'extra': {
+                'codigo': u.get('codigo', ''),
+                'tipo': u.get('tipo_unidad', ''),
+                'ciudad': u.get('ciudad', ''),
+            }
+        }
+        for u in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def select_tipos_epp(request):
     """
     Lista de tipos de EPP activos para dropdowns.

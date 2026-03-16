@@ -12,6 +12,8 @@ import { Card, Button, BrandedSkeleton, SectionHeader } from '@/components/commo
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCurrentTenant, useUpdateCurrentTenant } from '../hooks/useStrategic';
 import type { CurrentTenantData } from '../api/strategicApi';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import {
   TIPO_SOCIEDAD_OPTIONS,
   TIPO_SOCIEDAD_MAP,
@@ -83,6 +85,8 @@ const ColorPickerField = ({ label, value, onChange, disabled }: ColorPickerField
 export const EmpresaSection = () => {
   const { data: tenant, isLoading } = useCurrentTenant();
   const updateMutation = useUpdateCurrentTenant();
+  const { canDo } = usePermissions();
+  const canEdit = canDo(Modules.FUNDACION, Sections.EMPRESA, 'edit');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<EditableFields>({});
@@ -222,11 +226,11 @@ export const EmpresaSection = () => {
                 {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
               </Button>
             </>
-          ) : (
+          ) : canEdit ? (
             <Button variant="outline" size="sm" onClick={startEditing}>
               Editar
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 

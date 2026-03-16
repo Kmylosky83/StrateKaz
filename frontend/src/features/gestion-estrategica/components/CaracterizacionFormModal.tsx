@@ -328,7 +328,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
         <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
         {/* Estado de carga al editar */}

@@ -182,7 +182,7 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
   const canDelete = canDo(Modules.FUNDACION, Sections.PARTES_INTERESADAS, 'delete');
 
   // Color del modulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('FUNDACION');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Sprint 17: Ref para input de archivo

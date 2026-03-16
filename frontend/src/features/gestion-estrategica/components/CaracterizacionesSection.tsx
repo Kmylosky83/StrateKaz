@@ -7,10 +7,20 @@
  * - Colores dinámicos via getModuleColorClasses()
  * - ResponsiveTable para columnas adaptables
  */
-import { useState } from 'react';
-import { ClipboardList, Plus, Pencil, Trash2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import {
+  ClipboardList,
+  Plus,
+  Pencil,
+  Trash2,
+  CheckCircle,
+  Clock,
+  FileText,
+  AlertTriangle,
+} from 'lucide-react';
 import { Alert, Badge, Button, BrandedSkeleton, ConfirmDialog } from '@/components/common';
-import { DataTableCard } from '@/components/layout';
+import { DataTableCard, StatsGrid } from '@/components/layout';
+import type { StatItem } from '@/components/layout';
 import { DataSection } from '@/components/data-display';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
@@ -42,6 +52,46 @@ export const CaracterizacionesSection = () => {
   const deleteMutation = useDeleteCaracterizacion();
 
   const items = Array.isArray(caracterizacionesData) ? caracterizacionesData : [];
+
+  // StatsGrid
+  const stats: StatItem[] = useMemo(() => {
+    const total = items.length;
+    const aprobadas = items.filter((i) => i.estado === 'APROBADO').length;
+    const borrador = items.filter((i) => i.estado === 'BORRADOR').length;
+    const enRevision = items.filter((i) => i.estado === 'EN_REVISION').length;
+
+    return [
+      {
+        label: 'Total Procesos',
+        value: total,
+        icon: FileText,
+        iconColor: 'info',
+        description: 'Caracterizaciones registradas',
+      },
+      {
+        label: 'Aprobadas',
+        value: aprobadas,
+        icon: CheckCircle,
+        iconColor: 'success',
+        description:
+          total > 0 ? `${Math.round((aprobadas / total) * 100)}% del total` : 'Sin datos',
+      },
+      {
+        label: 'En Revisión',
+        value: enRevision,
+        icon: Clock,
+        iconColor: 'warning',
+        description: 'Pendientes de aprobación',
+      },
+      {
+        label: 'Borrador',
+        value: borrador,
+        icon: AlertTriangle,
+        iconColor: 'danger',
+        description: 'Requieren completar',
+      },
+    ];
+  }, [items]);
 
   // Handlers
   const handleCreate = () => {
@@ -190,6 +240,8 @@ export const CaracterizacionesSection = () => {
 
   return (
     <div className="space-y-6">
+      <StatsGrid stats={stats} columns={4} moduleColor={moduleColor as string} />
+
       <DataSection
         icon={ClipboardList}
         iconBgClass={colorClasses.badge}

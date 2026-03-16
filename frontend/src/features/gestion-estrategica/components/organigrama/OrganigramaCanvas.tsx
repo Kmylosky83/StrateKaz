@@ -28,6 +28,8 @@ import '@xyflow/react/dist/style.css';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { Card, EmptyState, Spinner, Button } from '@/components/common';
 import { Building2, Network, Download, Maximize2, RotateCcw, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -110,6 +112,10 @@ const OrganigramaCanvasInner = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
 
+  // RBAC
+  const { canDo } = usePermissions();
+  const canEditOrg = canDo(Modules.FUNDACION, Sections.ORGANIGRAMA, 'edit');
+
   // Datos
   const { data, isLoading, error, refetch } = useOrganigramaData(false, filters.soloActivos);
 
@@ -187,9 +193,10 @@ const OrganigramaCanvasInner = ({
   // Handler para guardar posicion cuando el usuario arrastra un nodo
   const handleNodeDragStop: NodeDragHandler = useCallback(
     (_event, node) => {
+      if (!canEditOrg) return;
       saveNodePosition(node.id, node.position.x, node.position.y);
     },
-    [saveNodePosition]
+    [saveNodePosition, canEditOrg]
   );
 
   // Handlers

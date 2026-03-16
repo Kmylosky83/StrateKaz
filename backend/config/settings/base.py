@@ -167,10 +167,10 @@ TENANT_APPS = [
     'apps.talent_hub.off_boarding',
     'apps.talent_hub.consultores_externos',
 
-    'apps.admin_finance.presupuesto',
-    'apps.admin_finance.tesoreria',
-    'apps.admin_finance.activos_fijos',
-    'apps.admin_finance.servicios_generales',
+    'apps.administracion.presupuesto',
+    'apps.administracion.activos_fijos',
+    'apps.administracion.servicios_generales',
+    'apps.tesoreria.tesoreria',
 
     'apps.accounting.config_contable',
     'apps.accounting.movimientos',

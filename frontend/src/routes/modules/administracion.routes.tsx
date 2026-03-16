@@ -3,20 +3,19 @@
  * Nivel 11A — Soporte (HACER)
  *
  * 3 tabs: Activos Fijos, Servicios Generales, Presupuesto
- * Páginas en features/admin-finance/pages/ (mismo backend)
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const ActivosFijosPage = lazy(() =>
-  import('@/features/admin-finance').then((m) => ({ default: m.ActivosFijosPage }))
+  import('@/features/administracion').then((m) => ({ default: m.ActivosFijosPage }))
 );
 const ServiciosGeneralesPage = lazy(() =>
-  import('@/features/admin-finance').then((m) => ({ default: m.ServiciosGeneralesPage }))
+  import('@/features/administracion').then((m) => ({ default: m.ServiciosGeneralesPage }))
 );
 const PresupuestoPage = lazy(() =>
-  import('@/features/admin-finance').then((m) => ({ default: m.PresupuestoPage }))
+  import('@/features/administracion').then((m) => ({ default: m.PresupuestoPage }))
 );
 
 export const administracionRoutes = (

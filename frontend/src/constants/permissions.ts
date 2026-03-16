@@ -49,8 +49,6 @@ export const Modules = {
   MOTOR_RIESGOS: 'proteccion_cumplimiento',
   /** @deprecated Use GESTION_DOCUMENTAL */
   SISTEMA_GESTION: 'gestion_documental',
-  /** @deprecated Use ADMINISTRACION */
-  ADMIN_FINANCE: 'administracion',
 } as const;
 
 export const Sections = {

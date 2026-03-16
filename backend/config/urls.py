@@ -224,8 +224,11 @@ if is_app_installed('apps.sales_crm.gestion_clientes'):
 if is_app_installed('apps.talent_hub.estructura_cargos'):
     urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))
 
-if is_app_installed('apps.admin_finance.tesoreria'):
-    urlpatterns.append(path('api/admin-finance/', include('apps.admin_finance.urls')))
+if is_app_installed('apps.administracion.presupuesto'):
+    urlpatterns.append(path('api/administracion/', include('apps.administracion.urls')))
+
+if is_app_installed('apps.tesoreria.tesoreria'):
+    urlpatterns.append(path('api/tesoreria/', include('apps.tesoreria.urls')))
 
 if is_app_installed('apps.accounting.config_contable'):
     urlpatterns.append(path('api/accounting/', include('apps.accounting.urls')))

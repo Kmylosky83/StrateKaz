@@ -1,25 +1,9 @@
 /**
- * API Clients para Admin Finance - Alineados con backend real
- * Endpoints: /api/admin-finance/{app}/{resource}/
+ * API Clients para Administración — Módulo V2 (Cascada)
+ * Endpoints: /api/administracion/{app}/{resource}/
  */
 import { apiClient } from '@/lib/api-client';
 import type {
-  Banco,
-  BancoList,
-  BancoSaldos,
-  CuentaPorPagar,
-  CuentaPorPagarList,
-  CuentaPorPagarEstadisticas,
-  CuentaPorCobrar,
-  CuentaPorCobrarList,
-  CuentaPorCobrarEstadisticas,
-  FlujoCaja,
-  FlujoCajaList,
-  FlujoCajaResumen,
-  Pago,
-  PagoList,
-  Recaudo,
-  RecaudoList,
   CentroCosto,
   CentroCostoList,
   Rubro,
@@ -53,112 +37,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const API_BASE = '/admin-finance';
-
-// ==================== TESORERIA API ====================
-
-export const bancosApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<BancoList>>(`${API_BASE}/tesoreria/bancos/`, { params }),
-  getById: (id: number) => apiClient.get<Banco>(`${API_BASE}/tesoreria/bancos/${id}/`),
-  create: (data: Partial<Banco>) => apiClient.post<Banco>(`${API_BASE}/tesoreria/bancos/`, data),
-  update: (id: number, data: Partial<Banco>) =>
-    apiClient.patch<Banco>(`${API_BASE}/tesoreria/bancos/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/bancos/${id}/`),
-  getSaldos: () => apiClient.get<BancoSaldos>(`${API_BASE}/tesoreria/bancos/saldos/`),
-};
-
-export const cuentasPorPagarApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<CuentaPorPagarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-pagar/`,
-      { params }
-    ),
-  getById: (id: number) =>
-    apiClient.get<CuentaPorPagar>(`${API_BASE}/tesoreria/cuentas-por-pagar/${id}/`),
-  create: (data: Partial<CuentaPorPagar>) =>
-    apiClient.post<CuentaPorPagar>(`${API_BASE}/tesoreria/cuentas-por-pagar/`, data),
-  update: (id: number, data: Partial<CuentaPorPagar>) =>
-    apiClient.patch<CuentaPorPagar>(`${API_BASE}/tesoreria/cuentas-por-pagar/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/cuentas-por-pagar/${id}/`),
-  getVencidas: () =>
-    apiClient.get<PaginatedResponse<CuentaPorPagarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-pagar/vencidas/`
-    ),
-  getPorVencer: () =>
-    apiClient.get<PaginatedResponse<CuentaPorPagarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-pagar/por-vencer/`
-    ),
-  getEstadisticas: () =>
-    apiClient.get<CuentaPorPagarEstadisticas>(
-      `${API_BASE}/tesoreria/cuentas-por-pagar/estadisticas/`
-    ),
-};
-
-export const cuentasPorCobrarApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<CuentaPorCobrarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-cobrar/`,
-      { params }
-    ),
-  getById: (id: number) =>
-    apiClient.get<CuentaPorCobrar>(`${API_BASE}/tesoreria/cuentas-por-cobrar/${id}/`),
-  create: (data: Partial<CuentaPorCobrar>) =>
-    apiClient.post<CuentaPorCobrar>(`${API_BASE}/tesoreria/cuentas-por-cobrar/`, data),
-  update: (id: number, data: Partial<CuentaPorCobrar>) =>
-    apiClient.patch<CuentaPorCobrar>(`${API_BASE}/tesoreria/cuentas-por-cobrar/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/cuentas-por-cobrar/${id}/`),
-  getVencidas: () =>
-    apiClient.get<PaginatedResponse<CuentaPorCobrarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-cobrar/vencidas/`
-    ),
-  getPorVencer: () =>
-    apiClient.get<PaginatedResponse<CuentaPorCobrarList>>(
-      `${API_BASE}/tesoreria/cuentas-por-cobrar/por-vencer/`
-    ),
-  getEstadisticas: () =>
-    apiClient.get<CuentaPorCobrarEstadisticas>(
-      `${API_BASE}/tesoreria/cuentas-por-cobrar/estadisticas/`
-    ),
-};
-
-export const flujoCajaApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<FlujoCajaList>>(`${API_BASE}/tesoreria/flujo-caja/`, {
-      params,
-    }),
-  getById: (id: number) => apiClient.get<FlujoCaja>(`${API_BASE}/tesoreria/flujo-caja/${id}/`),
-  create: (data: Partial<FlujoCaja>) =>
-    apiClient.post<FlujoCaja>(`${API_BASE}/tesoreria/flujo-caja/`, data),
-  update: (id: number, data: Partial<FlujoCaja>) =>
-    apiClient.patch<FlujoCaja>(`${API_BASE}/tesoreria/flujo-caja/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/flujo-caja/${id}/`),
-  getResumenPeriodo: (params: { fecha_inicio: string; fecha_fin: string }) =>
-    apiClient.get<FlujoCajaResumen>(`${API_BASE}/tesoreria/flujo-caja/resumen-periodo/`, {
-      params,
-    }),
-};
-
-export const pagosApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<PagoList>>(`${API_BASE}/tesoreria/pagos/`, { params }),
-  getById: (id: number) => apiClient.get<Pago>(`${API_BASE}/tesoreria/pagos/${id}/`),
-  create: (data: Partial<Pago>) => apiClient.post<Pago>(`${API_BASE}/tesoreria/pagos/`, data),
-  update: (id: number, data: Partial<Pago>) =>
-    apiClient.patch<Pago>(`${API_BASE}/tesoreria/pagos/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/pagos/${id}/`),
-};
-
-export const recaudosApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<RecaudoList>>(`${API_BASE}/tesoreria/recaudos/`, { params }),
-  getById: (id: number) => apiClient.get<Recaudo>(`${API_BASE}/tesoreria/recaudos/${id}/`),
-  create: (data: Partial<Recaudo>) =>
-    apiClient.post<Recaudo>(`${API_BASE}/tesoreria/recaudos/`, data),
-  update: (id: number, data: Partial<Recaudo>) =>
-    apiClient.patch<Recaudo>(`${API_BASE}/tesoreria/recaudos/${id}/`, data),
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tesoreria/recaudos/${id}/`),
-};
+const API_BASE = '/administracion';
 
 // ==================== PRESUPUESTO API ====================
 

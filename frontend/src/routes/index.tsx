@@ -53,7 +53,6 @@ import { logisticsFleetRoutes } from './modules/logistics-fleet.routes';
 import { salesCrmRoutes } from './modules/sales-crm.routes';
 import { administracionRoutes } from './modules/administracion.routes';
 import { tesoreriaRoutes } from './modules/tesoreria.routes';
-import { adminFinanceRoutes } from './modules/admin-finance.routes';
 import { accountingRoutes } from './modules/accounting.routes';
 import { analyticsRoutes } from './modules/analytics.routes';
 import { auditSystemRoutes } from './modules/audit-system.routes';
@@ -138,8 +137,6 @@ export const AppRoutes = () => {
           {riesgosRoutes}
           {hseqRoutes}
           {sistemaGestionRoutes}
-          {adminFinanceRoutes}
-
           {/* C3 — Inteligencia + Mejora Continua */}
           {analyticsRoutes}
           {revisionDireccionRoutes}

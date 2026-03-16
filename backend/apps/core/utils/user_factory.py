@@ -77,9 +77,9 @@ def create_external_user(
     if fecha_ingreso:
         new_user.fecha_ingreso = fecha_ingreso
     if proveedor:
-        new_user.proveedor = proveedor
+        new_user.proveedor_id_ext = proveedor if isinstance(proveedor, int) else proveedor.pk
     if cliente:
-        new_user.cliente = cliente
+        new_user.cliente_id_ext = cliente if isinstance(cliente, int) else cliente.pk
 
     new_user._from_contratacion = True
     new_user.set_password(temp_password)

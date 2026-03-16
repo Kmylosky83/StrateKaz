@@ -197,18 +197,24 @@ def current_user(request):
 
     # 6. Proveedor vinculado (portal proveedor / profesional externo)
     proveedor_nombre = None
-    if user.proveedor_id:
+    if user.proveedor_id_ext:
         try:
-            proveedor_nombre = user.proveedor.nombre_comercial
-        except Exception:
+            from django.apps import apps as django_apps
+            Proveedor = django_apps.get_model('gestion_proveedores', 'Proveedor')
+            prov = Proveedor.objects.filter(pk=user.proveedor_id_ext).first()
+            proveedor_nombre = prov.nombre_comercial if prov else None
+        except (LookupError, Exception):
             pass
 
     # 7. Cliente vinculado (portal cliente)
     cliente_nombre = None
-    if user.cliente_id:
+    if user.cliente_id_ext:
         try:
-            cliente_nombre = user.cliente.nombre_comercial
-        except Exception:
+            from django.apps import apps as django_apps
+            Cliente = django_apps.get_model('gestion_clientes', 'Cliente')
+            cli = Cliente.objects.filter(pk=user.cliente_id_ext).first()
+            cliente_nombre = (cli.nombre_comercial or cli.razon_social) if cli else None
+        except (LookupError, Exception):
             pass
 
     return Response({
@@ -246,9 +252,9 @@ def current_user(request):
         # Foto de perfil
         'photo_url': photo_url,
         # Portal: proveedor/cliente vinculado
-        'proveedor': user.proveedor_id,
+        'proveedor': user.proveedor_id_ext,
         'proveedor_nombre': proveedor_nombre,
-        'cliente': user.cliente_id,
+        'cliente': user.cliente_id_ext,
         'cliente_nombre': cliente_nombre,
     })
 

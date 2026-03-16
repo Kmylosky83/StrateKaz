@@ -470,10 +470,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Cliente vinculado (portal cliente)
         cliente_nombre = None
-        if target_user.cliente_id:
+        if target_user.cliente_id_ext:
             try:
-                cliente_nombre = target_user.cliente.nombre_comercial
-            except Exception:
+                from django.apps import apps as django_apps
+                Cliente = django_apps.get_model('gestion_clientes', 'Cliente')
+                cli = Cliente.objects.filter(pk=target_user.cliente_id_ext).first()
+                cliente_nombre = (cli.nombre_comercial or cli.razon_social) if cli else None
+            except (LookupError, Exception):
                 pass
 
         # Respuesta en el mismo formato que current_user() de core_views.py
@@ -508,12 +511,9 @@ class UserViewSet(viewsets.ModelViewSet):
             'empresa_nombre': empresa_nombre,
             'area_nombre': area_nombre,
             'photo_url': photo_url,
-            'proveedor': target_user.proveedor_id,
-            'proveedor_nombre': (
-                target_user.proveedor.nombre_comercial
-                if target_user.proveedor else None
-            ),
-            'cliente': target_user.cliente_id,
+            'proveedor': target_user.proveedor_id_ext,
+            'proveedor_nombre': None,  # Se resuelve cuando supply_chain esté activo
+            'cliente': target_user.cliente_id_ext,
             'cliente_nombre': cliente_nombre,
         })
 

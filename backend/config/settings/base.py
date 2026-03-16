@@ -81,117 +81,129 @@ TENANT_APPS = [
     'apps.ia',  # IA: GeminiService, ayuda contextual, asistente de texto
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 1: ESTRATÉGICO
+    # CASCADA LEVEL 10: FUNDACIÓN (C1 base)
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.gestion_estrategica.configuracion',
     'apps.gestion_estrategica.organizacion',
     'apps.gestion_estrategica.identidad',
-    'apps.gestion_estrategica.planeacion',
     'apps.gestion_estrategica.contexto',
-    'apps.gestion_estrategica.encuestas',
-    'apps.gestion_estrategica.gestion_proyectos',
-    'apps.gestion_estrategica.revision_direccion',
-    'apps.gestion_estrategica.gestion_documental',
-    'apps.gestion_estrategica.planificacion_sistema',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 2: CUMPLIMIENTO
+    # CASCADA LEVEL 15: PLANEACIÓN ESTRATÉGICA
+    # Descomentar cuando Level 10 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.motor_cumplimiento.matriz_legal',
-    'apps.motor_cumplimiento.requisitos_legales',
-    # partes_interesadas ELIMINADO — la fuente canónica está en gestion_estrategica.contexto (ISO 9001:2015 Cláusula 4.2)
-    'apps.motor_cumplimiento.reglamentos_internos',
-    'apps.motor_cumplimiento.evidencias',
-
-    'apps.motor_riesgos.riesgos_procesos',
-    'apps.motor_riesgos.ipevr',
-    'apps.motor_riesgos.aspectos_ambientales',
-    'apps.motor_riesgos.riesgos_viales',
-    'apps.motor_riesgos.seguridad_informacion',
-    'apps.motor_riesgos.sagrilaft_ptee',
-
-    'apps.workflow_engine.disenador_flujos',
-    'apps.workflow_engine.ejecucion',
-    'apps.workflow_engine.monitoreo',
-    'apps.workflow_engine.firma_digital',
+    # 'apps.gestion_estrategica.planeacion',
+    # 'apps.gestion_estrategica.encuestas',
+    # 'apps.gestion_estrategica.gestion_proyectos',
+    # 'apps.gestion_estrategica.gestion_documental',
+    # 'apps.gestion_estrategica.planificacion_sistema',
+    # 'apps.gestion_estrategica.revision_direccion',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 3: TORRE DE CONTROL - HSEQ
+    # CASCADA LEVEL 20: CUMPLIMIENTO + RIESGOS
+    # Descomentar cuando Level 15 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.hseq_management.accidentalidad',
-    'apps.hseq_management.seguridad_industrial',
-    'apps.hseq_management.higiene_industrial',
-    'apps.hseq_management.medicina_laboral',
-    'apps.hseq_management.emergencias',
-    'apps.hseq_management.gestion_ambiental',
-    'apps.hseq_management.calidad',
-    'apps.hseq_management.mejora_continua',
-    'apps.hseq_management.gestion_comites',
-    # NOTA: planificacion_sistema fue migrado a apps.gestion_estrategica.planificacion_sistema
-
-    # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 4: CADENA DE VALOR
-    # ═══════════════════════════════════════════════════════════════════════════
-    'apps.supply_chain.catalogos',
-    'apps.supply_chain.gestion_proveedores',
-    'apps.supply_chain.compras',
-    'apps.supply_chain.almacenamiento',
-    'apps.supply_chain.programacion_abastecimiento',
-
-    'apps.production_ops.recepcion',
-    'apps.production_ops.procesamiento',
-    'apps.production_ops.producto_terminado',
-    'apps.production_ops.mantenimiento',
-
-    'apps.logistics_fleet.gestion_flota',
-    'apps.logistics_fleet.gestion_transporte',
-
-    'apps.sales_crm.gestion_clientes',
-    'apps.sales_crm.pipeline_ventas',
-    'apps.sales_crm.pedidos_facturacion',
-    'apps.sales_crm.servicio_cliente',
+    # 'apps.motor_cumplimiento.matriz_legal',
+    # 'apps.motor_cumplimiento.requisitos_legales',
+    # 'apps.motor_cumplimiento.reglamentos_internos',
+    # 'apps.motor_cumplimiento.evidencias',
+    #
+    # 'apps.motor_riesgos.riesgos_procesos',
+    # 'apps.motor_riesgos.ipevr',
+    # 'apps.motor_riesgos.aspectos_ambientales',
+    # 'apps.motor_riesgos.riesgos_viales',
+    # 'apps.motor_riesgos.seguridad_informacion',
+    # 'apps.motor_riesgos.sagrilaft_ptee',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 5: HABILITADORES
+    # CASCADA LEVEL 25: WORKFLOWS + HSEQ
+    # Descomentar cuando Level 20 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.talent_hub.estructura_cargos',
-    'apps.talent_hub.seleccion_contratacion',
-    'apps.talent_hub.colaboradores',
-    'apps.talent_hub.onboarding_induccion',
-    'apps.talent_hub.formacion_reinduccion',
-    'apps.talent_hub.desempeno',
-    'apps.talent_hub.control_tiempo',
-    'apps.talent_hub.novedades',
-    'apps.talent_hub.nomina',
-    'apps.talent_hub.proceso_disciplinario',
-    'apps.talent_hub.off_boarding',
-    'apps.talent_hub.consultores_externos',
-
-    'apps.administracion.presupuesto',
-    'apps.administracion.activos_fijos',
-    'apps.administracion.servicios_generales',
-    'apps.tesoreria.tesoreria',
-
-    'apps.accounting.config_contable',
-    'apps.accounting.movimientos',
-    'apps.accounting.informes_contables',
-    'apps.accounting.integracion',
+    # 'apps.workflow_engine.disenador_flujos',
+    # 'apps.workflow_engine.ejecucion',
+    # 'apps.workflow_engine.monitoreo',
+    # 'apps.workflow_engine.firma_digital',
+    #
+    # 'apps.hseq_management.accidentalidad',
+    # 'apps.hseq_management.seguridad_industrial',
+    # 'apps.hseq_management.higiene_industrial',
+    # 'apps.hseq_management.medicina_laboral',
+    # 'apps.hseq_management.emergencias',
+    # 'apps.hseq_management.gestion_ambiental',
+    # 'apps.hseq_management.calidad',
+    # 'apps.hseq_management.mejora_continua',
+    # 'apps.hseq_management.gestion_comites',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 6: INTELIGENCIA
+    # CASCADA LEVEL 30: CADENA DE VALOR
+    # Descomentar cuando Level 25 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.analytics.config_indicadores',
-    'apps.analytics.indicadores_area',
-    'apps.analytics.acciones_indicador',
-    'apps.analytics.dashboard_gerencial',
-    'apps.analytics.generador_informes',
-    'apps.analytics.analisis_tendencias',
-    'apps.analytics.exportacion_integracion',
+    # 'apps.supply_chain.catalogos',
+    # 'apps.supply_chain.gestion_proveedores',
+    # 'apps.supply_chain.compras',
+    # 'apps.supply_chain.almacenamiento',
+    # 'apps.supply_chain.programacion_abastecimiento',
+    #
+    # 'apps.production_ops.recepcion',
+    # 'apps.production_ops.procesamiento',
+    # 'apps.production_ops.producto_terminado',
+    # 'apps.production_ops.mantenimiento',
+    #
+    # 'apps.logistics_fleet.gestion_flota',
+    # 'apps.logistics_fleet.gestion_transporte',
+    #
+    # 'apps.sales_crm.gestion_clientes',
+    # 'apps.sales_crm.pipeline_ventas',
+    # 'apps.sales_crm.pedidos_facturacion',
+    # 'apps.sales_crm.servicio_cliente',
 
-    'apps.audit_system.logs_sistema',
-    'apps.audit_system.config_alertas',
-    'apps.audit_system.centro_notificaciones',
-    'apps.audit_system.tareas_recordatorios',
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 35: TALENTO HUMANO
+    # Descomentar cuando Level 30 esté estabilizado con datos reales
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 'apps.talent_hub.estructura_cargos',
+    # 'apps.talent_hub.seleccion_contratacion',
+    # 'apps.talent_hub.colaboradores',
+    # 'apps.talent_hub.onboarding_induccion',
+    # 'apps.talent_hub.formacion_reinduccion',
+    # 'apps.talent_hub.desempeno',
+    # 'apps.talent_hub.control_tiempo',
+    # 'apps.talent_hub.novedades',
+    # 'apps.talent_hub.nomina',
+    # 'apps.talent_hub.proceso_disciplinario',
+    # 'apps.talent_hub.off_boarding',
+    # 'apps.talent_hub.consultores_externos',
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 40: FINANZAS + CONTABILIDAD
+    # Descomentar cuando Level 35 esté estabilizado con datos reales
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 'apps.administracion.presupuesto',
+    # 'apps.administracion.activos_fijos',
+    # 'apps.administracion.servicios_generales',
+    # 'apps.tesoreria.tesoreria',
+    #
+    # 'apps.accounting.config_contable',
+    # 'apps.accounting.movimientos',
+    # 'apps.accounting.informes_contables',
+    # 'apps.accounting.integracion',
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 45: INTELIGENCIA (C3)
+    # Descomentar cuando TODOS los módulos C2 estén estabilizados
+    # ═══════════════════════════════════════════════════════════════════════════
+    # 'apps.analytics.config_indicadores',
+    # 'apps.analytics.indicadores_area',
+    # 'apps.analytics.acciones_indicador',
+    # 'apps.analytics.dashboard_gerencial',
+    # 'apps.analytics.generador_informes',
+    # 'apps.analytics.analisis_tendencias',
+    # 'apps.analytics.exportacion_integracion',
+    #
+    # 'apps.audit_system.logs_sistema',
+    # 'apps.audit_system.config_alertas',
+    # 'apps.audit_system.centro_notificaciones',
+    # 'apps.audit_system.tareas_recordatorios',
 ]
 
 # INSTALLED_APPS es la combinación de ambas

@@ -42,18 +42,17 @@ urlpatterns = [
     # Endpoints canónicos a nivel de módulo (router)
     path('', include(router.urls)),
 
-    # Sub-apps del módulo Gestión Estratégica
+    # Sub-apps del módulo Gestión Estratégica — CASCADA LEVEL 10 (activas)
     path('organizacion/', include('apps.gestion_estrategica.organizacion.urls')),
     path('configuracion/', include('apps.gestion_estrategica.configuracion.urls')),
     path('identidad/', include('apps.gestion_estrategica.identidad.urls')),
     path('contexto/', include('apps.gestion_estrategica.contexto.urls')),
-    path('planeacion/', include('apps.gestion_estrategica.planeacion.urls')),
-    path('proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
-    path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
-    path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
-    path('planificacion-sistema/', include('apps.gestion_estrategica.planificacion_sistema.urls')),
 
-    # Mejora continua (auditorías + hallazgos) — modelos en hseq_management, re-montados aquí
-    # para que sistema_gestion consuma APIs bajo /api/gestion-estrategica/mejora-continua/
-    path('mejora-continua/', include('apps.hseq_management.mejora_continua.urls')),
+    # CASCADA LEVEL 15+ (descomentar al activar cada nivel)
+    # path('planeacion/', include('apps.gestion_estrategica.planeacion.urls')),
+    # path('proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
+    # path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
+    # path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
+    # path('planificacion-sistema/', include('apps.gestion_estrategica.planificacion_sistema.urls')),
+    # path('mejora-continua/', include('apps.hseq_management.mejora_continua.urls')),
 ]

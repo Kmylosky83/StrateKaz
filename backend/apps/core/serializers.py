@@ -114,11 +114,11 @@ class UserListSerializer(serializers.ModelSerializer):
     def get_origen(self, obj):
         """Calcula el origen del usuario basado en FKs existentes."""
         cargo_code = obj.cargo.code if obj.cargo else None
-        if obj.proveedor_id:
+        if obj.proveedor_id_ext:
             if cargo_code == 'PROVEEDOR_PORTAL':
                 return 'proveedor_portal'
             return 'proveedor_profesional'
-        if obj.cliente_id:
+        if obj.cliente_id_ext:
             return 'cliente_portal'
         # Check if linked to Colaborador (reverse FK)
         if hasattr(obj, '_has_colaborador'):
@@ -157,11 +157,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     # Proveedor vinculado (para usuarios externos: consultores, auditores)
     # IntegerField directo para evitar cross-module PrimaryKeyRelatedField
-    proveedor = serializers.IntegerField(source='proveedor_id', read_only=True, allow_null=True)
+    proveedor = serializers.IntegerField(source='proveedor_id_ext', read_only=True, allow_null=True)
     proveedor_nombre = serializers.SerializerMethodField()
 
     # Cliente vinculado (para usuarios del portal de clientes)
-    cliente = serializers.IntegerField(source='cliente_id', read_only=True, allow_null=True)
+    cliente = serializers.IntegerField(source='cliente_id_ext', read_only=True, allow_null=True)
     cliente_nombre = serializers.SerializerMethodField()
 
     class Meta:
@@ -250,17 +250,27 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def get_proveedor_nombre(self, obj):
         """Retorna el nombre comercial del proveedor vinculado (None si no tiene)"""
-        proveedor = getattr(obj, 'proveedor', None)
-        if proveedor:
-            return proveedor.nombre_comercial
-        return None
+        if not obj.proveedor_id_ext:
+            return None
+        try:
+            from django.apps import apps
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            prov = Proveedor.objects.filter(pk=obj.proveedor_id_ext).first()
+            return prov.nombre_comercial if prov else None
+        except LookupError:
+            return None
 
     def get_cliente_nombre(self, obj):
         """Retorna el nombre comercial del cliente vinculado (None si no tiene)"""
-        cliente = getattr(obj, 'cliente', None)
-        if cliente:
-            return cliente.nombre_comercial or cliente.razon_social
-        return None
+        if not obj.cliente_id_ext:
+            return None
+        try:
+            from django.apps import apps
+            Cliente = apps.get_model('gestion_clientes', 'Cliente')
+            cli = Cliente.objects.filter(pk=obj.cliente_id_ext).first()
+            return (cli.nombre_comercial or cli.razon_social) if cli else None
+        except LookupError:
+            return None
 
     def get_section_ids(self, obj):
         """
@@ -417,18 +427,20 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         try:
             from django.apps import apps
             Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
-            return Proveedor.objects.get(id=value, is_active=True)
+            Proveedor.objects.get(id=value, is_active=True)
+            return value  # Retorna el ID, no la instancia
+        except LookupError:
+            return value  # Módulo no activo, aceptar ID sin validar
         except Exception:
             raise serializers.ValidationError('Proveedor no encontrado o inactivo')
 
     def update(self, instance, validated_data):
-        """Override para manejar proveedor_id → proveedor FK"""
-        proveedor = validated_data.pop('proveedor_id', 'NOT_SET')
+        """Override para manejar proveedor_id como IntegerField"""
+        proveedor_id = validated_data.pop('proveedor_id', 'NOT_SET')
         instance = super().update(instance, validated_data)
-        if proveedor != 'NOT_SET':
-            # proveedor es None (desvinculado) o una instancia Proveedor
-            instance.proveedor = proveedor
-            instance.save(update_fields=['proveedor'])
+        if proveedor_id != 'NOT_SET':
+            instance.proveedor_id_ext = proveedor_id
+            instance.save(update_fields=['proveedor_id_ext'])
         return instance
 
     class Meta:

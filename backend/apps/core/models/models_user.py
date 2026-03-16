@@ -803,28 +803,28 @@ class User(AbstractUser):
 
     # ==========================================================================
     # PROVEEDOR VINCULADO (para usuarios externos: consultores, auditores)
+    # Cross-module: IntegerField (CASCADA LEVEL 30 — supply_chain)
     # ==========================================================================
-    proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
-        on_delete=models.SET_NULL,
+    proveedor_id_ext = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='usuarios_vinculados',
+        db_index=True,
+        db_column='proveedor_id',
         verbose_name='Proveedor vinculado',
-        help_text='Solo para usuarios externos (consultores, auditores, proveedores de servicios)',
+        help_text='ID del Proveedor (supply_chain.gestion_proveedores)',
     )
 
     # ==========================================================================
     # CLIENTE VINCULADO (para usuarios del portal de clientes)
+    # Cross-module: IntegerField (CASCADA LEVEL 30 — sales_crm)
     # ==========================================================================
-    cliente = models.ForeignKey(
-        'gestion_clientes.Cliente',
-        on_delete=models.SET_NULL,
+    cliente_id_ext = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='usuarios_vinculados',
+        db_index=True,
+        db_column='cliente_id',
         verbose_name='Cliente vinculado',
-        help_text='Solo para usuarios del portal de clientes',
+        help_text='ID del Cliente (sales_crm.gestion_clientes)',
     )
 
     # ==========================================================================

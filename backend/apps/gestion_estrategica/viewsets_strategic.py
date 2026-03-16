@@ -28,7 +28,12 @@ from apps.core.models import (
 
 # Modelos locales de gestion_estrategica (imports relativos)
 from .identidad.models import CorporateIdentity
-from .planeacion.models import StrategicPlan, StrategicObjective
+
+# Planeación: import condicional (CASCADA LEVEL 15+)
+from django.apps import apps as django_apps
+HAS_PLANEACION = django_apps.is_installed('apps.gestion_estrategica.planeacion')
+if HAS_PLANEACION:
+    from .planeacion.models import StrategicPlan, StrategicObjective
 
 
 # =============================================================================
@@ -82,30 +87,30 @@ class StrategicStatsViewSet(viewsets.ViewSet):
         ).annotate(
             active_values_count=Count('values', filter=Q(values__is_active=True))
         ).first()
-        active_plan = StrategicPlan.objects.filter(is_active=True).first()
-
-        # === 2. OBJETIVOS ESTRATEGICOS ===
+        active_plan = None
         total_objs = 0
         completed_objs = 0
         in_progress_objs = 0
         at_risk_objs = 0
         avg = 0
 
-        if active_plan:
-            plan_objectives = StrategicObjective.objects.filter(
-                plan=active_plan, is_active=True
-            )
-            total_objs = plan_objectives.count()
-            completed_objs = plan_objectives.filter(status='COMPLETADO').count()
-            in_progress_objs = plan_objectives.filter(status='EN_PROGRESO').count()
-            # Objetivos en riesgo: retrasados o con progreso <30%
-            at_risk_objs = plan_objectives.filter(status='RETRASADO').count()
-            at_risk_objs += plan_objectives.filter(
-                status='EN_PROGRESO', progress__lt=30
-            ).count()
+        # === 2. OBJETIVOS ESTRATEGICOS (requiere CASCADA LEVEL 15+) ===
+        if HAS_PLANEACION:
+            active_plan = StrategicPlan.objects.filter(is_active=True).first()
+            if active_plan:
+                plan_objectives = StrategicObjective.objects.filter(
+                    plan=active_plan, is_active=True
+                )
+                total_objs = plan_objectives.count()
+                completed_objs = plan_objectives.filter(status='COMPLETADO').count()
+                in_progress_objs = plan_objectives.filter(status='EN_PROGRESO').count()
+                at_risk_objs = plan_objectives.filter(status='RETRASADO').count()
+                at_risk_objs += plan_objectives.filter(
+                    status='EN_PROGRESO', progress__lt=30
+                ).count()
 
-            progress_values = list(plan_objectives.values_list('progress', flat=True))
-            avg = sum(progress_values) / len(progress_values) if progress_values else 0
+                progress_values = list(plan_objectives.values_list('progress', flat=True))
+                avg = sum(progress_values) / len(progress_values) if progress_values else 0
 
         # === 3. CONTROL DE ACCESO (RBAC) ===
         total_users = User.objects.filter(is_active=True).count()
@@ -124,7 +129,7 @@ class StrategicStatsViewSet(viewsets.ViewSet):
         # === 5. COMPLETITUD DEL SISTEMA ===
         has_identity = active_identity is not None
         has_organization = total_cargos >= 1 and total_roles >= 1
-        has_plan = active_plan is not None
+        has_plan = active_plan is not None if HAS_PLANEACION else False
         has_config = enabled_modules >= 1
 
         # Calcular porcentaje (25% por cada seccion)

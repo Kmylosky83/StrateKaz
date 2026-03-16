@@ -20,19 +20,15 @@ from django.db.models import Count, Q
 # Modelos de identidad y planeación
 from .models import CorporateIdentity, CorporateValue
 
-# Importación condicional de planeación para evitar dependencias circulares
-try:
+# Planeación: import condicional (CASCADA LEVEL 15+)
+from django.apps import apps as django_apps
+PLANEACION_AVAILABLE = django_apps.is_installed('apps.gestion_estrategica.planeacion')
+if PLANEACION_AVAILABLE:
     from apps.gestion_estrategica.planeacion.models import StrategicPlan, StrategicObjective
-    PLANEACION_AVAILABLE = True
-except ImportError:
-    PLANEACION_AVAILABLE = False
 
 # Modelos de core para estadísticas RBAC y configuración
-try:
-    from apps.core.models import Role, Cargo, SystemModule
-    CORE_MODELS_AVAILABLE = True
-except ImportError:
-    CORE_MODELS_AVAILABLE = False
+from apps.core.models import Role, Cargo, SystemModule
+CORE_MODELS_AVAILABLE = True
 
 
 class StrategicStatsViewSet(viewsets.ViewSet):

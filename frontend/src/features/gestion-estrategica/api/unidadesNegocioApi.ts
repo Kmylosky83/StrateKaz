@@ -1,6 +1,6 @@
 /**
  * API Client para Unidades de Negocio — Fundacion Tab 1
- * Backend: /api/fundacion/configuracion/unidades-negocio/
+ * Backend: /api/configuracion/unidades-negocio/
  */
 import { apiClient } from '@/lib/api-client';
 import type {
@@ -16,7 +16,7 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-const BASE_URL = '/fundacion/configuracion';
+const BASE_URL = '/configuracion';
 
 export const unidadesNegocioApi = {
   getAll: async (params?: {

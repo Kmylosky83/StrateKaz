@@ -7,11 +7,11 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common';
 import { Input, Textarea, Select } from '@/components/forms';
 import { useSelectUsers } from '@/hooks/useSelectLists';
-import { useCreatePlanTrabajo, useUpdatePlanTrabajo } from '../../hooks/usePlanificacionSistema';
+import { useCreatePlanTrabajo, useUpdatePlanTrabajo } from '../hooks/usePlanificacionSistema';
 import type {
   PlanTrabajoAnual,
   CreatePlanTrabajoAnualDTO,
-} from '../../types/planificacion-sistema.types';
+} from '../types/planificacion-sistema.types';
 
 interface PlanTrabajoFormModalProps {
   item: PlanTrabajoAnual | null;

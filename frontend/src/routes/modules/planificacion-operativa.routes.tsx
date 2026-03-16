@@ -9,7 +9,7 @@ import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const PlanificacionSistemaPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/PlanificacionSistemaPage')
+  () => import('@/features/planificacion-operativa/pages/PlanificacionSistemaPage')
 );
 
 export const planificacionOperativaRoutes = (

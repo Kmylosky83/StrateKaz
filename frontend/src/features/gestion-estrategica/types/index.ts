@@ -40,9 +40,6 @@ export * from './organigrama.types';
 // RBAC
 export * from './rbac.types';
 
-// Planificación del Sistema
-export * from './planificacion-sistema.types';
-
 // ==============================================================================
 // MÓDULOS CON TIPOS ESPECÍFICOS (importar directamente para evitar conflictos)
 // ==============================================================================

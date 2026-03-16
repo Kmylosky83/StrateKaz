@@ -5,7 +5,7 @@
  */
 import { useMemo, useState } from 'react';
 import { CalendarDays } from 'lucide-react';
-import type { ActividadPlan, EstadoActividad } from '../../types/planificacion-sistema.types';
+import type { ActividadPlan, EstadoActividad } from '../types/planificacion-sistema.types';
 
 interface GanttTimelineProps {
   actividades: ActividadPlan[];

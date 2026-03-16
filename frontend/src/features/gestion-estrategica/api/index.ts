@@ -9,16 +9,6 @@ export * from './proyectosApi';
 // Revision por Direccion (ISO 9.3)
 export * from './revisionDireccionApi';
 
-// Planificacion del Sistema (migrado de HSEQ a N1)
-export {
-  planTrabajoApi,
-  actividadPlanApi,
-  objetivoSistemaApi,
-  programaGestionApi,
-  actividadProgramaApi,
-  seguimientoCronogramaApi,
-} from './planificacionSistemaApi';
-
 // Contexto Organizacional (DOFA, PESTEL, Porter, TOWS)
 export * from './contextoApi';
 

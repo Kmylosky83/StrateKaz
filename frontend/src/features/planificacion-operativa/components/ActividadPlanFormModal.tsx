@@ -11,12 +11,12 @@ import {
   useCreateActividadPlan,
   useUpdateActividadPlan,
   usePlanesTrabajoQuery,
-} from '../../hooks/usePlanificacionSistema';
+} from '../hooks/usePlanificacionSistema';
 import type {
   ActividadPlan,
   CreateActividadPlanDTO,
   TipoActividad,
-} from '../../types/planificacion-sistema.types';
+} from '../types/planificacion-sistema.types';
 
 interface ActividadPlanFormModalProps {
   item: ActividadPlan | null;

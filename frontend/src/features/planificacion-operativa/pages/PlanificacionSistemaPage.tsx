@@ -58,11 +58,11 @@ import {
   useActividadesPorPlanQuery,
 } from '../hooks/usePlanificacionSistema';
 
-import { PlanTrabajoFormModal } from '../components/planificacion-sistema/PlanTrabajoFormModal';
-import { ActividadPlanFormModal } from '../components/planificacion-sistema/ActividadPlanFormModal';
-import { ObjetivoSistemaFormModal } from '../components/planificacion-sistema/ObjetivoSistemaFormModal';
-import { ProgramaGestionFormModal } from '../components/planificacion-sistema/ProgramaGestionFormModal';
-import { GanttTimeline } from '../components/planificacion-sistema/GanttTimeline';
+import { PlanTrabajoFormModal } from '../components/PlanTrabajoFormModal';
+import { ActividadPlanFormModal } from '../components/ActividadPlanFormModal';
+import { ObjetivoSistemaFormModal } from '../components/ObjetivoSistemaFormModal';
+import { ProgramaGestionFormModal } from '../components/ProgramaGestionFormModal';
+import { GanttTimeline } from '../components/GanttTimeline';
 
 import type {
   PlanTrabajoAnual,

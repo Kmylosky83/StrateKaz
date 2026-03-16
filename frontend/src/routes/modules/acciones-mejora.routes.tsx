@@ -10,7 +10,7 @@ import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const AccionesMejoraPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/AccionesMejoraPage')
+  () => import('@/features/acciones-mejora/pages/AccionesMejoraPage')
 );
 
 export const accionesMejoraRoutes = (

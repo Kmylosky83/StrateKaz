@@ -11,14 +11,14 @@ import {
   useCreateObjetivoSistema,
   useUpdateObjetivoSistema,
   usePlanesTrabajoQuery,
-} from '../../hooks/usePlanificacionSistema';
+} from '../hooks/usePlanificacionSistema';
 import type {
   ObjetivoSistema,
   CreateObjetivoSistemaDTO,
   PerspectivaBSC,
   TipoObjetivo,
   AreaAplicacion,
-} from '../../types/planificacion-sistema.types';
+} from '../types/planificacion-sistema.types';
 
 interface ObjetivoSistemaFormModalProps {
   item: ObjetivoSistema | null;

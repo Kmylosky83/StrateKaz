@@ -11,12 +11,12 @@ import {
   useCreateProgramaGestion,
   useUpdateProgramaGestion,
   usePlanesTrabajoQuery,
-} from '../../hooks/usePlanificacionSistema';
+} from '../hooks/usePlanificacionSistema';
 import type {
   ProgramaGestion,
   CreateProgramaGestionDTO,
   TipoPrograma,
-} from '../../types/planificacion-sistema.types';
+} from '../types/planificacion-sistema.types';
 
 interface ProgramaGestionFormModalProps {
   item: ProgramaGestion | null;

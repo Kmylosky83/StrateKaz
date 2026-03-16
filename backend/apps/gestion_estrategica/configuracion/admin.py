@@ -290,7 +290,7 @@ class UnidadNegocioAdmin(admin.ModelAdmin):
     list_filter = ['tipo_unidad', 'is_active', 'departamento']
     search_fields = ['codigo', 'nombre', 'ciudad']
     ordering = ['codigo']
-    raw_id_fields = ['responsable', 'departamento']
+    raw_id_fields = ['responsable']
     readonly_fields = ['created_at', 'updated_at', 'deleted_at']
     fieldsets = (
         ('Información Básica', {

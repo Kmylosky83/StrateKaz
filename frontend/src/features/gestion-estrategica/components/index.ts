@@ -33,11 +33,10 @@ export { MapaProcesosSection } from './MapaProcesosSection';
 
 // Secciones autocontenidas — Tab 4: Mis Políticas y Reglamentos
 export { PoliticasSection } from './PoliticasSection';
-
-// Secciones de configuración (futuro módulo Configuración)
-export { ConsecutivosSection } from './ConsecutivosSection';
-export { ModulosSection } from './ModulosSection';
-export { IntegracionesSection } from './IntegracionesSection';
+export { ReglamentoInternoSection } from './ReglamentoInternoSection';
+export { ReglamentoFormModal } from './ReglamentoFormModal';
+export { ContratosTipoSection } from './ContratosTipoSection';
+export { ContratoTipoFormModal } from './ContratoTipoFormModal';
 
 // =============================================================================
 // PLANEACIÓN ESTRATÉGICA (C2)

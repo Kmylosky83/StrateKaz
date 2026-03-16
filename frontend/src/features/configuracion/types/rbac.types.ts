@@ -216,6 +216,26 @@ export function normalizeCompetencias(data: (string | CompetenciaCargo)[]): Comp
 
 export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO' | 'EXTERNO';
 
+export type TurnoTrabajo = 'DIURNO' | 'NOCTURNO' | 'MIXTO' | 'ROTATIVO' | 'FLEXIBLE';
+
+export const TURNO_TRABAJO_OPTIONS = [
+  { value: 'DIURNO', label: 'Diurno' },
+  { value: 'NOCTURNO', label: 'Nocturno' },
+  { value: 'MIXTO', label: 'Mixto' },
+  { value: 'ROTATIVO', label: 'Rotativo' },
+  { value: 'FLEXIBLE', label: 'Flexible' },
+] as const;
+
+export const DIAS_SEMANA_OPTIONS = [
+  { value: 'LUN', label: 'Lunes' },
+  { value: 'MAR', label: 'Martes' },
+  { value: 'MIE', label: 'Miércoles' },
+  { value: 'JUE', label: 'Jueves' },
+  { value: 'VIE', label: 'Viernes' },
+  { value: 'SAB', label: 'Sábado' },
+  { value: 'DOM', label: 'Domingo' },
+] as const;
+
 export type NivelEducativo =
   | 'PRIMARIA'
   | 'BACHILLER'
@@ -406,6 +426,12 @@ export interface CreateCargoDTO {
   restricciones_medicas?: string;
   capacitaciones_sst?: string[];
 
+  // Horarios y Turnos
+  turno_trabajo?: TurnoTrabajo;
+  horario_entrada?: string;
+  horario_salida?: string;
+  dias_laborales?: string[];
+
   // Permisos
   rol_sistema?: number;
   permission_ids?: number[];
@@ -458,6 +484,12 @@ export interface UpdateCargoDTO {
   examenes_medicos?: string[];
   restricciones_medicas?: string;
   capacitaciones_sst?: string[];
+
+  // Horarios y Turnos
+  turno_trabajo?: TurnoTrabajo;
+  horario_entrada?: string | null;
+  horario_salida?: string | null;
+  dias_laborales?: string[];
 
   // Permisos
   rol_sistema?: number | null;

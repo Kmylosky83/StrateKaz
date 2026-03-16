@@ -297,7 +297,45 @@ class Cargo(models.Model):
     )
 
     # ==========================================================================
-    # TAB 5: PERMISOS DEL SISTEMA
+    # TAB 5: HORARIOS Y TURNOS
+    # ==========================================================================
+    TURNO_TRABAJO_CHOICES = [
+        ('DIURNO', 'Diurno'),
+        ('NOCTURNO', 'Nocturno'),
+        ('MIXTO', 'Mixto'),
+        ('ROTATIVO', 'Rotativo'),
+        ('FLEXIBLE', 'Flexible'),
+    ]
+
+    turno_trabajo = models.CharField(
+        max_length=20,
+        choices=TURNO_TRABAJO_CHOICES,
+        default='DIURNO',
+        blank=True,
+        verbose_name='Turno de Trabajo',
+        help_text='Tipo de turno asignado al cargo'
+    )
+    horario_entrada = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name='Horario de Entrada',
+        help_text='Hora de inicio de jornada (ej: 07:00)'
+    )
+    horario_salida = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name='Horario de Salida',
+        help_text='Hora de fin de jornada (ej: 17:00)'
+    )
+    dias_laborales = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Días Laborales',
+        help_text='Días de la semana laborables (ej: ["LUN","MAR","MIE","JUE","VIE"])'
+    )
+
+    # ==========================================================================
+    # TAB 6: PERMISOS DEL SISTEMA
     # ==========================================================================
     rol_sistema = models.ForeignKey(
         'core.Role',

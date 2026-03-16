@@ -31,9 +31,15 @@ import type {
   CreateCargoDTO,
   UpdateCargoDTO,
   NivelJerarquico,
+  TurnoTrabajo,
   FuncionCargo,
 } from '../types/rbac.types';
-import { NIVEL_JERARQUICO_OPTIONS, normalizeFunciones } from '../types/rbac.types';
+import {
+  NIVEL_JERARQUICO_OPTIONS,
+  TURNO_TRABAJO_OPTIONS,
+  DIAS_SEMANA_OPTIONS,
+  normalizeFunciones,
+} from '../types/rbac.types';
 import { FuncionesTable } from './FuncionesTable';
 import type { Tab } from '@/components/common';
 import { toast } from 'sonner';
@@ -82,6 +88,12 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
     requiere_tarjeta_contador: false,
     requiere_tarjeta_abogado: false,
 
+    // Horarios y Turnos
+    turno_trabajo: 'DIURNO' as TurnoTrabajo,
+    horario_entrada: '',
+    horario_salida: '',
+    dias_laborales: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE'] as string[],
+
     // Tab 2: Manual de Funciones
     objetivo_cargo: '',
     funciones_responsabilidades: [] as FuncionCargo[],
@@ -120,6 +132,11 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: cargoCompleto.requiere_licencia_sst,
         requiere_tarjeta_contador: cargoCompleto.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: cargoCompleto.requiere_tarjeta_abogado,
+
+        turno_trabajo: cargoCompleto.turno_trabajo || 'DIURNO',
+        horario_entrada: cargoCompleto.horario_entrada || '',
+        horario_salida: cargoCompleto.horario_salida || '',
+        dias_laborales: cargoCompleto.dias_laborales || ['LUN', 'MAR', 'MIE', 'JUE', 'VIE'],
 
         objetivo_cargo: cargoCompleto.objetivo_cargo || '',
         funciones_responsabilidades: normalizeFunciones(
@@ -162,6 +179,10 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: false,
         requiere_tarjeta_contador: false,
         requiere_tarjeta_abogado: false,
+        turno_trabajo: 'DIURNO' as TurnoTrabajo,
+        horario_entrada: '',
+        horario_salida: '',
+        dias_laborales: ['LUN', 'MAR', 'MIE', 'JUE', 'VIE'],
         objetivo_cargo: '',
         funciones_responsabilidades: [],
         autoridad_autonomia: '',
@@ -192,6 +213,11 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_tarjeta_contador: formData.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: formData.requiere_tarjeta_abogado,
 
+        turno_trabajo: formData.turno_trabajo,
+        horario_entrada: formData.horario_entrada || null,
+        horario_salida: formData.horario_salida || null,
+        dias_laborales: formData.dias_laborales,
+
         objetivo_cargo: formData.objetivo_cargo || undefined,
         funciones_responsabilidades: formData.funciones_responsabilidades,
         autoridad_autonomia: formData.autoridad_autonomia || undefined,
@@ -215,6 +241,11 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: formData.requiere_licencia_sst,
         requiere_tarjeta_contador: formData.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: formData.requiere_tarjeta_abogado,
+
+        turno_trabajo: formData.turno_trabajo,
+        horario_entrada: formData.horario_entrada || undefined,
+        horario_salida: formData.horario_salida || undefined,
+        dias_laborales: formData.dias_laborales,
 
         objetivo_cargo: formData.objetivo_cargo || undefined,
         funciones_responsabilidades: formData.funciones_responsabilidades,
@@ -447,6 +478,70 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                     />
                   </div>
                 )}
+              </div>
+
+              {/* Horarios y Turnos */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                  Horarios y Turnos
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Select
+                    label="Turno de Trabajo"
+                    value={formData.turno_trabajo}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        turno_trabajo: e.target.value as TurnoTrabajo,
+                      })
+                    }
+                    options={TURNO_TRABAJO_OPTIONS.map((opt) => ({
+                      value: opt.value,
+                      label: opt.label,
+                    }))}
+                  />
+                  <Input
+                    label="Horario de Entrada"
+                    type="time"
+                    value={formData.horario_entrada}
+                    onChange={(e) => setFormData({ ...formData, horario_entrada: e.target.value })}
+                  />
+                  <Input
+                    label="Horario de Salida"
+                    type="time"
+                    value={formData.horario_salida}
+                    onChange={(e) => setFormData({ ...formData, horario_salida: e.target.value })}
+                  />
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Días Laborales
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {DIAS_SEMANA_OPTIONS.map((dia) => {
+                      const isSelected = formData.dias_laborales.includes(dia.value);
+                      return (
+                        <button
+                          key={dia.value}
+                          type="button"
+                          onClick={() => {
+                            const newDias = isSelected
+                              ? formData.dias_laborales.filter((d) => d !== dia.value)
+                              : [...formData.dias_laborales, dia.value];
+                            setFormData({ ...formData, dias_laborales: newDias });
+                          }}
+                          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                          }`}
+                        >
+                          {dia.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           )}

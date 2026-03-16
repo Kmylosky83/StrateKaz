@@ -45,7 +45,6 @@ export {
   CompromisosDashboard,
   GeneradorActaModal,
   // Secciones
-  IntegracionesSection,
   IntegracionFormModal,
   IntegracionStatusBadge,
   TestConnectionButton,
@@ -55,7 +54,6 @@ export {
   MisionVisionSection,
   ValoresSection,
   PoliticasSection,
-  ModulosSection,
 } from './components';
 
 // Hooks - Strategic

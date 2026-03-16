@@ -6,7 +6,8 @@ NOTA: UnidadMedida y ConsecutivoConfig fueron migrados a organizacion.
 from django.contrib import admin
 from .models import (
     SedeEmpresa, IntegracionExterna,
-    TipoSede, TipoServicioIntegracion, ProveedorIntegracion, NormaISO, TipoCambio
+    TipoSede, TipoServicioIntegracion, ProveedorIntegracion, NormaISO, TipoCambio,
+    TipoContrato,
 )
 
 
@@ -149,6 +150,39 @@ class TipoCambioAdmin(admin.ModelAdmin):
         if obj and obj.es_sistema:
             return False
         return super().has_delete_permission(request, obj)
+
+
+@admin.register(TipoContrato)
+class TipoContratoAdmin(admin.ModelAdmin):
+    """Admin para tipos de contrato laboral"""
+    list_display = ['nombre', 'tipo', 'duracion_default_dias', 'periodo_prueba_dias', 'requiere_poliza', 'is_active', 'orden']
+    list_filter = ['tipo', 'requiere_poliza', 'is_active']
+    search_fields = ['nombre', 'descripcion']
+    ordering = ['orden', 'nombre']
+    list_editable = ['orden', 'is_active']
+    raw_id_fields = ['empresa', 'created_by', 'updated_by']
+    readonly_fields = ['created_at', 'updated_at', 'deleted_at']
+
+    fieldsets = (
+        ('Identificación', {
+            'fields': ('empresa', 'nombre', 'tipo', 'descripcion')
+        }),
+        ('Configuración', {
+            'fields': ('duracion_default_dias', 'periodo_prueba_dias', 'requiere_poliza',
+                      'clausulas_principales', 'notas_legales')
+        }),
+        ('Documento', {
+            'fields': ('plantilla_documento',),
+            'classes': ('collapse',)
+        }),
+        ('Control', {
+            'fields': ('orden', 'is_active')
+        }),
+        ('Auditoría', {
+            'fields': ('created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(TipoSede)

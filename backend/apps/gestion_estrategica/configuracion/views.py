@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import SedeEmpresa, IconRegistry, NormaISO, ICON_CATEGORY_CHOICES
+from .models import SedeEmpresa, IconRegistry, NormaISO, TipoContrato, ICON_CATEGORY_CHOICES
 from .serializers import (
     SedeEmpresaSerializer,
     SedeEmpresaListSerializer,
@@ -26,8 +26,12 @@ from .serializers import (
     IconCategorySerializer,
     NormaISOSerializer,
     NormaISOListSerializer,
+    TipoContratoSerializer,
+    TipoContratoListSerializer,
 )
 from apps.core.permissions import GranularActionPermission
+from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 # ==============================================================================
@@ -777,6 +781,39 @@ class NormaISOViewSet(viewsets.ModelViewSet):
                 }
 
         return Response(result)
+
+
+# ==============================================================================
+# VIEWSET DE TIPO DE CONTRATO
+# ==============================================================================
+
+class TipoContratoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Tipos de Contrato laboral.
+
+    Fundación Tab 4: Mis Políticas y Reglamentos → Contratos Tipo.
+    CST Art. 37-47.
+
+    Endpoints:
+    - GET /contratos-tipo/ -> Lista tipos de contrato
+    - POST /contratos-tipo/ -> Crear tipo de contrato
+    - GET /contratos-tipo/{id}/ -> Detalle
+    - PUT/PATCH /contratos-tipo/{id}/ -> Actualizar
+    - DELETE /contratos-tipo/{id}/ -> Eliminar
+    """
+    queryset = TipoContrato.objects.all()
+    serializer_class = TipoContratoSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['tipo', 'is_active', 'requiere_poliza']
+    search_fields = ['nombre', 'descripcion']
+    ordering_fields = ['orden', 'nombre', 'tipo', 'created_at']
+    ordering = ['orden', 'nombre']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TipoContratoListSerializer
+        return TipoContratoSerializer
 
 
 # ==============================================================================

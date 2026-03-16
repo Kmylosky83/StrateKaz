@@ -10,6 +10,8 @@
  */
 import { GenericSectionFallback } from '@/components/common';
 import { PoliticasSection } from './PoliticasSection';
+import { ReglamentoInternoSection } from './ReglamentoInternoSection';
+import { ContratosTipoSection } from './ContratosTipoSection';
 
 interface PoliticasReglamentosTabProps {
   activeSection?: string;
@@ -17,8 +19,8 @@ interface PoliticasReglamentosTabProps {
 
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   politicas_obligatorias: PoliticasSection,
-  // reglamento_interno: pendiente — se implementará en sprint dedicado
-  // contratos_tipo: pendiente — se implementará en sprint dedicado
+  reglamento_interno: ReglamentoInternoSection,
+  contratos_tipo: ContratosTipoSection,
 };
 
 export const PoliticasReglamentosTab = ({ activeSection }: PoliticasReglamentosTabProps) => {

@@ -379,7 +379,10 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
             'epp_requeridos', 'examenes_medicos',
             'restricciones_medicas', 'capacitaciones_sst',
 
-            # TAB 5: Permisos del Sistema
+            # TAB 5: Horarios y Turnos
+            'turno_trabajo', 'horario_entrada', 'horario_salida', 'dias_laborales',
+
+            # TAB 6: Permisos del Sistema
             'rol_sistema', 'rol_sistema_detail',
             'permisos', 'default_roles',
             'permissions_count',
@@ -631,6 +634,8 @@ class CargoCreateSerializer(serializers.ModelSerializer):
             # SST
             'riesgo_ids', 'epp_requeridos', 'examenes_medicos',
             'restricciones_medicas', 'capacitaciones_sst',
+            # Horarios y Turnos
+            'turno_trabajo', 'horario_entrada', 'horario_salida', 'dias_laborales',
             # Permisos
             'rol_sistema', 'permission_ids', 'default_role_ids',
             # Acceso a secciones UI
@@ -766,6 +771,8 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             # SST
             'riesgo_ids', 'epp_requeridos', 'examenes_medicos',
             'restricciones_medicas', 'capacitaciones_sst',
+            # Horarios y Turnos
+            'turno_trabajo', 'horario_entrada', 'horario_salida', 'dias_laborales',
             # Permisos
             'rol_sistema', 'permission_ids', 'default_role_ids',
             # Control
@@ -855,6 +862,7 @@ class CargoChoicesSerializer(serializers.Serializer):
     nivel_jerarquico_choices = serializers.SerializerMethodField()
     nivel_educativo_choices = serializers.SerializerMethodField()
     experiencia_choices = serializers.SerializerMethodField()
+    turno_trabajo_choices = serializers.SerializerMethodField()
 
     def get_nivel_jerarquico_choices(self, obj):
         return [{'value': k, 'label': v} for k, v in Cargo.NIVEL_JERARQUICO_CHOICES]
@@ -864,6 +872,9 @@ class CargoChoicesSerializer(serializers.Serializer):
 
     def get_experiencia_choices(self, obj):
         return [{'value': k, 'label': v} for k, v in Cargo.EXPERIENCIA_CHOICES]
+
+    def get_turno_trabajo_choices(self, obj):
+        return [{'value': k, 'label': v} for k, v in Cargo.TURNO_TRABAJO_CHOICES]
 
 
 # =============================================================================

@@ -18,6 +18,7 @@ from .models import (
     ProveedorIntegracion,
     IconRegistry,
     NormaISO,
+    TipoContrato,
     DEPARTAMENTOS_COLOMBIA,
     ICON_CATEGORY_CHOICES,
 )
@@ -945,3 +946,37 @@ class NormaISOChoicesSerializer(serializers.Serializer):
     code = serializers.CharField()
     name = serializers.CharField()
     count = serializers.IntegerField()
+
+
+# ==============================================================================
+# SERIALIZERS DE TIPO DE CONTRATO
+# ==============================================================================
+
+class TipoContratoSerializer(serializers.ModelSerializer):
+    """
+    Serializer CRUD para Tipos de Contrato laboral.
+    Fundación Tab 4: Mis Políticas y Reglamentos → Contratos Tipo.
+    """
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+
+    class Meta:
+        model = TipoContrato
+        fields = [
+            'id', 'empresa', 'nombre', 'tipo', 'tipo_display', 'descripcion',
+            'clausulas_principales', 'duracion_default_dias', 'periodo_prueba_dias',
+            'requiere_poliza', 'plantilla_documento', 'notas_legales', 'orden',
+            'is_active', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class TipoContratoListSerializer(serializers.ModelSerializer):
+    """Serializer de lista ligero para Tipos de Contrato."""
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+
+    class Meta:
+        model = TipoContrato
+        fields = [
+            'id', 'nombre', 'tipo', 'tipo_display', 'duracion_default_dias',
+            'periodo_prueba_dias', 'requiere_poliza', 'orden', 'is_active',
+        ]

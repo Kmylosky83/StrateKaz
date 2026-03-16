@@ -20,7 +20,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 import re
 
-from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel
+from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel, BaseCompanyModel, OrderedModel
 
 # Modelos migrados a organizacion - importar desde allí para backward compatibility
 from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
@@ -2391,3 +2391,74 @@ class IconRegistry(TimestampedModel, SoftDeleteModel):
             is_active=True,
             deleted_at__isnull=True
         ).order_by('category', 'orden')
+
+
+# ==============================================================================
+# TIPO DE CONTRATO — Plantillas de contratos laborales
+# ==============================================================================
+
+class TipoContrato(BaseCompanyModel, OrderedModel):
+    """
+    Plantilla de contrato laboral.
+
+    CST Art. 37-47. Obligatorio antes del primer empleado.
+    Fundación Tab 4: Mis Políticas y Reglamentos → Contratos Tipo.
+    """
+    class TipoContratoChoices(models.TextChoices):
+        TERMINO_FIJO = 'TERMINO_FIJO', 'Contrato a Término Fijo'
+        INDEFINIDO = 'INDEFINIDO', 'Contrato a Término Indefinido'
+        OBRA_LABOR = 'OBRA_LABOR', 'Contrato por Obra o Labor'
+        PRESTACION_SERVICIOS = 'PRESTACION_SERVICIOS', 'Prestación de Servicios'
+        APRENDIZAJE = 'APRENDIZAJE', 'Contrato de Aprendizaje'
+
+    nombre = models.CharField(max_length=200, verbose_name='Nombre')
+    tipo = models.CharField(
+        max_length=30,
+        choices=TipoContratoChoices.choices,
+        verbose_name='Tipo de Contrato'
+    )
+    descripcion = models.TextField(blank=True, verbose_name='Descripción')
+    clausulas_principales = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Cláusulas Principales',
+        help_text='Lista de cláusulas tipo del contrato (JSON array)'
+    )
+    duracion_default_dias = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Duración por Defecto (días)',
+        help_text='Duración estándar del contrato en días. Null para indefinido.'
+    )
+    periodo_prueba_dias = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Período de Prueba (días)',
+        help_text='CST Art. 76-80. Máximo 2 meses.'
+    )
+    requiere_poliza = models.BooleanField(
+        default=False,
+        verbose_name='Requiere Póliza',
+        help_text='Indica si el contrato requiere póliza de cumplimiento'
+    )
+    plantilla_documento = models.FileField(
+        upload_to='contratos/plantillas/',
+        blank=True,
+        null=True,
+        verbose_name='Plantilla del Documento',
+        help_text='Archivo Word/PDF con la plantilla del contrato'
+    )
+    notas_legales = models.TextField(
+        blank=True,
+        verbose_name='Notas Legales',
+        help_text='Observaciones legales o normativas aplicables'
+    )
+
+    class Meta:
+        db_table = 'gestion_estrategica_tipocontrato'
+        verbose_name = 'Tipo de Contrato'
+        verbose_name_plural = 'Tipos de Contrato'
+        ordering = ['empresa', 'orden', 'nombre']
+        unique_together = ['empresa', 'tipo', 'nombre']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.get_tipo_display()})"

@@ -39,7 +39,7 @@ export const AnalisisPestelSection = ({
   const [selectedAnalisis, setSelectedAnalisis] = useState<AnalisisPESTEL | null>(null);
 
   // Color del módulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Query: todos los análisis PESTEL

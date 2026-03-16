@@ -499,8 +499,7 @@ class Command(BaseCommand):
                         'orden': 1,
                         'sections': [
                             {'code': 'empresa', 'name': 'Empresa', 'icon': 'Building2', 'orden': 1, 'description': 'Razón social, NIT, sector económico, actividad CIIU, datos de contacto, branding'},
-                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas: dirección, ciudad, departamento, tipo (principal, sucursal, planta, bodega)'},
-                            {'code': 'unidades_negocio', 'name': 'Unidades de Negocio', 'icon': 'Building2', 'orden': 3, 'description': 'Divisiones operativas de la empresa. Se consumen en Supply Chain, Contabilidad, Presupuesto'},
+                            {'code': 'sedes', 'name': 'Sedes y Unidades', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas + roles (unidad de negocio, centro de acopio, proveedor interno). Se consumen en Supply Chain, Contabilidad'},
                         ]
                     },
                     {

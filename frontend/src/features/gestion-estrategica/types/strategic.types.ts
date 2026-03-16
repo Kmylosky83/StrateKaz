@@ -660,6 +660,12 @@ export interface SedeEmpresa {
   responsable_name?: string | null;
   telefono?: string | null;
   email?: string | null;
+  // Roles (unificación Sede + Unidad de Negocio v5.2.0)
+  tipo_unidad?: string;
+  tipo_unidad_display?: string;
+  es_unidad_negocio: boolean;
+  es_centro_acopio: boolean;
+  es_proveedor_interno: boolean;
   // Control
   es_sede_principal: boolean;
   fecha_apertura?: string | null;
@@ -669,8 +675,6 @@ export interface SedeEmpresa {
   unidad_capacidad?: number | null;
   unidad_capacidad_display?: string | null;
   capacidad_formateada?: string;
-  // DEPRECATED: Mantener para compatibilidad temporal
-  capacidad_almacenamiento_kg?: number | null;
   // Auditoría
   is_active: boolean;
   is_deleted?: boolean;
@@ -687,11 +691,16 @@ export interface SedeEmpresaList {
   nombre: string;
   tipo_sede: TipoSede;
   tipo_sede_display?: string;
+  tipo_unidad?: string;
+  tipo_unidad_display?: string;
   ciudad: string;
   departamento_display?: string;
   responsable?: number | null;
   responsable_name?: string | null;
   es_sede_principal: boolean;
+  es_unidad_negocio: boolean;
+  es_centro_acopio: boolean;
+  es_proveedor_interno: boolean;
   is_active: boolean;
 }
 
@@ -709,14 +718,15 @@ export interface CreateSedeEmpresaDTO {
   responsable?: number;
   telefono?: string;
   email?: string;
+  tipo_unidad?: string;
+  es_unidad_negocio?: boolean;
+  es_centro_acopio?: boolean;
+  es_proveedor_interno?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string;
   fecha_cierre?: string;
-  // Capacidad - Sistema dinámico multi-industria
   capacidad_almacenamiento?: number;
   unidad_capacidad?: number;
-  // DEPRECATED: Mantener para compatibilidad temporal
-  capacidad_almacenamiento_kg?: number;
   is_active?: boolean;
 }
 
@@ -734,14 +744,15 @@ export interface UpdateSedeEmpresaDTO {
   responsable?: number | null;
   telefono?: string;
   email?: string;
+  tipo_unidad?: string;
+  es_unidad_negocio?: boolean;
+  es_centro_acopio?: boolean;
+  es_proveedor_interno?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string | null;
   fecha_cierre?: string | null;
-  // Capacidad - Sistema dinámico multi-industria
   capacidad_almacenamiento?: number | null;
   unidad_capacidad?: number | null;
-  // DEPRECATED: Mantener para compatibilidad temporal
-  capacidad_almacenamiento_kg?: number | null;
   is_active?: boolean;
 }
 

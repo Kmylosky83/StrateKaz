@@ -142,12 +142,11 @@ const SortableValueItem = ({
             </div>
           </div>
 
-          {/* IconPicker dinamico del Design System */}
+          {/* IconPicker — sin filtro de categoría para mostrar todos los iconos disponibles */}
           <IconPicker
             label="Seleccionar Icono"
             value={editData.icon}
             onChange={onEditIconChange}
-            category="VALORES"
             columns={6}
           />
 
@@ -547,12 +546,11 @@ export const ValoresDragDrop = ({
                   </div>
                 </div>
 
-                {/* IconPicker dinamico del Design System */}
+                {/* IconPicker — sin filtro de categoría para mostrar todos los iconos disponibles */}
                 <IconPicker
                   label="Seleccionar Icono"
                   value={newValue.icon}
                   onChange={(iconName) => setNewValue({ ...newValue, icon: iconName })}
-                  category="VALORES"
                   columns={6}
                 />
 

@@ -3,15 +3,14 @@
  *
  * Subtabs:
  * 1. Empresa — Datos generales, branding y configuración regional
- * 2. Sedes — Ubicaciones físicas de la empresa
- * 3. Unidades de Negocio — Divisiones operativas
+ * 2. Sedes — Ubicaciones físicas + roles (UN, centro acopio, proveedor interno)
  *
  * Lógica: "¿Quién soy?" — Lo primero que configura un empresario.
+ * Nota: UnidadNegocio unificada con SedeEmpresa desde v5.2.0
  */
 import { GenericSectionFallback } from '@/components/common';
 import { EmpresaSection } from './EmpresaSection';
 import { SedesSection } from './SedesSection';
-import { UnidadesNegocioSection } from './UnidadesNegocioSection';
 
 interface MiEmpresaTabProps {
   activeSection?: string;
@@ -20,7 +19,6 @@ interface MiEmpresaTabProps {
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresa: EmpresaSection,
   sedes: SedesSection,
-  unidades_negocio: UnidadesNegocioSection,
 };
 
 export const MiEmpresaTab = ({ activeSection }: MiEmpresaTabProps) => {

@@ -19,7 +19,6 @@ from .models import (
     IconRegistry,
     NormaISO,
     TipoContrato,
-    UnidadNegocio,
     DEPARTAMENTOS_COLOMBIA,
     ICON_CATEGORY_CHOICES,
 )
@@ -64,6 +63,9 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     responsable_name = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
 
+    # Roles - display
+    tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
+
     # Unidad de capacidad - display
     unidad_capacidad_display = serializers.SerializerMethodField()
 
@@ -98,13 +100,17 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'es_sede_principal',
             'fecha_apertura',
             'fecha_cierre',
+            # Roles (unificación con UnidadNegocio)
+            'tipo_unidad',
+            'tipo_unidad_display',
+            'es_unidad_negocio',
+            'es_centro_acopio',
+            'es_proveedor_interno',
             # Capacidad - Sistema dinámico multi-industria
             'capacidad_almacenamiento',
             'unidad_capacidad',
             'unidad_capacidad_display',
             'capacidad_formateada',
-            # DEPRECATED: Mantener para compatibilidad temporal
-            'capacidad_almacenamiento_kg',
             # Auditoría
             'is_active',
             'is_deleted',
@@ -140,9 +146,9 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
         return None
 
     def get_responsable_name(self, obj):
-        """Retorna el nombre completo del responsable"""
+        """Retorna el nombre del cargo responsable"""
         if obj.responsable:
-            return obj.responsable.get_full_name() or obj.responsable.username
+            return obj.responsable.name
         return None
 
     def get_created_by_name(self, obj):
@@ -269,6 +275,9 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
     Serializer simplificado para listados de sedes
     """
     tipo_sede_display = serializers.SerializerMethodField()
+    tipo_unidad_display = serializers.CharField(
+        source='get_tipo_unidad_display', read_only=True
+    )
     departamento_display = serializers.CharField(
         source='get_departamento_display',
         read_only=True
@@ -283,11 +292,16 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
             'nombre',
             'tipo_sede',
             'tipo_sede_display',
+            'tipo_unidad',
+            'tipo_unidad_display',
             'ciudad',
             'departamento_display',
             'responsable',
             'responsable_name',
             'es_sede_principal',
+            'es_unidad_negocio',
+            'es_centro_acopio',
+            'es_proveedor_interno',
             'is_active',
         ]
 
@@ -298,7 +312,7 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
 
     def get_responsable_name(self, obj):
         if obj.responsable:
-            return obj.responsable.get_full_name() or obj.responsable.username
+            return obj.responsable.name
         return None
 
 
@@ -984,37 +998,5 @@ class TipoContratoListSerializer(serializers.ModelSerializer):
         ]
 
 
-# ==============================================================================
-# SERIALIZERS DE UNIDAD DE NEGOCIO
-# ==============================================================================
-
-class UnidadNegocioSerializer(serializers.ModelSerializer):
-    """Serializer para Unidad de Negocio."""
-    tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
-    departamento_display = serializers.CharField(source='get_departamento_display', read_only=True)
-    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
-    is_deleted = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = UnidadNegocio
-        fields = [
-            'id', 'codigo', 'nombre', 'tipo_unidad', 'tipo_unidad_display',
-            'direccion', 'ciudad', 'departamento', 'departamento_display',
-            'responsable', 'responsable_nombre',
-            'is_active', 'is_deleted', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'codigo', 'created_at', 'updated_at']
-
-
-class UnidadNegocioListSerializer(serializers.ModelSerializer):
-    """Serializer simplificado para listados."""
-    tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
-    departamento_display = serializers.CharField(source='get_departamento_display', read_only=True)
-    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
-
-    class Meta:
-        model = UnidadNegocio
-        fields = [
-            'id', 'codigo', 'nombre', 'tipo_unidad', 'tipo_unidad_display',
-            'ciudad', 'departamento_display', 'responsable_nombre', 'is_active'
-        ]
+# UnidadNegocio ELIMINADO — Unificado con SedeEmpresa (v5.2.0)
+# Los select-lists de unidades de negocio ahora filtran SedeEmpresa.es_unidad_negocio=True

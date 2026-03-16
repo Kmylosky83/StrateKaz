@@ -18,12 +18,12 @@
 /**
  * Versión de la aplicación
  * Se inyecta desde package.json en build time via Vite define
- * Fallback a '0.0.0' solo en caso de error de configuración
+ * Fallback a '5.2.0' solo en caso de error de configuración
  */
 export const APP_VERSION: string =
   (import.meta.env.VITE_APP_VERSION as string) ||
   (import.meta.env.PACKAGE_VERSION as string) ||
-  '5.1.0';
+  '5.2.0';
 
 /**
  * Constantes de identidad de marca StrateKaz

@@ -48,7 +48,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
     effective_date: '',
     version: '1.0',
     // Campos de alcance del SIG (v4.1)
-    declara_alcance: false,
+    declara_alcance: true,
     alcance_general: '',
     alcance_geografico: '',
     alcance_procesos: '',
@@ -72,7 +72,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         effective_date: identity.effective_date,
         version: identity.version,
         // Campos de alcance del SIG (v4.1)
-        declara_alcance: identity.declara_alcance ?? false,
+        declara_alcance: true,
         alcance_general: identity.alcance_general ?? '',
         alcance_geografico: identity.alcance_geografico ?? '',
         alcance_procesos: identity.alcance_procesos ?? '',
@@ -87,7 +87,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         effective_date: new Date().toISOString().split('T')[0],
         version: '1.0',
         // Campos de alcance del SIG (v4.1)
-        declara_alcance: false,
+        declara_alcance: true,
         alcance_general: '',
         alcance_geografico: '',
         alcance_procesos: '',
@@ -107,13 +107,12 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       effective_date: formData.effective_date,
       version: formData.version,
       // Campos de alcance del SIG
-      declara_alcance: formData.declara_alcance,
-      alcance_general: formData.declara_alcance ? formData.alcance_general : undefined,
-      alcance_geografico: formData.declara_alcance ? formData.alcance_geografico : undefined,
-      alcance_procesos: formData.declara_alcance ? formData.alcance_procesos : undefined,
-      alcance_exclusiones: formData.declara_alcance ? formData.alcance_exclusiones : undefined,
-      // Procesos cubiertos - IDs de áreas (v4.2)
-      procesos_cubiertos_ids: formData.declara_alcance ? formData.procesos_cubiertos_ids : [],
+      declara_alcance: true,
+      alcance_general: formData.alcance_general,
+      alcance_geografico: formData.alcance_geografico,
+      alcance_procesos: formData.alcance_procesos,
+      alcance_exclusiones: formData.alcance_exclusiones,
+      procesos_cubiertos_ids: formData.procesos_cubiertos_ids,
     };
 
     if (isEditing && identity) {
@@ -143,11 +142,11 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
     return tmp.textContent || tmp.innerText || '';
   };
 
-  // Validación: misión y visión requeridos, alcance_general requerido si declara_alcance
+  // Validación: misión, visión y alcance_general requeridos
   const isValid =
     stripHtml(formData.mission).trim().length > 0 &&
     stripHtml(formData.vision).trim().length > 0 &&
-    (!formData.declara_alcance || formData.alcance_general.trim().length > 0);
+    formData.alcance_general.trim().length > 0;
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -237,20 +236,10 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
                 </p>
               </div>
             </div>
-            <Switch
-              checked={formData.declara_alcance}
-              onCheckedChange={(checked) => setFormData({ ...formData, declara_alcance: checked })}
-              label="¿Declarar alcance?"
-            />
           </div>
 
-          {/* Campos de alcance (condicional) */}
-          <div
-            className={cn(
-              'space-y-4 overflow-hidden transition-all duration-300',
-              formData.declara_alcance ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
-            )}
-          >
+          {/* Campos de alcance */}
+          <div className="space-y-4">
             {/* Alcance General */}
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">

@@ -1,6 +1,6 @@
 {
   "name": "marketing_site",
-  "version": "1.0.5",
+  "version": "5.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --mode development --port 3006",

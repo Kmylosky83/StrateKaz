@@ -344,16 +344,18 @@ def select_tipos_documento(request):
 @permission_classes([IsAuthenticated])
 def select_unidades_negocio(request):
     """
-    Lista de unidades de negocio activas para dropdowns.
+    Lista de sedes marcadas como unidad de negocio para dropdowns.
     Usado por: Supply Chain (proveedores), Contabilidad (centros de costo)
+    Desde v5.2.0: UnidadNegocio unificado con SedeEmpresa.
     """
-    UnidadNegocio = _safe_get_model('configuracion', 'UnidadNegocio')
-    if not UnidadNegocio:
+    SedeEmpresa = _safe_get_model('configuracion', 'SedeEmpresa')
+    if not SedeEmpresa:
         return Response([])
 
-    qs = UnidadNegocio.objects.filter(
+    qs = SedeEmpresa.objects.filter(
         is_active=True,
         deleted_at__isnull=True,
+        es_unidad_negocio=True,
     ).values(
         'id', 'codigo', 'nombre', 'tipo_unidad', 'ciudad'
     ).order_by('nombre')[:200]

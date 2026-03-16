@@ -25,7 +25,7 @@ interface AlcanceFormModalProps {
 
 export const AlcanceFormModal = ({ identity, isOpen, onClose }: AlcanceFormModalProps) => {
   const [formData, setFormData] = useState({
-    declara_alcance: false,
+    declara_alcance: true,
     alcance_general: '',
     alcance_geografico: '',
     alcance_exclusiones: '',
@@ -40,7 +40,7 @@ export const AlcanceFormModal = ({ identity, isOpen, onClose }: AlcanceFormModal
   useEffect(() => {
     if (identity) {
       setFormData({
-        declara_alcance: identity.declara_alcance ?? false,
+        declara_alcance: true,
         alcance_general: identity.alcance_general ?? '',
         alcance_geografico: identity.alcance_geografico ?? '',
         alcance_exclusiones: identity.alcance_exclusiones ?? '',
@@ -56,11 +56,11 @@ export const AlcanceFormModal = ({ identity, isOpen, onClose }: AlcanceFormModal
     await updateMutation.mutateAsync({
       id: identity.id,
       data: {
-        declara_alcance: formData.declara_alcance,
-        alcance_general: formData.declara_alcance ? formData.alcance_general : undefined,
-        alcance_geografico: formData.declara_alcance ? formData.alcance_geografico : undefined,
-        alcance_exclusiones: formData.declara_alcance ? formData.alcance_exclusiones : undefined,
-        procesos_cubiertos_ids: formData.declara_alcance ? formData.procesos_cubiertos_ids : [],
+        declara_alcance: true,
+        alcance_general: formData.alcance_general,
+        alcance_geografico: formData.alcance_geografico,
+        alcance_exclusiones: formData.alcance_exclusiones,
+        procesos_cubiertos_ids: formData.procesos_cubiertos_ids,
       },
     });
 
@@ -75,7 +75,7 @@ export const AlcanceFormModal = ({ identity, isOpen, onClose }: AlcanceFormModal
     setFormData({ ...formData, procesos_cubiertos_ids: updated });
   };
 
-  const isValid = !formData.declara_alcance || formData.alcance_general.trim().length > 0;
+  const isValid = formData.alcance_general.trim().length > 0;
   const isLoading = updateMutation.isPending;
 
   const footer = (
@@ -120,20 +120,10 @@ export const AlcanceFormModal = ({ identity, isOpen, onClose }: AlcanceFormModal
               </p>
             </div>
           </div>
-          <Switch
-            checked={formData.declara_alcance}
-            onCheckedChange={(checked) => setFormData({ ...formData, declara_alcance: checked })}
-            label="Declarar alcance"
-          />
         </div>
 
-        {/* Campos de alcance (condicional) */}
-        <div
-          className={cn(
-            'space-y-4 overflow-hidden transition-all duration-300',
-            formData.declara_alcance ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
-          )}
-        >
+        {/* Campos de alcance */}
+        <div className="space-y-4">
           {/* Alcance General */}
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">

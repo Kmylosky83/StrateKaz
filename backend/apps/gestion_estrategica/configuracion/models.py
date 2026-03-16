@@ -625,13 +625,13 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     # =========================================================================
 
     responsable = models.ForeignKey(
-        'core.User',
+        'core.Cargo',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='sedes_responsable',
         verbose_name='Responsable',
-        help_text='Usuario responsable de la sede'
+        help_text='Cargo responsable de la sede'
     )
     telefono = models.CharField(
         max_length=20,
@@ -670,6 +670,42 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     )
 
     # =========================================================================
+    # ROLES DE LA SEDE (unificación con UnidadNegocio)
+    # =========================================================================
+
+    TIPO_UNIDAD_CHOICES = [
+        ('SEDE', 'Sede Administrativa'),
+        ('SUCURSAL', 'Sucursal'),
+        ('PLANTA', 'Planta de Producción'),
+        ('CENTRO_ACOPIO', 'Centro de Acopio'),
+        ('ALMACEN', 'Almacén'),
+        ('OTRO', 'Otro'),
+    ]
+
+    tipo_unidad = models.CharField(
+        max_length=20,
+        choices=TIPO_UNIDAD_CHOICES,
+        default='SEDE',
+        verbose_name='Tipo de unidad',
+        help_text='Rol operativo de esta sede'
+    )
+    es_unidad_negocio = models.BooleanField(
+        default=True,
+        verbose_name='Es unidad de negocio',
+        help_text='Visible para Contabilidad, Presupuesto y Supply Chain como centro de operaciones'
+    )
+    es_centro_acopio = models.BooleanField(
+        default=False,
+        verbose_name='Es centro de acopio',
+        help_text='Recibe materia prima de proveedores'
+    )
+    es_proveedor_interno = models.BooleanField(
+        default=False,
+        verbose_name='Es proveedor interno',
+        help_text='Provee productos o servicios a otras sedes de la empresa'
+    )
+
+    # =========================================================================
     # CAPACIDAD - SISTEMA DINÁMICO (sin hardcoding de unidades)
     # =========================================================================
 
@@ -691,16 +727,6 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         help_text='Unidad de medida de la capacidad (ej: kg, ton, m³, pallets)'
     )
 
-    # DEPRECATED: Mantener temporalmente para migración
-    capacidad_almacenamiento_kg = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name='[DEPRECATED] Capacidad de Almacenamiento (kg)',
-        help_text='DEPRECATED: Use capacidad_almacenamiento + unidad_capacidad'
-    )
-
     # =========================================================================
     # AUDITORÍA (Todos los campos heredados de AuditModel y SoftDeleteModel)
     # =========================================================================
@@ -718,6 +744,7 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
             models.Index(fields=['is_active', 'tipo_sede']),
             models.Index(fields=['departamento', 'ciudad']),
             models.Index(fields=['deleted_at']),
+            models.Index(fields=['tipo_unidad', 'es_unidad_negocio']),
         ]
 
     def __str__(self):
@@ -770,14 +797,6 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
             str: Capacidad formateada (ej: "5.2 ton", "1,200 m³") o cadena vacía
         """
         if self.capacidad_almacenamiento is None:
-            # Fallback: usar capacidad_almacenamiento_kg deprecated
-            if self.capacidad_almacenamiento_kg is not None:
-                # Formatear como kg/ton según el valor
-                valor = float(self.capacidad_almacenamiento_kg)
-                if valor >= 1000:
-                    return f"{valor/1000:.1f} ton"
-                else:
-                    return f"{valor:.0f} kg"
             return ''
 
         if not self.unidad_capacidad:
@@ -2503,95 +2522,7 @@ class TipoContrato(BaseCompanyModel, OrderedModel):
 
 
 # ==============================================================================
-# MODELO UNIDAD DE NEGOCIO
+# UnidadNegocio ELIMINADO — Unificado con SedeEmpresa (v5.2.0)
+# Cross-module refs usan SedeEmpresa.id donde antes usaban UnidadNegocio.id
+# Supply Chain: campo unidad_negocio_id ahora apunta a SedeEmpresa
 # ==============================================================================
-
-class UnidadNegocio(AuditModel, SoftDeleteModel):
-    """
-    Unidad de Negocio — Divisiones operativas de la empresa.
-
-    Fundación Tab 1 (Mi Empresa). Dato maestro que consumen:
-    Supply Chain (proveedores), Contabilidad (centros de costo), Presupuesto.
-
-    Ejemplos: Planta de producción, Sucursal, Centro de acopio, Almacén.
-    """
-    TIPO_UNIDAD_CHOICES = [
-        ('SEDE', 'Sede Administrativa'),
-        ('SUCURSAL', 'Sucursal'),
-        ('PLANTA', 'Planta de Producción'),
-        ('CENTRO_ACOPIO', 'Centro de Acopio'),
-        ('ALMACEN', 'Almacén'),
-        ('OTRO', 'Otro'),
-    ]
-
-    codigo = models.CharField(
-        max_length=20,
-        unique=True,
-        db_index=True,
-        verbose_name='Código',
-        help_text='Código único autogenerado (ej: UN-001)'
-    )
-    nombre = models.CharField(
-        max_length=150,
-        verbose_name='Nombre'
-    )
-    tipo_unidad = models.CharField(
-        max_length=20,
-        choices=TIPO_UNIDAD_CHOICES,
-        verbose_name='Tipo de unidad'
-    )
-    direccion = models.TextField(
-        verbose_name='Dirección',
-        blank=True,
-        default=''
-    )
-    ciudad = models.CharField(
-        max_length=100,
-        verbose_name='Ciudad',
-        blank=True,
-        default=''
-    )
-    departamento = models.CharField(
-        max_length=30,
-        choices=DEPARTAMENTOS_COLOMBIA,
-        blank=True,
-        default='',
-        verbose_name='Departamento',
-        help_text='Departamento de Colombia donde se ubica'
-    )
-    responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='unidades_negocio_responsable',
-        verbose_name='Responsable'
-    )
-    is_active = models.BooleanField(default=True, db_index=True)
-
-    class Meta:
-        db_table = 'fundacion_unidad_negocio'
-        verbose_name = 'Unidad de Negocio'
-        verbose_name_plural = 'Unidades de Negocio'
-        ordering = ['codigo']
-
-    def __str__(self):
-        return f"{self.nombre} ({self.codigo})"
-
-    def save(self, *args, **kwargs):
-        if not self.codigo:
-            self.codigo = self._generate_code()
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def _generate_code(cls):
-        """Genera código secuencial UN-001, UN-002, etc."""
-        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
-        if last and last.startswith('UN-'):
-            try:
-                num = int(last.split('-')[1]) + 1
-            except (ValueError, IndexError):
-                num = cls.objects.count() + 1
-        else:
-            num = cls.objects.count() + 1
-        return f'UN-{num:03d}'

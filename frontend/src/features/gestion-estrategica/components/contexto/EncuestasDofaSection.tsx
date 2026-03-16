@@ -107,12 +107,12 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'create');
-  const canEdit = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'edit');
-  const canDelete = canDo(Modules.PLANEACION_ESTRATEGICA, Sections.ANALISIS_CONTEXTO, 'delete');
+  const canCreate = canDo(Modules.FUNDACION, Sections.ANALISIS_CONTEXTO, 'create');
+  const canEdit = canDo(Modules.FUNDACION, Sections.ANALISIS_CONTEXTO, 'edit');
+  const canDelete = canDo(Modules.FUNDACION, Sections.ANALISIS_CONTEXTO, 'delete');
 
   // Color del modulo (sin hardcoding)
-  const { color: moduleColor } = useModuleColor('planeacion_estrategica');
+  const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries y mutations

@@ -139,7 +139,7 @@ export default defineConfig(({ mode }) => {
               filesToDeleteAfterUpload: ['./dist/assets/**/*.map'],
             },
             release: {
-              name: env.VITE_SENTRY_RELEASE || `stratekaz-marketing@1.0.5`,
+              name: env.VITE_SENTRY_RELEASE || `stratekaz-marketing@5.2.0`,
               cleanArtifacts: true,
               setCommits: {
                 auto: true,

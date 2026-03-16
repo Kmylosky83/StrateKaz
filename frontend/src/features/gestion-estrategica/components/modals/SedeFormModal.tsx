@@ -28,7 +28,7 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateSede, useUpdateSede, useSede, useSedeChoices } from '../../hooks/useStrategic';
-import { useSelectUsers } from '@/hooks/useSelectLists';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import type {
   SedeEmpresaList,
   CreateSedeEmpresaDTO,
@@ -65,14 +65,28 @@ interface FormData {
   // Sistema dinámico de unidades multi-industria
   capacidad_almacenamiento: string;
   unidad_capacidad: string;
+  // Roles (unificación Sede + UN)
+  tipo_unidad: string;
+  es_unidad_negocio: boolean;
+  es_centro_acopio: boolean;
+  es_proveedor_interno: boolean;
   is_active: boolean;
 }
+
+const TIPOS_UNIDAD = [
+  { value: 'SEDE', label: 'Sede Administrativa' },
+  { value: 'SUCURSAL', label: 'Sucursal' },
+  { value: 'PLANTA', label: 'Planta de Producción' },
+  { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
+  { value: 'ALMACEN', label: 'Almacén' },
+  { value: 'OTRO', label: 'Otro' },
+];
 
 const defaultFormData: FormData = {
   codigo: '',
   nombre: '',
-  tipo_sede: '', // Se selecciona del dropdown
-  customTipoSede: '', // Para nuevo tipo personalizado
+  tipo_sede: '',
+  customTipoSede: '',
   descripcion: '',
   direccion: '',
   ciudad: '',
@@ -88,6 +102,10 @@ const defaultFormData: FormData = {
   fecha_cierre: '',
   capacidad_almacenamiento: '',
   unidad_capacidad: '',
+  tipo_unidad: 'SEDE',
+  es_unidad_negocio: true,
+  es_centro_acopio: false,
+  es_proveedor_interno: false,
   is_active: true,
 };
 
@@ -144,7 +162,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   // Queries y mutations
   const { data: sedeDetail } = useSede(sede?.id || 0);
   const { data: choices } = useSedeChoices();
-  const { data: usersData } = useSelectUsers();
+  const { data: cargosData } = useSelectCargos();
   const createMutation = useCreateSede();
   const updateMutation = useUpdateSede();
 
@@ -171,6 +189,10 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
         fecha_cierre: sedeDetail.fecha_cierre || '',
         capacidad_almacenamiento: sedeDetail.capacidad_almacenamiento?.toString() || '',
         unidad_capacidad: sedeDetail.unidad_capacidad?.toString() || '',
+        tipo_unidad: sedeDetail.tipo_unidad || 'SEDE',
+        es_unidad_negocio: sedeDetail.es_unidad_negocio ?? true,
+        es_centro_acopio: sedeDetail.es_centro_acopio ?? false,
+        es_proveedor_interno: sedeDetail.es_proveedor_interno ?? false,
         is_active: sedeDetail.is_active,
       });
     } else if (!isEditing) {
@@ -208,10 +230,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
       telefono: formData.telefono || undefined,
       email: formData.email || undefined,
+      // Roles
+      tipo_unidad: formData.tipo_unidad || 'SEDE',
+      es_unidad_negocio: formData.es_unidad_negocio,
+      es_centro_acopio: formData.es_centro_acopio,
+      es_proveedor_interno: formData.es_proveedor_interno,
       es_sede_principal: formData.es_sede_principal,
       fecha_apertura: formData.fecha_apertura || undefined,
       fecha_cierre: formData.fecha_cierre || undefined,
-      // Sistema dinámico de unidades
       capacidad_almacenamiento: formData.capacidad_almacenamiento
         ? parseFloat(formData.capacidad_almacenamiento)
         : undefined,
@@ -260,10 +286,10 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       label: u.label,
     })) || [];
 
-  const userOptions =
-    usersData?.map((user) => ({
-      value: user.id.toString(),
-      label: user.extra?.cargo ? `${user.label} — ${user.extra.cargo}` : user.label,
+  const cargoOptions =
+    cargosData?.map((cargo) => ({
+      value: cargo.id.toString(),
+      label: cargo.extra?.rol ? `${cargo.label} — ${cargo.extra.rol}` : cargo.label,
     })) || [];
 
   const footer = (
@@ -470,10 +496,10 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Select
-              label="Responsable"
+              label="Cargo Responsable"
               value={formData.responsable}
               onChange={(e) => setFormData({ ...formData, responsable: e.target.value })}
-              options={[{ value: '', label: 'Sin asignar' }, ...userOptions]}
+              options={[{ value: '', label: 'Sin asignar' }, ...cargoOptions]}
             />
             <Input
               label="Teléfono"
@@ -488,6 +514,70 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="sede@empresa.com"
             />
+          </div>
+        </div>
+
+        {/* Sección: Roles y Tipo de Unidad */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+              <Building2 className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Tipo y Roles
+            </h4>
+          </div>
+
+          <Select
+            label="Tipo de Unidad"
+            value={formData.tipo_unidad}
+            onChange={(e) => setFormData({ ...formData, tipo_unidad: e.target.value })}
+            options={TIPOS_UNIDAD.map((t) => ({ value: t.value, label: t.label }))}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Unidad de Negocio
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Visible en Supply Chain</p>
+              </div>
+              <Switch
+                checked={formData.es_unidad_negocio}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, es_unidad_negocio: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Centro de Acopio
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Recibe materia prima</p>
+              </div>
+              <Switch
+                checked={formData.es_centro_acopio}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, es_centro_acopio: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Proveedor Interno
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Abastece otras sedes</p>
+              </div>
+              <Switch
+                checked={formData.es_proveedor_interno}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, es_proveedor_interno: checked })
+                }
+              />
+            </div>
           </div>
         </div>
 

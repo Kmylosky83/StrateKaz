@@ -19,7 +19,6 @@ from .views import (
     IconRegistryViewSet,
     NormaISOViewSet,
     TipoContratoViewSet,
-    UnidadNegocioViewSet,
 )
 from .stats_views import config_stats_view, fundacion_progress_view
 
@@ -29,7 +28,7 @@ router.register(r'integraciones-externas', IntegracionExternaViewSet, basename='
 router.register(r'icons', IconRegistryViewSet, basename='icon')
 router.register(r'normas-iso', NormaISOViewSet, basename='norma-iso')
 router.register(r'contratos-tipo', TipoContratoViewSet, basename='contrato-tipo')
-router.register(r'unidades-negocio', UnidadNegocioViewSet, basename='unidad-negocio')
+
 
 urlpatterns = [
     path('', include(router.urls)),

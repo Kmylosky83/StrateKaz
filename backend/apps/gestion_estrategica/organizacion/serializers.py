@@ -183,7 +183,7 @@ class CaracterizacionProcesoListSerializer(serializers.ModelSerializer):
     area_code = serializers.CharField(source='area.code', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     lider_proceso_nombre = serializers.CharField(
-        source='lider_proceso.get_full_name', read_only=True, default=None
+        source='lider_proceso.name', read_only=True, default=None
     )
     objetivo_resumen = serializers.SerializerMethodField()
 
@@ -216,7 +216,7 @@ class CaracterizacionProcesoDetailSerializer(serializers.ModelSerializer):
     area_code = serializers.CharField(source='area.code', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     lider_proceso_nombre = serializers.CharField(
-        source='lider_proceso.get_full_name', read_only=True, default=None
+        source='lider_proceso.name', read_only=True, default=None
     )
     created_by_nombre = serializers.CharField(
         source='created_by.get_full_name', read_only=True, default=None
@@ -277,13 +277,21 @@ class CaracterizacionProcesoDetailSerializer(serializers.ModelSerializer):
         """
         Sync pattern: delete-and-recreate children from items array.
         Simple and reliable for small arrays (SIPOC rarely exceeds 20 items).
+        Filtra campos read-only (_display, etc.) que vienen del frontend.
         """
         related_name = model_class.__name__.lower() + 's'
         getattr(instance, related_name).all().delete()
+        # Campos válidos del modelo (excluir id y caracterizacion)
+        valid_fields = {
+            f.name for f in model_class._meta.get_fields()
+            if hasattr(f, 'column') or hasattr(f, 'attname')
+        }
+        valid_fields.discard('id')
+        valid_fields.discard('caracterizacion')
         for i, item_data in enumerate(items_data):
-            item_data.pop('id', None)
-            item_data['orden'] = item_data.get('orden', i)
-            model_class.objects.create(caracterizacion=instance, **item_data)
+            clean = {k: v for k, v in item_data.items() if k in valid_fields}
+            clean['orden'] = clean.get('orden', i)
+            model_class.objects.create(caracterizacion=instance, **clean)
 
     def _process_children(self, instance, validated_data):
         """Process all 9 child arrays from request.data."""

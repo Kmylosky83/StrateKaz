@@ -50,7 +50,7 @@ import {
 } from '../../hooks/usePartesInteresadas';
 import { useNormasISO } from '../../hooks/useNormasISO';
 import { useAreas } from '../../hooks/useAreas'; // Sprint 17
-import { useSelectCargos, useSelectColaboradores } from '@/hooks/useSelectLists'; // Sprint 17
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import { DynamicIcon } from '@/components/common';
 import { Badge } from '@/components/common/Badge'; // Sprint 17
 
@@ -238,9 +238,8 @@ const ParteInteresadaFormModalComponent = ({
   // Queries
   const { data: tipos, isLoading: isLoadingTipos } = useTiposParteInteresada();
   const { data: normasData, isLoading: isLoadingNormas } = useNormasISO();
-  // Sprint 17: Queries para responsables
+  // Queries para responsables
   const { data: areasData } = useAreas();
-  const { data: colaboradoresData } = useSelectColaboradores();
   const { data: cargosData } = useSelectCargos();
 
   // Lista de normas disponibles - memoizada para evitar re-renders
@@ -463,18 +462,7 @@ const ParteInteresadaFormModalComponent = ({
     return tipos?.find((t) => t.id.toString() === formData.tipo);
   }, [tipos, formData.tipo]);
 
-  // Sprint 17: Opciones de responsables - memoizadas
-  const colaboradorOptions = useMemo(
-    () => [
-      { value: '', label: 'Sin asignar' },
-      ...(colaboradoresData || []).map((c) => ({
-        value: c.id.toString(),
-        label: c.extra?.cargo ? `${c.label} - ${c.extra.cargo}` : c.label,
-      })),
-    ],
-    [colaboradoresData]
-  );
-
+  // Opciones de responsables - memoizadas
   const cargoOptions = useMemo(
     () => [
       { value: '', label: 'Sin asignar' },
@@ -875,7 +863,7 @@ const ParteInteresadaFormModalComponent = ({
           />
         </div>
 
-        {/* Seccion: Responsables en la Empresa (Sprint 17 - NUEVO) */}
+        {/* Seccion: Responsables en la Empresa */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
             <UserCircle className="h-4 w-4" />
@@ -883,22 +871,8 @@ const ParteInteresadaFormModalComponent = ({
           </h4>
 
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Asigne el colaborador, cargo y/o área responsable de gestionar la relación con esta
-            parte interesada
+            Asigne el cargo y/o área responsable de gestionar la relación con esta parte interesada
           </p>
-
-          <Select
-            label="Colaborador Responsable"
-            value={formData.responsable_empresa?.toString() || ''}
-            onChange={(e) =>
-              handleFieldChange(
-                'responsable_empresa',
-                e.target.value ? parseInt(e.target.value) : null
-              )
-            }
-            options={colaboradorOptions}
-            helperText="Persona asignada para gestionar esta PI"
-          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
@@ -911,7 +885,7 @@ const ParteInteresadaFormModalComponent = ({
                 )
               }
               options={cargoOptions}
-              helperText="Alternativa si no hay colaborador específico"
+              helperText="Cargo que gestiona esta relación"
             />
             <Select
               label="Área Responsable"

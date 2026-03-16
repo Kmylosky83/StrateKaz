@@ -4,9 +4,9 @@
  * Subtabs:
  * 1. Áreas — Estructura jerárquica de áreas y procesos
  * 2. Cargos — Gestión de cargos, manual de funciones y permisos RBAC
- * 3. Organigrama — Visualización interactiva de la jerarquía de cargos
+ * 3. Mapa de Procesos — Visualización interactiva
  * 4. Caracterizaciones — Ficha SIPOC por proceso
- * 5. Mapa de Procesos — Visualización interactiva
+ * 5. Organigrama — Visualización interactiva de la jerarquía de cargos
  *
  * Lógica: "¿Cómo funciono?" — Estructura operativa de la empresa.
  */
@@ -40,9 +40,9 @@ interface OrganizacionTabProps {
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
   cargos: CargosSection,
-  organigrama: OrganigramaSection,
-  caracterizaciones: CaracterizacionesSection,
   mapa_procesos: MapaProcesosSection,
+  caracterizaciones: CaracterizacionesSection,
+  organigrama: OrganigramaSection,
 };
 
 export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {

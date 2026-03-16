@@ -527,9 +527,9 @@ class Command(BaseCommand):
                         'sections': [
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Estructura jerárquica de áreas y procesos con objetivos, líder y tipo'},
                             {'code': 'cargos', 'name': 'Cargos', 'icon': 'Network', 'orden': 2, 'description': 'Gestión de cargos: manual de funciones, permisos, turno/jornada, EPP requerido, activos, documentos'},
-                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 3, 'description': 'Visualización interactiva de la jerarquía de cargos'},
+                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 3, 'description': 'Visualización interactiva de la estructura de procesos (estratégicos, misionales, apoyo)'},
                             {'code': 'caracterizaciones', 'name': 'Caracterizaciones', 'icon': 'ClipboardList', 'orden': 4, 'description': 'Ficha SIPOC por proceso: proveedores, entradas, actividades, salidas y clientes'},
-                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 5, 'description': 'Visualización interactiva de la estructura de procesos (estratégicos, misionales, apoyo)'},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 5, 'description': 'Visualización interactiva de la jerarquía de cargos'},
                         ]
                     },
                     # Tab 4 "Políticas y Reglamentos" ELIMINADO — se gestiona

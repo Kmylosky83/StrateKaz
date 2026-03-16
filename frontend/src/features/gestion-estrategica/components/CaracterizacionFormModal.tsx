@@ -6,12 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button, Spinner, Tabs, Badge } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
-import {
-  useSelectUsers,
-  useSelectAreas,
-  useSelectCargos,
-  useSelectIndicadores,
-} from '@/hooks/useSelectLists';
+import { useSelectAreas, useSelectCargos, useSelectIndicadores } from '@/hooks/useSelectLists';
 import { Plus, Trash2, Search, X } from 'lucide-react';
 import {
   useCaracterizacion,
@@ -223,7 +218,7 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
 
   const createMutation = useCreateCaracterizacion();
   const updateMutation = useUpdateCaracterizacion();
-  const { data: usuarios = [] } = useSelectUsers();
+  // lider_proceso es Cargo (ISO 9001 §4.4), no User
   const { data: areasSelect = [] } = useSelectAreas();
   const { data: cargos = [] } = useSelectCargos();
   const { data: indicadoresCatalogo = [] } = useSelectIndicadores();
@@ -400,17 +395,18 @@ export function CaracterizacionFormModal({ item, isOpen, onClose }: Caracterizac
                 </div>
 
                 <Select
-                  label="Líder del Proceso"
+                  label="Cargo Líder del Proceso"
                   value={formData.lider_proceso ?? 0}
                   onChange={(e) => {
                     const val = parseInt(e.target.value);
                     handleChange('lider_proceso', val || null);
                   }}
+                  helperText="Cargo responsable del proceso (ISO 9001 §4.4)"
                 >
-                  <option value={0}>Seleccionar líder...</option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.label}
+                  <option value={0}>Seleccionar cargo...</option>
+                  {cargos.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
                     </option>
                   ))}
                 </Select>

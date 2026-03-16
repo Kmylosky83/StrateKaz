@@ -80,12 +80,13 @@ class CaracterizacionProceso(AuditModel, SoftDeleteModel):
         help_text='Límites del proceso: dónde inicia y dónde termina',
     )
     lider_proceso = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'core.Cargo',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name='procesos_liderados',
         verbose_name='Líder del Proceso',
+        help_text='Cargo responsable del proceso',
     )
 
     # SIPOC (JSONField arrays)

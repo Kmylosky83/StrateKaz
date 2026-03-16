@@ -21,14 +21,6 @@ export {
   type UseTimeElapsedReturn,
 } from './useTimeElapsed';
 export {
-  useIcons,
-  useIconsByCategory,
-  useIconSearch,
-  type IconRegistryItem,
-  type IconCategory,
-  type UseIconsReturn,
-} from './useIcons';
-export {
   useMediaQuery,
   useIsTablet,
   useIsDesktop,

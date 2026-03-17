@@ -40,6 +40,9 @@ export const Modules = {
   REVISION_DIRECCION: 'revision_direccion',
   ACCIONES_MEJORA: 'acciones_mejora',
 
+  // ── INFRAESTRUCTURA ──
+  CONFIGURACION_PLATAFORMA: 'configuracion_plataforma',
+
   // ── Legacy aliases (V1 → V2, para compatibilidad durante migración) ──
   /** @deprecated Use GESTION_INTEGRAL */
   HSEQ_MANAGEMENT: 'gestion_integral',
@@ -79,14 +82,23 @@ export const Sections = {
   CARACTERIZACIONES: 'caracterizaciones',
   MAPA_PROCESOS: 'mapa_procesos',
 
-  // ── FUNDACION — Legacy aliases ──
-  CONSECUTIVOS: 'consecutivos',
+  // ── CONFIGURACIÓN DE PLATAFORMA ──
   MODULOS: 'modulos',
+  CONSECUTIVOS: 'consecutivos',
+  CATALOGOS: 'catalogos',
+  PLANTILLAS_NOTIFICACION: 'plantillas_notificacion',
+  AUTOMATIZACIONES: 'automatizaciones',
   INTEGRACIONES: 'integraciones',
+  IMPORTACION_EXPORTACION: 'importacion_exportacion',
+  CONFIG_INDICADORES: 'config_indicadores',
+  PERSONALIZACION: 'personalizacion',
+  AUDITORIA_CONFIGURACION: 'auditoria_configuracion',
+  UNIDADES_MEDIDA: 'unidades_medida',
+
+  // ── FUNDACION — Legacy aliases ──
   IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
   IDENTITY: 'identidad_corporativa',
   BRANDING: 'branding',
-  UNIDADES_MEDIDA: 'unidades_medida',
   ESTRATEGIA: 'estrategia',
 
   // ── GESTIÓN DOCUMENTAL ──
@@ -233,18 +245,15 @@ export const Sections = {
   ESTADO_RESULTADOS: 'estado_resultados',
   INTEGRACION_CONTABLE: 'integracion_contable',
 
-  // ── ANALYTICS (sin config_indicadores ni exportacion — van a Configuración) ──
+  // ── ANALYTICS ──
   TABLEROS: 'tableros',
   INDICADORES: 'indicadores',
   MEDICIONES_IND: 'mediciones',
   TENDENCIAS: 'tendencias',
   PLANTILLAS_INFORME: 'plantillas_informe',
   ACCIONES_MEJORA_IND: 'acciones_mejora_ind',
-  /** @deprecated Moved to Configuración */
   TIPOS_INDICADOR: 'tipos_indicador',
-  /** @deprecated Moved to Configuración */
   FUENTES_DATOS: 'fuentes_datos',
-  /** @deprecated Moved to Configuración */
   EXPORTACION: 'exportacion',
 
   // ── REVISIÓN POR LA DIRECCIÓN ──

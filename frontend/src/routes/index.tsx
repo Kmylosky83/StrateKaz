@@ -56,6 +56,7 @@ import { tesoreriaRoutes } from './modules/tesoreria.routes';
 import { accountingRoutes } from './modules/accounting.routes';
 import { analyticsRoutes } from './modules/analytics.routes';
 import { auditSystemRoutes } from './modules/audit-system.routes';
+import { configuracionAdminRoutes } from './modules/configuracion-admin.routes';
 
 // Paginas publicas (lazy)
 const EncuestaPublicaPage = lazy(
@@ -142,6 +143,9 @@ export const AppRoutes = () => {
           {revisionDireccionRoutes}
           {accionesMejoraRoutes}
           {auditSystemRoutes}
+
+          {/* Infraestructura — Configuración de Plataforma */}
+          {configuracionAdminRoutes}
 
           {/* Legacy redirects (gestion-estrategica → nuevas rutas) */}
           {gestionEstrategicaRoutes}

@@ -37,7 +37,8 @@ export type ModuleCategory =
   | 'NIVEL_CADENA'
   | 'NIVEL_TALENTO'
   | 'NIVEL_SOPORTE'
-  | 'NIVEL_INTELIGENCIA';
+  | 'NIVEL_INTELIGENCIA'
+  | 'NIVEL_CONFIG';
 
 /**
  * Lista completa de módulos del sistema StrateKaz V2.
@@ -102,6 +103,11 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   { code: 'revision_direccion', name: 'Revisión por la Dirección', category: 'NIVEL_INTELIGENCIA' },
   { code: 'acciones_mejora', name: 'Acciones de Mejora', category: 'NIVEL_INTELIGENCIA' },
   { code: 'audit_system', name: 'Centro de Control', category: 'NIVEL_INTELIGENCIA' },
+
+  // ── INFRAESTRUCTURA ──
+
+  // NIVEL_CONFIG — Configuración de Plataforma
+  { code: 'configuracion_plataforma', name: 'Configuración', category: 'NIVEL_CONFIG' },
 ];
 
 /** Módulos habilitados por defecto para nuevos tenants */

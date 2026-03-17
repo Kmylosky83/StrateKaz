@@ -147,6 +147,17 @@ SIDEBAR_LAYERS = [
         'phase': 'VERIFICAR_ACTUAR',
         'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora'],
     },
+    # ═══════════════════════════════════════════════════════════════
+    # INFRAESTRUCTURA — Configuración de plataforma (siempre al final)
+    # ═══════════════════════════════════════════════════════════════
+    {
+        'code': 'NIVEL_CONFIG',
+        'name': 'Configuración',
+        'icon': 'Settings',
+        'color': '#64748B',
+        'phase': 'INFRAESTRUCTURA',
+        'module_codes': ['configuracion_plataforma'],
+    },
 ]
 
 

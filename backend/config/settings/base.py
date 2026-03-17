@@ -366,7 +366,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     'TITLE': 'StrateKaz API',
     'DESCRIPTION': 'API del Sistema de Gestión Integral StrateKaz - Multi-tenant SaaS',
-    'VERSION': '5.2.0',
+    'VERSION': '5.3.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': '/api/',
 }

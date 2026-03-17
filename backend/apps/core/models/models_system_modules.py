@@ -20,12 +20,14 @@ class SystemModule(models.Model):
     """
 
     CATEGORY_CHOICES = [
-        ('STRATEGIC', 'Nivel Estrategico'),
+        ('STRATEGIC', 'Nivel Estratégico'),
         ('COMPLIANCE', 'Motores del Sistema'),
-        ('INTEGRATED', 'Gestion Integral'),
+        ('INTEGRATED', 'Gestión Integral'),
         ('OPERATIONAL', 'Nivel Misional'),
         ('SUPPORT', 'Nivel de Apoyo'),
         ('INTELLIGENCE', 'Inteligencia de Negocio'),
+        ('INFRASTRUCTURE', 'Infraestructura'),
+        ('TRANSVERSAL', 'Transversal'),
     ]
 
     COLOR_CHOICES = [
@@ -49,6 +51,8 @@ class SystemModule(models.Model):
         'OPERATIONAL': 'blue',
         'SUPPORT': 'green',
         'INTELLIGENCE': 'purple',
+        'INFRASTRUCTURE': 'gray',
+        'TRANSVERSAL': 'teal',
     }
 
     code = models.CharField(

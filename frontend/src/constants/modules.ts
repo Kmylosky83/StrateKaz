@@ -5,7 +5,7 @@
  * Las categorías reflejan los 10 grupos visuales del sidebar V2
  * (SIDEBAR_LAYERS en backend/apps/core/viewsets_config.py).
  *
- * Arquitectura Cascada V2 — 19 módulos organizados por ciclo PHVA.
+ * Arquitectura Cascada V2.1 — 20 módulos organizados por ciclo PHVA + Transversal.
  */
 
 export interface SystemModule {
@@ -17,7 +17,7 @@ export interface SystemModule {
 /**
  * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.
  * NIVEL_FUNDACION      → Fundación (C1)
- * NIVEL_INFRAESTRUCTURA → Gestión Documental + Flujos de Trabajo
+ * NIVEL_INFRAESTRUCTURA → Gestión Documental
  * NIVEL_EQUIPO         → Mi Equipo
  * NIVEL_PLANIFICACION  → Planificación Operativa + Planeación Estratégica
  * NIVEL_PROTECCION     → Protección y Cumplimiento
@@ -26,6 +26,8 @@ export interface SystemModule {
  * NIVEL_TALENTO        → Talent Hub
  * NIVEL_SOPORTE        → Administración + Tesorería + Contabilidad
  * NIVEL_INTELIGENCIA   → Analytics + Revisión Dirección + Acciones Mejora + Audit System
+ * NIVEL_WORKFLOWS      → Flujos de Trabajo (motor de ejecución transversal)
+ * NIVEL_CONFIG         → Configuración de Plataforma
  */
 export type ModuleCategory =
   | 'NIVEL_FUNDACION'
@@ -38,6 +40,7 @@ export type ModuleCategory =
   | 'NIVEL_TALENTO'
   | 'NIVEL_SOPORTE'
   | 'NIVEL_INTELIGENCIA'
+  | 'NIVEL_WORKFLOWS'
   | 'NIVEL_CONFIG';
 
 /**
@@ -51,9 +54,8 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   // NIVEL_FUNDACION — Fundación (C1)
   { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION' },
 
-  // NIVEL_INFRAESTRUCTURA — Documentos + Flujos
+  // NIVEL_INFRAESTRUCTURA — Documentos
   { code: 'gestion_documental', name: 'Gestión Documental', category: 'NIVEL_INFRAESTRUCTURA' },
-  { code: 'workflow_engine', name: 'Flujos de Trabajo', category: 'NIVEL_INFRAESTRUCTURA' },
 
   // NIVEL_EQUIPO — Mi Equipo
   { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO' },
@@ -104,7 +106,10 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   { code: 'acciones_mejora', name: 'Acciones de Mejora', category: 'NIVEL_INTELIGENCIA' },
   { code: 'audit_system', name: 'Centro de Control', category: 'NIVEL_INTELIGENCIA' },
 
-  // ── INFRAESTRUCTURA ──
+  // ── TRANSVERSAL ──
+
+  // NIVEL_WORKFLOWS — Motor de ejecución transversal
+  { code: 'workflow_engine', name: 'Flujos de Trabajo', category: 'NIVEL_WORKFLOWS' },
 
   // NIVEL_CONFIG — Configuración de Plataforma
   { code: 'configuracion_plataforma', name: 'Configuración', category: 'NIVEL_CONFIG' },

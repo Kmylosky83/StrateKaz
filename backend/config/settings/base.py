@@ -189,16 +189,22 @@ TENANT_APPS = [
     # 'apps.accounting.integracion',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 45: INTELIGENCIA (C3)
+    # CONFIGURACIÓN DE PLATAFORMA: Sub-apps activadas para config_indicadores
+    # Estas sub-apps NO dependen de C2, solo de core.Cargo. Se activan ya para
+    # configurar KPIs de procesos desde Fundación (V2.1)
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.analytics.config_indicadores',
+    'apps.analytics.exportacion_integracion',
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 45: INTELIGENCIA (C3) — resto de analytics
     # Descomentar cuando TODOS los módulos C2 estén estabilizados
     # ═══════════════════════════════════════════════════════════════════════════
-    # 'apps.analytics.config_indicadores',
     # 'apps.analytics.indicadores_area',
     # 'apps.analytics.acciones_indicador',
     # 'apps.analytics.dashboard_gerencial',
     # 'apps.analytics.generador_informes',
     # 'apps.analytics.analisis_tendencias',
-    # 'apps.analytics.exportacion_integracion',
     #
     # 'apps.audit_system.logs_sistema',
     # 'apps.audit_system.config_alertas',

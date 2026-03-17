@@ -148,14 +148,22 @@ SIDEBAR_LAYERS = [
         'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora'],
     },
     # ═══════════════════════════════════════════════════════════════
-    # INFRAESTRUCTURA — Configuración de plataforma (siempre al final)
+    # TRANSVERSAL — Workflows (motor de ejecución) + Configuración
     # ═══════════════════════════════════════════════════════════════
+    {
+        'code': 'NIVEL_WORKFLOWS',
+        'name': 'Flujos de Trabajo',
+        'icon': 'Workflow',
+        'color': '#0891B2',
+        'phase': 'TRANSVERSAL',
+        'module_codes': ['workflow_engine'],
+    },
     {
         'code': 'NIVEL_CONFIG',
         'name': 'Configuración',
         'icon': 'Settings',
         'color': '#64748B',
-        'phase': 'INFRAESTRUCTURA',
+        'phase': 'TRANSVERSAL',
         'module_codes': ['configuracion_plataforma'],
     },
 ]

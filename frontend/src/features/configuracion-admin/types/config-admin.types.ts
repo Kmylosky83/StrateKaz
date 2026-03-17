@@ -2,7 +2,10 @@
  * Types para Configuración de Plataforma
  *
  * Los tipos de SystemModule vienen del backend (core/viewsets_config.py).
- * Consecutivos y UnidadesMedida reusan los tipos existentes del backend.
+ * Consecutivos y catálogos reusan los endpoints existentes del backend.
+ *
+ * IMPORTANTE: Los nombres de campo DEBEN coincidir exactamente con los
+ * serializers del backend (snake_case). Ver serializers_consecutivos.py.
  */
 
 // ── Módulos del Sistema ──
@@ -26,34 +29,50 @@ export interface ToggleModuleDTO {
 }
 
 // ── Consecutivos ──
+// Campos alineados con ConsecutivoConfigSerializer (backend)
 
 export interface ConsecutivoConfig {
   id: number;
-  nombre: string;
   codigo: string;
-  prefijo: string;
-  sufijo: string;
-  siguiente_numero: number;
-  longitud_numero: number;
-  modulo: string;
-  tipo_documento: string;
-  is_active: boolean;
+  nombre: string;
   descripcion: string;
-  formato_ejemplo: string;
+  categoria: string;
+  categoria_display: string;
+  prefix: string;
+  suffix: string;
+  separator: string;
+  separator_display: string;
+  current_number: number;
+  padding: number;
+  numero_inicial: number;
+  include_year: boolean;
+  include_month: boolean;
+  include_day: boolean;
+  reset_yearly: boolean;
+  reset_monthly: boolean;
+  last_reset_date: string | null;
+  es_sistema: boolean;
+  is_active: boolean;
+  ejemplo_formato: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateConsecutivoDTO {
-  nombre: string;
   codigo: string;
-  prefijo?: string;
-  sufijo?: string;
-  siguiente_numero?: number;
-  longitud_numero?: number;
-  modulo: string;
-  tipo_documento?: string;
+  nombre: string;
   descripcion?: string;
+  categoria?: string;
+  prefix: string;
+  suffix?: string;
+  separator?: string;
+  padding?: number;
+  numero_inicial?: number;
+  include_year?: boolean;
+  include_month?: boolean;
+  include_day?: boolean;
+  reset_yearly?: boolean;
+  reset_monthly?: boolean;
 }
 
 export type UpdateConsecutivoDTO = Partial<CreateConsecutivoDTO>;

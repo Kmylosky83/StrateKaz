@@ -3,6 +3,9 @@
  *
  * Tabla CRUD de configuración de consecutivos automáticos.
  * Tipo A: SectionToolbar + ResponsiveTable.
+ *
+ * Campos alineados con ConsecutivoConfigSerializer (backend):
+ * prefix, suffix, current_number, padding, categoria, ejemplo_formato
  */
 import { useState, useMemo } from 'react';
 import { Hash, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -62,32 +65,32 @@ export const ConsecutivosSection = () => {
         accessorKey: 'nombre',
       },
       {
-        id: 'modulo',
-        header: 'Módulo',
-        accessorKey: 'modulo',
+        id: 'categoria',
+        header: 'Categoría',
+        accessorKey: 'categoria',
         cell: (row) => (
           <Badge variant="default" size="sm">
-            {row.modulo}
+            {row.categoria_display || row.categoria}
           </Badge>
         ),
       },
       {
         id: 'formato',
         header: 'Formato',
-        accessorKey: 'formato_ejemplo',
+        accessorKey: 'ejemplo_formato',
         cell: (row) => (
-          <span className="font-mono text-xs text-gray-500">
-            {row.prefijo}
-            {String(row.siguiente_numero).padStart(row.longitud_numero, '0')}
-            {row.sufijo}
-          </span>
+          <span className="font-mono text-xs text-gray-500">{row.ejemplo_formato || '—'}</span>
         ),
       },
       {
         id: 'siguiente',
         header: 'Siguiente #',
-        accessorKey: 'siguiente_numero',
-        cell: (row) => <span className="font-mono">{row.siguiente_numero}</span>,
+        accessorKey: 'current_number',
+        cell: (row) => (
+          <span className="font-mono">
+            {String((row.current_number || 0) + 1).padStart(row.padding || 4, '0')}
+          </span>
+        ),
       },
       {
         id: 'estado',
@@ -104,12 +107,12 @@ export const ConsecutivosSection = () => {
         header: '',
         cell: (row) => (
           <div className="flex items-center gap-1 justify-end">
-            {canEdit && (
+            {canEdit && !row.es_sistema && (
               <Button variant="ghost" size="sm" title="Editar" onClick={() => openEdit(row)}>
                 <Pencil size={14} />
               </Button>
             )}
-            {canDelete && (
+            {canDelete && !row.es_sistema && (
               <Button
                 variant="ghost"
                 size="sm"

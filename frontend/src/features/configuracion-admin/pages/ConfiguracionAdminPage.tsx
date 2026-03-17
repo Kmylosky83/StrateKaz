@@ -64,7 +64,7 @@ export const ConfiguracionAdminPage = () => {
     <div className="space-y-4">
       <PageHeader
         title={TAB_TITLES[tabRoute] || 'Configuración de Plataforma'}
-        description={activeSectionData.description}
+        description={activeSectionData?.description || 'Ajustes técnicos de la plataforma'}
       />
 
       {sections.length > 1 && (

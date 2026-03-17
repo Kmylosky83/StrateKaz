@@ -1,16 +1,18 @@
 /**
  * Modal de creación/edición de Consecutivos
  *
- * Patrón: BaseModal + useState form + create/update mutations.
+ * Campos alineados con ConsecutivoConfigSerializer (backend):
+ * prefix, suffix, separator, padding, numero_inicial, categoria,
+ * include_year/month/day, reset_yearly/monthly.
+ *
  * Preview en vivo del formato generado.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
 import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
 import { useCreateConsecutivo, useUpdateConsecutivo } from '../hooks/useConfigAdmin';
 import type { ConsecutivoConfig, CreateConsecutivoDTO } from '../types/config-admin.types';
 
@@ -23,30 +25,38 @@ interface ConsecutivoFormModalProps {
 interface FormData {
   nombre: string;
   codigo: string;
-  prefijo: string;
-  sufijo: string;
-  siguiente_numero: number;
-  longitud_numero: number;
-  modulo: string;
-  tipo_documento: string;
   descripcion: string;
-  is_active: boolean;
+  categoria: string;
+  prefix: string;
+  suffix: string;
+  separator: string;
+  padding: number;
+  numero_inicial: number;
+  include_year: boolean;
+  include_month: boolean;
+  include_day: boolean;
+  reset_yearly: boolean;
+  reset_monthly: boolean;
 }
 
 const defaultFormData: FormData = {
   nombre: '',
   codigo: '',
-  prefijo: '',
-  sufijo: '',
-  siguiente_numero: 1,
-  longitud_numero: 4,
-  modulo: 'GENERAL',
-  tipo_documento: '',
   descripcion: '',
-  is_active: true,
+  categoria: 'GENERAL',
+  prefix: '',
+  suffix: '',
+  separator: '-',
+  padding: 5,
+  numero_inicial: 1,
+  include_year: true,
+  include_month: false,
+  include_day: false,
+  reset_yearly: true,
+  reset_monthly: false,
 };
 
-const MODULO_OPTIONS = [
+const CATEGORIA_OPTIONS = [
   { value: 'DOCUMENTOS', label: 'Documentos' },
   { value: 'COMPRAS', label: 'Compras' },
   { value: 'VENTAS', label: 'Ventas' },
@@ -58,6 +68,14 @@ const MODULO_OPTIONS = [
   { value: 'SST', label: 'SST' },
   { value: 'AMBIENTAL', label: 'Ambiental' },
   { value: 'GENERAL', label: 'General' },
+];
+
+const SEPARATOR_OPTIONS = [
+  { value: '-', label: 'Guión (-)' },
+  { value: '/', label: 'Diagonal (/)' },
+  { value: '_', label: 'Guión bajo (_)' },
+  { value: '.', label: 'Punto (.)' },
+  { value: '', label: 'Sin separador' },
 ];
 
 export const ConsecutivoFormModal = ({
@@ -79,14 +97,18 @@ export const ConsecutivoFormModal = ({
       setFormData({
         nombre: consecutivo.nombre || '',
         codigo: consecutivo.codigo || '',
-        prefijo: consecutivo.prefijo || '',
-        sufijo: consecutivo.sufijo || '',
-        siguiente_numero: consecutivo.siguiente_numero || 1,
-        longitud_numero: consecutivo.longitud_numero || 4,
-        modulo: consecutivo.modulo || 'GENERAL',
-        tipo_documento: consecutivo.tipo_documento || '',
         descripcion: consecutivo.descripcion || '',
-        is_active: consecutivo.is_active ?? true,
+        categoria: consecutivo.categoria || 'GENERAL',
+        prefix: consecutivo.prefix || '',
+        suffix: consecutivo.suffix || '',
+        separator: consecutivo.separator ?? '-',
+        padding: consecutivo.padding || 5,
+        numero_inicial: consecutivo.numero_inicial || 1,
+        include_year: consecutivo.include_year ?? true,
+        include_month: consecutivo.include_month ?? false,
+        include_day: consecutivo.include_day ?? false,
+        reset_yearly: consecutivo.reset_yearly ?? true,
+        reset_monthly: consecutivo.reset_monthly ?? false,
       });
       setIsInitialized(true);
     }
@@ -100,14 +122,37 @@ export const ConsecutivoFormModal = ({
     }
   }, [isOpen, consecutivo, isInitialized]);
 
-  const formatPreview = `${formData.prefijo}${String(formData.siguiente_numero).padStart(formData.longitud_numero, '0')}${formData.sufijo}`;
+  // Preview del formato en vivo
+  const formatPreview = useMemo(() => {
+    const parts: string[] = [];
+    const today = new Date();
+
+    if (formData.prefix) parts.push(formData.prefix);
+
+    if (formData.include_day) {
+      parts.push(
+        `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+      );
+    } else if (formData.include_month) {
+      parts.push(`${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}`);
+    } else if (formData.include_year) {
+      parts.push(String(today.getFullYear()));
+    }
+
+    parts.push(String(formData.numero_inicial).padStart(formData.padding, '0'));
+
+    if (formData.suffix) parts.push(formData.suffix);
+
+    return parts.join(formData.separator);
+  }, [formData]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!formData.codigo.trim()) newErrors.codigo = 'El código es requerido';
-    if (formData.longitud_numero < 1 || formData.longitud_numero > 10) {
-      newErrors.longitud_numero = 'Debe ser entre 1 y 10';
+    if (!formData.prefix.trim()) newErrors.prefix = 'El prefijo es requerido';
+    if (formData.padding < 1 || formData.padding > 10) {
+      newErrors.padding = 'Debe ser entre 1 y 10';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -119,13 +164,18 @@ export const ConsecutivoFormModal = ({
     const payload: CreateConsecutivoDTO = {
       nombre: formData.nombre.trim(),
       codigo: formData.codigo.trim().toUpperCase(),
-      prefijo: formData.prefijo || undefined,
-      sufijo: formData.sufijo || undefined,
-      siguiente_numero: formData.siguiente_numero,
-      longitud_numero: formData.longitud_numero,
-      modulo: formData.modulo,
-      tipo_documento: formData.tipo_documento || undefined,
       descripcion: formData.descripcion.trim() || undefined,
+      categoria: formData.categoria,
+      prefix: formData.prefix.trim().toUpperCase(),
+      suffix: formData.suffix.trim().toUpperCase() || undefined,
+      separator: formData.separator,
+      padding: formData.padding,
+      numero_inicial: formData.numero_inicial,
+      include_year: formData.include_year,
+      include_month: formData.include_month,
+      include_day: formData.include_day,
+      reset_yearly: formData.reset_yearly,
+      reset_monthly: formData.reset_monthly,
     };
 
     try {
@@ -196,55 +246,94 @@ export const ConsecutivoFormModal = ({
           />
         </div>
 
-        {/* Prefijo + Sufijo */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Prefijo + Sufijo + Separador */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Input
-            label="Prefijo"
-            value={formData.prefijo}
-            onChange={(e) => handleChange('prefijo', e.target.value)}
-            placeholder="Ej: FAC-"
+            label="Prefijo *"
+            value={formData.prefix}
+            onChange={(e) => handleChange('prefix', e.target.value.toUpperCase())}
+            error={errors.prefix}
+            placeholder="Ej: FAC"
           />
           <Input
             label="Sufijo"
-            value={formData.sufijo}
-            onChange={(e) => handleChange('sufijo', e.target.value)}
-            placeholder="Ej: -2026"
+            value={formData.suffix}
+            onChange={(e) => handleChange('suffix', e.target.value.toUpperCase())}
+            placeholder="Ej: CO"
+          />
+          <Select
+            label="Separador"
+            value={formData.separator}
+            onChange={(e) => handleChange('separator', e.target.value)}
+            options={SEPARATOR_OPTIONS}
           />
         </div>
 
-        {/* Siguiente número + Longitud */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Dígitos + Número inicial + Categoría */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Input
-            label="Siguiente número"
+            label="Dígitos de relleno"
             type="number"
-            value={String(formData.siguiente_numero)}
-            onChange={(e) => handleChange('siguiente_numero', parseInt(e.target.value) || 1)}
-            min={1}
-          />
-          <Input
-            label="Longitud del número"
-            type="number"
-            value={String(formData.longitud_numero)}
-            onChange={(e) => handleChange('longitud_numero', parseInt(e.target.value) || 4)}
-            error={errors.longitud_numero}
+            value={String(formData.padding)}
+            onChange={(e) => handleChange('padding', parseInt(e.target.value) || 5)}
+            error={errors.padding}
             min={1}
             max={10}
           />
+          <Input
+            label="Número inicial"
+            type="number"
+            value={String(formData.numero_inicial)}
+            onChange={(e) => handleChange('numero_inicial', parseInt(e.target.value) || 1)}
+            min={1}
+          />
+          <Select
+            label="Categoría"
+            value={formData.categoria}
+            onChange={(e) => handleChange('categoria', e.target.value)}
+            options={CATEGORIA_OPTIONS}
+          />
         </div>
 
-        {/* Módulo + Estado */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Select
-            label="Módulo"
-            value={formData.modulo}
-            onChange={(e) => handleChange('modulo', e.target.value)}
-            options={MODULO_OPTIONS}
-          />
-          <div className="flex items-end pb-1">
+        {/* Componentes de fecha */}
+        <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+            Componentes de fecha
+          </p>
+          <div className="flex flex-wrap gap-6">
             <Switch
-              label="Activo"
-              checked={formData.is_active}
-              onCheckedChange={(checked) => handleChange('is_active', checked)}
+              label="Incluir año"
+              checked={formData.include_year}
+              onCheckedChange={(checked) => handleChange('include_year', checked)}
+            />
+            <Switch
+              label="Incluir mes"
+              checked={formData.include_month}
+              onCheckedChange={(checked) => handleChange('include_month', checked)}
+            />
+            <Switch
+              label="Incluir día"
+              checked={formData.include_day}
+              onCheckedChange={(checked) => handleChange('include_day', checked)}
+            />
+          </div>
+        </div>
+
+        {/* Reinicio automático */}
+        <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+          <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+            Reinicio automático
+          </p>
+          <div className="flex flex-wrap gap-6">
+            <Switch
+              label="Reinicio anual"
+              checked={formData.reset_yearly}
+              onCheckedChange={(checked) => handleChange('reset_yearly', checked)}
+            />
+            <Switch
+              label="Reinicio mensual"
+              checked={formData.reset_monthly}
+              onCheckedChange={(checked) => handleChange('reset_monthly', checked)}
             />
           </div>
         </div>
@@ -254,7 +343,7 @@ export const ConsecutivoFormModal = ({
           label="Descripción"
           value={formData.descripcion}
           onChange={(e) => handleChange('descripcion', e.target.value)}
-          placeholder="Descripción del consecutivo"
+          placeholder="Descripción del uso de este consecutivo"
         />
       </div>
     </BaseModal>

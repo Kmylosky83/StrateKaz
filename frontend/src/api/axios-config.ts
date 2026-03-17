@@ -10,9 +10,15 @@ const axiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Interceptor para agregar token JWT y tenant ID a todas las peticiones
+// Interceptor para agregar token JWT, tenant ID y manejar Content-Type
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Si el body es FormData, eliminar Content-Type default para que
+    // el browser auto-genere el boundary correcto de multipart/form-data
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

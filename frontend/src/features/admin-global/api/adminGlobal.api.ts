@@ -204,7 +204,7 @@ export const tenantsApi = {
     // axios auto-genere el boundary correcto de multipart/form-data
     if (data instanceof FormData) {
       const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
       return response.data;
     }

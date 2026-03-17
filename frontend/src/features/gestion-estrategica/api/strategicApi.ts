@@ -1106,8 +1106,8 @@ export const currentTenantApi = {
 
   update: async (data: FormData | Partial<CurrentTenantData>): Promise<CurrentTenantData> => {
     const isFormData = data instanceof FormData;
-    const response = await apiClient.patch(`${TENANT_URL}/tenants/me/`, _data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    const response = await apiClient.patch(`${TENANT_URL}/tenants/me/`, data, {
+      headers: isFormData ? { 'Content-Type': undefined } : {},
     });
     return response.data;
   },

@@ -259,6 +259,9 @@ export const useUpdateTenant = () => {
       tenantsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
+      // Invalidar sidebar y tree para que reflejen cambios en enabled_modules
+      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
       toast.success('Empresa actualizada correctamente');
     },
     onError: (error: {

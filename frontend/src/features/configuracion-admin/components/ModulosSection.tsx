@@ -17,15 +17,18 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import {
-  useModuleTree,
+  useModulesTree,
   useToggleModule,
   useToggleTab,
   useToggleSection,
-} from '../hooks/useConfigAdmin';
-import type { SystemModuleTree, ModuleTab } from '../types/config-admin.types';
+} from '@/hooks/useModules';
+import type {
+  SystemModuleTree,
+  ModuleTab,
+} from '@/features/gestion-estrategica/types/modules.types';
 
 export const ModulosSection = () => {
-  const { data: treeData, isLoading } = useModuleTree();
+  const { data: treeData, isLoading } = useModulesTree();
   const toggleModule = useToggleModule();
   const toggleTab = useToggleTab();
   const toggleSection = useToggleSection();
@@ -86,12 +89,12 @@ export const ModulosSection = () => {
             module={mod}
             isExpanded={expandedModules.has(mod.id)}
             onToggleExpand={() => toggleExpand(mod.id)}
-            onToggleModule={() => toggleModule.mutate({ id: mod.id, is_enabled: !mod.is_enabled })}
+            onToggleModule={() => toggleModule.mutate({ id: mod.id, isEnabled: !mod.is_enabled })}
             onToggleTab={(tabId: number, enabled: boolean) =>
-              toggleTab.mutate({ id: tabId, is_enabled: enabled })
+              toggleTab.mutate({ id: tabId, isEnabled: enabled })
             }
             onToggleSection={(sectionId: number, enabled: boolean) =>
-              toggleSection.mutate({ id: sectionId, is_enabled: enabled })
+              toggleSection.mutate({ id: sectionId, isEnabled: enabled })
             }
             canEdit={canEdit}
             isPending={isPending}

@@ -541,11 +541,11 @@ export function useModulesStats() {
   const enabledTabs = tree.modules.reduce((sum, m) => sum + m.enabled_tabs_count, 0);
 
   const totalSections = tree.modules.reduce(
-    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.total_sections_count, 0),
+    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.section_count, 0),
     0
   );
   const enabledSections = tree.modules.reduce(
-    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.enabled_sections_count, 0),
+    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.enabled_section_count, 0),
     0
   );
 

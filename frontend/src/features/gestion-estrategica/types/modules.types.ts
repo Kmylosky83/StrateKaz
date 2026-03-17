@@ -67,8 +67,11 @@ export interface ModuleTab {
   is_enabled: boolean;
   is_core: boolean;
   sections: TabSection[];
-  enabled_sections_count: number;
-  total_sections_count: number;
+  /** Backend: enabled_section_count (singular, matches serializer) */
+  enabled_section_count: number;
+  /** Backend: section_count (matches serializer) */
+  section_count: number;
+  can_disable?: { can_disable: boolean; reason: string | null };
 }
 
 // ==================== MODULO EXTENDIDO (para árbol) ====================

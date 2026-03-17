@@ -11,7 +11,6 @@ import { createCrudHooks } from '@/lib/crud-hooks-factory';
 import { createQueryKeys } from '@/lib/query-keys';
 import { apiClient } from '@/lib/api-client';
 import type {
-  ModuleTreeResponse,
   SystemModuleItem,
   ConsecutivoConfig,
   CreateConsecutivoDTO,
@@ -278,7 +277,9 @@ export const useUpdateFormaPago = formasPagoHooks.useUpdate;
 export const useDeleteFormaPago = formasPagoHooks.useDelete;
 
 // ══════════════════════════════════════════════════════════════
-// System Modules (custom — no factory, needs toggle)
+// System Modules — NOTA: useModulesTree, useToggleModule,
+// useToggleTab, useToggleSection viven en @/hooks/useModules
+// (fuente única). NO duplicar aquí.
 // ══════════════════════════════════════════════════════════════
 
 export function useSystemModules() {
@@ -288,89 +289,6 @@ export function useSystemModules() {
       const response = await apiClient.get('/core/system-modules/');
       const data = response.data;
       return Array.isArray(data) ? data : (data?.results ?? []);
-    },
-  });
-}
-
-export function useToggleModule() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, is_enabled }: { id: number; is_enabled: boolean }) => {
-      const response = await apiClient.patch(`/core/system-modules/${id}/toggle/`, {
-        is_enabled,
-      });
-      return response.data;
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(
-        variables.is_enabled ? 'Módulo activado correctamente' : 'Módulo desactivado correctamente'
-      );
-      queryClient.invalidateQueries({ queryKey: systemModulesKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
-      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
-    },
-    onError: () => {
-      toast.error('Error al cambiar el estado del módulo');
-    },
-  });
-}
-
-// Module Tree (tabs + secciones expandibles)
-export function useModuleTree() {
-  return useQuery<ModuleTreeResponse>({
-    queryKey: ['modules', 'tree'],
-    queryFn: async () => {
-      const response = await apiClient.get('/core/system-modules/tree/');
-      return response.data;
-    },
-  });
-}
-
-export function useToggleTab() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, is_enabled }: { id: number; is_enabled: boolean }) => {
-      const response = await apiClient.patch(`/core/module-tabs/${id}/toggle/`, { is_enabled });
-      return response.data;
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(
-        variables.is_enabled
-          ? 'Pestaña activada correctamente'
-          : 'Pestaña desactivada correctamente'
-      );
-      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
-      queryClient.invalidateQueries({ queryKey: systemModulesKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
-    },
-    onError: () => {
-      toast.error('Error al cambiar el estado de la pestaña');
-    },
-  });
-}
-
-export function useToggleSection() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, is_enabled }: { id: number; is_enabled: boolean }) => {
-      const response = await apiClient.patch(`/core/tab-sections/${id}/toggle/`, { is_enabled });
-      return response.data;
-    },
-    onSuccess: (_data, variables) => {
-      toast.success(
-        variables.is_enabled
-          ? 'Sección activada correctamente'
-          : 'Sección desactivada correctamente'
-      );
-      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
-      queryClient.invalidateQueries({ queryKey: systemModulesKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
-    },
-    onError: () => {
-      toast.error('Error al cambiar el estado de la sección');
     },
   });
 }

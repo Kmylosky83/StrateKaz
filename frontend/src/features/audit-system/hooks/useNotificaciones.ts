@@ -49,9 +49,10 @@ export const useNotificacionesNoLeidas = () => {
     queryKey: notificacionesKeys.noLeidas(user?.id),
     queryFn: () => notificacionesAPI.getNoLeidas(user?.id),
     enabled: !!user?.id,
-    refetchInterval: 60000, // Refrescar cada minuto
-    staleTime: 30000, // Considerar fresco por 30 segundos
-    retry: 0, // No reintentar en 401 — el interceptor ya maneja el refresh
+    // Detener polling si el endpoint no existe (404) o hay error
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 60000),
+    staleTime: 30000,
+    retry: 0,
   });
 };
 

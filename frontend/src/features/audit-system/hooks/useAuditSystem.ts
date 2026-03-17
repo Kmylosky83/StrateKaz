@@ -201,8 +201,7 @@ export const useUpdateTipoNotificacion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      tiposNotificacionApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => tiposNotificacionApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-notificacion'] });
     },
@@ -238,7 +237,9 @@ export const useNotificacionesNoLeidas = () => {
       const response = await notificacionesApi.noLeidas();
       return response.data;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    // Detener polling si el endpoint no existe (404) o hay error
+    refetchInterval: (query) => (query.state.status === 'error' ? false : 30000),
+    retry: 0,
   });
 };
 
@@ -372,8 +373,7 @@ export const useUpdateTipoAlerta = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      tiposAlertaApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => tiposAlertaApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-alerta'] });
     },
@@ -567,8 +567,7 @@ export const useUpdateTarea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      tareasApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => tareasApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tareas'] });
       queryClient.invalidateQueries({ queryKey: ['tarea', variables.id] });
@@ -593,8 +592,7 @@ export const useCancelarTarea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, motivo }: { id: number; motivo?: string }) =>
-      tareasApi.cancelar(id, motivo),
+    mutationFn: ({ id, motivo }: { id: number; motivo?: string }) => tareasApi.cancelar(id, motivo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tareas'] });
     },
@@ -605,8 +603,15 @@ export const useReasignarTarea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, asignadoA, observaciones }: { id: number; asignadoA: number; observaciones?: string }) =>
-      tareasApi.reasignar(id, asignadoA, observaciones),
+    mutationFn: ({
+      id,
+      asignadoA,
+      observaciones,
+    }: {
+      id: number;
+      asignadoA: number;
+      observaciones?: string;
+    }) => tareasApi.reasignar(id, asignadoA, observaciones),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tareas'] });
     },
@@ -639,8 +644,7 @@ export const useUpdateRecordatorio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      recordatoriosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => recordatoriosApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recordatorios'] });
     },
@@ -694,8 +698,7 @@ export const useUpdateEvento = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      eventosCalendarioApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => eventosCalendarioApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eventos-calendario'] });
     },

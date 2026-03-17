@@ -394,6 +394,14 @@ class Command(BaseCommand):
             'talent_hub': ['mi_equipo', 'talent_hub'],
         }
 
+        # Módulos que siempre deben estar en enabled_modules si la lista está poblada
+        # (módulos transversales de infraestructura que todo tenant necesita)
+        ALWAYS_ENABLED = [
+            'workflow_engine',
+            'configuracion_plataforma',
+            'audit_system',
+        ]
+
         with schema_context('public'):
             # Actualizar Tenant.enabled_modules
             try:
@@ -412,6 +420,12 @@ class Command(BaseCommand):
                             if new_code not in modules:
                                 modules.append(new_code)
                                 changed = True
+
+                    # Agregar módulos transversales obligatorios
+                    for code in ALWAYS_ENABLED:
+                        if code not in modules:
+                            modules.append(code)
+                            changed = True
 
                     if changed:
                         # Eliminar duplicados preservando orden
@@ -449,6 +463,12 @@ class Command(BaseCommand):
                             if new_code not in features:
                                 features.append(new_code)
                                 changed = True
+
+                    # Agregar módulos transversales obligatorios
+                    for code in ALWAYS_ENABLED:
+                        if code not in features:
+                            features.append(code)
+                            changed = True
 
                     if changed:
                         seen = set()

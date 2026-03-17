@@ -234,11 +234,18 @@ export const useNotificacionesNoLeidas = () => {
   return useQuery({
     queryKey: ['notificaciones', 'no-leidas'],
     queryFn: async () => {
-      const response = await notificacionesApi.noLeidas();
-      return response.data;
+      try {
+        const response = await notificacionesApi.noLeidas();
+        return response.data;
+      } catch (err: unknown) {
+        // 404 = app no habilitada en este nivel de despliegue → silenciar
+        if ((err as { response?: { status?: number } })?.response?.status === 404) {
+          return [];
+        }
+        throw err;
+      }
     },
-    // Detener polling si el endpoint no existe (404) o hay error
-    refetchInterval: (query) => (query.state.status === 'error' ? false : 30000),
+    refetchInterval: 30000,
     retry: 0,
   });
 };

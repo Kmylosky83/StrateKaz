@@ -47,10 +47,19 @@ export const useNotificacionesNoLeidas = () => {
 
   return useQuery({
     queryKey: notificacionesKeys.noLeidas(user?.id),
-    queryFn: () => notificacionesAPI.getNoLeidas(user?.id),
+    queryFn: async () => {
+      try {
+        return await notificacionesAPI.getNoLeidas(user?.id);
+      } catch (err: unknown) {
+        // 404 = app no habilitada en este nivel de despliegue → silenciar
+        if ((err as { response?: { status?: number } })?.response?.status === 404) {
+          return [];
+        }
+        throw err;
+      }
+    },
     enabled: !!user?.id,
-    // Detener polling si el endpoint no existe (404) o hay error
-    refetchInterval: (query) => (query.state.status === 'error' ? false : 60000),
+    refetchInterval: 60000,
     staleTime: 30000,
     retry: 0,
   });

@@ -1190,17 +1190,22 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 97,
                 'tabs': [
-                    {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1, 'sections': [
+                    {'code': 'general', 'name': 'General', 'icon': 'Settings', 'route': 'general', 'orden': 1, 'sections': [
                         {'code': 'modulos', 'name': 'Módulos del Sistema', 'icon': 'Blocks', 'orden': 1, 'description': 'Activar y desactivar módulos, tabs y secciones del sistema'},
                         {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 2, 'description': 'Configuración de numeración automática por tipo de documento'},
-                        {'code': 'catalogos', 'name': 'Catálogos Maestros', 'icon': 'Library', 'orden': 3, 'description': 'Tablas maestras transversales: unidades de medida, tipos de contrato, EPP, normas y más'},
-                        {'code': 'plantillas_notificacion', 'name': 'Plantillas de Notificación', 'icon': 'Bell', 'orden': 4, 'description': 'Configuración de plantillas de correo electrónico y notificaciones push por evento del sistema'},
-                        {'code': 'automatizaciones', 'name': 'Automatizaciones', 'icon': 'Workflow', 'orden': 5, 'description': 'Diseñador de flujos de trabajo y automatizaciones del sistema'},
-                        {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 6, 'description': 'Conexiones con sistemas externos (contabilidad, nómina, ERP)'},
-                        {'code': 'importacion_exportacion', 'name': 'Importación / Exportación', 'icon': 'ArrowUpDown', 'orden': 7, 'description': 'Importación masiva de datos (Excel) y exportación para herramientas de BI externo'},
-                        {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'BarChart3', 'orden': 8, 'description': 'Tipos de indicador, fuentes de datos y fórmulas de cálculo'},
-                        {'code': 'personalizacion', 'name': 'Personalización', 'icon': 'Palette', 'orden': 9, 'description': 'Branding del tenant: logo, colores de marca, formato de fecha y preferencias visuales'},
-                        {'code': 'auditoria_configuracion', 'name': 'Auditoría de Configuración', 'icon': 'ShieldCheck', 'orden': 10, 'description': 'Registro de cambios en configuración del sistema: quién modificó qué y cuándo'},
+                    ]},
+                    {'code': 'catalogos_tab', 'name': 'Catálogos', 'icon': 'Library', 'route': 'catalogos', 'orden': 2, 'sections': [
+                        {'code': 'catalogos', 'name': 'Catálogos Maestros', 'icon': 'Library', 'orden': 1, 'description': 'Tablas maestras transversales: unidades de medida, tipos de contrato, EPP, normas y más'},
+                    ]},
+                    {'code': 'conexiones', 'name': 'Conexiones', 'icon': 'Plug', 'route': 'conexiones', 'orden': 3, 'sections': [
+                        {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 1, 'description': 'Conexiones con sistemas externos (contabilidad, nómina, ERP)'},
+                        {'code': 'automatizaciones', 'name': 'Automatizaciones', 'icon': 'Workflow', 'orden': 2, 'description': 'Diseñador de flujos de trabajo y automatizaciones del sistema'},
+                        {'code': 'importacion_exportacion', 'name': 'Importación / Exportación', 'icon': 'ArrowUpDown', 'orden': 3, 'description': 'Importación masiva de datos (Excel) y exportación para herramientas de BI externo'},
+                    ]},
+                    {'code': 'avanzado', 'name': 'Avanzado', 'icon': 'Sliders', 'route': 'avanzado', 'orden': 4, 'sections': [
+                        {'code': 'plantillas_notificacion', 'name': 'Plantillas de Notificación', 'icon': 'Bell', 'orden': 1, 'description': 'Configuración de plantillas de correo electrónico y notificaciones push por evento del sistema'},
+                        {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'BarChart3', 'orden': 2, 'description': 'Tipos de indicador, fuentes de datos y fórmulas de cálculo'},
+                        {'code': 'auditoria_configuracion', 'name': 'Auditoría de Configuración', 'icon': 'ShieldCheck', 'orden': 3, 'description': 'Registro de cambios en configuración del sistema: quién modificó qué y cuándo'},
                     ]},
                 ]
             },

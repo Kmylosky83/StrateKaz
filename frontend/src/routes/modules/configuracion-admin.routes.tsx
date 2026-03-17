@@ -2,8 +2,7 @@
  * Rutas: Configuración de Plataforma (Infraestructura)
  *
  * Módulo: configuracion_plataforma
- * Centro de control técnico del tenant: módulos, consecutivos,
- * catálogos maestros, integraciones y configuración transversal.
+ * 4 tabs en sidebar: General, Catálogos, Conexiones, Avanzado
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -19,8 +18,11 @@ export const configuracionAdminRoutes = (
   <>
     <Route
       path="/configuracion-admin"
-      element={<Navigate to="/configuracion-admin/configuracion" replace />}
+      element={<Navigate to="/configuracion-admin/general" replace />}
     />
-    <Route path="/configuracion-admin/configuracion" element={GuardedPage} />
+    <Route path="/configuracion-admin/general" element={GuardedPage} />
+    <Route path="/configuracion-admin/catalogos" element={GuardedPage} />
+    <Route path="/configuracion-admin/conexiones" element={GuardedPage} />
+    <Route path="/configuracion-admin/avanzado" element={GuardedPage} />
   </>
 );

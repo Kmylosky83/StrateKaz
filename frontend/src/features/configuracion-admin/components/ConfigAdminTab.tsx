@@ -2,9 +2,10 @@
  * Tab router: Configuración de Plataforma
  *
  * Mapea section codes del backend a componentes React.
- * 4 funcionales + 6 EmptyState placeholders.
+ * 4 funcionales + 5 EmptyState placeholders.
+ * (Personalización eliminado — branding ya está en Fundación)
  */
-import { Bell, Workflow, ArrowUpDown, BarChart3, Palette, ShieldCheck } from 'lucide-react';
+import { Bell, Workflow, ArrowUpDown, BarChart3, ShieldCheck } from 'lucide-react';
 import { GenericSectionFallback } from '@/components/common';
 import { ModulosSection } from './ModulosSection';
 import { ConsecutivosSection } from './ConsecutivosSection';
@@ -51,14 +52,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
       title="Configuración de Indicadores"
       description="Define indicadores KPI, fórmulas y metas del sistema de gestión."
       level="Level 80"
-    />
-  ),
-  personalizacion: () => (
-    <EmptyStateSection
-      icon={Palette}
-      title="Personalización"
-      description="Ajusta colores, logos y apariencia del sistema para tu organización."
-      level="Level 15"
     />
   ),
   auditoria_configuracion: () => (

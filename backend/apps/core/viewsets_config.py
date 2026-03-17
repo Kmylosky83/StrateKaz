@@ -65,13 +65,13 @@ SIDEBAR_LAYERS = [
         'module_codes': ['fundacion'],
     },
     {
-        # Gestión Documental + Workflows = infraestructura transversal
+        # Gestión Documental = infraestructura transversal
         'code': 'NIVEL_INFRAESTRUCTURA',
         'name': 'Infraestructura',
         'icon': 'FileText',
         'color': '#6366F1',
         'phase': 'PLANEAR',
-        'module_codes': ['gestion_documental', 'workflow_engine'],
+        'module_codes': ['gestion_documental'],
     },
     {
         'code': 'NIVEL_EQUIPO',
@@ -157,7 +157,6 @@ SIDEBAR_LAYERS = [
         'color': '#64748B',
         'phase': 'INFRAESTRUCTURA',
         'module_codes': ['configuracion_plataforma'],
-        'force_category': True,  # Siempre mostrar header para separación visual
     },
 ]
 
@@ -773,7 +772,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
             # Solo incluir capas con ≥1 módulo visible
             if layer_children:
-                if len(layer_children) == 1 and not layer.get('force_category'):
+                if len(layer_children) == 1:
                     # Capa con 1 solo módulo → render directo sin wrapper redundante
                     result.append(layer_children[0])
                 else:

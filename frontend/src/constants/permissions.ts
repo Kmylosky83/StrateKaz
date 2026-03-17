@@ -91,7 +91,6 @@ export const Sections = {
   INTEGRACIONES: 'integraciones',
   IMPORTACION_EXPORTACION: 'importacion_exportacion',
   CONFIG_INDICADORES: 'config_indicadores',
-  PERSONALIZACION: 'personalizacion',
   AUDITORIA_CONFIGURACION: 'auditoria_configuracion',
   UNIDADES_MEDIDA: 'unidades_medida',
 

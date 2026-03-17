@@ -888,9 +888,9 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
                 })
 
         # Validar capacidad positiva
-        if self.capacidad_almacenamiento_kg is not None and self.capacidad_almacenamiento_kg < 0:
+        if self.capacidad_almacenamiento is not None and self.capacidad_almacenamiento < 0:
             raise ValidationError({
-                'capacidad_almacenamiento_kg': 'La capacidad de almacenamiento no puede ser negativa.'
+                'capacidad_almacenamiento': 'La capacidad de almacenamiento no puede ser negativa.'
             })
 
     def save(self, *args, **kwargs):

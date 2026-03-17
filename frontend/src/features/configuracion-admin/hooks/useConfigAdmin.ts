@@ -11,6 +11,7 @@ import { createCrudHooks } from '@/lib/crud-hooks-factory';
 import { createQueryKeys } from '@/lib/query-keys';
 import { apiClient } from '@/lib/api-client';
 import type {
+  ModuleTreeResponse,
   SystemModuleItem,
   ConsecutivoConfig,
   CreateConsecutivoDTO,
@@ -311,6 +312,65 @@ export function useToggleModule() {
     },
     onError: () => {
       toast.error('Error al cambiar el estado del módulo');
+    },
+  });
+}
+
+// Module Tree (tabs + secciones expandibles)
+export function useModuleTree() {
+  return useQuery<ModuleTreeResponse>({
+    queryKey: ['modules', 'tree'],
+    queryFn: async () => {
+      const response = await apiClient.get('/core/system-modules/tree/');
+      return response.data;
+    },
+  });
+}
+
+export function useToggleTab() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, is_enabled }: { id: number; is_enabled: boolean }) => {
+      const response = await apiClient.patch(`/core/module-tabs/${id}/toggle/`, { is_enabled });
+      return response.data;
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(
+        variables.is_enabled
+          ? 'Pestaña activada correctamente'
+          : 'Pestaña desactivada correctamente'
+      );
+      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+      queryClient.invalidateQueries({ queryKey: systemModulesKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+    },
+    onError: () => {
+      toast.error('Error al cambiar el estado de la pestaña');
+    },
+  });
+}
+
+export function useToggleSection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, is_enabled }: { id: number; is_enabled: boolean }) => {
+      const response = await apiClient.patch(`/core/tab-sections/${id}/toggle/`, { is_enabled });
+      return response.data;
+    },
+    onSuccess: (_data, variables) => {
+      toast.success(
+        variables.is_enabled
+          ? 'Sección activada correctamente'
+          : 'Sección desactivada correctamente'
+      );
+      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+      queryClient.invalidateQueries({ queryKey: systemModulesKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+    },
+    onError: () => {
+      toast.error('Error al cambiar el estado de la sección');
     },
   });
 }

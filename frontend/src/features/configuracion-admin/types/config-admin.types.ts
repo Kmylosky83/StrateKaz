@@ -28,6 +28,65 @@ export interface ToggleModuleDTO {
   is_enabled: boolean;
 }
 
+// ── Árbol de módulos (tabs + secciones) ──
+
+export interface ModuleTabSection {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  orden: number;
+  is_enabled: boolean;
+  is_core: boolean;
+  supported_actions: string[];
+  can_disable: { can_disable: boolean; reason: string | null };
+}
+
+export interface ModuleTab {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  route: string;
+  orden: number;
+  is_enabled: boolean;
+  is_core: boolean;
+  sections: ModuleTabSection[];
+  section_count: number;
+  enabled_section_count: number;
+  can_disable: { can_disable: boolean; reason: string | null };
+}
+
+export interface SystemModuleTree {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  route: string;
+  category: string;
+  category_display: string;
+  orden: number;
+  is_enabled: boolean;
+  is_core: boolean;
+  requires_license: boolean;
+  can_disable: { can_disable: boolean; reason: string | null };
+  tabs: ModuleTab[];
+  enabled_tabs_count: number;
+  total_tabs_count: number;
+}
+
+export interface ModuleTreeResponse {
+  modules: SystemModuleTree[];
+  total_modules: number;
+  enabled_modules: number;
+  categories: { code: string; name: string; modules_count: number }[];
+  layers: { code: string; name: string; icon: string; color: string }[];
+}
+
 // ── Consecutivos ──
 // Campos alineados con ConsecutivoConfigSerializer (backend)
 

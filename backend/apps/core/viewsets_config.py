@@ -235,9 +235,16 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action in ['tree', 'sidebar']:
-            return queryset.prefetch_related('tabs__sections').order_by('orden', 'name')
-        return queryset.prefetch_related('dependencies', 'dependents')
+
+        # Filtrar por módulos licenciados del tenant (Admin Global → Tenant.enabled_modules)
+        # Aplica a list, retrieve, toggle, etc. — NO a sidebar/tree (tienen su propio filtro)
+        if self.action not in ['sidebar', 'tree']:
+            effective_modules = self._get_tenant_effective_modules()
+            if effective_modules:
+                queryset = queryset.filter(code__in=effective_modules)
+            return queryset.prefetch_related('dependencies', 'dependents')
+
+        return queryset.prefetch_related('tabs__sections').order_by('orden', 'name')
 
     def perform_destroy(self, instance):
         """Validar antes de eliminar"""

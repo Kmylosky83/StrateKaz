@@ -1236,12 +1236,12 @@ class Command(BaseCommand):
                 'name': 'Centro de Control',
                 'description': 'Logs, notificaciones, alertas y trazabilidad del sistema',
                 'category': 'INTELLIGENCE',
-                'color': 'slate',
+                'color': 'purple',
                 'icon': 'Shield',
                 'route': '/auditoria',
                 'is_core': True,
                 'is_enabled': True,
-                'orden': 95,
+                'orden': 91,
                 'tabs': [
                     {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'route': 'logs', 'orden': 1, 'sections': [
                         {'code': 'logs_auditoria', 'name': 'Logs de Auditoría', 'icon': 'Terminal', 'orden': 1, 'description': 'Registro de actividad y trazabilidad del sistema'},

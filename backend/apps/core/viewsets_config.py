@@ -145,7 +145,7 @@ SIDEBAR_LAYERS = [
         'icon': 'BarChart3',
         'color': '#8B5CF6',
         'phase': 'VERIFICAR_ACTUAR',
-        'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora'],
+        'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora', 'audit_system'],
     },
     # ═══════════════════════════════════════════════════════════════
     # TRANSVERSAL — Workflows (motor de ejecución) + Configuración

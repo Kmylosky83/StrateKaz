@@ -1,7 +1,19 @@
 /**
  * Constantes para los tabs del TenantFormModal.
  */
-import { Landmark, Target, ShieldCheck, Factory, Building2, BrainCircuit } from 'lucide-react';
+import {
+  Landmark,
+  Target,
+  FileText,
+  Users,
+  ShieldCheck,
+  Factory,
+  Building2,
+  BrainCircuit,
+  HeartPulse,
+  Workflow,
+  Settings,
+} from 'lucide-react';
 import { createElement } from 'react';
 
 export const TIER_OPTIONS = [
@@ -35,32 +47,56 @@ export const MONEDA_OPTIONS = [
 ];
 
 /**
- * Etiquetas de categoría alineadas con SIDEBAR_LAYERS del backend.
- * Mismos nombres, íconos y orden que el sidebar de la aplicación.
+ * Etiquetas de categoría alineadas con ModuleCategory (modules.ts) y SIDEBAR_LAYERS V2.1.
+ * El orden aquí determina el orden visual en el Tab Módulos de Admin Global.
  */
 export const CATEGORY_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
-  NIVEL_C1: {
+  NIVEL_FUNDACION: {
     label: 'Fundación',
     icon: createElement(Landmark, { className: 'h-4 w-4 text-blue-500' }),
   },
-  NIVEL_PE: {
-    label: 'Planeación Estratégica',
+  NIVEL_INFRAESTRUCTURA: {
+    label: 'Gestión Documental',
+    icon: createElement(FileText, { className: 'h-4 w-4 text-cyan-500' }),
+  },
+  NIVEL_EQUIPO: {
+    label: 'Mi Equipo',
+    icon: createElement(Users, { className: 'h-4 w-4 text-teal-500' }),
+  },
+  NIVEL_PLANIFICACION: {
+    label: 'Planificación',
     icon: createElement(Target, { className: 'h-4 w-4 text-indigo-500' }),
   },
-  NIVEL_SGI: {
-    label: 'Sistema de Gestión',
+  NIVEL_PROTECCION: {
+    label: 'Protección y Cumplimiento',
     icon: createElement(ShieldCheck, { className: 'h-4 w-4 text-sky-500' }),
   },
-  NIVEL_OPS: {
-    label: 'Operaciones',
+  NIVEL_HSEQ: {
+    label: 'Gestión Integral HSEQ',
+    icon: createElement(HeartPulse, { className: 'h-4 w-4 text-red-500' }),
+  },
+  NIVEL_CADENA: {
+    label: 'Cadena de Valor',
     icon: createElement(Factory, { className: 'h-4 w-4 text-emerald-500' }),
   },
-  NIVEL_ORG: {
-    label: 'Organización',
+  NIVEL_TALENTO: {
+    label: 'Gestión del Talento',
     icon: createElement(Building2, { className: 'h-4 w-4 text-amber-500' }),
   },
-  NIVEL_C3: {
-    label: 'Inteligencia',
+  NIVEL_SOPORTE: {
+    label: 'Soporte Administrativo',
+    icon: createElement(Building2, { className: 'h-4 w-4 text-orange-500' }),
+  },
+  NIVEL_INTELIGENCIA: {
+    label: 'Inteligencia y Mejora',
     icon: createElement(BrainCircuit, { className: 'h-4 w-4 text-violet-500' }),
+  },
+  NIVEL_WORKFLOWS: {
+    label: 'Flujos de Trabajo',
+    icon: createElement(Workflow, { className: 'h-4 w-4 text-cyan-600' }),
+  },
+  NIVEL_CONFIG: {
+    label: 'Configuración',
+    icon: createElement(Settings, { className: 'h-4 w-4 text-gray-500' }),
   },
 };

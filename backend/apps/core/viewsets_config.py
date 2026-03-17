@@ -157,6 +157,7 @@ SIDEBAR_LAYERS = [
         'color': '#64748B',
         'phase': 'INFRAESTRUCTURA',
         'module_codes': ['configuracion_plataforma'],
+        'force_category': True,  # Siempre mostrar header para separación visual
     },
 ]
 
@@ -741,12 +742,19 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
                     children.append(tab_data)
 
+            # Flatten single-tab modules: direct link instead of expandable
+            if children and len(children) == 1:
+                module_route = children[0]['route']
+                children = None
+            else:
+                module_route = f"/{module_route_segment}" if not children else None
+
             module_data = {
                 'code': module.code,
                 'name': module.name,
                 'icon': module.icon,
                 'color': module_effective_color,
-                'route': f"/{module_route_segment}" if not children else None,
+                'route': module_route,
                 'is_category': False,
                 'children': children
             }
@@ -765,7 +773,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
             # Solo incluir capas con ≥1 módulo visible
             if layer_children:
-                if len(layer_children) == 1:
+                if len(layer_children) == 1 and not layer.get('force_category'):
                     # Capa con 1 solo módulo → render directo sin wrapper redundante
                     result.append(layer_children[0])
                 else:

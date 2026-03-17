@@ -6,16 +6,21 @@
  * catálogos maestros, integraciones y configuración transversal.
  */
 import { lazy } from 'react';
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const ConfiguracionAdminPage = lazy(
   () => import('@/features/configuracion-admin/pages/ConfiguracionAdminPage')
 );
 
+const GuardedPage = withModuleGuard(ConfiguracionAdminPage, 'configuracion_plataforma');
+
 export const configuracionAdminRoutes = (
-  <Route
-    path="/configuracion-admin"
-    element={withModuleGuard(ConfiguracionAdminPage, 'configuracion_plataforma')}
-  />
+  <>
+    <Route
+      path="/configuracion-admin"
+      element={<Navigate to="/configuracion-admin/configuracion" replace />}
+    />
+    <Route path="/configuracion-admin/configuracion" element={GuardedPage} />
+  </>
 );

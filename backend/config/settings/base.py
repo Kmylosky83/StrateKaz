@@ -60,6 +60,7 @@ SHARED_APPS = [
 
     # Apps compartidas (schema public)
     'apps.tenant',  # Modelos: Tenant, Plan, TenantUser, Domain
+    'apps.shared_library',  # Biblioteca Maestra: plantillas compartidas multi-tenant (Fase 8)
 ]
 
 # Apps de tenant (schema tenant_xxx) - aisladas por tenant

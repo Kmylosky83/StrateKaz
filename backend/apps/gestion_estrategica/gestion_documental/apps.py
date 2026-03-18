@@ -13,5 +13,6 @@ class GestionDocumentalConfig(AppConfig):
     verbose_name = 'Gestión Documental'
 
     def ready(self):
-        """Importar signals cuando la app esté lista"""
-        pass
+        """Registrar signal handlers (BPM auto-generación Fase 4)."""
+        from .signal_handlers import _register_workflow_signal
+        _register_workflow_signal()

@@ -109,6 +109,9 @@ export interface PlantillaDocumento {
   estado: EstadoPlantilla;
   es_por_defecto: boolean;
   campos_formulario?: CampoFormulario[];
+  // Biblioteca Maestra (Fase 8)
+  plantilla_maestra_codigo?: string;
+  es_personalizada?: boolean;
   empresa_id: number;
   created_at: string;
   updated_at: string;
@@ -175,8 +178,18 @@ export interface Documento {
   texto_extraido?: string;
   ocr_estado: OcrEstado;
   ocr_metadatos?: OcrMetadatos;
+  // BPM auto-generación (Fase 4)
+  workflow_asociado_id?: number | null;
+  es_auto_generado?: boolean;
   es_externo: boolean;
   archivo_original?: string | null;
+  // Scoring (Fase 6)
+  score_cumplimiento?: number;
+  score_detalle?: ScoreDetalle;
+  score_actualizado_at?: string;
+  // Google Drive (Fase 7)
+  drive_file_id?: string;
+  drive_exportado_at?: string;
   empresa_id: number;
   created_at: string;
   updated_at: string;
@@ -553,4 +566,95 @@ export const OCR_ESTADO_COLORS: Record<OcrEstado, string> = {
   COMPLETADO: 'success',
   ERROR: 'danger',
   NO_APLICA: 'gray',
+};
+
+// ==================== SCORING (Fase 6) ====================
+
+export interface ScoreDetalle {
+  [regla: string]: {
+    puntos: number;
+    maximo: number;
+    cumple: boolean;
+    descripcion: string;
+  };
+}
+
+export interface ScoreResumen {
+  promedio: number;
+  distribucion: {
+    critico: number;
+    bajo: number;
+    medio: number;
+    alto: number;
+  };
+  incompletos: number;
+  total: number;
+}
+
+// ==================== GOOGLE DRIVE (Fase 7) ====================
+
+export interface DriveExportResult {
+  drive_file_id: string;
+  web_view_link: string;
+  filename: string;
+}
+
+export interface DriveExportLoteResult {
+  exportados: number;
+  omitidos: number;
+  errores: Array<{ documento_id: number; codigo: string; error: string }>;
+}
+
+// ==================== BIBLIOTECA MAESTRA (Fase 8) ====================
+
+export type CategoriaPlantilla =
+  | 'PROCEDIMIENTO'
+  | 'FORMATO'
+  | 'MANUAL'
+  | 'POLITICA'
+  | 'INSTRUCTIVO';
+
+export type IndustriaPlantilla =
+  | 'GENERAL'
+  | 'ALIMENTOS'
+  | 'CONSTRUCCION'
+  | 'MANUFACTURA'
+  | 'SERVICIOS'
+  | 'SALUD'
+  | 'TECNOLOGIA';
+
+export interface BibliotecaPlantilla {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  tipo_documento_codigo: string;
+  contenido_plantilla?: string;
+  variables_disponibles?: string[];
+  categoria: CategoriaPlantilla;
+  categoria_display: string;
+  industria: IndustriaPlantilla;
+  industria_display: string;
+  norma_iso_codigo: string;
+  version: string;
+  is_active: boolean;
+  orden: number;
+}
+
+export const CATEGORIA_LABELS: Record<CategoriaPlantilla, string> = {
+  PROCEDIMIENTO: 'Procedimiento',
+  FORMATO: 'Formato',
+  MANUAL: 'Manual',
+  POLITICA: 'Política',
+  INSTRUCTIVO: 'Instructivo',
+};
+
+export const INDUSTRIA_LABELS: Record<IndustriaPlantilla, string> = {
+  GENERAL: 'General',
+  ALIMENTOS: 'Alimentos',
+  CONSTRUCCION: 'Construcción',
+  MANUFACTURA: 'Manufactura',
+  SERVICIOS: 'Servicios',
+  SALUD: 'Salud',
+  TECNOLOGIA: 'Tecnología',
 };

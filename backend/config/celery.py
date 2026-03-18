@@ -275,6 +275,13 @@ app.conf.beat_schedule = {
         'options': {'queue': 'files'},
     },
 
+    # Calcular scores de cumplimiento documental - Diario a las 5:00 AM
+    'documental-calcular-scores-batch': {
+        'task': 'documental.calcular_scores_batch',
+        'schedule': crontab(hour=5, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
     # ═══════════════════════════════════════════════════
     # REVISION POR LA DIRECCION (ISO 9.3)
     # ═══════════════════════════════════════════════════
@@ -420,6 +427,9 @@ app.conf.task_routes = {
     'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer': {'queue': 'notifications'},
     'documental.procesar_ocr_documento': {'queue': 'files'},
     'documental.procesar_ocr_pendientes': {'queue': 'files'},
+    'documental.calcular_scores_batch': {'queue': 'compliance'},
+    'documental.generar_documento_desde_workflow': {'queue': 'files'},
+    'documental.exportar_drive_lote': {'queue': 'files'},
 
     # Audit System - Config Alertas tasks
     'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},

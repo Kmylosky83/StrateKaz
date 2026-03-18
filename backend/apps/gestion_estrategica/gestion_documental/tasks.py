@@ -374,6 +374,239 @@ def procesar_ocr_pendientes():
 
 
 # =============================================================================
+# SCORING — Cálculo batch de scores (Fase 6)
+# =============================================================================
+
+@shared_task(
+    name='documental.calcular_scores_batch',
+    queue='compliance',
+    max_retries=1,
+    soft_time_limit=300,
+)
+def calcular_scores_batch():
+    """
+    Batch diario: recalcula scores de cumplimiento para todos los documentos.
+    """
+    total_actualizados = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                from .models import Documento
+                from .services_scoring import ScoringService
+
+                documentos = Documento.objects.exclude(estado='ARCHIVADO')
+                for doc in documentos[:500]:
+                    try:
+                        ScoringService.actualizar_score(doc)
+                        total_actualizados += 1
+                    except Exception as e:
+                        logger.warning(
+                            f'[Scoring] Error en doc {doc.id}: {e}'
+                        )
+        except Exception as e:
+            logger.error(
+                f'[Scoring] Error en tenant {tenant.schema_name}: {e}'
+            )
+
+    logger.info(
+        f'[Scoring] calcular_scores_batch: {total_actualizados} actualizados'
+    )
+    return {'status': 'ok', 'actualizados': total_actualizados}
+
+
+# =============================================================================
+# BPM AUTO-GENERACIÓN — Crear documento desde workflow (Fase 4)
+# =============================================================================
+
+@shared_task(
+    name='documental.generar_documento_desde_workflow',
+    queue='files',
+    bind=True,
+    max_retries=2,
+    soft_time_limit=120,
+)
+def generar_documento_desde_workflow(
+    self, instancia_id: int, config: dict,
+    usuario_id: int = None, tenant_schema: str = ''
+):
+    """
+    Genera un documento automáticamente cuando un workflow BPM se completa.
+    Usa la plantilla y tipo configurados en PlantillaFlujo.config_auto_generacion.
+    """
+    with schema_context(tenant_schema):
+        from django.apps import apps
+        from .models import Documento, TipoDocumento, PlantillaDocumento
+        from .services import DocumentoService
+
+        # Obtener InstanciaFlujo (C2→C2: apps.get_model)
+        InstanciaFlujo = apps.get_model('ejecucion', 'InstanciaFlujo')
+        try:
+            instancia = InstanciaFlujo.objects.get(id=instancia_id)
+        except InstanciaFlujo.DoesNotExist:
+            logger.error(f'[BPM→Doc] InstanciaFlujo {instancia_id} no encontrada')
+            return {'status': 'error', 'error': 'Instancia no encontrada'}
+
+        # Obtener tipo de documento
+        tipo_doc_id = config.get('tipo_documento_id')
+        if not tipo_doc_id:
+            logger.error('[BPM→Doc] config sin tipo_documento_id')
+            return {'status': 'error', 'error': 'Config sin tipo_documento_id'}
+
+        try:
+            tipo_doc = TipoDocumento.objects.get(id=tipo_doc_id)
+        except TipoDocumento.DoesNotExist:
+            logger.error(f'[BPM→Doc] TipoDocumento {tipo_doc_id} no encontrado')
+            return {'status': 'error', 'error': 'Tipo documento no encontrado'}
+
+        # Generar código
+        empresa_id = instancia.empresa_id if hasattr(instancia, 'empresa_id') else 1
+        codigo = DocumentoService.generar_codigo(tipo_doc, empresa_id)
+
+        # Renderizar contenido desde plantilla (si configurada)
+        contenido = ''
+        plantilla_doc = None
+        plantilla_doc_id = config.get('plantilla_documento_id')
+        if plantilla_doc_id:
+            try:
+                plantilla_doc = PlantillaDocumento.objects.get(id=plantilla_doc_id)
+                variables = instancia.data_contexto or {}
+                variables.update({
+                    'codigo': codigo,
+                    'titulo': instancia.titulo or f'Documento de {tipo_doc.nombre}',
+                    'workflow': instancia.titulo or '',
+                    'fecha': instancia.fecha_fin.strftime('%d/%m/%Y') if instancia.fecha_fin else '',
+                })
+                contenido = DocumentoService.renderizar_plantilla(
+                    plantilla_doc.contenido_plantilla, variables
+                )
+            except PlantillaDocumento.DoesNotExist:
+                logger.warning(
+                    f'[BPM→Doc] PlantillaDocumento {plantilla_doc_id} no encontrada, '
+                    f'creando documento sin contenido de plantilla'
+                )
+
+        # Crear documento
+        estado_inicial = config.get('estado_inicial', 'BORRADOR')
+        documento = Documento.objects.create(
+            codigo=codigo,
+            titulo=instancia.titulo or f'Documento de {tipo_doc.nombre}',
+            tipo_documento=tipo_doc,
+            plantilla=plantilla_doc,
+            contenido=contenido,
+            datos_formulario=instancia.data_contexto or {},
+            estado=estado_inicial,
+            elaborado_por_id=usuario_id,
+            workflow_asociado_id=instancia.plantilla_id,
+            workflow_asociado_nombre=instancia.titulo or '',
+            es_auto_generado=True,
+            empresa_id=empresa_id,
+        )
+
+        # Calcular score inicial
+        from .services_scoring import ScoringService
+        ScoringService.actualizar_score(documento)
+
+        # Notificar
+        if usuario_id:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            try:
+                usuario = User.objects.get(id=usuario_id)
+                _send_notification(
+                    tipo_codigo='DOCUMENTO_AUTO_GENERADO',
+                    usuario=usuario,
+                    titulo=f'Documento auto-generado: {codigo}',
+                    mensaje=(
+                        f'El flujo "{instancia.titulo}" generó automáticamente '
+                        f'el documento "{documento.titulo}" ({codigo}). '
+                        f'Estado: {estado_inicial}.'
+                    ),
+                    url='/gestion-documental/documentos',
+                    datos_extra={
+                        'documento_id': documento.id,
+                        'codigo': codigo,
+                        'workflow_id': instancia.id,
+                    },
+                )
+            except User.DoesNotExist:
+                pass
+
+        logger.info(
+            f'[BPM→Doc] Documento {codigo} generado desde workflow '
+            f'{instancia.id} ({tenant_schema})'
+        )
+        return {
+            'status': 'ok',
+            'documento_id': documento.id,
+            'codigo': codigo,
+        }
+
+
+# =============================================================================
+# GOOGLE DRIVE — Export batch (Fase 7)
+# =============================================================================
+
+@shared_task(
+    name='documental.exportar_drive_lote',
+    queue='files',
+    bind=True,
+    max_retries=1,
+    soft_time_limit=600,
+)
+def exportar_drive_lote(
+    self, empresa_id: int, integracion_id: int,
+    folder_id: str = None, usuario_id: int = None,
+    filtros: dict = None, tenant_schema: str = ''
+):
+    """Export batch de documentos a Google Drive."""
+    with schema_context(tenant_schema):
+        from .services_drive import GoogleDriveService
+        from django.contrib.auth import get_user_model
+
+        usuario = None
+        if usuario_id:
+            User = get_user_model()
+            try:
+                usuario = User.objects.get(id=usuario_id)
+            except User.DoesNotExist:
+                pass
+
+        try:
+            resultado = GoogleDriveService.exportar_lote(
+                empresa_id=empresa_id,
+                integracion_id=integracion_id,
+                folder_id=folder_id,
+                usuario=usuario,
+                filtros=filtros,
+            )
+
+            if usuario:
+                _send_notification(
+                    tipo_codigo='DOCUMENTO_DRIVE_EXPORTADO',
+                    usuario=usuario,
+                    titulo='Exportación a Google Drive completada',
+                    mensaje=(
+                        f'Se exportaron {resultado["exportados"]} documentos '
+                        f'a Google Drive. '
+                        f'{len(resultado["errores"])} errores.'
+                    ),
+                    url='/gestion-documental/documentos',
+                    datos_extra=resultado,
+                )
+
+            logger.info(
+                f'[Drive] Lote exportado: {resultado["exportados"]} docs '
+                f'({tenant_schema})'
+            )
+            return resultado
+
+        except Exception as e:
+            logger.error(f'[Drive] Error en export lote: {e}')
+            raise self.retry(exc=e, countdown=120)
+
+
+# =============================================================================
 # HELPER: Envío seguro de notificaciones
 # =============================================================================
 

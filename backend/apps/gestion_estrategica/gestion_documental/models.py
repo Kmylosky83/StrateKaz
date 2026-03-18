@@ -225,6 +225,21 @@ class PlantillaDocumento(models.Model):
         verbose_name='Creado por'
     )
 
+    # Biblioteca Maestra (Fase 8)
+    plantilla_maestra_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_index=True,
+        verbose_name='Código Plantilla Maestra',
+        help_text='Referencia a BibliotecaPlantilla en schema public'
+    )
+    es_personalizada = models.BooleanField(
+        default=True,
+        verbose_name='Personalizada',
+        help_text='False si es copia exacta de plantilla maestra'
+    )
+
     class Meta:
         db_table = 'documental_plantilla_documento'
         verbose_name = 'Plantilla de Documento'
@@ -530,6 +545,37 @@ class Documento(models.Model):
         default=False,
         verbose_name='Auto-generado desde BPM',
         help_text='True si el documento se genera automáticamente desde un flujo BPM'
+    )
+
+    # Scoring heurístico (Fase 6)
+    score_cumplimiento = models.IntegerField(
+        default=0,
+        db_index=True,
+        verbose_name='Score de Cumplimiento',
+        help_text='Puntuación 0-100 basada en completitud del documento'
+    )
+    score_detalle = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Detalle del Score'
+    )
+    score_actualizado_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Score Actualizado'
+    )
+
+    # Google Drive (Fase 7)
+    drive_file_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Google Drive File ID'
+    )
+    drive_exportado_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Exportado a Drive'
     )
 
     # OCR / Extracción de texto (Fase 5)

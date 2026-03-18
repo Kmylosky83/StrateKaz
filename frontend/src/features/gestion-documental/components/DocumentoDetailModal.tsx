@@ -137,6 +137,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     {documento.titulo}
                   </h3>
                   <Badge variant="secondary">{documento.codigo}</Badge>
+                  {documento.es_auto_generado && <Badge variant="info">Auto-generado BPM</Badge>}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-500">
                   <span>v{documento.version_actual}</span>

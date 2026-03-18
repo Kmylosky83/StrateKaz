@@ -26,6 +26,9 @@ import type {
   UpdateControlDocumentalDTO,
   EstadisticasDocumentales,
   BusquedaTextoResult,
+  ScoreResumen,
+  DriveExportResult,
+  BibliotecaPlantilla,
 } from '../types/gestion-documental.types';
 
 const BASE_URL = '/gestion-estrategica/gestion-documental';
@@ -154,6 +157,62 @@ export const documentoApi = {
       params: { q },
     });
     return Array.isArray(response.data) ? response.data : (response.data?.results ?? []);
+  },
+
+  // Scoring — Fase 6
+  calcularScore: async (
+    id: number
+  ): Promise<{ score: number; detalle: Record<string, unknown> }> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/calcular-score/`);
+    return response.data;
+  },
+  scoreResumen: async (): Promise<ScoreResumen> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/score-resumen/`);
+    return response.data;
+  },
+
+  // Google Drive — Fase 7
+  exportarDrive: async (id: number, folderId?: string): Promise<DriveExportResult> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/exportar-drive/`, {
+      folder_id: folderId,
+    });
+    return response.data;
+  },
+  exportarDriveLote: async (data: {
+    folder_id?: string;
+    filtros?: Record<string, unknown>;
+  }): Promise<{ mensaje: string }> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/exportar-drive-lote/`, data);
+    return response.data;
+  },
+};
+
+// ==================== BIBLIOTECA MAESTRA (Fase 8) ====================
+
+export const bibliotecaApi = {
+  list: async (params?: {
+    categoria?: string;
+    industria?: string;
+    norma_iso_codigo?: string;
+    search?: string;
+  }): Promise<BibliotecaPlantilla[]> => {
+    const response = await apiClient.get('/shared-library/plantillas/', { params });
+    return Array.isArray(response.data) ? response.data : (response.data?.results ?? []);
+  },
+  getById: async (id: number): Promise<BibliotecaPlantilla> => {
+    const response = await apiClient.get(`/shared-library/plantillas/${id}/`);
+    return response.data;
+  },
+  importarATenant: async (id: number): Promise<PlantillaDocumento> => {
+    const response = await apiClient.post(`/shared-library/plantillas/${id}/importar-a-tenant/`);
+    return response.data;
+  },
+  choices: async (): Promise<{
+    categorias: Array<[string, string]>;
+    industrias: Array<[string, string]>;
+  }> => {
+    const response = await apiClient.get('/shared-library/plantillas/choices/');
+    return response.data;
   },
 };
 

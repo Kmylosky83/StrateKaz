@@ -16,12 +16,14 @@ import { TiposPlantillasSection } from './TiposPlantillasSection';
 import { DocumentosSection } from './DocumentosSection';
 import { ControlCambiosSection } from './ControlCambiosSection';
 import { DistribucionSection } from './DistribucionSection';
+import { BibliotecaSection } from './BibliotecaSection';
 
 const SECTION_KEYS = {
   TIPOS_DOCUMENTO: 'tipos_documento',
   DOCUMENTOS: 'documentos',
   CONTROL_CAMBIOS: 'control_cambios',
   DISTRIBUCION: 'distribucion',
+  BIBLIOTECA: 'biblioteca',
 } as const;
 
 interface GestionDocumentalTabProps {
@@ -77,6 +79,8 @@ export const GestionDocumentalTab = ({
       );
     case SECTION_KEYS.DISTRIBUCION:
       return <DistribucionSection onViewDocumento={onViewDocumento} />;
+    case SECTION_KEYS.BIBLIOTECA:
+      return <BibliotecaSection />;
     default:
       return <GenericSectionFallback sectionCode={activeSection} moduleName="Gestion Documental" />;
   }

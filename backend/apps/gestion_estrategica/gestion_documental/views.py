@@ -587,6 +587,98 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(data)
 
+    # =========================================================================
+    # SCORING — Fase 6: Score de cumplimiento heurístico
+    # =========================================================================
+
+    @action(detail=True, methods=['post'], url_path='calcular-score')
+    def calcular_score(self, request, pk=None):
+        """Calcula y guarda el score de cumplimiento del documento."""
+        documento = self.get_object()
+        from .services_scoring import ScoringService
+        resultado = ScoringService.actualizar_score(documento)
+        return Response(resultado)
+
+    @action(detail=False, methods=['get'], url_path='score-resumen')
+    def score_resumen(self, request):
+        """Dashboard de scores: promedio, distribución, incompletos."""
+        from .services_scoring import ScoringService
+        resumen = ScoringService.obtener_resumen(self.get_queryset())
+        return Response(resumen)
+
+    # =========================================================================
+    # GOOGLE DRIVE — Fase 7: Exportación con Habeas Data
+    # =========================================================================
+
+    @action(detail=True, methods=['post'], url_path='exportar-drive')
+    def exportar_drive(self, request, pk=None):
+        """Exporta un documento individual a Google Drive."""
+        documento = self.get_object()
+        folder_id = request.data.get('folder_id')
+
+        from django.apps import apps as django_apps
+        IntegracionExterna = django_apps.get_model(
+            'configuracion', 'IntegracionExterna'
+        )
+        integracion = IntegracionExterna.objects.filter(
+            proveedor='GOOGLE_DRIVE',
+            is_active=True,
+        ).first()
+
+        if not integracion:
+            return Response(
+                {'error': 'No hay integración de Google Drive activa configurada'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from .services_drive import GoogleDriveService
+            resultado = GoogleDriveService.exportar_documento(
+                documento_id=documento.id,
+                integracion_id=integracion.id,
+                folder_id=folder_id,
+                usuario=request.user,
+            )
+            return Response(resultado)
+        except PermissionError as e:
+            return Response({'error': str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except ImportError as e:
+            return Response({'error': str(e)}, status=status.HTTP_501_NOT_IMPLEMENTED)
+
+    @action(detail=False, methods=['post'], url_path='exportar-drive-lote')
+    def exportar_drive_lote(self, request):
+        """Exportación batch de documentos a Google Drive (async via Celery)."""
+        from django.apps import apps as django_apps
+        IntegracionExterna = django_apps.get_model(
+            'configuracion', 'IntegracionExterna'
+        )
+        integracion = IntegracionExterna.objects.filter(
+            proveedor='GOOGLE_DRIVE', is_active=True,
+        ).first()
+
+        if not integracion:
+            return Response(
+                {'error': 'No hay integración de Google Drive activa configurada'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa = get_tenant_empresa()
+        from django.db import connection
+        from .tasks import exportar_drive_lote
+        exportar_drive_lote.delay(
+            empresa_id=empresa.id,
+            integracion_id=integracion.id,
+            folder_id=request.data.get('folder_id'),
+            usuario_id=request.user.id,
+            filtros=request.data.get('filtros', {}),
+            tenant_schema=connection.schema_name,
+        )
+
+        return Response({
+            'mensaje': 'Exportación a Google Drive iniciada. '
+                       'Recibirá una notificación al completar.',
+        })
+
     def _get_client_ip(self, request):
         """Obtiene IP del cliente"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

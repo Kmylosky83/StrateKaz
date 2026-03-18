@@ -339,6 +339,14 @@ class PlantillaFlujo(TenantModel):
         verbose_name='Activado por'
     )
 
+    # Auto-generación documental (Fase 4)
+    config_auto_generacion = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Configuración de Auto-Generación Documental',
+        help_text='{"habilitado": true, "tipo_documento_id": 1, "plantilla_documento_id": 2, "estado_inicial": "BORRADOR"}'
+    )
+
     class Meta:
         db_table = 'workflow_plantilla_flujo'
         verbose_name = 'Plantilla de flujo'

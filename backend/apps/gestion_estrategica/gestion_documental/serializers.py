@@ -78,7 +78,8 @@ class PlantillaDocumentoListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'codigo', 'nombre', 'tipo_documento', 'tipo_documento_nombre',
             'tipo_plantilla', 'tipo_plantilla_display', 'version', 'estado', 'estado_display',
-            'es_por_defecto', 'total_documentos'
+            'es_por_defecto', 'plantilla_maestra_codigo', 'es_personalizada',
+            'total_documentos'
         ]
         extra_kwargs = {
             'codigo': {'required': False, 'allow_blank': True},
@@ -102,6 +103,7 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
             'tipo_plantilla', 'tipo_plantilla_display', 'contenido_plantilla',
             'variables_disponibles', 'estilos_css', 'encabezado', 'pie_pagina',
             'version', 'estado', 'estado_display', 'es_por_defecto',
+            'plantilla_maestra_codigo', 'es_personalizada',
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']
@@ -175,6 +177,8 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'responsable_cargo', 'responsable_cargo_nombre',
             'es_politica_integral',
             'ocr_estado', 'es_externo',
+            'score_cumplimiento',
+            'drive_file_id',
             'total_firmas', 'firmas_pendientes'
         ]
 
@@ -224,12 +228,16 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'fecha_expiracion', 'motivo_cambio', 'es_politica_integral',
             'texto_extraido', 'ocr_estado', 'ocr_metadatos',
             'es_externo', 'archivo_original',
+            'score_cumplimiento', 'score_detalle', 'score_actualizado_at',
+            'drive_file_id', 'drive_exportado_at',
             'empresa_id', 'created_at', 'updated_at',
             'firmas_digitales'
         ]
         read_only_fields = [
             'codigo', 'numero_descargas', 'numero_impresiones',
             'texto_extraido', 'ocr_estado', 'ocr_metadatos',
+            'score_cumplimiento', 'score_detalle', 'score_actualizado_at',
+            'drive_file_id', 'drive_exportado_at',
             'empresa_id', 'created_at', 'updated_at'
         ]
 

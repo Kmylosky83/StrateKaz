@@ -38,6 +38,7 @@ import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/us
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
 import IngestarExternoModal from './IngestarExternoModal';
 import OcrStatusBadge from './OcrStatusBadge';
+import ScoreBadge from './ScoreBadge';
 
 interface DocumentosSectionProps {
   onCreateDocumento: () => void;
@@ -238,6 +239,9 @@ export function DocumentosSection({
                       >
                         {documento.estado}
                       </Badge>
+                      {documento.score_cumplimiento != null && documento.score_cumplimiento > 0 && (
+                        <ScoreBadge score={documento.score_cumplimiento} />
+                      )}
                       {documento.es_externo && (
                         <OcrStatusBadge
                           estado={documento.ocr_estado}

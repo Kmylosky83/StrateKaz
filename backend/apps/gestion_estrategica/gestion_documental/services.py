@@ -417,3 +417,21 @@ class DocumentoService:
                 'fecha_revision_programada'
             )
         )
+
+    @classmethod
+    def renderizar_plantilla(cls, contenido_plantilla: str, variables: dict) -> str:
+        """
+        Renderiza una plantilla reemplazando {{variable}} con valores del dict.
+        Variables no encontradas quedan como placeholder vacío.
+        """
+        import re
+
+        if not contenido_plantilla:
+            return ''
+
+        def reemplazar(match):
+            key = match.group(1).strip()
+            valor = variables.get(key, '')
+            return str(valor) if valor is not None else ''
+
+        return re.sub(r'\{\{(\s*\w+\s*)\}\}', reemplazar, contenido_plantilla)

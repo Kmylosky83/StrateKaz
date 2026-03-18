@@ -153,6 +153,8 @@ urlpatterns = [
     path('api/tenant/', include('apps.tenant.urls')),
     # Inteligencia Artificial (ayuda contextual, asistente de texto)
     path('api/ia/', include('apps.ia.urls')),
+    # Biblioteca Maestra (plantillas compartidas multi-tenant, Fase 8)
+    path('api/shared-library/', include('apps.shared_library.urls')),
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════

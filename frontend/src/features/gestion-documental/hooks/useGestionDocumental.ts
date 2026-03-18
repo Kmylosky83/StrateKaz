@@ -505,3 +505,92 @@ export function useBusquedaTexto(query: string) {
     staleTime: 30_000,
   });
 }
+
+// =============================================================================
+// SCORING — Fase 6: Score de cumplimiento heurístico
+// =============================================================================
+
+export function useCalcScore() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => documentoApi.calcularScore(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      toast.success('Score calculado exitosamente');
+    },
+    onError: () => toast.error('Error al calcular score'),
+  });
+}
+
+export function useScoreResumen() {
+  return useQuery({
+    queryKey: [...gestionDocumentalKeys.all, 'score-resumen'],
+    queryFn: () => documentoApi.scoreResumen(),
+    staleTime: 60_000,
+  });
+}
+
+// =============================================================================
+// GOOGLE DRIVE — Fase 7: Exportación con Habeas Data
+// =============================================================================
+
+export function useExportarDrive() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, folderId }: { id: number; folderId?: string }) =>
+      documentoApi.exportarDrive(id, folderId),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      toast.success('Documento exportado a Google Drive');
+    },
+    onError: () => toast.error('Error al exportar a Google Drive'),
+  });
+}
+
+export function useExportarDriveLote() {
+  return useMutation({
+    mutationFn: async (data: { folder_id?: string; filtros?: Record<string, unknown> }) =>
+      documentoApi.exportarDriveLote(data),
+    onSuccess: () => {
+      toast.success('Exportación a Drive iniciada. Recibirá una notificación al completar.');
+    },
+    onError: () => toast.error('Error al iniciar exportación masiva'),
+  });
+}
+
+// =============================================================================
+// BIBLIOTECA MAESTRA — Fase 8
+// =============================================================================
+
+import { bibliotecaApi } from '../api/gestionDocumentalApi';
+
+const bibliotecaKeys = createQueryKeys('biblioteca-plantillas');
+
+export function useBibliotecaPlantillas(params?: {
+  categoria?: string;
+  industria?: string;
+  norma_iso_codigo?: string;
+  search?: string;
+}) {
+  return useQuery({
+    queryKey: [...bibliotecaKeys.lists(), params],
+    queryFn: () => bibliotecaApi.list(params),
+  });
+}
+
+export function useImportarPlantilla() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => bibliotecaApi.importarATenant(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdPlantillasKeys.lists() });
+      toast.success('Plantilla importada exitosamente desde la biblioteca');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.error || 'Error al importar plantilla';
+      toast.error(msg);
+    },
+  });
+}

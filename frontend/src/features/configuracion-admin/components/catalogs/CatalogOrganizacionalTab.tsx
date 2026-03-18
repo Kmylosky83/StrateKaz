@@ -166,7 +166,6 @@ export const CatalogOrganizacionalTab = ({ moduleColor }: CatalogOrganizacionalT
           canCreate
             ? {
                 label: 'Agregar',
-                icon: Plus,
                 onClick: () => {
                   setEditItem(null);
                   setFormOpen(true);

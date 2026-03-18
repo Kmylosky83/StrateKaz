@@ -511,9 +511,7 @@ export const CatalogHSEQTab = ({ moduleColor }: CatalogHSEQTabProps) => {
       <SectionToolbar
         title={getTitle()}
         primaryAction={
-          canCreate
-            ? { label: 'Agregar', icon: Plus, onClick: () => openCreate(getCurrentType()) }
-            : undefined
+          canCreate ? { label: 'Agregar', onClick: () => openCreate(getCurrentType()) } : undefined
         }
         moduleColor={moduleColor}
       />

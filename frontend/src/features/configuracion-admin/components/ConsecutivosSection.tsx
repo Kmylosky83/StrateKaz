@@ -150,7 +150,6 @@ export const ConsecutivosSection = () => {
           canCreate
             ? {
                 label: 'Nuevo Consecutivo',
-                icon: Plus,
                 onClick: openCreate,
               }
             : undefined

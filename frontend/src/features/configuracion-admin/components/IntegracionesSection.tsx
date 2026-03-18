@@ -195,9 +195,7 @@ export const IntegracionesSection = () => {
       <SectionToolbar
         title="Integraciones Externas"
         description="Conexiones con servicios y APIs de terceros"
-        primaryAction={
-          canCreate ? { label: 'Nueva Integración', icon: Plus, onClick: openCreate } : undefined
-        }
+        primaryAction={canCreate ? { label: 'Nueva Integración', onClick: openCreate } : undefined}
         moduleColor={moduleColor}
       />
 

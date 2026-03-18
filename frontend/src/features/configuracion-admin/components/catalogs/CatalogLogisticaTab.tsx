@@ -124,7 +124,6 @@ export const CatalogLogisticaTab = ({ moduleColor }: CatalogLogisticaTabProps) =
           canCreate
             ? {
                 label: 'Agregar',
-                icon: Plus,
                 onClick: () => {
                   setEditItem(null);
                   setFormOpen(true);

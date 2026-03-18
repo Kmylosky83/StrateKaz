@@ -153,7 +153,7 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
         header: 'Categoría',
         accessorKey: 'categoria',
         cell: (row) => (
-          <Badge variant="default" size="sm">
+          <Badge variant="gray" size="sm">
             {row.categoria}
           </Badge>
         ),
@@ -440,7 +440,7 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
         title={getTabTitle()}
         primaryAction={
           canCreate
-            ? { label: 'Agregar', icon: Plus, onClick: () => openCreate(getCurrentCatalogType()) }
+            ? { label: 'Agregar', onClick: () => openCreate(getCurrentCatalogType()) }
             : undefined
         }
         moduleColor={moduleColor}

@@ -147,7 +147,13 @@ export const DashboardLayout = () => {
         </main>
 
         {/* Bottom Navigation - Solo visible en mobile */}
-        <BottomNavigation onOpenMenu={() => setIsMobileMenuOpen(true)} />
+        <BottomNavigation
+          onOpenMenu={() => setIsMobileMenuOpen(true)}
+          onOpenSearch={() => {
+            // Disparar Ctrl+K que SearchModal escucha en Header
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+          }}
+        />
 
         {/* Modal de selección de usuario para impersonación */}
         <UserImpersonationModal

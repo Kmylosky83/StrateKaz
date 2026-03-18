@@ -1,11 +1,11 @@
 /**
  * Sidebar Dinámico - Sistema de Gestión StrateKaz
  *
- * Características:
+ * Diseño profesional neutro:
  * - Carga módulos, tabs y secciones desde la API (sin hardcoding)
  * - Iconos dinámicos desde Lucide React
- * - Colores por módulo/categoría (6 niveles: STRATEGIC, COMPLIANCE, INTEGRATED, OPERATIONAL, SUPPORT, INTELLIGENCE)
- * - Control granular: desactivar módulo/tab en ConfiguracionTab → desaparece del sidebar
+ * - Colores neutros base con acento sutil en estado activo
+ * - Control granular: desactivar módulo/tab en Config → desaparece del sidebar
  */
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -28,8 +28,6 @@ import {
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
 import { useAuthStore } from '@/store/authStore';
-import type { ModuleColor } from '@/utils/moduleColors';
-import { getMappedColor } from '@/utils/moduleColors';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -43,121 +41,8 @@ interface SidebarProps {
   impersonationOffset?: boolean;
 }
 
-// Colores del sidebar por módulo (clases Tailwind específicas para navegación)
-const moduleColors: Record<
-  ModuleColor,
-  {
-    bg: string;
-    bgHover: string;
-    bgActive: string;
-    text: string;
-    textActive: string;
-    icon: string;
-    iconActive: string;
-    border: string;
-  }
-> = {
-  purple: {
-    bg: 'bg-purple-50/50 dark:bg-purple-900/10',
-    bgHover: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
-    bgActive: 'bg-purple-100 dark:bg-purple-900/30',
-    text: 'text-purple-600 dark:text-purple-400',
-    textActive: 'text-purple-700 dark:text-purple-300',
-    icon: 'text-purple-500 dark:text-purple-400',
-    iconActive: 'text-purple-600 dark:text-purple-300',
-    border: 'border-l-purple-500',
-  },
-  blue: {
-    bg: 'bg-blue-50/50 dark:bg-blue-900/10',
-    bgHover: 'hover:bg-blue-50 dark:hover:bg-blue-900/20',
-    bgActive: 'bg-blue-100 dark:bg-blue-900/30',
-    text: 'text-blue-600 dark:text-blue-400',
-    textActive: 'text-blue-700 dark:text-blue-300',
-    icon: 'text-blue-500 dark:text-blue-400',
-    iconActive: 'text-blue-600 dark:text-blue-300',
-    border: 'border-l-blue-500',
-  },
-  green: {
-    bg: 'bg-emerald-50/50 dark:bg-emerald-900/10',
-    bgHover: 'hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
-    bgActive: 'bg-emerald-100 dark:bg-emerald-900/30',
-    text: 'text-emerald-600 dark:text-emerald-400',
-    textActive: 'text-emerald-700 dark:text-emerald-300',
-    icon: 'text-emerald-500 dark:text-emerald-400',
-    iconActive: 'text-emerald-600 dark:text-emerald-300',
-    border: 'border-l-emerald-500',
-  },
-  orange: {
-    bg: 'bg-orange-50/50 dark:bg-orange-900/10',
-    bgHover: 'hover:bg-orange-50 dark:hover:bg-orange-900/20',
-    bgActive: 'bg-orange-100 dark:bg-orange-900/30',
-    text: 'text-orange-600 dark:text-orange-400',
-    textActive: 'text-orange-700 dark:text-orange-300',
-    icon: 'text-orange-500 dark:text-orange-400',
-    iconActive: 'text-orange-600 dark:text-orange-300',
-    border: 'border-l-orange-500',
-  },
-  gray: {
-    bg: 'bg-gray-50/50 dark:bg-gray-900/10',
-    bgHover: 'hover:bg-gray-50 dark:hover:bg-gray-900/20',
-    bgActive: 'bg-gray-100 dark:bg-gray-900/30',
-    text: 'text-gray-600 dark:text-gray-400',
-    textActive: 'text-gray-700 dark:text-gray-300',
-    icon: 'text-gray-500 dark:text-gray-400',
-    iconActive: 'text-gray-600 dark:text-gray-300',
-    border: 'border-l-gray-500',
-  },
-  teal: {
-    bg: 'bg-teal-50/50 dark:bg-teal-900/10',
-    bgHover: 'hover:bg-teal-50 dark:hover:bg-teal-900/20',
-    bgActive: 'bg-teal-100 dark:bg-teal-900/30',
-    text: 'text-teal-600 dark:text-teal-400',
-    textActive: 'text-teal-700 dark:text-teal-300',
-    icon: 'text-teal-500 dark:text-teal-400',
-    iconActive: 'text-teal-600 dark:text-teal-300',
-    border: 'border-l-teal-500',
-  },
-  red: {
-    bg: 'bg-red-50/50 dark:bg-red-900/10',
-    bgHover: 'hover:bg-red-50 dark:hover:bg-red-900/20',
-    bgActive: 'bg-red-100 dark:bg-red-900/30',
-    text: 'text-red-600 dark:text-red-400',
-    textActive: 'text-red-700 dark:text-red-300',
-    icon: 'text-red-500 dark:text-red-400',
-    iconActive: 'text-red-600 dark:text-red-300',
-    border: 'border-l-red-500',
-  },
-  yellow: {
-    bg: 'bg-yellow-50/50 dark:bg-yellow-900/10',
-    bgHover: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20',
-    bgActive: 'bg-yellow-100 dark:bg-yellow-900/30',
-    text: 'text-yellow-600 dark:text-yellow-400',
-    textActive: 'text-yellow-700 dark:text-yellow-300',
-    icon: 'text-yellow-500 dark:text-yellow-400',
-    iconActive: 'text-yellow-600 dark:text-yellow-300',
-    border: 'border-l-yellow-500',
-  },
-  pink: {
-    bg: 'bg-pink-50/50 dark:bg-pink-900/10',
-    bgHover: 'hover:bg-pink-50 dark:hover:bg-pink-900/20',
-    bgActive: 'bg-pink-100 dark:bg-pink-900/30',
-    text: 'text-pink-600 dark:text-pink-400',
-    textActive: 'text-pink-700 dark:text-pink-300',
-    icon: 'text-pink-500 dark:text-pink-400',
-    iconActive: 'text-pink-600 dark:text-pink-300',
-    border: 'border-l-pink-500',
-  },
-  indigo: {
-    bg: 'bg-indigo-50/50 dark:bg-indigo-900/10',
-    bgHover: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
-    bgActive: 'bg-indigo-100 dark:bg-indigo-900/30',
-    text: 'text-indigo-600 dark:text-indigo-400',
-    textActive: 'text-indigo-700 dark:text-indigo-300',
-    icon: 'text-indigo-500 dark:text-indigo-400',
-    iconActive: 'text-indigo-600 dark:text-indigo-300',
-    border: 'border-l-indigo-500',
-  },
-};
+// Sidebar profesional: colores neutros uniformes con acento primary en estado activo.
+// Los colores por módulo se reservan para las páginas de contenido, no para navegación.
 
 /**
  * Obtener el componente de icono de Lucide React por nombre
@@ -171,7 +56,8 @@ const getIconComponent = (iconName?: string | null): React.ElementType => {
 };
 
 /**
- * Componente recursivo para renderizar items de navegación
+ * Componente recursivo para renderizar items de navegación.
+ * Diseño profesional: colores neutros, acento primary en activo.
  */
 interface NavItemComponentProps {
   item: SidebarModule;
@@ -180,9 +66,13 @@ interface NavItemComponentProps {
   toggleExpanded: (code: string) => void;
   location: ReturnType<typeof useLocation>;
   depth?: number;
-  /** Cuando el sidebar tiene color dinámico oscuro, usar colores neutros en vez de moduleColors */
-  useNeutralColors?: boolean;
 }
+
+const CollapsedTooltip = ({ name }: { name: string }) => (
+  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+    {name}
+  </div>
+);
 
 const NavItemComponent = ({
   item,
@@ -191,108 +81,59 @@ const NavItemComponent = ({
   toggleExpanded,
   location,
   depth = 0,
-  useNeutralColors = false,
 }: NavItemComponentProps) => {
   const Icon = getIconComponent(item.icon);
-  // Mapear color extendido de Tailwind a los 10 soportados
-  const mappedColor = getMappedColor(item.color);
-  // Cuando el sidebar tiene color dinámico oscuro, usar colores neutros
-  // para garantizar contraste (ej: sidebar azul + icono azul = invisible)
-  const colors = useNeutralColors ? null : mappedColor ? moduleColors[mappedColor] : null;
   const hasChildren = item.children && item.children.length > 0;
   const isExpanded = expandedItems.includes(item.code);
 
-  // Verificar si este item o alguno de sus hijos está activo
   const isActive = useMemo(() => {
-    // Match exacto o con subruta (evita falsos positivos)
     const matchesRoute = (route: string | undefined | null) => {
       if (!route) return false;
       return location.pathname === route || location.pathname.startsWith(route + '/');
     };
-
-    if (item.route && matchesRoute(item.route)) {
-      return true;
-    }
-    if (item.children) {
-      return item.children.some((child) => matchesRoute(child.route));
-    }
+    if (item.route && matchesRoute(item.route)) return true;
+    if (item.children) return item.children.some((child) => matchesRoute(child.route));
     return false;
   }, [item, location.pathname]);
 
-  // Si es categoría, renderizar como grupo expandible con separador visual
+  // ── Categoría (grupo de módulos) ──
   if (item.is_category) {
-    // Detectar si es un nivel principal (NIVEL_1, NIVEL_2, etc.)
-    const isMainLevel = item.code.startsWith('NIVEL_');
-
     return (
-      <div className={cn(isMainLevel ? 'mt-6 first:mt-0' : 'mt-4 first:mt-0')}>
-        {/* Separador visual para niveles principales */}
-        {isMainLevel && depth === 0 && !isCollapsed && (
-          <div className="mb-3">
-            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent" />
+      <div className="mt-5 first:mt-0">
+        {/* Separador sutil */}
+        {depth === 0 && !isCollapsed && (
+          <div className="mb-2 mx-3">
+            <div className="h-px bg-gray-200 dark:bg-gray-700" />
           </div>
         )}
 
         <button
           onClick={() => toggleExpanded(item.code)}
           className={cn(
-            'w-full flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
-            isMainLevel && 'font-semibold uppercase text-xs tracking-wide',
-            colors
-              ? isActive
-                ? cn(colors.bgActive, colors.textActive)
-                : cn('text-gray-700 dark:text-gray-300', colors.bgHover)
-              : isActive
-                ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+            'w-full flex items-center px-3 py-2 rounded-lg transition-colors group relative',
+            isActive
+              ? 'bg-gray-100 dark:bg-gray-700/60 text-gray-900 dark:text-gray-100'
+              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
           )}
         >
-          <Icon
-            className={cn(
-              isMainLevel ? 'h-4 w-4' : 'h-5 w-5',
-              'flex-shrink-0',
-              colors
-                ? isActive
-                  ? colors.iconActive
-                  : colors.icon
-                : isActive
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-500 dark:text-gray-400'
-            )}
-          />
+          <Icon className="h-4 w-4 flex-shrink-0" />
           {!isCollapsed && (
             <>
-              <span
-                className={cn(
-                  'ml-3 flex-1 text-left',
-                  isMainLevel ? 'text-xs font-bold' : 'text-sm font-medium'
-                )}
-              >
+              <span className="ml-3 flex-1 text-left text-xs font-semibold uppercase tracking-wider">
                 {item.name}
               </span>
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
               )}
             </>
           )}
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-              {item.name}
-            </div>
-          )}
+          {isCollapsed && <CollapsedTooltip name={item.name} />}
         </button>
 
-        {/* Hijos de la categoría */}
         {isExpanded && !isCollapsed && hasChildren && (
-          <div
-            className={cn(
-              'mt-1 space-y-0.5',
-              isMainLevel ? 'ml-0' : 'ml-3 border-l-2',
-              !isMainLevel && (colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700')
-            )}
-          >
+          <div className="mt-1 space-y-0.5">
             {item.children!.map((child) => (
               <NavItemComponent
                 key={child.code}
@@ -302,7 +143,6 @@ const NavItemComponent = ({
                 toggleExpanded={toggleExpanded}
                 location={location}
                 depth={depth + 1}
-                useNeutralColors={useNeutralColors}
               />
             ))}
           </div>
@@ -311,69 +151,44 @@ const NavItemComponent = ({
     );
   }
 
-  // Si tiene hijos (módulo con tabs), renderizar como grupo expandible
+  // ── Módulo con tabs (expandible) ──
   if (hasChildren) {
     return (
       <div>
         <button
           onClick={() => toggleExpanded(item.code)}
           className={cn(
-            'w-full flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
-            depth > 0 ? 'pl-4 pr-3 py-2' : '',
-            colors
-              ? isActive
-                ? cn(colors.bgActive, colors.textActive)
-                : cn('text-gray-700 dark:text-gray-300', colors.bgHover)
-              : isActive
-                ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+            'w-full flex items-center rounded-lg transition-colors group relative',
+            depth > 0 ? 'pl-4 pr-3 py-2' : 'px-3 py-2.5',
+            isActive
+              ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+              : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
           )}
         >
           <Icon
             className={cn(
               depth > 0 ? 'h-4 w-4' : 'h-5 w-5',
               'flex-shrink-0',
-              colors
-                ? isActive
-                  ? colors.iconActive
-                  : colors.icon
-                : isActive
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-500 dark:text-gray-400'
+              isActive
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-400 dark:text-gray-500'
             )}
           />
           {!isCollapsed && (
             <>
-              <span
-                className={cn(
-                  'ml-3 font-medium flex-1 text-left',
-                  depth > 0 ? 'text-sm' : 'text-sm'
-                )}
-              >
-                {item.name}
-              </span>
+              <span className="ml-3 font-medium flex-1 text-left text-sm">{item.name}</span>
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 opacity-40" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 opacity-40" />
               )}
             </>
           )}
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-              {item.name}
-            </div>
-          )}
+          {isCollapsed && <CollapsedTooltip name={item.name} />}
         </button>
 
-        {/* Tabs del módulo */}
         {isExpanded && !isCollapsed && (
-          <div
-            className={cn(
-              'mt-1 ml-3 space-y-0.5 border-l-2',
-              colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
-            )}
-          >
+          <div className="mt-0.5 ml-3 space-y-0.5 border-l-2 border-gray-200 dark:border-gray-700">
             {item.children!.map((child) => (
               <NavItemComponent
                 key={child.code}
@@ -383,7 +198,6 @@ const NavItemComponent = ({
                 toggleExpanded={toggleExpanded}
                 location={location}
                 depth={depth + 1}
-                useNeutralColors={useNeutralColors}
               />
             ))}
           </div>
@@ -392,7 +206,7 @@ const NavItemComponent = ({
     );
   }
 
-  // Item simple (hoja) - Link navegable
+  // ── Item simple (hoja) — Link navegable ──
   const isItemActive =
     item.route &&
     (location.pathname === item.route || location.pathname.startsWith(item.route + '/'));
@@ -402,36 +216,22 @@ const NavItemComponent = ({
       to={item.route || '#'}
       className={cn(
         'flex items-center rounded-lg transition-colors group relative',
-        depth > 0 ? 'pl-4 pr-3 py-2 rounded-r-lg text-sm' : 'px-3 py-2.5',
-        colors
-          ? isItemActive
-            ? cn(colors.bgActive, colors.textActive)
-            : cn('text-gray-600 dark:text-gray-400', colors.bgHover)
-          : isItemActive
-            ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
-            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
+        depth > 0 ? 'pl-4 pr-3 py-2 text-sm' : 'px-3 py-2.5',
+        isItemActive
+          ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300 font-medium'
+          : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
       )}
     >
       <Icon
         className={cn(
           depth > 0 ? 'h-4 w-4 mr-2' : 'h-5 w-5',
-          colors
-            ? isItemActive
-              ? colors.iconActive
-              : colors.icon
-            : isItemActive
-              ? 'text-primary-600 dark:text-primary-400'
-              : 'text-gray-500 dark:text-gray-400'
+          isItemActive
+            ? 'text-primary-600 dark:text-primary-400'
+            : 'text-gray-400 dark:text-gray-500'
         )}
       />
-      {!isCollapsed && (
-        <span className={cn(depth > 0 ? '' : 'ml-3 font-medium text-sm')}>{item.name}</span>
-      )}
-      {isCollapsed && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-          {item.name}
-        </div>
-      )}
+      {!isCollapsed && <span className={cn(depth > 0 ? '' : 'ml-3 text-sm')}>{item.name}</span>}
+      {isCollapsed && <CollapsedTooltip name={item.name} />}
     </Link>
   );
 };
@@ -829,7 +629,6 @@ export const Sidebar = ({
                 expandedItems={expandedItems}
                 toggleExpanded={toggleExpanded}
                 location={location}
-                useNeutralColors={false}
               />
             ))}
 

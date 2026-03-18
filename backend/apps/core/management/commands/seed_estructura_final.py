@@ -1,33 +1,26 @@
 """
-Management command MAESTRO para configurar los 19 módulos del ERP StrateKaz
-según la Arquitectura Cascada V2 (14 niveles + infraestructura).
+Management command MAESTRO para configurar los 21 módulos del ERP StrateKaz
+según la Arquitectura Cascada V2.1.
 
-CASCADA V2 — PHVA:
-    PLANEAR:
-        10. Fundación
-        15. Gestión Documental
-        18. Flujos de Trabajo
-        20. Mi Equipo
-        25. Planificación Operativa
-        30. Planeación Estratégica
-    HACER:
-        35. Protección y Cumplimiento
-        40. Gestión Integral (HSEQ)
-        50-53. Cadena de Valor (supply, production, logistics, sales)
-        60. Gestión del Talento
-        70-72. Soporte (administración, tesorería, contabilidad)
-    VERIFICAR:
-        80. Inteligencia (Analytics)
-        85. Revisión por la Dirección
-    ACTUAR:
-        90. Acciones de Mejora
-    INFRAESTRUCTURA:
-        95. Centro de Control (logs, alertas, notificaciones)
+DEPLOY CASCADE — is_enabled=True por nivel:
+    L0:  core + ia (siempre activos, no son SystemModule)
+    L10: fundacion (is_core)
+    L12: workflow_engine + audit_system (transversal)
+    L15: gestion_documental + planificacion_operativa + planeacion_estrategica
+    L20: proteccion_cumplimiento
+    L25: gestion_integral
+    L30: supply_chain + production_ops + logistics_fleet + sales_crm
+    L35: mi_equipo + talent_hub
+    L40: administracion + tesoreria + accounting
+    L45: analytics + revision_direccion + acciones_mejora
+    SIEMPRE: configuracion_plataforma (is_core)
 
-Fuente de verdad: docs/01-arquitectura/ARQUITECTURA-CASCADA-V2.md
+Para activar un nivel: cambiar is_enabled=False → True, descomentar apps
+en base.py TENANT_APPS, y re-ejecutar seeds.
 
 Uso:
     docker exec -it backend python manage.py seed_estructura_final
+    (o: python manage.py deploy_seeds_all_tenants)
 """
 import copy
 
@@ -567,7 +560,7 @@ class Command(BaseCommand):
                 'icon': 'FileText',
                 'route': '/gestion-documental',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L15
                 'orden': 15,
                 'tabs': [
                     {
@@ -632,7 +625,7 @@ class Command(BaseCommand):
                 'icon': 'UserPlus',
                 'route': '/mi-equipo',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L35
                 'orden': 20,
                 'tabs': [
                     {'code': 'perfiles_cargo', 'name': 'Perfiles de Cargo', 'icon': 'Briefcase', 'route': 'perfiles-cargo', 'orden': 1, 'sections': [
@@ -666,7 +659,7 @@ class Command(BaseCommand):
                 'icon': 'Calendar',
                 'route': '/planificacion-operativa',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L15
                 'orden': 25,
                 'tabs': [
                     {
@@ -694,7 +687,7 @@ class Command(BaseCommand):
                 'icon': 'Target',
                 'route': '/planeacion-estrategica',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L15
                 'orden': 30,
                 'tabs': [
                     {
@@ -762,7 +755,7 @@ class Command(BaseCommand):
                 'icon': 'ShieldCheck',
                 'route': '/proteccion',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L20
                 'orden': 35,
                 'tabs': [
                     {
@@ -810,7 +803,7 @@ class Command(BaseCommand):
                 'icon': 'Shield',
                 'route': '/gestion-integral',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L25
                 'orden': 40,
                 'tabs': [
                     {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 1, 'sections': [
@@ -851,7 +844,7 @@ class Command(BaseCommand):
                 'icon': 'Package',
                 'route': '/supply-chain',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L30
                 'orden': 50,
                 'tabs': [
                     {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [
@@ -889,7 +882,7 @@ class Command(BaseCommand):
                 'icon': 'Factory',
                 'route': '/produccion',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L30
                 'orden': 51,
                 'tabs': [
                     {'code': 'recepcion', 'name': 'Recepción', 'icon': 'Download', 'route': 'recepcion', 'orden': 1, 'sections': [
@@ -917,7 +910,7 @@ class Command(BaseCommand):
                 'icon': 'Truck',
                 'route': '/logistica',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L30
                 'orden': 52,
                 'tabs': [
                     {'code': 'gestion_transporte', 'name': 'Gestión Transporte', 'icon': 'Route', 'route': 'transporte', 'orden': 1, 'sections': [
@@ -945,7 +938,7 @@ class Command(BaseCommand):
                 'icon': 'TrendingUp',
                 'route': '/ventas',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L30
                 'orden': 53,
                 'tabs': [
                     {'code': 'gestion_clientes', 'name': 'Gestión de Clientes', 'icon': 'Users', 'route': 'clientes', 'orden': 1, 'sections': [
@@ -973,7 +966,7 @@ class Command(BaseCommand):
                 'icon': 'GraduationCap',
                 'route': '/talento',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L35
                 'orden': 60,
                 'tabs': [
                     {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 1, 'sections': [
@@ -1021,7 +1014,7 @@ class Command(BaseCommand):
                 'icon': 'Building2',
                 'route': '/administracion',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L40
                 'orden': 70,
                 'tabs': [
                     {'code': 'activos_fijos', 'name': 'Activos', 'icon': 'Building', 'route': 'activos-fijos', 'orden': 1, 'sections': [
@@ -1049,7 +1042,7 @@ class Command(BaseCommand):
                 'icon': 'Wallet',
                 'route': '/tesoreria',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L40
                 'orden': 71,
                 'tabs': [
                     {'code': 'tesoreria', 'name': 'Flujo de Caja', 'icon': 'Landmark', 'route': 'tesoreria', 'orden': 1, 'sections': [
@@ -1074,7 +1067,7 @@ class Command(BaseCommand):
                 'icon': 'Calculator',
                 'route': '/contabilidad',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L40
                 'orden': 72,
                 'tabs': [
                     {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1, 'sections': [
@@ -1110,7 +1103,7 @@ class Command(BaseCommand):
                 'icon': 'BarChart3',
                 'route': '/analytics',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L45
                 'orden': 80,
                 'tabs': [
                     {'code': 'dashboard_gerencial', 'name': 'Dashboard Gerencial', 'icon': 'LayoutDashboard', 'route': 'dashboards', 'orden': 1, 'sections': [
@@ -1142,7 +1135,7 @@ class Command(BaseCommand):
                 'icon': 'ClipboardCheck',
                 'route': '/revision-direccion',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L45
                 'orden': 85,
                 'tabs': [
                     {
@@ -1174,7 +1167,7 @@ class Command(BaseCommand):
                 'icon': 'TrendingUp',
                 'route': '/acciones-mejora',
                 'is_core': False,
-                'is_enabled': True,
+                'is_enabled': False,  # CASCADE L45
                 'orden': 90,
                 'tabs': [
                     {

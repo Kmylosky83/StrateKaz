@@ -5,7 +5,8 @@
  * responsable_actual_id (select de usuarios del sistema).
  */
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useIniciarFlujo, usePlantillasActivas } from '../hooks/useWorkflows';
 import { useSelectUsers } from '@/hooks/useSelectLists';
@@ -125,7 +126,7 @@ export default function IniciarFlujoModal({
   }));
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Iniciar Nuevo Flujo de Trabajo" size="lg">
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Iniciar Nuevo Flujo de Trabajo" size="lg">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Plantilla */}
         <Select
@@ -216,6 +217,6 @@ export default function IniciarFlujoModal({
           </Button>
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

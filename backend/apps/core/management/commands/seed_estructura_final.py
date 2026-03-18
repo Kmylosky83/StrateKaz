@@ -1207,18 +1207,11 @@ class Command(BaseCommand):
                         {'code': 'modulos', 'name': 'Módulos del Sistema', 'icon': 'Blocks', 'orden': 1, 'description': 'Activar y desactivar módulos, tabs y secciones del sistema'},
                         {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 2, 'description': 'Configuración de numeración automática por tipo de documento'},
                     ]},
-                    {'code': 'catalogos_tab', 'name': 'Catálogos', 'icon': 'Library', 'route': 'catalogos', 'orden': 2, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'Library', 'route': 'catalogos', 'orden': 2, 'sections': [
                         {'code': 'catalogos', 'name': 'Catálogos Maestros', 'icon': 'Library', 'orden': 1, 'description': 'Tablas maestras transversales: unidades de medida, tipos de contrato, EPP, normas y más'},
                     ]},
                     {'code': 'conexiones', 'name': 'Conexiones', 'icon': 'Plug', 'route': 'conexiones', 'orden': 3, 'sections': [
                         {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 1, 'description': 'Conexiones con sistemas externos (contabilidad, nómina, ERP)'},
-                        {'code': 'automatizaciones', 'name': 'Automatizaciones', 'icon': 'Workflow', 'orden': 2, 'description': 'Diseñador de flujos de trabajo y automatizaciones del sistema'},
-                        {'code': 'importacion_exportacion', 'name': 'Importación / Exportación', 'icon': 'ArrowUpDown', 'orden': 3, 'description': 'Importación masiva de datos (Excel) y exportación para herramientas de BI externo'},
-                    ]},
-                    {'code': 'avanzado', 'name': 'Avanzado', 'icon': 'Sliders', 'route': 'avanzado', 'orden': 4, 'sections': [
-                        {'code': 'plantillas_notificacion', 'name': 'Plantillas de Notificación', 'icon': 'Bell', 'orden': 1, 'description': 'Configuración de plantillas de correo electrónico y notificaciones push por evento del sistema'},
-                        {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'BarChart3', 'orden': 2, 'description': 'Tipos de indicador, fuentes de datos y fórmulas de cálculo'},
-                        {'code': 'auditoria_configuracion', 'name': 'Auditoría de Configuración', 'icon': 'ShieldCheck', 'orden': 3, 'description': 'Registro de cambios en configuración del sistema: quién modificó qué y cuándo'},
                     ]},
                 ]
             },

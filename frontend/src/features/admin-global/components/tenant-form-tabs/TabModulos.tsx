@@ -1,9 +1,9 @@
 /**
  * Tab Modulos - Seleccion de modulos habilitados para la empresa.
  */
-import { Check } from 'lucide-react';
+import { Check, Clock } from 'lucide-react';
 import { Button } from '@/components/common/Button';
-import { AVAILABLE_MODULES } from '@/constants/modules';
+import { AVAILABLE_MODULES, CURRENT_DEPLOY_LEVEL } from '@/constants/modules';
 import { CATEGORY_LABELS } from './constants';
 import type { TabModulosProps } from './types';
 
@@ -37,6 +37,8 @@ export const TabModulos = ({ formData, handleModuleToggle }: TabModulosProps) =>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {categoryModules.map((module) => {
                   const isEnabled = formData.enabled_modules?.includes(module.code) ?? false;
+                  const isDeployed =
+                    module.deployLevel !== undefined && module.deployLevel <= CURRENT_DEPLOY_LEVEL;
                   return (
                     <Button
                       key={module.code}
@@ -47,7 +49,9 @@ export const TabModulos = ({ formData, handleModuleToggle }: TabModulosProps) =>
                       className={`flex items-center gap-2 !justify-start text-left text-sm w-full ${
                         isEnabled
                           ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          : isDeployed
+                            ? 'border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                            : 'border border-dashed border-gray-200 dark:border-gray-700 opacity-60 hover:opacity-80'
                       }`}
                     >
                       <div
@@ -58,7 +62,7 @@ export const TabModulos = ({ formData, handleModuleToggle }: TabModulosProps) =>
                         {isEnabled && <Check className="h-3 w-3" />}
                       </div>
                       <span
-                        className={`truncate ${
+                        className={`truncate flex-1 ${
                           isEnabled
                             ? 'text-primary-700 dark:text-primary-300 font-medium'
                             : 'text-gray-600 dark:text-gray-400'
@@ -66,6 +70,7 @@ export const TabModulos = ({ formData, handleModuleToggle }: TabModulosProps) =>
                       >
                         {module.name}
                       </span>
+                      {!isDeployed && <Clock className="h-3 w-3 flex-shrink-0 text-gray-400" />}
                     </Button>
                   );
                 })}

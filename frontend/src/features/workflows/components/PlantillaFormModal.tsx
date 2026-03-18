@@ -5,7 +5,8 @@
  * requiere aprobacion gerencia, permite cancelacion, etiquetas.
  */
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCreatePlantilla, useUpdatePlantilla, useCategorias } from '../hooks/useWorkflows';
 import type { PlantillaFlujo, CreatePlantillaDTO } from '../types/workflow.types';
@@ -94,7 +95,7 @@ export default function PlantillaFormModal({ item, isOpen, onClose }: PlantillaF
   }));
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={item ? 'Editar Plantilla de Flujo' : 'Nueva Plantilla de Flujo'}
@@ -256,6 +257,6 @@ export default function PlantillaFormModal({ item, isOpen, onClose }: PlantillaF
           </Button>
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

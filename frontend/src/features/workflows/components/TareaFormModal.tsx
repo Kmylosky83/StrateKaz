@@ -9,7 +9,8 @@
  */
 import { useState, useEffect } from 'react';
 import { Clock, User, GitBranch, CheckCircle2 } from 'lucide-react';
-import { Modal, Card, Badge, Button, Spinner, StatusBadge } from '@/components/common';
+import { Card, Badge, Button, Spinner, StatusBadge } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Select, Textarea } from '@/components/forms';
 import { useCompletarTarea, useRechazarTarea } from '../hooks/useWorkflows';
 import type { TareaActiva, TipoTarea } from '../types/workflow.types';
@@ -144,7 +145,7 @@ export default function TareaFormModal({ tarea, isOpen, onClose }: TareaFormModa
   })();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Resolver Tarea" size="lg">
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Resolver Tarea" size="lg">
       {/* Info de la tarea (read-only) */}
       <Card className="mb-6 bg-gray-50 dark:bg-gray-800/50">
         <div className="p-4 space-y-3">
@@ -298,6 +299,6 @@ export default function TareaFormModal({ tarea, isOpen, onClose }: TareaFormModa
           )}
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

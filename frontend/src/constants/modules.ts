@@ -12,7 +12,12 @@ export interface SystemModule {
   code: string;
   name: string;
   category: ModuleCategory;
+  /** Nivel de cascade en el que se despliega. 0 = siempre activo. undefined = no desplegado aún. */
+  deployLevel?: number;
 }
+
+/** Nivel máximo de cascade actualmente desplegado */
+export const CURRENT_DEPLOY_LEVEL = 12;
 
 /**
  * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.
@@ -52,24 +57,31 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   // ── PLANEAR ──
 
   // NIVEL_FUNDACION — Fundación (C1)
-  { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION' },
+  { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION', deployLevel: 10 },
 
   // NIVEL_INFRAESTRUCTURA — Documentos
-  { code: 'gestion_documental', name: 'Gestión Documental', category: 'NIVEL_INFRAESTRUCTURA' },
+  {
+    code: 'gestion_documental',
+    name: 'Gestión Documental',
+    category: 'NIVEL_INFRAESTRUCTURA',
+    deployLevel: 15,
+  },
 
   // NIVEL_EQUIPO — Mi Equipo
-  { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO' },
+  { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO', deployLevel: 35 },
 
   // NIVEL_PLANIFICACION — Planificación
   {
     code: 'planificacion_operativa',
     name: 'Planificación Operativa',
     category: 'NIVEL_PLANIFICACION',
+    deployLevel: 15,
   },
   {
     code: 'planeacion_estrategica',
     name: 'Planeación Estratégica',
     category: 'NIVEL_PLANIFICACION',
+    deployLevel: 15,
   },
 
   // ── HACER ──
@@ -79,40 +91,81 @@ export const AVAILABLE_MODULES: SystemModule[] = [
     code: 'proteccion_cumplimiento',
     name: 'Protección y Cumplimiento',
     category: 'NIVEL_PROTECCION',
+    deployLevel: 20,
   },
 
   // NIVEL_HSEQ — Gestión Integral
-  { code: 'gestion_integral', name: 'Gestión Integral HSEQ', category: 'NIVEL_HSEQ' },
+  {
+    code: 'gestion_integral',
+    name: 'Gestión Integral HSEQ',
+    category: 'NIVEL_HSEQ',
+    deployLevel: 25,
+  },
 
   // NIVEL_CADENA — Cadena de Valor
-  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA' },
-  { code: 'production_ops', name: 'Base de Operaciones', category: 'NIVEL_CADENA' },
-  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_CADENA' },
-  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_CADENA' },
+  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA', deployLevel: 30 },
+  {
+    code: 'production_ops',
+    name: 'Base de Operaciones',
+    category: 'NIVEL_CADENA',
+    deployLevel: 30,
+  },
+  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_CADENA', deployLevel: 30 },
+  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_CADENA', deployLevel: 30 },
 
   // NIVEL_TALENTO — Talent Hub
-  { code: 'talent_hub', name: 'Centro de Talento', category: 'NIVEL_TALENTO' },
+  { code: 'talent_hub', name: 'Centro de Talento', category: 'NIVEL_TALENTO', deployLevel: 35 },
 
   // NIVEL_SOPORTE — Soporte Administrativo
-  { code: 'administracion', name: 'Administración', category: 'NIVEL_SOPORTE' },
-  { code: 'tesoreria', name: 'Tesorería', category: 'NIVEL_SOPORTE' },
-  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_SOPORTE' },
+  { code: 'administracion', name: 'Administración', category: 'NIVEL_SOPORTE', deployLevel: 40 },
+  { code: 'tesoreria', name: 'Tesorería', category: 'NIVEL_SOPORTE', deployLevel: 40 },
+  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_SOPORTE', deployLevel: 40 },
 
   // ── VERIFICAR + ACTUAR ──
 
   // NIVEL_INTELIGENCIA — Inteligencia y Mejora
-  { code: 'analytics', name: 'Inteligencia de Negocios', category: 'NIVEL_INTELIGENCIA' },
-  { code: 'revision_direccion', name: 'Revisión por la Dirección', category: 'NIVEL_INTELIGENCIA' },
-  { code: 'acciones_mejora', name: 'Acciones de Mejora', category: 'NIVEL_INTELIGENCIA' },
-  { code: 'audit_system', name: 'Centro de Control', category: 'NIVEL_INTELIGENCIA' },
+  {
+    code: 'analytics',
+    name: 'Inteligencia de Negocios',
+    category: 'NIVEL_INTELIGENCIA',
+    deployLevel: 45,
+  },
+  {
+    code: 'revision_direccion',
+    name: 'Revisión por la Dirección',
+    category: 'NIVEL_INTELIGENCIA',
+    deployLevel: 45,
+  },
+  {
+    code: 'acciones_mejora',
+    name: 'Acciones de Mejora',
+    category: 'NIVEL_INTELIGENCIA',
+    deployLevel: 45,
+  },
+  {
+    code: 'audit_system',
+    name: 'Centro de Control',
+    category: 'NIVEL_INTELIGENCIA',
+    deployLevel: 12,
+  },
 
   // ── TRANSVERSAL ──
 
   // NIVEL_WORKFLOWS — Motor de ejecución transversal
-  { code: 'workflow_engine', name: 'Flujos de Trabajo', category: 'NIVEL_WORKFLOWS' },
+  {
+    code: 'workflow_engine',
+    name: 'Flujos de Trabajo',
+    category: 'NIVEL_WORKFLOWS',
+    deployLevel: 12,
+  },
 
   // NIVEL_CONFIG — Configuración de Plataforma
-  { code: 'configuracion_plataforma', name: 'Configuración', category: 'NIVEL_CONFIG' },
+  {
+    code: 'configuracion_plataforma',
+    name: 'Configuración',
+    category: 'NIVEL_CONFIG',
+    deployLevel: 0,
+  },
 ];
 
 /** Módulos habilitados por defecto para nuevos tenants */

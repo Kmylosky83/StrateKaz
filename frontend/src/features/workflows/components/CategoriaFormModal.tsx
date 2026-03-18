@@ -4,7 +4,8 @@
  * Campos: nombre, descripcion, color (con preview), icono.
  */
 import { useState, useEffect } from 'react';
-import { Modal, Button, Spinner } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Textarea } from '@/components/forms';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -105,7 +106,7 @@ export default function CategoriaFormModal({ item, isOpen, onClose }: CategoriaF
   };
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={item ? 'Editar Categoría' : 'Nueva Categoría'}
@@ -214,6 +215,6 @@ export default function CategoriaFormModal({ item, isOpen, onClose }: CategoriaF
           </Button>
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 }

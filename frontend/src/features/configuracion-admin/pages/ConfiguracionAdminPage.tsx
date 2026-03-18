@@ -2,11 +2,10 @@
  * Página: Configuración de Plataforma
  *
  * Centro de control técnico del tenant: módulos, consecutivos,
- * catálogos maestros, integraciones y configuración transversal.
+ * catálogos maestros e integraciones.
  *
- * 4 tabs en sidebar (General, Catálogos, Conexiones, Avanzado).
- * Cada tab carga sus secciones via usePageSections.
- * tabCode se extrae de la URL: /configuracion-admin/{tabRoute}
+ * 3 tabs: General, Catálogos, Conexiones.
+ * tabCode se extrae directo de la URL: /configuracion-admin/{tabCode}
  */
 import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
@@ -17,26 +16,16 @@ import { ConfigAdminTab } from '../components/ConfigAdminTab';
 
 const MODULE_CODE = 'configuracion_plataforma';
 
-/** Mapeo ruta URL → tabCode en seed */
-const TAB_ROUTE_MAP: Record<string, string> = {
-  general: 'general',
-  catalogos: 'catalogos_tab',
-  conexiones: 'conexiones',
-  avanzado: 'avanzado',
-};
-
 /** Títulos por tab */
 const TAB_TITLES: Record<string, string> = {
   general: 'Configuración General',
   catalogos: 'Catálogos Maestros',
   conexiones: 'Conexiones e Integraciones',
-  avanzado: 'Configuración Avanzada',
 };
 
 export const ConfiguracionAdminPage = () => {
   const location = useLocation();
-  const tabRoute = location.pathname.split('/').pop() || 'general';
-  const tabCode = TAB_ROUTE_MAP[tabRoute] || 'general';
+  const tabCode = location.pathname.split('/').pop() || 'general';
 
   const {
     sections,
@@ -63,7 +52,7 @@ export const ConfiguracionAdminPage = () => {
   return (
     <div className="space-y-4">
       <PageHeader
-        title={TAB_TITLES[tabRoute] || 'Configuración de Plataforma'}
+        title={TAB_TITLES[tabCode] || 'Configuración de Plataforma'}
         description={activeSectionData?.description || 'Ajustes técnicos de la plataforma'}
       />
 

@@ -8,18 +8,31 @@ Submódulos:
 - monitoreo/: Monitoreo y analytics (MetricaFlujo, AlertaFlujo)
 - firma-digital/: Sistema de firma digital (FirmaDigital, Delegación, Revisión)
 """
+from django.apps import apps
 from django.urls import path, include
 
-urlpatterns = [
-    # TAB: Diseñador de Flujos BPMN
-    path('disenador/', include('apps.workflow_engine.disenador_flujos.urls')),
+urlpatterns = []
 
-    # TAB: Ejecución de Flujos
-    path('ejecucion/', include('apps.workflow_engine.ejecucion.urls')),
+# TAB: Diseñador de Flujos BPMN
+if apps.is_installed('apps.workflow_engine.disenador_flujos'):
+    urlpatterns.append(
+        path('disenador/', include('apps.workflow_engine.disenador_flujos.urls')),
+    )
 
-    # TAB: Monitoreo y Analytics
-    path('monitoreo/', include('apps.workflow_engine.monitoreo.urls')),
+# TAB: Ejecución de Flujos
+if apps.is_installed('apps.workflow_engine.ejecucion'):
+    urlpatterns.append(
+        path('ejecucion/', include('apps.workflow_engine.ejecucion.urls')),
+    )
 
-    # TAB: Firma Digital (Fase 0.3.4 - Sistema centralizado de firmas)
-    path('firma-digital/', include('apps.workflow_engine.firma_digital.urls')),
-]
+# TAB: Monitoreo y Analytics
+if apps.is_installed('apps.workflow_engine.monitoreo'):
+    urlpatterns.append(
+        path('monitoreo/', include('apps.workflow_engine.monitoreo.urls')),
+    )
+
+# TAB: Firma Digital
+if apps.is_installed('apps.workflow_engine.firma_digital'):
+    urlpatterns.append(
+        path('firma-digital/', include('apps.workflow_engine.firma_digital.urls')),
+    )

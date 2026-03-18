@@ -90,6 +90,21 @@ TENANT_APPS = [
     'apps.gestion_estrategica.encuestas',  # PCI-POAM — parte de Análisis del Contexto (C1)
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 12: TRANSVERSAL — Infraestructura para todos los C2
+    # Workflows: diseñador BPMN, ejecución, monitoreo, firma digital
+    # Audit System: logs, alertas, notificaciones, tareas/recordatorios
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.workflow_engine.disenador_flujos',
+    'apps.workflow_engine.ejecucion',
+    'apps.workflow_engine.monitoreo',
+    'apps.workflow_engine.firma_digital',
+
+    'apps.audit_system.logs_sistema',
+    'apps.audit_system.config_alertas',
+    'apps.audit_system.centro_notificaciones',
+    'apps.audit_system.tareas_recordatorios',
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 15: PLANEACIÓN ESTRATÉGICA
     # Descomentar cuando Level 10 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
@@ -116,14 +131,9 @@ TENANT_APPS = [
     # 'apps.motor_riesgos.sagrilaft_ptee',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 25: WORKFLOWS + HSEQ
+    # CASCADA LEVEL 25: HSEQ
     # Descomentar cuando Level 20 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
-    # 'apps.workflow_engine.disenador_flujos',
-    # 'apps.workflow_engine.ejecucion',
-    # 'apps.workflow_engine.monitoreo',
-    # 'apps.workflow_engine.firma_digital',
-    #
     # 'apps.hseq_management.accidentalidad',
     # 'apps.hseq_management.seguridad_industrial',
     # 'apps.hseq_management.higiene_industrial',
@@ -205,11 +215,6 @@ TENANT_APPS = [
     # 'apps.analytics.dashboard_gerencial',
     # 'apps.analytics.generador_informes',
     # 'apps.analytics.analisis_tendencias',
-    #
-    # 'apps.audit_system.logs_sistema',
-    # 'apps.audit_system.config_alertas',
-    # 'apps.audit_system.centro_notificaciones',
-    # 'apps.audit_system.tareas_recordatorios',
 ]
 
 # INSTALLED_APPS es la combinación de ambas

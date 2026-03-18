@@ -183,8 +183,8 @@ function ErrorFallback({
           </>
         )}
 
-        {/* Detalles del error (solo en desarrollo) */}
-        {isDev && error && (
+        {/* Detalles del error (temporal: visible en prod para diagnóstico) */}
+        {error && (
           <details className="mb-6 text-left">
             <summary className="cursor-pointer text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
               Ver detalles técnicos

@@ -423,6 +423,18 @@ export const useToggleTenantUserActive = () => {
   });
 };
 
+export const useResendWelcomeEmail = () => {
+  return useMutation({
+    mutationFn: (id: number) => tenantUsersApi.resendWelcome(id),
+    onSuccess: (data) => {
+      toast.success(data.message || 'Email de bienvenida reenviado');
+    },
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al reenviar el email');
+    },
+  });
+};
+
 export const useAssignTenantToUser = () => {
   const queryClient = useQueryClient();
 

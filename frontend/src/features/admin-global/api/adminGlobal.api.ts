@@ -344,6 +344,14 @@ export const tenantUsersApi = {
   },
 
   /**
+   * Reenviar email de bienvenida
+   */
+  resendWelcome: async (id: number): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/users/${id}/resend-welcome/`);
+    return response.data;
+  },
+
+  /**
    * Asigna un usuario a un tenant
    */
   assignTenant: async (

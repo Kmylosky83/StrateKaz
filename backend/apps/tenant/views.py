@@ -597,6 +597,33 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     ordering_fields = ['email', 'first_name', 'last_name', 'created_at']
     ordering = ['-created_at']
 
+    def perform_create(self, serializer):
+        """Crear TenantUser y enviar email de bienvenida."""
+        with schema_context('public'):
+            instance = serializer.save()
+
+        # Enviar email de bienvenida asincrónicamente
+        try:
+            from apps.core.tasks import send_welcome_email_task
+
+            # Obtener nombre del primer tenant asignado (si hay)
+            tenant_name = 'StrateKaz'
+            accesses = instance.tenant_accesses.select_related('tenant').all()
+            if accesses.exists():
+                tenant_name = accesses.first().tenant.name or tenant_name
+
+            send_welcome_email_task.delay(
+                user_email=instance.email,
+                user_name=f"{instance.first_name} {instance.last_name}".strip() or instance.email,
+                tenant_name=tenant_name,
+                cargo_name='Administrador' if instance.is_superadmin else '',
+                temp_password_hint='La contraseña que te asignó el administrador',
+            )
+            logger.info(f"Email de bienvenida encolado para {instance.email}")
+        except Exception as e:
+            # No bloquear creación si el email falla
+            logger.warning(f"No se pudo encolar email de bienvenida para {instance.email}: {e}")
+
     def get_serializer_class(self):
         if self.action == 'create':
             return TenantUserCreateSerializer
@@ -731,6 +758,37 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
             'is_active': user.is_active,
             'message': f'Usuario {action_text} correctamente.',
         })
+
+    @action(detail=True, methods=['post'], url_path='resend-welcome')
+    def resend_welcome(self, request, pk=None):
+        """
+        Reenviar email de bienvenida a un usuario global.
+        Útil cuando el email original no llegó o el usuario perdió sus credenciales.
+        """
+        user = self.get_object()
+
+        try:
+            from apps.core.tasks import send_welcome_email_task
+
+            tenant_name = 'StrateKaz'
+            accesses = user.tenant_accesses.select_related('tenant').filter(is_active=True)
+            if accesses.exists():
+                tenant_name = accesses.first().tenant.name or tenant_name
+
+            send_welcome_email_task.delay(
+                user_email=user.email,
+                user_name=f"{user.first_name} {user.last_name}".strip() or user.email,
+                tenant_name=tenant_name,
+                cargo_name='Administrador' if user.is_superadmin else '',
+                temp_password_hint='La contraseña que te asignó el administrador',
+            )
+            return Response({'message': f'Email de bienvenida reenviado a {user.email}'})
+        except Exception as e:
+            logger.error(f"Error reenviando email a {user.email}: {e}")
+            return Response(
+                {'detail': 'Error al enviar el email. Intente nuevamente.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def _cascade_active_to_tenants(self, tenant_user, is_active):
         """

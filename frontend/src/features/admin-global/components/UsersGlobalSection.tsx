@@ -12,6 +12,7 @@ import {
   Shield,
   Building2,
   Mail,
+  Send,
   Clock,
   UserX,
   UserCheck,
@@ -28,7 +29,11 @@ import {
 } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import { useTenantUsersList, useToggleTenantUserActive } from '../hooks/useAdminGlobal';
+import {
+  useTenantUsersList,
+  useToggleTenantUserActive,
+  useResendWelcomeEmail,
+} from '../hooks/useAdminGlobal';
 import { TenantUserFormModal } from './TenantUserFormModal';
 import type { TenantUser } from '../types';
 
@@ -36,9 +41,10 @@ interface UserRowProps {
   user: TenantUser;
   onEdit: (user: TenantUser) => void;
   onToggleActive: (id: number) => void;
+  onResendWelcome: (id: number) => void;
 }
 
-const UserRow = ({ user, onEdit, onToggleActive }: UserRowProps) => {
+const UserRow = ({ user, onEdit, onToggleActive, onResendWelcome }: UserRowProps) => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return 'Nunca';
     return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -141,6 +147,11 @@ const UserRow = ({ user, onEdit, onToggleActive }: UserRowProps) => {
               icon: <Edit className="h-4 w-4" />,
               onClick: () => onEdit(user),
             },
+            {
+              label: 'Reenviar bienvenida',
+              icon: <Send className="h-4 w-4" />,
+              onClick: () => onResendWelcome(user.id),
+            },
             { label: '', onClick: () => {}, divider: true },
             {
               label: user.is_active ? 'Desactivar' : 'Activar',
@@ -175,6 +186,7 @@ export const UsersGlobalSection = () => {
   });
 
   const toggleActive = useToggleTenantUserActive();
+  const resendWelcome = useResendWelcomeEmail();
 
   // Filtrar localmente
   const filteredUsers = useMemo(() => {
@@ -303,6 +315,7 @@ export const UsersGlobalSection = () => {
                     user={user}
                     onEdit={handleEditUser}
                     onToggleActive={setUserToToggle}
+                    onResendWelcome={(id) => resendWelcome.mutate(id)}
                   />
                 ))}
               </AnimatePresence>

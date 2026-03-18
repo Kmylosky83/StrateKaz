@@ -36,7 +36,7 @@ import {
   useCallback,
 } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
-import { XMarkIcon, ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { X, RotateCcw, Check } from 'lucide-react';
 import clsx from 'clsx';
 
 export interface SignaturePadProps {
@@ -396,7 +396,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
             <div className="flex items-center gap-2">
               {!isEmpty && (
                 <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                  <CheckIcon className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Firma capturada
                 </span>
               )}
@@ -416,7 +416,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                 )}
                 title="Limpiar firma"
               >
-                <ArrowPathIcon className="w-4 h-4" />
+                <RotateCcw className="w-4 h-4" />
                 Limpiar
               </button>
             </div>
@@ -426,7 +426,7 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
         {/* Error Message */}
         {error && (
           <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-            <XMarkIcon className="w-4 h-4" />
+            <X className="w-4 h-4" />
             {error}
           </p>
         )}

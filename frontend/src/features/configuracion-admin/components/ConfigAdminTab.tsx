@@ -22,14 +22,15 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 export const ConfigAdminTab = ({ activeSection }: ConfigAdminTabProps) => {
-  const ActiveComponent = activeSection ? SECTION_COMPONENTS[activeSection] : null;
-
-  if (activeSection && !ActiveComponent) {
-    return <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />;
+  // Sin sección activa = aún cargando, no renderizar nada
+  if (!activeSection) {
+    return null;
   }
 
+  const ActiveComponent = SECTION_COMPONENTS[activeSection];
+
   if (!ActiveComponent) {
-    return <ModulosSection />;
+    return <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />;
   }
 
   return (

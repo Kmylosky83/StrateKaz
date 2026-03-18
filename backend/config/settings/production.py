@@ -133,7 +133,11 @@ LOGGING['loggers']['apps']['level'] = 'INFO'
 # =============================================================================
 # STATIC FILES
 # =============================================================================
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # =============================================================================
 # FRONTEND URL (para links en emails)

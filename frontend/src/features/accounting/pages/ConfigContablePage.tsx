@@ -153,7 +153,7 @@ const CuentaTreeItem = ({
   );
 };
 
-const _CentroCostoTreeItem = ({
+const CentroCostoTreeItem = ({
   centro,
   level = 0,
   onEdit,

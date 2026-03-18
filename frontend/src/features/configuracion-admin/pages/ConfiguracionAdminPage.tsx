@@ -40,7 +40,7 @@ export const ConfiguracionAdminPage = () => {
 
   const { color: moduleColor } = useModuleColor('configuracion_plataforma');
 
-  if (!activeSection && sectionsLoading) {
+  if (!activeSection) {
     return (
       <div className="space-y-4">
         <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />

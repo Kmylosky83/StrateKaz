@@ -33,57 +33,57 @@ const API_BASE = '/audit';
 // ==================== LOGS SISTEMA ====================
 
 export const configuracionAuditoriaApi = {
-  getAll: () => apiClient.get<ConfiguracionAuditoria[]>(`${API_BASE}/logs-sistema/configuracion/`),
+  getAll: () => apiClient.get<ConfiguracionAuditoria[]>(`${API_BASE}/logs/configuracion/`),
 
   getById: (id: number) =>
-    apiClient.get<ConfiguracionAuditoria>(`${API_BASE}/logs-sistema/configuracion/${id}/`),
+    apiClient.get<ConfiguracionAuditoria>(`${API_BASE}/logs/configuracion/${id}/`),
 
   create: (data: Partial<ConfiguracionAuditoria>) =>
-    apiClient.post<ConfiguracionAuditoria>(`${API_BASE}/logs-sistema/configuracion/`, data),
+    apiClient.post<ConfiguracionAuditoria>(`${API_BASE}/logs/configuracion/`, data),
 
   update: (id: number, data: Partial<ConfiguracionAuditoria>) =>
-    apiClient.patch<ConfiguracionAuditoria>(`${API_BASE}/logs-sistema/configuracion/${id}/`, data),
+    apiClient.patch<ConfiguracionAuditoria>(`${API_BASE}/logs/configuracion/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/logs-sistema/configuracion/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/logs/configuracion/${id}/`),
 };
 
 export const logsAccesoApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<LogAcceso[]>(`${API_BASE}/logs-sistema/accesos/`, { params }),
+    apiClient.get<LogAcceso[]>(`${API_BASE}/logs/accesos/`, { params }),
 
-  getById: (id: number) => apiClient.get<LogAcceso>(`${API_BASE}/logs-sistema/accesos/${id}/`),
+  getById: (id: number) => apiClient.get<LogAcceso>(`${API_BASE}/logs/accesos/${id}/`),
 
   porUsuario: (usuarioId: number, params?: Record<string, unknown>) =>
-    apiClient.get<LogAcceso[]>(`${API_BASE}/logs-sistema/accesos/por-usuario/${usuarioId}/`, {
+    apiClient.get<LogAcceso[]>(`${API_BASE}/logs/accesos/por-usuario/${usuarioId}/`, {
       params,
     }),
 
   porFecha: (fechaInicio: string, fechaFin: string) =>
-    apiClient.get<LogAcceso[]>(`${API_BASE}/logs-sistema/accesos/por-fecha/`, {
+    apiClient.get<LogAcceso[]>(`${API_BASE}/logs/accesos/por-fecha/`, {
       params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
     }),
 
-  stats: () => apiClient.get(`${API_BASE}/logs-sistema/accesos/stats/`),
+  stats: () => apiClient.get(`${API_BASE}/logs/accesos/stats/`),
 };
 
 export const logsCambioApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<LogCambio[]>(`${API_BASE}/logs-sistema/cambios/`, { params }),
+    apiClient.get<LogCambio[]>(`${API_BASE}/logs/cambios/`, { params }),
 
-  getById: (id: number) => apiClient.get<LogCambio>(`${API_BASE}/logs-sistema/cambios/${id}/`),
+  getById: (id: number) => apiClient.get<LogCambio>(`${API_BASE}/logs/cambios/${id}/`),
 
   porObjeto: (contentType: number, objectId: string) =>
-    apiClient.get<LogCambio[]>(`${API_BASE}/logs-sistema/cambios/por-objeto/`, {
+    apiClient.get<LogCambio[]>(`${API_BASE}/logs/cambios/por-objeto/`, {
       params: { content_type: contentType, object_id: objectId },
     }),
 
   porUsuario: (usuarioId: number, params?: Record<string, unknown>) =>
-    apiClient.get<LogCambio[]>(`${API_BASE}/logs-sistema/cambios/por-usuario/${usuarioId}/`, {
+    apiClient.get<LogCambio[]>(`${API_BASE}/logs/cambios/por-usuario/${usuarioId}/`, {
       params,
     }),
 
   exportar: (formato: 'excel' | 'csv', params?: Record<string, unknown>) =>
-    apiClient.get(`${API_BASE}/logs-sistema/cambios/exportar/`, {
+    apiClient.get(`${API_BASE}/logs/cambios/exportar/`, {
       params: { formato, ...params },
       responseType: 'blob',
     }),
@@ -91,12 +91,12 @@ export const logsCambioApi = {
 
 export const logsConsultaApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<LogConsulta[]>(`${API_BASE}/logs-sistema/consultas/`, { params }),
+    apiClient.get<LogConsulta[]>(`${API_BASE}/logs/consultas/`, { params }),
 
-  getById: (id: number) => apiClient.get<LogConsulta>(`${API_BASE}/logs-sistema/consultas/${id}/`),
+  getById: (id: number) => apiClient.get<LogConsulta>(`${API_BASE}/logs/consultas/${id}/`),
 
   porModulo: (modulo: string, params?: Record<string, unknown>) =>
-    apiClient.get<LogConsulta[]>(`${API_BASE}/logs-sistema/consultas/por-modulo/`, {
+    apiClient.get<LogConsulta[]>(`${API_BASE}/logs/consultas/por-modulo/`, {
       params: { modulo, ...params },
     }),
 };
@@ -165,175 +165,168 @@ export const notificacionesMasivasApi = {
 // ==================== CONFIG ALERTAS ====================
 
 export const tiposAlertaApi = {
-  getAll: () => apiClient.get<TipoAlerta[]>(`${API_BASE}/config-alertas/tipos/`),
+  getAll: () => apiClient.get<TipoAlerta[]>(`${API_BASE}/alertas/tipos/`),
 
-  getById: (id: number) => apiClient.get<TipoAlerta>(`${API_BASE}/config-alertas/tipos/${id}/`),
+  getById: (id: number) => apiClient.get<TipoAlerta>(`${API_BASE}/alertas/tipos/${id}/`),
 
   create: (data: Partial<TipoAlerta>) =>
-    apiClient.post<TipoAlerta>(`${API_BASE}/config-alertas/tipos/`, data),
+    apiClient.post<TipoAlerta>(`${API_BASE}/alertas/tipos/`, data),
 
   update: (id: number, data: Partial<TipoAlerta>) =>
-    apiClient.patch<TipoAlerta>(`${API_BASE}/config-alertas/tipos/${id}/`, data),
+    apiClient.patch<TipoAlerta>(`${API_BASE}/alertas/tipos/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/config-alertas/tipos/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/alertas/tipos/${id}/`),
 };
 
 export const configuracionesAlertaApi = {
-  getAll: () => apiClient.get<ConfiguracionAlerta[]>(`${API_BASE}/config-alertas/configuraciones/`),
+  getAll: () => apiClient.get<ConfiguracionAlerta[]>(`${API_BASE}/alertas/configuraciones/`),
 
   getById: (id: number) =>
-    apiClient.get<ConfiguracionAlerta>(`${API_BASE}/config-alertas/configuraciones/${id}/`),
+    apiClient.get<ConfiguracionAlerta>(`${API_BASE}/alertas/configuraciones/${id}/`),
 
   create: (data: Partial<ConfiguracionAlerta>) =>
-    apiClient.post<ConfiguracionAlerta>(`${API_BASE}/config-alertas/configuraciones/`, data),
+    apiClient.post<ConfiguracionAlerta>(`${API_BASE}/alertas/configuraciones/`, data),
 
   update: (id: number, data: Partial<ConfiguracionAlerta>) =>
-    apiClient.patch<ConfiguracionAlerta>(`${API_BASE}/config-alertas/configuraciones/${id}/`, data),
+    apiClient.patch<ConfiguracionAlerta>(`${API_BASE}/alertas/configuraciones/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/config-alertas/configuraciones/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/alertas/configuraciones/${id}/`),
 };
 
 export const alertasGeneradasApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<AlertaGenerada[]>(`${API_BASE}/config-alertas/alertas-generadas/`, { params }),
+    apiClient.get<AlertaGenerada[]>(`${API_BASE}/alertas/alertas-generadas/`, { params }),
 
   getById: (id: number) =>
-    apiClient.get<AlertaGenerada>(`${API_BASE}/config-alertas/alertas-generadas/${id}/`),
+    apiClient.get<AlertaGenerada>(`${API_BASE}/alertas/alertas-generadas/${id}/`),
 
   atender: (id: number, observaciones?: string) =>
-    apiClient.post(`${API_BASE}/config-alertas/alertas-generadas/${id}/atender/`, {
+    apiClient.post(`${API_BASE}/alertas/alertas-generadas/${id}/atender/`, {
       observaciones,
     }),
 
   escalar: (id: number, escaladoA: number, motivo: string) =>
-    apiClient.post(`${API_BASE}/config-alertas/alertas-generadas/${id}/escalar/`, {
+    apiClient.post(`${API_BASE}/alertas/alertas-generadas/${id}/escalar/`, {
       escalado_a: escaladoA,
       motivo_escalamiento: motivo,
     }),
 
   pendientes: () =>
-    apiClient.get<AlertaGenerada[]>(`${API_BASE}/config-alertas/alertas-generadas/pendientes/`),
+    apiClient.get<AlertaGenerada[]>(`${API_BASE}/alertas/alertas-generadas/pendientes/`),
 
   porSeveridad: (severidad: string) =>
-    apiClient.get<AlertaGenerada[]>(`${API_BASE}/config-alertas/alertas-generadas/por-severidad/`, {
+    apiClient.get<AlertaGenerada[]>(`${API_BASE}/alertas/alertas-generadas/por-severidad/`, {
       params: { severidad },
     }),
 
-  resumen: () =>
-    apiClient.get<ResumenAlertas>(`${API_BASE}/config-alertas/alertas-generadas/resumen/`),
+  resumen: () => apiClient.get<ResumenAlertas>(`${API_BASE}/alertas/alertas-generadas/resumen/`),
 };
 
 export const escalamientosAlertaApi = {
   getAll: (alertaId?: number) =>
-    apiClient.get<EscalamientoAlerta[]>(`${API_BASE}/config-alertas/escalamientos/`, {
+    apiClient.get<EscalamientoAlerta[]>(`${API_BASE}/alertas/escalamientos/`, {
       params: alertaId ? { alerta: alertaId } : {},
     }),
 
   getById: (id: number) =>
-    apiClient.get<EscalamientoAlerta>(`${API_BASE}/config-alertas/escalamientos/${id}/`),
+    apiClient.get<EscalamientoAlerta>(`${API_BASE}/alertas/escalamientos/${id}/`),
 
   create: (data: Partial<EscalamientoAlerta>) =>
-    apiClient.post<EscalamientoAlerta>(`${API_BASE}/config-alertas/escalamientos/`, data),
+    apiClient.post<EscalamientoAlerta>(`${API_BASE}/alertas/escalamientos/`, data),
 
   resolver: (id: number, observaciones?: string) =>
-    apiClient.post(`${API_BASE}/config-alertas/escalamientos/${id}/resolver/`, { observaciones }),
+    apiClient.post(`${API_BASE}/alertas/escalamientos/${id}/resolver/`, { observaciones }),
 };
 
 // ==================== TAREAS RECORDATORIOS ====================
 
 export const tareasApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<Tarea[]>(`${API_BASE}/tareas-recordatorios/tareas/`, { params }),
+    apiClient.get<Tarea[]>(`${API_BASE}/tareas/tareas/`, { params }),
 
-  getById: (id: number) => apiClient.get<Tarea>(`${API_BASE}/tareas-recordatorios/tareas/${id}/`),
+  getById: (id: number) => apiClient.get<Tarea>(`${API_BASE}/tareas/tareas/${id}/`),
 
-  create: (data: Partial<Tarea>) =>
-    apiClient.post<Tarea>(`${API_BASE}/tareas-recordatorios/tareas/`, data),
+  create: (data: Partial<Tarea>) => apiClient.post<Tarea>(`${API_BASE}/tareas/tareas/`, data),
 
   update: (id: number, data: Partial<Tarea>) =>
-    apiClient.patch<Tarea>(`${API_BASE}/tareas-recordatorios/tareas/${id}/`, data),
+    apiClient.patch<Tarea>(`${API_BASE}/tareas/tareas/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas-recordatorios/tareas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas/tareas/${id}/`),
 
   completar: (id: number, observaciones?: string) =>
-    apiClient.post(`${API_BASE}/tareas-recordatorios/tareas/${id}/completar/`, { observaciones }),
+    apiClient.post(`${API_BASE}/tareas/tareas/${id}/completar/`, { observaciones }),
 
   cancelar: (id: number, motivo?: string) =>
-    apiClient.post(`${API_BASE}/tareas-recordatorios/tareas/${id}/cancelar/`, { motivo }),
+    apiClient.post(`${API_BASE}/tareas/tareas/${id}/cancelar/`, { motivo }),
 
   reasignar: (id: number, asignadoA: number, observaciones?: string) =>
-    apiClient.post(`${API_BASE}/tareas-recordatorios/tareas/${id}/reasignar/`, {
+    apiClient.post(`${API_BASE}/tareas/tareas/${id}/reasignar/`, {
       asignado_a: asignadoA,
       observaciones,
     }),
 
-  misTareas: () => apiClient.get<Tarea[]>(`${API_BASE}/tareas-recordatorios/tareas/mis-tareas/`),
+  misTareas: () => apiClient.get<Tarea[]>(`${API_BASE}/tareas/tareas/mis-tareas/`),
 
-  vencidas: () => apiClient.get<Tarea[]>(`${API_BASE}/tareas-recordatorios/tareas/vencidas/`),
+  vencidas: () => apiClient.get<Tarea[]>(`${API_BASE}/tareas/tareas/vencidas/`),
 
-  resumen: () => apiClient.get<ResumenTareas>(`${API_BASE}/tareas-recordatorios/tareas/resumen/`),
+  resumen: () => apiClient.get<ResumenTareas>(`${API_BASE}/tareas/tareas/resumen/`),
 };
 
 export const recordatoriosApi = {
-  getAll: () => apiClient.get<Recordatorio[]>(`${API_BASE}/tareas-recordatorios/recordatorios/`),
+  getAll: () => apiClient.get<Recordatorio[]>(`${API_BASE}/tareas/recordatorios/`),
 
-  getById: (id: number) =>
-    apiClient.get<Recordatorio>(`${API_BASE}/tareas-recordatorios/recordatorios/${id}/`),
+  getById: (id: number) => apiClient.get<Recordatorio>(`${API_BASE}/tareas/recordatorios/${id}/`),
 
   create: (data: Partial<Recordatorio>) =>
-    apiClient.post<Recordatorio>(`${API_BASE}/tareas-recordatorios/recordatorios/`, data),
+    apiClient.post<Recordatorio>(`${API_BASE}/tareas/recordatorios/`, data),
 
   update: (id: number, data: Partial<Recordatorio>) =>
-    apiClient.patch<Recordatorio>(`${API_BASE}/tareas-recordatorios/recordatorios/${id}/`, data),
+    apiClient.patch<Recordatorio>(`${API_BASE}/tareas/recordatorios/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas-recordatorios/recordatorios/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas/recordatorios/${id}/`),
 
-  activar: (id: number) =>
-    apiClient.post(`${API_BASE}/tareas-recordatorios/recordatorios/${id}/activar/`),
+  activar: (id: number) => apiClient.post(`${API_BASE}/tareas/recordatorios/${id}/activar/`),
 
-  desactivar: (id: number) =>
-    apiClient.post(`${API_BASE}/tareas-recordatorios/recordatorios/${id}/desactivar/`),
+  desactivar: (id: number) => apiClient.post(`${API_BASE}/tareas/recordatorios/${id}/desactivar/`),
 };
 
 export const eventosCalendarioApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas-recordatorios/eventos/`, { params }),
+    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas/eventos/`, { params }),
 
-  getById: (id: number) =>
-    apiClient.get<EventoCalendario>(`${API_BASE}/tareas-recordatorios/eventos/${id}/`),
+  getById: (id: number) => apiClient.get<EventoCalendario>(`${API_BASE}/tareas/eventos/${id}/`),
 
   create: (data: Partial<EventoCalendario>) =>
-    apiClient.post<EventoCalendario>(`${API_BASE}/tareas-recordatorios/eventos/`, data),
+    apiClient.post<EventoCalendario>(`${API_BASE}/tareas/eventos/`, data),
 
   update: (id: number, data: Partial<EventoCalendario>) =>
-    apiClient.patch<EventoCalendario>(`${API_BASE}/tareas-recordatorios/eventos/${id}/`, data),
+    apiClient.patch<EventoCalendario>(`${API_BASE}/tareas/eventos/${id}/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas-recordatorios/eventos/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas/eventos/${id}/`),
 
   porMes: (anio: number, mes: number) =>
-    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas-recordatorios/eventos/por-mes/`, {
+    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas/eventos/por-mes/`, {
       params: { anio, mes },
     }),
 
   porSemana: (anio: number, semana: number) =>
-    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas-recordatorios/eventos/por-semana/`, {
+    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas/eventos/por-semana/`, {
       params: { anio, semana },
     }),
 
-  misEventos: () =>
-    apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas-recordatorios/eventos/mis-eventos/`),
+  misEventos: () => apiClient.get<EventoCalendario[]>(`${API_BASE}/tareas/eventos/mis-eventos/`),
 };
 
 export const comentariosTareaApi = {
   getAll: (tareaId: number) =>
-    apiClient.get<ComentarioTarea[]>(`${API_BASE}/tareas-recordatorios/comentarios/`, {
+    apiClient.get<ComentarioTarea[]>(`${API_BASE}/tareas/comentarios/`, {
       params: { tarea: tareaId },
     }),
 
   create: (data: Partial<ComentarioTarea>) =>
-    apiClient.post<ComentarioTarea>(`${API_BASE}/tareas-recordatorios/comentarios/`, data),
+    apiClient.post<ComentarioTarea>(`${API_BASE}/tareas/comentarios/`, data),
 
-  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas-recordatorios/comentarios/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/tareas/comentarios/${id}/`),
 };
 
 // ==================== DASHBOARD & STATS ====================

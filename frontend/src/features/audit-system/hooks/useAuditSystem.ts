@@ -4,6 +4,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+/** Normaliza respuesta paginada: {results:[]} → [] */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const asList = <T>(data: any): T[] => (Array.isArray(data) ? data : (data?.results ?? []));
+
 import {
   configuracionAuditoriaApi,
   logsAccesoApi,
@@ -56,7 +61,7 @@ export const useConfiguracionesAuditoria = () => {
     queryKey: ['configuraciones-auditoria'],
     queryFn: async () => {
       const response = await configuracionAuditoriaApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -102,7 +107,7 @@ export const useLogsAcceso = (params?: Record<string, unknown>) => {
     queryKey: ['logs-acceso', params],
     queryFn: async () => {
       const response = await logsAccesoApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -123,7 +128,7 @@ export const useLogsAccesoPorUsuario = (usuarioId: number, params?: Record<strin
     queryKey: ['logs-acceso', 'usuario', usuarioId, params],
     queryFn: async () => {
       const response = await logsAccesoApi.porUsuario(usuarioId, params);
-      return response.data;
+      return asList(response.data);
     },
     enabled: !!usuarioId,
   });
@@ -135,7 +140,7 @@ export const useLogsCambio = (params?: Record<string, unknown>) => {
     queryKey: ['logs-cambio', params],
     queryFn: async () => {
       const response = await logsCambioApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -156,7 +161,7 @@ export const useLogsCambioPorObjeto = (contentType: number, objectId: string) =>
     queryKey: ['logs-cambio', 'objeto', contentType, objectId],
     queryFn: async () => {
       const response = await logsCambioApi.porObjeto(contentType, objectId);
-      return response.data;
+      return asList(response.data);
     },
     enabled: !!contentType && !!objectId,
   });
@@ -168,7 +173,7 @@ export const useLogsConsulta = (params?: Record<string, unknown>) => {
     queryKey: ['logs-consulta', params],
     queryFn: async () => {
       const response = await logsConsultaApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -181,7 +186,7 @@ export const useTiposNotificacion = () => {
     queryKey: ['tipos-notificacion'],
     queryFn: async () => {
       const response = await tiposNotificacionApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -214,7 +219,7 @@ export const useNotificaciones = (params?: Record<string, unknown>) => {
     queryKey: ['notificaciones', params],
     queryFn: async () => {
       const response = await notificacionesApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -236,7 +241,7 @@ export const useNotificacionesNoLeidas = () => {
     queryFn: async () => {
       try {
         const response = await notificacionesApi.noLeidas();
-        return response.data;
+        return asList(response.data);
       } catch (err: unknown) {
         // 404 = app no habilitada en este nivel de despliegue → silenciar
         if ((err as { response?: { status?: number } })?.response?.status === 404) {
@@ -302,7 +307,7 @@ export const usePreferenciasNotificacion = () => {
     queryKey: ['preferencias-notificacion'],
     queryFn: async () => {
       const response = await preferenciasNotificacionApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -325,7 +330,7 @@ export const useNotificacionesMasivas = (params?: Record<string, unknown>) => {
     queryKey: ['notificaciones-masivas', params],
     queryFn: async () => {
       const response = await notificacionesMasivasApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -360,7 +365,7 @@ export const useTiposAlerta = () => {
     queryKey: ['tipos-alerta'],
     queryFn: async () => {
       const response = await tiposAlertaApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -393,7 +398,7 @@ export const useConfiguracionesAlerta = () => {
     queryKey: ['configuraciones-alerta'],
     queryFn: async () => {
       const response = await configuracionesAlertaApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -427,7 +432,7 @@ export const useAlertasGeneradas = (params?: Record<string, unknown>) => {
     queryKey: ['alertas-generadas', params],
     queryFn: async () => {
       const response = await alertasGeneradasApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -448,7 +453,7 @@ export const useAlertasPendientes = () => {
     queryKey: ['alertas-generadas', 'pendientes'],
     queryFn: async () => {
       const response = await alertasGeneradasApi.pendientes();
-      return response.data;
+      return asList(response.data);
     },
     refetchInterval: 60000,
   });
@@ -497,7 +502,7 @@ export const useEscalamientosAlerta = (alertaId?: number) => {
     queryKey: ['escalamientos-alerta', alertaId],
     queryFn: async () => {
       const response = await escalamientosAlertaApi.getAll(alertaId);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -510,7 +515,7 @@ export const useTareas = (params?: Record<string, unknown>) => {
     queryKey: ['tareas', params],
     queryFn: async () => {
       const response = await tareasApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -531,7 +536,7 @@ export const useMisTareas = () => {
     queryKey: ['tareas', 'mis-tareas'],
     queryFn: async () => {
       const response = await tareasApi.misTareas();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -541,7 +546,7 @@ export const useTareasVencidas = () => {
     queryKey: ['tareas', 'vencidas'],
     queryFn: async () => {
       const response = await tareasApi.vencidas();
-      return response.data;
+      return asList(response.data);
     },
     refetchInterval: 300000, // Every 5 minutes
   });
@@ -631,7 +636,7 @@ export const useRecordatorios = () => {
     queryKey: ['recordatorios'],
     queryFn: async () => {
       const response = await recordatoriosApi.getAll();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -664,7 +669,7 @@ export const useEventosCalendario = (params?: Record<string, unknown>) => {
     queryKey: ['eventos-calendario', params],
     queryFn: async () => {
       const response = await eventosCalendarioApi.getAll(params);
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -674,7 +679,7 @@ export const useEventosPorMes = (anio: number, mes: number) => {
     queryKey: ['eventos-calendario', 'mes', anio, mes],
     queryFn: async () => {
       const response = await eventosCalendarioApi.porMes(anio, mes);
-      return response.data;
+      return asList(response.data);
     },
     enabled: !!anio && !!mes,
   });
@@ -685,7 +690,7 @@ export const useMisEventos = () => {
     queryKey: ['eventos-calendario', 'mis-eventos'],
     queryFn: async () => {
       const response = await eventosCalendarioApi.misEventos();
-      return response.data;
+      return asList(response.data);
     },
   });
 };
@@ -729,7 +734,7 @@ export const useComentariosTarea = (tareaId: number) => {
     queryKey: ['comentarios-tarea', tareaId],
     queryFn: async () => {
       const response = await comentariosTareaApi.getAll(tareaId);
-      return response.data;
+      return asList(response.data);
     },
     enabled: !!tareaId,
   });

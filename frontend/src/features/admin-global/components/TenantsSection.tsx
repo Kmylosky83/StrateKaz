@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, BrandedSkeleton, Dropdown } from '@/components/common';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import type { BadgeVariant } from '@/components/common/Badge';
@@ -708,7 +708,7 @@ export const TenantsSection = () => {
       )}
 
       {/* Hard Delete Confirmation Dialog */}
-      <Modal
+      <BaseModal
         isOpen={!!tenantToHardDelete}
         onClose={() => {
           setTenantToHardDelete(null);
@@ -770,7 +770,7 @@ export const TenantsSection = () => {
             </Button>
           </div>
         </div>
-      </Modal>
+      </BaseModal>
 
       {/* Tenant Form Modal */}
       <TenantFormModal

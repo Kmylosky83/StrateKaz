@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Search, User as UserIcon, Briefcase, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
@@ -88,7 +88,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ver como usuario" size="2xl">
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Ver como usuario" size="2xl">
       <div className="space-y-4">
         {/* Info del tenant */}
         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -203,6 +203,6 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
           </p>
         )}
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

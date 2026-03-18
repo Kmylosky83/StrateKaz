@@ -30,7 +30,7 @@ import {
 } from '../hooks/useNotificaciones';
 import { useSelectCargos, useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
 import { TipoNotificacionModal } from '../components';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { getCategoriaIcon, getCategoriaColor } from '../components/notificacion-utils';
 import type { TipoNotificacion } from '../types/notificaciones.types';
 
@@ -296,7 +296,7 @@ function TiposTab() {
 
       {/* Modal de Detalle */}
       {selectedTipo && showDetailModal && (
-        <Modal
+        <BaseModal
           isOpen={showDetailModal}
           onClose={() => {
             setShowDetailModal(false);
@@ -357,7 +357,7 @@ function TiposTab() {
               </Badge>
             </div>
           </div>
-        </Modal>
+        </BaseModal>
       )}
     </div>
   );

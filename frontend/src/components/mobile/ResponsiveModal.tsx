@@ -13,7 +13,7 @@
  * ```
  */
 import { ReactNode } from 'react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { BottomSheet } from './BottomSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 
@@ -70,7 +70,7 @@ export const ResponsiveModal = ({
   }
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={title}
@@ -78,7 +78,7 @@ export const ResponsiveModal = ({
       showCloseButton={showCloseButton}
     >
       {children}
-    </Modal>
+    </BaseModal>
   );
 };
 

@@ -10,7 +10,6 @@
  *   Button,
  *   Badge,
  *   Card,
- *   Modal,
  *   Spinner,
  *   ConfirmDialog,
  *   Alert,
@@ -36,6 +35,7 @@ export type { BadgeVariant, BadgeSize } from './Badge';
 export { Card } from './Card';
 export type { CardProps } from './Card';
 
+/** @deprecated Usar BaseModal de @/components/modals/BaseModal. Se mantiene solo para módulos inactivos (L15+). */
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
 

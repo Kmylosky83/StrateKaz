@@ -23,7 +23,7 @@ import {
   Shield,
   AlertTriangle,
 } from 'lucide-react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
@@ -233,7 +233,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
   ];
 
   return (
-    <Modal
+    <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -460,6 +460,6 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           </Button>
         </div>
       </form>
-    </Modal>
+    </BaseModal>
   );
 };

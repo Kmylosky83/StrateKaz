@@ -3,7 +3,7 @@
  */
 import { useState } from 'react';
 import { Bell, Settings, CheckSquare, AlertTriangle, Clock, CheckCircle, Eye } from 'lucide-react';
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
 import type { Notificacion } from '../types/notificaciones.types';
@@ -54,7 +54,7 @@ export function NotificacionDetailModal({
         : 'text-gray-600 bg-gray-50 dark:bg-gray-800';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalle de Notificación" size="lg">
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Detalle de Notificación" size="lg">
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start gap-3">
@@ -143,6 +143,6 @@ export function NotificacionDetailModal({
           </a>
         )}
       </div>
-    </Modal>
+    </BaseModal>
   );
 }

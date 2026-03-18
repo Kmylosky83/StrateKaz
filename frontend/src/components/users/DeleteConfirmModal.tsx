@@ -1,4 +1,4 @@
-import { Modal } from '@/components/common/Modal';
+import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { AlertTriangle } from 'lucide-react';
 
@@ -28,7 +28,7 @@ export const DeleteConfirmModal = ({
     : 'Estás a punto de eliminar este registro. Esta acción no se puede deshacer.';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
+    <BaseModal isOpen={isOpen} onClose={onClose} title={title} size="md">
       <div className="space-y-4">
         <div className="flex items-start gap-3 p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
           <AlertTriangle className="h-6 w-6 text-warning-600 dark:text-warning-400 flex-shrink-0 mt-0.5" />
@@ -62,6 +62,6 @@ export const DeleteConfirmModal = ({
           </Button>
         </div>
       </div>
-    </Modal>
+    </BaseModal>
   );
 };

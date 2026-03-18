@@ -48,6 +48,8 @@ mypy_extensions==1.1.0
 openpyxl==3.1.2
 packaging==25.0
 pathspec==1.0.3
+pdf2image==1.17.0
+pdfplumber==0.11.4
 pillow==12.1.1
 platformdirs==4.5.1
 pluggy==1.6.0
@@ -61,6 +63,7 @@ PyJWT==2.11.0
 pyotp==2.9.0
 pyphen==0.17.2
 pypng==0.20220715.0
+pytesseract==0.3.13
 python-crontab==3.3.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8

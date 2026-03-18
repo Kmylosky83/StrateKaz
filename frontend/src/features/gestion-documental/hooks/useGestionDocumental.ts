@@ -457,3 +457,51 @@ export function useExportDocumentoDocx() {
     },
   });
 }
+
+// =============================================================================
+// OCR — Fase 5: Ingesta, reprocesamiento y búsqueda full-text
+// =============================================================================
+
+export function useIngestarExterno() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: FormData) => {
+      return documentoApi.ingestarExterno(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: gestionDocumentalKeys.listadoMaestro(),
+      });
+      toast.success('Documento ingresado. La extracción de texto iniciará en breve.');
+    },
+    onError: () => {
+      toast.error('Error al ingestar el documento');
+    },
+  });
+}
+
+export function useReprocesarOcr() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      return documentoApi.reprocesarOcr(id);
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      toast.success('OCR reprogramado. Recibirá una notificación al completar.');
+    },
+    onError: () => {
+      toast.error('Error al reprogramar OCR');
+    },
+  });
+}
+
+export function useBusquedaTexto(query: string) {
+  return useQuery({
+    queryKey: [...gestionDocumentalKeys.all, 'busqueda-texto', query],
+    queryFn: () => documentoApi.busquedaTexto(query),
+    enabled: query.length >= 3,
+    staleTime: 30_000,
+  });
+}

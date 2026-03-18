@@ -532,6 +532,46 @@ class Documento(models.Model):
         help_text='True si el documento se genera automáticamente desde un flujo BPM'
     )
 
+    # OCR / Extracción de texto (Fase 5)
+    texto_extraido = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Texto Extraído',
+        help_text='Texto completo extraído del PDF (pdfplumber o Tesseract OCR)'
+    )
+    OCR_ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente'),
+        ('PROCESANDO', 'Procesando'),
+        ('COMPLETADO', 'Completado'),
+        ('ERROR', 'Error'),
+        ('NO_APLICA', 'No Aplica'),
+    ]
+    ocr_estado = models.CharField(
+        max_length=20,
+        choices=OCR_ESTADO_CHOICES,
+        default='NO_APLICA',
+        db_index=True,
+        verbose_name='Estado OCR'
+    )
+    ocr_metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos OCR',
+        help_text='{"metodo": "pdfplumber|tesseract", "confianza": 0.95, "paginas": 10, "duracion_seg": 5.2}'
+    )
+    es_externo = models.BooleanField(
+        default=False,
+        verbose_name='Documento Externo',
+        help_text='True si fue ingresado por upload de PDF externo'
+    )
+    archivo_original = models.FileField(
+        upload_to='documentos/originales/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo Original',
+        help_text='PDF original subido externamente para OCR'
+    )
+
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,

@@ -174,6 +174,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
             'es_politica_integral',
+            'ocr_estado', 'es_externo',
             'total_firmas', 'firmas_pendientes'
         ]
 
@@ -221,11 +222,14 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
             'fecha_expiracion', 'motivo_cambio', 'es_politica_integral',
+            'texto_extraido', 'ocr_estado', 'ocr_metadatos',
+            'es_externo', 'archivo_original',
             'empresa_id', 'created_at', 'updated_at',
             'firmas_digitales'
         ]
         read_only_fields = [
             'codigo', 'numero_descargas', 'numero_impresiones',
+            'texto_extraido', 'ocr_estado', 'ocr_metadatos',
             'empresa_id', 'created_at', 'updated_at'
         ]
 

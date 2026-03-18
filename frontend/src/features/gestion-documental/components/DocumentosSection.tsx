@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Calendar,
   PenTool,
+  Upload,
 } from 'lucide-react';
 import {
   Card,
@@ -35,6 +36,8 @@ import {
 } from '../hooks/useGestionDocumental';
 import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
+import IngestarExternoModal from './IngestarExternoModal';
+import OcrStatusBadge from './OcrStatusBadge';
 
 interface DocumentosSectionProps {
   onCreateDocumento: () => void;
@@ -62,6 +65,7 @@ export function DocumentosSection({
     documentoId: string;
     titulo: string;
   } | null>(null);
+  const [showIngestarModal, setShowIngestarModal] = useState(false);
 
   if (isLoading) {
     return (
@@ -149,13 +153,22 @@ export function DocumentosSection({
             />
           </div>
           {canCreate && (
-            <Button
-              variant="primary"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onCreateDocumento}
-            >
-              Crear Documento
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                leftIcon={<Upload className="w-4 h-4" />}
+                onClick={() => setShowIngestarModal(true)}
+              >
+                Ingestar PDF
+              </Button>
+              <Button
+                variant="primary"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={onCreateDocumento}
+              >
+                Crear Documento
+              </Button>
+            </>
           )}
           <ExportButton
             endpoint="/api/gestion-estrategica/gestion-documental/documentos/export/"
@@ -213,17 +226,25 @@ export function DocumentosSection({
                     <span>v{documento.version_actual}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <Badge
-                      variant={
-                        documento.estado === 'APROBADO'
-                          ? 'success'
-                          : documento.estado === 'EN_REVISION'
-                            ? 'warning'
-                            : 'secondary'
-                      }
-                    >
-                      {documento.estado}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          documento.estado === 'APROBADO'
+                            ? 'success'
+                            : documento.estado === 'EN_REVISION'
+                              ? 'warning'
+                              : 'secondary'
+                        }
+                      >
+                        {documento.estado}
+                      </Badge>
+                      {documento.es_externo && (
+                        <OcrStatusBadge
+                          estado={documento.ocr_estado}
+                          metadatos={documento.ocr_metadatos}
+                        />
+                      )}
+                    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -305,6 +326,11 @@ export function DocumentosSection({
           documentoTitulo={asignarFirmantesModal?.titulo ?? ''}
         />
       )}
+
+      <IngestarExternoModal
+        isOpen={showIngestarModal}
+        onClose={() => setShowIngestarModal(false)}
+      />
     </>
   );
 }

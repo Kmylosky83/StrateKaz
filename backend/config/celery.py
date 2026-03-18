@@ -268,6 +268,13 @@ app.conf.beat_schedule = {
         'options': {'queue': 'notifications'},
     },
 
+    # Procesar OCR pendientes - Diario a las 6:30 AM
+    'documental-procesar-ocr-pendientes': {
+        'task': 'documental.procesar_ocr_pendientes',
+        'schedule': crontab(hour=6, minute=30),
+        'options': {'queue': 'files'},
+    },
+
     # ═══════════════════════════════════════════════════
     # REVISION POR LA DIRECCION (ISO 9.3)
     # ═══════════════════════════════════════════════════
@@ -411,6 +418,8 @@ app.conf.task_routes = {
     # Gestion Documental tasks
     'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},
     'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer': {'queue': 'notifications'},
+    'documental.procesar_ocr_documento': {'queue': 'files'},
+    'documental.procesar_ocr_pendientes': {'queue': 'files'},
 
     # Audit System - Config Alertas tasks
     'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},

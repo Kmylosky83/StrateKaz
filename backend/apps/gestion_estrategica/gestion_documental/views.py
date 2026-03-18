@@ -416,6 +416,177 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(listado)
 
+    # =========================================================================
+    # OCR — Fase 5: Ingesta, reprocesamiento y búsqueda full-text
+    # =========================================================================
+
+    @action(detail=False, methods=['post'], url_path='ingestar-externo')
+    def ingestar_externo(self, request):
+        """
+        Ingesta de PDF externo: crea Documento + dispara OCR async.
+        Acepta multipart/form-data con archivo PDF.
+        """
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'error': 'Se requiere un archivo PDF'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar tipo de archivo
+        if not archivo.name.lower().endswith('.pdf'):
+            return Response(
+                {'error': 'Solo se aceptan archivos PDF'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar tamaño (50MB máximo)
+        max_size = 50 * 1024 * 1024
+        if archivo.size > max_size:
+            return Response(
+                {'error': 'El archivo excede el tamaño máximo de 50 MB'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        titulo = request.data.get('titulo', archivo.name.rsplit('.', 1)[0])
+        tipo_documento_id = request.data.get('tipo_documento')
+        clasificacion = request.data.get('clasificacion', 'INTERNO')
+
+        if not tipo_documento_id:
+            return Response(
+                {'error': 'Se requiere tipo_documento'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa = get_tenant_empresa()
+
+        # Generar código automático
+        from .services import DocumentoService
+        tipo_doc = TipoDocumento.objects.get(id=tipo_documento_id)
+        codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id)
+
+        documento = Documento.objects.create(
+            codigo=codigo,
+            titulo=titulo,
+            tipo_documento=tipo_doc,
+            estado='BORRADOR',
+            clasificacion=clasificacion,
+            elaborado_por=request.user,
+            archivo_original=archivo,
+            es_externo=True,
+            ocr_estado='PENDIENTE',
+            empresa_id=empresa.id,
+        )
+
+        # Palabras clave desde request (opcional)
+        palabras = request.data.get('palabras_clave')
+        if palabras:
+            import json
+            try:
+                documento.palabras_clave = json.loads(palabras) if isinstance(
+                    palabras, str
+                ) else palabras
+                documento.save(update_fields=['palabras_clave'])
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        # Disparar OCR async
+        from django.db import connection
+        from .tasks import procesar_ocr_documento
+        procesar_ocr_documento.delay(documento.id, connection.schema_name)
+
+        serializer = DocumentoDetailSerializer(documento)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='reprocesar-ocr')
+    def reprocesar_ocr(self, request, pk=None):
+        """Re-dispara OCR para un documento (útil si falló antes)."""
+        documento = self.get_object()
+
+        archivo = documento.archivo_original or documento.archivo_pdf
+        if not archivo:
+            return Response(
+                {'error': 'El documento no tiene archivo PDF para procesar'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        documento.ocr_estado = 'PENDIENTE'
+        documento.ocr_metadatos = {}
+        documento.save(update_fields=['ocr_estado', 'ocr_metadatos'])
+
+        from django.db import connection
+        from .tasks import procesar_ocr_documento
+        procesar_ocr_documento.delay(documento.id, connection.schema_name)
+
+        return Response({
+            'mensaje': 'OCR reprogramado. Recibirá una notificación al completar.',
+            'ocr_estado': 'PENDIENTE',
+        })
+
+    @action(detail=False, methods=['get'], url_path='busqueda-texto')
+    def busqueda_texto(self, request):
+        """
+        Búsqueda full-text usando PostgreSQL tsvector.
+        Query param: q (mínimo 3 caracteres).
+        """
+        query = request.query_params.get('q', '').strip()
+        if len(query) < 3:
+            return Response(
+                {'error': 'La búsqueda requiere al menos 3 caracteres'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from django.contrib.postgres.search import (
+            SearchQuery, SearchRank, SearchVector
+        )
+
+        search_vector = SearchVector(
+            'texto_extraido', 'titulo', 'resumen',
+            config='spanish'
+        )
+        search_query = SearchQuery(query, config='spanish')
+
+        resultados = (
+            Documento.objects
+            .annotate(
+                relevancia=SearchRank(search_vector, search_query),
+            )
+            .filter(relevancia__gt=0.01)
+            .order_by('-relevancia')[:50]
+        )
+
+        data = []
+        for doc in resultados:
+            # Extraer fragmento relevante del texto
+            extracto = ''
+            if doc.texto_extraido:
+                # Buscar contexto alrededor de la primera ocurrencia
+                texto_lower = doc.texto_extraido.lower()
+                query_lower = query.lower()
+                pos = texto_lower.find(query_lower)
+                if pos >= 0:
+                    start = max(0, pos - 100)
+                    end = min(len(doc.texto_extraido), pos + len(query) + 100)
+                    extracto = ('...' if start > 0 else '') + \
+                        doc.texto_extraido[start:end] + \
+                        ('...' if end < len(doc.texto_extraido) else '')
+
+            data.append({
+                'id': doc.id,
+                'codigo': doc.codigo,
+                'titulo': doc.titulo,
+                'resumen': doc.resumen[:200] if doc.resumen else '',
+                'estado': doc.estado,
+                'estado_display': doc.get_estado_display(),
+                'clasificacion': doc.clasificacion,
+                'relevancia': round(float(doc.relevancia), 4),
+                'texto_extracto': extracto,
+                'ocr_estado': doc.ocr_estado,
+                'es_externo': doc.es_externo,
+            })
+
+        return Response(data)
+
     def _get_client_ip(self, request):
         """Obtiene IP del cliente"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

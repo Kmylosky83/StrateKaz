@@ -25,6 +25,7 @@ import type {
   CreateControlDocumentalDTO,
   UpdateControlDocumentalDTO,
   EstadisticasDocumentales,
+  BusquedaTextoResult,
 } from '../types/gestion-documental.types';
 
 const BASE_URL = '/gestion-estrategica/gestion-documental';
@@ -137,6 +138,22 @@ export const documentoApi = {
       responseType: 'blob',
     });
     return response.data;
+  },
+
+  // OCR — Fase 5
+  ingestarExterno: async (data: FormData): Promise<Documento> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/ingestar-externo/`, data);
+    return response.data;
+  },
+  reprocesarOcr: async (id: number): Promise<Documento> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/reprocesar-ocr/`);
+    return response.data;
+  },
+  busquedaTexto: async (q: string): Promise<BusquedaTextoResult[]> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/busqueda-texto/`, {
+      params: { q },
+    });
+    return Array.isArray(response.data) ? response.data : (response.data?.results ?? []);
   },
 };
 

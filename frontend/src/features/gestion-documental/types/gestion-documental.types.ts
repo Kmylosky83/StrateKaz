@@ -53,6 +53,8 @@ export type TipoControl = 'DISTRIBUCION' | 'ACTUALIZACION' | 'RETIRO' | 'DESTRUC
 
 export type MedioDistribucion = 'DIGITAL' | 'IMPRESO' | 'MIXTO';
 
+export type OcrEstado = 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR' | 'NO_APLICA';
+
 // ==================== USER DETAIL ====================
 
 export interface UserDetail {
@@ -169,6 +171,12 @@ export interface Documento {
   // Firmas ahora vienen de workflow_engine.firma_digital
   firmas_digitales?: any[];
   controles?: ControlDocumental[];
+  // OCR / Extracción de texto (Fase 5)
+  texto_extraido?: string;
+  ocr_estado: OcrEstado;
+  ocr_metadatos?: OcrMetadatos;
+  es_externo: boolean;
+  archivo_original?: string | null;
   empresa_id: number;
   created_at: string;
   updated_at: string;
@@ -496,3 +504,53 @@ export interface EstadisticasDocumentales {
   total_versiones: number;
   total_firmas_pendientes: number;
 }
+
+// ==================== OCR (Fase 5) ====================
+
+export interface OcrMetadatos {
+  metodo?: 'pdfplumber' | 'tesseract' | 'mixto' | 'ninguno';
+  confianza?: number;
+  paginas_procesadas?: number;
+  total_paginas?: number;
+  duracion_seg?: number;
+  error?: string | null;
+  nota?: string;
+}
+
+export interface IngestarExternoDTO {
+  archivo: File;
+  titulo: string;
+  tipo_documento: number;
+  clasificacion?: ClasificacionDocumento;
+  palabras_clave?: string[];
+}
+
+export interface BusquedaTextoResult {
+  id: number;
+  codigo: string;
+  titulo: string;
+  resumen: string;
+  estado: EstadoDocumento;
+  estado_display: string;
+  clasificacion: ClasificacionDocumento;
+  relevancia: number;
+  texto_extracto: string;
+  ocr_estado: OcrEstado;
+  es_externo: boolean;
+}
+
+export const OCR_ESTADO_LABELS: Record<OcrEstado, string> = {
+  PENDIENTE: 'OCR pendiente',
+  PROCESANDO: 'Procesando OCR...',
+  COMPLETADO: 'Texto extraído',
+  ERROR: 'Error OCR',
+  NO_APLICA: '',
+};
+
+export const OCR_ESTADO_COLORS: Record<OcrEstado, string> = {
+  PENDIENTE: 'gray',
+  PROCESANDO: 'info',
+  COMPLETADO: 'success',
+  ERROR: 'danger',
+  NO_APLICA: 'gray',
+};

@@ -41,6 +41,7 @@ import {
   useExportDocumentoDocx,
   useEstadoFirmasDocumento,
 } from '../hooks/useGestionDocumental';
+import TextoExtraidoPanel from './TextoExtraidoPanel';
 
 interface DocumentoDetailModalProps {
   isOpen: boolean;
@@ -443,6 +444,15 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 </div>
               )}
             </div>
+            {/* Panel de texto extraído (OCR) */}
+            {documento && documento.ocr_estado !== 'NO_APLICA' && (
+              <TextoExtraidoPanel
+                documentoId={documento.id}
+                ocrEstado={documento.ocr_estado}
+                ocrMetadatos={documento.ocr_metadatos}
+                textoExtraido={documento.texto_extraido}
+              />
+            )}
           </div>
         )}
       </BaseModal>

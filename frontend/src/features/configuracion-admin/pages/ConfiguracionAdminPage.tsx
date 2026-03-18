@@ -56,15 +56,19 @@ export const ConfiguracionAdminPage = () => {
         description={activeSectionData?.description || 'Ajustes técnicos de la plataforma'}
       />
 
+      {/* DEBUG: DynamicSections comentado para aislar crash */}
       {sections.length > 1 && (
-        <DynamicSections
-          sections={sections}
-          activeSection={activeSection}
-          onChange={setActiveSection}
-          isLoading={sectionsLoading}
-          variant="underline"
-          moduleColor={moduleColor}
-        />
+        <div className="flex gap-2 border-b pb-2">
+          {sections.map((s) => (
+            <button
+              key={s.code}
+              onClick={() => setActiveSection(s.code)}
+              className={`px-3 py-1.5 text-sm rounded ${activeSection === s.code ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              {s.name}
+            </button>
+          ))}
+        </div>
       )}
 
       {activeSection && <ConfigAdminTab activeSection={activeSection} />}

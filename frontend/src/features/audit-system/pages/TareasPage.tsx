@@ -93,7 +93,7 @@ function MisTareasTab() {
       <EmptyState
         title="No tienes tareas asignadas"
         description="Las tareas asignadas a ti aparecerán aquí"
-        icon={CheckSquare}
+        icon={<CheckSquare size={40} />}
       />
     );
   }
@@ -387,7 +387,7 @@ function CalendarioTab() {
             <EmptyState
               title="No hay eventos"
               description="No hay eventos programados este mes"
-              icon={CalendarIcon}
+              icon={<CalendarIcon size={40} />}
             />
           )}
         </div>
@@ -414,7 +414,7 @@ function RecordatoriosTab() {
       <EmptyState
         title="No hay recordatorios"
         description="Crea un nuevo recordatorio para recibir notificaciones programadas"
-        icon={Bell}
+        icon={<Bell size={40} />}
         action={canCreate ? { label: 'Nuevo Recordatorio', onClick: () => {} } : undefined}
       />
     );
@@ -527,7 +527,7 @@ function TodasTab() {
       <EmptyState
         title="No hay tareas"
         description="Las tareas del sistema aparecerán aquí"
-        icon={List}
+        icon={<List size={40} />}
       />
     );
   }

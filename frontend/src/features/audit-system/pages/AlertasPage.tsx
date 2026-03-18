@@ -99,7 +99,7 @@ function AlertasActivasTab() {
       <EmptyState
         title="No hay alertas activas"
         description="No se encontraron alertas generadas en este momento"
-        icon={AlertTriangle}
+        icon={<AlertTriangle size={40} />}
       />
     );
   }
@@ -275,7 +275,7 @@ function TiposTab() {
       <EmptyState
         title="No hay tipos de alerta"
         description="Comienza creando un nuevo tipo de alerta"
-        icon={FileText}
+        icon={<FileText size={40} />}
         action={canCreate ? { label: 'Nuevo Tipo', onClick: () => {} } : undefined}
       />
     );
@@ -368,7 +368,7 @@ function ConfiguracionTab() {
       <EmptyState
         title="No hay configuraciones"
         description="Crea una nueva configuración de alerta"
-        icon={Settings}
+        icon={<Settings size={40} />}
         action={canCreate ? { label: 'Nueva Configuración', onClick: () => {} } : undefined}
       />
     );

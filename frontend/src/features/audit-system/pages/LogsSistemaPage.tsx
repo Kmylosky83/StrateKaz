@@ -48,7 +48,7 @@ function ConfiguracionTab() {
       <EmptyState
         title="No hay configuraciones de auditoría"
         description="Crea una nueva configuración para empezar a auditar módulos"
-        icon={Settings}
+        icon={<Settings size={40} />}
       />
     );
   }
@@ -159,7 +159,7 @@ function AccesosTab() {
       <EmptyState
         title="No hay logs de acceso"
         description="Los registros de login y logout aparecerán aquí"
-        icon={LogIn}
+        icon={<LogIn size={40} />}
       />
     );
   }
@@ -271,7 +271,7 @@ function CambiosTab() {
       <EmptyState
         title="No hay logs de cambios"
         description="Los cambios en registros aparecerán aquí"
-        icon={FileEdit}
+        icon={<FileEdit size={40} />}
       />
     );
   }
@@ -394,7 +394,7 @@ function ConsultasTab() {
       <EmptyState
         title="No hay logs de consultas"
         description="Las consultas y exportaciones aparecerán aquí"
-        icon={Search}
+        icon={<Search size={40} />}
       />
     );
   }

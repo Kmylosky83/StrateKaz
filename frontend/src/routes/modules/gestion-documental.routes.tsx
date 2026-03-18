@@ -2,8 +2,9 @@
  * Rutas: Gestión Documental (módulo independiente V2)
  * Nivel 2 — Infraestructura (PLANEAR)
  *
- * 2 tabs: Documentos + Auditorías Internas
- * Pages en features/gestion-documental/pages/
+ * 1 tab: Documentos (tipos, documentos, control cambios, distribución)
+ * NOTA: Auditorías Internas removido — pertenece a VERIFICAR (ISO 9.2),
+ * se reubicará en NIVEL_INTELIGENCIA al activar L30.
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -11,9 +12,6 @@ import { withModuleGuard } from '../helpers';
 
 const GestionDocumentalPage = lazy(
   () => import('@/features/gestion-documental/pages/GestionDocumentalPage')
-);
-const AuditoriasInternasPage = lazy(
-  () => import('@/features/gestion-documental/pages/AuditoriasInternasPage')
 );
 
 export const gestionDocumentalRoutes = (
@@ -26,9 +24,10 @@ export const gestionDocumentalRoutes = (
       path="/gestion-documental/documentos"
       element={withModuleGuard(GestionDocumentalPage, 'gestion_documental')}
     />
+    {/* Auditorías Internas → se activará con NIVEL_INTELIGENCIA (L30) */}
     <Route
       path="/gestion-documental/auditorias"
-      element={withModuleGuard(AuditoriasInternasPage, 'gestion_documental')}
+      element={<Navigate to="/gestion-documental/documentos" replace />}
     />
   </>
 );

@@ -576,17 +576,9 @@ class Command(BaseCommand):
                             {'code': 'distribucion', 'name': 'Distribución', 'icon': 'Share2', 'orden': 4, 'description': 'Control de copias y distribución. Registro de lectura y firma por colaborador'},
                         ]
                     },
-                    {
-                        'code': 'auditorias_internas',
-                        'name': 'Auditorías Internas',
-                        'icon': 'ClipboardCheck',
-                        'route': 'auditorias',
-                        'orden': 2,
-                        'sections': [
-                            {'code': 'ejecucion_auditoria', 'name': 'Ejecución', 'icon': 'Play', 'orden': 1, 'description': 'Listas de verificación, ejecución de auditorías y registro de hallazgos'},
-                            {'code': 'informes', 'name': 'Informes', 'icon': 'FileText', 'orden': 2, 'description': 'Informes de auditoría, conclusiones y recomendaciones'},
-                        ]
-                    },
+                    # NOTA: Auditorías Internas removido de gestion_documental.
+                    # Pertenece a VERIFICAR (ISO 9.2), no a Información Documentada (ISO 7.5).
+                    # Se reubicará en NIVEL_INTELIGENCIA al activar L30 (HSEQ/mejora_continua).
                 ]
             },
 

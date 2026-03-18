@@ -44,11 +44,57 @@ export interface ResponsiveTableColumn<T = Record<string, unknown>> {
   width?: string | number;
 }
 
+/**
+ * ColumnDef — formato alternativo compatible con TanStack Table.
+ * Acepta `id` (en vez de `key`) y `cell(item)` (en vez de `render(item, index)`).
+ * Se normaliza a ResponsiveTableColumn internamente.
+ */
+export interface ColumnDef<T = Record<string, unknown>> {
+  id: string;
+  header: string;
+  accessorKey?: string;
+  cell?: (item: T) => ReactNode;
+  align?: 'left' | 'center' | 'right';
+  priority?: 1 | 2 | 3 | 4 | 5;
+  hideOnTablet?: boolean;
+  className?: string;
+  width?: string | number;
+}
+
+/** Normaliza ColumnDef[] a ResponsiveTableColumn[] */
+function normalizeColumns<T>(
+  columns: (ResponsiveTableColumn<T> | ColumnDef<T>)[]
+): ResponsiveTableColumn<T>[] {
+  return columns.map((col) => {
+    // Ya es ResponsiveTableColumn (tiene `key` y `render`)
+    if ('key' in col && 'render' in col) {
+      return col as ResponsiveTableColumn<T>;
+    }
+    // Es ColumnDef (tiene `id`, puede tener `cell` o `accessorKey`)
+    const cdef = col as ColumnDef<T>;
+    return {
+      key: cdef.id,
+      header: cdef.header,
+      render: (item: T) => {
+        if (cdef.cell) return cdef.cell(item);
+        if (cdef.accessorKey)
+          return String((item as Record<string, unknown>)[cdef.accessorKey] ?? '');
+        return '';
+      },
+      align: cdef.align,
+      priority: cdef.priority,
+      hideOnTablet: cdef.hideOnTablet,
+      className: cdef.className,
+      width: cdef.width,
+    } as ResponsiveTableColumn<T>;
+  });
+}
+
 export interface ResponsiveTableProps<T> {
   /** Datos a mostrar */
   data: T[];
-  /** Definición de columnas */
-  columns: ResponsiveTableColumn<T>[];
+  /** Definición de columnas (acepta ResponsiveTableColumn o ColumnDef) */
+  columns: (ResponsiveTableColumn<T> | ColumnDef<T>)[];
   /** Key extractor */
   keyExtractor?: (item: T, index: number) => string | number;
   /** Título para card view en móvil */
@@ -93,6 +139,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
   onRowClick,
 }: ResponsiveTableProps<T>) {
   const { isMobile } = useResponsive();
+  const normalizedColumns = normalizeColumns(columns);
 
   // Loading skeleton
   if (isLoading) {
@@ -122,7 +169,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
         className={className}
         renderCard={(item, index) => {
           // Columnas priority 1-2 se muestran como metadata
-          const priorityColumns = columns
+          const priorityColumns = normalizedColumns
             .filter((col) => col.priority && col.priority <= 2)
             .map((col) => ({
               label: col.header,
@@ -162,7 +209,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
-            {columns.map((column) => (
+            {normalizedColumns.map((column) => (
               <th
                 key={column.key}
                 scope="col"
@@ -204,7 +251,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
                 'transition-colors'
               )}
             >
-              {columns.map((column) => (
+              {normalizedColumns.map((column) => (
                 <td
                   key={`${rowIndex}-${column.key}`}
                   className={cn(

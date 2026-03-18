@@ -39,6 +39,7 @@ import {
   useVersionesDocumento,
   useExportDocumentoPdf,
   useExportDocumentoDocx,
+  useEstadoFirmasDocumento,
 } from '../hooks/useGestionDocumental';
 
 interface DocumentoDetailModalProps {
@@ -69,6 +70,7 @@ const CLASIFICACION_VARIANT: Record<string, 'success' | 'warning' | 'info' | 'da
 export function DocumentoDetailModal({ isOpen, onClose, documentoId }: DocumentoDetailModalProps) {
   const { data: documento, isLoading } = useDocumento(documentoId!);
   const { data: versiones } = useVersionesDocumento(documentoId!);
+  const { data: estadoFirmas } = useEstadoFirmasDocumento(documentoId);
   const aprobarMutation = useAprobarDocumento();
   const publicarMutation = usePublicarDocumento();
   const enviarRevisionMutation = useEnviarRevision();
@@ -304,6 +306,44 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Estado de Firmas Digitales */}
+                  {estadoFirmas && estadoFirmas.total > 0 && (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        Firmas Digitales
+                      </h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="text-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                          <p className="text-lg font-semibold">{estadoFirmas.total}</p>
+                          <p className="text-xs text-gray-500">Total</p>
+                        </div>
+                        <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                          <p className="text-lg font-semibold text-green-600">
+                            {estadoFirmas.firmadas}
+                          </p>
+                          <p className="text-xs text-gray-500">Firmadas</p>
+                        </div>
+                        <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
+                          <p className="text-lg font-semibold text-yellow-600">
+                            {estadoFirmas.pendientes}
+                          </p>
+                          <p className="text-xs text-gray-500">Pendientes</p>
+                        </div>
+                        <div className="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                          <p className="text-lg font-semibold text-red-600">
+                            {estadoFirmas.rechazadas}
+                          </p>
+                          <p className="text-xs text-gray-500">Rechazadas</p>
+                        </div>
+                      </div>
+                      {!estadoFirmas.puede_publicar && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                          Todas las firmas deben completarse antes de aprobar/publicar
+                        </p>
+                      )}
                     </div>
                   )}
 

@@ -10,7 +10,6 @@ usando GenericForeignKey para vincular firmas a cualquier modelo.
 """
 from django.db import models
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MinValueValidator
 
 
@@ -511,6 +510,28 @@ class Documento(models.Model):
         help_text='Indica si es una política integral del sistema de gestión'
     )
 
+    # Integración BPM (preparación para auto-generación — Fase 4 spec)
+    # C2→C2: IntegerField (no FK directo a workflow_engine)
+    workflow_asociado_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Workflow Asociado ID',
+        help_text='ID del flujo BPM que genera/actualiza este documento'
+    )
+    workflow_asociado_nombre = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name='Workflow Asociado',
+        help_text='Nombre cache del flujo BPM asociado'
+    )
+    es_auto_generado = models.BooleanField(
+        default=False,
+        verbose_name='Auto-generado desde BPM',
+        help_text='True si el documento se genera automáticamente desde un flujo BPM'
+    )
+
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
@@ -533,6 +554,7 @@ class Documento(models.Model):
             models.Index(fields=['empresa_id', 'clasificacion']),
             models.Index(fields=['fecha_revision_programada']),
             models.Index(fields=['codigo']),
+            models.Index(fields=['workflow_asociado_id']),
         ]
 
     def __str__(self):

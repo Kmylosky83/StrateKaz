@@ -82,7 +82,7 @@ import type {
 
 // ==================== UTILITY FUNCTIONS ====================
 
-const getEstadoBadgeColor = (estado: string): 'default' | 'success' | 'warning' | 'danger' => {
+const getEstadoBadgeColor = (estado: string): 'gray' | 'success' | 'warning' | 'danger' => {
   const e = estado.toUpperCase();
   if (
     e.includes('COMPLETADO') ||
@@ -99,30 +99,28 @@ const getEstadoBadgeColor = (estado: string): 'default' | 'success' | 'warning' 
   )
     return 'warning';
   if (e.includes('CANCELAD')) return 'danger';
-  return 'default';
+  return 'gray';
 };
 
-const getTipoBadgeVariant = (tipo: string): 'danger' | 'warning' | 'default' | 'success' => {
+const getTipoBadgeVariant = (tipo: string): 'danger' | 'warning' | 'gray' | 'success' => {
   if (tipo === 'NO_CONFORMIDAD_MAYOR') return 'danger';
   if (tipo === 'NO_CONFORMIDAD_MENOR') return 'warning';
   if (tipo === 'OPORTUNIDAD_MEJORA' || tipo === 'FORTALEZA') return 'success';
-  return 'default';
+  return 'gray';
 };
 
-const getImpactoBadgeVariant = (impacto: string): 'danger' | 'warning' | 'success' | 'default' => {
+const getImpactoBadgeVariant = (impacto: string): 'danger' | 'warning' | 'success' | 'gray' => {
   if (impacto === 'ALTO') return 'danger';
   if (impacto === 'MEDIO') return 'warning';
   if (impacto === 'BAJO') return 'success';
-  return 'default';
+  return 'gray';
 };
 
-const getResultadoBadgeVariant = (
-  resultado: string
-): 'success' | 'warning' | 'danger' | 'default' => {
+const getResultadoBadgeVariant = (resultado: string): 'success' | 'warning' | 'danger' | 'gray' => {
   if (resultado === 'CUMPLE') return 'success';
   if (resultado === 'CUMPLE_PARCIAL') return 'warning';
   if (resultado === 'NO_CUMPLE') return 'danger';
-  return 'default';
+  return 'gray';
 };
 
 // FSM transition maps (inferred from estado since List serializers don't include transiciones_disponibles)
@@ -402,7 +400,7 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
         }}
         title="Eliminar Programa de Auditoría"
         message="¿Está seguro de eliminar este programa? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
       />
 
@@ -412,8 +410,8 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
         onConfirm={executeTransition}
         title={`${TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? ''} Programa`}
         message={`¿Está seguro de ${(TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? '').toLowerCase()} este programa de auditoría?`}
-        confirmLabel={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
-        variant="default"
+        confirmText={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
+        variant="info"
       />
     </div>
   );
@@ -485,7 +483,7 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
       header: 'Tipo',
       priority: 3,
       render: (item) => (
-        <Badge variant="default">{item.tipo_display ?? formatStatusLabel(item.tipo)}</Badge>
+        <Badge variant="gray">{item.tipo_display ?? formatStatusLabel(item.tipo)}</Badge>
       ),
     },
     {
@@ -662,7 +660,7 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
         }}
         title="Eliminar Auditoría"
         message="¿Está seguro de eliminar esta auditoría? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
       />
 
@@ -672,8 +670,8 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
         onConfirm={executeTransition}
         title={`${TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? ''} Auditoría`}
         message={`¿Está seguro de ${(TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? '').toLowerCase()} esta auditoría?`}
-        confirmLabel={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
-        variant="default"
+        confirmText={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
+        variant="info"
       />
     </div>
   );
@@ -958,7 +956,7 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
         }}
         title="Eliminar Hallazgo"
         message="¿Está seguro de eliminar este hallazgo? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
       />
 
@@ -968,8 +966,8 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
         onConfirm={executeTransition}
         title={`${TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? ''} Hallazgo`}
         message={`¿Está seguro de ${(TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? '').toLowerCase()} este hallazgo?`}
-        confirmLabel={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
-        variant="default"
+        confirmText={TRANSITION_LABELS[transitionConfirm?.action ?? '']?.label ?? 'Confirmar'}
+        variant="info"
       />
 
       {/* Verificar Hallazgo — requires eficacia + observaciones */}
@@ -979,8 +977,8 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
         onConfirm={executeVerificar}
         title="Verificar Hallazgo"
         message=""
-        confirmLabel="Verificar"
-        variant="default"
+        confirmText="Verificar"
+        variant="info"
       >
         <div className="space-y-4 py-2">
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1053,7 +1051,7 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
       header: 'Tipo',
       priority: 3,
       render: (item) => (
-        <Badge variant="default">{item.tipo_display ?? formatStatusLabel(item.tipo)}</Badge>
+        <Badge variant="gray">{item.tipo_display ?? formatStatusLabel(item.tipo)}</Badge>
       ),
     },
     {
@@ -1190,7 +1188,7 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
         }}
         title="Eliminar Evaluación de Cumplimiento"
         message="¿Está seguro de eliminar esta evaluación? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
       />
     </div>

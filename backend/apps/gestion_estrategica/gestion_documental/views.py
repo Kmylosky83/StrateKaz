@@ -283,94 +283,82 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             'model': ct.model,
         })
 
+    @action(detail=True, methods=['get'], url_path='estado-firmas')
+    def estado_firmas(self, request, pk=None):
+        """Retorna estado de firmas digitales del documento."""
+        from .services import DocumentoService
+        documento = self.get_object()
+        estado = DocumentoService.obtener_estado_firmas(documento)
+        return Response(estado)
+
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        """Aprueba un documento"""
+        """Aprueba un documento (valida firmas si requiere_firma)."""
+        from .services import DocumentoService
         documento = self.get_object()
-
-        if documento.estado != 'EN_REVISION':
-            return Response(
-                {'error': 'Solo se pueden aprobar documentos en revisión'},
-                status=status.HTTP_400_BAD_REQUEST
+        empresa = get_tenant_empresa()
+        try:
+            doc = DocumentoService.aprobar_documento(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa.id if empresa else documento.empresa_id,
+                observaciones=request.data.get('observaciones', ''),
             )
-
-        documento.estado = 'APROBADO'
-        documento.aprobado_por = request.user
-        documento.fecha_aprobacion = timezone.now().date()
-        documento.save()
-
-        return Response(DocumentoDetailSerializer(documento).data)
+            return Response(DocumentoDetailSerializer(doc).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def publicar(self, request, pk=None):
-        """Publica un documento aprobado"""
+        """Publica un documento aprobado (valida firmas si requiere_firma)."""
+        from .services import DocumentoService
         documento = self.get_object()
-
-        if documento.estado != 'APROBADO':
-            return Response(
-                {'error': 'Solo se pueden publicar documentos aprobados'},
-                status=status.HTTP_400_BAD_REQUEST
+        empresa = get_tenant_empresa()
+        try:
+            doc = DocumentoService.publicar_documento(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa.id if empresa else documento.empresa_id,
+                fecha_vigencia=request.data.get('fecha_vigencia'),
             )
-
-        documento.estado = 'PUBLICADO'
-        documento.fecha_publicacion = timezone.now().date()
-        documento.fecha_vigencia = timezone.now().date()
-        documento.save()
-
-        # Crear versión snapshot
-        VersionDocumento.objects.create(
-            documento=documento,
-            numero_version=documento.version_actual,
-            tipo_cambio='CREACION' if documento.numero_revision == 0 else 'REVISION_MAYOR',
-            contenido_snapshot=documento.contenido,
-            datos_formulario_snapshot=documento.datos_formulario,
-            descripcion_cambios=documento.motivo_cambio_version or 'Publicación inicial',
-            creado_por=request.user,
-            aprobado_por=documento.aprobado_por,
-            fecha_aprobacion=documento.fecha_aprobacion,
-            is_version_actual=True,
-            empresa_id=documento.empresa_id
-        )
-
-        return Response(DocumentoDetailSerializer(documento).data)
+            return Response(DocumentoDetailSerializer(doc).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], url_path='marcar-obsoleto')
     def marcar_obsoleto(self, request, pk=None):
-        """Marca documento como obsoleto"""
+        """Marca documento como obsoleto."""
+        from .services import DocumentoService
         documento = self.get_object()
-        documento.estado = 'OBSOLETO'
-        documento.fecha_obsolescencia = timezone.now().date()
-        documento.save()
-
-        # Crear control de retiro
-        ControlDocumental.objects.create(
-            documento=documento,
-            tipo_control='RETIRO',
-            fecha_retiro=timezone.now().date(),
-            motivo_retiro=request.data.get('motivo', 'Documento obsoleto'),
-            documento_sustituto_id=request.data.get('documento_sustituto'),
-            empresa_id=documento.empresa_id,
-            created_by=request.user
-        )
-
-        return Response(DocumentoDetailSerializer(documento).data)
+        empresa = get_tenant_empresa()
+        try:
+            doc = DocumentoService.marcar_obsoleto(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa.id if empresa else documento.empresa_id,
+                motivo=request.data.get('motivo', 'Documento obsoleto'),
+                sustituto_id=request.data.get('documento_sustituto'),
+            )
+            return Response(DocumentoDetailSerializer(doc).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], url_path='enviar-revision')
     def enviar_revision(self, request, pk=None):
-        """Envía documento a revisión"""
+        """Envía documento a revisión."""
+        from .services import DocumentoService
         documento = self.get_object()
-
-        if documento.estado != 'BORRADOR':
-            return Response(
-                {'error': 'Solo se pueden enviar borradores a revisión'},
-                status=status.HTTP_400_BAD_REQUEST
+        empresa = get_tenant_empresa()
+        try:
+            doc = DocumentoService.enviar_a_revision(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa.id if empresa else documento.empresa_id,
+                revisor_id=request.data.get('revisor_id'),
             )
-
-        documento.estado = 'EN_REVISION'
-        documento.revisado_por_id = request.data.get('revisor_id')
-        documento.save()
-
-        return Response(DocumentoDetailSerializer(documento).data)
+            return Response(DocumentoDetailSerializer(doc).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], url_path='incrementar-descarga')
     def incrementar_descarga(self, request, pk=None):

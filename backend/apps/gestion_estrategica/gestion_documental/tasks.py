@@ -76,7 +76,7 @@ def verificar_documentos_revision_programada():
                                         f'revisión programada vencida. Por favor programe '
                                         f'la revisión correspondiente.'
                                     ),
-                                    url='/sistema-gestion/gestion-documental',
+                                    url='/gestion-documental/documentos',
                                     datos_extra={
                                         'documento_id': doc_id,
                                         'codigo': codigo,
@@ -166,7 +166,7 @@ def notificar_documentos_por_vencer():
                                         f'({dias_restantes} días restantes). '
                                         f'Planifique la revisión con anticipación.'
                                     ),
-                                    url='/sistema-gestion/gestion-documental',
+                                    url='/gestion-documental/documentos',
                                     datos_extra={
                                         'documento_id': doc_id,
                                         'codigo': codigo,

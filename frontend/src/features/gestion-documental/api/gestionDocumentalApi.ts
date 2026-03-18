@@ -110,6 +110,18 @@ export const documentoApi = {
     const response = await apiClient.get(`${BASE_URL}/documentos/${id}/firmas/`);
     return response.data;
   },
+  estadoFirmas: async (
+    id: number
+  ): Promise<{
+    total: number;
+    firmadas: number;
+    pendientes: number;
+    rechazadas: number;
+    puede_publicar: boolean;
+  }> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/${id}/estado-firmas/`);
+    return response.data;
+  },
   estadisticas: async (): Promise<EstadisticasDocumentales> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/estadisticas/`);
     return response.data;

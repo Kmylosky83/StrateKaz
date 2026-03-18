@@ -18,6 +18,7 @@ Endpoints a nivel de módulo (rutas canónicas):
 - /strategic-objectives/ - Objetivos estratégicos
 - /strategic-stats/ - Estadísticas de gestión estratégica
 """
+from django.apps import apps as django_apps
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -48,11 +49,14 @@ urlpatterns = [
     path('identidad/', include('apps.gestion_estrategica.identidad.urls')),
     path('contexto/', include('apps.gestion_estrategica.contexto.urls')),
 
-    # CASCADA LEVEL 15+ (descomentar al activar cada nivel)
+    # CASCADA LEVEL 15: GESTIÓN DOCUMENTAL (guard condicional)
+    *([path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls'))]
+      if django_apps.is_installed('apps.gestion_estrategica.gestion_documental') else []),
+
+    # CASCADA LEVEL 20+ (descomentar al activar cada nivel)
     # path('planeacion/', include('apps.gestion_estrategica.planeacion.urls')),
     # path('proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
     # path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
-    # path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
     # path('planificacion-sistema/', include('apps.gestion_estrategica.planificacion_sistema.urls')),
     # path('mejora-continua/', include('apps.hseq_management.mejora_continua.urls')),
 ]

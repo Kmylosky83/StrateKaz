@@ -560,7 +560,7 @@ class Command(BaseCommand):
                 'icon': 'FileText',
                 'route': '/gestion-documental',
                 'is_core': False,
-                'is_enabled': False,  # CASCADE L15
+                'is_enabled': True,  # CASCADE L15 — ACTIVO
                 'orden': 15,
                 'tabs': [
                     {

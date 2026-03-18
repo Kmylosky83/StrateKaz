@@ -96,18 +96,36 @@ class DocumentoPDFGenerator:
             }
         return {'razon_social': 'Empresa', 'nit': '', 'logo_base64': None}
 
-    def generate_documento_pdf(self, documento):
+    WATERMARK_CSS = """
+        .watermark {
+            position: fixed;
+            top: 40%;
+            left: 10%;
+            width: 80%;
+            text-align: center;
+            transform: rotate(-35deg);
+            font-size: 48pt;
+            color: rgba(200, 200, 200, 0.25);
+            font-weight: 900;
+            letter-spacing: 8px;
+            z-index: -1;
+            pointer-events: none;
+        }
+    """
+
+    def generate_documento_pdf(self, documento, usuario=None):
         """
-        Genera PDF de un documento del sistema de gestion.
+        Genera PDF de un documento del sistema de gestión.
 
         Args:
             documento: Instancia de Documento
+            usuario: Usuario que solicita la copia (para marca de agua)
 
         Returns:
             BytesIO: Buffer con el PDF generado
         """
         if not WEASYPRINT_AVAILABLE:
-            raise ImportError("WeasyPrint no esta instalado. Ejecute: pip install weasyprint")
+            raise ImportError("WeasyPrint no está instalado. Ejecute: pip install weasyprint")
 
         empresa_info = self._get_empresa_info()
 
@@ -134,15 +152,31 @@ class DocumentoPDFGenerator:
         estado_display = documento.get_estado_display()
         clasificacion_display = documento.get_clasificacion_display()
 
+        # Marca de agua para copias controladas (docs PUBLICADOS)
+        watermark_html = ''
+        watermark_css = ''
+        if documento.estado == 'PUBLICADO':
+            usuario_nombre = usuario.get_full_name() if usuario else 'N/A'
+            fecha_descarga = datetime.now().strftime('%d/%m/%Y %H:%M')
+            watermark_css = self.WATERMARK_CSS
+            watermark_html = (
+                f'<div class="watermark">'
+                f'COPIA CONTROLADA<br>'
+                f'<span style="font-size: 14pt;">{fecha_descarga} — {usuario_nombre}</span>'
+                f'</div>'
+            )
+
         html = f'''
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <style>{self.BASE_CSS}</style>
+            <style>{watermark_css}</style>
             <style>{custom_css}</style>
         </head>
         <body>
+            {watermark_html}
             <div class="header">
                 {logo_img}
                 <div class="header-text">

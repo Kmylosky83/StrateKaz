@@ -380,6 +380,16 @@ export function useDistribucionesActivas() {
   });
 }
 
+// ==================== ESTADO FIRMAS ====================
+
+export function useEstadoFirmasDocumento(documentoId: number | null) {
+  return useQuery({
+    queryKey: [...gestionDocumentalKeys.all, 'estado-firmas', documentoId],
+    queryFn: () => documentoApi.estadoFirmas(documentoId!),
+    enabled: !!documentoId,
+  });
+}
+
 // ==================== ESTADISTICAS ====================
 
 export function useEstadisticasDocumentales() {

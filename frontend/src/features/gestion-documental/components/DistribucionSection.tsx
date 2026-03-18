@@ -43,12 +43,12 @@ const distribucionColumns: ResponsiveTableColumn<Documento & Record<string, unkn
       return (
         <div className="flex flex-wrap gap-1">
           {doc.areas_aplicacion?.slice(0, 2).map((area: string, idx: number) => (
-            <Badge key={idx} variant="outline" size="sm">
+            <Badge key={idx} variant="gray" size="sm">
               {area}
             </Badge>
           ))}
           {(doc.areas_aplicacion?.length || 0) > 2 && (
-            <Badge variant="outline" size="sm">
+            <Badge variant="gray" size="sm">
               +{doc.areas_aplicacion.length - 2}
             </Badge>
           )}

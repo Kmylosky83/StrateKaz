@@ -174,13 +174,13 @@ export const GestionDocumentalPage = () => {
       <TipoDocumentoFormModal
         isOpen={tipoFormModal.isOpen}
         onClose={() => setTipoFormModal({ isOpen: false })}
-        tipo={tipoFormModal.tipo}
+        tipoId={tipoFormModal.tipo?.id ?? null}
       />
 
       <PlantillaFormModal
         isOpen={plantillaFormModal.isOpen}
         onClose={() => setPlantillaFormModal({ isOpen: false })}
-        plantilla={plantillaFormModal.plantilla}
+        plantillaId={plantillaFormModal.plantilla?.id ?? null}
       />
 
       <DocumentoFormModal

@@ -117,7 +117,7 @@ class DocumentoService:
                     f'enviado a revisión por {usuario.get_full_name()}. '
                     f'Por favor revísalo.'
                 ),
-                url='/sistema-gestion/gestion-documental',
+                url='/gestion-documental/documentos',
                 datos_extra={
                     'documento_id': doc.id,
                     'codigo': doc.codigo,
@@ -128,11 +128,49 @@ class DocumentoService:
         return doc
 
     @classmethod
+    def obtener_estado_firmas(cls, documento):
+        """Retorna estado de firmas digitales del documento."""
+        firmas = documento.get_firmas_digitales()
+        total = firmas.count()
+        if total == 0:
+            return {'total': 0, 'firmadas': 0, 'pendientes': 0, 'rechazadas': 0, 'puede_publicar': True}
+
+        firmadas = firmas.filter(estado='FIRMADO').count()
+        pendientes = firmas.filter(estado='PENDIENTE').count()
+        rechazadas = firmas.filter(estado='RECHAZADO').count()
+        return {
+            'total': total,
+            'firmadas': firmadas,
+            'pendientes': pendientes,
+            'rechazadas': rechazadas,
+            'puede_publicar': pendientes == 0 and rechazadas == 0,
+        }
+
+    @classmethod
     def aprobar_documento(cls, documento_id, usuario, empresa_id, observaciones=''):
         """EN_REVISION -> APROBADO, crea VersionDocumento snapshot."""
         doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
         if doc.estado != 'EN_REVISION':
             raise ValueError('Solo se pueden aprobar documentos en revisión')
+
+        # Validar firmas si el tipo lo requiere
+        if doc.tipo_documento.requiere_firma:
+            estado_firmas = cls.obtener_estado_firmas(doc)
+            if estado_firmas['total'] == 0:
+                raise ValueError(
+                    'Este tipo de documento requiere firma digital. '
+                    'Asigne firmantes antes de aprobar.'
+                )
+            if estado_firmas['pendientes'] > 0:
+                raise ValueError(
+                    f'Hay {estado_firmas["pendientes"]} firma(s) pendiente(s). '
+                    f'Todas las firmas deben completarse antes de aprobar.'
+                )
+            if estado_firmas['rechazadas'] > 0:
+                raise ValueError(
+                    f'Hay {estado_firmas["rechazadas"]} firma(s) rechazada(s). '
+                    f'Resuelva las firmas rechazadas antes de aprobar.'
+                )
 
         doc.estado = 'APROBADO'
         doc.aprobado_por = usuario
@@ -152,7 +190,7 @@ class DocumentoService:
                     f'aprobado por {usuario.get_full_name()}. '
                     f'Puede proceder a publicarlo.'
                 ),
-                url='/sistema-gestion/gestion-documental',
+                url='/gestion-documental/documentos',
                 datos_extra={
                     'documento_id': doc.id,
                     'codigo': doc.codigo,
@@ -169,6 +207,15 @@ class DocumentoService:
         doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
         if doc.estado != 'APROBADO':
             raise ValueError('Solo se pueden publicar documentos aprobados')
+
+        # Validar firmas si el tipo lo requiere
+        if doc.tipo_documento.requiere_firma:
+            estado_firmas = cls.obtener_estado_firmas(doc)
+            if not estado_firmas['puede_publicar']:
+                raise ValueError(
+                    'No se puede publicar: hay firmas pendientes o rechazadas. '
+                    f'Firmadas: {estado_firmas["firmadas"]}/{estado_firmas["total"]}'
+                )
 
         doc.estado = 'PUBLICADO'
         doc.fecha_publicacion = timezone.now().date()
@@ -221,7 +268,7 @@ class DocumentoService:
                         f'publicado (versión {doc.version_actual}) y está '
                         f'disponible para consulta.'
                     ),
-                    url='/sistema-gestion/gestion-documental',
+                    url='/gestion-documental/documentos',
                     datos_extra={
                         'documento_id': doc.id,
                         'codigo': doc.codigo,
@@ -261,7 +308,7 @@ class DocumentoService:
                     f'marcado como obsoleto por {usuario.get_full_name()}. '
                     f'Motivo: {motivo}'
                 ),
-                url='/sistema-gestion/gestion-documental',
+                url='/gestion-documental/documentos',
                 datos_extra={
                     'documento_id': doc.id,
                     'codigo': doc.codigo,

@@ -105,18 +105,23 @@ TENANT_APPS = [
     'apps.audit_system.tareas_recordatorios',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 15: PLANEACIÓN ESTRATÉGICA
-    # Descomentar cuando Level 10 esté estabilizado con datos reales
+    # CASCADA LEVEL 15: GESTIÓN DOCUMENTAL (Infraestructura transversal)
+    # Todos los módulos C2 generan documentos — debe activarse antes de C2
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.gestion_estrategica.gestion_documental',
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 20: PLANEACIÓN ESTRATÉGICA
+    # Descomentar cuando Level 15 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.gestion_estrategica.planeacion',
     # 'apps.gestion_estrategica.gestion_proyectos',
-    # 'apps.gestion_estrategica.gestion_documental',
     # 'apps.gestion_estrategica.planificacion_sistema',
     # 'apps.gestion_estrategica.revision_direccion',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 20: CUMPLIMIENTO + RIESGOS
-    # Descomentar cuando Level 15 esté estabilizado con datos reales
+    # CASCADA LEVEL 25: CUMPLIMIENTO + RIESGOS
+    # Descomentar cuando Level 20 (Planeación Estratégica) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.motor_cumplimiento.matriz_legal',
     # 'apps.motor_cumplimiento.requisitos_legales',
@@ -131,8 +136,8 @@ TENANT_APPS = [
     # 'apps.motor_riesgos.sagrilaft_ptee',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 25: HSEQ
-    # Descomentar cuando Level 20 esté estabilizado con datos reales
+    # CASCADA LEVEL 30: HSEQ
+    # Descomentar cuando Level 25 (Cumplimiento+Riesgos) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.hseq_management.accidentalidad',
     # 'apps.hseq_management.seguridad_industrial',
@@ -145,8 +150,8 @@ TENANT_APPS = [
     # 'apps.hseq_management.gestion_comites',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 30: CADENA DE VALOR
-    # Descomentar cuando Level 25 esté estabilizado con datos reales
+    # CASCADA LEVEL 35: CADENA DE VALOR
+    # Descomentar cuando Level 30 (HSEQ) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.supply_chain.catalogos',
     # 'apps.supply_chain.gestion_proveedores',
@@ -168,8 +173,8 @@ TENANT_APPS = [
     # 'apps.sales_crm.servicio_cliente',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 35: TALENTO HUMANO
-    # Descomentar cuando Level 30 esté estabilizado con datos reales
+    # CASCADA LEVEL 40: TALENTO HUMANO
+    # Descomentar cuando Level 35 (Cadena de Valor) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.talent_hub.estructura_cargos',
     # 'apps.talent_hub.seleccion_contratacion',
@@ -185,8 +190,8 @@ TENANT_APPS = [
     # 'apps.talent_hub.consultores_externos',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 40: FINANZAS + CONTABILIDAD
-    # Descomentar cuando Level 35 esté estabilizado con datos reales
+    # CASCADA LEVEL 45: FINANZAS + CONTABILIDAD
+    # Descomentar cuando Level 40 (Talento Humano) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.administracion.presupuesto',
     # 'apps.administracion.activos_fijos',
@@ -207,7 +212,7 @@ TENANT_APPS = [
     'apps.analytics.exportacion_integracion',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 45: INTELIGENCIA (C3) — resto de analytics
+    # CASCADA LEVEL 50: INTELIGENCIA (C3) — resto de analytics
     # Descomentar cuando TODOS los módulos C2 estén estabilizados
     # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.analytics.indicadores_area',

@@ -41,7 +41,7 @@ def export_documento_pdf(request, pk):
 
     try:
         generator = DocumentoPDFGenerator(empresa=empresa)
-        pdf_buffer = generator.generate_documento_pdf(documento)
+        pdf_buffer = generator.generate_documento_pdf(documento, usuario=request.user)
 
         # Incrementar contador de descargas
         Documento.objects.filter(pk=pk).update(

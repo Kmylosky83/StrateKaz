@@ -57,6 +57,11 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
   // Estado local para seccion activa
   const [activeSection, setActiveSectionState] = useState<string>('');
 
+  // Resetear seccion activa cuando cambia el tab (navegación entre tabs)
+  useEffect(() => {
+    setActiveSectionState('');
+  }, [moduleCode, tabCode]);
+
   // Inicializar seccion activa cuando se cargan las secciones
   useEffect(() => {
     if (!isLoading && sections.length > 0 && !activeSection) {

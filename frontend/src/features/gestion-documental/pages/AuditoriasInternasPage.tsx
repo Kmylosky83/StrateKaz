@@ -572,7 +572,7 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
           label="Programadas"
           value={stats.programadas}
           icon={<Clock className="w-5 h-5" />}
-          color="default"
+          color="gray"
         />
         <KpiCard
           label="En Curso"
@@ -825,7 +825,7 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
         item.dias_abierto !== undefined ? (
           <Badge
             variant={
-              item.dias_abierto > 30 ? 'danger' : item.dias_abierto > 15 ? 'warning' : 'default'
+              item.dias_abierto > 30 ? 'danger' : item.dias_abierto > 15 ? 'warning' : 'gray'
             }
           >
             {item.dias_abierto} días

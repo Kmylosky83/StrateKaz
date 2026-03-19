@@ -21,6 +21,7 @@ import {
   GraduationCap,
   BarChart3,
   FolderOpen,
+  BookOpen,
   ShieldCheck,
   Pencil,
   Sun,
@@ -64,6 +65,10 @@ const GameEntryCard = lazy(() =>
   import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
 );
 
+const LecturasPendientesTab = lazy(
+  () => import('@/features/gestion-documental/components/LecturasPendientesTab')
+);
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -100,6 +105,7 @@ const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['hseq']);
 
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mis datos', icon: <User className="w-4 h-4" /> },
+  { id: 'lecturas' as const, label: 'Lecturas Pendientes', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'documentos' as const, label: 'Documentos', icon: <FolderOpen className="w-4 h-4" /> },
   { id: 'hseq' as const, label: 'HSEQ', icon: <ShieldCheck className="w-4 h-4" /> },
   { id: 'vacaciones' as const, label: 'Vacaciones', icon: <Calendar className="w-4 h-4" /> },
@@ -585,6 +591,11 @@ export default function MiPortalPage() {
             />
           )}
 
+          {safeActiveTab === 'lecturas' && (
+            <Suspense fallback={<Skeleton count={3} />}>
+              <LecturasPendientesTab />
+            </Suspense>
+          )}
           {safeActiveTab === 'documentos' && <MisDocumentos />}
           {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
           {safeActiveTab === 'vacaciones' && !isExterno && <VacacionesSaldo />}

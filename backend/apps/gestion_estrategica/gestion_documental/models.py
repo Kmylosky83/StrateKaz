@@ -1188,3 +1188,160 @@ class ControlDocumental(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_control_display()} - {self.documento.codigo} - {self.fecha_distribucion}"
+
+
+class AceptacionDocumental(models.Model):
+    """
+    Registro de lectura verificada de documentos (ISO 7.3 Toma de Conciencia).
+    Cada registro = 1 usuario + 1 documento + evidencia de lectura con scroll tracking.
+
+    Cumple: ISO 9001/14001/45001/27001 §7.3, Decreto 1072 Art. 2.2.4.6.10/12,
+    Resolución 0312 Estándar 1.1.1 (difusión de política SST).
+    """
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente de Lectura'),
+        ('EN_PROGRESO', 'Leyendo'),
+        ('ACEPTADO', 'Leído y Aceptado'),
+        ('RECHAZADO', 'Rechazado'),
+        ('VENCIDO', 'Plazo Vencido'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='aceptaciones',
+        verbose_name='Documento'
+    )
+    version_documento = models.CharField(
+        max_length=20,
+        verbose_name='Versión del Documento',
+        help_text='Snapshot de la versión al momento de asignación'
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='aceptaciones_documentales',
+        verbose_name='Usuario Asignado'
+    )
+    control_documental = models.ForeignKey(
+        ControlDocumental,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='aceptaciones',
+        verbose_name='Control Documental',
+        help_text='Registro de distribución que originó esta asignación'
+    )
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='aceptaciones_asignadas',
+        verbose_name='Asignado por'
+    )
+
+    # Estado y fechas
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='PENDIENTE',
+        db_index=True,
+        verbose_name='Estado'
+    )
+    fecha_asignacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Asignación'
+    )
+    fecha_limite = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha Límite',
+        help_text='Plazo máximo para completar la lectura'
+    )
+    fecha_inicio_lectura = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Inicio de Lectura',
+        help_text='Momento en que el usuario abrió el documento por primera vez'
+    )
+    fecha_aceptacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aceptación'
+    )
+    fecha_rechazo = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Rechazo'
+    )
+
+    # Scroll tracking (evidencia auditoría)
+    porcentaje_lectura = models.IntegerField(
+        default=0,
+        verbose_name='Porcentaje de Lectura',
+        help_text='0-100, basado en secciones visibles del documento'
+    )
+    tiempo_lectura_seg = models.IntegerField(
+        default=0,
+        verbose_name='Tiempo de Lectura (seg)',
+        help_text='Segundos totales con el documento visible'
+    )
+    scroll_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Datos de Scroll',
+        help_text='{"secciones_vistas": [0,1,2], "total_secciones": 5, "timestamps": [...]}'
+    )
+
+    # Aceptación explícita
+    texto_aceptacion = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Texto de Aceptación',
+        help_text='Declaración firmada por el usuario al aceptar'
+    )
+    motivo_rechazo = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Motivo de Rechazo'
+    )
+
+    # Auditoría forense
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name='User Agent',
+        help_text='Navegador y dispositivo del usuario'
+    )
+
+    # Multi-tenancy
+    empresa_id = models.PositiveBigIntegerField(
+        db_index=True,
+        verbose_name='Empresa ID'
+    )
+
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'documental_aceptacion_documental'
+        verbose_name = 'Aceptación Documental'
+        verbose_name_plural = 'Aceptaciones Documentales'
+        ordering = ['-fecha_asignacion']
+        unique_together = ['documento', 'version_documento', 'usuario', 'empresa_id']
+        indexes = [
+            models.Index(fields=['empresa_id', 'usuario', 'estado']),
+            models.Index(fields=['empresa_id', 'documento']),
+            models.Index(fields=['fecha_limite']),
+            models.Index(fields=['estado']),
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} — {self.documento.codigo} ({self.estado})"

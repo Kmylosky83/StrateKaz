@@ -29,6 +29,10 @@ import type {
   ScoreResumen,
   DriveExportResult,
   VerificacionSellado,
+  AceptacionDocumental,
+  AsignarLecturaDTO,
+  RegistrarProgresoDTO,
+  AceptacionResumen,
   BibliotecaPlantilla,
 } from '../types/gestion-documental.types';
 
@@ -285,6 +289,59 @@ export const controlDocumentalApi = {
   distribucionesActivas: async (): Promise<ControlDocumental[]> => {
     const response = await apiClient.get(`${BASE_URL}/controles/distribuciones-activas/`);
     return response.data;
+  },
+};
+
+// ==================== ACEPTACIÓN DOCUMENTAL (Mejora 3 — Lectura Verificada) ====================
+
+export const aceptacionApi = {
+  misPendientes: async (): Promise<AceptacionDocumental[]> => {
+    const response = await apiClient.get(`${BASE_URL}/aceptaciones/mis-pendientes/`);
+    return response.data;
+  },
+  asignar: async (
+    data: AsignarLecturaDTO
+  ): Promise<{ mensaje: string; creados: number; omitidos: number }> => {
+    const response = await apiClient.post(`${BASE_URL}/aceptaciones/asignar/`, data);
+    return response.data;
+  },
+  registrarProgreso: async (
+    id: number,
+    data: RegistrarProgresoDTO
+  ): Promise<{
+    porcentaje_lectura: number;
+    tiempo_lectura_seg: number;
+    estado: string;
+  }> => {
+    const response = await apiClient.post(
+      `${BASE_URL}/aceptaciones/${id}/registrar-progreso/`,
+      data
+    );
+    return response.data;
+  },
+  aceptar: async (id: number, textoAceptacion?: string): Promise<AceptacionDocumental> => {
+    const response = await apiClient.post(`${BASE_URL}/aceptaciones/${id}/aceptar/`, {
+      texto_aceptacion: textoAceptacion,
+    });
+    return response.data;
+  },
+  rechazar: async (id: number, motivo: string): Promise<AceptacionDocumental> => {
+    const response = await apiClient.post(`${BASE_URL}/aceptaciones/${id}/rechazar/`, {
+      motivo_rechazo: motivo,
+    });
+    return response.data;
+  },
+  resumen: async (documentoId?: number): Promise<AceptacionResumen> => {
+    const response = await apiClient.get(`${BASE_URL}/aceptaciones/resumen/`, {
+      params: documentoId ? { documento: documentoId } : undefined,
+    });
+    return response.data;
+  },
+  porDocumento: async (documentoId: number): Promise<AceptacionDocumental[]> => {
+    const response = await apiClient.get(`${BASE_URL}/aceptaciones/`, {
+      params: { documento: documentoId },
+    });
+    return Array.isArray(response.data) ? response.data : (response.data?.results ?? []);
   },
 };
 

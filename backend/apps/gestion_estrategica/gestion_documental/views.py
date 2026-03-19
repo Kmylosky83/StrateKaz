@@ -887,3 +887,249 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
+
+# =============================================================================
+# ACEPTACIÓN DOCUMENTAL (Mejora 3 — Lectura Verificada)
+# =============================================================================
+
+class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de lecturas verificadas de documentos.
+    ISO 7.3 Toma de Conciencia + Decreto 1072 Art. 2.2.4.6.10/12.
+    """
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'patch']
+
+    def get_serializer_class(self):
+        from .serializers import (
+            AceptacionDocumentalListSerializer,
+            AceptacionDocumentalDetailSerializer,
+        )
+        if self.action in ('list', 'mis_pendientes'):
+            return AceptacionDocumentalListSerializer
+        return AceptacionDocumentalDetailSerializer
+
+    def get_queryset(self):
+        from .models import AceptacionDocumental
+        qs = AceptacionDocumental.objects.select_related(
+            'documento', 'usuario', 'asignado_por'
+        )
+        estado = self.request.query_params.get('estado')
+        if estado:
+            qs = qs.filter(estado=estado)
+        documento_id = self.request.query_params.get('documento')
+        if documento_id:
+            qs = qs.filter(documento_id=documento_id)
+        return qs
+
+    @action(detail=False, methods=['get'], url_path='mis-pendientes')
+    def mis_pendientes(self, request):
+        """Documentos pendientes de lectura del usuario autenticado."""
+        from .models import AceptacionDocumental
+        from .serializers import AceptacionDocumentalListSerializer
+
+        qs = AceptacionDocumental.objects.select_related(
+            'documento', 'asignado_por'
+        ).filter(
+            usuario=request.user,
+            estado__in=['PENDIENTE', 'EN_PROGRESO'],
+        ).order_by('fecha_limite', '-fecha_asignacion')
+
+        return Response(AceptacionDocumentalListSerializer(qs, many=True).data)
+
+    @action(detail=False, methods=['post'], url_path='asignar')
+    def asignar(self, request):
+        """Asigna lectura verificada de un documento a una lista de usuarios."""
+        from .serializers import AsignarLecturaSerializer
+        from .models import AceptacionDocumental, Documento
+
+        serializer = AsignarLecturaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        documento_id = serializer.validated_data['documento_id']
+        usuario_ids = serializer.validated_data['usuario_ids']
+        fecha_limite = serializer.validated_data.get('fecha_limite')
+
+        try:
+            documento = Documento.objects.get(id=documento_id, estado='PUBLICADO')
+        except Documento.DoesNotExist:
+            return Response(
+                {'error': 'Documento no encontrado o no está publicado'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        empresa = get_tenant_empresa(request)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        creados = 0
+        omitidos = 0
+        for uid in usuario_ids:
+            try:
+                usuario = User.objects.get(id=uid)
+            except User.DoesNotExist:
+                omitidos += 1
+                continue
+
+            _, created = AceptacionDocumental.objects.get_or_create(
+                documento=documento,
+                version_documento=documento.version_actual,
+                usuario=usuario,
+                empresa_id=empresa.id if empresa else 0,
+                defaults={
+                    'asignado_por': request.user,
+                    'fecha_limite': fecha_limite,
+                    'estado': 'PENDIENTE',
+                },
+            )
+            if created:
+                creados += 1
+            else:
+                omitidos += 1
+
+        return Response({
+            'mensaje': f'Lectura asignada a {creados} usuario(s)',
+            'creados': creados,
+            'omitidos': omitidos,
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='registrar-progreso')
+    def registrar_progreso(self, request, pk=None):
+        """Actualiza progreso de scroll y tiempo de lectura."""
+        aceptacion = self.get_object()
+
+        if aceptacion.usuario != request.user:
+            return Response(
+                {'error': 'Solo el usuario asignado puede registrar progreso'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if aceptacion.estado in ('ACEPTADO', 'RECHAZADO'):
+            return Response(
+                {'error': 'Esta lectura ya fue finalizada'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not aceptacion.fecha_inicio_lectura:
+            aceptacion.fecha_inicio_lectura = timezone.now()
+            aceptacion.estado = 'EN_PROGRESO'
+
+        porcentaje = request.data.get('porcentaje_lectura', aceptacion.porcentaje_lectura)
+        tiempo = request.data.get('tiempo_lectura_seg', aceptacion.tiempo_lectura_seg)
+        scroll_data = request.data.get('scroll_data', aceptacion.scroll_data)
+
+        aceptacion.porcentaje_lectura = min(int(porcentaje), 100)
+        aceptacion.tiempo_lectura_seg = int(tiempo)
+        aceptacion.scroll_data = scroll_data
+        aceptacion.save(update_fields=[
+            'porcentaje_lectura', 'tiempo_lectura_seg', 'scroll_data',
+            'fecha_inicio_lectura', 'estado', 'updated_at',
+        ])
+
+        return Response({
+            'porcentaje_lectura': aceptacion.porcentaje_lectura,
+            'tiempo_lectura_seg': aceptacion.tiempo_lectura_seg,
+            'estado': aceptacion.estado,
+        })
+
+    @action(detail=True, methods=['post'], url_path='aceptar')
+    def aceptar(self, request, pk=None):
+        """Acepta el documento tras lectura verificada (requiere >= 90%)."""
+        aceptacion = self.get_object()
+
+        if aceptacion.usuario != request.user:
+            return Response(
+                {'error': 'Solo el usuario asignado puede aceptar'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if aceptacion.estado in ('ACEPTADO', 'RECHAZADO'):
+            return Response(
+                {'error': 'Esta lectura ya fue finalizada'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if aceptacion.porcentaje_lectura < 90:
+            return Response(
+                {'error': f'Debe leer al menos el 90% del documento (actual: {aceptacion.porcentaje_lectura}%)'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        aceptacion.estado = 'ACEPTADO'
+        aceptacion.fecha_aceptacion = timezone.now()
+        aceptacion.texto_aceptacion = request.data.get(
+            'texto_aceptacion',
+            'He leído y comprendido el contenido de este documento.'
+        )
+        aceptacion.ip_address = _get_client_ip(request)
+        aceptacion.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+        aceptacion.save(update_fields=[
+            'estado', 'fecha_aceptacion', 'texto_aceptacion',
+            'ip_address', 'user_agent', 'updated_at',
+        ])
+
+        from .serializers import AceptacionDocumentalDetailSerializer
+        return Response(AceptacionDocumentalDetailSerializer(aceptacion).data)
+
+    @action(detail=True, methods=['post'], url_path='rechazar')
+    def rechazar(self, request, pk=None):
+        """Rechaza la lectura del documento con motivo."""
+        aceptacion = self.get_object()
+
+        if aceptacion.usuario != request.user:
+            return Response(
+                {'error': 'Solo el usuario asignado puede rechazar'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        motivo = request.data.get('motivo_rechazo', '')
+        if not motivo.strip():
+            return Response(
+                {'error': 'Debe indicar un motivo de rechazo'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        aceptacion.estado = 'RECHAZADO'
+        aceptacion.fecha_rechazo = timezone.now()
+        aceptacion.motivo_rechazo = motivo
+        aceptacion.ip_address = _get_client_ip(request)
+        aceptacion.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+        aceptacion.save(update_fields=[
+            'estado', 'fecha_rechazo', 'motivo_rechazo',
+            'ip_address', 'user_agent', 'updated_at',
+        ])
+
+        from .serializers import AceptacionDocumentalDetailSerializer
+        return Response(AceptacionDocumentalDetailSerializer(aceptacion).data)
+
+    @action(detail=False, methods=['get'], url_path='resumen')
+    def resumen(self, request):
+        """Dashboard de aceptaciones: pendientes, completados, vencidos."""
+        from .models import AceptacionDocumental
+        from django.db.models import Avg
+
+        qs = AceptacionDocumental.objects.all()
+        documento_id = request.query_params.get('documento')
+        if documento_id:
+            qs = qs.filter(documento_id=documento_id)
+
+        stats = qs.aggregate(
+            total=Count('id'),
+            pendientes=Count('id', filter=Q(estado='PENDIENTE')),
+            en_progreso=Count('id', filter=Q(estado='EN_PROGRESO')),
+            aceptados=Count('id', filter=Q(estado='ACEPTADO')),
+            rechazados=Count('id', filter=Q(estado='RECHAZADO')),
+            vencidos=Count('id', filter=Q(estado='VENCIDO')),
+            promedio_tiempo=Avg('tiempo_lectura_seg', filter=Q(estado='ACEPTADO')),
+            promedio_porcentaje=Avg('porcentaje_lectura'),
+        )
+        return Response(stats)
+
+
+def _get_client_ip(request):
+    """Obtiene IP del cliente (función standalone para reutilizar)."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0]
+    return request.META.get('REMOTE_ADDR')

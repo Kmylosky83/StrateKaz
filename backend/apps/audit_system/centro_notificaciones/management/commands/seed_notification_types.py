@@ -579,6 +579,49 @@ TIPOS_NOTIFICACION = [
     },
 
     # =========================================================================
+    # LECTURA VERIFICADA (Mejora 3 — ISO 7.3 Toma de Conciencia)
+    # =========================================================================
+    {
+        'codigo': 'DOCUMENTO_LECTURA_REQUERIDA',
+        'nombre': 'Lectura de Documento Requerida',
+        'descripcion': 'Notifica al usuario que tiene un documento obligatorio pendiente de lectura y aceptación',
+        'categoria': 'aprobacion',
+        'color': '#6366F1',  # Indigo
+        'icono': 'book-open',
+        'plantilla_titulo': 'Lectura requerida: {codigo}',
+        'plantilla_mensaje': 'Se le ha asignado la lectura obligatoria del documento "{titulo}" ({codigo}). Fecha límite: {fecha_limite}.',
+        'url_template': '/mi-portal',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'DOCUMENTO_LECTURA_COMPLETADA',
+        'nombre': 'Lectura de Documento Completada',
+        'descripcion': 'Notifica al asignador que un usuario completó la lectura verificada de un documento',
+        'categoria': 'sistema',
+        'color': '#10B981',  # Green
+        'icono': 'check-circle',
+        'plantilla_titulo': 'Lectura completada: {codigo}',
+        'plantilla_mensaje': 'El usuario {usuario_nombre} completó la lectura del documento "{titulo}" ({codigo}). Tiempo: {tiempo_lectura}.',
+        'url_template': '/sistema-gestion/gestion-documental',
+        'es_email': False,
+        'es_push': True,
+    },
+    {
+        'codigo': 'DOCUMENTO_LECTURA_VENCIDA',
+        'nombre': 'Lectura de Documento Vencida',
+        'descripcion': 'Alerta cuando el plazo para lectura obligatoria de un documento ha vencido',
+        'categoria': 'alerta',
+        'color': '#EF4444',  # Red
+        'icono': 'alert-triangle',
+        'plantilla_titulo': 'Lectura vencida: {codigo}',
+        'plantilla_mensaje': 'El plazo para leer el documento "{titulo}" ({codigo}) ha vencido. Por favor complete la lectura lo antes posible.',
+        'url_template': '/mi-portal',
+        'es_email': True,
+        'es_push': True,
+    },
+
+    # =========================================================================
     # FIRMA DIGITAL (Workflow de Firmas)
     # =========================================================================
     {

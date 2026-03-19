@@ -634,6 +634,81 @@ export interface ScoreResumen {
   total: number;
 }
 
+// ==================== LECTURA VERIFICADA (Mejora 3) ====================
+
+export type AceptacionEstado = 'PENDIENTE' | 'EN_PROGRESO' | 'ACEPTADO' | 'RECHAZADO' | 'VENCIDO';
+
+export interface AceptacionDocumental {
+  id: number;
+  documento: number;
+  documento_codigo: string;
+  documento_titulo: string;
+  documento_contenido?: string;
+  version_documento: string;
+  usuario: number;
+  usuario_nombre: string;
+  asignado_por: number | null;
+  asignado_por_nombre: string | null;
+  control_documental?: number | null;
+  estado: AceptacionEstado;
+  estado_display: string;
+  fecha_asignacion: string;
+  fecha_limite: string | null;
+  dias_restantes: number | null;
+  fecha_inicio_lectura: string | null;
+  fecha_aceptacion: string | null;
+  fecha_rechazo?: string | null;
+  porcentaje_lectura: number;
+  tiempo_lectura_seg: number;
+  scroll_data?: Record<string, unknown>;
+  texto_aceptacion?: string;
+  motivo_rechazo?: string;
+  ip_address?: string;
+  user_agent?: string;
+  empresa_id?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AsignarLecturaDTO {
+  documento_id: number;
+  usuario_ids: number[];
+  fecha_limite?: string | null;
+}
+
+export interface RegistrarProgresoDTO {
+  porcentaje_lectura: number;
+  tiempo_lectura_seg: number;
+  scroll_data: Record<string, unknown>;
+}
+
+export interface AceptacionResumen {
+  total: number;
+  pendientes: number;
+  en_progreso: number;
+  aceptados: number;
+  rechazados: number;
+  vencidos: number;
+  promedio_tiempo: number | null;
+  promedio_porcentaje: number | null;
+}
+
+export const ACEPTACION_ESTADO_LABELS: Record<AceptacionEstado, string> = {
+  PENDIENTE: 'Pendiente',
+  EN_PROGRESO: 'Leyendo',
+  ACEPTADO: 'Aceptado',
+  RECHAZADO: 'Rechazado',
+  VENCIDO: 'Vencido',
+};
+
+export const ACEPTACION_ESTADO_COLORS: Record<AceptacionEstado, string> = {
+  PENDIENTE: 'gray',
+  EN_PROGRESO: 'info',
+  ACEPTADO: 'success',
+  RECHAZADO: 'danger',
+  VENCIDO: 'warning',
+};
+
 // ==================== GOOGLE DRIVE (Fase 7) ====================
 
 export interface DriveExportResult {

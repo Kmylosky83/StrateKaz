@@ -690,6 +690,81 @@ def sellar_pdf_pyhanko(self, documento_id: int, tenant_schema: str,
 
 
 # =============================================================================
+# LECTURA VERIFICADA — Mejora 3 (ISO 7.3 Toma de Conciencia)
+# =============================================================================
+
+@shared_task(
+    name='documental.verificar_aceptaciones_vencidas',
+    queue='compliance',
+    max_retries=2,
+    soft_time_limit=300,
+)
+def verificar_aceptaciones_vencidas():
+    """
+    Diario 8:00AM: Marca VENCIDO las aceptaciones cuya fecha_limite < hoy.
+    Notifica al usuario y al asignador.
+    """
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    total_vencidos = 0
+    total_notificados = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                from .models import AceptacionDocumental
+                from django.utils import timezone
+
+                hoy = timezone.now().date()
+                pendientes_vencidas = AceptacionDocumental.objects.filter(
+                    estado__in=['PENDIENTE', 'EN_PROGRESO'],
+                    fecha_limite__lt=hoy,
+                )
+
+                for aceptacion in pendientes_vencidas:
+                    aceptacion.estado = 'VENCIDO'
+                    aceptacion.save(update_fields=['estado', 'updated_at'])
+                    total_vencidos += 1
+
+                    # Notificar al usuario
+                    try:
+                        usuario = User.objects.get(id=aceptacion.usuario_id)
+                        _send_notification(
+                            tipo_codigo='DOCUMENTO_LECTURA_VENCIDA',
+                            usuario=usuario,
+                            titulo=f'Lectura vencida: {aceptacion.documento.codigo}',
+                            mensaje=(
+                                f'El plazo para leer "{aceptacion.documento.titulo}" '
+                                f'({aceptacion.documento.codigo}) ha vencido.'
+                            ),
+                            url='/mi-portal',
+                            datos_extra={
+                                'documento_id': aceptacion.documento_id,
+                                'aceptacion_id': aceptacion.id,
+                            },
+                        )
+                        total_notificados += 1
+                    except User.DoesNotExist:
+                        pass
+
+        except Exception as e:
+            logger.error(
+                f'[LECTURA] Error verificando vencimientos en '
+                f'{tenant.schema_name}: {e}'
+            )
+
+    logger.info(
+        f'[LECTURA] Aceptaciones vencidas: {total_vencidos}, '
+        f'notificados: {total_notificados}'
+    )
+    return {
+        'vencidos': total_vencidos,
+        'notificados': total_notificados,
+    }
+
+
+# =============================================================================
 # HELPER: Envío seguro de notificaciones
 # =============================================================================
 

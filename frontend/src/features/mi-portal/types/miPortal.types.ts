@@ -111,6 +111,7 @@ export interface EvaluacionESS {
 
 export type MiPortalTab =
   | 'perfil'
+  | 'lecturas'
   | 'documentos'
   | 'hseq'
   | 'vacaciones'

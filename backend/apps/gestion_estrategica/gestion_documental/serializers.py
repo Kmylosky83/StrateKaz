@@ -12,7 +12,8 @@ from .models import (
     Documento,
     VersionDocumento,
     CampoFormulario,
-    ControlDocumental
+    ControlDocumental,
+    AceptacionDocumental,
 )
 
 
@@ -346,3 +347,79 @@ class ControlDocumentalDetailSerializer(serializers.ModelSerializer):
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']
+
+
+# =============================================================================
+# Aceptación Documental Serializers (Mejora 3 — Lectura Verificada)
+# =============================================================================
+class AceptacionDocumentalListSerializer(serializers.ModelSerializer):
+    """Serializer para listado de aceptaciones documentales"""
+    documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
+    documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
+    documento_contenido = serializers.CharField(source='documento.contenido', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
+    asignado_por_nombre = serializers.CharField(
+        source='asignado_por.get_full_name', read_only=True, allow_null=True
+    )
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    dias_restantes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AceptacionDocumental
+        fields = [
+            'id', 'documento', 'documento_codigo', 'documento_titulo',
+            'documento_contenido',
+            'version_documento', 'usuario', 'usuario_nombre',
+            'asignado_por', 'asignado_por_nombre',
+            'estado', 'estado_display',
+            'fecha_asignacion', 'fecha_limite', 'dias_restantes',
+            'porcentaje_lectura', 'tiempo_lectura_seg',
+            'fecha_inicio_lectura', 'fecha_aceptacion',
+        ]
+
+    def get_dias_restantes(self, obj):
+        if not obj.fecha_limite:
+            return None
+        from django.utils import timezone
+        delta = obj.fecha_limite - timezone.now().date()
+        return delta.days
+
+
+class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
+    """Serializer para detalle de aceptación documental"""
+    documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
+    documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
+    documento_contenido = serializers.CharField(source='documento.contenido', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
+    asignado_por_nombre = serializers.CharField(
+        source='asignado_por.get_full_name', read_only=True, allow_null=True
+    )
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+
+    class Meta:
+        model = AceptacionDocumental
+        fields = [
+            'id', 'documento', 'documento_codigo', 'documento_titulo',
+            'documento_contenido',
+            'version_documento', 'usuario', 'usuario_nombre',
+            'control_documental', 'asignado_por', 'asignado_por_nombre',
+            'estado', 'estado_display',
+            'fecha_asignacion', 'fecha_limite',
+            'fecha_inicio_lectura', 'fecha_aceptacion', 'fecha_rechazo',
+            'porcentaje_lectura', 'tiempo_lectura_seg', 'scroll_data',
+            'texto_aceptacion', 'motivo_rechazo',
+            'ip_address', 'user_agent',
+            'empresa_id', 'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'empresa_id', 'created_at', 'updated_at',
+            'fecha_asignacion', 'fecha_aceptacion', 'fecha_rechazo',
+            'ip_address', 'user_agent',
+        ]
+
+
+class AsignarLecturaSerializer(serializers.Serializer):
+    """Serializer para asignar lectura verificada a usuarios"""
+    documento_id = serializers.IntegerField()
+    usuario_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+    fecha_limite = serializers.DateField(required=False, allow_null=True)

@@ -19,6 +19,7 @@ import {
   Shield,
   ShieldCheck,
   FileDown,
+  BookOpen,
 } from 'lucide-react';
 import {
   Button,
@@ -239,6 +240,23 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     onClick={() => setConfirmAction('marcar_obsoleto')}
                   >
                     Marcar Obsoleto
+                  </Button>
+                )}
+                {documento.estado === 'PUBLICADO' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<BookOpen className="w-4 h-4" />}
+                    onClick={() => {
+                      // TODO: Modal selector de usuarios. Por ahora usa toast info.
+                      import('sonner').then(({ toast }) =>
+                        toast.info(
+                          'Use la API /aceptaciones/asignar/ para asignar lecturas verificadas.'
+                        )
+                      );
+                    }}
+                  >
+                    Asignar Lectura
                   </Button>
                 )}
                 {documento.estado === 'PUBLICADO' &&

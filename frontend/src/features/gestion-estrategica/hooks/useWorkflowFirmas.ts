@@ -133,6 +133,10 @@ export interface FirmarDocumentoDTO {
   observaciones?: string;
   ip_address?: string;
   user_agent?: string;
+  /** Código TOTP para reconfirmación (nivel_firma >= 2) */
+  totp_code?: string;
+  /** Código OTP por email (nivel_firma >= 3) */
+  email_otp_code?: string;
 }
 
 export interface RechazarFirmaDTO {
@@ -273,6 +277,8 @@ export function useWorkflowFirmas() {
         observaciones: signatureData.metadata?.userAgent,
         ip_address: signatureData.metadata?.ipAddress,
         user_agent: signatureData.metadata?.userAgent,
+        totp_code: signatureData.totpCode,
+        email_otp_code: signatureData.emailOtpCode,
       };
 
       const response = await api.post<FirmaDigital>(

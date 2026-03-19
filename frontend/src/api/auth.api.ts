@@ -99,6 +99,23 @@ export const authAPI = {
   },
 
   /**
+   * Verificar código 2FA durante login multi-tenant.
+   * Retorna tokens + tenants (misma respuesta que login exitoso).
+   */
+  verifyTwoFactor: async (data: {
+    email: string;
+    token: string;
+    use_backup_code?: boolean;
+    use_email_otp?: boolean;
+  }): Promise<LoginResponse & { backup_codes_remaining?: number }> => {
+    const response = await axios.post<LoginResponse & { backup_codes_remaining?: number }>(
+      '/tenant/auth/2fa-verify/',
+      data
+    );
+    return response.data;
+  },
+
+  /**
    * Solicitar restablecimiento de contrasena
    * Siempre retorna 200 por seguridad (no revela si el email existe)
    */

@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from django.apps import apps
 from django.db import transaction
 from django.db.models import Q, Count, Prefetch
 
@@ -383,6 +384,66 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
         data = serializer.validated_data
 
+        # ================================================================
+        # VERIFICACIÓN 2FA AL FIRMAR (ISO 27001)
+        # nivel_firma >= 2: requiere código TOTP
+        # nivel_firma >= 3: acepta TOTP o OTP por email
+        # ================================================================
+        user = request.user
+        nivel_firma = getattr(user, 'nivel_firma', 1)
+        otp_usado = ''
+
+        if nivel_firma >= 2:
+            totp_code = data.get('totp_code')
+            email_otp_code = data.get('email_otp_code')
+
+            if not totp_code and not email_otp_code:
+                return Response(
+                    {
+                        'error': 'Se requiere código de verificación para firmar',
+                        'requires_totp': True,
+                        'nivel_firma': nivel_firma,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Verificar TOTP o email OTP via apps.get_model (C2→C0 sin import directo)
+            TwoFactorAuth = apps.get_model('core', 'TwoFactorAuth')
+            try:
+                two_factor = TwoFactorAuth.objects.get(user=user)
+            except TwoFactorAuth.DoesNotExist:
+                return Response(
+                    {'error': 'Debe configurar 2FA antes de firmar con este nivel de seguridad'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if totp_code:
+                if not two_factor.verify_token(totp_code):
+                    return Response(
+                        {'error': 'Código TOTP inválido'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                otp_usado = totp_code
+            elif email_otp_code and nivel_firma >= 3:
+                EmailOTP = apps.get_model('core', 'EmailOTP')
+                pending_otp = EmailOTP.objects.filter(
+                    user=user,
+                    purpose='FIRMA',
+                    is_used=False,
+                ).order_by('-created_at').first()
+
+                if not pending_otp or not pending_otp.verify(email_otp_code):
+                    return Response(
+                        {'error': 'Código OTP por email inválido o expirado'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                otp_usado = email_otp_code
+            else:
+                return Response(
+                    {'error': 'Método de verificación no válido para su nivel de firma'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         with transaction.atomic():
             # Actualizar firma
             firma.estado = 'FIRMADO'
@@ -401,18 +462,41 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
             # Recalcular firma_hash (usa save() override)
             firma.firma_hash = firma.calcular_firma_hash()
-            firma.save(update_fields=['firma_hash'])
+
+            # Hash de verificación extendido (ISO 27001)
+            # SHA-256(trazo[:200] | otp | documento_id | version | timestamp_utc | cedula)
+            import hashlib
+            version = getattr(documento, 'version', '1.0.0')
+            cedula = getattr(user, 'document_number', '') or str(user.id)
+            hash_input = '|'.join([
+                data['firma_base64'][:200],
+                otp_usado,
+                str(firma.object_id),
+                str(version),
+                firma.fecha_firma.strftime('%Y-%m-%dT%H:%M:%S+00:00'),
+                cedula,
+            ])
+            firma.hash_verificacion = hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+
+            firma.save(update_fields=['firma_hash', 'hash_verificacion'])
 
             # Historial
+            metadatos = {
+                'ip': firma.ip_address,
+                'user_agent': firma.user_agent[:200] if firma.user_agent else '',
+            }
+            if nivel_firma >= 2:
+                metadatos['nivel_firma'] = nivel_firma
+                metadatos['metodo_2fa'] = 'email_otp' if data.get('email_otp_code') else 'totp'
+                metadatos['hash_verificacion'] = firma.hash_verificacion[:16] + '...'
+
             HistorialFirma.objects.create(
                 firma=firma,
                 accion='FIRMA_VALIDADA',
                 usuario=request.user,
-                descripcion=f"Firma {firma.get_rol_firma_display()} completada",
-                metadatos={
-                    'ip': firma.ip_address,
-                    'user_agent': firma.user_agent[:200] if firma.user_agent else '',
-                },
+                descripcion=f"Firma {firma.get_rol_firma_display()} completada"
+                            + (f" (2FA nivel {nivel_firma})" if nivel_firma >= 2 else ""),
+                metadatos=metadatos,
                 ip_address=firma.ip_address,
             )
 

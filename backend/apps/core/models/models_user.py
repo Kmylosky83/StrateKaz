@@ -828,6 +828,28 @@ class User(AbstractUser):
     )
 
     # ==========================================================================
+    # NIVEL DE FIRMA (ISO 27001 — 2FA por rol)
+    # ==========================================================================
+    NIVEL_FIRMA_CHOICES = [
+        (1, 'Nivel 1 — Operativo (sin 2FA)'),
+        (2, 'Nivel 2 — Responsable/Auditor (TOTP)'),
+        (3, 'Nivel 3 — Alta Dirección (TOTP + OTP email)'),
+    ]
+
+    nivel_firma = models.IntegerField(
+        choices=NIVEL_FIRMA_CHOICES,
+        default=1,
+        db_index=True,
+        verbose_name='Nivel de Firma',
+        help_text='Determina el nivel de verificación 2FA requerido al firmar documentos'
+    )
+    nivel_firma_manual = models.BooleanField(
+        default=False,
+        verbose_name='Nivel de firma manual',
+        help_text='Si True, el nivel no se auto-asigna al cambiar de cargo'
+    )
+
+    # ==========================================================================
     # RBAC HÍBRIDO - ROLES ADICIONALES
     # ==========================================================================
     roles_adicionales = models.ManyToManyField(

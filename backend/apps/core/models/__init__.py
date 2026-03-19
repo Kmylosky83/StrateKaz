@@ -98,6 +98,7 @@ from apps.core.models.models_session import (
 # =============================================================================
 from apps.core.models.models_two_factor import (
     TwoFactorAuth,
+    EmailOTP,
 )
 
 # =============================================================================

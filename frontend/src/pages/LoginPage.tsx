@@ -14,7 +14,6 @@ import { Link } from 'react-router-dom';
 import { Mail, Lock, Key, ShieldCheck } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
-import { verifyTwoFactor } from '@/features/perfil/api/twoFactor.api';
 import { authAPI } from '@/api/auth.api';
 import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 
@@ -158,13 +157,16 @@ export const LoginPage = () => {
       // Login con el nuevo sistema multi-tenant
       await login(data);
 
-      // TODO: Verificar si requiere 2FA
-      // Por ahora, el backend no retorna requires_2fa en la nueva API
-      // Si se implementa 2FA, habría que verificar la respuesta aquí
-
       // Login exitoso - procesar flujo de tenants
       await handlePostLoginFlow();
     } catch (error: unknown) {
+      // Verificar si requiere 2FA
+      if (error && typeof error === 'object' && 'requires_2fa' in error) {
+        const twoFaError = error as { requires_2fa: boolean; email: string };
+        setEmail(twoFaError.email);
+        setLoginStep('2fa');
+        return;
+      }
       const apiError = error as { response?: { data?: { detail?: string } } };
       toast.error(apiError.response?.data?.detail || 'Error al iniciar sesión');
     } finally {
@@ -172,12 +174,13 @@ export const LoginPage = () => {
     }
   };
 
-  // Handler: Verificar 2FA
+  // Handler: Verificar 2FA (usa endpoint multi-tenant)
   const onSubmit2FA = async (data: TwoFactorFormData) => {
     setIsLoading(true);
     try {
-      const response = await verifyTwoFactor({
-        username: email, // Usamos el email guardado del paso anterior
+      // Verificar 2FA contra endpoint tenant que retorna tokens + tenants
+      const response = await authAPI.verifyTwoFactor({
+        email,
         token: data.token,
         use_backup_code: useBackupCode,
       });
@@ -186,15 +189,40 @@ export const LoginPage = () => {
       localStorage.setItem('access_token', response.access);
       localStorage.setItem('refresh_token', response.refresh);
 
-      // Obtener perfil
-      const userProfile = await authAPI.getProfile();
+      // Determinar tenant inicial
+      let initialTenantId: number | null = null;
+      let initialTenant = null;
 
-      // Actualizar store
+      if (response.tenants.length > 0) {
+        if (response.last_tenant_id) {
+          const lastTenant = response.tenants.find(
+            (t: { tenant: { id: number } }) => t.tenant.id === response.last_tenant_id
+          );
+          if (lastTenant) {
+            initialTenantId = lastTenant.tenant.id;
+            initialTenant = lastTenant.tenant;
+          }
+        }
+        if (!initialTenantId) {
+          initialTenantId = response.tenants[0].tenant.id;
+          initialTenant = response.tenants[0].tenant;
+        }
+      }
+
+      if (initialTenantId) {
+        localStorage.setItem('current_tenant_id', String(initialTenantId));
+      }
+
+      // Actualizar store con respuesta completa
       useAuthStore.setState({
-        user: userProfile,
+        tenantUser: response.user,
         accessToken: response.access,
         refreshToken: response.refresh,
         isAuthenticated: true,
+        accessibleTenants: response.tenants,
+        isSuperadmin: response.user.is_superadmin,
+        currentTenantId: initialTenantId,
+        currentTenant: initialTenant,
       });
 
       // Informar si usó código de backup

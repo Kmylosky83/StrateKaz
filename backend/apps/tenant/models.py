@@ -900,6 +900,13 @@ class TenantUser(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # 2FA Mirror (sincronizado desde core.TwoFactorAuth)
+    has_2fa_enabled = models.BooleanField(
+        default=False,
+        verbose_name='2FA habilitado',
+        help_text='Mirror del estado 2FA del usuario (sincronizado al activar/desactivar)'
+    )
+
     # Password Reset
     password_reset_token = models.CharField(
         max_length=64,

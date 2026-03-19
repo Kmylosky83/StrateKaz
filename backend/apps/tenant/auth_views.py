@@ -125,8 +125,16 @@ class TenantLoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # TODO: Verificar 2FA si está habilitado
-        # Por ahora, procedemos sin 2FA
+        # Verificar 2FA si está habilitado
+        if user.has_2fa_enabled:
+            security_logger.info(
+                f"Login parcial (requiere 2FA) - User: {email} - IP: {ip_address}"
+            )
+            return Response({
+                'requires_2fa': True,
+                'message': 'Se requiere verificación de dos factores',
+                'email': email,
+            }, status=status.HTTP_200_OK)
 
         # Generar tokens JWT manualmente
         tokens = create_tokens_for_tenant_user(user)
@@ -581,6 +589,168 @@ class ForgotPasswordView(APIView):
                 )
             except Exception as e2:
                 logger.error(f"Fallback email tambien fallo: {e2}")
+
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+class TenantTwoFactorVerifyView(APIView):
+    """
+    Verificar código 2FA durante login multi-tenant.
+
+    POST /api/tenant/auth/2fa-verify/
+    {
+        "email": "usuario@ejemplo.com",
+        "token": "123456",
+        "use_backup_code": false
+    }
+
+    Si el código es válido, retorna tokens JWT + tenants (misma respuesta que login).
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        token = request.data.get('token', '').strip()
+        use_backup_code = request.data.get('use_backup_code', False)
+        use_email_otp = request.data.get('use_email_otp', False)
+        ip_address = self._get_client_ip(request)
+
+        if not email or not token:
+            return Response(
+                {'error': 'Email y código son requeridos'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Buscar TenantUser
+        try:
+            tenant_user = TenantUser.objects.get(email=email, is_active=True)
+        except TenantUser.DoesNotExist:
+            return Response(
+                {'error': 'Usuario no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Buscar TwoFactorAuth en los schemas del tenant
+        # Necesitamos verificar TOTP contra core.User en alguno de los schemas
+        from django_tenants.utils import schema_context
+        from django.apps import apps
+
+        verified = False
+        backup_codes_remaining = None
+
+        # Obtener tenants accesibles
+        accessible_tenants = tenant_user.get_accessible_tenants()
+
+        for tenant_obj in accessible_tenants:
+            try:
+                with schema_context(tenant_obj.schema_name):
+                    User = apps.get_model('core', 'User')
+                    user_in_tenant = User.objects.filter(
+                        email=email, is_active=True
+                    ).first()
+
+                    if not user_in_tenant:
+                        continue
+
+                    try:
+                        two_factor = user_in_tenant.two_factor
+                    except Exception:
+                        continue
+
+                    if not two_factor.is_enabled:
+                        continue
+
+                    if use_email_otp:
+                        # Verificar OTP por email
+                        EmailOTP = apps.get_model('core', 'EmailOTP')
+                        pending_otp = EmailOTP.objects.filter(
+                            user=user_in_tenant,
+                            purpose='LOGIN',
+                            is_used=False,
+                        ).order_by('-created_at').first()
+
+                        if pending_otp and pending_otp.verify(token):
+                            verified = True
+                            break
+                    elif use_backup_code:
+                        if two_factor.verify_backup_code(token):
+                            verified = True
+                            backup_codes_remaining = two_factor.get_remaining_backup_codes_count()
+                            break
+                    else:
+                        if two_factor.verify_token(token):
+                            verified = True
+                            break
+            except Exception as e:
+                logger.warning(f"Error verificando 2FA en schema {tenant_obj.schema_name}: {e}")
+                continue
+
+        if not verified:
+            security_logger.warning(
+                f"2FA verificación fallida - User: {email} - IP: {ip_address}"
+            )
+            return Response(
+                {'error': 'Código de verificación inválido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2FA verificado — generar tokens
+        tokens = create_tokens_for_tenant_user(tenant_user)
+
+        # Obtener tenants accesibles para la respuesta
+        tenants_data = self._get_accessible_tenants(tenant_user, request)
+
+        # Actualizar último login
+        tenant_user.last_login = timezone.now()
+        tenant_user.save(update_fields=['last_login'])
+
+        security_logger.info(
+            f"Login 2FA exitoso - User: {email} - IP: {ip_address} - "
+            f"Método: {'email_otp' if use_email_otp else 'backup' if use_backup_code else 'totp'}"
+        )
+
+        response_data = {
+            'access': tokens['access'],
+            'refresh': tokens['refresh'],
+            'user': {
+                'id': tenant_user.id,
+                'email': tenant_user.email,
+                'first_name': tenant_user.first_name,
+                'last_name': tenant_user.last_name,
+                'full_name': tenant_user.full_name,
+                'is_superadmin': tenant_user.is_superadmin,
+            },
+            'tenants': tenants_data,
+            'last_tenant_id': tenant_user.last_tenant_id,
+        }
+
+        if backup_codes_remaining is not None:
+            response_data['backup_codes_remaining'] = backup_codes_remaining
+
+        return Response(response_data)
+
+    def _get_accessible_tenants(self, user, request=None):
+        """Obtiene la lista de tenants accesibles (duplicado de TenantLoginView)."""
+        if user.is_superadmin:
+            tenants = Tenant.objects.filter(is_active=True).exclude(schema_name='public')
+            return [
+                {'tenant': TenantMinimalSerializer(t, context={'request': request}).data}
+                for t in tenants
+            ]
+        accesses = TenantUserAccess.objects.filter(
+            tenant_user=user, is_active=True, tenant__is_active=True
+        ).select_related('tenant')
+        return [
+            {'tenant': TenantMinimalSerializer(a.tenant, context={'request': request}).data}
+            for a in accesses
+        ]
 
     def _get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

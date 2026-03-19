@@ -81,3 +81,17 @@ export const regenerateBackupCodes = async (
   );
   return response.data;
 };
+
+/**
+ * Enviar OTP por email (para NIVEL_3)
+ * @param purpose 'LOGIN' | 'FIRMA'
+ */
+export const sendEmailOTP = async (
+  purpose: 'LOGIN' | 'FIRMA' = 'FIRMA'
+): Promise<{ message: string; expires_in_minutes: number }> => {
+  const response = await apiClient.post<{ message: string; expires_in_minutes: number }>(
+    `${TWO_FACTOR_BASE_URL}/send-email-otp/`,
+    { purpose }
+  );
+  return response.data;
+};

@@ -1,0 +1,43 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Código de verificación — StrateKaz{% endblock %}
+
+{% block header %}
+<div style="height: 4px; background: linear-gradient(90deg, #ec268f, #ec268f99);"></div>
+<div style="background-color: #1f2937; padding: 32px 24px; text-align: center;">
+    <p style="color: #ec268f; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; font-weight: 700;">Sistema de Gestión Integral</p>
+    <h1 style="color: #ffffff; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">StrateKaz</h1>
+    <p style="color: #9ca3af; font-size: 13px; margin: 8px 0 0 0;">Verificación de Seguridad</p>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div style="border-left: 4px solid #ec268f; background-color: #f8fafc; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 28px;">
+    <p style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #111827;">Hola, {{ user_name }}</p>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">Código de verificación para {{ purpose_label }}</p>
+</div>
+
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0;">
+    Has solicitado un código de verificación para <strong>{{ purpose_label }}</strong> en StrateKaz.
+</p>
+
+<div style="text-align: center; margin: 32px 0;">
+    <div style="display: inline-block; background-color: #1f2937; border-radius: 12px; padding: 24px 48px;">
+        <p style="color: #9ca3af; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0;">Tu código de verificación</p>
+        <p style="color: #ffffff; font-size: 36px; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">{{ otp_code }}</p>
+    </div>
+</div>
+
+<div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
+    <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.6;">
+        <strong>&#9888; Importante:</strong> Este código expira en <strong>{{ expiry_minutes }} minutos</strong>.
+        No compartas este código con nadie. El equipo de StrateKaz nunca te pedirá tu código por teléfono o chat.
+    </p>
+</div>
+
+<p style="color: #6b7280; font-size: 14px; line-height: 1.7; margin: 24px 0 0 0;">
+    Si no solicitaste este código, puedes ignorar este mensaje de forma segura. Tu cuenta permanece protegida.
+</p>
+
+{% endblock %}

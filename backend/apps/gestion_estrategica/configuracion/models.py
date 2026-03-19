@@ -1240,44 +1240,10 @@ class ProveedorIntegracion(TimestampedModel, SoftDeleteModel):
 # ==============================================================================
 
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import serialization
-from django.conf import settings
 import json
 
-
-# Clave de encriptación - DEBE estar en settings.py o .env
-# Generar con: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-
-# Clave fija SOLO para desarrollo - NUNCA usar en producción
-# Esta clave permite que los datos encriptados persistan entre reinicios del servidor
-DEV_ENCRYPTION_KEY = 'ZGV2X2tleV9ET19OT1RfVVNFX0lOX1BST0RVQ1RJT04='
-
-
-def get_encryption_key():
-    """
-    Obtiene la clave de encriptación desde .env o usa clave de desarrollo.
-
-    IMPORTANTE: En producción DEBE configurarse ENCRYPTION_KEY en .env
-    Generar con: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-    """
-    from decouple import config
-
-    # Intentar obtener desde .env
-    encryption_key = config('ENCRYPTION_KEY', default=None)
-
-    if not encryption_key:
-        # ADVERTENCIA: Esto es solo para desarrollo
-        # En producción DEBE estar en .env
-        import warnings
-        warnings.warn(
-            "ENCRYPTION_KEY no configurada en .env. Usando clave de desarrollo. "
-            "Configure ENCRYPTION_KEY en .env antes de ir a producción.",
-            RuntimeWarning
-        )
-        # Usar clave fija de desarrollo (no generar una nueva cada vez)
-        encryption_key = DEV_ENCRYPTION_KEY
-
-    return encryption_key.encode() if isinstance(encryption_key, str) else encryption_key
+# Utilidad de cifrado centralizada
+from utils.encryption import get_encryption_key
 
 
 class IntegracionExterna(AuditModel, SoftDeleteModel):

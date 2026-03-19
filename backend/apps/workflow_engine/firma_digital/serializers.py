@@ -361,6 +361,15 @@ class FirmarFirmaActionSerializer(serializers.Serializer):
     observaciones = serializers.CharField(required=False, allow_blank=True, default='')
     ip_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     user_agent = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    # 2FA reconfirmación al firmar (ISO 27001)
+    totp_code = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=6,
+        help_text='Código TOTP de 6 dígitos (requerido para nivel_firma >= 2)'
+    )
+    email_otp_code = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=6,
+        help_text='Código OTP enviado por email (alternativa para nivel_firma >= 3)'
+    )
 
 
 class RechazarFirmaActionSerializer(serializers.Serializer):

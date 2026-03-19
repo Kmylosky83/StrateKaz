@@ -82,6 +82,15 @@ export const useAuthStore = create<AuthState>()(
           // Obtener tokens + info de usuario + tenants
           const response = await authAPI.login(credentials);
 
+          // Verificar si requiere 2FA
+          if ('requires_2fa' in response && (response as Record<string, unknown>).requires_2fa) {
+            // Lanzar objeto especial para que LoginPage lo intercepte
+            throw {
+              requires_2fa: true,
+              email: (response as Record<string, unknown>).email as string,
+            };
+          }
+
           // Guardar tokens en localStorage
           localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.access);
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);

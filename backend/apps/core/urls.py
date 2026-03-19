@@ -46,6 +46,7 @@ from .views.two_factor_views import (
     TwoFactorDisableView,
     TwoFactorVerifyView,
     TwoFactorRegenerateBackupCodesView,
+    SendEmailOTPView,
 )
 # Views de Sincronización de Secciones (RBAC v4.1)
 from .api.sections_api import (
@@ -132,6 +133,7 @@ urlpatterns = [
     path('2fa/disable/', TwoFactorDisableView.as_view(), name='2fa-disable'),
     path('2fa/verify/', TwoFactorVerifyView.as_view(), name='2fa-verify'),
     path('2fa/regenerate-backup-codes/', TwoFactorRegenerateBackupCodesView.as_view(), name='2fa-regenerate-backup-codes'),
+    path('2fa/send-email-otp/', SendEmailOTPView.as_view(), name='2fa-send-email-otp'),
 
     # Endpoints User Preferences (MS-003) - Singleton pattern
     path('user-preferences/', UserPreferencesView.as_view(), name='user-preferences'),

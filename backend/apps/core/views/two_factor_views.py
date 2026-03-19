@@ -179,6 +179,9 @@ class TwoFactorEnableView(APIView):
         two_factor.verified_at = timezone.now()
         two_factor.save()
 
+        # Sincronizar estado 2FA a TenantUser (public schema)
+        self._sync_2fa_to_tenant_user(user, enabled=True)
+
         # Generar códigos de backup
         backup_codes = two_factor.generate_backup_codes(count=10)
 
@@ -192,6 +195,23 @@ class TwoFactorEnableView(APIView):
         })
 
         return Response(response_serializer.data)
+
+    def _sync_2fa_to_tenant_user(self, user, enabled):
+        """Sincroniza estado 2FA al TenantUser en schema público."""
+        try:
+            from django.apps import apps
+            from django_tenants.utils import schema_context
+            with schema_context('public'):
+                TenantUser = apps.get_model('tenant', 'TenantUser')
+                tenant_user = TenantUser.objects.filter(email=user.email).first()
+                if tenant_user:
+                    tenant_user.has_2fa_enabled = enabled
+                    tenant_user.save(update_fields=['has_2fa_enabled'])
+        except Exception as e:
+            import logging
+            logging.getLogger('security').warning(
+                f"Error sincronizando 2FA a TenantUser para {user.email}: {e}"
+            )
 
     def _get_client_ip(self, request):
         """Obtiene la IP del cliente"""
@@ -250,12 +270,32 @@ class TwoFactorDisableView(APIView):
         two_factor.verified_at = None
         two_factor.save()
 
+        # Sincronizar estado 2FA a TenantUser (public schema)
+        self._sync_2fa_to_tenant_user(user, enabled=False)
+
         # Log de auditoría
         log_2fa_disabled(request, user)
 
         return Response({
             'message': '2FA deshabilitado exitosamente'
         })
+
+    def _sync_2fa_to_tenant_user(self, user, enabled):
+        """Sincroniza estado 2FA al TenantUser en schema público."""
+        try:
+            from django.apps import apps
+            from django_tenants.utils import schema_context
+            with schema_context('public'):
+                TenantUser = apps.get_model('tenant', 'TenantUser')
+                tenant_user = TenantUser.objects.filter(email=user.email).first()
+                if tenant_user:
+                    tenant_user.has_2fa_enabled = enabled
+                    tenant_user.save(update_fields=['has_2fa_enabled'])
+        except Exception as e:
+            import logging
+            logging.getLogger('security').warning(
+                f"Error sincronizando 2FA a TenantUser para {user.email}: {e}"
+            )
 
     def _get_client_ip(self, request):
         """Obtiene la IP del cliente"""
@@ -465,3 +505,106 @@ class TwoFactorRegenerateBackupCodesView(APIView):
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
+
+@method_decorator(api_rate_limit, name='post')
+class SendEmailOTPView(APIView):
+    """
+    POST: Envía un OTP de 6 dígitos al email del usuario.
+    Para usuarios NIVEL_3 que necesitan verificación adicional.
+    Propósitos: LOGIN (durante login 2FA) o FIRMA (al firmar documentos).
+    Rate limit: 3 por 15 minutos.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        purpose = request.data.get('purpose', 'FIRMA')
+
+        if purpose not in ('LOGIN', 'FIRMA'):
+            return Response(
+                {'error': 'Propósito inválido. Use LOGIN o FIRMA.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+
+        # Verificar que tiene 2FA habilitado
+        try:
+            two_factor = user.two_factor
+            if not two_factor.is_enabled:
+                return Response(
+                    {'error': 'Debe tener 2FA habilitado para usar OTP por email'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except TwoFactorAuth.DoesNotExist:
+            return Response(
+                {'error': 'Debe configurar 2FA primero'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Rate limit: máximo 3 OTPs por 15 minutos
+        from apps.core.models import EmailOTP
+        recent_count = EmailOTP.objects.filter(
+            user=user,
+            purpose=purpose,
+            created_at__gte=timezone.now() - timezone.timedelta(minutes=15),
+        ).count()
+
+        if recent_count >= 3:
+            return Response(
+                {'error': 'Demasiados códigos solicitados. Intente en 15 minutos.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        # Crear OTP
+        otp, raw_code = EmailOTP.create_for_user(user, purpose=purpose)
+
+        # Enviar por email
+        try:
+            from apps.audit_system.centro_notificaciones.email_service import EmailService
+            purpose_label = 'iniciar sesión' if purpose == 'LOGIN' else 'firmar un documento'
+
+            EmailService.send_email(
+                to_email=user.email,
+                subject=f'Código de verificación — StrateKaz',
+                template_name='otp_verificacion',
+                context={
+                    'user_name': user.get_full_name() or user.username,
+                    'otp_code': raw_code,
+                    'purpose_label': purpose_label,
+                    'expiry_minutes': 10,
+                }
+            )
+        except Exception as e:
+            # Fallback: email simple con Django
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                send_mail(
+                    subject='Código de verificación — StrateKaz',
+                    message=(
+                        f'Hola {user.get_full_name()},\n\n'
+                        f'Tu código de verificación es: {raw_code}\n\n'
+                        f'Este código expira en 10 minutos.\n\n'
+                        f'Si no solicitaste este código, ignora este mensaje.\n\n'
+                        f'Equipo StrateKaz'
+                    ),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@stratekaz.com'),
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e2:
+                logger.error(f"Error enviando OTP email a {user.email}: {e2}")
+                return Response(
+                    {'error': 'Error al enviar el código por email'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        security_logger.info(
+            f"OTP email enviado - User: {user.username} - Purpose: {purpose}"
+        )
+
+        return Response({
+            'message': 'Código enviado a tu correo electrónico',
+            'expires_in_minutes': 10,
+        })

@@ -341,6 +341,13 @@ class FirmaDigital(TimestampedModel):
         verbose_name='Hash de la Firma',
         help_text='SHA-256 hash de la firma completa para verificación'
     )
+    hash_verificacion = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        verbose_name='Hash de Verificación Extendido',
+        help_text='SHA-256(trazo + otp + doc_id + version + timestamp_utc + cédula) — ISO 27001'
+    )
 
     # Metadatos de firma
     fecha_firma = models.DateTimeField(

@@ -133,7 +133,7 @@ export const DynamicFormRenderer = ({
 
   return (
     <div className={cn(useGridLayout ? 'grid grid-cols-12 gap-4' : 'space-y-4', className)}>
-      {sortedFields.map((_field) => {
+      {sortedFields.map((field) => {
         // Conditional visibility — hide field if condition not met
         if (!evaluateVisibility(field.condicion_visible, values)) {
           return null;
@@ -164,14 +164,14 @@ export const DynamicFormRenderer = ({
 // ============================================================
 
 interface DynamicFieldProps {
-  _field: DynamicFieldDefinition;
+  field: DynamicFieldDefinition;
   value: unknown;
   onChange: (value: unknown) => void;
   error?: string;
   readOnly: boolean;
 }
 
-const DynamicField = ({ _field, value, onChange, error, readOnly }: DynamicFieldProps) => {
+const DynamicField = ({ field, value, onChange, error, readOnly }: DynamicFieldProps) => {
   // SECCION is a visual separator, not an input field
   if (field.tipo === 'SECCION') {
     return (
@@ -218,7 +218,7 @@ const DynamicField = ({ _field, value, onChange, error, readOnly }: DynamicField
 // ============================================================
 
 interface FieldRendererProps {
-  _field: DynamicFieldDefinition;
+  field: DynamicFieldDefinition;
   value: unknown;
   onChange: (value: unknown) => void;
   readOnly: boolean;
@@ -232,7 +232,7 @@ const inputClasses = `
   placeholder:text-gray-400 dark:placeholder:text-gray-500
 `;
 
-const FieldRenderer = ({ _field, value, onChange, readOnly }: FieldRendererProps) => {
+const FieldRenderer = ({ field, value, onChange, readOnly }: FieldRendererProps) => {
   switch (field.tipo) {
     case 'TEXT':
     case 'EMAIL':
@@ -424,13 +424,13 @@ const FieldRenderer = ({ _field, value, onChange, readOnly }: FieldRendererProps
 // ============================================================
 
 interface MultiSelectFieldProps {
-  _field: DynamicFieldDefinition;
+  field: DynamicFieldDefinition;
   value: string[] | null;
   onChange: (value: string[]) => void;
   readOnly: boolean;
 }
 
-const MultiSelectField = ({ _field, value, onChange, readOnly }: MultiSelectFieldProps) => {
+const MultiSelectField = ({ field, value, onChange, readOnly }: MultiSelectFieldProps) => {
   const selected = value ?? [];
 
   const toggle = (val: string) => {
@@ -465,13 +465,13 @@ const MultiSelectField = ({ _field, value, onChange, readOnly }: MultiSelectFiel
 // ============================================================
 
 interface FileFieldProps {
-  _field: DynamicFieldDefinition;
+  field: DynamicFieldDefinition;
   value: File | null;
   onChange: (value: File | null) => void;
   readOnly: boolean;
 }
 
-const FileField = ({ _field, value, onChange, readOnly }: FileFieldProps) => {
+const FileField = ({ field, value, onChange, readOnly }: FileFieldProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -643,13 +643,13 @@ const SignatureField = ({ value, onChange, readOnly }: SignatureFieldProps) => {
 // ============================================================
 
 interface TablaFieldProps {
-  _field: DynamicFieldDefinition;
+  field: DynamicFieldDefinition;
   value: Record<string, unknown>[] | null;
   onChange: (value: Record<string, unknown>[]) => void;
   readOnly: boolean;
 }
 
-const TablaField = ({ _field, value, onChange, readOnly }: TablaFieldProps) => {
+const TablaField = ({ field, value, onChange, readOnly }: TablaFieldProps) => {
   const rows = value ?? [];
   const columnas = field.columnas_tabla ?? [];
 

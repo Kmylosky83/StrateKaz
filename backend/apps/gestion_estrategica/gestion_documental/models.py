@@ -618,6 +618,47 @@ class Documento(models.Model):
         help_text='PDF original subido externamente para OCR'
     )
 
+    # Sellado PDF (Mejora 2 — ISO 27001)
+    pdf_sellado = models.FileField(
+        upload_to='documentos/sellados/%Y/%m/',
+        blank=True,
+        null=True,
+        verbose_name='PDF Sellado',
+        help_text='PDF sellado con X.509 y firmas visuales'
+    )
+    hash_pdf_sellado = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        verbose_name='Hash PDF Sellado',
+        help_text='SHA-256 del PDF sellado'
+    )
+    fecha_sellado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Sellado'
+    )
+    SELLADO_ESTADO_CHOICES = [
+        ('NO_APLICA', 'No Aplica'),
+        ('PENDIENTE', 'Pendiente'),
+        ('PROCESANDO', 'Procesando'),
+        ('COMPLETADO', 'Completado'),
+        ('ERROR', 'Error'),
+    ]
+    sellado_estado = models.CharField(
+        max_length=20,
+        choices=SELLADO_ESTADO_CHOICES,
+        default='NO_APLICA',
+        db_index=True,
+        verbose_name='Estado Sellado'
+    )
+    sellado_metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos Sellado',
+        help_text='{"certificado_serial": "...", "algoritmo": "sha256WithRSA", "error": "..."}'
+    )
+
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,

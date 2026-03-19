@@ -63,6 +63,8 @@ pycparser==2.23
 pydyf==0.12.1
 Pygments==2.19.2
 PyJWT==2.11.0
+pyhanko==0.25.2
+pyhanko-certvalidator==0.26.4
 pyotp==2.9.0
 pyphen==0.17.2
 pypng==0.20220715.0

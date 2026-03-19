@@ -28,6 +28,7 @@ class Command(BaseCommand):
         ('unidades', 'seed_configuracion_sistema', [], 'Unidades de medida y configuración base'),
         ('notificaciones', 'seed_notification_types', [], 'Tipos de notificación'),
         ('documentos_th', 'seed_tipos_documento_th', [], 'TipoDocumento + Plantilla para contratos laborales'),
+        ('documentos_sgi', 'seed_tipos_documento_sgi', [], 'Tipos de Documento estándar SGI (12 tipos ISO)'),
         ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
         ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),

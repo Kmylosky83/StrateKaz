@@ -15,11 +15,13 @@ class BibliotecaPlantilla(SharedModel):
     """
 
     CATEGORIA_CHOICES = [
-        ('PROCEDIMIENTO', 'Procedimiento'),
-        ('FORMATO', 'Formato'),
-        ('MANUAL', 'Manual'),
         ('POLITICA', 'Política'),
+        ('MANUAL', 'Manual'),
+        ('PROCEDIMIENTO', 'Procedimiento'),
         ('INSTRUCTIVO', 'Instructivo'),
+        ('FORMATO', 'Formato'),
+        ('ACTA', 'Acta'),
+        ('CONTRATO', 'Contrato'),
     ]
 
     INDUSTRIA_CHOICES = [

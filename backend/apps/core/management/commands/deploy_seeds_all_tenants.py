@@ -20,7 +20,12 @@ from django_tenants.utils import schema_context
 class Command(BaseCommand):
     help = 'Ejecuta seeds críticos en todos los tenant schemas (post-deploy)'
 
-    # Seeds disponibles: (código, comando, args, descripción)
+    # Seeds que corren en schema PUBLIC (antes de los tenant seeds)
+    PUBLIC_SEEDS = [
+        ('biblioteca', 'seed_biblioteca_plantillas', [], 'Biblioteca Maestra de plantillas StrateKaz (schema public)'),
+    ]
+
+    # Seeds que corren en cada TENANT schema
     AVAILABLE_SEEDS = [
         ('roles', 'init_roles_sugeridos', ['--reset'], 'Roles sugeridos (18 roles normativa colombiana)'),
         ('permisos', 'seed_permisos_rbac', [], 'Permisos RBAC'),
@@ -42,7 +47,11 @@ class Command(BaseCommand):
         parser.add_argument(
             '--only',
             type=str,
-            help=f'Ejecutar solo un seed específico: {", ".join(s[0] for s in self.AVAILABLE_SEEDS)}',
+            help=(
+                f'Ejecutar solo un seed específico. '
+                f'Public: {", ".join(s[0] for s in self.PUBLIC_SEEDS)}. '
+                f'Tenant: {", ".join(s[0] for s in self.AVAILABLE_SEEDS)}'
+            ),
         )
         parser.add_argument(
             '--tenant',
@@ -69,13 +78,16 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
 
         # Filtrar seeds
+        all_codes = [s[0] for s in self.PUBLIC_SEEDS] + [s[0] for s in self.AVAILABLE_SEEDS]
         if only:
-            seeds = [s for s in self.AVAILABLE_SEEDS if s[0] == only]
-            if not seeds:
+            is_public = any(s[0] == only for s in self.PUBLIC_SEEDS)
+            is_tenant = any(s[0] == only for s in self.AVAILABLE_SEEDS)
+            if not is_public and not is_tenant:
                 self.stderr.write(self.style.ERROR(
-                    f'Seed "{only}" no encontrado. Disponibles: {", ".join(s[0] for s in self.AVAILABLE_SEEDS)}'
+                    f'Seed "{only}" no encontrado. Disponibles: {", ".join(all_codes)}'
                 ))
                 return
+            seeds = [s for s in self.AVAILABLE_SEEDS if s[0] == only] if is_tenant else []
         else:
             seeds = self.AVAILABLE_SEEDS
 
@@ -119,10 +131,40 @@ class Command(BaseCommand):
                 self.stdout.write(f'    - {t.schema_name} ({t.name})')
             return
 
-        # Ejecutar seeds en cada tenant
+        # Fase 1: Seeds en schema public (Biblioteca Maestra, etc.)
         success_count = 0
         error_count = 0
 
+        if not only or only == 'biblioteca':
+            self.stdout.write(self.style.MIGRATE_HEADING(
+                '\n  ─── Schema PUBLIC (seeds globales) ───'
+            ))
+            for code, cmd, cmd_args, desc in self.PUBLIC_SEEDS:
+                if only and only != code:
+                    continue
+                try:
+                    if dry_run:
+                        continue
+                    if verbose:
+                        self.stdout.write(f'    → Ejecutando: {cmd}...')
+                        call_command(cmd, *cmd_args, stdout=self.stdout)
+                    else:
+                        from io import StringIO
+                        out = StringIO()
+                        call_command(cmd, *cmd_args, stdout=out)
+                    self.stdout.write(self.style.SUCCESS(f'    ✓ {code}'))
+                    success_count += 1
+                except Exception as e:
+                    self.stdout.write(self.style.ERROR(f'    ✗ {code}: {e}'))
+                    error_count += 1
+
+            if only == 'biblioteca':
+                self.stdout.write(self.style.SUCCESS(
+                    f'\n  Public seeds completados: {success_count} exitosos'
+                ))
+                return
+
+        # Fase 2: Seeds en cada tenant schema
         for tenant in tenant_list:
             self.stdout.write(self.style.MIGRATE_HEADING(
                 f'\n  ─── {tenant.name} ({tenant.schema_name}) ───'

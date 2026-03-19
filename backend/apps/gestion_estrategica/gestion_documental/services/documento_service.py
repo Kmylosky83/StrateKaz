@@ -9,7 +9,7 @@ from django.apps import apps
 from django.utils import timezone
 from django.db.models import Count, Q
 
-from .models import (
+from ..models import (
     TipoDocumento,
     Documento,
     VersionDocumento,

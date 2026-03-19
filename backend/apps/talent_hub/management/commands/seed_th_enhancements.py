@@ -395,41 +395,6 @@ class Command(BaseCommand):
             )
             self.stdout.write(f'    [{"OK" if created else "SKIP"}] Section: {code}')
 
-        # Mi Equipo (MSS)
-        mi_equipo_tab, created = ModuleTab.objects.get_or_create(
-            module=th_module,
-            code='mi_equipo',
-            defaults={
-                'name': 'Mi Equipo',
-                'description': 'Portal de gestión de equipo para jefes',
-                'icon': 'Users',
-                'route': '/mi-equipo',
-                'orden': 91,
-                'is_enabled': True,
-                'is_core': True,
-            }
-        )
-        self.stdout.write(
-            self.style.SUCCESS(f'  [{"CREATED" if created else "EXISTS"}] Tab: mi_equipo')
-        )
-
-        # Secciones de Mi Equipo
-        mss_sections = [
-            ('equipo_resumen', 'Mi Equipo', 'Users', 1),
-            ('aprobaciones', 'Aprobaciones', 'ClipboardCheck', 2),
-            ('evaluaciones_equipo', 'Evaluaciones', 'BarChart3', 3),
-        ]
-
-        for code, name, icon, orden in mss_sections:
-            _, created = TabSection.objects.get_or_create(
-                tab=mi_equipo_tab,
-                code=code,
-                defaults={
-                    'name': name,
-                    'icon': icon,
-                    'orden': orden,
-                    'is_enabled': True,
-                    'is_core': True,
-                }
-            )
-            self.stdout.write(f'    [{"OK" if created else "SKIP"}] Section: {code}')
+        # Mi Equipo es un SystemModule independiente (L20).
+        # Su RBAC se gestiona en seed_estructura_final.py, NO aquí.
+        # Eliminado: mi_equipo_tab bajo th_module (violaba independencia C2↔C2).

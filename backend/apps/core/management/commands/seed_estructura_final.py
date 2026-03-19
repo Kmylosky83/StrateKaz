@@ -72,6 +72,9 @@ class Command(BaseCommand):
 
     def _seed_for_current_tenant(self):
         """Ejecuta el seed completo dentro del schema del tenant actual."""
+        # PASO 0: Limpiar registros huérfanos de versiones anteriores
+        self._cleanup_legacy_mi_equipo_under_talent_hub()
+
         # PASO 1: Migrar módulos V1 → V2
         self._migrate_v1_to_v2()
 
@@ -122,6 +125,27 @@ class Command(BaseCommand):
     # =========================================================================
     # MIGRACIÓN V1 → V2
     # =========================================================================
+
+    def _cleanup_legacy_mi_equipo_under_talent_hub(self):
+        """
+        Elimina el tab 'mi_equipo' que fue creado erróneamente bajo
+        el SystemModule 'talent_hub' por seed_th_enhancements.py.
+        Mi Equipo es un módulo independiente (L20), no un tab de talent_hub.
+        """
+        try:
+            th_module = SystemModule.objects.filter(code='talent_hub').first()
+            if th_module:
+                orphan = ModuleTab.objects.filter(module=th_module, code='mi_equipo')
+                count = orphan.count()
+                if count:
+                    # Eliminar sections primero (cascade debería hacerlo, pero explícito)
+                    TabSection.objects.filter(tab__in=orphan).delete()
+                    orphan.delete()
+                    self.stdout.write(self.style.WARNING(
+                        f'  [CLEANUP] Eliminado tab mi_equipo huérfano de talent_hub ({count})'
+                    ))
+        except Exception:
+            pass  # Tabla puede no existir aún
 
     def _migrate_v1_to_v2(self):
         """

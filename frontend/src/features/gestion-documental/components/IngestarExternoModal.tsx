@@ -1,13 +1,20 @@
 /**
  * Modal para ingestar documentos PDF externos al sistema.
  * Sube el PDF, crea un Documento en BORRADOR, y dispara OCR async.
+ *
+ * Opcionalmente permite asociar una plantilla para alinear el documento
+ * al formato estándar de StrateKaz en la edición posterior.
  */
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button, Spinner } from '@/components/common';
 import { Input, Select } from '@/components/forms';
 import { Upload, FileText, X } from 'lucide-react';
-import { useTiposDocumento, useIngestarExterno } from '../hooks/useGestionDocumental';
+import {
+  useTiposDocumento,
+  usePlantillasDocumento,
+  useIngestarExterno,
+} from '../hooks/useGestionDocumental';
 import type { ClasificacionDocumento } from '../types/gestion-documental.types';
 
 interface IngestarExternoModalProps {
@@ -28,18 +35,36 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
   const [file, setFile] = useState<File | null>(null);
   const [titulo, setTitulo] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState<string>('');
+  const [plantillaId, setPlantillaId] = useState<string>('');
   const [clasificacion, setClasificacion] = useState<ClasificacionDocumento>('INTERNO');
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: tipos = [] } = useTiposDocumento();
+  const { data: plantillas = [] } = usePlantillasDocumento({ estado: 'ACTIVA' });
   const ingestarMutation = useIngestarExterno();
 
   const tipoOptions = tipos.map((t) => ({
     value: String(t.id),
     label: `${t.codigo} - ${t.nombre}`,
   }));
+
+  // Filtrar plantillas por tipo de documento seleccionado
+  const filteredPlantillas = useMemo(() => {
+    if (!tipoDocumento) return [];
+    return (
+      plantillas as {
+        id: number;
+        nombre: string;
+        tipo_documento?: { id: number } | number;
+        tipo_plantilla?: string;
+      }[]
+    ).filter((p) => {
+      const tipoId = typeof p.tipo_documento === 'object' ? p.tipo_documento?.id : p.tipo_documento;
+      return tipoId === Number(tipoDocumento);
+    });
+  }, [plantillas, tipoDocumento]);
 
   const validateFile = useCallback((f: File): string => {
     if (!f.name.toLowerCase().endsWith('.pdf')) {
@@ -87,6 +112,9 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
     formData.append('titulo', titulo.trim());
     formData.append('tipo_documento', tipoDocumento);
     formData.append('clasificacion', clasificacion);
+    if (plantillaId) {
+      formData.append('plantilla', plantillaId);
+    }
 
     await ingestarMutation.mutateAsync(formData);
     handleClose();
@@ -96,6 +124,7 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
     setFile(null);
     setTitulo('');
     setTipoDocumento('');
+    setPlantillaId('');
     setClasificacion('INTERNO');
     setFileError('');
     setDragOver(false);
@@ -210,7 +239,10 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
           <Select
             label="Tipo de documento *"
             value={tipoDocumento}
-            onChange={(e) => setTipoDocumento(e.target.value)}
+            onChange={(e) => {
+              setTipoDocumento(e.target.value);
+              setPlantillaId(''); // Reset plantilla al cambiar tipo
+            }}
             options={tipoOptions}
             placeholder="Seleccionar tipo..."
           />
@@ -220,6 +252,27 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
             onChange={(e) => setClasificacion(e.target.value as ClasificacionDocumento)}
             options={CLASIFICACION_OPTIONS}
           />
+          {filteredPlantillas.length > 0 && (
+            <div className="sm:col-span-2">
+              <Select
+                label="Plantilla (opcional)"
+                value={plantillaId}
+                onChange={(e) => setPlantillaId(e.target.value)}
+              >
+                <option value="">Sin plantilla — solo ingestar</option>
+                {filteredPlantillas.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                    {p.tipo_plantilla === 'FORMULARIO' ? ' (Formulario)' : ''}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Al asociar una plantilla, podrá alinear el documento al formato estándar en la
+                edición posterior.
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-gray-500">

@@ -36,16 +36,6 @@ POLITICA_CAMPOS = [
         'ancho_columna': 12,
     },
     {
-        'nombre_campo': 'titulo',
-        'etiqueta': 'Título de la Política',
-        'tipo_campo': 'TEXT',
-        'placeholder': 'Ej: Política de Calidad, Política Ambiental, Política SST',
-        'es_obligatorio': True,
-        'orden': 2,
-        'ancho_columna': 12,
-        'descripcion': 'Nombre completo de la política.',
-    },
-    {
         'nombre_campo': 'marco_normativo',
         'etiqueta': 'Marco Normativo Aplicable',
         'tipo_campo': 'MULTISELECT',
@@ -58,7 +48,7 @@ POLITICA_CAMPOS = [
             {'value': 'RES0312', 'label': 'Resolución 0312 — Estándares Mínimos'},
         ],
         'es_obligatorio': True,
-        'orden': 3,
+        'orden': 2,
         'ancho_columna': 12,
         'descripcion': 'Seleccione las normas que aplican a esta política.',
     },
@@ -73,7 +63,7 @@ POLITICA_CAMPOS = [
         ],
         'valor_por_defecto': 'ANUAL',
         'es_obligatorio': True,
-        'orden': 4,
+        'orden': 3,
         'ancho_columna': 6,
         'descripcion': 'Periodicidad con la que se revisa y actualiza esta política.',
     },
@@ -211,7 +201,7 @@ POLITICA_CAMPOS = [
 ]
 
 VARIABLES_POLITICA = [
-    'titulo', 'marco_normativo', 'frecuencia_revision',
+    'marco_normativo', 'frecuencia_revision',
     'objetivo', 'alcance', 'declaracion', 'compromisos',
     'comunicacion', 'elaboro_nombre', 'elaboro_cargo',
     'reviso_nombre', 'reviso_cargo',

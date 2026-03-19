@@ -2,9 +2,10 @@
  * DocumentoFormModal - Modal principal para crear/editar Documentos.
  *
  * Cuando la plantilla seleccionada es tipo FORMULARIO:
- * - Oculta textarea de contenido
+ * - Oculta campos redundantes (resumen, contenido, observaciones)
  * - Muestra DynamicFormRenderer con los campos de la plantilla
  * - Guarda los valores en datos_formulario
+ * - El título del documento ES el título del formulario
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
@@ -242,10 +243,15 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
       >
+        {/* === METADATOS MÍNIMOS (siempre visibles) === */}
         <Input
           label="Título *"
-          {...register('titulo', { required: 'Titulo es requerido' })}
-          placeholder="Procedimiento de Control de Documentos"
+          {...register('titulo', { required: 'Título es requerido' })}
+          placeholder={
+            isFormulario
+              ? 'Nombre del documento — ej: Política de Calidad'
+              : 'Procedimiento de Control de Documentos'
+          }
           error={errors.titulo?.message}
         />
 
@@ -287,53 +293,51 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
           />
         </div>
 
-        <Textarea
-          label="Resumen"
-          {...register('resumen')}
-          rows={2}
-          placeholder="Resumen ejecutivo del documento..."
-        />
-
-        {/* Content: DynamicFormRenderer for FORMULARIO, Textarea otherwise */}
+        {/* === CONTENIDO: depende del tipo de plantilla === */}
         {isFormulario && dynamicFields.length > 0 ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Formulario
-            </label>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
-              <DynamicFormRenderer
-                fields={dynamicFields}
-                values={formValues}
-                onChange={handleFormValueChange}
-                errors={dynamicErrors}
-                useGridLayout
-              />
-            </div>
+          /* FORMULARIO: solo el formulario dinámico, sin campos genéricos redundantes */
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+            <DynamicFormRenderer
+              fields={dynamicFields}
+              values={formValues}
+              onChange={handleFormValueChange}
+              errors={dynamicErrors}
+              useGridLayout
+            />
           </div>
         ) : (
-          <Textarea
-            label={`Contenido ${!isFormulario ? '*' : ''}`}
-            {...register('contenido', {
-              required: !isFormulario ? 'Contenido es requerido' : false,
-            })}
-            rows={10}
-            className="font-mono"
-            placeholder="Contenido del documento en formato HTML o Markdown..."
-            error={errors.contenido?.message}
-          />
+          /* HTML/MARKDOWN: campos genéricos completos */
+          <>
+            <Textarea
+              label="Resumen"
+              {...register('resumen')}
+              rows={2}
+              placeholder="Resumen ejecutivo del documento..."
+            />
+
+            <Textarea
+              label="Contenido *"
+              {...register('contenido', {
+                required: 'Contenido es requerido',
+              })}
+              rows={10}
+              className="font-mono"
+              placeholder="Contenido del documento en formato HTML o Markdown..."
+              error={errors.contenido?.message}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="Fecha de Vigencia" type="date" {...register('fecha_vigencia')} />
+              <Input
+                label="Revisión Programada"
+                type="date"
+                {...register('fecha_revision_programada')}
+              />
+            </div>
+
+            <Textarea label="Observaciones" {...register('observaciones')} rows={2} />
+          </>
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input label="Fecha de Vigencia" type="date" {...register('fecha_vigencia')} />
-
-          <Input
-            label="Revisión Programada"
-            type="date"
-            {...register('fecha_revision_programada')}
-          />
-        </div>
-
-        <Textarea label="Observaciones" {...register('observaciones')} rows={2} />
       </form>
     </BaseModal>
   );

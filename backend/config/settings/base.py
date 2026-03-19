@@ -175,19 +175,19 @@ TENANT_APPS = [
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 20: MI EQUIPO — Ciclo de vinculación del colaborador
-    # ACTIVADO 2026-03-18
+    # Sub-apps propias, 100% independientes de talent_hub
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.mi_equipo',
-    'apps.talent_hub.estructura_cargos',
-    'apps.talent_hub.seleccion_contratacion',
-    'apps.talent_hub.colaboradores',
-    'apps.talent_hub.onboarding_induccion',
-    'apps.talent_hub.novedades',                  # Vacaciones/Permisos (aprobaciones MSS)
+    'apps.mi_equipo.estructura_cargos',
+    'apps.mi_equipo.seleccion_contratacion',
+    'apps.mi_equipo.colaboradores',
+    'apps.mi_equipo.onboarding_induccion',
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 60: TALENTO — Gestión continua del colaborador
     # Descomentar cuando Level 53 (Cadena de Valor) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
+    # 'apps.talent_hub.novedades',              # Vacaciones/Permisos
     # 'apps.talent_hub.formacion_reinduccion',
     # 'apps.talent_hub.desempeno',
     # 'apps.talent_hub.control_tiempo',

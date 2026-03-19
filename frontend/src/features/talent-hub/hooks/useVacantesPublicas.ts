@@ -9,7 +9,7 @@
  * - Postulación pública
  * - Branding público del tenant (logo, colores, nombre)
  *
- * API Base: /talent-hub/seleccion/vacantes-publicas/
+ * API Base: /mi-equipo/seleccion/vacantes-publicas/
  * Branding: /tenant/public/branding/
  */
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -178,7 +178,7 @@ export function useVacantesPublicas(filters?: { search?: string; modalidad?: str
       if (filters?.modalidad) params.modalidad = filters.modalidad;
 
       const response = await api.get<VacantePublicaItem[]>(
-        '/talent-hub/seleccion/vacantes-publicas/',
+        '/mi-equipo/seleccion/vacantes-publicas/',
         { params }
       );
       const data = response.data;
@@ -195,7 +195,7 @@ export function useVacantePublicaDetail(id: number) {
     queryKey: vacantesPublicasKeys.detail(id),
     queryFn: async () => {
       const response = await api.get<VacantePublicaDetail>(
-        `/talent-hub/seleccion/vacantes-publicas/${id}/`
+        `/mi-equipo/seleccion/vacantes-publicas/${id}/`
       );
       return response.data;
     },
@@ -213,7 +213,7 @@ export function usePostulacionPublica() {
   return useMutation({
     mutationFn: async ({ vacanteId, formData }: { vacanteId: number; formData: FormData }) => {
       const response = await api.post(
-        `/talent-hub/seleccion/vacantes-publicas/${vacanteId}/postular/`,
+        `/mi-equipo/seleccion/vacantes-publicas/${vacanteId}/postular/`,
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },

@@ -5,7 +5,7 @@
  * Muestra score de compatibilidad (0-100) para cada candidato,
  * desglosado por: educacion, experiencia, salario, entrevistas, pruebas, evaluacion HR
  *
- * Endpoint: GET /api/talent-hub/seleccion/vacantes-activas/{id}/perfilamiento/
+ * Endpoint: GET /api/mi-equipo/seleccion/vacantes-activas/{id}/perfilamiento/
  */
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';

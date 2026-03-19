@@ -98,7 +98,7 @@ export function useModulosInduccion() {
   return useQuery({
     queryKey: onboardingKeys.modulos.list(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/modulos/');
+      const response = await api.get('/mi-equipo/onboarding/modulos/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as ModuloInduccion[];
     },
@@ -109,7 +109,7 @@ export function useModuloInduccion(id: number) {
   return useQuery({
     queryKey: onboardingKeys.modulos.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<ModuloInduccion>(`/talent-hub/onboarding/modulos/${id}/`);
+      const { data } = await api.get<ModuloInduccion>(`/mi-equipo/onboarding/modulos/${id}/`);
       return data;
     },
     enabled: !!id,
@@ -120,7 +120,7 @@ export function useModulosVigentes() {
   return useQuery({
     queryKey: onboardingKeys.modulos.vigentes(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/modulos/vigentes/');
+      const response = await api.get('/mi-equipo/onboarding/modulos/vigentes/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as ModuloInduccion[];
     },
@@ -131,7 +131,7 @@ export function useCreateModuloInduccion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: ModuloInduccionFormData) => {
-      const { data } = await api.post<ModuloInduccion>('/talent-hub/onboarding/modulos/', formData);
+      const { data } = await api.post<ModuloInduccion>('/mi-equipo/onboarding/modulos/', formData);
       return data;
     },
     onSuccess: () => {
@@ -154,7 +154,7 @@ export function useUpdateModuloInduccion() {
       data: Partial<ModuloInduccionFormData>;
     }) => {
       const { data } = await api.patch<ModuloInduccion>(
-        `/talent-hub/onboarding/modulos/${id}/`,
+        `/mi-equipo/onboarding/modulos/${id}/`,
         formData
       );
       return data;
@@ -171,7 +171,7 @@ export function useDeleteModuloInduccion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/talent-hub/onboarding/modulos/${id}/`);
+      await api.delete(`/mi-equipo/onboarding/modulos/${id}/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.modulos.all });
@@ -190,7 +190,7 @@ export function useItemsChecklist() {
   return useQuery({
     queryKey: onboardingKeys.itemsChecklist.list(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/items-checklist/');
+      const response = await api.get('/mi-equipo/onboarding/items-checklist/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as ItemChecklist[];
     },
@@ -202,7 +202,7 @@ export function useCreateItemChecklist() {
   return useMutation({
     mutationFn: async (formData: ItemChecklistFormData) => {
       const { data } = await api.post<ItemChecklist>(
-        '/talent-hub/onboarding/items-checklist/',
+        '/mi-equipo/onboarding/items-checklist/',
         formData
       );
       return data;
@@ -224,7 +224,7 @@ export function useChecklistPorColaborador(colaboradorId: number) {
     queryKey: onboardingKeys.checklistIngreso.porColaborador(colaboradorId),
     queryFn: async () => {
       const { data } = await api.get<{ items: ChecklistIngreso[]; resumen: ChecklistResumen }>(
-        `/talent-hub/onboarding/checklist-ingreso/por-colaborador/?colaborador_id=${colaboradorId}`
+        `/mi-equipo/onboarding/checklist-ingreso/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       return data;
     },
@@ -236,7 +236,7 @@ export function useVerificarItemChecklist() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/talent-hub/onboarding/checklist-ingreso/${id}/verificar/`);
+      const { data } = await api.post(`/mi-equipo/onboarding/checklist-ingreso/${id}/verificar/`);
       return data;
     },
     onSuccess: () => {
@@ -255,7 +255,7 @@ export function useEjecuciones() {
   return useQuery({
     queryKey: onboardingKeys.ejecuciones.list(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/ejecuciones/');
+      const response = await api.get('/mi-equipo/onboarding/ejecuciones/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionIntegral[];
     },
@@ -269,7 +269,7 @@ export function useEjecucionesPorColaborador(colaboradorId: number) {
       const { data } = await api.get<{
         inducciones: EjecucionIntegral[];
         resumen: EjecucionResumen;
-      }>(`/talent-hub/onboarding/ejecuciones/por-colaborador/?colaborador_id=${colaboradorId}`);
+      }>(`/mi-equipo/onboarding/ejecuciones/por-colaborador/?colaborador_id=${colaboradorId}`);
       return data;
     },
     enabled: !!colaboradorId,
@@ -280,7 +280,7 @@ export function useEjecucionesVencidas() {
   return useQuery({
     queryKey: onboardingKeys.ejecuciones.vencidas(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/ejecuciones/vencidas/');
+      const response = await api.get('/mi-equipo/onboarding/ejecuciones/vencidas/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionIntegral[];
     },
@@ -292,7 +292,7 @@ export function useCreateEjecucion() {
   return useMutation({
     mutationFn: async (formData: EjecucionCreateData) => {
       const { data } = await api.post<EjecucionIntegral>(
-        '/talent-hub/onboarding/ejecuciones/',
+        '/mi-equipo/onboarding/ejecuciones/',
         formData
       );
       return data;
@@ -310,7 +310,7 @@ export function useIniciarModulo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/talent-hub/onboarding/ejecuciones/${id}/iniciar/`);
+      const { data } = await api.post(`/mi-equipo/onboarding/ejecuciones/${id}/iniciar/`);
       return data;
     },
     onSuccess: () => {
@@ -325,7 +325,7 @@ export function useCompletarModulo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, nota }: { id: number; nota?: number }) => {
-      const { data } = await api.post(`/talent-hub/onboarding/ejecuciones/${id}/completar/`, {
+      const { data } = await api.post(`/mi-equipo/onboarding/ejecuciones/${id}/completar/`, {
         nota,
       });
       return data;
@@ -425,7 +425,7 @@ export function useEntregasActivos() {
   return useQuery({
     queryKey: onboardingKeys.entregasActivos.list(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/entregas-activos/');
+      const response = await api.get('/mi-equipo/onboarding/entregas-activos/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
     },
@@ -437,7 +437,7 @@ export function useEntregasActivosPorColaborador(colaboradorId: number) {
     queryKey: onboardingKeys.entregasActivos.porColaborador(colaboradorId),
     queryFn: async () => {
       const response = await api.get(
-        `/talent-hub/onboarding/entregas-activos/por-colaborador/?colaborador_id=${colaboradorId}`
+        `/mi-equipo/onboarding/entregas-activos/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
@@ -451,7 +451,7 @@ export function useActivosPendientesDevolucion() {
     queryKey: onboardingKeys.entregasActivos.pendientesDevolucion(),
     queryFn: async () => {
       const response = await api.get(
-        '/talent-hub/onboarding/entregas-activos/pendientes-devolucion/'
+        '/mi-equipo/onboarding/entregas-activos/pendientes-devolucion/'
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
@@ -464,7 +464,7 @@ export function useCreateEntregaActivo() {
   return useMutation({
     mutationFn: async (formData: EntregaActivoFormData) => {
       const { data } = await api.post<EntregaActivo>(
-        '/talent-hub/onboarding/entregas-activos/',
+        '/mi-equipo/onboarding/entregas-activos/',
         formData
       );
       return data;
@@ -490,7 +490,7 @@ export function useRegistrarDevolucion() {
       observaciones?: string;
     }) => {
       const { data } = await api.post(
-        `/talent-hub/onboarding/entregas-activos/${id}/registrar-devolucion/`,
+        `/mi-equipo/onboarding/entregas-activos/${id}/registrar-devolucion/`,
         body
       );
       return data;
@@ -512,7 +512,7 @@ export function useFirmasDocumentos() {
   return useQuery({
     queryKey: onboardingKeys.firmasDocumentos.list(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/firmas-documentos/');
+      const response = await api.get('/mi-equipo/onboarding/firmas-documentos/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as FirmaDocumento[];
     },
@@ -527,7 +527,7 @@ export function useFirmasPorColaborador(colaboradorId: number) {
         documentos: FirmaDocumento[];
         resumen: { total: number; firmados: number; pendientes: number };
       }>(
-        `/talent-hub/onboarding/firmas-documentos/por-colaborador/?colaborador_id=${colaboradorId}`
+        `/mi-equipo/onboarding/firmas-documentos/por-colaborador/?colaborador_id=${colaboradorId}`
       );
       return data;
     },
@@ -539,7 +539,7 @@ export function useFirmasPendientes() {
   return useQuery({
     queryKey: onboardingKeys.firmasDocumentos.pendientes(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/onboarding/firmas-documentos/pendientes/');
+      const response = await api.get('/mi-equipo/onboarding/firmas-documentos/pendientes/');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as FirmaDocumento[];
     },
@@ -551,7 +551,7 @@ export function useCreateFirmaDocumento() {
   return useMutation({
     mutationFn: async (formData: FirmaDocumentoFormData) => {
       const { data } = await api.post<FirmaDocumento>(
-        '/talent-hub/onboarding/firmas-documentos/',
+        '/mi-equipo/onboarding/firmas-documentos/',
         formData
       );
       return data;
@@ -569,7 +569,7 @@ export function useMarcarFirmado() {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await api.post(
-        `/talent-hub/onboarding/firmas-documentos/${id}/marcar-firmado/`
+        `/mi-equipo/onboarding/firmas-documentos/${id}/marcar-firmado/`
       );
       return data;
     },
@@ -589,9 +589,7 @@ export function useOnboardingEstadisticas() {
   return useQuery({
     queryKey: onboardingKeys.estadisticas(),
     queryFn: async () => {
-      const { data } = await api.get<OnboardingEstadisticas>(
-        '/talent-hub/onboarding/estadisticas/'
-      );
+      const { data } = await api.get<OnboardingEstadisticas>('/mi-equipo/onboarding/estadisticas/');
       return data;
     },
   });

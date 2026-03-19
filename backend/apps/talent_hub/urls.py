@@ -1,10 +1,9 @@
 """
-URLs para Talent Hub
-Sistema de Gestión StrateKaz
+URLs para Talent Hub (L60)
 
-Sub-apps divididas en dos niveles de cascada:
-- L20 (Mi Equipo): estructura_cargos, seleccion, colaboradores, onboarding, novedades
-- L60 (Talento):   formacion, desempeno, control_tiempo, nomina, disciplinario, off_boarding
+Sub-apps de gestión continua del colaborador.
+Las sub-apps L20 (estructura_cargos, selección, colaboradores, onboarding)
+se movieron a apps.mi_equipo — ver mi_equipo/urls.py.
 
 Solo se incluyen las URLs de sub-apps que estén en INSTALLED_APPS.
 """
@@ -26,26 +25,11 @@ def _is_installed(app_label):
 urlpatterns = []
 
 # ═══════════════════════════════════════════════════════════════════════════
-# L20: MI EQUIPO — Ciclo de vinculación (se activan con mi_equipo)
+# L60: TALENTO — Gestión continua (se activan después)
 # ═══════════════════════════════════════════════════════════════════════════
-if _is_installed('estructura_cargos'):
-    urlpatterns.append(path('estructura-cargos/', include('apps.talent_hub.estructura_cargos.urls')))
-
-if _is_installed('seleccion_contratacion'):
-    urlpatterns.append(path('seleccion/', include('apps.talent_hub.seleccion_contratacion.urls')))
-
-if _is_installed('colaboradores'):
-    urlpatterns.append(path('empleados/', include('apps.talent_hub.colaboradores.urls')))
-
-if _is_installed('onboarding_induccion'):
-    urlpatterns.append(path('onboarding/', include('apps.talent_hub.onboarding_induccion.urls')))
-
 if _is_installed('novedades'):
     urlpatterns.append(path('novedades/', include('apps.talent_hub.novedades.urls')))
 
-# ═══════════════════════════════════════════════════════════════════════════
-# L60: TALENTO — Gestión continua (se activan después)
-# ═══════════════════════════════════════════════════════════════════════════
 if _is_installed('formacion_reinduccion'):
     urlpatterns.append(path('formacion/', include('apps.talent_hub.formacion_reinduccion.urls')))
 
@@ -67,11 +51,10 @@ if _is_installed('off_boarding'):
 # ═══════════════════════════════════════════════════════════════════════════
 # Portales y servicios transversales
 # ═══════════════════════════════════════════════════════════════════════════
-if _is_installed('colaboradores'):
-    # ESS solo funciona si colaboradores está activo
-    urlpatterns.append(path('mi-portal/', include('apps.talent_hub.api.ess_urls')))
 
-# Portal Jefe (MSS) → MOVIDO a apps.mi_equipo (L20, /api/mi-equipo/)
+# ESS (Mi Portal) — requiere colaboradores activo (vive en mi_equipo ahora)
+if _is_installed('colaboradores'):
+    urlpatterns.append(path('mi-portal/', include('apps.talent_hub.api.ess_urls')))
 
 if _is_installed('consultores_externos'):
     urlpatterns.append(path('consultores-externos/', include('apps.talent_hub.consultores_externos.urls')))

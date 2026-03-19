@@ -57,7 +57,7 @@ def empresa(db):
 @pytest.fixture
 def colaborador(db, empresa, usuario):
     """Colaborador responsable de acciones."""
-    from apps.talent_hub.colaboradores.models import Colaborador
+    from apps.mi_equipo.colaboradores.models import Colaborador
     return Colaborador.objects.create(
         empresa_id=empresa.id,
         numero_identificacion='1234567890',

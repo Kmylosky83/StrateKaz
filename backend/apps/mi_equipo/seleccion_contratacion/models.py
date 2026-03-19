@@ -81,7 +81,7 @@ class TipoContrato(OrderedModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'talent_hub_tipo_contrato'
+        db_table = 'mi_equipo_tipo_contrato'
         verbose_name = 'Tipo de Contrato'
         verbose_name_plural = 'Tipos de Contrato'
         ordering = ['orden', 'nombre']
@@ -140,7 +140,7 @@ class TipoEntidad(OrderedModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'talent_hub_tipo_entidad'
+        db_table = 'mi_equipo_tipo_entidad'
         verbose_name = 'Tipo de Entidad'
         verbose_name_plural = 'Tipos de Entidad'
         ordering = ['orden', 'nombre']
@@ -215,7 +215,7 @@ class EntidadSeguridadSocial(OrderedModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'talent_hub_entidad_seguridad_social'
+        db_table = 'mi_equipo_entidad_seguridad_social'
         verbose_name = 'Entidad de Seguridad Social'
         verbose_name_plural = 'Entidades de Seguridad Social'
         ordering = ['tipo_entidad__orden', 'orden', 'nombre']
@@ -288,7 +288,7 @@ class TipoPrueba(OrderedModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'talent_hub_tipo_prueba'
+        db_table = 'mi_equipo_tipo_prueba'
         verbose_name = 'Tipo de Prueba'
         verbose_name_plural = 'Tipos de Prueba'
         ordering = ['orden', 'nombre']
@@ -537,7 +537,7 @@ class VacanteActiva(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_vacante_activa'
+        db_table = 'mi_equipo_vacante_activa'
         verbose_name = 'Vacante Activa'
         verbose_name_plural = 'Vacantes Activas'
         ordering = ['-fecha_apertura', '-prioridad']
@@ -900,7 +900,7 @@ class Candidato(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_candidato'
+        db_table = 'mi_equipo_candidato'
         verbose_name = 'Candidato'
         verbose_name_plural = 'Candidatos'
         ordering = ['-fecha_postulacion']
@@ -1160,7 +1160,7 @@ class Entrevista(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_entrevista'
+        db_table = 'mi_equipo_entrevista'
         verbose_name = 'Entrevista'
         verbose_name_plural = 'Entrevistas'
         ordering = ['-fecha_programada']
@@ -1376,7 +1376,7 @@ class Prueba(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_prueba'
+        db_table = 'mi_equipo_prueba'
         verbose_name = 'Prueba'
         verbose_name_plural = 'Pruebas'
         ordering = ['-fecha_programada']
@@ -1505,7 +1505,7 @@ class AfiliacionSS(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_afiliacion_ss'
+        db_table = 'mi_equipo_afiliacion_ss'
         verbose_name = 'Afiliación a Seguridad Social'
         verbose_name_plural = 'Afiliaciones a Seguridad Social'
         ordering = ['-fecha_solicitud']
@@ -1709,7 +1709,7 @@ class HistorialContrato(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_historial_contrato'
+        db_table = 'mi_equipo_historial_contrato'
         verbose_name = 'Historial de Contrato'
         verbose_name_plural = 'Historial de Contratos'
         ordering = ['-fecha_inicio']
@@ -1911,7 +1911,7 @@ class PlantillaPruebaDinamica(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'seleccion_plantilla_prueba_dinamica'
+        db_table = 'mi_equipo_plantilla_prueba_dinamica'
         ordering = ['-created_at']
         verbose_name = 'Plantilla de Prueba Dinámica'
         verbose_name_plural = 'Plantillas de Pruebas Dinámicas'
@@ -2082,7 +2082,7 @@ class AsignacionPruebaDinamica(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'seleccion_asignacion_prueba_dinamica'
+        db_table = 'mi_equipo_asignacion_prueba_dinamica'
         ordering = ['-fecha_asignacion']
         verbose_name = 'Asignación de Prueba Dinámica'
         verbose_name_plural = 'Asignaciones de Pruebas Dinámicas'
@@ -2362,7 +2362,7 @@ class EntrevistaAsincronica(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_entrevista_asincronica'
+        db_table = 'mi_equipo_entrevista_asincronica'
         verbose_name = 'Entrevista Asincronica'
         verbose_name_plural = 'Entrevistas Asincronicas'
         ordering = ['-created_at']

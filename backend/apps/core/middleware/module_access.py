@@ -8,7 +8,7 @@ URLs excluidas: /api/core/, /api/tenant/, /api/auth/, /api/health/, /admin/
 
 Soporte multi-módulo: una URL puede mapearse a varios module_codes (lista).
 Basta con que UNO esté habilitado para permitir acceso.
-Ejemplo: /api/talent-hub/ → ['talent_hub', 'mi_equipo']
+Ejemplo: /api/gestion-documental/ → 'sistema_gestion'
 """
 import logging
 from django.http import JsonResponse
@@ -20,8 +20,8 @@ logger = logging.getLogger('apps')
 # Sincronizado con config/urls.py y seed_estructura_final.py
 #
 # Valor puede ser str (un módulo) o list[str] (cualquiera de ellos habilita acceso).
-# Mi Equipo (L20) usa endpoints de talent-hub para colaboradores, selección y
-# onboarding. Si mi_equipo está habilitado, se permite acceso a /api/talent-hub/.
+# Mi Equipo (L20) tiene sus propios endpoints en /api/mi-equipo/.
+# Talent Hub (L60) tiene endpoints independientes en /api/talent-hub/.
 URL_TO_MODULE_CODE: dict[str, str | list[str]] = {
     # C1 — Fundación
     'api/configuracion/': 'fundacion',
@@ -44,7 +44,7 @@ URL_TO_MODULE_CODE: dict[str, str | list[str]] = {
     'api/production-ops/': 'production_ops',
     'api/logistics-fleet/': 'logistics_fleet',
     'api/sales-crm/': 'sales_crm',
-    'api/talent-hub/': ['talent_hub', 'mi_equipo'],
+    'api/talent-hub/': 'talent_hub',
     'api/mi-equipo/': 'mi_equipo',
     'api/administracion/': 'administracion',
     'api/tesoreria/': 'tesoreria',

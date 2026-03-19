@@ -44,7 +44,7 @@ def check_contratos_por_vencer(self):
     for tenant in _get_active_tenants():
         try:
             with schema_context(tenant.schema_name):
-                from apps.talent_hub.seleccion_contratacion.models import HistorialContrato
+                from apps.mi_equipo.seleccion_contratacion.models import HistorialContrato
                 from apps.talent_hub.services import NotificadorTH
 
                 for dias in alertas:
@@ -92,7 +92,7 @@ def check_periodos_prueba(self):
     for tenant in _get_active_tenants():
         try:
             with schema_context(tenant.schema_name):
-                from apps.talent_hub.colaboradores.models import Colaborador
+                from apps.mi_equipo.colaboradores.models import Colaborador
                 from apps.talent_hub.services import NotificadorTH
 
                 for dias in alertas:

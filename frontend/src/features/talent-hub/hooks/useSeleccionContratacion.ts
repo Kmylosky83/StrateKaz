@@ -5,7 +5,7 @@
  * Sprint 20: Refactorizado con factories (talentHubApi + thKeys).
  * Mantiene TODOS los exports existentes para compatibilidad.
  *
- * API Base: /talent-hub/seleccion/
+ * API Base: /mi-equipo/seleccion/
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -260,7 +260,7 @@ export function usePublicarVacanteActiva() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, url_publicacion }: { id: number; url_publicacion?: string }) => {
-      const response = await api.post(`/talent-hub/seleccion/vacantes-activas/${id}/publicar/`, {
+      const response = await api.post(`/mi-equipo/seleccion/vacantes-activas/${id}/publicar/`, {
         url_publicacion,
       });
       return response.data;
@@ -324,7 +324,7 @@ export function useCreateCandidato() {
             else formData.append(key, String(value));
           }
         });
-        const response = await api.post('/talent-hub/seleccion/candidatos/', formData, {
+        const response = await api.post('/mi-equipo/seleccion/candidatos/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -527,7 +527,7 @@ export function useCalificarPrueba() {
       recomendaciones?: string;
       aprobado?: boolean;
     }) => {
-      const response = await api.post(`/talent-hub/seleccion/pruebas/${id}/calificar/`, {
+      const response = await api.post(`/mi-equipo/seleccion/pruebas/${id}/calificar/`, {
         calificacion,
         observaciones,
         recomendaciones,
@@ -588,7 +588,7 @@ export function useConfirmarAfiliacion() {
       fecha_afiliacion?: string;
       numero_afiliacion?: string;
     }) => {
-      const response = await api.post(`/talent-hub/seleccion/afiliaciones/${id}/confirmar/`, {
+      const response = await api.post(`/mi-equipo/seleccion/afiliaciones/${id}/confirmar/`, {
         fecha_afiliacion,
         numero_afiliacion,
       });
@@ -656,7 +656,7 @@ export function useCreateHistorialContrato() {
             else formData.append(key, String(value));
           }
         });
-        const response = await api.post('/talent-hub/seleccion/historial-contratos/', formData, {
+        const response = await api.post('/mi-equipo/seleccion/historial-contratos/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
@@ -675,7 +675,7 @@ export function useFirmarContrato() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(`/talent-hub/seleccion/historial-contratos/${id}/firmar/`);
+      const response = await api.post(`/mi-equipo/seleccion/historial-contratos/${id}/firmar/`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -762,7 +762,7 @@ export function useContratoPublico(token: string) {
     queryKey: ['contrato-publico', token],
     queryFn: async () => {
       const response = await api.get<ContratoPublicData>(
-        `/talent-hub/seleccion/firmar-contrato/${token}/`
+        `/mi-equipo/seleccion/firmar-contrato/${token}/`
       );
       return response.data;
     },
@@ -776,7 +776,7 @@ export function useContratoPublico(token: string) {
 export function useFirmarContratoPublico() {
   return useMutation({
     mutationFn: async ({ token, firma_imagen }: { token: string; firma_imagen: string }) => {
-      const response = await api.put(`/talent-hub/seleccion/firmar-contrato/${token}/`, {
+      const response = await api.put(`/mi-equipo/seleccion/firmar-contrato/${token}/`, {
         firma_imagen,
       });
       return response.data;
@@ -871,7 +871,7 @@ export function useDuplicarPlantillaPrueba() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(`/talent-hub/seleccion/plantillas-prueba/${id}/duplicar/`);
+      const response = await api.post(`/mi-equipo/seleccion/plantillas-prueba/${id}/duplicar/`);
       return response.data;
     },
     onSuccess: () => {
@@ -942,7 +942,7 @@ export function usePruebaPublica(token: string) {
     queryKey: ['prueba-publica', token],
     queryFn: async () => {
       const response = await api.get<PruebaPublicaData>(
-        `/talent-hub/seleccion/responder-prueba/${token}/`
+        `/mi-equipo/seleccion/responder-prueba/${token}/`
       );
       return response.data;
     },
@@ -961,7 +961,7 @@ export function useResponderPrueba() {
       token: string;
       respuestas: Record<string, unknown>;
     }) => {
-      const response = await api.put(`/talent-hub/seleccion/responder-prueba/${token}/`, {
+      const response = await api.put(`/mi-equipo/seleccion/responder-prueba/${token}/`, {
         respuestas,
       });
       return response.data;
@@ -1042,7 +1042,7 @@ export function useCancelarEntrevistaAsync() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(`/talent-hub/seleccion/entrevistas-async/${id}/cancelar/`);
+      const response = await api.post(`/mi-equipo/seleccion/entrevistas-async/${id}/cancelar/`);
       return response.data;
     },
     onSuccess: () => {
@@ -1063,7 +1063,7 @@ export function useEntrevistaPublica(token: string) {
     queryKey: ['entrevista-publica', token],
     queryFn: async () => {
       const response = await api.get<EntrevistaAsincronicaPublicData>(
-        `/talent-hub/seleccion/responder-entrevista/${token}/`
+        `/mi-equipo/seleccion/responder-entrevista/${token}/`
       );
       return response.data;
     },
@@ -1082,7 +1082,7 @@ export function useResponderEntrevistaAsync() {
       token: string;
       respuestas: Record<string, string>;
     }) => {
-      const response = await api.put(`/talent-hub/seleccion/responder-entrevista/${token}/`, {
+      const response = await api.put(`/mi-equipo/seleccion/responder-entrevista/${token}/`, {
         respuestas,
       });
       return response.data;

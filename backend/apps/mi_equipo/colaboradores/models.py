@@ -305,7 +305,7 @@ class Colaborador(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_colaborador'
+        db_table = 'mi_equipo_colaborador'
         verbose_name = 'Colaborador'
         verbose_name_plural = 'Colaboradores'
         ordering = ['-fecha_ingreso', 'primer_apellido', 'primer_nombre']
@@ -509,7 +509,7 @@ class HojaVida(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_hoja_vida'
+        db_table = 'mi_equipo_hoja_vida'
         verbose_name = 'Hoja de Vida'
         verbose_name_plural = 'Hojas de Vida'
 
@@ -718,7 +718,7 @@ class InfoPersonal(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_info_personal'
+        db_table = 'mi_equipo_info_personal'
         verbose_name = 'Información Personal'
         verbose_name_plural = 'Información Personal'
 
@@ -870,7 +870,7 @@ class HistorialLaboral(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_historial_laboral'
+        db_table = 'mi_equipo_historial_laboral'
         verbose_name = 'Historial Laboral'
         verbose_name_plural = 'Historial Laboral'
         ordering = ['-fecha_movimiento', '-created_at']

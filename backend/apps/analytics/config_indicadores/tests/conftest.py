@@ -71,7 +71,7 @@ def empresa(db):
 @pytest.fixture
 def cargo_medicion(db, empresa):
     """Cargo responsable de medición."""
-    from apps.talent_hub.estructura_cargos.models import Cargo
+    from apps.mi_equipo.estructura_cargos.models import Cargo
     return Cargo.objects.create(
         empresa_id=empresa.id,
         codigo='CARGO-MED-001',
@@ -84,7 +84,7 @@ def cargo_medicion(db, empresa):
 @pytest.fixture
 def cargo_analisis(db, empresa):
     """Cargo responsable de análisis."""
-    from apps.talent_hub.estructura_cargos.models import Cargo
+    from apps.mi_equipo.estructura_cargos.models import Cargo
     return Cargo.objects.create(
         empresa_id=empresa.id,
         codigo='CARGO-ANA-001',

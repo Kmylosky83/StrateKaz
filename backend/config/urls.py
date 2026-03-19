@@ -228,8 +228,9 @@ if is_app_installed('apps.mi_equipo'):
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)
+# talent_hub/urls.py se auto-detecta: solo monta sub-apps instaladas
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.talent_hub.estructura_cargos'):
+if is_app_installed('apps.mi_equipo') or is_app_installed('apps.talent_hub.novedades'):
     urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))
 
 if is_app_installed('apps.administracion.presupuesto'):

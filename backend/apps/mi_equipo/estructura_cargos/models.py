@@ -333,7 +333,7 @@ class Profesiograma(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_profesiograma'
+        db_table = 'mi_equipo_profesiograma'
         verbose_name = 'Profesiograma'
         verbose_name_plural = 'Profesiogramas'
         ordering = ['-created_at', 'codigo']
@@ -551,7 +551,7 @@ class MatrizCompetencia(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_matriz_competencia'
+        db_table = 'mi_equipo_matriz_competencia'
         verbose_name = 'Matriz de Competencia'
         verbose_name_plural = 'Matrices de Competencias'
         ordering = ['profesiograma', '-criticidad', 'tipo_competencia', 'nombre_competencia']
@@ -712,7 +712,7 @@ class RequisitoEspecial(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_requisito_especial'
+        db_table = 'mi_equipo_requisito_especial'
         verbose_name = 'Requisito Especial'
         verbose_name_plural = 'Requisitos Especiales'
         ordering = ['profesiograma', '-criticidad', 'tipo_requisito', 'nombre_requisito']
@@ -1018,7 +1018,7 @@ class Vacante(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_vacante'
+        db_table = 'mi_equipo_vacante'
         verbose_name = 'Vacante'
         verbose_name_plural = 'Vacantes'
         ordering = ['-fecha_apertura', '-prioridad', 'codigo']

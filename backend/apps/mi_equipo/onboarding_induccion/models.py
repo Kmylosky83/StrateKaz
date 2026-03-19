@@ -217,7 +217,7 @@ class ModuloInduccion(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_modulo_induccion'
+        db_table = 'mi_equipo_modulo_induccion'
         verbose_name = 'Módulo de Inducción'
         verbose_name_plural = 'Módulos de Inducción'
         ordering = ['orden', 'nombre']
@@ -293,7 +293,7 @@ class AsignacionPorCargo(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_asignacion_cargo_modulo'
+        db_table = 'mi_equipo_asignacion_cargo_modulo'
         verbose_name = 'Asignación por Cargo'
         verbose_name_plural = 'Asignaciones por Cargo'
         unique_together = ['cargo', 'modulo']
@@ -362,7 +362,7 @@ class ItemChecklist(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_item_checklist'
+        db_table = 'mi_equipo_item_checklist'
         verbose_name = 'Item de Checklist'
         verbose_name_plural = 'Items de Checklist'
         ordering = ['categoria', 'orden']
@@ -431,7 +431,7 @@ class ChecklistIngreso(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_checklist_ingreso'
+        db_table = 'mi_equipo_checklist_ingreso'
         verbose_name = 'Checklist de Ingreso'
         verbose_name_plural = 'Checklists de Ingreso'
         unique_together = ['colaborador', 'item']
@@ -544,7 +544,7 @@ class EjecucionIntegral(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_ejecucion_integral'
+        db_table = 'mi_equipo_ejecucion_integral'
         verbose_name = 'Ejecución de Inducción'
         verbose_name_plural = 'Ejecuciones de Inducción'
         unique_together = ['colaborador', 'modulo']
@@ -662,7 +662,7 @@ class EntregaEPP(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_entrega_epp'
+        db_table = 'mi_equipo_entrega_epp'
         verbose_name = 'Entrega de EPP'
         verbose_name_plural = 'Entregas de EPP'
         ordering = ['-fecha_entrega']
@@ -825,7 +825,7 @@ class EntregaActivo(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_entrega_activo'
+        db_table = 'mi_equipo_entrega_activo'
         verbose_name = 'Entrega de Activo'
         verbose_name_plural = 'Entregas de Activos'
         ordering = ['-fecha_entrega']
@@ -938,7 +938,7 @@ class FirmaDocumento(BaseCompanyModel):
     )
 
     class Meta:
-        db_table = 'talent_hub_firma_documento'
+        db_table = 'mi_equipo_firma_documento'
         verbose_name = 'Firma de Documento'
         verbose_name_plural = 'Firmas de Documentos'
         ordering = ['-fecha_firma']

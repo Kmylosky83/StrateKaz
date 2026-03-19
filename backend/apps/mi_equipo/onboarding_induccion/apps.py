@@ -3,11 +3,11 @@ from django.apps import AppConfig
 
 class OnboardingInduccionConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.talent_hub.onboarding_induccion'
-    verbose_name = 'OnboardingInduccion'
+    name = 'apps.mi_equipo.onboarding_induccion'
+    verbose_name = 'Onboarding e Inducción'
 
     def ready(self):
         try:
-            import apps.talent_hub.onboarding_induccion.signals  # noqa
+            import apps.mi_equipo.onboarding_induccion.signals  # noqa
         except ImportError:
             pass

@@ -20,7 +20,7 @@ class Command(BaseCommand):
     help = 'Carga catálogo de Tipos de Contrato Laboral (legislación colombiana)'
 
     def handle(self, *args, **kwargs):
-        from apps.talent_hub.seleccion_contratacion.models import TipoContrato
+        from apps.mi_equipo.seleccion_contratacion.models import TipoContrato
 
         self.stdout.write(self.style.HTTP_INFO('=' * 60))
         self.stdout.write(self.style.HTTP_INFO('CARGANDO TIPOS DE CONTRATO LABORAL'))

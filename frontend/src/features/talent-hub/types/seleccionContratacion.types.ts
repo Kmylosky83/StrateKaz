@@ -6,7 +6,7 @@
  * - backend/apps/talent_hub/seleccion_contratacion/serializers.py
  * - backend/apps/talent_hub/seleccion_contratacion/views.py
  *
- * API Base: /api/talent-hub/seleccion/
+ * API Base: /api/mi-equipo/seleccion/
  */
 
 // =============================================================================

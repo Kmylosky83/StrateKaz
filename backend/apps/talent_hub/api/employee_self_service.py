@@ -42,7 +42,7 @@ class MiPerfilView(APIView):
         """Obtiene el colaborador asociado al usuario actual."""
         if hasattr(user, 'colaborador'):
             return user.colaborador
-        from apps.talent_hub.colaboradores.models import Colaborador
+        from apps.mi_equipo.colaboradores.models import Colaborador
         return Colaborador.objects.filter(usuario=user, is_active=True).first()
 
     def get(self, request):
@@ -106,7 +106,7 @@ class MiPerfilView(APIView):
         }
 
         if info_updates:
-            from apps.talent_hub.colaboradores.models import InfoPersonal
+            from apps.mi_equipo.colaboradores.models import InfoPersonal
             info_personal, _ = InfoPersonal.objects.get_or_create(
                 colaborador=colaborador,
                 defaults={
@@ -136,7 +136,7 @@ class MisVacacionesView(APIView):
     def _get_colaborador(self, user):
         if hasattr(user, 'colaborador'):
             return user.colaborador
-        from apps.talent_hub.colaboradores.models import Colaborador
+        from apps.mi_equipo.colaboradores.models import Colaborador
         return Colaborador.objects.filter(usuario=user, is_active=True).first()
 
     def get(self, request):
@@ -206,7 +206,7 @@ class SolicitarPermisoView(APIView):
         if hasattr(effective_user, 'colaborador'):
             colaborador = effective_user.colaborador
         else:
-            from apps.talent_hub.colaboradores.models import Colaborador
+            from apps.mi_equipo.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
                 usuario=effective_user, is_active=True
             ).first()
@@ -246,7 +246,7 @@ class MisRecibosView(APIView):
         if hasattr(effective_user, 'colaborador'):
             colaborador = effective_user.colaborador
         else:
-            from apps.talent_hub.colaboradores.models import Colaborador
+            from apps.mi_equipo.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
                 usuario=effective_user, is_active=True
             ).first()
@@ -254,7 +254,12 @@ class MisRecibosView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        from apps.talent_hub.nomina.models import LiquidacionNomina
+        try:
+            from apps.talent_hub.nomina.models import LiquidacionNomina
+        except (ImportError, RuntimeError):
+            # App nomina no está en INSTALLED_APPS (L60)
+            return Response(RecibosNominaESSSerializer([], many=True).data)
+
         liquidaciones = LiquidacionNomina.objects.filter(
             colaborador=colaborador,
             is_active=True,
@@ -284,7 +289,7 @@ class MisCapacitacionesView(APIView):
         if hasattr(effective_user, 'colaborador'):
             colaborador = effective_user.colaborador
         else:
-            from apps.talent_hub.colaboradores.models import Colaborador
+            from apps.mi_equipo.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
                 usuario=effective_user, is_active=True
             ).first()
@@ -292,7 +297,12 @@ class MisCapacitacionesView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        from apps.talent_hub.formacion_reinduccion.models import EjecucionCapacitacion
+        try:
+            from apps.talent_hub.formacion_reinduccion.models import EjecucionCapacitacion
+        except (ImportError, RuntimeError):
+            # App formacion_reinduccion no está en INSTALLED_APPS (L60)
+            return Response(CapacitacionESSSerializer([], many=True).data)
+
         ejecuciones = EjecucionCapacitacion.objects.filter(
             colaborador=colaborador,
             is_active=True,
@@ -323,7 +333,7 @@ class MiEvaluacionView(APIView):
         if hasattr(effective_user, 'colaborador'):
             colaborador = effective_user.colaborador
         else:
-            from apps.talent_hub.colaboradores.models import Colaborador
+            from apps.mi_equipo.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
                 usuario=effective_user, is_active=True
             ).first()
@@ -331,7 +341,12 @@ class MiEvaluacionView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        from apps.talent_hub.desempeno.models import EvaluacionDesempeno
+        try:
+            from apps.talent_hub.desempeno.models import EvaluacionDesempeno
+        except (ImportError, RuntimeError):
+            # App desempeno no está en INSTALLED_APPS (L60)
+            return Response(EvaluacionResumenESSSerializer([], many=True).data)
+
         evaluaciones = EvaluacionDesempeno.objects.filter(
             colaborador=colaborador,
             is_active=True,

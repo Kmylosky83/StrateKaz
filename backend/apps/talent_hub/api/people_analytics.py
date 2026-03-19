@@ -46,7 +46,7 @@ class PeopleAnalyticsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from apps.talent_hub.colaboradores.models import Colaborador
+        from apps.mi_equipo.colaboradores.models import Colaborador
 
         empresa = get_tenant_empresa(auto_create=False)
 

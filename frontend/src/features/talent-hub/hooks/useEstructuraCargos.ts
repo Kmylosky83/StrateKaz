@@ -128,7 +128,7 @@ export function useCompetencias(profesiogramaId: string) {
     queryKey: profesiogramaKeys.competencias(profesiogramaId),
     queryFn: async () => {
       const response = await apiClient.get(
-        `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
+        `/mi-equipo/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as MatrizCompetencia[];
@@ -150,7 +150,7 @@ export function useRequisitos(profesiogramaId: string) {
     queryKey: profesiogramaKeys.requisitos(profesiogramaId),
     queryFn: async () => {
       const response = await apiClient.get(
-        `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
+        `/mi-equipo/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
       );
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as RequisitoEspecial[];
@@ -187,7 +187,7 @@ export function useVacantesAbiertas() {
   return useQuery({
     queryKey: vacanteKeys.abiertas(),
     queryFn: async () => {
-      const response = await apiClient.get('/talent-hub/estructura-cargos/vacantes/?abierta=true');
+      const response = await apiClient.get('/mi-equipo/estructura-cargos/vacantes/?abierta=true');
       const data = response.data;
       return (Array.isArray(data) ? data : (data?.results ?? [])) as Vacante[];
     },
@@ -203,7 +203,7 @@ export function useVacanteEstadisticas() {
     queryKey: vacanteKeys.estadisticas(),
     queryFn: async () => {
       const response = await apiClient.get<VacanteEstadisticas>(
-        '/talent-hub/estructura-cargos/vacantes/estadisticas/'
+        '/mi-equipo/estructura-cargos/vacantes/estadisticas/'
       );
       return response.data;
     },

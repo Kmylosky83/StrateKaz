@@ -6,9 +6,9 @@
  * Metodos custom se agregan con spread operator.
  *
  * Base URLs:
- *   /talent-hub/seleccion/   → Seleccion y Contratacion
- *   /talent-hub/empleados/   → Colaboradores
- *   /talent-hub/onboarding/  → Onboarding e Induccion
+ *   /mi-equipo/seleccion/   → Seleccion y Contratacion
+ *   /mi-equipo/empleados/   → Colaboradores
+ *   /mi-equipo/onboarding/  → Onboarding e Induccion
  */
 import { apiClient } from '@/lib/api-client';
 import { createApiClient } from '@/lib/api-factory';
@@ -185,14 +185,14 @@ import type {
 // BASE URLS
 // =============================================================================
 
-const SELECCION_URL = '/talent-hub/seleccion';
-const EMPLEADOS_URL = '/talent-hub/empleados';
-const ONBOARDING_URL = '/talent-hub/onboarding';
+const SELECCION_URL = '/mi-equipo/seleccion';
+const EMPLEADOS_URL = '/mi-equipo/empleados';
+const ONBOARDING_URL = '/mi-equipo/onboarding';
 const CONTROL_TIEMPO_URL = '/talent-hub/control-tiempo';
 const NOVEDADES_URL = '/talent-hub/novedades';
 const NOMINA_URL = '/talent-hub/nomina';
 const DISCIPLINARIO_URL = '/talent-hub/proceso-disciplinario';
-const ESTRUCTURA_CARGOS_URL = '/talent-hub/estructura-cargos';
+const ESTRUCTURA_CARGOS_URL = '/mi-equipo/estructura-cargos';
 const DESEMPENO_URL = '/talent-hub/desempeno';
 const FORMACION_URL = '/talent-hub/formacion';
 const OFF_BOARDING_URL = '/talent-hub/off-boarding';

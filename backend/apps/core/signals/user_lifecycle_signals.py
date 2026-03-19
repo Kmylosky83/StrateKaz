@@ -159,7 +159,7 @@ def auto_fill_vacancy_on_user_created(sender, instance, created, **kwargs):
         return
 
     try:
-        from apps.talent_hub.seleccion_contratacion.models import VacanteActiva
+        from apps.mi_equipo.seleccion_contratacion.models import VacanteActiva
 
         # Buscar vacante abierta o en proceso para este cargo
         vacante = VacanteActiva.objects.filter(

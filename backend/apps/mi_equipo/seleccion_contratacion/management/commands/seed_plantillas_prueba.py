@@ -1210,7 +1210,7 @@ class Command(BaseCommand):
 
     def _seed_tenant(self):
         from django.apps import apps
-        from apps.talent_hub.seleccion_contratacion.models import PlantillaPruebaDinamica
+        from apps.mi_equipo.seleccion_contratacion.models import PlantillaPruebaDinamica
 
         EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
 

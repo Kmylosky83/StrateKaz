@@ -2,7 +2,7 @@
  * DashboardTab - Dashboard Analytics del proceso de Seleccion y Contratacion
  * Vista general con KPIs, distribuciones y metricas clave
  *
- * Datos del endpoint: /api/talent-hub/seleccion/estadisticas/
+ * Datos del endpoint: /api/mi-equipo/seleccion/estadisticas/
  * + hooks locales para contratos por vencer y afiliaciones
  */
 import { useMemo } from 'react';

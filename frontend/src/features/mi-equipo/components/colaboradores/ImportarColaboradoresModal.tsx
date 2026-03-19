@@ -26,7 +26,7 @@ import { apiClient } from '@/lib/api-client';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { thKeys } from '../../api/queryKeys';
 
-const EMPLEADOS_URL = '/talent-hub/empleados';
+const EMPLEADOS_URL = '/mi-equipo/empleados';
 
 interface FilaError {
   fila: number | string;

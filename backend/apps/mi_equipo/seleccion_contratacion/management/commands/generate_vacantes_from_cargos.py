@@ -34,7 +34,7 @@ class Command(BaseCommand):
         dry_run = options['dry_run']
 
         from apps.core.models import Cargo
-        from apps.talent_hub.seleccion_contratacion.models import (
+        from apps.mi_equipo.seleccion_contratacion.models import (
             VacanteActiva,
             TipoContrato,
         )

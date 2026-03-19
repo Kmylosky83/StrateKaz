@@ -129,7 +129,7 @@ export function useColaboradorCompleto(id: string) {
     queryKey: colaboradoresKeys.completo(id),
     queryFn: async () => {
       const r = await api.get<ColaboradorCompleto>(
-        `/talent-hub/empleados/colaboradores/${id}/completo/`
+        `/mi-equipo/empleados/colaboradores/${id}/completo/`
       );
       return r.data;
     },
@@ -142,7 +142,7 @@ export function useColaboradoresActivos() {
   return useQuery({
     queryKey: colaboradoresKeys.activos(),
     queryFn: async () => {
-      const r = await api.get('/talent-hub/empleados/colaboradores/activos/');
+      const r = await api.get('/mi-equipo/empleados/colaboradores/activos/');
       return unwrapList<Colaborador>(r.data);
     },
     staleTime: 5 * 60 * 1000,
@@ -153,7 +153,7 @@ export function useColaboradoresPorArea(areaId: string) {
   return useQuery({
     queryKey: colaboradoresKeys.porArea(areaId),
     queryFn: async () => {
-      const r = await api.get(`/talent-hub/empleados/colaboradores/por-area/${areaId}/`);
+      const r = await api.get(`/mi-equipo/empleados/colaboradores/por-area/${areaId}/`);
       return unwrapList<Colaborador>(r.data);
     },
     enabled: !!areaId,
@@ -165,7 +165,7 @@ export function useColaboradoresPorCargo(cargoId: string) {
   return useQuery({
     queryKey: colaboradoresKeys.porCargo(cargoId),
     queryFn: async () => {
-      const r = await api.get(`/talent-hub/empleados/colaboradores/por-cargo/${cargoId}/`);
+      const r = await api.get(`/mi-equipo/empleados/colaboradores/por-cargo/${cargoId}/`);
       return unwrapList<Colaborador>(r.data);
     },
     enabled: !!cargoId,
@@ -198,7 +198,7 @@ export function useUpdateColaborador() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ColaboradorFormData> }) =>
-      api.patch(`/talent-hub/empleados/colaboradores/${id}/`, data).then((r) => r.data),
+      api.patch(`/mi-equipo/empleados/colaboradores/${id}/`, data).then((r) => r.data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: thKeys.colaboradores.all });
       qc.invalidateQueries({ queryKey: colaboradoresKeys.detail(id) });
@@ -253,7 +253,7 @@ export function useCrearAccesoColaborador() {
       username: string;
     }) =>
       api
-        .post(`/talent-hub/empleados/colaboradores/${id}/crear-acceso/`, {
+        .post(`/mi-equipo/empleados/colaboradores/${id}/crear-acceso/`, {
           email_corporativo,
           username,
         })
@@ -277,7 +277,7 @@ export function useHojaVidaColaborador(colaboradorId: string) {
     queryKey: colaboradoresKeys.hojasVida.porColaborador(colaboradorId),
     queryFn: async () => {
       const r = await api.get<HojaVida>(
-        `/talent-hub/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
+        `/mi-equipo/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
       );
       return r.data;
     },
@@ -306,7 +306,7 @@ export function useUpdateHojaVida() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<HojaVidaFormData> }) =>
-      api.patch(`/talent-hub/empleados/hojas-vida/${id}/`, data).then((r) => r.data),
+      api.patch(`/mi-equipo/empleados/hojas-vida/${id}/`, data).then((r) => r.data),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: thKeys.hojasVida.all });
       if (result.colaborador) {
@@ -328,7 +328,7 @@ export function useInfoPersonalColaborador(colaboradorId: string) {
     queryKey: colaboradoresKeys.infoPersonal.porColaborador(colaboradorId),
     queryFn: async () => {
       const r = await api.get<InfoPersonal>(
-        `/talent-hub/empleados/info-personal/por-colaborador/${colaboradorId}/`
+        `/mi-equipo/empleados/info-personal/por-colaborador/${colaboradorId}/`
       );
       return r.data;
     },
@@ -357,7 +357,7 @@ export function useUpdateInfoPersonal() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InfoPersonalFormData> }) =>
-      api.patch(`/talent-hub/empleados/info-personal/${id}/`, data).then((r) => r.data),
+      api.patch(`/mi-equipo/empleados/info-personal/${id}/`, data).then((r) => r.data),
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: thKeys.infoPersonal.all });
       if (result.colaborador) {
@@ -390,7 +390,7 @@ export function useHistorialLaboralColaborador(colaboradorId: string) {
     queryKey: colaboradoresKeys.historialLaboral.porColaborador(colaboradorId),
     queryFn: async () => {
       const r = await api.get(
-        `/talent-hub/empleados/historial-laboral/por-colaborador/${colaboradorId}/`
+        `/mi-equipo/empleados/historial-laboral/por-colaborador/${colaboradorId}/`
       );
       return unwrapList<HistorialLaboral>(r.data);
     },
@@ -403,7 +403,7 @@ export function useAscensos() {
   return useQuery({
     queryKey: colaboradoresKeys.historialLaboral.ascensos(),
     queryFn: async () => {
-      const r = await api.get('/talent-hub/empleados/historial-laboral/ascensos/');
+      const r = await api.get('/mi-equipo/empleados/historial-laboral/ascensos/');
       return unwrapList<HistorialLaboral>(r.data);
     },
     staleTime: 5 * 60 * 1000,
@@ -414,7 +414,7 @@ export function useTraslados() {
   return useQuery({
     queryKey: colaboradoresKeys.historialLaboral.traslados(),
     queryFn: async () => {
-      const r = await api.get('/talent-hub/empleados/historial-laboral/traslados/');
+      const r = await api.get('/mi-equipo/empleados/historial-laboral/traslados/');
       return unwrapList<HistorialLaboral>(r.data);
     },
     staleTime: 5 * 60 * 1000,

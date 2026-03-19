@@ -128,7 +128,7 @@ export function useMisDocumentos(colaboradorId: number | null | undefined) {
       if (!colaboradorId) return null;
       try {
         const response = await api.get<HojaVidaESS>(
-          `/talent-hub/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
+          `/mi-equipo/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
         );
         return response.data;
       } catch (error: any) {

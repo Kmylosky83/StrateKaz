@@ -6,7 +6,7 @@
  * - Ver si tiene CV y certificados subidos
  * - Consultar su información académica
  *
- * Conectado al endpoint: GET /talent-hub/empleados/hojas-vida/por-colaborador/{id}/
+ * Conectado al endpoint: GET /mi-equipo/empleados/hojas-vida/por-colaborador/{id}/
  */
 
 import {

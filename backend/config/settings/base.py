@@ -175,14 +175,14 @@ TENANT_APPS = [
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 20: MI EQUIPO — Ciclo de vinculación del colaborador
-    # Descomentar cuando Level 15 (Gestión Documental) esté estabilizado
+    # ACTIVADO 2026-03-18
     # ═══════════════════════════════════════════════════════════════════════════
-    # 'apps.mi_equipo',
-    # 'apps.talent_hub.estructura_cargos',
-    # 'apps.talent_hub.seleccion_contratacion',
-    # 'apps.talent_hub.colaboradores',
-    # 'apps.talent_hub.onboarding_induccion',
-    # 'apps.talent_hub.novedades',                  # Vacaciones/Permisos (aprobaciones MSS)
+    'apps.mi_equipo',
+    'apps.talent_hub.estructura_cargos',
+    'apps.talent_hub.seleccion_contratacion',
+    'apps.talent_hub.colaboradores',
+    'apps.talent_hub.onboarding_induccion',
+    'apps.talent_hub.novedades',                  # Vacaciones/Permisos (aprobaciones MSS)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 60: TALENTO — Gestión continua del colaborador

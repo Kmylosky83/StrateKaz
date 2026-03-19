@@ -17,7 +17,7 @@ export interface SystemModule {
 }
 
 /** Nivel máximo de cascade actualmente desplegado */
-export const CURRENT_DEPLOY_LEVEL = 12;
+export const CURRENT_DEPLOY_LEVEL = 20;
 
 /**
  * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.

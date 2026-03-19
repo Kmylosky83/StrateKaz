@@ -15,7 +15,7 @@ import type {
   TipoSolicitud,
 } from '../types';
 
-const BASE_URL = '/talent-hub/mi-equipo';
+const BASE_URL = '/mi-equipo';
 
 // ============================================================================
 // QUERY KEYS

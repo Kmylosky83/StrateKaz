@@ -57,8 +57,7 @@ urlpatterns = [
     # Portal Empleado (ESS - Employee Self-Service)
     path('mi-portal/', include('apps.talent_hub.api.ess_urls')),
 
-    # Portal Jefe (MSS - Manager Self-Service)
-    path('mi-equipo/', include('apps.talent_hub.api.mss_urls')),
+    # Portal Jefe (MSS) → MOVIDO a apps.mi_equipo (L20, /api/mi-equipo/)
 
     # Consultores Externos
     path('consultores-externos/', include('apps.talent_hub.consultores_externos.urls')),

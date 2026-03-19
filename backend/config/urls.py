@@ -221,7 +221,13 @@ if is_app_installed('apps.sales_crm.gestion_clientes'):
     urlpatterns.append(path('api/sales-crm/', include('apps.sales_crm.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
-# NIVEL 5: HABILITADORES - Talent + Finance + Accounting
+# NIVEL L20: MI EQUIPO — Portal Jefe + Ciclo de vinculación
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.mi_equipo'):
+    urlpatterns.append(path('api/mi-equipo/', include('apps.mi_equipo.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.talent_hub.estructura_cargos'):
     urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))

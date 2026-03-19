@@ -5,7 +5,7 @@
  * Las categorías reflejan los 10 grupos visuales del sidebar V2
  * (SIDEBAR_LAYERS en backend/apps/core/viewsets_config.py).
  *
- * Arquitectura Cascada V2.1 — 20 módulos organizados por ciclo PHVA + Transversal.
+ * Arquitectura Cascada V3 — 20 módulos organizados por ciclo PHVA + Transversal.
  */
 
 export interface SystemModule {
@@ -68,20 +68,20 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   },
 
   // NIVEL_EQUIPO — Mi Equipo
-  { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO', deployLevel: 35 },
+  { code: 'mi_equipo', name: 'Mi Equipo', category: 'NIVEL_EQUIPO', deployLevel: 20 },
 
   // NIVEL_PLANIFICACION — Planificación
   {
     code: 'planificacion_operativa',
     name: 'Planificación Operativa',
     category: 'NIVEL_PLANIFICACION',
-    deployLevel: 15,
+    deployLevel: 25,
   },
   {
     code: 'planeacion_estrategica',
     name: 'Planeación Estratégica',
     category: 'NIVEL_PLANIFICACION',
-    deployLevel: 15,
+    deployLevel: 30,
   },
 
   // ── HACER ──
@@ -91,7 +91,7 @@ export const AVAILABLE_MODULES: SystemModule[] = [
     code: 'proteccion_cumplimiento',
     name: 'Protección y Cumplimiento',
     category: 'NIVEL_PROTECCION',
-    deployLevel: 20,
+    deployLevel: 35,
   },
 
   // NIVEL_HSEQ — Gestión Integral
@@ -99,48 +99,51 @@ export const AVAILABLE_MODULES: SystemModule[] = [
     code: 'gestion_integral',
     name: 'Gestión Integral HSEQ',
     category: 'NIVEL_HSEQ',
-    deployLevel: 25,
+    deployLevel: 40,
   },
 
   // NIVEL_CADENA — Cadena de Valor
-  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA', deployLevel: 30 },
+  { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA', deployLevel: 50 },
   {
     code: 'production_ops',
     name: 'Base de Operaciones',
     category: 'NIVEL_CADENA',
-    deployLevel: 30,
+    deployLevel: 51,
   },
-  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_CADENA', deployLevel: 30 },
-  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_CADENA', deployLevel: 30 },
+  { code: 'logistics_fleet', name: 'Logística y Flota', category: 'NIVEL_CADENA', deployLevel: 52 },
+  { code: 'sales_crm', name: 'Ventas y CRM', category: 'NIVEL_CADENA', deployLevel: 53 },
 
-  // NIVEL_TALENTO — Talent Hub
-  { code: 'talent_hub', name: 'Centro de Talento', category: 'NIVEL_TALENTO', deployLevel: 35 },
+  // NIVEL_TALENTO — Gestión Continua del Talento
+  { code: 'talent_hub', name: 'Gestión del Talento', category: 'NIVEL_TALENTO', deployLevel: 60 },
 
   // NIVEL_SOPORTE — Soporte Administrativo
-  { code: 'administracion', name: 'Administración', category: 'NIVEL_SOPORTE', deployLevel: 40 },
-  { code: 'tesoreria', name: 'Tesorería', category: 'NIVEL_SOPORTE', deployLevel: 40 },
-  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_SOPORTE', deployLevel: 40 },
+  { code: 'administracion', name: 'Administración', category: 'NIVEL_SOPORTE', deployLevel: 70 },
+  { code: 'tesoreria', name: 'Tesorería', category: 'NIVEL_SOPORTE', deployLevel: 71 },
+  { code: 'accounting', name: 'Contabilidad', category: 'NIVEL_SOPORTE', deployLevel: 72 },
 
-  // ── VERIFICAR + ACTUAR ──
+  // ── VERIFICAR ──
 
-  // NIVEL_INTELIGENCIA — Inteligencia y Mejora
+  // NIVEL_INTELIGENCIA — Inteligencia
   {
     code: 'analytics',
     name: 'Inteligencia de Negocios',
     category: 'NIVEL_INTELIGENCIA',
-    deployLevel: 45,
+    deployLevel: 80,
   },
   {
     code: 'revision_direccion',
     name: 'Revisión por la Dirección',
     category: 'NIVEL_INTELIGENCIA',
-    deployLevel: 45,
+    deployLevel: 85,
   },
+
+  // ── ACTUAR ──
+
   {
     code: 'acciones_mejora',
     name: 'Acciones de Mejora',
     category: 'NIVEL_INTELIGENCIA',
-    deployLevel: 45,
+    deployLevel: 90,
   },
   {
     code: 'audit_system',

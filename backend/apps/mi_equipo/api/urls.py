@@ -1,11 +1,12 @@
 """
-URLs del Portal Jefe (MSS - Manager Self-Service).
+URLs Mi Equipo (L20) — Portal Jefe (MSS).
 
 Todos los endpoints filtran por el equipo del jefe autenticado.
+Montado en: /api/mi-equipo/
 """
 from django.urls import path
 
-from .manager_self_service import (
+from .views import (
     MiEquipoView,
     AprobacionesPendientesView,
     AprobarSolicitudView,
@@ -13,7 +14,7 @@ from .manager_self_service import (
     EvaluacionesEquipoView,
 )
 
-app_name = 'mss'
+app_name = 'mi_equipo'
 
 urlpatterns = [
     path('', MiEquipoView.as_view(), name='mi-equipo'),

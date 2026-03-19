@@ -174,17 +174,23 @@ TENANT_APPS = [
     # 'apps.sales_crm.servicio_cliente',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 40: TALENTO HUMANO
-    # Descomentar cuando Level 35 (Cadena de Valor) esté estabilizado
+    # CASCADA LEVEL 20: MI EQUIPO — Ciclo de vinculación del colaborador
+    # Descomentar cuando Level 15 (Gestión Documental) esté estabilizado
     # ═══════════════════════════════════════════════════════════════════════════
+    # 'apps.mi_equipo',
     # 'apps.talent_hub.estructura_cargos',
     # 'apps.talent_hub.seleccion_contratacion',
     # 'apps.talent_hub.colaboradores',
     # 'apps.talent_hub.onboarding_induccion',
+    # 'apps.talent_hub.novedades',                  # Vacaciones/Permisos (aprobaciones MSS)
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 60: TALENTO — Gestión continua del colaborador
+    # Descomentar cuando Level 53 (Cadena de Valor) esté estabilizado
+    # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.talent_hub.formacion_reinduccion',
     # 'apps.talent_hub.desempeno',
     # 'apps.talent_hub.control_tiempo',
-    # 'apps.talent_hub.novedades',
     # 'apps.talent_hub.nomina',
     # 'apps.talent_hub.proceso_disciplinario',
     # 'apps.talent_hub.off_boarding',

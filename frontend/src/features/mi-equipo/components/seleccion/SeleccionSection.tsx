@@ -82,11 +82,14 @@ export const SeleccionSection = () => {
       ) : (
         <Card className="p-8">
           <EmptyState
-            icon={
-              <div className="p-3 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
-                {currentTab.icon && <currentTab.icon size={16} />}
-              </div>
-            }
+            icon={(() => {
+              const Icon = currentTab.icon;
+              return (
+                <div className="p-3 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
+                  {Icon && <Icon size={16} />}
+                </div>
+              );
+            })()}
             title={currentTab.label}
             description={`Sección en desarrollo. Estará disponible próximamente.`}
           />

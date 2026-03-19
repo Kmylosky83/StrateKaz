@@ -8,9 +8,10 @@
  *   - Admin Global: Tema + Nombre admin + Logout
  *   - Tenant: Busqueda + Notificaciones + Tema + UserMenu completo
  */
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, Moon, Sun, Search, LogOut } from 'lucide-react';
+import NotificationPanel from '@/features/audit-system/components/NotificationPanel';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
@@ -53,6 +54,8 @@ export const Header = ({
   // Estado de busqueda global (solo aplica en modo tenant)
   const searchModal = useSearchModal();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
+  const toggleNotifPanel = useCallback(() => setIsNotifPanelOpen((prev) => !prev), []);
 
   // Notificaciones no leidas (hook ya tiene enabled: !!user?.id, no fetcha sin tenant)
   const { data: notificacionesNoLeidas } = useNotificacionesNoLeidas();
@@ -194,35 +197,42 @@ export const Header = ({
                 </button>
 
                 {/* Notificaciones */}
-                <button
-                  onClick={() => navigate(ROUTES.NOTIFICATIONS)}
-                  className={cn(
-                    'relative p-2 rounded-lg transition-colors',
-                    'hover:bg-gray-100 dark:hover:bg-gray-700',
-                    'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                  )}
-                  title={
-                    unreadCount > 0
-                      ? `${unreadCount} ${HEADER_LABELS.NOTIFICATIONS}`
-                      : HEADER_LABELS.NOTIFICATIONS
-                  }
-                >
-                  <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                  {unreadCount > 0 && (
-                    <span
-                      className={cn(
-                        'absolute -top-0.5 -right-0.5',
-                        'flex items-center justify-center',
-                        'min-w-[18px] h-[18px] px-1',
-                        'text-[10px] font-bold text-white',
-                        'bg-red-500 rounded-full',
-                        'ring-2 ring-white dark:ring-gray-800'
-                      )}
-                    >
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={toggleNotifPanel}
+                    className={cn(
+                      'relative p-2 rounded-lg transition-colors',
+                      'hover:bg-gray-100 dark:hover:bg-gray-700',
+                      'focus:outline-none focus:ring-2 focus:ring-primary-500',
+                      isNotifPanelOpen && 'bg-gray-100 dark:bg-gray-700'
+                    )}
+                    title={
+                      unreadCount > 0
+                        ? `${unreadCount} ${HEADER_LABELS.NOTIFICATIONS}`
+                        : HEADER_LABELS.NOTIFICATIONS
+                    }
+                  >
+                    <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                    {unreadCount > 0 && (
+                      <span
+                        className={cn(
+                          'absolute -top-0.5 -right-0.5',
+                          'flex items-center justify-center',
+                          'min-w-[18px] h-[18px] px-1',
+                          'text-[10px] font-bold text-white',
+                          'bg-red-500 rounded-full',
+                          'ring-2 ring-white dark:ring-gray-800'
+                        )}
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <NotificationPanel
+                    isOpen={isNotifPanelOpen}
+                    onClose={() => setIsNotifPanelOpen(false)}
+                  />
+                </div>
 
                 {/* Asistente IA */}
                 <AIAssistantButton />

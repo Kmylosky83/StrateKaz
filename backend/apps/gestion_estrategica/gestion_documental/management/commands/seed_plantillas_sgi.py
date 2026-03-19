@@ -102,14 +102,16 @@ class Command(BaseCommand):
                         continue
 
                 # Crear/actualizar PlantillaDocumento desde la maestra
-                _, was_created = PlantillaDocumento.objects.update_or_create(
+                tipo_plantilla = getattr(maestra, 'tipo_plantilla', 'HTML') or 'HTML'
+
+                plantilla_obj, was_created = PlantillaDocumento.objects.update_or_create(
                     empresa_id=empresa.id,
                     codigo=maestra.codigo,
                     defaults={
                         'nombre': maestra.nombre,
                         'descripcion': maestra.descripcion,
                         'tipo_documento': tipo_doc,
-                        'tipo_plantilla': 'HTML',
+                        'tipo_plantilla': tipo_plantilla,
                         'contenido_plantilla': maestra.contenido_plantilla,
                         'variables_disponibles': maestra.variables_disponibles,
                         'estilos_css': maestra.estilos_css,
@@ -122,6 +124,38 @@ class Command(BaseCommand):
                         'es_personalizada': False,
                     },
                 )
+
+                # Para FORMULARIO: crear CampoFormulario desde JSON de la maestra
+                campos_json = getattr(maestra, 'campos_formulario', []) or []
+                if tipo_plantilla == 'FORMULARIO' and campos_json:
+                    CampoFormulario = apps.get_model('gestion_documental', 'CampoFormulario')
+                    campos_created = 0
+                    for campo_data in campos_json:
+                        defaults = {
+                            'etiqueta': campo_data.get('etiqueta', ''),
+                            'tipo_campo': campo_data.get('tipo_campo', 'TEXT'),
+                            'descripcion': campo_data.get('descripcion', ''),
+                            'placeholder': campo_data.get('placeholder', ''),
+                            'valor_por_defecto': campo_data.get('valor_por_defecto', ''),
+                            'opciones': campo_data.get('opciones', []),
+                            'es_obligatorio': campo_data.get('es_obligatorio', False),
+                            'orden': campo_data.get('orden', 0),
+                            'ancho_columna': campo_data.get('ancho_columna', 12),
+                            'columnas_tabla': campo_data.get('columnas_tabla', []),
+                            'is_active': True,
+                            'empresa_id': empresa.id,
+                        }
+                        _, cf_created = CampoFormulario.objects.update_or_create(
+                            plantilla=plantilla_obj,
+                            nombre_campo=campo_data['nombre_campo'],
+                            defaults=defaults,
+                        )
+                        if cf_created:
+                            campos_created += 1
+                    if campos_created:
+                        self.stdout.write(self.style.SUCCESS(
+                            f'    ✓ Campos formulario {maestra.codigo}: {campos_created} creados'
+                        ))
 
                 if was_created:
                     created_count += 1

@@ -52,15 +52,33 @@ class BibliotecaPlantilla(SharedModel):
         verbose_name='Código Tipo Documento',
         help_text='Código del TipoDocumento (PR, IN, FT, MA, POL)',
     )
+    TIPO_PLANTILLA_CHOICES = [
+        ('HTML', 'HTML'),
+        ('MARKDOWN', 'Markdown'),
+        ('FORMULARIO', 'Formulario Dinámico'),
+    ]
+
+    tipo_plantilla = models.CharField(
+        max_length=20,
+        choices=TIPO_PLANTILLA_CHOICES,
+        default='HTML',
+        verbose_name='Tipo de Plantilla',
+    )
     contenido_plantilla = models.TextField(
         blank=True,
         verbose_name='Contenido de la Plantilla',
-        help_text='HTML/Markdown con {{variables}} para sustitución',
+        help_text='HTML/Markdown con {{variables}}, o vacío para FORMULARIO',
     )
     variables_disponibles = models.JSONField(
         default=list,
         blank=True,
         verbose_name='Variables Disponibles',
+    )
+    campos_formulario = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Campos del Formulario',
+        help_text='JSON con definición de campos para tipo FORMULARIO. Se crean como CampoFormulario en cada tenant.',
     )
     estilos_css = models.TextField(
         blank=True,

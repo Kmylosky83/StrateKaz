@@ -374,61 +374,201 @@ VARIABLES_MANUAL = [
 
 
 # ============================================================================
-# PLANTILLA: POLÍTICA INTEGRAL SGI
+# PLANTILLA: POLÍTICA INTEGRAL SGI (tipo FORMULARIO)
 # ============================================================================
+# Los campos se definen como JSON y se crean como CampoFormulario en cada tenant.
+# Campos AUTO (empresa, código, versión, firmas) NO van aquí — los maneja el sistema.
 
-POLITICA_HTML = """
-<div class="documento-sgi politica">
-  <div class="encabezado text-center mb-4">
-    <h2>POLÍTICA INTEGRAL DEL SISTEMA DE GESTIÓN</h2>
-    <p class="text-muted">{{empresa_nombre}}</p>
-    <p><strong>Código:</strong> {{codigo_documento}} | <strong>Versión:</strong> {{version}} | <strong>Fecha:</strong> {{fecha_emision}}</p>
-  </div>
-
-  <div class="seccion mb-3">
-    <h4>DECLARACIÓN DE LA POLÍTICA</h4>
-    <p>{{declaracion_politica}}</p>
-  </div>
-
-  <div class="seccion mb-3">
-    <h4>COMPROMISOS</h4>
-    <p><strong>Calidad (ISO 9001):</strong> {{compromiso_calidad}}</p>
-    <p><strong>Medio Ambiente (ISO 14001):</strong> {{compromiso_ambiental}}</p>
-    <p><strong>Seguridad y Salud en el Trabajo (ISO 45001):</strong> {{compromiso_sst}}</p>
-    <p><strong>Seguridad de la Información (ISO 27001):</strong> {{compromiso_seguridad_info}}</p>
-  </div>
-
-  <div class="seccion mb-3">
-    <h4>MARCO DE REFERENCIA</h4>
-    <p>{{marco_referencia}}</p>
-  </div>
-
-  <div class="seccion mb-3">
-    <h4>COMUNICACIÓN Y DIFUSIÓN</h4>
-    <p>Esta política será comunicada a todos los niveles de la organización y estará
-    disponible para las partes interesadas que así lo requieran.</p>
-  </div>
-
-  <div class="firmas mt-5">
-    <div class="row">
-      <div class="col-12 text-center">
-        <div class="linea-firma">______________________________</div>
-        <p><strong>{{cargo_representante_legal}}</strong></p>
-        <p>{{nombre_representante_legal}}</p>
-        <p>{{empresa_nombre}}</p>
-        <p>Fecha de aprobación: {{fecha_aprobacion}}</p>
-      </div>
-    </div>
-  </div>
-</div>
-""".strip()
+POLITICA_CAMPOS = [
+    # ── SECCIÓN: INFORMACIÓN GENERAL ──
+    {
+        'nombre_campo': 'seccion_info_general',
+        'etiqueta': 'Información General',
+        'tipo_campo': 'SECCION',
+        'orden': 1,
+        'ancho_columna': 12,
+    },
+    {
+        'nombre_campo': 'titulo',
+        'etiqueta': 'Título de la Política',
+        'tipo_campo': 'TEXT',
+        'placeholder': 'Ej: Política Integral de Gestión',
+        'valor_por_defecto': 'Política Integral del Sistema de Gestión',
+        'es_obligatorio': True,
+        'orden': 2,
+        'ancho_columna': 12,
+        'descripcion': 'Nombre completo de la política.',
+    },
+    {
+        'nombre_campo': 'marco_normativo',
+        'etiqueta': 'Marco Normativo Aplicable',
+        'tipo_campo': 'MULTISELECT',
+        'opciones': [
+            {'value': 'ISO9001', 'label': 'ISO 9001 — Calidad'},
+            {'value': 'ISO14001', 'label': 'ISO 14001 — Medio Ambiente'},
+            {'value': 'ISO45001', 'label': 'ISO 45001 — Seguridad y Salud en el Trabajo'},
+            {'value': 'ISO27001', 'label': 'ISO 27001 — Seguridad de la Información'},
+            {'value': 'D1072', 'label': 'Decreto 1072 — SG-SST'},
+            {'value': 'RES0312', 'label': 'Resolución 0312 — Estándares Mínimos'},
+        ],
+        'es_obligatorio': True,
+        'orden': 3,
+        'ancho_columna': 12,
+        'descripcion': 'Seleccione las normas que aplican a esta política.',
+    },
+    {
+        'nombre_campo': 'frecuencia_revision',
+        'etiqueta': 'Frecuencia de Revisión',
+        'tipo_campo': 'SELECT',
+        'opciones': [
+            {'value': 'ANUAL', 'label': 'Anual'},
+            {'value': 'SEMESTRAL', 'label': 'Semestral'},
+            {'value': 'POR_CAMBIOS', 'label': 'Cuando haya cambios significativos'},
+        ],
+        'valor_por_defecto': 'ANUAL',
+        'es_obligatorio': True,
+        'orden': 4,
+        'ancho_columna': 6,
+        'descripcion': 'Periodicidad con la que se revisa y actualiza esta política.',
+    },
+    # ── SECCIÓN: CONTENIDO DE LA POLÍTICA ──
+    {
+        'nombre_campo': 'seccion_contenido',
+        'etiqueta': 'Contenido de la Política',
+        'tipo_campo': 'SECCION',
+        'orden': 10,
+        'ancho_columna': 12,
+    },
+    {
+        'nombre_campo': 'objetivo',
+        'etiqueta': 'Objetivo',
+        'tipo_campo': 'TEXTAREA',
+        'placeholder': 'Describa el propósito de esta política...',
+        'es_obligatorio': True,
+        'orden': 11,
+        'ancho_columna': 12,
+        'descripcion': 'Para qué existe esta política y qué propósito cumple dentro del SGI.',
+    },
+    {
+        'nombre_campo': 'alcance',
+        'etiqueta': 'Alcance',
+        'tipo_campo': 'TEXTAREA',
+        'placeholder': 'Aplica a todos los procesos, sedes y colaboradores de la organización...',
+        'es_obligatorio': True,
+        'orden': 12,
+        'ancho_columna': 12,
+        'descripcion': (
+            'A quién aplica, qué procesos y sedes cubre. '
+            'Se sugiere incluir la información de la empresa registrada en Fundación.'
+        ),
+    },
+    {
+        'nombre_campo': 'declaracion',
+        'etiqueta': 'Declaración de la Política',
+        'tipo_campo': 'TEXTAREA',
+        'placeholder': 'La alta dirección de [empresa] se compromete a...',
+        'es_obligatorio': True,
+        'orden': 13,
+        'ancho_columna': 12,
+        'descripcion': (
+            'El texto central de la política. Compromiso formal de la alta dirección. '
+            'Es el corazón del documento.'
+        ),
+    },
+    {
+        'nombre_campo': 'compromisos',
+        'etiqueta': 'Compromisos Específicos',
+        'tipo_campo': 'TABLA',
+        'orden': 14,
+        'ancho_columna': 12,
+        'descripcion': (
+            'Lista de compromisos concretos de la organización. '
+            'Cada uno asociado a la norma o requisito que cumple.'
+        ),
+        'columnas_tabla': [
+            {'nombre_campo': 'compromiso', 'etiqueta': 'Compromiso', 'tipo_campo': 'TEXTAREA'},
+            {
+                'nombre_campo': 'norma_asociada',
+                'etiqueta': 'Norma Asociada',
+                'tipo_campo': 'SELECT',
+                'opciones': [
+                    {'value': 'ISO9001', 'label': 'ISO 9001'},
+                    {'value': 'ISO14001', 'label': 'ISO 14001'},
+                    {'value': 'ISO45001', 'label': 'ISO 45001'},
+                    {'value': 'ISO27001', 'label': 'ISO 27001'},
+                    {'value': 'D1072', 'label': 'Decreto 1072'},
+                    {'value': 'GENERAL', 'label': 'General'},
+                ],
+            },
+        ],
+    },
+    {
+        'nombre_campo': 'comunicacion',
+        'etiqueta': 'Comunicación y Disponibilidad',
+        'tipo_campo': 'TEXTAREA',
+        'valor_por_defecto': (
+            'Esta política será comunicada a todos los niveles de la organización, '
+            'estará disponible para las partes interesadas que lo requieran y '
+            'será publicada en los medios internos de comunicación.'
+        ),
+        'es_obligatorio': True,
+        'orden': 15,
+        'ancho_columna': 12,
+        'descripcion': 'Cómo se comunica la política y dónde estará disponible.',
+    },
+    # ── SECCIÓN: FIRMAS ──
+    {
+        'nombre_campo': 'seccion_firmas',
+        'etiqueta': 'Responsables del Documento',
+        'tipo_campo': 'SECCION',
+        'orden': 20,
+        'ancho_columna': 12,
+    },
+    {
+        'nombre_campo': 'elaboro_nombre',
+        'etiqueta': 'Elaboró — Nombre',
+        'tipo_campo': 'TEXT',
+        'placeholder': 'Nombre del responsable que elaboró',
+        'es_obligatorio': True,
+        'orden': 21,
+        'ancho_columna': 6,
+        'descripcion': 'Persona que redactó la política.',
+    },
+    {
+        'nombre_campo': 'elaboro_cargo',
+        'etiqueta': 'Elaboró — Cargo',
+        'tipo_campo': 'TEXT',
+        'placeholder': 'Cargo del responsable',
+        'es_obligatorio': True,
+        'orden': 22,
+        'ancho_columna': 6,
+    },
+    {
+        'nombre_campo': 'reviso_nombre',
+        'etiqueta': 'Revisó — Nombre',
+        'tipo_campo': 'TEXT',
+        'placeholder': 'Nombre del responsable que revisó',
+        'es_obligatorio': True,
+        'orden': 23,
+        'ancho_columna': 6,
+        'descripcion': 'Persona que revisó y validó el contenido.',
+    },
+    {
+        'nombre_campo': 'reviso_cargo',
+        'etiqueta': 'Revisó — Cargo',
+        'tipo_campo': 'TEXT',
+        'placeholder': 'Cargo del responsable',
+        'es_obligatorio': True,
+        'orden': 24,
+        'ancho_columna': 6,
+    },
+]
 
 VARIABLES_POLITICA = [
-    'empresa_nombre', 'codigo_documento', 'version', 'fecha_emision',
-    'declaracion_politica', 'compromiso_calidad', 'compromiso_ambiental',
-    'compromiso_sst', 'compromiso_seguridad_info', 'marco_referencia',
-    'cargo_representante_legal', 'nombre_representante_legal',
-    'fecha_aprobacion',
+    'titulo', 'marco_normativo', 'frecuencia_revision',
+    'objetivo', 'alcance', 'declaracion', 'compromisos',
+    'comunicacion', 'elaboro_nombre', 'elaboro_cargo',
+    'reviso_nombre', 'reviso_cargo',
 ]
 
 
@@ -574,14 +714,16 @@ BIBLIOTECA_PLANTILLAS = [
         'codigo': 'POL-SGI-DEFAULT',
         'nombre': 'Política Integral SGI',
         'descripcion': (
-            'Plantilla HTML para la Política Integral del Sistema de Gestión. '
-            'Declaración de compromiso + 4 ejes (calidad, medio ambiente, SST, '
-            'seguridad de la información) + firma del representante legal. '
-            'Requisito ISO 9001 §5.2, ISO 14001 §5.2, ISO 45001 §5.2, ISO 27001 §5.2.'
+            'Formulario intuitivo para crear la Política Integral del Sistema de '
+            'Gestión. El usuario llena los campos (objetivo, alcance, declaración, '
+            'compromisos) y el sistema genera el documento con encabezado, firmas '
+            'y formato profesional. Requisito ISO 9001/14001/45001/27001 §5.2.'
         ),
         'tipo_documento_codigo': 'POL',
-        'contenido_plantilla': POLITICA_HTML,
+        'tipo_plantilla': 'FORMULARIO',
+        'contenido_plantilla': '',
         'variables_disponibles': VARIABLES_POLITICA,
+        'campos_formulario': POLITICA_CAMPOS,
         'categoria': 'POLITICA',
         'norma_iso_codigo': 'ISO9001',
         'orden': 5,
@@ -622,8 +764,10 @@ class Command(BaseCommand):
                         'nombre': data['nombre'],
                         'descripcion': data['descripcion'],
                         'tipo_documento_codigo': data['tipo_documento_codigo'],
+                        'tipo_plantilla': data.get('tipo_plantilla', 'HTML'),
                         'contenido_plantilla': data['contenido_plantilla'],
                         'variables_disponibles': data['variables_disponibles'],
+                        'campos_formulario': data.get('campos_formulario', []),
                         'categoria': data['categoria'],
                         'industria': 'GENERAL',
                         'norma_iso_codigo': data['norma_iso_codigo'],

@@ -9,7 +9,7 @@ Jerarquía documental:
   - SOPORTE: Actas, Registros, Base de Conocimiento
 
 Idempotente — usa update_or_create con unique_together (empresa_id, codigo).
-NO incluye CONTRATO_LABORAL (vive en seed_tipos_documento_th de Talent Hub).
+CONTRATO_LABORAL se crea en seed_plantillas_sgi (mismo módulo gestion_documental).
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction

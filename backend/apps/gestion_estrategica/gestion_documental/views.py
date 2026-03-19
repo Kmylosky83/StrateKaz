@@ -607,6 +607,62 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         return Response(resumen)
 
     # =========================================================================
+    # SELLADO PDF — Mejora 2: Firma digital X.509 con pyHanko
+    # =========================================================================
+
+    @action(detail=True, methods=['post'], url_path='sellar-pdf')
+    def sellar_pdf(self, request, pk=None):
+        """Inicia sellado PDF con firma digital X.509 via Celery."""
+        documento = self.get_object()
+
+        if documento.estado != 'PUBLICADO':
+            return Response(
+                {'error': 'Solo se pueden sellar documentos PUBLICADOS'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if documento.sellado_estado not in ('NO_APLICA', 'ERROR'):
+            return Response(
+                {'error': f'El documento ya está en estado de sellado: {documento.sellado_estado}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        documento.sellado_estado = 'PENDIENTE'
+        documento.sellado_metadatos = {}
+        documento.save(update_fields=['sellado_estado', 'sellado_metadatos'])
+
+        from django.db import connection
+        from .tasks import sellar_pdf_pyhanko
+        sellar_pdf_pyhanko.delay(
+            documento.id,
+            connection.schema_name,
+            request.user.id,
+        )
+
+        return Response(
+            {
+                'mensaje': 'Sellado iniciado. Recibirá una notificación al completar.',
+                'sellado_estado': 'PENDIENTE',
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+    @action(detail=True, methods=['get'], url_path='verificar-sellado')
+    def verificar_sellado(self, request, pk=None):
+        """Verifica integridad del PDF sellado recalculando SHA-256."""
+        documento = self.get_object()
+
+        if documento.sellado_estado != 'COMPLETADO':
+            return Response(
+                {'error': 'El documento no tiene un PDF sellado para verificar'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from .services.pdf_sealing import PDFSealingService
+        resultado = PDFSealingService.verificar_integridad(documento)
+        return Response(resultado)
+
+    # =========================================================================
     # GOOGLE DRIVE — Fase 7: Exportación con Habeas Data
     # =========================================================================
 

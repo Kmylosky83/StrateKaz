@@ -532,6 +532,37 @@ export function useScoreResumen() {
 }
 
 // =============================================================================
+// SELLADO PDF — Mejora 2: Firma digital X.509 con pyHanko
+// =============================================================================
+
+export function useSellarDocumento() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => documentoApi.sellarPdf(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      toast.success('Sellado iniciado. Recibirá una notificación al completar.');
+    },
+    onError: () => toast.error('Error al iniciar sellado del documento'),
+  });
+}
+
+export function useVerificarSellado() {
+  return useMutation({
+    mutationFn: async (id: number) => documentoApi.verificarSellado(id),
+    onSuccess: (resultado) => {
+      if (resultado.integro) {
+        toast.success('Integridad verificada: el PDF sellado no ha sido alterado.');
+      } else {
+        toast.error('ALERTA: El PDF sellado puede haber sido modificado.');
+      }
+    },
+    onError: () => toast.error('Error al verificar integridad del sellado'),
+  });
+}
+
+// =============================================================================
 // GOOGLE DRIVE — Fase 7: Exportación con Habeas Data
 // =============================================================================
 

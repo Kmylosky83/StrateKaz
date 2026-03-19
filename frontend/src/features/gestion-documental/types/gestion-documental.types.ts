@@ -55,6 +55,18 @@ export type MedioDistribucion = 'DIGITAL' | 'IMPRESO' | 'MIXTO';
 
 export type OcrEstado = 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR' | 'NO_APLICA';
 
+export type SelladoEstado = 'NO_APLICA' | 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
+
+export interface SelladoMetadatos {
+  certificado_serial?: string;
+  algoritmo?: string;
+  subject?: string;
+  valido_hasta?: string;
+  tamano_bytes?: number;
+  fecha_sellado?: string;
+  error?: string;
+}
+
 // ==================== USER DETAIL ====================
 
 export interface UserDetail {
@@ -187,6 +199,12 @@ export interface Documento {
   score_cumplimiento?: number;
   score_detalle?: ScoreDetalle;
   score_actualizado_at?: string;
+  // Sellado PDF (Mejora 2 — ISO 27001)
+  pdf_sellado?: string | null;
+  hash_pdf_sellado?: string;
+  fecha_sellado?: string | null;
+  sellado_estado: SelladoEstado;
+  sellado_metadatos?: SelladoMetadatos;
   // Google Drive (Fase 7)
   drive_file_id?: string;
   drive_exportado_at?: string;
@@ -567,6 +585,31 @@ export const OCR_ESTADO_COLORS: Record<OcrEstado, string> = {
   ERROR: 'danger',
   NO_APLICA: 'gray',
 };
+
+// ==================== SELLADO PDF (Mejora 2) ====================
+
+export const SELLADO_ESTADO_LABELS: Record<SelladoEstado, string> = {
+  NO_APLICA: '',
+  PENDIENTE: 'Sellado pendiente',
+  PROCESANDO: 'Sellando PDF...',
+  COMPLETADO: 'PDF sellado',
+  ERROR: 'Error sellado',
+};
+
+export const SELLADO_ESTADO_COLORS: Record<SelladoEstado, string> = {
+  NO_APLICA: 'gray',
+  PENDIENTE: 'gray',
+  PROCESANDO: 'info',
+  COMPLETADO: 'success',
+  ERROR: 'danger',
+};
+
+export interface VerificacionSellado {
+  integro: boolean;
+  hash_actual: string | null;
+  hash_almacenado: string;
+  error?: string;
+}
 
 // ==================== SCORING (Fase 6) ====================
 

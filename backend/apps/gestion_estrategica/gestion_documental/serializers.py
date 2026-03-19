@@ -179,6 +179,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'ocr_estado', 'es_externo',
             'score_cumplimiento',
             'drive_file_id',
+            'sellado_estado', 'fecha_sellado',
             'total_firmas', 'firmas_pendientes'
         ]
 
@@ -230,6 +231,8 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'es_externo', 'archivo_original',
             'score_cumplimiento', 'score_detalle', 'score_actualizado_at',
             'drive_file_id', 'drive_exportado_at',
+            'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
+            'sellado_estado', 'sellado_metadatos',
             'empresa_id', 'created_at', 'updated_at',
             'firmas_digitales'
         ]
@@ -238,6 +241,8 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'texto_extraido', 'ocr_estado', 'ocr_metadatos',
             'score_cumplimiento', 'score_detalle', 'score_actualizado_at',
             'drive_file_id', 'drive_exportado_at',
+            'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
+            'sellado_estado', 'sellado_metadatos',
             'empresa_id', 'created_at', 'updated_at'
         ]
 

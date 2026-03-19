@@ -28,6 +28,7 @@ import type {
   BusquedaTextoResult,
   ScoreResumen,
   DriveExportResult,
+  VerificacionSellado,
   BibliotecaPlantilla,
 } from '../types/gestion-documental.types';
 
@@ -168,6 +169,16 @@ export const documentoApi = {
   },
   scoreResumen: async (): Promise<ScoreResumen> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/score-resumen/`);
+    return response.data;
+  },
+
+  // Sellado PDF — Mejora 2
+  sellarPdf: async (id: number): Promise<{ mensaje: string; sellado_estado: string }> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/sellar-pdf/`);
+    return response.data;
+  },
+  verificarSellado: async (id: number): Promise<VerificacionSellado> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/${id}/verificar-sellado/`);
     return response.data;
   },
 

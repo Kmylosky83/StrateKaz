@@ -607,6 +607,89 @@ def exportar_drive_lote(
 
 
 # =============================================================================
+# SELLADO PDF — Mejora 2 (ISO 27001)
+# =============================================================================
+
+@shared_task(
+    name='documental.sellar_pdf_pyhanko',
+    queue='files',
+    bind=True,
+    max_retries=2,
+    soft_time_limit=300,
+    time_limit=360,
+)
+def sellar_pdf_pyhanko(self, documento_id: int, tenant_schema: str,
+                       usuario_id: int = None):
+    """
+    Sella un documento con firma digital X.509 + estampa visual via pyHanko.
+    Se dispara desde el endpoint POST /documentos/{id}/sellar-pdf/.
+    """
+    with schema_context(tenant_schema):
+        from .models import Documento
+        from .services.pdf_sealing import PDFSealingService
+
+        try:
+            documento = Documento.objects.get(id=documento_id)
+        except Documento.DoesNotExist:
+            logger.error(
+                f'[SELLADO] Documento {documento_id} no encontrado en '
+                f'{tenant_schema}'
+            )
+            return {'status': 'error', 'error': 'Documento no encontrado'}
+
+        # Marcar como procesando
+        documento.sellado_estado = 'PROCESANDO'
+        documento.save(update_fields=['sellado_estado'])
+
+        try:
+            resultado = PDFSealingService.sellar_documento(documento)
+
+            # Notificar al usuario que solicitó el sellado
+            if usuario_id:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                try:
+                    usuario = User.objects.get(id=usuario_id)
+                    _send_notification(
+                        tipo_codigo='DOCUMENTO_SELLADO_COMPLETADO',
+                        usuario=usuario,
+                        titulo=f'PDF sellado: {documento.codigo}',
+                        mensaje=(
+                            f'El documento "{documento.titulo}" ({documento.codigo}) '
+                            f'fue sellado exitosamente con firma digital X.509.'
+                        ),
+                        url='/gestion-documental/documentos',
+                        datos_extra={
+                            'documento_id': documento.id,
+                            'codigo': documento.codigo,
+                            'hash': resultado['hash_sha256'][:16],
+                        },
+                    )
+                except User.DoesNotExist:
+                    pass
+
+            logger.info(
+                f'[SELLADO] {tenant_schema}: Documento {documento.codigo} sellado '
+                f'(hash: {resultado["hash_sha256"][:16]}...)'
+            )
+            return {
+                'status': 'ok',
+                'documento_id': documento_id,
+                'hash': resultado['hash_sha256'],
+            }
+
+        except Exception as e:
+            documento.sellado_estado = 'ERROR'
+            documento.sellado_metadatos = {'error': str(e)}
+            documento.save(update_fields=['sellado_estado', 'sellado_metadatos'])
+            logger.error(
+                f'[SELLADO] Error sellando documento {documento_id} en '
+                f'{tenant_schema}: {e}'
+            )
+            raise self.retry(exc=e, countdown=60)
+
+
+# =============================================================================
 # HELPER: Envío seguro de notificaciones
 # =============================================================================
 

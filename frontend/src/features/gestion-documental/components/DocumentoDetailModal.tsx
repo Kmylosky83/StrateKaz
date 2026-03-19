@@ -17,6 +17,7 @@ import {
   Calendar,
   User,
   Shield,
+  ShieldCheck,
   FileDown,
 } from 'lucide-react';
 import {
@@ -40,8 +41,11 @@ import {
   useExportDocumentoPdf,
   useExportDocumentoDocx,
   useEstadoFirmasDocumento,
+  useSellarDocumento,
+  useVerificarSellado,
 } from '../hooks/useGestionDocumental';
 import TextoExtraidoPanel from './TextoExtraidoPanel';
+import SelladoBadge from './SelladoBadge';
 
 interface DocumentoDetailModalProps {
   isOpen: boolean;
@@ -78,10 +82,12 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const marcarObsoletoMutation = useMarcarObsoleto();
   const exportPdfMutation = useExportDocumentoPdf();
   const exportDocxMutation = useExportDocumentoDocx();
+  const sellarMutation = useSellarDocumento();
+  const verificarSelladoMutation = useVerificarSellado();
 
   const [activeTab, setActiveTab] = useState('info');
   const [confirmAction, setConfirmAction] = useState<
-    'aprobar' | 'publicar' | 'enviar_revision' | 'marcar_obsoleto' | null
+    'aprobar' | 'publicar' | 'enviar_revision' | 'marcar_obsoleto' | 'sellar_pdf' | null
   >(null);
   const [motivoObsoleto, setMotivoObsoleto] = useState('');
 
@@ -106,6 +112,9 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
           motivo: motivoObsoleto,
         });
         setMotivoObsoleto('');
+        break;
+      case 'sellar_pdf':
+        await sellarMutation.mutateAsync(documentoId);
         break;
     }
     setConfirmAction(null);
@@ -152,6 +161,10 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     <Shield className="w-3 h-3 mr-1 inline" />
                     {documento.clasificacion}
                   </Badge>
+                  <SelladoBadge
+                    estado={documento.sellado_estado}
+                    metadatos={documento.sellado_metadatos}
+                  />
                 </div>
               </div>
 
@@ -227,6 +240,44 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                   >
                     Marcar Obsoleto
                   </Button>
+                )}
+                {documento.estado === 'PUBLICADO' &&
+                  (!documento.sellado_estado ||
+                    documento.sellado_estado === 'NO_APLICA' ||
+                    documento.sellado_estado === 'ERROR') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<ShieldCheck className="w-4 h-4" />}
+                      onClick={() => setConfirmAction('sellar_pdf')}
+                      disabled={sellarMutation.isPending}
+                    >
+                      {sellarMutation.isPending ? '...' : 'Sellar PDF'}
+                    </Button>
+                  )}
+                {documento.sellado_estado === 'COMPLETADO' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<ShieldCheck className="w-4 h-4" />}
+                      onClick={() => verificarSelladoMutation.mutate(documentoId!)}
+                      disabled={verificarSelladoMutation.isPending}
+                    >
+                      {verificarSelladoMutation.isPending ? '...' : 'Verificar'}
+                    </Button>
+                    {documento.pdf_sellado && (
+                      <a
+                        href={documento.pdf_sellado}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                      >
+                        <Download className="w-4 h-4" />
+                        Sellado
+                      </a>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -511,6 +562,16 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         confirmText="Marcar Obsoleto"
         variant="danger"
         isLoading={marcarObsoletoMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmAction === 'sellar_pdf'}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleAction}
+        title="Sellar PDF con Firma Digital"
+        message={`¿Sellar "${documento?.titulo}" con firma digital X.509? El PDF sellado será inmutable y verificable.`}
+        confirmText="Sellar PDF"
+        isLoading={sellarMutation.isPending}
       />
     </>
   );

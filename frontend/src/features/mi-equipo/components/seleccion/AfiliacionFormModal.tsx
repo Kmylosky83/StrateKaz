@@ -14,9 +14,9 @@ import {
   useCandidatos,
   useEntidadesSS,
   useTiposEntidad,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import { useSelectUsers } from '@/hooks/useSelectLists';
-import type { AfiliacionSSFormData } from '@/features/talent-hub/types';
+import type { AfiliacionSSFormData } from '../../types';
 
 interface Props {
   isOpen: boolean;

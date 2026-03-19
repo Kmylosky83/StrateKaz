@@ -44,13 +44,13 @@ import {
   useCancelarEntrevista,
   useReenviarEmailEntrevistaAsync,
   useCancelarEntrevistaAsync,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import type {
   Entrevista,
   EntrevistaAsincronicaList,
   EstadoEntrevista,
   EstadoEntrevistaAsync,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import {
   ESTADO_ENTREVISTA_OPTIONS,
   ESTADO_ENTREVISTA_BADGE,
@@ -58,7 +58,7 @@ import {
   RECOMENDACION_BADGE,
   ESTADO_ENTREVISTA_ASYNC_OPTIONS,
   ESTADO_ENTREVISTA_ASYNC_BADGE,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import { EntrevistaFormModal } from './EntrevistaFormModal';
 import { RealizarEntrevistaModal } from './RealizarEntrevistaModal';
 import { EntrevistaAsyncFormModal } from './EntrevistaAsyncFormModal';

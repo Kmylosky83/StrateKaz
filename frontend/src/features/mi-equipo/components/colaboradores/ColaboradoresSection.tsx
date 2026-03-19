@@ -47,14 +47,14 @@ import {
   useColaboradores,
   useColaboradoresEstadisticas,
   useRetirarColaborador,
-} from '@/features/talent-hub/hooks/useColaboradores';
+} from '../../hooks/useColaboradores';
 import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import type {
   Colaborador,
   ColaboradorFilters,
   EstadoColaborador,
   TipoContratoColaborador,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import { ColaboradorFormModal } from './ColaboradorFormModal';
 import { CrearAccesoModal } from './CrearAccesoModal';
 import { ImportarColaboradoresModal } from './ImportarColaboradoresModal';

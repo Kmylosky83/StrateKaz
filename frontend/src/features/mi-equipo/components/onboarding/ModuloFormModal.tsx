@@ -12,8 +12,8 @@ import { Checkbox } from '@/components/forms/Checkbox';
 import {
   useCreateModuloInduccion,
   useUpdateModuloInduccion,
-} from '@/features/talent-hub/hooks/useOnboardingInduccion';
-import type { ModuloInduccion, ModuloInduccionFormData } from '@/features/talent-hub/types';
+} from '../../hooks/useOnboardingInduccion';
+import type { ModuloInduccion, ModuloInduccionFormData } from '../../types';
 
 const TIPO_OPTIONS = [
   { value: 'induccion_general', label: 'Inducción General' },

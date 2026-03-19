@@ -10,9 +10,9 @@ import { Textarea } from '@/components/forms/Textarea';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { CheckCircle } from 'lucide-react';
-import { useRealizarEntrevista } from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { RECOMENDACION_OPTIONS, ESTADO_ENTREVISTA_BADGE } from '@/features/talent-hub/types';
-import type { Entrevista } from '@/features/talent-hub/types';
+import { useRealizarEntrevista } from '../../hooks/useSeleccionContratacion';
+import { RECOMENDACION_OPTIONS, ESTADO_ENTREVISTA_BADGE } from '../../types';
+import type { Entrevista } from '../../types';
 
 interface Props {
   isOpen: boolean;

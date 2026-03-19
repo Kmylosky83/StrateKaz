@@ -46,9 +46,9 @@ import {
   useCandidatos,
   useProcesoSeleccionEstadisticas,
   useVacantesActivasAbiertas,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { Candidato, CandidatoFilters, EstadoCandidato } from '@/features/talent-hub/types';
-import { ESTADO_CANDIDATO_OPTIONS, ESTADO_CANDIDATO_BADGE } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import type { Candidato, CandidatoFilters, EstadoCandidato } from '../../types';
+import { ESTADO_CANDIDATO_OPTIONS, ESTADO_CANDIDATO_BADGE } from '../../types';
 import { CandidatoFormModal } from './CandidatoFormModal';
 import { CandidatoDetailDrawer } from './CandidatoDetailDrawer';
 import { CambiarEstadoDialog } from './CambiarEstadoDialog';

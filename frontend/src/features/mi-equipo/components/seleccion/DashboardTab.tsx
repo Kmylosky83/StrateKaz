@@ -28,7 +28,7 @@ import {
   useProcesoSeleccionEstadisticas,
   useContratosPorVencer,
   useAfiliaciones,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 
 // ============================================================================
 // Componentes auxiliares

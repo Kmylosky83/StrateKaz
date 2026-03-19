@@ -25,8 +25,8 @@ import {
   useCandidatos,
   useVacantesActivasAbiertas,
   useCreateAsignacionPrueba,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { AsignacionPruebaFormData } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import type { AsignacionPruebaFormData } from '../../types';
 
 // ============================================================================
 // Tipos

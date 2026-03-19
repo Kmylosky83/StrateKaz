@@ -46,17 +46,17 @@ import {
   useDeletePlantillaPrueba,
   useDuplicarPlantillaPrueba,
   useReenviarEmailPrueba,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import type {
   PlantillaPruebaList,
   AsignacionPruebaList,
   EstadoAsignacionPrueba,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import {
   ESTADO_ASIGNACION_OPTIONS,
   ESTADO_ASIGNACION_BADGE,
   TIPO_SCORING_OPTIONS,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import { FormBuilderModal } from './FormBuilderModal';
 import { AsignarPruebaModal } from './AsignarPruebaModal';
 import { ResultadosPsicometricosModal } from './ResultadosPsicometricosModal';

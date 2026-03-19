@@ -20,19 +20,15 @@ import {
   useCreateCandidato,
   useUpdateCandidato,
   useVacantesActivasAbiertas,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import type {
   Candidato,
   CandidatoFormData,
   TipoDocumentoCandidato,
   NivelEducativo,
   OrigenPostulacion,
-} from '@/features/talent-hub/types';
-import {
-  TIPO_DOCUMENTO_OPTIONS,
-  NIVEL_EDUCATIVO_OPTIONS,
-  ORIGEN_OPTIONS,
-} from '@/features/talent-hub/types';
+} from '../../types';
+import { TIPO_DOCUMENTO_OPTIONS, NIVEL_EDUCATIVO_OPTIONS, ORIGEN_OPTIONS } from '../../types';
 
 // ============================================================================
 // Tipos y constantes

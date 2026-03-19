@@ -8,8 +8,8 @@ import { Input } from '@/components/forms/Input';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { CheckCircle, Building2, User, Calendar } from 'lucide-react';
-import { useConfirmarAfiliacion } from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { AfiliacionSS } from '@/features/talent-hub/types';
+import { useConfirmarAfiliacion } from '../../hooks/useSeleccionContratacion';
+import type { AfiliacionSS } from '../../types';
 
 interface Props {
   isOpen: boolean;

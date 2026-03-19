@@ -36,9 +36,9 @@ import {
   useAfiliaciones,
   useUpdateAfiliacion,
   useTiposEntidad,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { ESTADO_AFILIACION_OPTIONS, ESTADO_AFILIACION_BADGE } from '@/features/talent-hub/types';
-import type { AfiliacionSS, AfiliacionSSFilters } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import { ESTADO_AFILIACION_OPTIONS, ESTADO_AFILIACION_BADGE } from '../../types';
+import type { AfiliacionSS, AfiliacionSSFilters } from '../../types';
 import { AfiliacionFormModal } from './AfiliacionFormModal';
 import { ConfirmarAfiliacionModal } from './ConfirmarAfiliacionModal';
 

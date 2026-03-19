@@ -24,7 +24,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { apiClient } from '@/lib/api-client';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import { thKeys } from '@/features/talent-hub/api/queryKeys';
+import { thKeys } from '../../api/queryKeys';
 
 const EMPLEADOS_URL = '/talent-hub/empleados';
 

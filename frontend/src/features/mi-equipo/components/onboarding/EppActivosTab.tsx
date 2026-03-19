@@ -21,8 +21,8 @@ import {
   useEppPorVencer,
   useEntregasActivos,
   useRegistrarDevolucion,
-} from '@/features/talent-hub/hooks/useOnboardingInduccion';
-import type { EntregaActivo } from '@/features/talent-hub/types';
+} from '../../hooks/useOnboardingInduccion';
+import type { EntregaActivo } from '../../types';
 import type { EntregaEPP as HseqEntregaEPP } from '@/features/hseq/types/seguridad-industrial.types';
 import { EntregaEppFormModal } from './EntregaEppFormModal';
 import { EntregaActivoFormModal } from './EntregaActivoFormModal';

@@ -13,7 +13,7 @@ import { BookOpen, Clock, CheckCircle, AlertTriangle, HardHat, Package } from 'l
 import {
   useOnboardingEstadisticas,
   useEjecucionesVencidas,
-} from '@/features/talent-hub/hooks/useOnboardingInduccion';
+} from '../../hooks/useOnboardingInduccion';
 
 const ESTADO_BADGE: Record<string, 'warning' | 'info' | 'success' | 'danger'> = {
   pendiente: 'warning',

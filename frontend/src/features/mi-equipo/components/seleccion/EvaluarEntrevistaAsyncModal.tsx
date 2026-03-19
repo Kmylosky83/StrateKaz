@@ -14,9 +14,9 @@ import { Star, CheckCircle, MessageSquare, User, Clock } from 'lucide-react';
 import {
   useEntrevistaAsyncDetail,
   useEvaluarEntrevistaAsync,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { RECOMENDACION_OPTIONS, ESTADO_ENTREVISTA_ASYNC_BADGE } from '@/features/talent-hub/types';
-import type { RecomendacionEntrevista, PreguntaEntrevistaAsync } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import { RECOMENDACION_OPTIONS, ESTADO_ENTREVISTA_ASYNC_BADGE } from '../../types';
+import type { RecomendacionEntrevista, PreguntaEntrevistaAsync } from '../../types';
 
 interface Props {
   isOpen: boolean;

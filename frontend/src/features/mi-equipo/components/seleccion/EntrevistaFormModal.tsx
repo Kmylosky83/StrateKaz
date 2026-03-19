@@ -13,10 +13,10 @@ import {
   useCreateEntrevista,
   useCandidatos,
   useVacantesActivasAbiertas,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import { useSelectUsers } from '@/hooks/useSelectLists';
-import { TIPO_ENTREVISTA_OPTIONS } from '@/features/talent-hub/types';
-import type { EntrevistaFormData, TipoEntrevistaType } from '@/features/talent-hub/types';
+import { TIPO_ENTREVISTA_OPTIONS } from '../../types';
+import type { EntrevistaFormData, TipoEntrevistaType } from '../../types';
 
 interface Props {
   isOpen: boolean;

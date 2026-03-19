@@ -27,9 +27,9 @@ import {
 import {
   useVacantesActivasAbiertas,
   usePerfilamientoVacante,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { PerfilamientoCandidato, NivelMatching } from '@/features/talent-hub/types';
-import { NIVEL_MATCHING_BADGE } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import type { PerfilamientoCandidato, NivelMatching } from '../../types';
+import { NIVEL_MATCHING_BADGE } from '../../types';
 
 // ============================================================================
 // Helpers

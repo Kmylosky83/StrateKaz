@@ -8,9 +8,9 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { useCreateEntregaActivo } from '@/features/talent-hub/hooks/useOnboardingInduccion';
-import { useColaboradores } from '@/features/talent-hub/hooks/useColaboradores';
-import type { EntregaActivoFormData } from '@/features/talent-hub/types';
+import { useCreateEntregaActivo } from '../../hooks/useOnboardingInduccion';
+import { useColaboradores } from '../../hooks/useColaboradores';
+import type { EntregaActivoFormData } from '../../types';
 
 const TIPO_ACTIVO_OPTIONS = [
   { value: 'computador', label: 'Computador' },

@@ -18,7 +18,7 @@ import { Modules, Sections } from '@/constants/permissions';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
 import { useCargos } from '@/features/configuracion/hooks/useCargos';
-import { CargoLevelBadge } from '@/features/talent-hub/components/estructura/CargoLevelBadge';
+import { CargoLevelBadge } from '../shared/CargoLevelBadge';
 import type { CargoList } from '@/features/configuracion/types/rbac.types';
 import { CargoPerfilModal } from './CargoPerfilModal';
 

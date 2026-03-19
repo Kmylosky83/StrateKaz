@@ -10,8 +10,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Alert } from '@/components/common/Alert';
 import { Check } from 'lucide-react';
-import { useCrearAccesoColaborador } from '@/features/talent-hub/hooks/useColaboradores';
-import type { Colaborador } from '@/features/talent-hub/types';
+import { useCrearAccesoColaborador } from '../../hooks/useColaboradores';
+import type { Colaborador } from '../../types';
 
 interface CrearAccesoModalProps {
   colaborador: Colaborador | null;

@@ -21,7 +21,7 @@ import {
   useCreateVacanteActiva,
   useUpdateVacanteActiva,
   useTiposContrato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import type {
   VacanteActiva,
@@ -29,12 +29,8 @@ import type {
   EstadoVacante,
   PrioridadVacante,
   ModalidadVacante,
-} from '@/features/talent-hub/types';
-import {
-  ESTADO_VACANTE_OPTIONS,
-  PRIORIDAD_OPTIONS,
-  MODALIDAD_OPTIONS,
-} from '@/features/talent-hub/types';
+} from '../../types';
+import { ESTADO_VACANTE_OPTIONS, PRIORIDAD_OPTIONS, MODALIDAD_OPTIONS } from '../../types';
 import { useAuthStore } from '@/store/authStore';
 
 // ============================================================================

@@ -14,7 +14,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useSelectTiposEPP } from '@/hooks/useSelectLists';
 import { useSelectUsers } from '@/hooks/useSelectLists';
-import { useCreateEntregaEpp } from '@/features/talent-hub/hooks/useOnboardingInduccion';
+import { useCreateEntregaEpp } from '../../hooks/useOnboardingInduccion';
 import { useAuthStore } from '@/store/authStore';
 import type { CreateEntregaEPPDTO } from '@/features/hseq/types/seguridad-industrial.types';
 

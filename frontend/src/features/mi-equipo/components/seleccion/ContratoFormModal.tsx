@@ -16,16 +16,10 @@ import { Checkbox } from '@/components/forms/Checkbox';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { cn } from '@/utils/cn';
 import { FileText, ChevronRight, ChevronLeft, AlertTriangle } from 'lucide-react';
-import {
-  useCreateHistorialContrato,
-  useTiposContrato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { useColaboradoresActivos } from '@/features/talent-hub/hooks/useColaboradores';
-import { TIPO_MOVIMIENTO_OPTIONS } from '@/features/talent-hub/types';
-import type {
-  HistorialContratoFormData,
-  TipoMovimientoContrato,
-} from '@/features/talent-hub/types';
+import { useCreateHistorialContrato, useTiposContrato } from '../../hooks/useSeleccionContratacion';
+import { useColaboradoresActivos } from '../../hooks/useColaboradores';
+import { TIPO_MOVIMIENTO_OPTIONS } from '../../types';
+import type { HistorialContratoFormData, TipoMovimientoContrato } from '../../types';
 
 interface Props {
   isOpen: boolean;

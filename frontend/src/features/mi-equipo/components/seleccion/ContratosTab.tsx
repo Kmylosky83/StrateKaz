@@ -44,9 +44,9 @@ import {
   useFirmarContrato,
   useEnviarContrato,
   useReenviarContrato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { TIPO_MOVIMIENTO_OPTIONS, TIPO_MOVIMIENTO_BADGE } from '@/features/talent-hub/types';
-import type { HistorialContratoList, HistorialContratoFilters } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import { TIPO_MOVIMIENTO_OPTIONS, TIPO_MOVIMIENTO_BADGE } from '../../types';
+import type { HistorialContratoList, HistorialContratoFilters } from '../../types';
 import { ContratoFormModal } from './ContratoFormModal';
 
 // ============================================================================

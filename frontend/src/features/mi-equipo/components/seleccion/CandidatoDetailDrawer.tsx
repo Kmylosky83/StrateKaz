@@ -40,9 +40,9 @@ import {
   useCandidato,
   useEntrevistasPorCandidato,
   usePruebasPorCandidato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { Candidato, Entrevista, Prueba } from '@/features/talent-hub/types';
-import { ESTADO_CANDIDATO_BADGE, NIVEL_EDUCATIVO_OPTIONS } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import type { Candidato, Entrevista, Prueba } from '../../types';
+import { ESTADO_CANDIDATO_BADGE, NIVEL_EDUCATIVO_OPTIONS } from '../../types';
 
 // ============================================================================
 // Tipos

@@ -13,10 +13,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { FileSignature, Plus, CheckCircle } from 'lucide-react';
-import {
-  useFirmasDocumentos,
-  useMarcarFirmado,
-} from '@/features/talent-hub/hooks/useOnboardingInduccion';
+import { useFirmasDocumentos, useMarcarFirmado } from '../../hooks/useOnboardingInduccion';
 import { FirmaDocumentoFormModal } from './FirmaDocumentoFormModal';
 
 const TIPO_OPTIONS = [

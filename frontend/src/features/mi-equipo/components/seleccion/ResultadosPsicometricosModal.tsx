@@ -12,7 +12,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
 import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { AsignacionPruebaList } from '@/features/talent-hub/types';
+import type { AsignacionPruebaList } from '../../types';
 
 // ============================================================================
 // Types

@@ -13,14 +13,14 @@ import { Progress } from '@/components/common/Progress';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { ListChecks, Play, CheckCircle, AlertTriangle, ClipboardCheck } from 'lucide-react';
-import { useColaboradores } from '@/features/talent-hub/hooks/useColaboradores';
+import { useColaboradores } from '../../hooks/useColaboradores';
 import {
   useEjecucionesPorColaborador,
   useChecklistPorColaborador,
   useIniciarModulo,
   useCompletarModulo,
   useVerificarItemChecklist,
-} from '@/features/talent-hub/hooks/useOnboardingInduccion';
+} from '../../hooks/useOnboardingInduccion';
 
 const ESTADO_BADGE: Record<string, 'warning' | 'info' | 'success' | 'danger' | 'gray'> = {
   pendiente: 'warning',

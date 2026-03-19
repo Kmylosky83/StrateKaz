@@ -20,9 +20,9 @@ import { ArrowRight, Check } from 'lucide-react';
 import {
   useCambiarEstadoCandidato,
   useContratarCandidato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { Candidato, EstadoCandidato } from '@/features/talent-hub/types';
-import { ESTADO_CANDIDATO_OPTIONS, ESTADO_CANDIDATO_BADGE } from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import type { Candidato, EstadoCandidato } from '../../types';
+import { ESTADO_CANDIDATO_OPTIONS, ESTADO_CANDIDATO_BADGE } from '../../types';
 
 // ============================================================================
 // Transiciones validas

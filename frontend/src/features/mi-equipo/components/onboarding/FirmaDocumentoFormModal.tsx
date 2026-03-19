@@ -8,10 +8,10 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import { useCreateFirmaDocumento } from '@/features/talent-hub/hooks/useOnboardingInduccion';
-import { useColaboradores } from '@/features/talent-hub/hooks/useColaboradores';
-import { useHistorialContratos } from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { FirmaDocumentoFormData } from '@/features/talent-hub/types';
+import { useCreateFirmaDocumento } from '../../hooks/useOnboardingInduccion';
+import { useColaboradores } from '../../hooks/useColaboradores';
+import { useHistorialContratos } from '../../hooks/useSeleccionContratacion';
+import type { FirmaDocumentoFormData } from '../../types';
 
 const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'contrato', label: 'Contrato de Trabajo' },

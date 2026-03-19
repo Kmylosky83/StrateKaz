@@ -32,20 +32,17 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import {
-  useCreateColaborador,
-  useUpdateColaborador,
-} from '@/features/talent-hub/hooks/useColaboradores';
+import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
 import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
-import { CargoFormModal } from '@/features/talent-hub/components/estructura';
+import { CargoFormModal } from '@/features/configuracion/components/CargoFormModal';
 import type {
   Colaborador,
   ColaboradorFormData,
   TipoDocumento,
   TipoContratoColaborador,
   EstadoColaborador,
-} from '@/features/talent-hub/types';
+} from '../../types';
 
 interface ColaboradorFormModalProps {
   colaborador: Colaborador | null;

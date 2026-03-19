@@ -22,11 +22,8 @@ import {
   FileText,
   CheckCircle,
 } from 'lucide-react';
-import {
-  useContratarCandidato,
-  useTiposContrato,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import type { Candidato, ContratarCandidatoDTO } from '@/features/talent-hub/types';
+import { useContratarCandidato, useTiposContrato } from '../../hooks/useSeleccionContratacion';
+import type { Candidato, ContratarCandidatoDTO } from '../../types';
 
 interface Props {
   candidato: Candidato | null;

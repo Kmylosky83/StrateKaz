@@ -45,19 +45,19 @@ import {
   useProcesoSeleccionEstadisticas,
   useCerrarVacanteActiva,
   usePublicarVacanteActiva,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import type {
   VacanteActiva,
   VacanteActivaFilters,
   EstadoVacante,
   PrioridadVacante,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import {
   ESTADO_VACANTE_OPTIONS,
   PRIORIDAD_OPTIONS,
   ESTADO_VACANTE_BADGE,
   PRIORIDAD_BADGE,
-} from '@/features/talent-hub/types';
+} from '../../types';
 import { VacanteFormModal } from './VacanteFormModal';
 
 // ============================================================================

@@ -16,12 +16,9 @@ import {
   useCreateEntrevistaAsync,
   useCandidatos,
   useVacantesActivasAbiertas,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
-import { TIPO_PREGUNTA_ASYNC_OPTIONS } from '@/features/talent-hub/types';
-import type {
-  EntrevistaAsincronicaFormData,
-  PreguntaEntrevistaAsync,
-} from '@/features/talent-hub/types';
+} from '../../hooks/useSeleccionContratacion';
+import { TIPO_PREGUNTA_ASYNC_OPTIONS } from '../../types';
+import type { EntrevistaAsincronicaFormData, PreguntaEntrevistaAsync } from '../../types';
 
 interface Props {
   isOpen: boolean;

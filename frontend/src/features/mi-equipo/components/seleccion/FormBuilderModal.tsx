@@ -32,14 +32,14 @@ import {
   useCreatePlantillaPrueba,
   useUpdatePlantillaPrueba,
   usePlantillaPrueba,
-} from '@/features/talent-hub/hooks/useSeleccionContratacion';
+} from '../../hooks/useSeleccionContratacion';
 import type {
   PlantillaPruebaList,
   PlantillaPruebaFormData,
   CampoPruebaDinamica,
   TipoScoring,
-} from '@/features/talent-hub/types';
-import { TIPO_SCORING_OPTIONS } from '@/features/talent-hub/types';
+} from '../../types';
+import { TIPO_SCORING_OPTIONS } from '../../types';
 
 // ============================================================================
 // Tipos y constantes

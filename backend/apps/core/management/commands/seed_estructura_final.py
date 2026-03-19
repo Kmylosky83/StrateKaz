@@ -1,18 +1,21 @@
 """
 Management command MAESTRO para configurar los 21 módulos del ERP StrateKaz
-según la Arquitectura Cascada V2.1.
+según la Arquitectura Cascada V3.
 
 DEPLOY CASCADE — is_enabled=True por nivel:
     L0:  core + ia (siempre activos, no son SystemModule)
     L10: fundacion (is_core)
     L12: workflow_engine + audit_system (transversal)
-    L15: gestion_documental + planificacion_operativa + planeacion_estrategica
-    L20: proteccion_cumplimiento
-    L25: gestion_integral
-    L30: supply_chain + production_ops + logistics_fleet + sales_crm
-    L35: mi_equipo + talent_hub
-    L40: administracion + tesoreria + accounting
-    L45: analytics + revision_direccion + acciones_mejora
+    L15: gestion_documental
+    L20: mi_equipo
+    L25: planificacion_operativa
+    L30: planeacion_estrategica
+    L35: proteccion_cumplimiento
+    L40: gestion_integral
+    L50-53: supply_chain + production_ops + logistics_fleet + sales_crm
+    L60: talent_hub
+    L70-72: administracion + tesoreria + accounting
+    L80-90: analytics + revision_direccion + acciones_mejora
     SIEMPRE: configuracion_plataforma (is_core)
 
 Para activar un nivel: cambiar is_enabled=False → True, descomentar apps
@@ -617,7 +620,7 @@ class Command(BaseCommand):
                 'icon': 'UserPlus',
                 'route': '/mi-equipo',
                 'is_core': False,
-                'is_enabled': False,  # CASCADE L35
+                'is_enabled': True,  # CASCADE L20 — ACTIVO
                 'orden': 20,
                 'tabs': [
                     {'code': 'perfiles_cargo', 'name': 'Perfiles de Cargo', 'icon': 'Briefcase', 'route': 'perfiles-cargo', 'orden': 1, 'sections': [

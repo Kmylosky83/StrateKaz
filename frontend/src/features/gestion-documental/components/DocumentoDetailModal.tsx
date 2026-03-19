@@ -2,7 +2,7 @@
  * DocumentoDetailModal - Modal de detalle con tabs: Info, Contenido, Versiones, Evidencias.
  * Acciones contextuales según estado del documento.
  */
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import DOMPurify from 'dompurify';
 import {
   FileText,
@@ -48,6 +48,8 @@ import {
 import TextoExtraidoPanel from './TextoExtraidoPanel';
 import SelladoBadge from './SelladoBadge';
 
+const AsignarLecturaModal = lazy(() => import('./AsignarLecturaModal'));
+
 interface DocumentoDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -91,6 +93,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
     'aprobar' | 'publicar' | 'enviar_revision' | 'marcar_obsoleto' | 'sellar_pdf' | null
   >(null);
   const [motivoObsoleto, setMotivoObsoleto] = useState('');
+  const [showAsignarLectura, setShowAsignarLectura] = useState(false);
 
   if (!documentoId) return null;
 
@@ -247,14 +250,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     variant="outline"
                     size="sm"
                     leftIcon={<BookOpen className="w-4 h-4" />}
-                    onClick={() => {
-                      // TODO: Modal selector de usuarios. Por ahora usa toast info.
-                      import('sonner').then(({ toast }) =>
-                        toast.info(
-                          'Use la API /aceptaciones/asignar/ para asignar lecturas verificadas.'
-                        )
-                      );
-                    }}
+                    onClick={() => setShowAsignarLectura(true)}
                   >
                     Asignar Lectura
                   </Button>
@@ -591,6 +587,19 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         confirmText="Sellar PDF"
         isLoading={sellarMutation.isPending}
       />
+
+      {/* Asignar Lectura Verificada */}
+      {documento && showAsignarLectura && (
+        <Suspense fallback={null}>
+          <AsignarLecturaModal
+            isOpen={showAsignarLectura}
+            onClose={() => setShowAsignarLectura(false)}
+            documentoId={documento.id}
+            documentoTitulo={documento.titulo}
+            documentoCodigo={documento.codigo}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -506,7 +506,7 @@ export const partesInteresadasApi = {
     formData.append('archivo', file);
 
     const response = await apiClient.post<GenerarMatrizResponse>(
-      `${BASE_URL}/partes-interesadas/import_excel/`,
+      `${BASE_URL}/partes-interesadas/import-excel/`,
       formData,
       {
         headers: {
@@ -525,7 +525,7 @@ export const partesInteresadasApi = {
     data: any;
   }> => {
     const response = await apiClient.post(
-      `${BASE_URL}/partes-interesadas/generar_matriz_comunicacion/`,
+      `${BASE_URL}/partes-interesadas/generar-matriz-comunicacion/`,
       { parte_interesada_id: parteInteresadaId }
     );
     return response.data;

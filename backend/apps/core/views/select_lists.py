@@ -36,31 +36,35 @@ def select_colaboradores(request):
     if not Colaborador:
         return Response([])
 
-    qs = Colaborador.objects.filter(
-        is_active=True
-    ).select_related('cargo').values(
-        'id', 'primer_nombre', 'segundo_nombre',
-        'primer_apellido', 'segundo_apellido',
-        'numero_identificacion', 'cargo__name', 'cargo_id', 'usuario_id'
-    ).order_by('primer_apellido', 'primer_nombre')[:500]
+    try:
+        qs = Colaborador.objects.filter(
+            is_active=True
+        ).select_related('cargo').values(
+            'id', 'primer_nombre', 'segundo_nombre',
+            'primer_apellido', 'segundo_apellido',
+            'numero_identificacion', 'cargo__name', 'cargo_id', 'usuario_id'
+        ).order_by('primer_apellido', 'primer_nombre')[:500]
 
-    results = []
-    for c in qs:
-        nombre = f"{c['primer_nombre'] or ''} {c['primer_apellido'] or ''}".strip()
-        if c['segundo_apellido']:
-            nombre += f" {c['segundo_apellido']}"
-        results.append({
-            'id': c['id'],
-            'label': nombre,
-            'extra': {
-                'documento': c.get('numero_identificacion', '') or '',
-                'cargo': c.get('cargo__name', '') or '',
-                'cargo_id': str(c['cargo_id']) if c.get('cargo_id') else '',
-                'usuario_id': str(c['usuario_id']) if c.get('usuario_id') else '',
-            }
-        })
+        results = []
+        for c in qs:
+            nombre = f"{c['primer_nombre'] or ''} {c['primer_apellido'] or ''}".strip()
+            if c['segundo_apellido']:
+                nombre += f" {c['segundo_apellido']}"
+            results.append({
+                'id': c['id'],
+                'label': nombre,
+                'extra': {
+                    'documento': c.get('numero_identificacion', '') or '',
+                    'cargo': c.get('cargo__name', '') or '',
+                    'cargo_id': str(c['cargo_id']) if c.get('cargo_id') else '',
+                    'usuario_id': str(c['usuario_id']) if c.get('usuario_id') else '',
+                }
+            })
 
-    return Response(results)
+        return Response(results)
+    except Exception:
+        # Tabla puede no existir si el módulo talent_hub no está migrado
+        return Response([])
 
 
 @api_view(['GET'])

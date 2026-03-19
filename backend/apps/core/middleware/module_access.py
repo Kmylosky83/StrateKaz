@@ -19,9 +19,9 @@ URL_TO_MODULE_CODE = {
     'api/configuracion/': 'fundacion',
     'api/organizacion/': 'fundacion',
     'api/identidad/': 'fundacion',
+    'api/encuestas-dofa/': 'fundacion',  # DOFA = Contexto Organizacional (C1)
     # C2 — Planeación Estratégica
     'api/planeacion/': 'planeacion_estrategica',
-    'api/encuestas-dofa/': 'planeacion_estrategica',
     'api/proyectos/': 'planeacion_estrategica',
     # C3 — Revisión por la Dirección
     'api/revision-direccion/': 'revision_direccion',

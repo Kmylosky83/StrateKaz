@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { cn } from '@/utils/cn';
 import { getMappedColorSafe } from '@/utils/moduleColors';
+import { PHVA_COLORS } from '@/constants/defaults';
 import {
   moduleCardHoverVariants,
   moduleIconVariants,
@@ -418,9 +419,14 @@ export const DashboardPage = () => {
     if (!layeredModules) return null;
 
     const phaseOrder: Array<{ key: string; label: string; icon: LucideIcon; color: string }> = [
-      { key: 'PLANEAR', label: 'Planear', icon: ClipboardList, color: '#3B82F6' },
-      { key: 'HACER', label: 'Hacer', icon: Cog, color: '#10B981' },
-      { key: 'VERIFICAR_ACTUAR', label: 'Verificar + Actuar', icon: SearchCheck, color: '#8B5CF6' },
+      { key: 'PLANEAR', label: 'Planear', icon: ClipboardList, color: PHVA_COLORS.PLANEAR },
+      { key: 'HACER', label: 'Hacer', icon: Cog, color: PHVA_COLORS.HACER },
+      {
+        key: 'VERIFICAR_ACTUAR',
+        label: 'Verificar + Actuar',
+        icon: SearchCheck,
+        color: PHVA_COLORS.VERIFICAR_ACTUAR,
+      },
     ];
 
     return phaseOrder

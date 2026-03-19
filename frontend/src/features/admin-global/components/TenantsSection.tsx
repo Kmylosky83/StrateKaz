@@ -6,6 +6,7 @@
  * Muestra progreso de creacion asincrona de tenants.
  */
 import { useState, useMemo, useEffect, forwardRef } from 'react';
+import { DEFAULT_TENANT_COLORS } from '@/constants/defaults';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -103,7 +104,7 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
       >
         <Card
           className="p-4 hover:shadow-md transition-shadow relative group"
-          style={{ borderColor: tenant.primary_color || '#6366F1' }}
+          style={{ borderColor: tenant.primary_color || DEFAULT_TENANT_COLORS.primary }}
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-3">
@@ -111,7 +112,7 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
               {/* Logo o inicial */}
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+                style={{ backgroundColor: tenant.primary_color || DEFAULT_TENANT_COLORS.primary }}
               >
                 {tenant.logo || tenant.logo_url ? (
                   <img
@@ -561,7 +562,10 @@ export const TenantsSection = () => {
                         <div className="flex items-center gap-3">
                           <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                            style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+                            style={{
+                              backgroundColor:
+                                tenant.primary_color || DEFAULT_TENANT_COLORS.primary,
+                            }}
                           >
                             {tenant.name.charAt(0).toUpperCase()}
                           </div>

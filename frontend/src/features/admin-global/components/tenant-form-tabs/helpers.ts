@@ -2,6 +2,7 @@
  * Helpers para inicializacion y poblado del formulario de tenant.
  */
 import { DEFAULT_ENABLED_MODULES } from '@/constants/modules';
+import { DEFAULT_TENANT_COLORS, DEFAULT_PWA_COLORS } from '@/constants/defaults';
 import type { Tenant, CreateTenantDTO, UpdateTenantDTO } from '../../types';
 
 export type TenantFormData = UpdateTenantDTO & CreateTenantDTO;
@@ -57,18 +58,18 @@ export const createInitialFormData = (trialDate?: Date): TenantFormData => ({
   separador_miles: '.',
   separador_decimales: ',',
   // Branding
-  primary_color: '#6366F1',
-  secondary_color: '#10B981',
-  accent_color: '#F59E0B',
-  sidebar_color: '#1E293B',
-  background_color: '#F5F5F5',
+  primary_color: DEFAULT_TENANT_COLORS.primary,
+  secondary_color: DEFAULT_TENANT_COLORS.secondary,
+  accent_color: DEFAULT_TENANT_COLORS.accent,
+  sidebar_color: DEFAULT_TENANT_COLORS.sidebar,
+  background_color: DEFAULT_TENANT_COLORS.background,
   company_slogan: '',
   // PWA
   pwa_name: '',
   pwa_short_name: '',
   pwa_description: '',
-  pwa_theme_color: '#6366F1',
-  pwa_background_color: '#FFFFFF',
+  pwa_theme_color: DEFAULT_PWA_COLORS.theme,
+  pwa_background_color: DEFAULT_PWA_COLORS.background,
   // Modulos
   enabled_modules: DEFAULT_ENABLED_MODULES,
 });
@@ -117,17 +118,17 @@ export const tenantToFormData = (t: Tenant): TenantFormData => ({
   simbolo_moneda: t.simbolo_moneda || '$',
   separador_miles: t.separador_miles || '.',
   separador_decimales: t.separador_decimales || ',',
-  primary_color: t.primary_color || '#6366F1',
-  secondary_color: t.secondary_color || '#10B981',
-  accent_color: t.accent_color || '#F59E0B',
-  sidebar_color: t.sidebar_color || '#1E293B',
-  background_color: t.background_color || '#F5F5F5',
+  primary_color: t.primary_color || DEFAULT_TENANT_COLORS.primary,
+  secondary_color: t.secondary_color || DEFAULT_TENANT_COLORS.secondary,
+  accent_color: t.accent_color || DEFAULT_TENANT_COLORS.accent,
+  sidebar_color: t.sidebar_color || DEFAULT_TENANT_COLORS.sidebar,
+  background_color: t.background_color || DEFAULT_TENANT_COLORS.background,
   company_slogan: t.company_slogan || '',
   pwa_name: t.pwa_name || '',
   pwa_short_name: t.pwa_short_name || '',
   pwa_description: t.pwa_description || '',
-  pwa_theme_color: t.pwa_theme_color || '#6366F1',
-  pwa_background_color: t.pwa_background_color || '#FFFFFF',
+  pwa_theme_color: t.pwa_theme_color || DEFAULT_PWA_COLORS.theme,
+  pwa_background_color: t.pwa_background_color || DEFAULT_PWA_COLORS.background,
   enabled_modules: t.enabled_modules || DEFAULT_ENABLED_MODULES,
 });
 

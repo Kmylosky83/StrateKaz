@@ -10,6 +10,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
+import { DEFAULT_TENANT_COLORS } from '@/constants/defaults';
 import { useSidebarModules } from '@/hooks/useModules';
 import type { SidebarModule } from '@/hooks/useModules';
 import {
@@ -387,7 +388,9 @@ export const Sidebar = ({
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ backgroundColor: currentTenant?.primary_color || '#6366F1' }}
+                style={{
+                  backgroundColor: currentTenant?.primary_color || DEFAULT_TENANT_COLORS.primary,
+                }}
               >
                 {currentTenant?.name?.charAt(0)?.toUpperCase() || <Building2 className="w-4 h-4" />}
               </div>
@@ -439,7 +442,9 @@ export const Sidebar = ({
                     >
                       <div
                         className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
-                        style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+                        style={{
+                          backgroundColor: tenant.primary_color || DEFAULT_TENANT_COLORS.primary,
+                        }}
                       >
                         {tenant.name.charAt(0).toUpperCase()}
                       </div>

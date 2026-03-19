@@ -212,7 +212,7 @@ services:
   # pgAdmin (opcional - administración de BD)
   # ===========================================================================
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.14
     container_name: stratekaz_pgadmin
     restart: unless-stopped
     environment:
@@ -234,7 +234,7 @@ services:
   # Redis Commander (opcional - administración de Redis)
   # ===========================================================================
   redis-commander:
-    image: rediscommander/redis-commander:latest
+    image: rediscommander/redis-commander:0.8.1
     container_name: stratekaz_redis_commander
     restart: unless-stopped
     environment:

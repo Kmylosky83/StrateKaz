@@ -9,6 +9,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, ChevronDown, Check, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
+import { DEFAULT_TENANT_COLORS } from '@/constants/defaults';
 
 export interface TenantSwitcherProps {
   /** Clases adicionales */
@@ -88,7 +89,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
     : currentTenant?.name || 'Seleccionar empresa';
 
   // Color del tenant actual
-  const tenantColor = currentTenant?.primary_color || '#6366F1';
+  const tenantColor = currentTenant?.primary_color || DEFAULT_TENANT_COLORS.primary;
 
   return (
     <div ref={menuRef} className={cn('relative', className)}>

@@ -257,9 +257,12 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             tenant_id = getattr(connection.tenant, 'id', '')
             setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
 
-            tenant_name = str(empresa)
-            if hasattr(empresa, 'razon_social') and empresa.razon_social:
+            # Prioridad: razon_social configurada > tenant.name > fallback
+            tenant_name = 'StrateKaz'
+            if hasattr(empresa, 'razon_social') and empresa.razon_social and empresa.razon_social != 'Empresa Sin Configurar':
                 tenant_name = empresa.razon_social
+            elif hasattr(connection, 'tenant') and hasattr(connection.tenant, 'name') and connection.tenant.name:
+                tenant_name = connection.tenant.name
 
             # Obtener colores del tenant para el email con branding corporativo
             try:

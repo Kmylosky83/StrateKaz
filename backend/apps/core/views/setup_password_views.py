@@ -96,7 +96,7 @@ class SetupPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Configurar contraseña
+        # Configurar contraseña en User del tenant
         user.set_password(new_password)
         user.password_setup_token = None
         user.password_setup_expires = None
@@ -107,16 +107,53 @@ class SetupPasswordView(APIView):
             user.id, user.email
         )
 
-        # Sincronizar password al TenantUser (public schema) para que el login funcione
-        # En try/except para no bloquear la respuesta exitosa si falla el sync
+        # Actualizar TenantUser directamente en public schema (login valida contra TenantUser)
+        # Doble estrategia: sync desde User + update directo como fallback
+        tenant_user_synced = False
         try:
             from apps.core.utils import sync_password_to_tenant_user
-            sync_password_to_tenant_user(user)
+            tenant_user_synced = sync_password_to_tenant_user(user)
         except Exception as e:
             logger.error(
-                'Error sincronizando password a TenantUser para User %s (%s): %s',
+                'Error en sync_password_to_tenant_user para User %s (%s): %s',
                 user.id, user.email, e, exc_info=True
             )
+
+        # Fallback: actualizar TenantUser directamente (mismo patrón que ResetPasswordView)
+        if not tenant_user_synced:
+            try:
+                from django_tenants.utils import schema_context
+                with schema_context('public'):
+                    from apps.tenant.models import TenantUser
+                    tenant_user = TenantUser.objects.filter(
+                        email=email.lower().strip()
+                    ).first()
+                    if tenant_user:
+                        tenant_user.set_password(new_password)
+                        tenant_user.save(update_fields=['password'])
+                        tenant_user_synced = True
+                        logger.info(
+                            'TenantUser actualizado via fallback directo para %s',
+                            email
+                        )
+                    else:
+                        logger.error(
+                            'TenantUser NO encontrado para %s. '
+                            'El usuario no podrá hacer login.',
+                            email
+                        )
+            except Exception as e:
+                logger.error(
+                    'Error en fallback directo de TenantUser para %s: %s',
+                    email, e, exc_info=True
+                )
+
+        if not tenant_user_synced:
+            return Response({
+                'message': 'Contraseña configurada, pero hubo un problema '
+                           'sincronizando con el sistema de login. '
+                           'Usa "Olvidé mi contraseña" para restablecer el acceso.',
+            }, status=status.HTTP_207_MULTI_STATUS)
 
         return Response({
             'message': 'Contraseña configurada exitosamente. Ya puedes iniciar sesión.'

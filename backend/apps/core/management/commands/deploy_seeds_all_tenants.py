@@ -33,7 +33,7 @@ class Command(BaseCommand):
         ('unidades', 'seed_configuracion_sistema', [], 'Unidades de medida y configuración base'),
         ('notificaciones', 'seed_notification_types', [], 'Tipos de notificación'),
         ('documentos_sgi', 'seed_tipos_documento_sgi', [], 'Tipos de Documento estándar SGI (12 tipos ISO)'),
-        ('plantillas_sgi', 'seed_plantillas_sgi', [], 'Plantillas SGI (5 ISO + contrato laboral) + TipoDocumento CONTRATO_LABORAL'),
+        ('plantillas_sgi', 'seed_plantillas_sgi', [], 'Plantillas SGI desde Biblioteca Maestra (public → tenant)'),
         ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
         ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),

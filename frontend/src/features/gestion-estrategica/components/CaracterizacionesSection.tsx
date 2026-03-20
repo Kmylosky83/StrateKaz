@@ -2,12 +2,14 @@
  * CaracterizacionesSection - SIPOC por Proceso
  * Módulo: C1 — Fundación / Organización
  *
- * Vista 2B: Lista CRUD con RBAC
- * - DataSection + DataTableCard
- * - Colores dinámicos via getModuleColorClasses()
- * - ResponsiveTable para columnas adaptables
+ * Vista 2B: Lista CRUD con RBAC + Import/Export Excel
+ * Sigue patrón DS de Partes Interesadas:
+ * 1. StatsGrid (métricas)
+ * 2. Toolbar import/export (barra separada con botones outline + texto)
+ * 3. DataSection (título + acción primaria)
+ * 4. DataTableCard + ResponsiveTable
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   ClipboardList,
   Plus,
@@ -17,7 +19,11 @@ import {
   Clock,
   FileText,
   AlertTriangle,
+  Upload,
+  Download,
+  FileDown,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, Badge, Button, BrandedSkeleton, ConfirmDialog } from '@/components/common';
 import { DataTableCard, StatsGrid } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
@@ -29,6 +35,7 @@ import { Modules, Sections } from '@/constants/permissions';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
 import { useCaracterizaciones, useDeleteCaracterizacion } from '../hooks/useCaracterizaciones';
+import { caracterizacionApi } from '../api/caracterizacionApi';
 import { CaracterizacionFormModal } from './CaracterizacionFormModal';
 import type { CaracterizacionProcesoList } from '../types/caracterizacion.types';
 import { ESTADO_LABELS, ESTADO_BADGE_VARIANTS } from '../types/caracterizacion.types';
@@ -40,6 +47,14 @@ export const CaracterizacionesSection = () => {
   const [selectedItem, setSelectedItem] = useState<CaracterizacionProcesoList | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<CaracterizacionProcesoList | null>(null);
+  const [alertMessage, setAlertMessage] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+  } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingPlantilla, setIsDownloadingPlantilla] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // RBAC
   const { canDo } = usePermissions();
@@ -56,7 +71,7 @@ export const CaracterizacionesSection = () => {
   // StatsGrid
   const stats: StatItem[] = useMemo(() => {
     const total = items.length;
-    const aprobadas = items.filter((i) => i.estado === 'APROBADO').length;
+    const vigentes = items.filter((i) => i.estado === 'VIGENTE').length;
     const borrador = items.filter((i) => i.estado === 'BORRADOR').length;
     const enRevision = items.filter((i) => i.estado === 'EN_REVISION').length;
 
@@ -69,12 +84,11 @@ export const CaracterizacionesSection = () => {
         description: 'Caracterizaciones registradas',
       },
       {
-        label: 'Aprobadas',
-        value: aprobadas,
+        label: 'Vigentes',
+        value: vigentes,
         icon: CheckCircle,
         iconColor: 'success',
-        description:
-          total > 0 ? `${Math.round((aprobadas / total) * 100)}% del total` : 'Sin datos',
+        description: total > 0 ? `${Math.round((vigentes / total) * 100)}% del total` : 'Sin datos',
       },
       {
         label: 'En Revisión',
@@ -93,7 +107,7 @@ export const CaracterizacionesSection = () => {
     ];
   }, [items]);
 
-  // Handlers
+  // Handlers CRUD
   const handleCreate = () => {
     setSelectedItem(null);
     setIsModalOpen(true);
@@ -117,6 +131,66 @@ export const CaracterizacionesSection = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
+  };
+
+  // Handlers Import/Export
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blobUrl = await caracterizacionApi.exportExcel();
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'Caracterizaciones_SIPOC.xlsx';
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+      toast.success('Excel exportado');
+    } catch {
+      toast.error('Error al exportar');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    setIsDownloadingPlantilla(true);
+    try {
+      const blobUrl = await caracterizacionApi.downloadTemplate();
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'Plantilla_Caracterizaciones_SIPOC.xlsx';
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+      toast.success('Plantilla descargada');
+    } catch {
+      toast.error('Error al descargar plantilla');
+    } finally {
+      setIsDownloadingPlantilla(false);
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const result = await caracterizacionApi.importExcel(file);
+      setAlertMessage({
+        type: result.errors?.length ? 'warning' : 'success',
+        message:
+          result.message + (result.errors?.length ? ` (${result.errors.length} errores)` : ''),
+      });
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al importar archivo' });
+    } finally {
+      setIsImporting(false);
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // Columnas
@@ -240,8 +314,56 @@ export const CaracterizacionesSection = () => {
 
   return (
     <div className="space-y-6">
+      {/* Alerta de feedback */}
+      {alertMessage && (
+        <Alert
+          variant={alertMessage.type}
+          message={alertMessage.message}
+          closable
+          onClose={() => setAlertMessage(null)}
+        />
+      )}
+
+      {/* 1. StatsGrid */}
       <StatsGrid stats={stats} columns={4} moduleColor={moduleColor as string} />
 
+      {/* 2. Toolbar Import/Export — barra separada (patrón Stakeholders) */}
+      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleDownloadTemplate}
+            variant="outline"
+            size="sm"
+            disabled={isDownloadingPlantilla}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            {isDownloadingPlantilla ? 'Descargando...' : 'Plantilla'}
+          </Button>
+          <Button
+            onClick={handleImportClick}
+            variant="outline"
+            size="sm"
+            disabled={isImporting || !canCreate}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {isImporting ? 'Importando...' : 'Importar'}
+          </Button>
+          <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exportando...' : 'Exportar'}
+          </Button>
+        </div>
+        {/* Input oculto para importar archivo */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          className="hidden"
+          onChange={handleImport}
+        />
+      </div>
+
+      {/* 3. DataSection (título + acción primaria) */}
       <DataSection
         icon={ClipboardList}
         iconBgClass={colorClasses.badge}
@@ -258,10 +380,11 @@ export const CaracterizacionesSection = () => {
         }
       />
 
+      {/* 4. DataTableCard + ResponsiveTable */}
       <DataTableCard
         isEmpty={items.length === 0}
         isLoading={false}
-        emptyMessage="No hay caracterizaciones registradas. Crea una ficha SIPOC para un proceso."
+        emptyMessage="No hay caracterizaciones registradas. Crea una ficha SIPOC para un proceso o importa desde Excel."
       >
         {items.length > 0 && (
           <ResponsiveTable

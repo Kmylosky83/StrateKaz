@@ -19,8 +19,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django.http import HttpResponse
+from django.db import transaction
+
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 
 from .models import Area, OrganigramaNodePosition, CaracterizacionProceso
+from .models_caracterizacion import (
+    CaracterizacionProveedor, CaracterizacionEntrada,
+    CaracterizacionActividad, CaracterizacionSalida,
+    CaracterizacionCliente, CaracterizacionRecurso,
+)
 from .serializers import (
     AreaSerializer, AreaTreeSerializer, AreaListSerializer,
     OrganigramaNodePositionSerializer,
@@ -425,6 +437,9 @@ class CaracterizacionProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet)
 
     granular_action_map = {
         'by_area': 'can_view',
+        'export_excel': 'can_view',
+        'plantilla_importacion': 'can_view',
+        'import_excel': 'can_create',
         'toggle_active': 'can_edit',
         'bulk_activate': 'can_edit',
         'bulk_deactivate': 'can_edit',
@@ -454,3 +469,429 @@ class CaracterizacionProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet)
                 {'detail': 'No existe caracterización para esta área.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    # ------------------------------------------------------------------
+    # EXCEL: export / plantilla / import
+    # ------------------------------------------------------------------
+
+    def _excel_header_style(self, color_hex='#1565C0'):
+        """Estilo reutilizable para headers de Excel."""
+        return {
+            'font': Font(bold=True, color='FFFFFF', size=11),
+            'fill': PatternFill(start_color=color_hex.replace('#', ''), end_color=color_hex.replace('#', ''), fill_type='solid'),
+            'alignment': Alignment(horizontal='center', vertical='center', wrap_text=True),
+            'border': Border(
+                bottom=Side(style='thin', color='000000'),
+                right=Side(style='thin', color='000000'),
+            ),
+        }
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        """Exportar caracterizaciones con SIPOC a Excel multi-hoja."""
+        qs = self.filter_queryset(self.get_queryset())
+        wb = openpyxl.Workbook()
+
+        # --- HOJA 1: Caracterizaciones ---
+        ws = wb.active
+        ws.title = 'Caracterizaciones'
+        headers_main = [
+            'Código Área', 'Nombre Área', 'Estado', 'Versión',
+            'Objetivo', 'Alcance', 'Líder del Proceso',
+            'Requisitos Normativos', 'Observaciones',
+        ]
+        style = self._excel_header_style('#1565C0')
+        for col_idx, h in enumerate(headers_main, 1):
+            cell = ws.cell(row=1, column=col_idx, value=h)
+            cell.font = style['font']
+            cell.fill = style['fill']
+            cell.alignment = style['alignment']
+            cell.border = style['border']
+
+        for row_idx, c in enumerate(qs, 2):
+            ws.cell(row=row_idx, column=1, value=c.area.code if c.area else '')
+            ws.cell(row=row_idx, column=2, value=c.area.name if c.area else '')
+            ws.cell(row=row_idx, column=3, value=c.get_estado_display())
+            ws.cell(row=row_idx, column=4, value=c.version)
+            ws.cell(row=row_idx, column=5, value=c.objetivo or '')
+            ws.cell(row=row_idx, column=6, value=c.alcance or '')
+            ws.cell(row=row_idx, column=7, value=str(c.lider_proceso) if c.lider_proceso else '')
+            ws.cell(row=row_idx, column=8, value=c.requisitos_normativos or '')
+            ws.cell(row=row_idx, column=9, value=c.observaciones or '')
+
+        for col_idx in range(1, len(headers_main) + 1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = 22
+
+        # --- HOJA 2: SIPOC (todos los items) ---
+        ws_sipoc = wb.create_sheet('SIPOC')
+        headers_sipoc = [
+            'Código Área', 'Tipo Item', 'Nombre / Descripción',
+            'Detalle (Origen/Destino/Tipo/Responsable)',
+            'Campos Extra',
+        ]
+        style_sipoc = self._excel_header_style('#2E7D32')
+        for col_idx, h in enumerate(headers_sipoc, 1):
+            cell = ws_sipoc.cell(row=1, column=col_idx, value=h)
+            cell.font = style_sipoc['font']
+            cell.fill = style_sipoc['fill']
+            cell.alignment = style_sipoc['alignment']
+            cell.border = style_sipoc['border']
+
+        sipoc_row = 2
+        for c in qs:
+            area_code = c.area.code if c.area else ''
+
+            # Proveedores (S)
+            for item in c.caracterizacionproveedors.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Proveedor')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.nombre)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.tipo)
+                sipoc_row += 1
+
+            # Entradas (I)
+            for item in c.caracterizacionentradas.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Entrada')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.descripcion)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.origen)
+                sipoc_row += 1
+
+            # Actividades (P)
+            for item in c.caracterizacionactividads.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Actividad')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.descripcion)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.responsable)
+                sipoc_row += 1
+
+            # Salidas (O)
+            for item in c.caracterizacionsalidas.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Salida')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.descripcion)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.destino)
+                sipoc_row += 1
+
+            # Clientes (C)
+            for item in c.caracterizacionclientes.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Cliente')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.nombre)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.tipo)
+                sipoc_row += 1
+
+            # Recursos
+            for item in c.caracterizacionrecursos.all():
+                ws_sipoc.cell(row=sipoc_row, column=1, value=area_code)
+                ws_sipoc.cell(row=sipoc_row, column=2, value='Recurso')
+                ws_sipoc.cell(row=sipoc_row, column=3, value=item.descripcion)
+                ws_sipoc.cell(row=sipoc_row, column=4, value=item.get_tipo_display())
+                sipoc_row += 1
+
+        for col_idx in range(1, len(headers_sipoc) + 1):
+            ws_sipoc.column_dimensions[get_column_letter(col_idx)].width = 28
+
+        # Respuesta
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="Caracterizaciones_SIPOC.xlsx"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request):
+        """Descargar plantilla Excel para importar caracterizaciones."""
+        wb = openpyxl.Workbook()
+
+        # --- HOJA 1: Caracterizaciones ---
+        ws = wb.active
+        ws.title = 'Caracterizaciones'
+        headers = [
+            'Código Área *', 'Objetivo', 'Alcance',
+            'Cargo Líder', 'Requisitos Normativos', 'Observaciones',
+        ]
+        style = self._excel_header_style('#1565C0')
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_idx, value=h)
+            cell.font = style['font']
+            cell.fill = style['fill']
+            cell.alignment = style['alignment']
+            cell.border = style['border']
+
+        # Instrucciones
+        instructions = [
+            '= INSTRUCCIONES =',
+            'Complete desde la fila 4. El Código Área debe existir en el sistema.',
+            'Estado se crea como BORRADOR. Si ya existe una caracterización para el área, se actualiza.',
+        ]
+        for i, txt in enumerate(instructions, 2):
+            ws.cell(row=i, column=1, value=txt)
+            ws.cell(row=i, column=1).font = Font(italic=True, color='666666')
+
+        # Fila ejemplo
+        ws.cell(row=4, column=1, value='GER')
+        ws.cell(row=4, column=2, value='Dirigir y controlar la organización...')
+        ws.cell(row=4, column=3, value='Desde la planeación estratégica hasta la revisión por la dirección')
+        ws.cell(row=4, column=4, value='Gerente General')
+        ws.cell(row=4, column=5, value='ISO 9001:2015 §5 Liderazgo')
+        ws.cell(row=4, column=6, value='')
+
+        for col_idx in range(1, len(headers) + 1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = 30
+
+        # --- HOJA 2: SIPOC ---
+        ws_sipoc = wb.create_sheet('SIPOC')
+        headers_sipoc = [
+            'Código Área *', 'Tipo Item *', 'Nombre / Descripción *',
+            'Detalle (Origen/Destino/Tipo/Responsable)',
+        ]
+        style_sipoc = self._excel_header_style('#2E7D32')
+        for col_idx, h in enumerate(headers_sipoc, 1):
+            cell = ws_sipoc.cell(row=1, column=col_idx, value=h)
+            cell.font = style_sipoc['font']
+            cell.fill = style_sipoc['fill']
+            cell.alignment = style_sipoc['alignment']
+            cell.border = style_sipoc['border']
+
+        instructions_sipoc = [
+            '= INSTRUCCIONES =',
+            'Tipo Item: Proveedor, Entrada, Actividad, Salida, Cliente, Recurso',
+            'Complete desde la fila 4. El Código Área debe coincidir con la hoja Caracterizaciones.',
+        ]
+        for i, txt in enumerate(instructions_sipoc, 2):
+            ws_sipoc.cell(row=i, column=1, value=txt)
+            ws_sipoc.cell(row=i, column=1).font = Font(italic=True, color='666666')
+
+        # Ejemplos SIPOC
+        ejemplos = [
+            ('GER', 'Proveedor', 'Junta Directiva', 'interno'),
+            ('GER', 'Entrada', 'Informes de gestión', 'Todos los procesos'),
+            ('GER', 'Actividad', 'Planificación estratégica', 'Gerente General'),
+            ('GER', 'Salida', 'Plan estratégico', 'Todos los procesos'),
+            ('GER', 'Cliente', 'Accionistas', 'externo'),
+            ('GER', 'Recurso', 'Sistema de información gerencial', 'Tecnológico'),
+        ]
+        for i, (area, tipo, nombre, detalle) in enumerate(ejemplos, 4):
+            ws_sipoc.cell(row=i, column=1, value=area)
+            ws_sipoc.cell(row=i, column=2, value=tipo)
+            ws_sipoc.cell(row=i, column=3, value=nombre)
+            ws_sipoc.cell(row=i, column=4, value=detalle)
+
+        for col_idx in range(1, len(headers_sipoc) + 1):
+            ws_sipoc.column_dimensions[get_column_letter(col_idx)].width = 32
+
+        # --- HOJA 3: Referencia (áreas disponibles) ---
+        ws_ref = wb.create_sheet('Áreas Disponibles')
+        ref_headers = ['Código', 'Nombre Área', '¿Tiene Caracterización?']
+        style_ref = self._excel_header_style('#6A1B9A')
+        for col_idx, h in enumerate(ref_headers, 1):
+            cell = ws_ref.cell(row=1, column=col_idx, value=h)
+            cell.font = style_ref['font']
+            cell.fill = style_ref['fill']
+            cell.alignment = style_ref['alignment']
+            cell.border = style_ref['border']
+
+        areas = Area.objects.filter(is_active=True).order_by('name')
+        for i, area in enumerate(areas, 2):
+            ws_ref.cell(row=i, column=1, value=area.code)
+            ws_ref.cell(row=i, column=2, value=area.name)
+            tiene = 'Sí' if hasattr(area, 'caracterizacion') and CaracterizacionProceso.objects.filter(area=area, is_active=True).exists() else 'No'
+            ws_ref.cell(row=i, column=3, value=tiene)
+
+        for col_idx in range(1, 4):
+            ws_ref.column_dimensions[get_column_letter(col_idx)].width = 25
+
+        # Respuesta
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = 'attachment; filename="Plantilla_Caracterizaciones_SIPOC.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], url_path='import-excel')
+    def import_excel(self, request):
+        """Importar caracterizaciones + SIPOC desde Excel."""
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'Archivo requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            wb = openpyxl.load_workbook(file, data_only=True)
+        except Exception:
+            return Response({'error': 'Archivo Excel inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        errors = []
+        created = 0
+        updated = 0
+        sipoc_created = 0
+
+        # Mapear áreas por código
+        areas_map = {a.code.upper(): a for a in Area.objects.filter(is_active=True)}
+
+        # Mapear cargos por nombre (case-insensitive)
+        cargos_map = {c.name.lower(): c for c in Cargo.objects.filter(is_active=True)}
+
+        # --- HOJA 1: Caracterizaciones ---
+        if 'Caracterizaciones' in wb.sheetnames:
+            ws = wb['Caracterizaciones']
+            for row_idx in range(4, ws.max_row + 1):
+                area_code = str(ws.cell(row=row_idx, column=1).value or '').strip().upper()
+                if not area_code:
+                    continue
+
+                area = areas_map.get(area_code)
+                if not area:
+                    errors.append(f'Fila {row_idx}: Código de área "{area_code}" no encontrado')
+                    continue
+
+                objetivo = str(ws.cell(row=row_idx, column=2).value or '').strip()
+                alcance = str(ws.cell(row=row_idx, column=3).value or '').strip()
+                cargo_nombre = str(ws.cell(row=row_idx, column=4).value or '').strip()
+                requisitos = str(ws.cell(row=row_idx, column=5).value or '').strip()
+                observaciones = str(ws.cell(row=row_idx, column=6).value or '').strip()
+
+                # Buscar cargo líder
+                lider = None
+                if cargo_nombre:
+                    lider = cargos_map.get(cargo_nombre.lower())
+
+                defaults = {
+                    'objetivo': objetivo,
+                    'alcance': alcance,
+                    'lider_proceso': lider,
+                    'requisitos_normativos': requisitos,
+                    'observaciones': observaciones,
+                }
+
+                with transaction.atomic():
+                    obj, was_created = CaracterizacionProceso.objects.update_or_create(
+                        area=area,
+                        defaults=defaults,
+                    )
+                    if was_created:
+                        obj.created_by = request.user
+                        obj.save(update_fields=['created_by'])
+                        created += 1
+                    else:
+                        updated += 1
+
+        # --- HOJA 2: SIPOC ---
+        TIPO_MAP = {
+            'proveedor': 'proveedor',
+            'entrada': 'entrada',
+            'actividad': 'actividad',
+            'salida': 'salida',
+            'cliente': 'cliente',
+            'recurso': 'recurso',
+        }
+
+        TIPO_RECURSO_MAP = {
+            'humano': 'humano',
+            'tecnológico': 'tecnologico',
+            'tecnologico': 'tecnologico',
+            'físico': 'fisico',
+            'fisico': 'fisico',
+            'financiero': 'financiero',
+        }
+
+        if 'SIPOC' in wb.sheetnames:
+            ws_sipoc = wb['SIPOC']
+
+            # Agrupar items por área para hacer bulk create
+            sipoc_by_area = {}
+
+            for row_idx in range(4, ws_sipoc.max_row + 1):
+                area_code = str(ws_sipoc.cell(row=row_idx, column=1).value or '').strip().upper()
+                tipo_raw = str(ws_sipoc.cell(row=row_idx, column=2).value or '').strip().lower()
+                nombre = str(ws_sipoc.cell(row=row_idx, column=3).value or '').strip()
+                detalle = str(ws_sipoc.cell(row=row_idx, column=4).value or '').strip()
+
+                if not area_code or not tipo_raw or not nombre:
+                    continue
+
+                tipo = TIPO_MAP.get(tipo_raw)
+                if not tipo:
+                    errors.append(f'SIPOC fila {row_idx}: Tipo "{tipo_raw}" no válido')
+                    continue
+
+                if area_code not in sipoc_by_area:
+                    sipoc_by_area[area_code] = []
+                sipoc_by_area[area_code].append({
+                    'tipo': tipo,
+                    'nombre': nombre,
+                    'detalle': detalle,
+                    'row': row_idx,
+                })
+
+            # Procesar items agrupados por área
+            for area_code, items in sipoc_by_area.items():
+                area = areas_map.get(area_code)
+                if not area:
+                    errors.append(f'SIPOC: Código de área "{area_code}" no encontrado')
+                    continue
+
+                try:
+                    caract = CaracterizacionProceso.objects.get(area=area)
+                except CaracterizacionProceso.DoesNotExist:
+                    errors.append(f'SIPOC: No existe caracterización para área "{area_code}". Créela primero en la hoja Caracterizaciones.')
+                    continue
+
+                with transaction.atomic():
+                    for idx, item in enumerate(items):
+                        tipo = item['tipo']
+                        nombre = item['nombre']
+                        detalle = item['detalle']
+
+                        if tipo == 'proveedor':
+                            tipo_valor = 'externo' if detalle.lower() in ('externo', 'ext', '') else 'interno'
+                            CaracterizacionProveedor.objects.create(
+                                caracterizacion=caract, nombre=nombre,
+                                tipo=tipo_valor if detalle.lower() in ('interno', 'int', 'externo', 'ext', '') else 'externo',
+                                orden=idx,
+                            )
+                        elif tipo == 'entrada':
+                            CaracterizacionEntrada.objects.create(
+                                caracterizacion=caract, descripcion=nombre,
+                                origen=detalle, orden=idx,
+                            )
+                        elif tipo == 'actividad':
+                            CaracterizacionActividad.objects.create(
+                                caracterizacion=caract, descripcion=nombre,
+                                responsable=detalle, orden=idx,
+                            )
+                        elif tipo == 'salida':
+                            CaracterizacionSalida.objects.create(
+                                caracterizacion=caract, descripcion=nombre,
+                                destino=detalle, orden=idx,
+                            )
+                        elif tipo == 'cliente':
+                            tipo_valor = 'interno' if detalle.lower() in ('interno', 'int') else 'externo'
+                            CaracterizacionCliente.objects.create(
+                                caracterizacion=caract, nombre=nombre,
+                                tipo=tipo_valor, orden=idx,
+                            )
+                        elif tipo == 'recurso':
+                            tipo_recurso = TIPO_RECURSO_MAP.get(detalle.lower(), 'humano')
+                            CaracterizacionRecurso.objects.create(
+                                caracterizacion=caract, descripcion=nombre,
+                                tipo=tipo_recurso, orden=idx,
+                            )
+
+                        sipoc_created += 1
+
+        return Response({
+            'message': f'{created} caracterizaciones creadas, {updated} actualizadas, {sipoc_created} items SIPOC importados.',
+            'created': created,
+            'updated': updated,
+            'sipoc_created': sipoc_created,
+            'errors': errors,
+        })

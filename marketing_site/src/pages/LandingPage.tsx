@@ -8,7 +8,7 @@ import { FinalCTASection } from '../components/sections/FinalCTASection';
 
 const LandingPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'StrateKaz | Suite Empresarial';
+    document.title = 'StrateKaz | Consultoría 4.0 + Plataforma de Gestión 360°';
   }, []);
 
   const handleTrialStart = async (_tierId?: string) => {

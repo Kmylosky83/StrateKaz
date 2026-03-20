@@ -4,42 +4,62 @@ import {
   Users,
   Shield,
   Award,
-  Lightbulb,
-  Rocket,
   Calendar,
   Trophy,
   Zap,
   Settings,
-  Navigation,
   Activity,
+  Boxes,
+  FileSignature,
+  BarChart3,
+  Truck,
 } from 'lucide-react';
 
 export const HERO_CONTENT = {
   socialProof: {
-    text: 'Gestión Empresarial de Alto Impacto',
+    text: 'Plataforma de Gestión Empresarial 360°',
     icon: Award,
   },
   headline: {
     main: 'Consultoría',
     highlight: 'Estratégica',
-    continuation: 'para la gestión',
-    dynamicWords: ['De Calidad', 'Ambiental', 'De SST', 'Del PESV'],
+    continuation: '+ Plataforma',
+    dynamicWords: [
+      'de Gestión 360°',
+      'ISO Multi-Norma',
+      'ERP Integrado',
+      'GRC & Compliance',
+      'de Firma Digital',
+      'HSEQ Inteligente',
+    ],
     structure: {
       lineBreakAfterBPM: true,
       lineBreakBeforeDynamic: true,
     },
   },
   description:
-    'Diseñamos sistemas de gestión eficientes y escalables, potenciados por nuestra propia Plataforma de Gestión Integral para garantizar resultados sostenibles.',
+    'Consultoría 4.0 respaldada por una plataforma con 84+ módulos integrados: SGI, ERP, GRC, HSEQ, Talento Humano, Firma Digital y Business Intelligence en un solo ecosistema.',
   keyBenefits: [
-    { text: 'Sistemas de Gestión', icon: Award, color: 'text-system-blue-500' },
     {
-      text: 'Cumplimiento Normativo',
-      icon: AlertTriangle,
+      text: 'ISO Multi-Norma',
+      icon: Award,
+      color: 'text-system-blue-500',
+    },
+    {
+      text: 'GRC & Debida Diligencia',
+      icon: Shield,
       color: 'text-system-red-500',
     },
-    { text: 'Innovación', icon: Lightbulb, color: 'text-system-orange-500' },
-    { text: 'Nuevos Desafíos', icon: Rocket, color: 'text-system-purple-500' },
+    {
+      text: 'ERP & Cadena de Valor',
+      icon: Boxes,
+      color: 'text-system-orange-500',
+    },
+    {
+      text: 'Firma Digital SHA-256',
+      icon: FileSignature,
+      color: 'text-system-purple-500',
+    },
   ],
   trustIndicators: {
     companies: {
@@ -55,8 +75,8 @@ export const HERO_CONTENT = {
       color: 'text-system-yellow-500',
     },
     certifications: {
-      text: '20+',
-      label: 'Certificaciones ISO',
+      text: '84+',
+      label: 'Módulos Integrados',
       icon: Trophy,
       color: 'text-system-orange-500',
     },
@@ -69,17 +89,18 @@ export const HERO_CONTENT = {
   },
   riskReversal: {
     main: 'Transformación Digital',
-    highlight: 'Garantizada',
-    description: 'Sistemas inteligentes que evolucionan con tu empresa',
+    highlight: '360°',
+    description:
+      'SGI + ERP + GRC + HSEQ + BI — todo integrado, todo en uno',
     icon: Zap,
   },
   dashboardStats: [
     { value: '98%', label: 'Cumplimiento' },
-    { value: '15x', label: 'Más Eficiente' },
+    { value: '84+', label: 'Módulos' },
   ],
   managementSystems: [
     {
-      category: 'Gestión ISO',
+      category: 'Gobierno & Cumplimiento',
       systems: [
         {
           name: 'ISO 9001',
@@ -91,17 +112,8 @@ export const HERO_CONTENT = {
           status: 'active',
         },
         {
-          name: 'ISO 14001',
-          description: 'Medio Ambiente',
-          target: 88,
-          current: 0,
-          color: 'green',
-          icon: Shield,
-          status: 'active',
-        },
-        {
           name: 'ISO 45001',
-          description: 'Seguridad',
+          description: 'SST',
           target: 92,
           current: 0,
           color: 'red',
@@ -109,36 +121,63 @@ export const HERO_CONTENT = {
           status: 'active',
         },
         {
-          name: 'ISO 27001',
-          description: 'Info Security',
+          name: 'SAGRILAFT',
+          description: 'Debida Diligencia',
           target: 89,
           current: 0,
           color: 'purple',
-          icon: Settings,
+          icon: Shield,
+          status: 'active',
+        },
+        {
+          name: 'Firma Digital',
+          description: 'SHA-256',
+          target: 96,
+          current: 0,
+          color: 'green',
+          icon: FileSignature,
           status: 'active',
         },
       ],
     },
     {
-      category: 'Sistemas Especializados',
+      category: 'Operaciones & ERP',
       systems: [
         {
-          name: 'SST',
-          description: 'Seguridad y Salud en el Trabajo',
+          name: 'Supply Chain',
+          description: 'Cadena de Valor',
           target: 85,
           current: 0,
           color: 'orange',
+          icon: Truck,
+          status: 'active',
+        },
+        {
+          name: 'Producción',
+          description: 'Production Ops',
+          target: 88,
+          current: 0,
+          color: 'blue',
           icon: Activity,
+          status: 'active',
+        },
+        {
+          name: 'Logística',
+          description: 'Fleet & Transport',
+          target: 82,
+          current: 0,
+          color: 'green',
+          icon: Settings,
           status: 'in_progress',
         },
         {
-          name: 'PESV',
-          description: 'Plan Estratégico de Seguridad Vial',
-          target: 78,
+          name: 'Analytics',
+          description: 'BI & Dashboards',
+          target: 91,
           current: 0,
           color: 'purple',
-          icon: Navigation,
-          status: 'planning',
+          icon: BarChart3,
+          status: 'active',
         },
       ],
     },
@@ -149,7 +188,7 @@ export const HERO_CONTENT = {
   },
   floatingElements: {
     topBadge: {
-      text: 'Gestión Empresarial de Alto Impacto',
+      text: 'Plataforma de Gestión Empresarial 360°',
       icon: Award,
       position: '-top-6 -right-6',
       style:
@@ -157,14 +196,14 @@ export const HERO_CONTENT = {
       textStyle: 'text-xs font-medium text-white-muted',
     },
     bottomBadge: {
-      baseText: 'Auditoría',
+      baseText: 'Módulo',
       dynamicWords: [
-        'Activa',
-        'Riesgos y Oportunidades',
-        'Indicadores',
-        'Matriz Legal',
-        'Acciones de Mejora',
-        'Gestión del Cambio',
+        'Supply Chain',
+        'Firma Digital',
+        'SAGRILAFT',
+        'HSEQ',
+        'Talento Humano',
+        'Analytics & BI',
       ],
       position: '-bottom-4 -left-4',
       style:

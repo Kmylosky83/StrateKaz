@@ -24,10 +24,10 @@ const env: EnvironmentConfig = {
     | 'production'
     | 'staging',
   appName: import.meta.env.VITE_APP_NAME || 'StrateKaz',
-  appVersion: import.meta.env.VITE_APP_VERSION || '1.0.5',
+  appVersion: import.meta.env.VITE_APP_VERSION || '5.3.0',
   appDescription:
     import.meta.env.VITE_APP_DESCRIPTION ||
-    'Business Process Management Platform',
+    'Consultoría 4.0 + Plataforma de Gestión Empresarial 360°',
   appLoginUrl: import.meta.env.VITE_APP_LOGIN_URL || 'http://localhost:3010/login',
   appDashboardUrl: import.meta.env.VITE_APP_DASHBOARD_URL || 'http://localhost:3010/dashboard',
   analytics: {

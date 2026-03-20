@@ -3,12 +3,12 @@ import { TrialCTA } from '@components/CTAButton';
 
 /**
  * Final CTA Section Content Configuration
- * Contenido empresarial enfocado en BPM/ISO compliance
+ * Contenido empresarial enfocado en Consultoría 4.0 + Plataforma 360°
  */
 const FINAL_CTA_CONTENT = {
-  title: '¿Estás listo para el siguiente nivel?',
+  title: '84+ módulos. Una sola plataforma. Tu empresa.',
   subtitle:
-    'No diseñamos sistemas de gestión. Desatamos el potencial de tu empresa. Únete a StrateKaz.',
+    'Consultoría 4.0 + Plataforma de Gestión 360° — SGI, ERP, GRC, HSEQ, Firma Digital y BI integrados. Sin miedo al éxito.',
   cta: {
     text: 'Agendar Reunión',
     subtext: '',
@@ -33,7 +33,7 @@ interface FinalCTASectionProps {
  * FinalCTASection Component
  *
  * Sección final de call-to-action con design system StrateKaz minimalista.
- * Optimizada para empresas que buscan compliance ISO y BPM profesional.
+ * Optimizada para empresas que buscan Consultoría 4.0 + Plataforma de Gestión 360°.
  *
  * Design principles:
  * - Fondo negro profundo (bg-black-deep)

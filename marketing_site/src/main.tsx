@@ -8,7 +8,7 @@ import '@styles/globals.css';
 // Initialize Sentry for error tracking (Marketing Site)
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN_MARKETING || import.meta.env.VITE_SENTRY_DSN;
 const SENTRY_ENVIRONMENT = import.meta.env.VITE_SENTRY_ENVIRONMENT || import.meta.env.MODE;
-const SENTRY_RELEASE = import.meta.env.VITE_SENTRY_RELEASE || `stratekaz-marketing@${import.meta.env.VITE_APP_VERSION || '1.0.5'}`;
+const SENTRY_RELEASE = import.meta.env.VITE_SENTRY_RELEASE || `stratekaz-marketing@${import.meta.env.VITE_APP_VERSION || '5.3.0'}`;
 
 if (SENTRY_DSN) {
   Sentry.init({
@@ -79,7 +79,7 @@ if (SENTRY_DSN) {
 
   // Set initial context
   Sentry.setTag('application', 'marketing');
-  Sentry.setTag('version', import.meta.env.VITE_APP_VERSION || '1.0.5');
+  Sentry.setTag('version', import.meta.env.VITE_APP_VERSION || '5.3.0');
 }
 
 // Aggressive Service Worker cleanup on every page load

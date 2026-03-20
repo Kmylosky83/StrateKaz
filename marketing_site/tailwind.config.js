@@ -283,9 +283,6 @@ export default {
         'content-normal': '48rem', // 768px - for general content
         'content-wide': '64rem', // 1024px - for wider content sections
 
-        // Success states
-        'success-50': '240px',
-        'success-600': '#16a34a',
       },
     },
   },

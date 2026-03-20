@@ -66,11 +66,12 @@ export const ContactHeroSection: React.FC = () => {
   });
 
   const rotatingTexts = [
-    'Sistema de Gestión',
-    'Dirección Estratégica',
-    'Proceso de Selección',
-    'Programa de Capacitación',
-    'Nuevo Proyecto',
+    'Plataforma de Gestión 360°',
+    'Certificación ISO',
+    'Cumplimiento SAGRILAFT',
+    'Firma Digital SHA-256',
+    'Gestión HSEQ',
+    'Transformación Digital',
   ];
 
   const [currentTextIndex, setCurrentTextIndex] = React.useState(0);
@@ -128,9 +129,9 @@ export const ContactHeroSection: React.FC = () => {
             {/* Description and benefits - Hidden on mobile */}
             <div className='hidden sm:block container-content mb-6'>
               <p className='text-xl text-white-muted'>
-                ¿Listo para potenciar tu organización? Nosotros estamos aquí
-                para ayudarte con consultoría especializada y tecnología
-                innovadora.
+                Consultoría 4.0 respaldada por una plataforma con 84+ módulos
+                integrados. SGI, ERP, GRC, HSEQ, Firma Digital y BI en un
+                solo ecosistema.
               </p>
             </div>
 

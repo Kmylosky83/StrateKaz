@@ -4,267 +4,364 @@ import {
   FileCheck,
   Leaf,
   Settings,
-  Search,
-  Archive,
   Users,
   BarChart3,
   TrendingUp,
   Zap,
-  Globe,
   Award,
+  Truck,
+  Factory,
+  HardHat,
+  Workflow,
+  FileSignature,
+  Scale,
+  UserCheck,
+  Wallet,
+  Calculator,
+  ClipboardCheck,
+  Brain,
+  ChevronRight,
 } from 'lucide-react';
 
-/**
- * Represents a process category in the library
- */
-interface ProcessCategory {
-  /** Display name of the category */
+interface PlatformModule {
   name: string;
-  /** Brief description of what this category covers */
   description: string;
-  /** Icon component to display */
   icon: React.ReactNode;
-  /** Whether this category should be highlighted with brand color */
-  featured?: boolean;
-  /** Number of processes in this category */
-  processCount?: number;
+  subApps: string[];
+  color: string;
+  borderColor: string;
+  bgGradient: string;
 }
 
-/**
- * Content configuration for the Process Categories Section
- */
-interface ProcessCategoriesContent {
-  /** Main section title */
-  title: string;
-  /** Section subtitle/description */
-  subtitle: string;
-  /** List of available categories */
-  categories: ProcessCategory[];
-  /** Call-to-action button configuration */
-  cta: {
-    text: string;
-    href?: string;
-  };
+interface ModuleLayer {
+  name: string;
+  description: string;
+  modules: PlatformModule[];
 }
 
-/**
- * ISO/BPM Enterprise Process Categories Configuration
- * Focused on quality management, compliance, and enterprise systems
- */
-const PROCESS_CATEGORIES_CONTENT: ProcessCategoriesContent = {
-  title: 'Biblioteca de Procesos Lista para Usar',
-  subtitle:
-    '22+ categorías de procesos prediseñados que cubren todos los aspectos de las operaciones empresariales y cumplimiento ISO.',
-  categories: [
-    {
-      name: 'Gestión de Calidad',
-      description: 'ISO 9001, control de calidad, mejora continua',
-      icon: <Award className='h-6 w-6' aria-hidden='true' />,
-      processCount: 15,
-    },
-    {
-      name: 'Gestión Ambiental',
-      description: 'ISO 14001, sostenibilidad, impacto ambiental',
-      icon: <Leaf className='h-6 w-6' aria-hidden='true' />,
-      processCount: 12,
-    },
-    {
-      name: 'Seguridad y SST',
-      description: 'ISO 45001, prevención de riesgos laborales',
-      icon: <Shield className='h-6 w-6' aria-hidden='true' />,
-      processCount: 18,
-    },
-    {
-      name: 'Gestión de Procesos',
-      description: 'BPM, optimización, mapeo de procesos',
-      icon: <Settings className='h-6 w-6' aria-hidden='true' />,
-      processCount: 25,
-    },
-    {
-      name: 'Auditorías y Cumplimiento',
-      description: 'Auditorías internas, compliance, verificación',
-      icon: <Search className='h-6 w-6' aria-hidden='true' />,
-      processCount: 10,
-    },
-    {
-      name: 'Control de Documentos',
-      description: 'Gestión documental, versiones, aprobaciones',
-      icon: <Archive className='h-6 w-6' aria-hidden='true' />,
-      processCount: 8,
-    },
-    {
-      name: 'Recursos Humanos',
-      description: 'Selección, capacitación, evaluación',
-      icon: <Users className='h-6 w-6' aria-hidden='true' />,
-      processCount: 20,
-    },
-    {
-      name: 'Finanzas y Contabilidad',
-      description: 'Control financiero, presupuestos, reportes',
-      icon: <BarChart3 className='h-6 w-6' aria-hidden='true' />,
-      processCount: 16,
-    },
-    {
-      name: 'Ventas y CRM',
-      description: 'Gestión comercial, clientes, oportunidades',
-      icon: <TrendingUp className='h-6 w-6' aria-hidden='true' />,
-      processCount: 14,
-    },
-    {
-      name: 'Operaciones',
-      description: 'Producción, logística, cadena de suministro',
-      icon: <Zap className='h-6 w-6' aria-hidden='true' />,
-      processCount: 22,
-    },
-    {
-      name: 'Marketing Digital',
-      description: 'Campañas, contenido, análisis de mercado',
-      icon: <Globe className='h-6 w-6' aria-hidden='true' />,
-      processCount: 11,
-    },
-    {
-      name: 'Conformidad Legal',
-      description: 'Normativas, regulaciones, aspectos legales',
-      icon: <FileCheck className='h-6 w-6' aria-hidden='true' />,
-      processCount: 9,
-    },
-  ],
-  cta: {
-    text: 'Explorar Todas las Categorías',
-    href: '/process-library',
+const PLATFORM_LAYERS: ModuleLayer[] = [
+  {
+    name: 'Gobierno & Cumplimiento',
+    description: 'ISO Multi-Norma + GRC + Debida Diligencia',
+    modules: [
+      {
+        name: 'Sistema de Gestión Integral',
+        description: 'Trinorma ISO + PESV + auditorías internas',
+        icon: <Award className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['ISO 9001', 'ISO 14001', 'ISO 45001', 'ISO 27001', 'PESV'],
+        color: 'text-blue-400',
+        borderColor: 'border-blue-500/30',
+        bgGradient: 'from-blue-500/10 to-blue-600/5',
+      },
+      {
+        name: 'Motor de Cumplimiento',
+        description: 'Matriz legal, requisitos y evidencias',
+        icon: <Scale className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Matriz Legal', 'Requisitos', 'Reglamentos', 'Evidencias'],
+        color: 'text-cyan-400',
+        borderColor: 'border-cyan-500/30',
+        bgGradient: 'from-cyan-500/10 to-cyan-600/5',
+      },
+      {
+        name: 'Motor de Riesgos',
+        description: '6 tipos de riesgo con matrices automáticas',
+        icon: <Shield className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Procesos', 'IPEVR/GTC-45', 'Ambiental', 'Vial', 'InfoSec', 'SAGRILAFT'],
+        color: 'text-red-400',
+        borderColor: 'border-red-500/30',
+        bgGradient: 'from-red-500/10 to-red-600/5',
+      },
+      {
+        name: 'Gestión Documental',
+        description: '12 tipos de documento SGI con plantillas',
+        icon: <FileCheck className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Políticas', 'Procedimientos', 'Manuales', 'Formatos', 'Registros'],
+        color: 'text-indigo-400',
+        borderColor: 'border-indigo-500/30',
+        bgGradient: 'from-indigo-500/10 to-indigo-600/5',
+      },
+    ],
   },
-};
+  {
+    name: 'Operaciones & Cadena de Valor',
+    description: 'ERP completo + Logística + CRM',
+    modules: [
+      {
+        name: 'Supply Chain',
+        description: 'Proveedores, compras, almacenamiento',
+        icon: <Truck className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Catálogos', 'Proveedores', 'Compras', 'Almacén', 'Abastecimiento'],
+        color: 'text-emerald-400',
+        borderColor: 'border-emerald-500/30',
+        bgGradient: 'from-emerald-500/10 to-emerald-600/5',
+      },
+      {
+        name: 'Production Ops',
+        description: 'Recepción, procesamiento, producto terminado',
+        icon: <Factory className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Recepción', 'Procesamiento', 'Producto Terminado', 'Mantenimiento'],
+        color: 'text-amber-400',
+        borderColor: 'border-amber-500/30',
+        bgGradient: 'from-amber-500/10 to-amber-600/5',
+      },
+      {
+        name: 'Logistics & Fleet',
+        description: 'Flota vehicular y gestión de transporte',
+        icon: <Settings className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Gestión Flota', 'Transporte'],
+        color: 'text-teal-400',
+        borderColor: 'border-teal-500/30',
+        bgGradient: 'from-teal-500/10 to-teal-600/5',
+      },
+      {
+        name: 'Sales CRM',
+        description: 'Clientes, pipeline, pedidos, servicio',
+        icon: <TrendingUp className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Clientes', 'Pipeline', 'Pedidos', 'Servicio al Cliente'],
+        color: 'text-pink-400',
+        borderColor: 'border-pink-500/30',
+        bgGradient: 'from-pink-500/10 to-pink-600/5',
+      },
+    ],
+  },
+  {
+    name: 'Capital Humano & HSEQ',
+    description: 'Talento + SST + Seguridad Industrial',
+    modules: [
+      {
+        name: 'Talent Hub',
+        description: 'Ciclo completo del colaborador',
+        icon: <Users className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Selección', 'Onboarding', 'Formación', 'Desempeño', 'Nómina', 'Offboarding'],
+        color: 'text-orange-400',
+        borderColor: 'border-orange-500/30',
+        bgGradient: 'from-orange-500/10 to-orange-600/5',
+      },
+      {
+        name: 'HSEQ Management',
+        description: '7 sub-módulos de seguridad integral',
+        icon: <HardHat className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Accidentalidad', 'Seguridad Industrial', 'Higiene', 'Medicina', 'Emergencias', 'Ambiental', 'Comités'],
+        color: 'text-yellow-400',
+        borderColor: 'border-yellow-500/30',
+        bgGradient: 'from-yellow-500/10 to-yellow-600/5',
+      },
+      {
+        name: 'Admin & Finanzas',
+        description: 'Presupuesto, tesorería, activos',
+        icon: <Wallet className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Presupuesto', 'Tesorería', 'Activos Fijos', 'Servicios'],
+        color: 'text-lime-400',
+        borderColor: 'border-lime-500/30',
+        bgGradient: 'from-lime-500/10 to-lime-600/5',
+      },
+      {
+        name: 'Contabilidad',
+        description: 'Config contable, movimientos, informes',
+        icon: <Calculator className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Config Contable', 'Movimientos', 'Informes', 'Integración'],
+        color: 'text-green-400',
+        borderColor: 'border-green-500/30',
+        bgGradient: 'from-green-500/10 to-green-600/5',
+      },
+    ],
+  },
+  {
+    name: 'Automatización & Inteligencia',
+    description: 'Workflows BPMN + Firma Digital + BI',
+    modules: [
+      {
+        name: 'Workflow Engine',
+        description: 'BPMN 2.0 con gateways y SLA',
+        icon: <Workflow className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Diseñador', 'Ejecución', 'Monitoreo', 'Firma Digital'],
+        color: 'text-purple-400',
+        borderColor: 'border-purple-500/30',
+        bgGradient: 'from-purple-500/10 to-purple-600/5',
+      },
+      {
+        name: 'Firma Digital',
+        description: 'SHA-256, canvas, delegación, versionado',
+        icon: <FileSignature className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Firma Manuscrita', 'Verificación SHA-256', 'Delegación', 'Auditoría'],
+        color: 'text-violet-400',
+        borderColor: 'border-violet-500/30',
+        bgGradient: 'from-violet-500/10 to-violet-600/5',
+      },
+      {
+        name: 'Analytics & BI',
+        description: 'KPIs, dashboards, tendencias, informes',
+        icon: <BarChart3 className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Indicadores', 'Dashboard Gerencial', 'Tendencias', 'Exportación'],
+        color: 'text-fuchsia-400',
+        borderColor: 'border-fuchsia-500/30',
+        bgGradient: 'from-fuchsia-500/10 to-fuchsia-600/5',
+      },
+      {
+        name: 'Auditorías Internas',
+        description: 'Planificación, ejecución, hallazgos',
+        icon: <ClipboardCheck className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Programa', 'Ejecución', 'Hallazgos', 'Seguimiento'],
+        color: 'text-sky-400',
+        borderColor: 'border-sky-500/30',
+        bgGradient: 'from-sky-500/10 to-sky-600/5',
+      },
+    ],
+  },
+];
+
+const EXTRA_CAPABILITIES = [
+  { icon: <Zap className='h-4 w-4' aria-hidden='true' />, text: 'Multi-Tenant' },
+  { icon: <Leaf className='h-4 w-4' aria-hidden='true' />, text: 'PWA Offline' },
+  { icon: <UserCheck className='h-4 w-4' aria-hidden='true' />, text: 'RBAC Granular' },
+  { icon: <Brain className='h-4 w-4' aria-hidden='true' />, text: 'IA Integrada' },
+];
 
 /**
- * Props for the ProcessCategoriesSection component
+ * ProcessCategoriesSection — Platform Modules Showcase
+ *
+ * Replaces the old generic BPM process library with a real
+ * showcase of all 16+ platform modules organized by layer.
  */
-interface ProcessCategoriesSectionProps {
-  /** Custom content configuration (optional) */
-  content?: ProcessCategoriesContent;
-  /** Additional CSS classes */
+export const ProcessCategoriesSection: React.FC<{
   className?: string;
-}
+}> = ({ className = '' }) => {
+  const [expandedLayer, setExpandedLayer] = React.useState<number>(0);
 
-/**
- * Process Categories Section Component
- *
- * Displays a grid of process categories with ISO/BPM focus.
- * Applies StrateKaz design system with black background and elegant styling.
- * One category can be featured with brand pink color.
- *
- * @param content - Custom content configuration
- * @param className - Additional CSS classes
- */
-export const ProcessCategoriesSection: React.FC<
-  ProcessCategoriesSectionProps
-> = ({ content = PROCESS_CATEGORIES_CONTENT, className = '' }) => {
   return (
-    <section
-      className={`py-section-sm lg:py-section-md ${className}`}
-    >
+    <section className={`py-section-sm lg:py-section-md ${className}`}>
       <div className='container-responsive'>
-        {/* Section Header - Mobile optimized */}
-        <div className='text-center mb-4'>
+        {/* Header */}
+        <div className='text-center mb-8'>
           <h2 className='text-fluid-2xl lg:text-fluid-3xl font-bold font-title text-white-text mb-4'>
-            <span className='sm:hidden'>Biblioteca de Recursos</span>
-            <span className='hidden sm:inline'>{content.title}</span>
+            <span className='sm:hidden'>84+ Módulos Integrados</span>
+            <span className='hidden sm:inline'>
+              Plataforma con 84+ Módulos Integrados
+            </span>
           </h2>
           <div className='hidden sm:block container-content'>
-            <p className='text-xl text-white-muted'>{content.subtitle}</p>
+            <p className='text-xl text-white-muted'>
+              SGI + ERP + GRC + HSEQ + HCM + BI — todo lo que necesita tu
+              empresa en un solo ecosistema multi-tenant
+            </p>
           </div>
         </div>
 
-        {/* Categories Grid - Mobile shows only 4 main pillars */}
-        <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6'>
-          {/* Mobile: Show only first 4 categories - with description like PC */}
-          <div className='sm:hidden contents'>
-            {content.categories.slice(0, 4).map((category, index) => (
-              <div
-                key={index}
-                className='group relative overflow-hidden rounded-xl p-4 bg-black-card-soft border border-black-border-soft transition-all duration-300 hover:border-neutral-600 hover:scale-105'
-              >
-                {/* Icon Container */}
-                <div className='w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-black-hover text-brand-500 border border-black-border transition-all duration-300 group-hover:scale-110'>
-                  {category.icon}
-                </div>
-
-                {/* Category Content - Like PC version */}
-                <div className='space-y-2'>
-                  <h3 className='font-title text-sm font-semibold text-white-text'>
-                    {category.name}
-                  </h3>
-                  <p className='font-content text-xs text-white-muted-soft leading-relaxed'>
-                    {category.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Desktop: Show all categories */}
-          {content.categories.map((category, index) => (
-            <div
-              key={index}
-              className={`
-                hidden sm:block group relative overflow-hidden rounded-xl p-4 lg:p-6
-                bg-black-card-soft border border-black-border-soft
-                hover:border-neutral-600 transition-all duration-500
-                cursor-pointer hover:scale-105 hover:shadow-xl hover:shadow-brand-500/20
-                ${category.featured
-                  ? 'hover:shadow-2xl hover:shadow-brand-500/30 hover:scale-110'
-                  : 'hover:bg-black-hover-soft hover:-translate-y-2 hover:shadow-brand-500/15'
-                }
-              `}
+        {/* Layer Tabs - Desktop */}
+        <div className='hidden lg:flex items-center justify-center gap-2 mb-8'>
+          {PLATFORM_LAYERS.map((layer, idx) => (
+            <button
+              key={layer.name}
+              onClick={() => setExpandedLayer(idx)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 border ${
+                expandedLayer === idx
+                  ? 'bg-brand-500/20 border-brand-500/50 text-brand-400 shadow-lg shadow-brand-500/10'
+                  : 'bg-black-card-soft border-black-border-soft text-white-muted hover:border-neutral-600 hover:text-white-text'
+              }`}
             >
-              {/* Icon Container */}
-              <div
-                className={`
-                  w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex items-center justify-center mb-4
-                  border border-black-border transition-all duration-500 group-hover:scale-125 group-hover:rotate-12
-                  bg-black-hover text-brand-500 group-hover:bg-brand-500/10 group-hover:border-brand-500/50
-                  ${category.featured
-                    ? 'group-hover:shadow-lg group-hover:shadow-brand-500/30'
-                    : ''
-                  }
-                `}
+              {layer.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile: Accordion style */}
+        <div className='lg:hidden space-y-3 mb-6'>
+          {PLATFORM_LAYERS.map((layer, idx) => (
+            <div key={layer.name}>
+              <button
+                onClick={() => setExpandedLayer(idx)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-all duration-300 border ${
+                  expandedLayer === idx
+                    ? 'bg-brand-500/10 border-brand-500/40 text-brand-400'
+                    : 'bg-black-card-soft border-black-border-soft text-white-muted'
+                }`}
               >
-                {category.icon}
+                <div>
+                  <div className='font-semibold text-sm'>{layer.name}</div>
+                  <div className='text-xs text-white-muted-soft'>
+                    {layer.modules.length} módulos
+                  </div>
+                </div>
+                <ChevronRight
+                  className={`h-4 w-4 transition-transform duration-300 ${
+                    expandedLayer === idx ? 'rotate-90' : ''
+                  }`}
+                />
+              </button>
+
+              {expandedLayer === idx && (
+                <div className='grid grid-cols-2 gap-3 mt-3'>
+                  {layer.modules.map(mod => (
+                    <div
+                      key={mod.name}
+                      className={`bg-gradient-to-br ${mod.bgGradient} border ${mod.borderColor} rounded-xl p-3`}
+                    >
+                      <div className={`${mod.color} mb-2`}>{mod.icon}</div>
+                      <div className='text-xs font-semibold text-white-text mb-1'>
+                        {mod.name}
+                      </div>
+                      <div className='text-xs text-white-muted-soft leading-relaxed'>
+                        {mod.description}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: Module Cards Grid */}
+        <div className='hidden lg:grid grid-cols-4 gap-5'>
+          {PLATFORM_LAYERS[expandedLayer].modules.map(mod => (
+            <div
+              key={mod.name}
+              className={`group relative bg-gradient-to-br ${mod.bgGradient} border ${mod.borderColor} rounded-xl p-5 transition-all duration-500 hover:scale-105 hover:shadow-xl cursor-default`}
+            >
+              {/* Icon */}
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-black-card/50 ${mod.color} transition-all duration-300 group-hover:scale-110`}
+              >
+                {mod.icon}
               </div>
 
-              {/* Category Content */}
-              <div className='space-y-3'>
-                <div className='flex items-center justify-between'>
-                  <h3 className='font-title text-sm lg:text-base font-semibold text-white-text transition-all duration-300'>
-                    {category.name}
-                  </h3>
-                  {category.processCount && (
-                    <span className='font-content text-xs font-medium text-white-muted bg-black-hover px-2 py-1 rounded-full transition-all duration-300 group-hover:bg-brand-500/10 group-hover:text-brand-500'>
-                      {category.processCount}
-                    </span>
-                  )}
-                </div>
+              {/* Content */}
+              <h3 className='text-sm font-bold text-white-text mb-1.5'>
+                {mod.name}
+              </h3>
+              <p className='text-xs text-white-muted-soft mb-3 leading-relaxed'>
+                {mod.description}
+              </p>
 
-                <p className='font-content text-xs lg:text-sm text-white-muted-soft leading-relaxed'>
-                  {category.description}
-                </p>
+              {/* Sub-apps tags */}
+              <div className='flex flex-wrap gap-1.5'>
+                {mod.subApps.map(app => (
+                  <span
+                    key={app}
+                    className={`text-xs px-2 py-0.5 rounded-full bg-black-card/40 ${mod.color} border ${mod.borderColor}`}
+                  >
+                    {app}
+                  </span>
+                ))}
               </div>
             </div>
           ))}
         </div>
 
-        {/* CTA Button */}
-        {content.cta && (
-          <div className='mt-8 text-center sm:hidden'>
-            <a
-              href={content.cta.href}
-              className='inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-600 hover:bg-brand-700 transition-colors duration-300'
+        {/* Extra Capabilities Bar */}
+        <div className='mt-8 flex flex-wrap items-center justify-center gap-3 lg:gap-4'>
+          {EXTRA_CAPABILITIES.map(cap => (
+            <div
+              key={cap.text}
+              className='flex items-center gap-2 bg-black-card-soft border border-black-border-soft rounded-full px-4 py-2 text-xs text-white-muted'
             >
-              {content.cta.text}
-            </a>
-          </div>
-        )}
+              <span className='text-brand-500'>{cap.icon}</span>
+              {cap.text}
+            </div>
+          ))}
+        </div>
       </div>
-    </section >
+    </section>
   );
 };
 

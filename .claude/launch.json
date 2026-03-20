@@ -7,6 +7,13 @@
       "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "3010"],
       "port": 3010,
       "cwd": "frontend"
+    },
+    {
+      "name": "marketing",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "3006"],
+      "port": 3006,
+      "cwd": "marketing_site"
     }
   ],
   "autoVerify": false

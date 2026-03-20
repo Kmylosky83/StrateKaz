@@ -18,21 +18,24 @@ export const userMenuItems: NavigationItem[] = [];
 
 export const footerLinks: FooterLinks = {
   services: [
-    { name: 'Sistema de Gestión', href: '/#services' },
-    { name: 'Cumplimiento Normativo', href: '/#services' },
-    { name: 'Innovación', href: '/#services' },
-    { name: 'Nuevos Desafíos', href: '/#services' },
+    { name: 'Consultoría 4.0', href: '/#services' },
+    { name: 'Plataforma SGI 360°', href: '/#services' },
+    { name: 'Certificaciones ISO', href: '/#services' },
+    { name: 'Firma Digital', href: '/#services' },
+    { name: 'SAGRILAFT', href: '/#services' },
   ],
   clients: [
     { name: 'Empresas de Consultoría', href: '/#clients' },
-    { name: 'Profesionales Independientes', href: '/#clients' },
-    { name: 'Empresas Directas', href: '/#clients' },
-    { name: 'Emprendedores', href: '/#clients' },
+    { name: 'Industria & Manufactura', href: '/#clients' },
+    { name: 'Empresas de Servicios', href: '/#clients' },
+    { name: 'Sector Público', href: '/#clients' },
   ],
   coverage: [
     { name: 'Cúcuta', href: '/#coverage' },
     { name: 'Bogotá', href: '/#coverage' },
     { name: 'Bucaramanga', href: '/#coverage' },
+    { name: 'Tibú', href: '/#coverage' },
+    { name: 'Mocoa', href: '/#coverage' },
   ],
   company: [
     { name: 'Términos de Servicio', href: '/terms' },

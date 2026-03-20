@@ -21,10 +21,13 @@ const SERVICE_OPTIONS = [
   { value: 'iso-9001', label: 'ISO 9001 - Gestión de Calidad' },
   { value: 'iso-14001', label: 'ISO 14001 - Gestión Ambiental' },
   { value: 'iso-45001', label: 'ISO 45001 - Seguridad y Salud' },
+  { value: 'iso-27001', label: 'ISO 27001 - Seguridad de la Información' },
   { value: 'sst', label: 'SG-SST - Sistema de Gestión SST' },
   { value: 'pesv', label: 'PESV - Plan Estratégico Seguridad Vial' },
-  { value: 'consultoria', label: 'Consultoría Estratégica' },
-  { value: 'plataforma', label: 'Plataforma de Gestión Integral' },
+  { value: 'sagrilaft', label: 'SAGRILAFT - Debida Diligencia' },
+  { value: 'firma-digital', label: 'Firma Digital SHA-256' },
+  { value: 'consultoria', label: 'Consultoría 4.0' },
+  { value: 'plataforma', label: 'Plataforma de Gestión 360°' },
   { value: 'otro', label: 'Otro servicio' },
 ] as const;
 

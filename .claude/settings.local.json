@@ -127,7 +127,21 @@
       "Bash(ls /c/Python*/python.exe)",
       "Read(//c/Users/Lenovo/AppData/Local/Programs/Python/**)",
       "Read(//c/Users/Lenovo/**)",
-      "Bash(/c/Users/Lenovo/AppData/Local/Programs/Python/Python311/python.exe manage.py check)"
+      "Bash(/c/Users/Lenovo/AppData/Local/Programs/Python/Python311/python.exe manage.py check)",
+      "Bash(grep -n \"\\\\.map\\(\" frontend/src/features/audit-system/**/*.tsx)",
+      "Bash(/c/Users/Lenovo/AppData/Local/Programs/Python/Python311/python.exe -m pip install python-docx -q)",
+      "Bash(docker compose:*)",
+      "Bash(docker compose exec backend python -c \":*)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(cp -r talent_hub/estructura_cargos mi_equipo/estructura_cargos)",
+      "Bash(cp -r talent_hub/seleccion_contratacion mi_equipo/seleccion_contratacion)",
+      "Bash(cp -r talent_hub/colaboradores mi_equipo/colaboradores)",
+      "Bash(cp -r talent_hub/onboarding_induccion mi_equipo/onboarding_induccion)",
+      "Bash(sed -i 's/from apps\\\\.talent_hub\\\\.colaboradores\\\\.models import Colaborador/from apps.mi_equipo.colaboradores.models import Colaborador/g' apps/analytics/indicadores_area/tests/conftest.py)",
+      "Bash(sed -i 's/from apps\\\\.talent_hub\\\\.estructura_cargos\\\\.models import Cargo/from apps.mi_equipo.estructura_cargos.models import Cargo/g' apps/analytics/config_indicadores/tests/conftest.py)",
+      "Bash(find . -name \"models.py\" -exec sed -i \"s/db_table = ''''talent_hub_/db_table = ''''mi_equipo_/g\" {})",
+      "Bash(find /c/Proyectos/StrateKaz/frontend -type f \\\\\\(-name *encuesta* -o -name *Encuesta* \\\\\\))"
     ],
     "deny": [],
     "ask": []

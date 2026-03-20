@@ -71,13 +71,14 @@ export const ANIMATIONS = {
 
 export const COMPANY_INFO = {
   name: 'StrateKaz',
-  tagline: 'Consultoría 4.0',
+  tagline: 'Consultoría 4.0 + Plataforma de Gestión 360°',
   slogan: 'Sin Miedo al Éxito!',
   description:
-    'Consultoría estratégica + Plataforma de Gestión Integral que busca modernizar la gestión empresarial con herramientas de vanguardia.',
+    'Consultoría 4.0 respaldada por una plataforma con 84+ módulos integrados: SGI, ERP, GRC, HSEQ, Talento Humano, Firma Digital y Business Intelligence.',
   ceo: 'Camilo Rubiano Bustos',
   experience: '20+ años de experiencia',
   successRate: '100% de éxito en certificaciones',
+  modules: '84+ módulos integrados',
   copyright:
     '© 2026 StrateKaz | Marca Kmylosky | Todos los derechos reservados.',
 
@@ -101,30 +102,35 @@ export const COMPANY_INFO = {
 
   // Cities presence
   cities: {
-    active: ['Bogotá', 'Medellín', 'Cali', 'Cúcuta'],
-    future: ['Barranquilla', 'Cartagena', 'Bucaramanga'],
+    active: ['Bogotá', 'Cúcuta', 'Bucaramanga', 'Tibú', 'Mocoa'],
+    future: ['Medellín', 'Cali', 'Barranquilla'],
   },
 } as const;
 
 export const SERVICES = {
-  consultation: {
-    name: 'Consultoría',
-    free: true,
-    description: 'Evaluación inicial sin costo',
+  consultoria: {
+    name: 'Consultoría 4.0',
+    description: 'Diseño e implementación de sistemas de gestión con plataforma incluida',
+    includes: ['ISO Multi-Norma', 'SST', 'PESV', 'Plataforma SGI'],
   },
-  bpm: {
-    name: 'Plataforma de Gestión Integral',
-    included: 'Con consultoría activa',
-    description: 'Plataforma completa de gestión',
+  plataforma: {
+    name: 'Plataforma de Gestión 360°',
+    description: '84+ módulos: SGI + ERP + GRC + HSEQ + HCM + BI',
+    price: '$20.000 COP/usuario/mes',
+    minUsers: 10,
   },
   iso: {
     name: 'Certificaciones ISO',
     guarantee: '100% éxito garantizado',
     types: ['9001', '14001', '45001', '27001'],
   },
-  sst: {
-    name: 'SST y PESV',
-    description: 'Cumplimiento normativo especializado',
+  firmaDigital: {
+    name: 'Firma Digital SHA-256',
+    description: 'Verificación criptográfica con auditoría completa',
+  },
+  sagrilaft: {
+    name: 'SAGRILAFT & Debida Diligencia',
+    description: 'KYC, PEP screening, perfilamiento de riesgo',
   },
 } as const;
 

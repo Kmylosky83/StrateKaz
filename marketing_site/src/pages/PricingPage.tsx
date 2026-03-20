@@ -57,7 +57,7 @@ const servicePackages: ServicePackage[] = [
     title: 'Sistemas Integrados de Gestión ISO',
     description: 'Implementación completa de ISO 9001, 14001, 45001, 27001',
     timeline: '4-12 meses',
-    investment: 'Desde $800.000',
+    investment: 'Por cotización',
     icon: <Award className='h-8 w-8' />,
     color: 'blue',
     popular: true,
@@ -67,7 +67,7 @@ const servicePackages: ServicePackage[] = [
       'Capacitación de equipos internos',
       'Auditorías internas preparatorias',
       'Acompañamiento hasta certificación',
-      'Plataforma de Gestión Integral StrateKaz GRATIS',
+      'Plataforma de Gestión 360° incluida',
     ],
     deliverables: [
       'Manual de calidad integrado',
@@ -89,7 +89,7 @@ const servicePackages: ServicePackage[] = [
     title: 'Seguridad y Salud en el Trabajo',
     description: 'Cumplimiento normativo SST según legislación colombiana',
     timeline: '4-12 meses',
-    investment: 'Desde $480.000',
+    investment: 'Por cotización',
     icon: <Shield className='h-8 w-8' />,
     color: 'yellow',
     includes: [
@@ -98,7 +98,7 @@ const servicePackages: ServicePackage[] = [
       'Procedimientos de emergencia',
       'Indicadores y seguimiento',
       'Plan de trabajo anual SST',
-      'Plataforma de Gestión Integral StrateKaz GRATIS',
+      'Plataforma de Gestión 360° incluida',
     ],
     deliverables: [
       'SG-SST completo y documentado',
@@ -120,7 +120,7 @@ const servicePackages: ServicePackage[] = [
     title: 'Plan Estratégico de Seguridad Vial',
     description: 'PESV completo según Resolución 40595 de 2022',
     timeline: '4-12 meses',
-    investment: 'Desde $500.000',
+    investment: 'Por cotización',
     icon: <Car className='h-8 w-8' />,
     color: 'red',
     includes: [
@@ -129,7 +129,7 @@ const servicePackages: ServicePackage[] = [
       'Capacitaciones especializadas',
       'Indicadores de gestión vial',
       'Seguimiento y mejora continua',
-      'Plataforma de Gestión Integral StrateKaz GRATIS',
+      'Plataforma de Gestión 360° incluida',
     ],
     deliverables: [
       'PESV completo y aprobado',
@@ -151,7 +151,7 @@ const servicePackages: ServicePackage[] = [
     title: 'Transformación Digital y BI',
     description: 'Digitalización de procesos y Business Intelligence',
     timeline: '6-18 meses',
-    investment: 'Desde $1.000.000',
+    investment: 'Por cotización',
     icon: <TrendingUp className='h-8 w-8' />,
     color: 'orange',
     includes: [
@@ -160,7 +160,7 @@ const servicePackages: ServicePackage[] = [
       'Implementación de BI',
       'Automatización de procesos',
       'Desarrollo de aplicativos',
-      'Plataforma de Gestión Integral StrateKaz GRATIS',
+      'Plataforma de Gestión 360° incluida',
     ],
     deliverables: [
       'Plan de transformación digital',
@@ -191,7 +191,7 @@ const userProfiles: UserProfile[] = [
       'Plantillas predefinidas por industria',
       'Reportes automáticos de avance',
       'Portal de clientes personalizado',
-      'Integración con herramientas de proyecto',
+      'Workflows y firma digital integrados',
     ],
     useCases: [
       'Consultoría ISO',
@@ -242,23 +242,23 @@ const userProfiles: UserProfile[] = [
     ],
   },
   {
-    id: 'entrepreneurs',
-    title: 'Emprendedores',
-    description: 'Soluciones completas incluyendo desarrollo de apps',
+    id: 'transport-logistics',
+    title: 'Transporte y Logística',
+    description: 'Gestión integral de flotas, PESV y cadena de suministro',
     icon: <Rocket className='h-6 w-6' />,
     color: 'purple',
     benefits: [
-      'Desarrollo de aplicativos',
-      'Soluciones móviles',
-      'Integración con e-commerce',
-      'Automatización de ventas',
-      'Escalabilidad garantizada',
+      'Gestión de flota vehicular',
+      'PESV según Resolución 40595',
+      'Control de rutas y despachos',
+      'Mantenimiento preventivo',
+      'Indicadores de seguridad vial',
     ],
     useCases: [
-      'Apps móviles',
-      'Plataformas web',
-      'E-commerce',
-      'Sistemas de gestión',
+      'Empresas de transporte',
+      'Operadores logísticos',
+      'Distribuidoras',
+      'Flotas corporativas',
     ],
   },
 ];
@@ -289,9 +289,9 @@ const faqs = [
     category: 'Servicios de Consultoría',
     items: [
       {
-        question: '¿Qué incluye exactamente la Plataforma de Gestión Integral gratuita?',
+        question: '¿Qué incluye la Plataforma de Gestión 360° con la consultoría?',
         answer:
-          'Nuestra Plataforma de Gestión Integral incluye gestión completa de documentos, workflows automatizados, tableros de control, reportes en tiempo real, y todas las funcionalidades necesarias para gestionar sistemas ISO, SST y PESV, así como para optimizar sus procesos sin tener que pensar en certificaciones que mantener a largo tiempo.',
+          'Al contratar consultoría, la Plataforma de Gestión 360° viene incluida con acceso completo a los módulos relevantes: gestión documental, workflows automatizados, tableros de control, reportes en tiempo real, firma digital SHA-256 y todas las funcionalidades necesarias para gestionar sistemas ISO, SST, PESV y más. También puede adquirirse como SaaS independiente.',
       },
       {
         question: '¿Cuánto tiempo toma una implementación ISO completa?',
@@ -332,7 +332,7 @@ const faqs = [
       {
         question: '¿La plataforma se integra con otros sistemas?',
         answer:
-          'Sí, nuestra plataforma cuenta con APIs robustas y conectores pre-construidos para ERP (SAP, Oracle), CRM (Salesforce, HubSpot), herramientas de productividad (Microsoft 365, Google Workspace) y sistemas de gestión documental.',
+          'Nuestra plataforma es un ecosistema completo con 84+ módulos que cubren SGI, ERP, GRC, HSEQ, Talento Humano y BI. Al integrar todo en una sola plataforma, eliminamos la necesidad de conectar múltiples herramientas externas. Además, contamos con API REST documentada para integraciones específicas según las necesidades de cada cliente.',
       },
       {
         question: '¿Qué nivel de personalización permite?',
@@ -342,7 +342,7 @@ const faqs = [
       {
         question: '¿Cómo garantizan la seguridad de los datos?',
         answer:
-          'Implementamos metodologías basadas en ISO 27001, cifrado de datos, autenticación segura, respaldos automáticos diarios, y cumplimiento de mejores prácticas de seguridad. Mantenemos los más altos estándares de calidad en protección de datos con certificaciones internacionales de seguridad.',
+          'Implementamos metodologías basadas en ISO 27001, cifrado de datos, autenticación JWT con 2FA, respaldos automáticos diarios, firma digital SHA-256 y arquitectura multi-tenant con aislamiento por schema. La plataforma cuenta con RBAC granular, auditoría completa de acciones y monitoreo con Sentry.',
       },
     ],
   },
@@ -362,7 +362,7 @@ const faqs = [
       {
         question: '¿Qué incluye exactamente cada paquete de precios?',
         answer:
-          'Cada paquete incluye consultoría especializada, documentación completa, capacitación de equipos, Plataforma de Gestión Integral gratuita, y acompañamiento hasta lograr los objetivos. Los precios varían según el alcance: Sistemas ISO desde $150, SST desde $150, PESV desde $150, y Transformación Digital desde $200.',
+          'Cada paquete incluye consultoría especializada, documentación completa, capacitación de equipos, Plataforma de Gestión 360° incluida, y acompañamiento hasta lograr los objetivos. Los precios se calculan por cotización según el alcance, nivel de riesgo, número de trabajadores y complejidad del proyecto.',
       },
       {
         question: '¿Hay costos ocultos o adicionales?',
@@ -641,9 +641,9 @@ export const PricingPage: React.FC = () => {
       color: 'text-system-blue-500',
     },
     {
-      title: 'Coaching',
-      subtitle: 'Liderazgo transformador',
-      description: 'Desarrolla el potencial de tu equipo',
+      title: 'SAGRILAFT',
+      subtitle: 'Debida diligencia',
+      description: 'Cumplimiento antilavado y gestión de riesgos LA/FT',
       icon: Users,
       color: 'text-system-yellow-500',
     },
@@ -664,7 +664,7 @@ export const PricingPage: React.FC = () => {
   ];
 
   React.useEffect(() => {
-    document.title = 'StrateKaz | Precios';
+    document.title = 'StrateKaz | Servicios & Precios';
   }, []);
 
   React.useEffect(() => {

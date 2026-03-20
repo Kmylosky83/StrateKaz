@@ -311,7 +311,7 @@ export const PresenceMapSection: React.FC = () => {
                     aria-hidden='true'
                   />
                   <span className='text-sm text-white-muted'>
-                    Plataforma de Gestión Integral incluida gratis
+                    84+ módulos en una sola plataforma
                   </span>
                 </div>
                 <div className='flex items-center space-x-3'>

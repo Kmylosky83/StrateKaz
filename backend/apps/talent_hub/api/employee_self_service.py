@@ -144,7 +144,16 @@ class MisVacacionesView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
-        from apps.talent_hub.novedades.models import SolicitudVacaciones, PeriodoVacaciones
+        try:
+            from apps.talent_hub.novedades.models import SolicitudVacaciones, PeriodoVacaciones
+        except (ImportError, RuntimeError):
+            # App novedades no está en INSTALLED_APPS (L60)
+            return Response(VacacionesSaldoESSSerializer({
+                'dias_acumulados': 0, 'dias_disfrutados': 0,
+                'dias_disponibles': 0, 'fecha_ultimo_periodo': None,
+                'solicitudes_pendientes': 0,
+            }).data)
+
         from decimal import Decimal
 
         # Calcular saldo
@@ -175,10 +184,16 @@ class MisVacacionesView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
+        try:
+            from apps.talent_hub.novedades.models import SolicitudVacaciones
+        except (ImportError, RuntimeError):
+            return Response(
+                {'error': 'Módulo de vacaciones no disponible aún.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         serializer = SolicitudVacacionesESSSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        from apps.talent_hub.novedades.models import SolicitudVacaciones
         solicitud = SolicitudVacaciones.objects.create(
             colaborador=colaborador,
             empresa=colaborador.empresa,
@@ -214,10 +229,16 @@ class SolicitarPermisoView(APIView):
         if not colaborador:
             return Response({'error': 'Sin perfil asociado.'}, status=status.HTTP_404_NOT_FOUND)
 
+        try:
+            from apps.talent_hub.novedades.models import Permiso
+        except (ImportError, RuntimeError):
+            return Response(
+                {'error': 'Módulo de permisos no disponible aún.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
         serializer = SolicitudPermisoESSSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        from apps.talent_hub.novedades.models import Permiso
         permiso = Permiso.objects.create(
             colaborador=colaborador,
             empresa=colaborador.empresa,

@@ -1,9 +1,14 @@
 /**
  * Rutas: Portales ESS/MSS + Usuarios
  * Acceso universal (sin ModuleGuard, excepto Usuarios que requiere RBAC)
+ *
+ * PORTALES DESACTIVADOS (apps apagadas):
+ * - Proveedor Portal → requiere supply_chain (L50) — redirige a /mi-portal
+ * - Cliente Portal → requiere sales_crm (L53) — redirige a /mi-portal
+ * Se reactivan cuando se libere cada level en INSTALLED_APPS.
  */
 import { lazy, Suspense } from 'react';
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import { SectionGuard } from '../SectionGuard';
 import { withSuspense } from '../helpers';
 import { PageLoader } from '@/components/common/PageLoader';
@@ -17,12 +22,13 @@ const SSTGamePage = lazy(() =>
 const MiEquipoPage = lazy(() =>
   import('@/features/mi-equipo').then((m) => ({ default: m.MiEquipoPage }))
 );
-const ProveedorPortalPage = lazy(() =>
-  import('@/features/proveedor-portal').then((m) => ({ default: m.ProveedorPortalPage }))
-);
-const ClientePortalPage = lazy(() =>
-  import('@/features/cliente-portal').then((m) => ({ default: m.ClientePortalPage }))
-);
+// Portales desactivados — se reactivan con su level
+// const ProveedorPortalPage = lazy(() =>
+//   import('@/features/proveedor-portal').then((m) => ({ default: m.ProveedorPortalPage }))
+// );
+// const ClientePortalPage = lazy(() =>
+//   import('@/features/cliente-portal').then((m) => ({ default: m.ClientePortalPage }))
+// );
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
 
 export const portalsRoutes = (
@@ -30,8 +36,10 @@ export const portalsRoutes = (
     <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
     <Route path="/mi-portal/juego-sst" element={withSuspense(SSTGamePage)} />
     <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
-    <Route path="/proveedor-portal" element={withSuspense(ProveedorPortalPage)} />
-    <Route path="/cliente-portal" element={withSuspense(ClientePortalPage)} />
+
+    {/* Portales desactivados — redirect a mi-portal hasta que se libere su level */}
+    <Route path="/proveedor-portal" element={<Navigate to="/mi-portal" replace />} />
+    <Route path="/cliente-portal" element={<Navigate to="/mi-portal" replace />} />
 
     {/* Usuarios - Modulo transversal (requiere acceso RBAC) */}
     <Route

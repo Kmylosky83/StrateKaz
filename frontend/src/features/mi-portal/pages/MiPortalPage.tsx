@@ -27,7 +27,6 @@ import {
   Sun,
   Sunset,
   Moon,
-  Clock,
   Camera,
   Eye,
   LayoutDashboard,
@@ -36,28 +35,11 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton, Button } from '@/components/common';
-import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import type { StatItem } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useIsExterno } from '@/hooks/useIsExterno';
-import {
-  useMiPerfil,
-  useMisVacaciones,
-  useMisCapacitaciones,
-  useMiEvaluacion,
-} from '../api/miPortalApi';
-import {
-  MiPerfilCard,
-  MiPerfilEditForm,
-  VacacionesSaldo,
-  PermisoSolicitar,
-  RecibosNomina,
-  CapacitacionesList,
-  EvaluacionResumen,
-  MisDocumentos,
-  MiHSEQ,
-} from '../components';
+import { useMiPerfil } from '../api/miPortalApi';
+import { MiPerfilCard, MiPerfilEditForm, MisDocumentos, MiHSEQ } from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
@@ -103,6 +85,18 @@ const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'reci
 /** Tabs que solo aplican a externos (contratistas, consultores) */
 const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['hseq']);
 
+/**
+ * Tabs que requieren apps L60 (talent_hub: novedades, nomina, formacion, desempeno).
+ * Se ocultan hasta que se active el Level 60 en INSTALLED_APPS.
+ */
+const L60_TABS = new Set<MiPortalTab>([
+  'vacaciones',
+  'permisos',
+  'recibos',
+  'capacitaciones',
+  'evaluacion',
+]);
+
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mis datos', icon: <User className="w-4 h-4" /> },
   { id: 'lecturas' as const, label: 'Lecturas Pendientes', icon: <BookOpen className="w-4 h-4" /> },
@@ -116,7 +110,7 @@ const ALL_PORTAL_TABS = [
     label: 'Capacitaciones',
     icon: <GraduationCap className="w-4 h-4" />,
   },
-  { id: 'evaluacion' as const, label: 'Evaluacion', icon: <BarChart3 className="w-4 h-4" /> },
+  { id: 'evaluacion' as const, label: 'Evaluación', icon: <BarChart3 className="w-4 h-4" /> },
   {
     id: 'juego_sst' as const,
     label: 'Héroes SST',
@@ -356,13 +350,6 @@ export default function MiPortalPage() {
   const { isExterno } = useIsExterno();
   const hasPerfil = !!perfil;
 
-  // Stats data hooks — solo disparan cuando el usuario tiene perfil de colaborador
-  // Evita 404 innecesarios para superadmins y usuarios sin Colaborador asociado
-  const { data: vacaciones, isLoading: vacacionesLoading } = useMisVacaciones(hasPerfil);
-  const { data: capacitaciones, isLoading: capacitacionesLoading } =
-    useMisCapacitaciones(hasPerfil);
-  const { data: evaluaciones, isLoading: evaluacionesLoading } = useMiEvaluacion(hasPerfil);
-
   // Greeting
   const { text: greetingText, Icon: GreetingIcon } = getGreeting();
   const currentDate = getCurrentDateFormatted();
@@ -371,61 +358,16 @@ export default function MiPortalPage() {
   const firstName = perfil?.nombre_completo?.split(' ')[0] || user?.first_name || 'Usuario';
   const fullName = perfil?.nombre_completo || user?.full_name || user?.first_name || 'Usuario';
 
-  // Stats loading
-  const statsLoading = isExterno
-    ? capacitacionesLoading || evaluacionesLoading
-    : vacacionesLoading || capacitacionesLoading || evaluacionesLoading;
-
-  // Build stats items
-  const statsItems: StatItem[] = useMemo(() => {
-    const items: StatItem[] = [];
-
-    if (!isExterno) {
-      items.push({
-        label: 'Dias de vacaciones',
-        value: vacaciones?.dias_disponibles ?? '-',
-        icon: Calendar,
-        iconColor: 'info',
-        description: 'disponibles',
-      });
-      items.push({
-        label: 'Solicitudes pendientes',
-        value: vacaciones?.solicitudes_pendientes ?? 0,
-        icon: Clock,
-        iconColor: 'warning',
-      });
-    }
-
-    const capacitacionesList = Array.isArray(capacitaciones) ? capacitaciones : [];
-    const completedCount = capacitacionesList.filter(
-      (c) => c.estado === 'completada' || c.estado === 'aprobada'
-    ).length;
-
-    items.push({
-      label: 'Capacitaciones',
-      value: capacitacionesList.length,
-      icon: GraduationCap,
-      iconColor: 'success',
-      description: completedCount > 0 ? `${completedCount} completadas` : undefined,
-    });
-
-    const evaluacionesList = Array.isArray(evaluaciones) ? evaluaciones : [];
-    items.push({
-      label: 'Evaluaciones',
-      value: evaluacionesList.length,
-      icon: BarChart3,
-      iconColor: 'primary',
-    });
-
-    return items;
-  }, [isExterno, vacaciones, capacitaciones, evaluaciones]);
-
-  // Filtrar tabs segun tipo de cargo
+  // Filtrar tabs: excluir L60 (apps apagadas) + por tipo de cargo
   const visibleTabs = useMemo(() => {
-    if (isExterno) {
-      return ALL_PORTAL_TABS.filter((tab) => !INTERNAL_ONLY_TABS.has(tab.id));
-    }
-    return ALL_PORTAL_TABS.filter((tab) => !EXTERNAL_ONLY_TABS.has(tab.id));
+    return ALL_PORTAL_TABS.filter((tab) => {
+      // Ocultar tabs de apps L60 (no liberadas aún)
+      if (L60_TABS.has(tab.id)) return false;
+      // Filtrar por interno/externo
+      if (isExterno && INTERNAL_ONLY_TABS.has(tab.id)) return false;
+      if (!isExterno && EXTERNAL_ONLY_TABS.has(tab.id)) return false;
+      return true;
+    });
   }, [isExterno]);
 
   // Si el tab activo fue filtrado, volver a 'perfil'
@@ -555,15 +497,6 @@ export default function MiPortalPage() {
         )}
 
         {/* ================================================================
-            STATS GRID
-            ================================================================ */}
-        {statsLoading ? (
-          <StatsGridSkeleton count={isExterno ? 2 : 4} />
-        ) : (
-          <StatsGrid stats={statsItems} columns={isExterno ? 2 : 4} />
-        )}
-
-        {/* ================================================================
             TABS
             ================================================================ */}
         <Tabs
@@ -598,11 +531,6 @@ export default function MiPortalPage() {
           )}
           {safeActiveTab === 'documentos' && <MisDocumentos />}
           {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
-          {safeActiveTab === 'vacaciones' && !isExterno && <VacacionesSaldo />}
-          {safeActiveTab === 'permisos' && !isExterno && <PermisoSolicitar />}
-          {safeActiveTab === 'recibos' && !isExterno && <RecibosNomina />}
-          {safeActiveTab === 'capacitaciones' && <CapacitacionesList />}
-          {safeActiveTab === 'evaluacion' && <EvaluacionResumen />}
           {safeActiveTab === 'juego_sst' && (
             <Suspense
               fallback={<div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>}

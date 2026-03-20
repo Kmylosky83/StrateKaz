@@ -130,21 +130,18 @@ export const AdaptiveLayout = () => {
   const portalOnly = isPortalOnlyUser(user);
 
   if (portalOnly) {
-    // ¿Está en una ruta de portal?
-    const onPortalRoute =
-      location.pathname.startsWith('/proveedor-portal') ||
-      location.pathname.startsWith('/cliente-portal');
+    // Portales proveedor/cliente desactivados hasta L50/L53.
+    // Portal-only users se redirigen a /mi-portal que muestra vista informativa.
+    // TODO: Reactivar cuando supply_chain (L50) y sales_crm (L53) se liberen:
+    //   const onPortalRoute =
+    //     location.pathname.startsWith('/proveedor-portal') ||
+    //     location.pathname.startsWith('/cliente-portal');
+    //   if (onPortalRoute) return <PortalLayout />;
+    //   const targetRoute = isClientePortalUser(user) ? '/cliente-portal' : '/proveedor-portal';
+    //   return <PortalRedirect to={targetRoute} />;
 
-    // Si ya está en ruta de portal → renderizar PortalLayout directamente
-    if (onPortalRoute) {
-      return <PortalLayout />;
-    }
-
-    // No está en ruta portal → redirigir con spinner visible
-    // Usa PortalRedirect (navigate imperativo) en vez de <Navigate> (renderiza null → flash negro)
-    // Funciona tanto para: impersonación desde modal, reload con estado persistido, y portal real
-    const targetRoute = isClientePortalUser(user) ? '/cliente-portal' : '/proveedor-portal';
-    return <PortalRedirect to={targetRoute} />;
+    // Mientras tanto: DashboardLayout con acceso a /mi-portal
+    return <DashboardLayout />;
   }
 
   // Usuario normal (empleado interno o profesional colocado) → DashboardLayout

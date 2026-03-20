@@ -384,6 +384,49 @@ export const factoresPestelApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`${BASE_URL}/factores-pestel/${id}/`);
   },
+
+  /**
+   * Exportar factores PESTEL a Excel
+   */
+  exportExcel: async (filters?: FactorPESTELFilters): Promise<string> => {
+    const params = new URLSearchParams();
+    if (filters?.analisis) params.append('analisis', filters.analisis.toString());
+    const response = await apiClient.get(
+      `${BASE_URL}/factores-pestel/export-excel/?${params.toString()}`,
+      { responseType: 'blob' }
+    );
+    return URL.createObjectURL(response.data as Blob);
+  },
+
+  /**
+   * Descargar plantilla de importación PESTEL
+   */
+  downloadTemplate: async (): Promise<string> => {
+    const response = await apiClient.get(`${BASE_URL}/factores-pestel/plantilla-importacion/`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data as Blob);
+  },
+
+  /**
+   * Importar factores PESTEL desde Excel
+   */
+  importExcel: async (
+    file: File,
+    analisisId: number
+  ): Promise<{
+    message: string;
+    created: number;
+    errors: Array<{ fila: number; error: string }>;
+  }> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    formData.append('analisis_id', analisisId.toString());
+    const response = await apiClient.post(`${BASE_URL}/factores-pestel/import-excel/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 // ==============================================================================
@@ -448,6 +491,50 @@ export const fuerzasPorterApi = {
    */
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`${BASE_URL}/fuerzas-porter/${id}/`);
+  },
+
+  /**
+   * Exportar fuerzas de Porter a Excel
+   */
+  exportExcel: async (filters?: FuerzaPorterFilters): Promise<string> => {
+    const params = new URLSearchParams();
+    if (filters?.periodo) params.append('periodo', filters.periodo);
+    const response = await apiClient.get(
+      `${BASE_URL}/fuerzas-porter/export-excel/?${params.toString()}`,
+      { responseType: 'blob' }
+    );
+    return URL.createObjectURL(response.data as Blob);
+  },
+
+  /**
+   * Descargar plantilla de importación Porter
+   */
+  downloadTemplate: async (): Promise<string> => {
+    const response = await apiClient.get(`${BASE_URL}/fuerzas-porter/plantilla-importacion/`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data as Blob);
+  },
+
+  /**
+   * Importar fuerzas de Porter desde Excel
+   */
+  importExcel: async (
+    file: File,
+    periodo?: string
+  ): Promise<{
+    message: string;
+    created: number;
+    updated: number;
+    errors: Array<{ fila: number; error: string }>;
+  }> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    if (periodo) formData.append('periodo', periodo);
+    const response = await apiClient.post(`${BASE_URL}/fuerzas-porter/import-excel/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
   },
 };
 

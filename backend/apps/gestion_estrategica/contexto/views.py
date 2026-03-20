@@ -635,6 +635,248 @@ class FactorPESTELViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets
     ordering_fields = ['analisis', 'tipo', 'orden', 'created_at']
     ordering = ['analisis', 'tipo', 'orden']
 
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request) -> Response:
+        """Exporta factores PESTEL a Excel."""
+        queryset = self.filter_queryset(self.get_queryset()).select_related('analisis')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Factores PESTEL'
+
+        headers = [
+            'ANÁLISIS', 'DIMENSIÓN', 'DESCRIPCIÓN DEL FACTOR',
+            'TENDENCIA', 'IMPACTO', 'PROBABILIDAD',
+            'IMPLICACIONES', 'FUENTES'
+        ]
+        ws.append(headers)
+
+        header_font = Font(bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='2E7D32', end_color='2E7D32', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+
+        tipo_labels = dict(FactorPESTEL.TipoFactor.choices)
+        tendencia_labels = dict(FactorPESTEL.TendenciaFactor.choices)
+        impacto_labels = dict(FactorPESTEL.NivelImpacto.choices)
+        probabilidad_labels = dict(FactorPESTEL.Probabilidad.choices)
+
+        for factor in queryset:
+            ws.append([
+                str(factor.analisis) if factor.analisis else '',
+                tipo_labels.get(factor.tipo, factor.tipo),
+                factor.descripcion,
+                tendencia_labels.get(factor.tendencia, factor.tendencia),
+                impacto_labels.get(factor.impacto, factor.impacto),
+                probabilidad_labels.get(factor.probabilidad, factor.probabilidad),
+                factor.implicaciones or '',
+                factor.fuentes or '',
+            ])
+
+        widths = [35, 20, 50, 20, 15, 15, 50, 40]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Factores_PESTEL.xlsx"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request) -> Response:
+        """Descarga plantilla Excel para importación de factores PESTEL."""
+        wb = openpyxl.Workbook()
+
+        # Hoja 1: Plantilla
+        ws = wb.active
+        ws.title = 'Factores PESTEL'
+
+        headers = [
+            'DIMENSIÓN *', 'DESCRIPCIÓN DEL FACTOR *',
+            'TENDENCIA *', 'IMPACTO *', 'PROBABILIDAD *',
+            'IMPLICACIONES', 'FUENTES'
+        ]
+        # Fila 1: Título
+        ws.merge_cells('A1:G1')
+        ws['A1'] = 'PLANTILLA DE IMPORTACIÓN — FACTORES PESTEL'
+        ws['A1'].font = Font(bold=True, size=14, color='2E7D32')
+        # Fila 2: Instrucciones
+        ws.merge_cells('A2:G2')
+        ws['A2'] = 'Complete los datos desde la fila 4. Las columnas con * son obligatorias. Consulte la hoja "Referencia" para valores válidos.'
+        ws['A2'].font = Font(italic=True, size=10, color='666666')
+        # Fila 3: Headers
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=3, column=col, value=header)
+            cell.font = Font(bold=True, color='FFFFFF', size=11)
+            cell.fill = PatternFill(start_color='2E7D32', end_color='2E7D32', fill_type='solid')
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        # Fila 4: Ejemplo
+        ejemplo = [
+            'Político', 'Reforma tributaria que incrementa carga fiscal para PYMES',
+            'Empeorando', 'Alto', 'Alta',
+            'Ajustar presupuesto operativo y buscar beneficios tributarios',
+            'DIAN, Ministerio de Hacienda'
+        ]
+        for col, val in enumerate(ejemplo, 1):
+            cell = ws.cell(row=4, column=col, value=val)
+            cell.font = Font(italic=True, color='999999')
+
+        widths = [20, 55, 20, 15, 15, 50, 40]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        # Hoja 2: Referencia
+        ref = wb.create_sheet('Referencia')
+        ref_data = [
+            ('DIMENSIONES PESTEL', '', ''),
+            ('Valor', 'Descripción', ''),
+            ('Político', 'Factores gubernamentales, regulación, estabilidad política', ''),
+            ('Económico', 'Inflación, tasas de interés, crecimiento económico, empleo', ''),
+            ('Social', 'Demografía, cultura, educación, tendencias sociales', ''),
+            ('Tecnológico', 'Innovación, I+D, automatización, transformación digital', ''),
+            ('Ecológico', 'Medio ambiente, cambio climático, sostenibilidad', ''),
+            ('Legal', 'Legislación laboral, protección al consumidor, normatividad', ''),
+            ('', '', ''),
+            ('TENDENCIAS', '', ''),
+            ('Valor', 'Descripción', ''),
+            ('Mejorando', 'El factor evoluciona favorablemente', ''),
+            ('Estable', 'Sin cambios significativos', ''),
+            ('Empeorando', 'El factor evoluciona desfavorablemente', ''),
+            ('', '', ''),
+            ('IMPACTO / PROBABILIDAD', '', ''),
+            ('Valor', '', ''),
+            ('Alto / Alta', '', ''),
+            ('Medio / Media', '', ''),
+            ('Bajo / Baja', '', ''),
+        ]
+        for row_data in ref_data:
+            ref.append(list(row_data))
+
+        # Estilo headers de referencia
+        for row_idx in [1, 10, 16]:
+            cell = ref.cell(row=row_idx, column=1)
+            cell.font = Font(bold=True, size=12, color='2E7D32')
+        ref.column_dimensions['A'].width = 25
+        ref.column_dimensions['B'].width = 60
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Plantilla_Factores_PESTEL.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser], url_path='import-excel')
+    def import_excel(self, request) -> Response:
+        """Importa factores PESTEL desde Excel."""
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        file_obj = request.FILES.get('archivo') or request.FILES.get('file')
+        if not file_obj:
+            return Response(
+                {'error': 'No se recibió ningún archivo. Use el campo "archivo".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        analisis_id = request.data.get('analisis_id')
+        if not analisis_id:
+            return Response(
+                {'error': 'Debe indicar el análisis PESTEL destino (analisis_id).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            analisis = AnalisisPESTEL.objects.get(id=analisis_id)
+        except AnalisisPESTEL.DoesNotExist:
+            return Response(
+                {'error': f'Análisis PESTEL con id={analisis_id} no encontrado.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            wb = openpyxl.load_workbook(file_obj, data_only=True)
+        except Exception as e:
+            return Response(
+                {'error': f'Error al leer el archivo Excel: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ws = wb.active
+        empresa = get_tenant_empresa()
+
+        # Mapeo de valores display → código
+        tipo_map = {v.lower(): k for k, v in FactorPESTEL.TipoFactor.choices}
+        tipo_map.update({'ecológico': 'ecologico', 'ecológico (ambiental)': 'ecologico',
+                         'legal (regulatorio)': 'legal', 'político': 'politico',
+                         'económico': 'economico', 'tecnológico': 'tecnologico'})
+        tendencia_map = {v.lower(): k for k, v in FactorPESTEL.TendenciaFactor.choices}
+        tendencia_map.update({'mejorando (favorable)': 'mejorando', 'estable (sin cambios)': 'estable',
+                              'empeorando (desfavorable)': 'empeorando'})
+        impacto_map = {v.lower(): k for k, v in FactorPESTEL.NivelImpacto.choices}
+        probabilidad_map = {v.lower(): k for k, v in FactorPESTEL.Probabilidad.choices}
+
+        created_count = 0
+        errors = []
+
+        # Datos desde fila 4 (plantilla) o fila 2 (sin header decorativo)
+        start_row = 4 if ws.cell(row=1, column=1).value and 'PLANTILLA' in str(ws.cell(row=1, column=1).value).upper() else 2
+
+        with transaction.atomic():
+            for row_idx in range(start_row, ws.max_row + 1):
+                tipo_raw = str(ws.cell(row=row_idx, column=1).value or '').strip()
+                descripcion = str(ws.cell(row=row_idx, column=2).value or '').strip()
+
+                if not tipo_raw or not descripcion:
+                    continue
+
+                tipo = tipo_map.get(tipo_raw.lower())
+                if not tipo:
+                    errors.append({'fila': row_idx, 'error': f'Dimensión no válida: "{tipo_raw}"'})
+                    continue
+
+                tendencia_raw = str(ws.cell(row=row_idx, column=3).value or 'estable').strip()
+                impacto_raw = str(ws.cell(row=row_idx, column=4).value or 'medio').strip()
+                probabilidad_raw = str(ws.cell(row=row_idx, column=5).value or 'media').strip()
+
+                tendencia = tendencia_map.get(tendencia_raw.lower(), 'estable')
+                impacto = impacto_map.get(impacto_raw.lower(), 'medio')
+                probabilidad = probabilidad_map.get(probabilidad_raw.lower(), 'media')
+
+                FactorPESTEL.objects.create(
+                    empresa=empresa,
+                    analisis=analisis,
+                    tipo=tipo,
+                    descripcion=descripcion,
+                    tendencia=tendencia,
+                    impacto=impacto,
+                    probabilidad=probabilidad,
+                    implicaciones=str(ws.cell(row=row_idx, column=6).value or '').strip(),
+                    fuentes=str(ws.cell(row=row_idx, column=7).value or '').strip(),
+                    created_by=request.user,
+                )
+                created_count += 1
+
+        return Response({
+            'message': f'{created_count} factores PESTEL importados exitosamente',
+            'created': created_count,
+            'errors': errors,
+            'total_errores': len(errors),
+        })
+
 
 class FuerzaPorterViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestión de fuerzas de Porter."""
@@ -675,6 +917,238 @@ class FuerzaPorterViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, viewsets
             'fuerzas': serializer.data,
             'total_fuerzas': queryset.count(),
             'distribucion_niveles': distribucion
+        })
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request) -> Response:
+        """Exporta fuerzas de Porter a Excel."""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Fuerzas de Porter'
+
+        headers = [
+            'FUERZA COMPETITIVA', 'NIVEL', 'DESCRIPCIÓN Y ANÁLISIS',
+            'FACTORES CLAVE', 'PERIODO', 'FECHA ANÁLISIS',
+            'IMPLICACIONES ESTRATÉGICAS'
+        ]
+        ws.append(headers)
+
+        header_font = Font(bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='1565C0', end_color='1565C0', fill_type='solid')
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        tipo_labels = dict(FuerzaPorter.TipoFuerza.choices)
+        nivel_labels = dict(FuerzaPorter.NivelFuerza.choices)
+
+        for fuerza in queryset:
+            factores_str = ', '.join(fuerza.factores) if isinstance(fuerza.factores, list) else str(fuerza.factores or '')
+            ws.append([
+                tipo_labels.get(fuerza.tipo, fuerza.tipo),
+                nivel_labels.get(fuerza.nivel, fuerza.nivel),
+                fuerza.descripcion,
+                factores_str,
+                fuerza.periodo,
+                fuerza.fecha_analisis.strftime('%Y-%m-%d') if fuerza.fecha_analisis else '',
+                fuerza.implicaciones_estrategicas or '',
+            ])
+
+        widths = [45, 22, 55, 50, 15, 15, 55]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Fuerzas_Porter.xlsx"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request) -> Response:
+        """Descarga plantilla Excel para importación de fuerzas de Porter."""
+        wb = openpyxl.Workbook()
+
+        ws = wb.active
+        ws.title = 'Fuerzas de Porter'
+
+        # Fila 1: Título
+        ws.merge_cells('A1:F1')
+        ws['A1'] = 'PLANTILLA DE IMPORTACIÓN — 5 FUERZAS DE PORTER'
+        ws['A1'].font = Font(bold=True, size=14, color='1565C0')
+        # Fila 2: Instrucciones
+        ws.merge_cells('A2:F2')
+        ws['A2'] = 'Complete los datos desde la fila 4. Las columnas con * son obligatorias. Máximo 5 filas (una por fuerza).'
+        ws['A2'].font = Font(italic=True, size=10, color='666666')
+
+        headers = [
+            'FUERZA COMPETITIVA *', 'NIVEL *', 'DESCRIPCIÓN Y ANÁLISIS *',
+            'FACTORES CLAVE (separados por ;)', 'PERIODO *',
+            'IMPLICACIONES ESTRATÉGICAS'
+        ]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=3, column=col, value=header)
+            cell.font = Font(bold=True, color='FFFFFF', size=11)
+            cell.fill = PatternFill(start_color='1565C0', end_color='1565C0', fill_type='solid')
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+
+        # Fila 4: Ejemplo
+        ejemplo = [
+            'Rivalidad entre Competidores', 'Alto',
+            'Mercado altamente competitivo con guerra de precios constante',
+            'Competencia en precio; Diferenciación baja; Muchos competidores',
+            str(date.today().year),
+            'Desarrollar ventaja competitiva basada en servicio y calidad'
+        ]
+        for col, val in enumerate(ejemplo, 1):
+            cell = ws.cell(row=4, column=col, value=val)
+            cell.font = Font(italic=True, color='999999')
+
+        widths = [40, 15, 55, 50, 15, 55]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        # Hoja 2: Referencia
+        ref = wb.create_sheet('Referencia')
+        ref_data = [
+            ('5 FUERZAS DE PORTER', ''),
+            ('Valor (exacto)', 'Descripción'),
+            ('Rivalidad entre Competidores', 'Intensidad de la competencia actual en el sector'),
+            ('Amenaza de Nuevos Entrantes', 'Facilidad con la que nuevos competidores pueden ingresar'),
+            ('Amenaza de Sustitutos', 'Disponibilidad de productos/servicios alternativos'),
+            ('Poder de Proveedores', 'Capacidad de negociación de los proveedores'),
+            ('Poder de Clientes', 'Capacidad de negociación de los clientes/compradores'),
+            ('', ''),
+            ('NIVELES', ''),
+            ('Valor', 'Significado'),
+            ('Alto', 'Fuerza intensa — desfavorable para la empresa'),
+            ('Medio', 'Fuerza moderada'),
+            ('Bajo', 'Fuerza débil — favorable para la empresa'),
+        ]
+        for row_data in ref_data:
+            ref.append(list(row_data))
+
+        for row_idx in [1, 9]:
+            cell = ref.cell(row=row_idx, column=1)
+            cell.font = Font(bold=True, size=12, color='1565C0')
+        ref.column_dimensions['A'].width = 40
+        ref.column_dimensions['B'].width = 60
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Plantilla_Fuerzas_Porter.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser], url_path='import-excel')
+    def import_excel(self, request) -> Response:
+        """Importa fuerzas de Porter desde Excel."""
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        file_obj = request.FILES.get('archivo') or request.FILES.get('file')
+        if not file_obj:
+            return Response(
+                {'error': 'No se recibió ningún archivo. Use el campo "archivo".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        periodo = request.data.get('periodo', str(date.today().year))
+
+        try:
+            wb = openpyxl.load_workbook(file_obj, data_only=True)
+        except Exception as e:
+            return Response(
+                {'error': f'Error al leer el archivo Excel: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ws = wb.active
+        empresa = get_tenant_empresa()
+
+        # Mapeo flexible de nombres → códigos
+        tipo_map = {
+            'rivalidad entre competidores': 'rivalidad',
+            'rivalidad': 'rivalidad',
+            'amenaza de nuevos entrantes': 'nuevos_entrantes',
+            'nuevos entrantes': 'nuevos_entrantes',
+            'amenaza de sustitutos': 'sustitutos',
+            'amenaza de productos/servicios sustitutos': 'sustitutos',
+            'sustitutos': 'sustitutos',
+            'poder de proveedores': 'poder_proveedores',
+            'poder de negociación de proveedores': 'poder_proveedores',
+            'poder proveedores': 'poder_proveedores',
+            'poder de clientes': 'poder_clientes',
+            'poder de negociación de clientes': 'poder_clientes',
+            'poder clientes': 'poder_clientes',
+        }
+        nivel_map = {v.lower(): k for k, v in FuerzaPorter.NivelFuerza.choices}
+        nivel_map.update({'alto (desfavorable)': 'alto', 'medio (moderado)': 'medio', 'bajo (favorable)': 'bajo'})
+
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        start_row = 4 if ws.cell(row=1, column=1).value and 'PLANTILLA' in str(ws.cell(row=1, column=1).value).upper() else 2
+
+        with transaction.atomic():
+            for row_idx in range(start_row, ws.max_row + 1):
+                tipo_raw = str(ws.cell(row=row_idx, column=1).value or '').strip()
+                nivel_raw = str(ws.cell(row=row_idx, column=2).value or '').strip()
+                descripcion = str(ws.cell(row=row_idx, column=3).value or '').strip()
+
+                if not tipo_raw or not descripcion:
+                    continue
+
+                tipo = tipo_map.get(tipo_raw.lower())
+                if not tipo:
+                    errors.append({'fila': row_idx, 'error': f'Fuerza no válida: "{tipo_raw}"'})
+                    continue
+
+                nivel = nivel_map.get(nivel_raw.lower(), 'medio')
+
+                factores_raw = str(ws.cell(row=row_idx, column=4).value or '').strip()
+                factores = [f.strip() for f in factores_raw.split(';') if f.strip()] if factores_raw else []
+
+                periodo_row = str(ws.cell(row=row_idx, column=5).value or periodo).strip()
+                implicaciones = str(ws.cell(row=row_idx, column=6).value or '').strip()
+
+                fuerza, created = FuerzaPorter.objects.update_or_create(
+                    empresa=empresa,
+                    tipo=tipo,
+                    periodo=periodo_row,
+                    defaults={
+                        'nivel': nivel,
+                        'descripcion': descripcion,
+                        'factores': factores,
+                        'fecha_analisis': date.today(),
+                        'implicaciones_estrategicas': implicaciones,
+                        'created_by': request.user,
+                    }
+                )
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+        return Response({
+            'message': f'Proceso completado: {created_count} creadas, {updated_count} actualizadas',
+            'created': created_count,
+            'updated': updated_count,
+            'errors': errors,
+            'total_errores': len(errors),
         })
 
 

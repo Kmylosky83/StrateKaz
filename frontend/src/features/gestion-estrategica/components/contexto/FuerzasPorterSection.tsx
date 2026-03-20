@@ -2,10 +2,11 @@
  * FuerzasPorterSection - Sección para gestión de 5 Fuerzas de Porter
  *
  * Vista Híbrida: Tabla CRUD + Radar Chart + Diagrama en Cruz
- * - ViewToggle para alternar entre Tabla (principal), Radar y Diagrama
- * - StatsGrid con métricas clave
- * - Import/Export Excel (mismo patrón que Partes Interesadas)
- * - Modal para crear/editar fuerzas
+ * Sigue el patrón DS de Partes Interesadas:
+ * 1. StatsGrid (métricas)
+ * 2. Toolbar import/export (barra separada con botones outline + texto)
+ * 3. SectionHeader (título + filtros + ViewToggle + acción primaria)
+ * 4. DataTableCard (tabla) o vistas visuales
  *
  * Gestiona las 5 fuerzas competitivas de Michael Porter:
  * - Rivalidad entre competidores
@@ -115,6 +116,9 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
     type: 'success' | 'warning' | 'error';
     message: string;
   } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingPlantilla, setIsDownloadingPlantilla] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // RBAC
@@ -245,6 +249,7 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
       const blobUrl = await fuerzasPorterApi.exportExcel({ periodo: selectedPeriodo });
       const a = document.createElement('a');
@@ -255,10 +260,13 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
       toast.success('Excel exportado');
     } catch {
       toast.error('Error al exportar');
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleDownloadTemplate = async () => {
+    setIsDownloadingPlantilla(true);
     try {
       const blobUrl = await fuerzasPorterApi.downloadTemplate();
       const a = document.createElement('a');
@@ -269,13 +277,20 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
       toast.success('Plantilla descargada');
     } catch {
       toast.error('Error al descargar plantilla');
+    } finally {
+      setIsDownloadingPlantilla(false);
     }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsImporting(true);
     try {
       const result = await fuerzasPorterApi.importExcel(file, selectedPeriodo);
       setAlertMessage({
@@ -285,6 +300,8 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
       });
     } catch {
       setAlertMessage({ type: 'error', message: 'Error al importar archivo' });
+    } finally {
+      setIsImporting(false);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -313,14 +330,58 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
         />
       )}
 
-      {/* Estadísticas */}
+      {/* 1. Estadísticas */}
       {isLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
         <StatsGrid stats={porterStats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* Section Header con ViewToggle */}
+      {/* 2. Toolbar Import/Export — barra separada (patrón Stakeholders) */}
+      {viewMode === 'tabla' && (
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleDownloadTemplate}
+              variant="outline"
+              size="sm"
+              disabled={isDownloadingPlantilla}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              {isDownloadingPlantilla ? 'Descargando...' : 'Plantilla'}
+            </Button>
+            <Button
+              onClick={handleImportClick}
+              variant="outline"
+              size="sm"
+              disabled={isImporting || !canCreate}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isImporting ? 'Importando...' : 'Importar'}
+            </Button>
+            <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? 'Exportando...' : 'Exportar'}
+            </Button>
+          </div>
+          <Select
+            value={selectedPeriodo}
+            onChange={(e) => setSelectedPeriodo(e.target.value)}
+            options={periodoOptions}
+            className="w-28"
+          />
+          {/* Input oculto para importar archivo */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </div>
+      )}
+
+      {/* 3. SectionHeader con ViewToggle + acción primaria */}
       <SectionHeader
         icon={
           <div className={`p-2 rounded-lg ${colorClasses.badge}`}>
@@ -328,18 +389,10 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
           </div>
         }
         title="Porter"
-        description="Evalúa las 5 fuerzas competitivas que determinan la intensidad de la competencia"
+        description={`${fuerzas.length} fuerza${fuerzas.length !== 1 ? 's' : ''} configurada${fuerzas.length !== 1 ? 's' : ''}`}
         variant="compact"
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select
-              value={selectedPeriodo}
-              onChange={(e) => setSelectedPeriodo(e.target.value)}
-              options={periodoOptions}
-              className="w-28"
-            />
-
-            {/* ViewToggle con 3 opciones */}
+          <div className="flex items-center gap-3 flex-nowrap">
             <ViewToggle
               value={viewMode}
               onChange={setViewMode}
@@ -351,34 +404,6 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
               moduleColor={moduleColor as 'purple' | 'blue' | 'green' | 'orange' | 'gray'}
             />
 
-            {/* Import/Export */}
-            {canCreate && (
-              <>
-                <Tooltip content="Descargar plantilla">
-                  <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
-                    <FileDown className="h-4 w-4" />
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Importar Excel">
-                  <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                </Tooltip>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={handleImport}
-                />
-              </>
-            )}
-            <Tooltip content="Exportar Excel">
-              <Button variant="ghost" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4" />
-              </Button>
-            </Tooltip>
-
             {canCreate && (
               <Button onClick={handleNewFuerza} variant="primary" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
@@ -389,7 +414,7 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
         }
       />
 
-      {/* Contenido según vista */}
+      {/* 4. Contenido según vista */}
       {viewMode === 'radar' ? (
         <PorterRadarChart
           periodo={selectedPeriodo}

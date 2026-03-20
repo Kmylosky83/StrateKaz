@@ -2,11 +2,11 @@
  * Sección de Análisis PESTEL - Vista Híbrida
  *
  * Vista tabla CRUD + Matriz PESTEL con ViewToggle
- * - StatsGrid con métricas por dimensión
- * - SectionHeader con filtros, ViewToggle e import/export
- * - DataTableCard para vista tabla (CRUD directo)
- * - PESTELMatrix para visualización en cuadrantes
- * - Import/Export Excel (mismo patrón que Partes Interesadas)
+ * Sigue el patrón DS de Partes Interesadas:
+ * 1. StatsGrid (métricas)
+ * 2. Toolbar import/export (barra separada con botones outline + texto)
+ * 3. SectionHeader (título + filtros + ViewToggle + acción primaria)
+ * 4. DataTableCard (tabla) o PESTELMatrix (visual)
  *
  * Los factores pueden venir de:
  * 1. Carga manual / Import Excel (este tab)
@@ -130,6 +130,9 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
     type: 'success' | 'warning' | 'error';
     message: string;
   } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloadingPlantilla, setIsDownloadingPlantilla] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // RBAC
@@ -246,6 +249,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
   };
 
   const handleExport = async () => {
+    setIsExporting(true);
     try {
       const blobUrl = await factoresPestelApi.exportExcel(
         selectedAnalisis ? { analisis: selectedAnalisis.id } : undefined
@@ -258,10 +262,13 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
       toast.success('Excel exportado');
     } catch {
       toast.error('Error al exportar');
+    } finally {
+      setIsExporting(false);
     }
   };
 
   const handleDownloadTemplate = async () => {
+    setIsDownloadingPlantilla(true);
     try {
       const blobUrl = await factoresPestelApi.downloadTemplate();
       const a = document.createElement('a');
@@ -272,13 +279,20 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
       toast.success('Plantilla descargada');
     } catch {
       toast.error('Error al descargar plantilla');
+    } finally {
+      setIsDownloadingPlantilla(false);
     }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedAnalisis) return;
 
+    setIsImporting(true);
     try {
       const result = await factoresPestelApi.importExcel(file, selectedAnalisis.id);
       setAlertMessage({
@@ -288,6 +302,8 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
       });
     } catch {
       setAlertMessage({ type: 'error', message: 'Error al importar archivo' });
+    } finally {
+      setIsImporting(false);
     }
 
     // Reset file input
@@ -358,14 +374,58 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
         />
       )}
 
-      {/* Estadísticas */}
+      {/* 1. Estadísticas */}
       {isLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
         <StatsGrid stats={stats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* Section Header */}
+      {/* 2. Toolbar Import/Export — barra separada (patrón Stakeholders) */}
+      {viewMode === 'tabla' && (
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleDownloadTemplate}
+              variant="outline"
+              size="sm"
+              disabled={isDownloadingPlantilla}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              {isDownloadingPlantilla ? 'Descargando...' : 'Plantilla'}
+            </Button>
+            <Button
+              onClick={handleImportClick}
+              variant="outline"
+              size="sm"
+              disabled={isImporting || !canCreate || !selectedAnalisis}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isImporting ? 'Importando...' : 'Importar'}
+            </Button>
+            <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? 'Exportando...' : 'Exportar'}
+            </Button>
+          </div>
+          <Select
+            value={selectedAnalisis?.id?.toString() || ''}
+            onChange={handleAnalisisChange}
+            options={analisisOptions}
+            className="w-56"
+          />
+          {/* Input oculto para importar archivo */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </div>
+      )}
+
+      {/* 3. SectionHeader con filtros + ViewToggle + acción primaria */}
       <SectionHeader
         icon={
           <div className={`p-2 rounded-lg ${colorClasses.badge}`}>
@@ -373,18 +433,10 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
           </div>
         }
         title="PESTEL"
-        description="Factores Políticos, Económicos, Sociales, Tecnológicos, Ecológicos y Legales"
+        description={`${factores.length} factor${factores.length !== 1 ? 'es' : ''} identificado${factores.length !== 1 ? 's' : ''}`}
         variant="compact"
         actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Selector de análisis */}
-            <Select
-              value={selectedAnalisis?.id?.toString() || ''}
-              onChange={handleAnalisisChange}
-              options={analisisOptions}
-              className="w-52"
-            />
-
+          <div className="flex items-center gap-3 flex-nowrap">
             {viewMode === 'tabla' && (
               <>
                 <Input
@@ -394,7 +446,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
                     setFilters({ ...filters, search: e.target.value } as FactorPESTELFilters)
                   }
                   leftIcon={<Search className="h-4 w-4" />}
-                  className="w-40"
+                  className="w-48"
                 />
                 <Select
                   value={filters.tipo || ''}
@@ -405,7 +457,6 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
               </>
             )}
 
-            {/* ViewToggle */}
             <ViewToggle
               value={viewMode}
               onChange={setViewMode}
@@ -415,39 +466,6 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
               ]}
               moduleColor={moduleColor as 'purple' | 'blue' | 'green' | 'orange' | 'gray'}
             />
-
-            {/* Import/Export */}
-            {canCreate && (
-              <>
-                <Tooltip content="Descargar plantilla">
-                  <Button variant="ghost" size="sm" onClick={handleDownloadTemplate}>
-                    <FileDown className="h-4 w-4" />
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Importar Excel">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={!selectedAnalisis}
-                  >
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                </Tooltip>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  className="hidden"
-                  onChange={handleImport}
-                />
-              </>
-            )}
-            <Tooltip content="Exportar Excel">
-              <Button variant="ghost" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4" />
-              </Button>
-            </Tooltip>
 
             {canCreate && (
               <Button
@@ -473,7 +491,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
         />
       )}
 
-      {/* Contenido según vista */}
+      {/* 4. Contenido según vista */}
       {viewMode === 'matriz' && selectedAnalisis ? (
         <PESTELMatrix analisisId={selectedAnalisis.id} readOnly={!canEdit} />
       ) : (
@@ -603,7 +621,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Modal de formulario — reutiliza el existente para factores */}
+      {/* Modal de formulario */}
       {isModalOpen && (
         <AnalisisPestelFormModal
           analisis={null}

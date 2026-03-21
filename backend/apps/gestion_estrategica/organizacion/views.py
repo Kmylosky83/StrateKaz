@@ -226,7 +226,7 @@ class OrganigramaView(APIView):
                 'parent_name': area.parent.name if area.parent else None,
                 'cost_center': area.cost_center,
                 'manager': area.manager_id,
-                'manager_name': area.manager.get_full_name() if area.manager else None,
+                'manager_name': area.manager.name if area.manager else None,
                 'icon': area.icon,
                 'color': area.color,
                 'is_active': area.is_active,

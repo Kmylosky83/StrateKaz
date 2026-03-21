@@ -152,59 +152,38 @@ POLITICA_CAMPOS = [
         'ancho_columna': 12,
         'descripcion': 'Cómo se comunica la política y dónde estará disponible.',
     },
-    # ── SECCIÓN: FIRMAS ──
-    {
-        'nombre_campo': 'seccion_firmas',
-        'etiqueta': 'Responsables del Documento',
-        'tipo_campo': 'SECCION',
-        'orden': 20,
-        'ancho_columna': 12,
-    },
-    {
-        'nombre_campo': 'elaboro_nombre',
-        'etiqueta': 'Elaboró — Nombre',
-        'tipo_campo': 'TEXT',
-        'placeholder': 'Nombre del responsable que elaboró',
-        'es_obligatorio': True,
-        'orden': 21,
-        'ancho_columna': 6,
-        'descripcion': 'Persona que redactó la política.',
-    },
-    {
-        'nombre_campo': 'elaboro_cargo',
-        'etiqueta': 'Elaboró — Cargo',
-        'tipo_campo': 'TEXT',
-        'placeholder': 'Cargo del responsable',
-        'es_obligatorio': True,
-        'orden': 22,
-        'ancho_columna': 6,
-    },
-    {
-        'nombre_campo': 'reviso_nombre',
-        'etiqueta': 'Revisó — Nombre',
-        'tipo_campo': 'TEXT',
-        'placeholder': 'Nombre del responsable que revisó',
-        'es_obligatorio': True,
-        'orden': 23,
-        'ancho_columna': 6,
-        'descripcion': 'Persona que revisó y validó el contenido.',
-    },
-    {
-        'nombre_campo': 'reviso_cargo',
-        'etiqueta': 'Revisó — Cargo',
-        'tipo_campo': 'TEXT',
-        'placeholder': 'Cargo del responsable',
-        'es_obligatorio': True,
-        'orden': 24,
-        'ancho_columna': 6,
-    },
+    # ── FIRMAS: ya NO van como campos TEXT ──
+    # Los firmantes se configuran en firmantes_por_defecto (JSONField)
+    # y se auto-crean como FirmaDigital al crear documento.
 ]
 
 VARIABLES_POLITICA = [
     'marco_normativo', 'frecuencia_revision',
     'objetivo', 'alcance', 'declaracion', 'compromisos',
-    'comunicacion', 'elaboro_nombre', 'elaboro_cargo',
-    'reviso_nombre', 'reviso_cargo',
+    'comunicacion',
+]
+
+# Firmantes por defecto para Política SGI
+# Cargos referencian seed_cargos_base.py (code estable entre tenants)
+FIRMANTES_POLITICA = [
+    {
+        'rol_firma': 'ELABORO',
+        'cargo_code': 'COORD_HSEQ',
+        'orden': 1,
+        'es_requerido': True,
+    },
+    {
+        'rol_firma': 'REVISO',
+        'cargo_code': 'DIR_CALIDAD',
+        'orden': 2,
+        'es_requerido': True,
+    },
+    {
+        'rol_firma': 'APROBO',
+        'cargo_code': 'GER_GENERAL',
+        'orden': 3,
+        'es_requerido': True,
+    },
 ]
 
 
@@ -227,6 +206,7 @@ BIBLIOTECA_PLANTILLAS = [
         'contenido_plantilla': '',
         'variables_disponibles': VARIABLES_POLITICA,
         'campos_formulario': POLITICA_CAMPOS,
+        'firmantes_por_defecto': FIRMANTES_POLITICA,
         'categoria': 'POLITICA',
         'norma_iso_codigo': 'ISO9001',
         'orden': 1,
@@ -267,6 +247,7 @@ class Command(BaseCommand):
                         'contenido_plantilla': data['contenido_plantilla'],
                         'variables_disponibles': data['variables_disponibles'],
                         'campos_formulario': data.get('campos_formulario', []),
+                        'firmantes_por_defecto': data.get('firmantes_por_defecto', []),
                         'categoria': data['categoria'],
                         'industria': 'GENERAL',
                         'norma_iso_codigo': data['norma_iso_codigo'],

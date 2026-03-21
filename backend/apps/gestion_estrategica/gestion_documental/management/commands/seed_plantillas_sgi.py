@@ -115,13 +115,31 @@ class Command(BaseCommand):
                         'es_por_defecto': True,
                         'plantilla_maestra_codigo': maestra.codigo,
                         'es_personalizada': False,
+                        'firmantes_por_defecto': getattr(
+                            maestra, 'firmantes_por_defecto', []
+                        ) or [],
                     },
                 )
+
+                # Limpiar campos TEXT de firma obsoletos (migrados a FirmaDigital)
+                CAMPOS_FIRMA_OBSOLETOS = [
+                    'seccion_firmas', 'elaboro_nombre', 'elaboro_cargo',
+                    'reviso_nombre', 'reviso_cargo',
+                ]
+                CampoFormulario = apps.get_model('gestion_documental', 'CampoFormulario')
+                deleted_firma = CampoFormulario.objects.filter(
+                    plantilla=plantilla_obj,
+                    nombre_campo__in=CAMPOS_FIRMA_OBSOLETOS,
+                ).delete()[0]
+                if deleted_firma:
+                    self.stdout.write(self.style.WARNING(
+                        f'    ⚠ {deleted_firma} campos firma TEXT eliminados de '
+                        f'{maestra.codigo} (migrados a FirmaDigital)'
+                    ))
 
                 # Para FORMULARIO: crear CampoFormulario desde JSON de la maestra
                 campos_json = getattr(maestra, 'campos_formulario', []) or []
                 if tipo_plantilla == 'FORMULARIO' and campos_json:
-                    CampoFormulario = apps.get_model('gestion_documental', 'CampoFormulario')
                     campos_created = 0
                     for campo_data in campos_json:
                         defaults = {

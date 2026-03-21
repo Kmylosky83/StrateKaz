@@ -79,7 +79,8 @@ class PlantillaDocumentoListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'codigo', 'nombre', 'tipo_documento', 'tipo_documento_nombre',
             'tipo_plantilla', 'tipo_plantilla_display', 'version', 'estado', 'estado_display',
-            'es_por_defecto', 'plantilla_maestra_codigo', 'es_personalizada',
+            'es_por_defecto', 'firmantes_por_defecto',
+            'plantilla_maestra_codigo', 'es_personalizada',
             'total_documentos'
         ]
         extra_kwargs = {
@@ -104,6 +105,7 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
             'tipo_plantilla', 'tipo_plantilla_display', 'contenido_plantilla',
             'variables_disponibles', 'estilos_css', 'encabezado', 'pie_pagina',
             'version', 'estado', 'estado_display', 'es_por_defecto',
+            'firmantes_por_defecto',
             'plantilla_maestra_codigo', 'es_personalizada',
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]

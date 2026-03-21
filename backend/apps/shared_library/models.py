@@ -126,6 +126,15 @@ class BibliotecaPlantilla(SharedModel):
         default=0,
         verbose_name='Orden',
     )
+    firmantes_por_defecto = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Firmantes por Defecto',
+        help_text=(
+            'JSON: [{"rol_firma": "ELABORO", "cargo_code": "COORD_HSEQ", '
+            '"orden": 1, "es_requerido": true}]'
+        ),
+    )
 
     class Meta:
         db_table = 'shared_biblioteca_plantilla'

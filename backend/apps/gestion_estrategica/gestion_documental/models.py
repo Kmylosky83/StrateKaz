@@ -239,6 +239,16 @@ class PlantillaDocumento(models.Model):
         verbose_name='Personalizada',
         help_text='False si es copia exacta de plantilla maestra'
     )
+    firmantes_por_defecto = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Firmantes por Defecto',
+        help_text=(
+            'JSON: [{"rol_firma": "ELABORO", "cargo_code": "COORD_HSEQ", '
+            '"orden": 1, "es_requerido": true}]. '
+            'Al crear documento, auto-crea FirmaDigital para cada firmante.'
+        ),
+    )
 
     class Meta:
         db_table = 'documental_plantilla_documento'

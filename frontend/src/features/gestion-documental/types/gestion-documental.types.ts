@@ -102,6 +102,17 @@ export interface TipoDocumento {
   created_by_detail?: UserDetail;
 }
 
+// ==================== FIRMANTES POR DEFECTO ====================
+
+export type RolFirma = 'ELABORO' | 'REVISO' | 'APROBO' | 'VALIDO' | 'AUTORIZO';
+
+export interface FirmantePorDefecto {
+  rol_firma: RolFirma;
+  cargo_code: string;
+  orden: number;
+  es_requerido?: boolean;
+}
+
 // ==================== PLANTILLA DOCUMENTO ====================
 
 export interface PlantillaDocumento {
@@ -121,6 +132,8 @@ export interface PlantillaDocumento {
   estado: EstadoPlantilla;
   es_por_defecto: boolean;
   campos_formulario?: CampoFormulario[];
+  // Firmantes por defecto (auto-crea FirmaDigital al crear documento)
+  firmantes_por_defecto?: FirmantePorDefecto[];
   // Biblioteca Maestra (Fase 8)
   plantilla_maestra_codigo?: string;
   es_personalizada?: boolean;

@@ -145,6 +145,68 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
 
         return Response(PlantillaDocumentoDetailSerializer(plantilla).data)
 
+    @action(detail=True, methods=['get'], url_path='resolver-firmantes')
+    def resolver_firmantes(self, request, pk=None):
+        """
+        Preview: resuelve firmantes_por_defecto a usuarios actuales.
+        Muestra quién firmaría si se crea un documento hoy desde esta plantilla.
+        """
+        from django.apps import apps
+        plantilla = self.get_object()
+        firmantes_config = plantilla.firmantes_por_defecto or []
+
+        if not firmantes_config:
+            return Response({
+                'firmantes': [],
+                'mensaje': 'Esta plantilla no tiene firmantes por defecto configurados.',
+            })
+
+        Cargo = apps.get_model('core', 'Cargo')
+        User = apps.get_model('core', 'User')
+        resultado = []
+
+        for config in firmantes_config:
+            cargo_code = config.get('cargo_code', '')
+            rol_firma = config.get('rol_firma', '')
+            item = {
+                'rol_firma': rol_firma,
+                'cargo_code': cargo_code,
+                'orden': config.get('orden', 0),
+                'es_requerido': config.get('es_requerido', True),
+                'cargo_nombre': None,
+                'usuario_nombre': None,
+                'usuario_id': None,
+                'resuelto': False,
+                'warning': None,
+            }
+
+            try:
+                cargo = Cargo.objects.get(code=cargo_code, is_active=True)
+                item['cargo_nombre'] = cargo.name
+            except Cargo.DoesNotExist:
+                item['warning'] = f'Cargo "{cargo_code}" no encontrado'
+                resultado.append(item)
+                continue
+
+            usuario = User.objects.filter(
+                cargo=cargo, is_active=True, deleted_at__isnull=True
+            ).first()
+
+            if usuario:
+                item['usuario_nombre'] = usuario.get_full_name()
+                item['usuario_id'] = usuario.pk
+                item['resuelto'] = True
+            else:
+                item['warning'] = f'Sin usuario activo con cargo "{cargo.name}"'
+
+            resultado.append(item)
+
+        return Response({
+            'firmantes': resultado,
+            'total': len(resultado),
+            'resueltos': sum(1 for f in resultado if f['resuelto']),
+        })
+
 
 class CampoFormularioViewSet(viewsets.ModelViewSet):
     """ViewSet para Campos de Formulario"""
@@ -256,11 +318,34 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 from .services import DocumentoService
                 codigo = DocumentoService.generar_codigo(tipo_documento, empresa_id)
 
-        serializer.save(
+        documento = serializer.save(
             empresa_id=empresa_id,
             elaborado_por=self.request.user,
             codigo=codigo,
         )
+
+        # Auto-asignar firmantes desde plantilla
+        plantilla = documento.plantilla
+        if plantilla and plantilla.firmantes_por_defecto:
+            from .services.documento_service import auto_asignar_firmantes_desde_plantilla
+            result = auto_asignar_firmantes_desde_plantilla(documento, plantilla)
+
+            # Transición a EN_REVISION si al menos 1 firmante fue asignado
+            if result['firmantes_creados']:
+                documento.estado = 'EN_REVISION'
+                documento.save(update_fields=['estado', 'updated_at'])
+
+            # Guardar resultado para incluirlo en la response
+            self._firma_auto_result = result
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        if hasattr(self, '_firma_auto_result'):
+            result = self._firma_auto_result
+            response.data['firmantes_auto_asignados'] = len(result['firmantes_creados'])
+            response.data['firmantes_warnings'] = result['warnings']
+            delattr(self, '_firma_auto_result')
+        return response
 
     @action(detail=True, methods=['get'])
     def firmas(self, request, pk=None):

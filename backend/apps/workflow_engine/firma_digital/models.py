@@ -291,8 +291,11 @@ class FirmaDigital(TimestampedModel):
     configuracion_flujo = models.ForeignKey(
         ConfiguracionFlujoFirma,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='firmas',
-        verbose_name='Configuración de Flujo'
+        verbose_name='Configuración de Flujo',
+        help_text='Null cuando se auto-asigna desde plantilla sin flujo formal',
     )
     nodo_flujo = models.ForeignKey(
         FlowNode,

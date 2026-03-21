@@ -8,6 +8,7 @@
  * - El título del documento ES el título del formulario
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { Button, Spinner } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -191,7 +192,24 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     if (isEdit && documentoId) {
       await updateMutation.mutateAsync({ id: documentoId, data: payload });
     } else {
-      await createMutation.mutateAsync(payload);
+      const response = await createMutation.mutateAsync(payload);
+
+      // Mostrar info de firmantes auto-asignados desde plantilla
+      const autoAsignados = (response as Record<string, unknown>)?.firmantes_auto_asignados as
+        | number
+        | undefined;
+      const warnings = (response as Record<string, unknown>)?.firmantes_warnings as
+        | string[]
+        | undefined;
+
+      if (autoAsignados && autoAsignados > 0) {
+        toast.success(
+          `${autoAsignados} firmante${autoAsignados > 1 ? 's' : ''} asignado${autoAsignados > 1 ? 's' : ''} automáticamente`
+        );
+      }
+      if (warnings && warnings.length > 0) {
+        warnings.forEach((w) => toast.warning(w));
+      }
     }
     onClose();
   };

@@ -435,3 +435,108 @@ class DocumentoService:
             return str(valor) if valor is not None else ''
 
         return re.sub(r'\{\{(\s*\w+\s*)\}\}', reemplazar, contenido_plantilla)
+
+
+def auto_asignar_firmantes_desde_plantilla(documento, plantilla):
+    """
+    Resuelve firmantes_por_defecto de una plantilla y crea FirmaDigital
+    records para un Documento recién creado.
+
+    Regla C2→C2: usa apps.get_model() en vez de import directo
+    de workflow_engine.
+
+    Returns:
+        dict: {
+            'firmantes_creados': [FirmaDigital, ...],
+            'warnings': ['Cargo X no tiene usuario asignado', ...],
+        }
+    """
+    from django.contrib.contenttypes.models import ContentType
+
+    firmantes_config = plantilla.firmantes_por_defecto
+    if not firmantes_config:
+        return {'firmantes_creados': [], 'warnings': []}
+
+    FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
+    HistorialFirma = apps.get_model('firma_digital', 'HistorialFirma')
+    Cargo = apps.get_model('core', 'Cargo')
+    User = apps.get_model('core', 'User')
+
+    content_type = ContentType.objects.get_for_model(documento)
+    firmantes_creados = []
+    warnings = []
+
+    for config in firmantes_config:
+        cargo_code = config.get('cargo_code', '')
+        rol_firma = config.get('rol_firma', 'ELABORO')
+        orden = config.get('orden', 0)
+
+        # Resolver cargo por code
+        try:
+            cargo = Cargo.objects.get(code=cargo_code, is_active=True)
+        except Cargo.DoesNotExist:
+            warnings.append(
+                f'Cargo "{cargo_code}" no encontrado o inactivo. '
+                f'Firmante {rol_firma} debe asignarse manualmente.'
+            )
+            continue
+
+        # Resolver usuario activo con ese cargo
+        usuario = User.objects.filter(
+            cargo=cargo, is_active=True, deleted_at__isnull=True
+        ).first()
+
+        if not usuario:
+            warnings.append(
+                f'No hay usuario activo con cargo "{cargo.name}" '
+                f'({cargo_code}). Firmante {rol_firma} debe asignarse manualmente.'
+            )
+            continue
+
+        # Crear FirmaDigital en PENDIENTE
+        try:
+            firma = FirmaDigital.objects.create(
+                content_type=content_type,
+                object_id=documento.pk,
+                configuracion_flujo=None,
+                nodo_flujo=None,
+                usuario=usuario,
+                cargo=cargo,
+                rol_firma=rol_firma,
+                orden=orden,
+                estado='PENDIENTE',
+                firma_imagen='',
+                documento_hash='pending',
+                ip_address='0.0.0.0',
+                user_agent='auto-assigned-from-plantilla',
+            )
+            firmantes_creados.append(firma)
+
+            # Historial de auditoría
+            HistorialFirma.objects.create(
+                firma=firma,
+                accion='FIRMA_CREADA',
+                usuario=usuario,
+                descripcion=(
+                    f'Auto-asignado desde plantilla "{plantilla.codigo}": '
+                    f'{rol_firma} → {usuario.get_full_name()}'
+                ),
+                metadatos={
+                    'plantilla_codigo': plantilla.codigo,
+                    'cargo_code': cargo_code,
+                    'auto_asignado': True,
+                },
+                ip_address='0.0.0.0',
+            )
+            logger.info(
+                '[documental] Auto-asignado firmante: %s (%s) como %s para doc %s',
+                usuario.get_full_name(), cargo_code, rol_firma, documento.pk,
+            )
+        except Exception as e:
+            logger.error(
+                '[documental] Error creando FirmaDigital para %s/%s: %s',
+                cargo_code, rol_firma, e,
+            )
+            warnings.append(f'Error al crear firma para {rol_firma}: {str(e)}')
+
+    return {'firmantes_creados': firmantes_creados, 'warnings': warnings}

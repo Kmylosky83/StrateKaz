@@ -110,7 +110,7 @@ function getSectionLabel(tema: TemaPublico): string {
     const labels: Record<string, string> = {
       directiva: 'Capacidad Directiva',
       talento_humano: 'Capacidad del Talento Humano',
-      tecnologica: 'Capacidad Tecnologica',
+      tecnologica: 'Capacidad Tecnológica',
       competitiva: 'Capacidad Competitiva',
       financiera: 'Capacidad Financiera',
     };
@@ -118,11 +118,11 @@ function getSectionLabel(tema: TemaPublico): string {
   }
   if (tema.factor_poam) {
     const labels: Record<string, string> = {
-      economico: 'Factores Economicos',
-      politico: 'Factores Politicos',
+      economico: 'Factores Económicos',
+      politico: 'Factores Políticos',
       social: 'Factores Sociales',
-      tecnologico: 'Factores Tecnologicos',
-      geografico: 'Factores Geograficos',
+      tecnologico: 'Factores Tecnológicos',
+      geografico: 'Factores Geográficos',
     };
     return labels[tema.factor_poam] || 'POAM';
   }
@@ -137,7 +137,7 @@ function resolveEmpresaNombre(enc?: EncuestaPublicaType): string {
   if (enc?.branding?.empresa_nombre) {
     return enc.branding.empresa_nombre;
   }
-  return enc?.empresa_nombre || 'Organizacion';
+  return enc?.empresa_nombre || 'Organización';
 }
 
 // ============================================================================
@@ -168,6 +168,46 @@ export default function EncuestaPublicaPage() {
 
   const enc = encuesta as EncuestaPublicaType | undefined;
   const temas = enc?.temas || [];
+
+  // Keyboard navigation: Enter/→ = siguiente, ←/Escape = anterior
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (screen !== 'question') {
+        if (screen === 'welcome' && e.key === 'Enter') {
+          e.preventDefault();
+          setScreen('question');
+          setQuestionIndex(0);
+        }
+        return;
+      }
+      if ((e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Enter' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const tema = temas[questionIndex];
+        const r = respuestas[tema?.id];
+        const answered = !!(r?.clasificacion && r?.impacto_percibido);
+        if (answered) {
+          if (questionIndex < temas.length - 1) {
+            setSlideDirection('right');
+            setQuestionIndex((i) => i + 1);
+          } else {
+            setScreen('summary');
+          }
+        }
+      } else if (e.key === 'ArrowLeft' || e.key === 'Escape') {
+        e.preventDefault();
+        if (questionIndex > 0) {
+          setSlideDirection('left');
+          setQuestionIndex((i) => i - 1);
+        } else {
+          setScreen('welcome');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [screen, questionIndex, respuestas, temas]);
   const isPciPoam = enc?.tipo_encuesta === 'pci_poam';
   const empresaNombre = resolveEmpresaNombre(enc);
   const brand = getBrandColors(enc?.branding);
@@ -399,12 +439,12 @@ export default function EncuestaPublicaPage() {
   // ============================================================================
 
   if (screen === 'welcome') {
-    const sectionLabel = isPciPoam ? 'Diagnostico PCI-POAM' : 'Encuesta de Contexto';
+    const sectionLabel = isPciPoam ? 'Diagnóstico PCI-POAM' : 'Encuesta de Contexto';
 
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-6 py-8">
-          <div className="w-full max-w-xl text-center">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 sm:px-6 lg:px-8 py-8">
+          <div className="w-full max-w-2xl lg:max-w-3xl text-center">
             {/* Badge */}
             <div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8"
@@ -444,7 +484,7 @@ export default function EncuestaPublicaPage() {
             </div>
 
             {/* Stats cards */}
-            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-10">
+            <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-md mx-auto mb-10">
               <div
                 className="rounded-2xl p-5 border text-center"
                 style={{
@@ -480,14 +520,14 @@ export default function EncuestaPublicaPage() {
             {/* Privacy note */}
             <p className="text-xs sm:text-sm text-gray-400 mb-8 flex items-center justify-center gap-2">
               <Shield className="w-4 h-4 flex-shrink-0" />
-              Anonima y confidencial — No necesita cuenta para responder
+              Anónima y confidencial — No necesita cuenta para responder
             </p>
 
             {/* Resume prompt */}
             {showResumePrompt ? (
               <div className="space-y-4">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Tiene progreso guardado de una sesion anterior
+                  Tiene progreso guardado de una sesión anterior
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
@@ -543,7 +583,7 @@ export default function EncuestaPublicaPage() {
 
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="w-full max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
           <div className="text-center mb-8">
             <ListChecks className="w-12 h-12 mx-auto mb-4" style={{ color: brand.primary }} />
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
@@ -561,7 +601,7 @@ export default function EncuestaPublicaPage() {
           )}
 
           {/* Summary grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 max-h-[55vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8 max-h-[55vh] overflow-y-auto pr-1">
             {temas.map((tema, i) => {
               const r = respuestas[tema.id];
               const answered = !!(r?.clasificacion && r?.impacto_percibido);
@@ -660,7 +700,7 @@ export default function EncuestaPublicaPage() {
   return (
     <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
       <div
-        className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10"
+        className="w-full max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -729,10 +769,10 @@ export default function EncuestaPublicaPage() {
             </p>
           )}
 
-          {/* Clasificacion */}
+          {/* Clasificación */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Clasificacion *
+              Clasificación *
             </label>
             <div className="grid grid-cols-2 gap-3">
               {(currentTema.clasificacion_esperada === 'oa'
@@ -808,7 +848,7 @@ export default function EncuestaPublicaPage() {
           {enc.requiere_justificacion && (
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Justificacion (opcional)
+                Justificación (opcional)
               </label>
               <Textarea
                 value={currentRespuesta?.justificacion || ''}
@@ -877,7 +917,7 @@ export default function EncuestaPublicaPage() {
         {/* Answered counter */}
         <p className="text-center text-xs sm:text-sm text-gray-400 mt-4">
           {answeredCount} de {temas.length} respondidas
-          {isMobile && ' · Deslice para navegar'}
+          {isMobile ? ' · Deslice para navegar' : ' · Use ← → para navegar'}
         </p>
       </div>
 
@@ -942,7 +982,7 @@ function PublicLayout({
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header — full width */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-10">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {showLogo ? (
@@ -962,10 +1002,10 @@ function PublicLayout({
               )}
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
-                  {empresaNombre || 'Organizacion'}
+                  {empresaNombre || 'Organización'}
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                  Diagnostico Organizacional
+                  Diagnóstico Organizacional
                 </p>
               </div>
             </div>
@@ -982,9 +1022,9 @@ function PublicLayout({
 
       {/* Footer — always at bottom */}
       <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs sm:text-sm text-gray-400">
-            {empresaNombre || 'Organizacion'} &middot; Encuesta anonima y confidencial
+            {empresaNombre || 'Organización'} &middot; Encuesta anónima y confidencial
           </p>
           <a
             href={MARKETING_URL}

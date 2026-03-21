@@ -652,7 +652,24 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
       <ConfirmDialog
         isOpen={!!consolidarConfirm}
         title="Consolidar Encuesta"
-        message={`Se consolidaran las respuestas de "${consolidarConfirm?.titulo}" en factores DOFA${consolidarConfirm?.tipo_encuesta === 'pci_poam' ? ' y PESTEL' : ''}. Desea continuar?`}
+        message={
+          <div className="space-y-2">
+            <p>
+              Se consolidarán las respuestas de &quot;{consolidarConfirm?.titulo}&quot; en factores
+              DOFA
+              {consolidarConfirm?.tipo_encuesta === 'pci_poam' ? ' y PESTEL' : ''}.
+            </p>
+            {consolidarConfirm?.tipo_encuesta === 'pci_poam' &&
+              !consolidarConfirm?.analisis_pestel && (
+                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                  <strong>⚠ Sin análisis PESTEL vinculado:</strong> Solo se crearán factores DOFA.
+                  Para generar también factores PESTEL, edite la encuesta y seleccione un análisis
+                  PESTEL antes de consolidar.
+                </div>
+              )}
+            <p className="text-sm text-gray-500 dark:text-gray-400">¿Desea continuar?</p>
+          </div>
+        }
         confirmText="Consolidar"
         cancelText="Cancelar"
         variant="info"

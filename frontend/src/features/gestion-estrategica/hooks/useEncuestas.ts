@@ -219,7 +219,7 @@ export function useEnviarRecordatorio() {
 }
 
 /**
- * Hook para consolidar respuestas en DOFA
+ * Hook para consolidar respuestas en DOFA y PESTEL
  */
 export function useConsolidarEncuesta() {
   const queryClient = useQueryClient();
@@ -228,14 +228,42 @@ export function useConsolidarEncuesta() {
     mutationFn: ({ id, umbral }: { id: number; umbral?: number }) =>
       encuestasApi.consolidar(id, umbral),
     onSuccess: (result, { id }) => {
+      // Invalidar encuesta + estadísticas
       queryClient.invalidateQueries({ queryKey: encuestasKeys.detail(id) });
-      queryClient.invalidateQueries({
-        queryKey: encuestasKeys.estadisticas(id),
-      });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.estadisticas(id) });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.lists() });
+
+      // Invalidar factores DOFA y PESTEL para que las tablas se refresquen
+      queryClient.invalidateQueries({ queryKey: ['factores-dofa'] });
+      queryClient.invalidateQueries({ queryKey: ['factores-pestel'] });
+      queryClient.invalidateQueries({ queryKey: ['analisis-dofa'] });
+      queryClient.invalidateQueries({ queryKey: ['analisis-pestel'] });
+
       if (result.success) {
-        toast.success(`Consolidación exitosa: ${result.factores_creados} factores creados`);
+        const partes = [];
+        if (result.factores_dofa_creados > 0) {
+          partes.push(`${result.factores_dofa_creados} factores DOFA`);
+        }
+        if (result.factores_pestel_creados > 0) {
+          partes.push(`${result.factores_pestel_creados} factores PESTEL`);
+        }
+        const sinConsenso = result.sin_consenso?.length || 0;
+
+        if (partes.length > 0) {
+          toast.success(`Consolidación exitosa: ${partes.join(' y ')} creados`);
+        } else {
+          toast.warning(
+            'Consolidación completada pero no se crearon factores. Verifique el umbral de consenso.'
+          );
+        }
+
+        if (sinConsenso > 0) {
+          toast.info(
+            `${sinConsenso} tema(s) sin consenso suficiente (umbral: ${((result.umbral_usado || 0.6) * 100).toFixed(0)}%)`
+          );
+        }
       } else {
-        toast.warning(result.message);
+        toast.warning(result.mensaje || 'No se pudo consolidar la encuesta');
       }
     },
     onError: (error: Error) => {

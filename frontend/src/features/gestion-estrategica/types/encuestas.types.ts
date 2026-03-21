@@ -325,16 +325,27 @@ export interface RespuestaFilters {
 
 export interface ConsolidarResultado {
   success: boolean;
-  message: string;
-  factores_creados?: number;
-  factores_pestel_creados?: number;
-  detalles?: {
-    fortalezas: number;
-    debilidades: number;
-    oportunidades?: number;
-    amenazas?: number;
-    empates: number;
-  };
+  mensaje: string;
+  factores_dofa_creados: number;
+  factores_pestel_creados: number;
+  factores_dofa?: Array<{
+    id: number;
+    tema: string;
+    tipo: string;
+    votos_a_favor: number;
+    total_votos: number;
+  }>;
+  factores_pestel?: Array<{
+    id: number;
+    tema: string;
+    dimension: string;
+  }>;
+  sin_consenso?: Array<{
+    tema: string;
+    total: number;
+    codigo: string | null;
+  }>;
+  umbral_usado?: number;
 }
 
 export interface CompartirEmailDTO {

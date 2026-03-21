@@ -249,11 +249,19 @@ export function useConsolidarEncuesta() {
         }
         const sinConsenso = result.sin_consenso?.length || 0;
 
+        const prefijo = result.es_reconsolidacion ? 'Re-consolidación' : 'Consolidación';
+
         if (partes.length > 0) {
-          toast.success(`Consolidación exitosa: ${partes.join(' y ')} creados`);
+          toast.success(`${prefijo} exitosa: ${partes.join(' y ')} creados`);
         } else {
           toast.warning(
-            'Consolidación completada pero no se crearon factores. Verifique el umbral de consenso.'
+            `${prefijo} completada pero no se crearon factores. Verifique el umbral de consenso.`
+          );
+        }
+
+        if (result.analisis_pestel_auto_creado) {
+          toast.info(
+            'Se creó automáticamente un Análisis PESTEL para vincular los factores del entorno.'
           );
         }
 

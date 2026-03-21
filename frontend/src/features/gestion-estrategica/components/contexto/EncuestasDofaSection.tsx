@@ -539,14 +539,27 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
                     </Tooltip>
                   )}
 
-                  {/* Consolidar en DOFA/PESTEL */}
-                  {encuesta.estado === 'cerrada' && canEdit && (
-                    <Tooltip content="Consolidar en DOFA">
-                      <Button variant="ghost" size="sm" onClick={() => handleConsolidar(encuesta)}>
-                        <Merge className="h-4 w-4 text-purple-600" />
-                      </Button>
-                    </Tooltip>
-                  )}
+                  {/* Consolidar / Re-consolidar en DOFA/PESTEL */}
+                  {(encuesta.estado === 'cerrada' || encuesta.estado === 'procesada') &&
+                    canEdit && (
+                      <Tooltip
+                        content={
+                          encuesta.estado === 'procesada'
+                            ? 'Re-consolidar (reemplaza factores previos)'
+                            : 'Consolidar en DOFA/PESTEL'
+                        }
+                      >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleConsolidar(encuesta)}
+                        >
+                          <Merge
+                            className={`h-4 w-4 ${encuesta.estado === 'procesada' ? 'text-amber-600' : 'text-purple-600'}`}
+                          />
+                        </Button>
+                      </Tooltip>
+                    )}
 
                   {/* Activar encuesta */}
                   {encuesta.estado === 'borrador' && canEdit && (
@@ -648,12 +661,22 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
         isLoading={cerrarMutation.isPending}
       />
 
-      {/* Dialogo de confirmacion para consolidar */}
+      {/* Dialogo de confirmacion para consolidar / re-consolidar */}
       <ConfirmDialog
         isOpen={!!consolidarConfirm}
-        title="Consolidar Encuesta"
+        title={
+          consolidarConfirm?.estado === 'procesada'
+            ? 'Re-consolidar Encuesta'
+            : 'Consolidar Encuesta'
+        }
         message={
           <div className="space-y-2">
+            {consolidarConfirm?.estado === 'procesada' && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                <strong>Re-consolidación:</strong> Los factores DOFA y PESTEL generados previamente
+                por esta encuesta serán reemplazados con datos frescos.
+              </div>
+            )}
             <p>
               Se consolidarán las respuestas de &quot;{consolidarConfirm?.titulo}&quot; en factores
               DOFA
@@ -661,18 +684,17 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
             </p>
             {consolidarConfirm?.tipo_encuesta === 'pci_poam' &&
               !consolidarConfirm?.analisis_pestel && (
-                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-                  <strong>⚠ Sin análisis PESTEL vinculado:</strong> Solo se crearán factores DOFA.
-                  Para generar también factores PESTEL, edite la encuesta y seleccione un análisis
-                  PESTEL antes de consolidar.
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
+                  <strong>ℹ Análisis PESTEL:</strong> Se creará automáticamente un Análisis PESTEL
+                  para vincular los factores del entorno externo.
                 </div>
               )}
             <p className="text-sm text-gray-500 dark:text-gray-400">¿Desea continuar?</p>
           </div>
         }
-        confirmText="Consolidar"
+        confirmText={consolidarConfirm?.estado === 'procesada' ? 'Re-consolidar' : 'Consolidar'}
         cancelText="Cancelar"
-        variant="info"
+        variant={consolidarConfirm?.estado === 'procesada' ? 'warning' : 'info'}
         onConfirm={handleConsolidarConfirm}
         onClose={() => setConsolidarConfirm(null)}
         isLoading={consolidarMutation.isPending}

@@ -346,6 +346,8 @@ export interface ConsolidarResultado {
     codigo: string | null;
   }>;
   umbral_usado?: number;
+  es_reconsolidacion?: boolean;
+  analisis_pestel_auto_creado?: boolean;
 }
 
 export interface CompartirEmailDTO {

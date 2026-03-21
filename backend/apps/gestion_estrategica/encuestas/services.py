@@ -24,7 +24,11 @@ from .models import (
     ParticipanteEncuesta,
     RespuestaEncuesta
 )
-from apps.gestion_estrategica.contexto.models import FactorDOFA, FactorPESTEL
+from apps.gestion_estrategica.contexto.models import (
+    FactorDOFA,
+    FactorPESTEL,
+    AnalisisPESTEL,
+)
 
 
 class EncuestaService:
@@ -200,18 +204,68 @@ class EncuestaService:
         - PCI (F/D): Genera FactorDOFA tipo fortaleza o debilidad
         - POAM (O/A): Genera FactorDOFA tipo oportunidad o amenaza
                       + Genera FactorPESTEL con dimensión correcta
+        - Si no tiene AnalisisPESTEL vinculado, lo auto-crea
 
         Para encuestas libres: Comportamiento original (solo DOFA F/D).
+
+        Re-consolidación: Si la encuesta ya fue procesada, limpia factores
+        previos generados por esta encuesta y re-genera desde cero.
         """
-        if encuesta.estado != EncuestaDofa.EstadoEncuesta.CERRADA:
+        es_reconsolidacion = False
+
+        # Permitir re-consolidar encuestas ya procesadas
+        if encuesta.estado == EncuestaDofa.EstadoEncuesta.PROCESADA:
+            es_reconsolidacion = True
+        elif encuesta.estado != EncuestaDofa.EstadoEncuesta.CERRADA:
             return {
                 'success': False,
-                'mensaje': 'La encuesta debe estar cerrada para consolidar',
+                'mensaje': 'La encuesta debe estar cerrada o procesada para consolidar',
                 'factores_dofa_creados': 0,
                 'factores_pestel_creados': 0
             }
 
         es_pci_poam = encuesta.tipo_encuesta == EncuestaDofa.TipoEncuesta.PCI_POAM
+        analisis_pestel_auto_creado = False
+
+        # Auto-crear AnalisisPESTEL si es PCI-POAM y no tiene uno vinculado
+        if es_pci_poam and not encuesta.analisis_pestel:
+            año = encuesta.fecha_cierre.year if encuesta.fecha_cierre else timezone.now().year
+            analisis_pestel = AnalisisPESTEL.objects.create(
+                empresa=encuesta.empresa,
+                nombre=f'Análisis PESTEL {año} — {encuesta.titulo}',
+                fecha_analisis=timezone.now().date(),
+                periodo=str(año),
+                estado=AnalisisPESTEL.EstadoAnalisis.BORRADOR,
+            )
+            encuesta.analisis_pestel = analisis_pestel
+            encuesta.save(update_fields=['analisis_pestel', 'updated_at'])
+            analisis_pestel_auto_creado = True
+
+        # Si es re-consolidación, limpiar factores previos de esta encuesta
+        factores_dofa_eliminados = 0
+        factores_pestel_eliminados = 0
+        if es_reconsolidacion:
+            fuente_filtro = 'encuesta_pci_poam' if es_pci_poam else 'encuesta'
+            if encuesta.analisis_dofa:
+                # Eliminar solo factores generados por ESTA encuesta
+                temas_ids = list(encuesta.temas.values_list('titulo', flat=True))
+                qs_dofa = FactorDOFA.objects.filter(
+                    analisis=encuesta.analisis_dofa,
+                    fuente=fuente_filtro,
+                    descripcion__in=temas_ids,
+                )
+                factores_dofa_eliminados = qs_dofa.count()
+                qs_dofa.delete()
+
+            if encuesta.analisis_pestel:
+                qs_pestel = FactorPESTEL.objects.filter(
+                    analisis=encuesta.analisis_pestel,
+                    fuentes__contains=encuesta.titulo,
+                    descripcion__in=list(encuesta.temas.values_list('titulo', flat=True)),
+                )
+                factores_pestel_eliminados = qs_pestel.count()
+                qs_pestel.delete()
+
         factores_dofa = []
         factores_pestel = []
         temas_sin_consenso = []
@@ -228,11 +282,17 @@ class EncuestaService:
             # Determinar clasificaciones válidas según perfil
             if es_pci_poam and pregunta:
                 if pregunta.clasificacion_esperada == 'oa':
-                    resultado = EncuestaService._clasificar_oa(respuestas, total_respuestas, umbral_consenso)
+                    resultado = EncuestaService._clasificar_oa(
+                        respuestas, total_respuestas, umbral_consenso
+                    )
                 else:
-                    resultado = EncuestaService._clasificar_fd(respuestas, total_respuestas, umbral_consenso)
+                    resultado = EncuestaService._clasificar_fd(
+                        respuestas, total_respuestas, umbral_consenso
+                    )
             else:
-                resultado = EncuestaService._clasificar_fd(respuestas, total_respuestas, umbral_consenso)
+                resultado = EncuestaService._clasificar_fd(
+                    respuestas, total_respuestas, umbral_consenso
+                )
 
             if resultado is None:
                 temas_sin_consenso.append({
@@ -298,19 +358,32 @@ class EncuestaService:
         encuesta.estado = EncuestaDofa.EstadoEncuesta.PROCESADA
         encuesta.save(update_fields=['estado', 'updated_at'])
 
+        mensaje_partes = [
+            f'Consolidación completada.',
+            f'{len(factores_dofa)} factores DOFA y',
+            f'{len(factores_pestel)} factores PESTEL creados.',
+        ]
+        if es_reconsolidacion:
+            mensaje_partes.append(
+                f'(Re-consolidación: {factores_dofa_eliminados} DOFA y '
+                f'{factores_pestel_eliminados} PESTEL previos reemplazados.)'
+            )
+        if analisis_pestel_auto_creado:
+            mensaje_partes.append(
+                'Se creó automáticamente un Análisis PESTEL para vincular los factores.'
+            )
+
         return {
             'success': True,
-            'mensaje': (
-                f'Consolidación completada. '
-                f'{len(factores_dofa)} factores DOFA y '
-                f'{len(factores_pestel)} factores PESTEL creados.'
-            ),
+            'mensaje': ' '.join(mensaje_partes),
             'factores_dofa_creados': len(factores_dofa),
             'factores_pestel_creados': len(factores_pestel),
             'factores_dofa': factores_dofa,
             'factores_pestel': factores_pestel,
             'sin_consenso': temas_sin_consenso,
             'umbral_usado': umbral_consenso,
+            'es_reconsolidacion': es_reconsolidacion,
+            'analisis_pestel_auto_creado': analisis_pestel_auto_creado,
         }
 
     @staticmethod

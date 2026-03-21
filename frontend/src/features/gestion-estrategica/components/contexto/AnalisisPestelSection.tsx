@@ -274,11 +274,14 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = 'Plantilla_Factores_PESTEL.xlsx';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
       toast.success('Plantilla descargada');
-    } catch {
-      toast.error('Error al descargar plantilla');
+    } catch (err) {
+      console.error('[PESTEL] Error descargando plantilla:', err);
+      toast.error('Error al descargar la plantilla. Verifique su conexion e intente de nuevo.');
     } finally {
       setIsDownloadingPlantilla(false);
     }

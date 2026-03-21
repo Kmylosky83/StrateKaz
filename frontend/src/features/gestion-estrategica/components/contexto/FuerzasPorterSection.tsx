@@ -272,11 +272,14 @@ export const FuerzasPorterSection = ({ triggerNewForm }: FuerzasPorterSectionPro
       const a = document.createElement('a');
       a.href = blobUrl;
       a.download = 'Plantilla_Fuerzas_Porter.xlsx';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
       toast.success('Plantilla descargada');
-    } catch {
-      toast.error('Error al descargar plantilla');
+    } catch (err) {
+      console.error('[Porter] Error descargando plantilla:', err);
+      toast.error('Error al descargar la plantilla. Verifique su conexion e intente de nuevo.');
     } finally {
       setIsDownloadingPlantilla(false);
     }

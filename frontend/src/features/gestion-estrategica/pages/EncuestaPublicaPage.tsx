@@ -1,14 +1,15 @@
 /**
- * EncuestaPublicaPage - Página pública para responder encuestas DOFA.
+ * EncuestaPublicaPage - Pagina publica para responder encuestas DOFA.
  *
- * Accesible SIN autenticación via token UUID.
+ * Accesible SIN autenticacion via token UUID.
  * Ruta: /encuestas/responder/:token
  *
  * Wizard single-question con:
- * - Branding dinámico del tenant
+ * - Branding dinamico del tenant
  * - Persistencia localStorage
- * - Navegación swipe + botones
+ * - Navegacion swipe + botones
  * - Responsive mobile-first
+ * - Layout full-width (Typeform-style)
  */
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
@@ -23,6 +24,7 @@ import {
   Shield,
   RotateCcw,
   ListChecks,
+  ExternalLink,
 } from 'lucide-react';
 import { Button, Badge, Spinner, Alert } from '@/components/common';
 import { Textarea } from '@/components/forms';
@@ -62,13 +64,13 @@ type WizardScreen = 'welcome' | 'question' | 'summary' | 'thanks';
 // ============================================================================
 
 const STORAGE_KEY_PREFIX = 'encuesta_progress_';
+const MARKETING_URL = 'https://stratekaz.com';
 
 function getSavedProgress(token: string): SavedProgress | null {
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${token}`);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedProgress;
-    // Expire after 7 days
     if (Date.now() - parsed.lastSaved > 7 * 24 * 60 * 60 * 1000) {
       localStorage.removeItem(`${STORAGE_KEY_PREFIX}${token}`);
       return null;
@@ -95,7 +97,6 @@ function clearProgress(token: string) {
   }
 }
 
-/** Derive CSS color values from branding, with fallbacks */
 function getBrandColors(branding?: EncuestaBranding | null) {
   return {
     primary: branding?.primary_color || '#3b82f6',
@@ -104,13 +105,12 @@ function getBrandColors(branding?: EncuestaBranding | null) {
   };
 }
 
-/** Get section label for PCI-POAM grouping */
 function getSectionLabel(tema: TemaPublico): string {
   if (tema.capacidad_pci) {
     const labels: Record<string, string> = {
       directiva: 'Capacidad Directiva',
       talento_humano: 'Capacidad del Talento Humano',
-      tecnologica: 'Capacidad Tecnológica',
+      tecnologica: 'Capacidad Tecnologica',
       competitiva: 'Capacidad Competitiva',
       financiera: 'Capacidad Financiera',
     };
@@ -118,15 +118,26 @@ function getSectionLabel(tema: TemaPublico): string {
   }
   if (tema.factor_poam) {
     const labels: Record<string, string> = {
-      economico: 'Factores Económicos',
-      politico: 'Factores Políticos',
+      economico: 'Factores Economicos',
+      politico: 'Factores Politicos',
       social: 'Factores Sociales',
-      tecnologico: 'Factores Tecnológicos',
-      geografico: 'Factores Geográficos',
+      tecnologico: 'Factores Tecnologicos',
+      geografico: 'Factores Geograficos',
     };
     return labels[tema.factor_poam] || 'POAM';
   }
   return '';
+}
+
+/** Resolve empresa name with robust fallback */
+function resolveEmpresaNombre(enc?: EncuestaPublicaType): string {
+  if (enc?.empresa_nombre && enc.empresa_nombre !== 'Empresa Sin Configurar') {
+    return enc.empresa_nombre;
+  }
+  if (enc?.branding?.empresa_nombre) {
+    return enc.branding.empresa_nombre;
+  }
+  return enc?.empresa_nombre || 'Organizacion';
 }
 
 // ============================================================================
@@ -145,11 +156,9 @@ export default function EncuestaPublicaPage() {
   const [showResumePrompt, setShowResumePrompt] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Swipe tracking
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
-  // Detect mobile
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -160,16 +169,13 @@ export default function EncuestaPublicaPage() {
   const enc = encuesta as EncuestaPublicaType | undefined;
   const temas = enc?.temas || [];
   const isPciPoam = enc?.tipo_encuesta === 'pci_poam';
-  const empresaNombre = enc?.empresa_nombre || 'Organización';
+  const empresaNombre = resolveEmpresaNombre(enc);
   const brand = getBrandColors(enc?.branding);
 
-  // Update browser tab title & favicon with tenant branding
   useEffect(() => {
     if (!enc) return;
-    const nombre = enc.empresa_nombre || enc.branding?.empresa_nombre;
-    if (nombre) {
-      document.title = nombre;
-    }
+    const nombre = resolveEmpresaNombre(enc);
+    if (nombre) document.title = `${enc.titulo || 'Encuesta'} — ${nombre}`;
     const faviconUrl = enc.branding?.favicon_url;
     if (faviconUrl) {
       let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
@@ -185,7 +191,6 @@ export default function EncuestaPublicaPage() {
     };
   }, [enc]);
 
-  // Check for saved progress on load
   useEffect(() => {
     if (!token || !enc) return;
     const saved = getSavedProgress(token);
@@ -194,7 +199,6 @@ export default function EncuestaPublicaPage() {
     }
   }, [token, enc]);
 
-  // Auto-save progress on changes
   useEffect(() => {
     if (!token || screen === 'thanks' || screen === 'welcome') return;
     if (Object.keys(respuestas).length === 0) return;
@@ -205,7 +209,6 @@ export default function EncuestaPublicaPage() {
     });
   }, [respuestas, questionIndex, token, screen]);
 
-  // Answered count
   const answeredCount = useMemo(
     () => Object.values(respuestas).filter((r) => r?.clasificacion && r?.impacto_percibido).length,
     [respuestas]
@@ -295,7 +298,6 @@ export default function EncuestaPublicaPage() {
     setScreen('thanks');
   }, [allAnswered, token, respuestas, responderMutation]);
 
-  // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -306,17 +308,9 @@ export default function EncuestaPublicaPage() {
       if (screen !== 'question') return;
       const dx = e.changedTouches[0].clientX - touchStartX.current;
       const dy = e.changedTouches[0].clientY - touchStartY.current;
-
-      // Only count horizontal swipes (ignore vertical scrolling)
       if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
-
-      if (dx < -60 && currentAnswered) {
-        // Swipe left → next
-        goNext();
-      } else if (dx > 60) {
-        // Swipe right → prev
-        goPrev();
-      }
+      if (dx < -60 && currentAnswered) goNext();
+      else if (dx > 60) goPrev();
     },
     [screen, currentAnswered, goNext, goPrev]
   );
@@ -332,7 +326,7 @@ export default function EncuestaPublicaPage() {
   if (isLoading) {
     return (
       <PublicLayout brand={brand}>
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <Spinner size="lg" />
           <p className="mt-4 text-gray-500">Cargando encuesta...</p>
         </div>
@@ -348,7 +342,7 @@ export default function EncuestaPublicaPage() {
     if (errorMsg.includes('cerrada') || errorMsg.includes('closed')) {
       return (
         <ErrorLayout
-          message="Esta encuesta ya fue cerrada y no acepta más respuestas."
+          message="Esta encuesta ya fue cerrada y no acepta mas respuestas."
           icon={<Clock className="w-12 h-12 text-amber-400" />}
         />
       );
@@ -356,16 +350,17 @@ export default function EncuestaPublicaPage() {
     return <ErrorLayout message="No se pudo cargar la encuesta. Intente nuevamente." />;
   }
 
-  // Can't respond
   if (enc.puede_responder === false && enc.razon) {
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="max-w-md mx-auto text-center py-16">
-          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-amber-500" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{enc.titulo}</h2>
-          <p className="text-gray-600 dark:text-gray-400">{enc.razon}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
+            {enc.titulo}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">{enc.razon}</p>
         </div>
       </PublicLayout>
     );
@@ -378,17 +373,17 @@ export default function EncuestaPublicaPage() {
   if (screen === 'thanks') {
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="max-w-lg mx-auto text-center py-16 px-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
           <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            className="w-24 h-24 rounded-full flex items-center justify-center mb-8"
             style={{ backgroundColor: `${brand.primary}15` }}
           >
-            <CheckCircle className="w-10 h-10" style={{ color: brand.primary }} />
+            <CheckCircle className="w-12 h-12" style={{ color: brand.primary }} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3 text-center">
             ¡Gracias por participar!
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-8 text-center max-w-lg text-base sm:text-lg">
             Sus respuestas han sido registradas exitosamente para <strong>{empresaNombre}</strong>.
           </p>
           <Badge variant="success" size="lg">
@@ -404,123 +399,134 @@ export default function EncuestaPublicaPage() {
   // ============================================================================
 
   if (screen === 'welcome') {
-    const sectionLabel = isPciPoam ? 'Diagnóstico PCI-POAM' : 'Encuesta de Contexto';
+    const sectionLabel = isPciPoam ? 'Diagnostico PCI-POAM' : 'Encuesta de Contexto';
 
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="max-w-lg mx-auto text-center py-8 sm:py-16 px-4">
-          {/* Badge */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
-            style={{
-              backgroundColor: `${brand.primary}12`,
-              color: brand.primary,
-            }}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            {sectionLabel}
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-6 py-8">
+          <div className="w-full max-w-xl text-center">
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8"
+              style={{
+                backgroundColor: `${brand.primary}12`,
+                color: brand.primary,
+              }}
+            >
+              <Shield className="w-4 h-4" />
+              {sectionLabel}
+            </div>
 
-          {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            {enc.titulo || 'Encuesta'}
-          </h1>
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+              {enc.titulo || 'Encuesta'}
+            </h1>
 
-          {enc.descripcion && (
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm sm:text-base leading-relaxed">
-              {enc.descripcion}
-            </p>
-          )}
-
-          {/* Meta info */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-gray-500 mb-8">
-            {enc.responsable_nombre && (
-              <span className="truncate max-w-[200px] sm:max-w-none">
-                Responsable: {enc.responsable_nombre}
-              </span>
+            {enc.descripcion && (
+              <p className="text-gray-600 dark:text-gray-400 mb-8 text-base sm:text-lg leading-relaxed max-w-lg mx-auto">
+                {enc.descripcion}
+              </p>
             )}
-            {enc.fecha_cierre && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 flex-shrink-0" />
-                <span>Cierre: {new Date(enc.fecha_cierre).toLocaleDateString('es-CO')}</span>
-              </div>
-            )}
-          </div>
 
-          {/* Stats */}
-          <div
-            className="rounded-xl p-4 mb-8 border"
-            style={{
-              backgroundColor: `${brand.primary}06`,
-              borderColor: `${brand.primary}20`,
-            }}
-          >
-            <div className="flex items-center justify-center gap-6 text-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: brand.primary }}>
+            {/* Meta info */}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm text-gray-500 mb-10">
+              {enc.responsable_nombre && (
+                <span className="truncate max-w-[250px]">
+                  Responsable: {enc.responsable_nombre}
+                </span>
+              )}
+              {enc.fecha_cierre && (
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
+                  <span>Cierre: {new Date(enc.fecha_cierre).toLocaleDateString('es-CO')}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-10">
+              <div
+                className="rounded-2xl p-5 border text-center"
+                style={{
+                  backgroundColor: `${brand.primary}06`,
+                  borderColor: `${brand.primary}20`,
+                }}
+              >
+                <div
+                  className="text-3xl sm:text-4xl font-bold mb-1"
+                  style={{ color: brand.primary }}
+                >
                   {temas.length}
                 </div>
-                <div className="text-gray-500">Preguntas</div>
+                <div className="text-sm text-gray-500 font-medium">Preguntas</div>
               </div>
-              <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
-              <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: brand.primary }}>
+              <div
+                className="rounded-2xl p-5 border text-center"
+                style={{
+                  backgroundColor: `${brand.primary}06`,
+                  borderColor: `${brand.primary}20`,
+                }}
+              >
+                <div
+                  className="text-3xl sm:text-4xl font-bold mb-1"
+                  style={{ color: brand.primary }}
+                >
                   ~{Math.ceil(temas.length * 0.4)}
                 </div>
-                <div className="text-gray-500">Min. aprox.</div>
+                <div className="text-sm text-gray-500 font-medium">Min. aprox.</div>
               </div>
             </div>
+
+            {/* Privacy note */}
+            <p className="text-xs sm:text-sm text-gray-400 mb-8 flex items-center justify-center gap-2">
+              <Shield className="w-4 h-4 flex-shrink-0" />
+              Anonima y confidencial — No necesita cuenta para responder
+            </p>
+
+            {/* Resume prompt */}
+            {showResumePrompt ? (
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Tiene progreso guardado de una sesion anterior
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button
+                    size="lg"
+                    onClick={handleResume}
+                    leftIcon={<RotateCcw className="w-5 h-5" />}
+                    style={{ backgroundColor: brand.primary }}
+                    className="text-white min-h-[52px] text-base px-8"
+                  >
+                    Continuar ({answeredCount || '...'})
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handleStartFresh}
+                    className="min-h-[52px] text-base"
+                  >
+                    Empezar de nuevo
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                size="lg"
+                onClick={handleStart}
+                rightIcon={<ChevronRight className="w-5 h-5" />}
+                style={{ backgroundColor: brand.primary }}
+                className="text-white min-h-[52px] w-full sm:w-auto px-10 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow"
+              >
+                Comenzar Encuesta
+              </Button>
+            )}
+
+            {temas.length === 0 && (
+              <Alert variant="warning" className="mt-8">
+                No se encontraron preguntas para esta encuesta.
+              </Alert>
+            )}
           </div>
-
-          {/* No login needed */}
-          <p className="text-xs text-gray-400 mb-6 flex items-center justify-center gap-1.5">
-            <Shield className="w-3.5 h-3.5" />
-            Anónima y confidencial — No necesita cuenta para responder
-          </p>
-
-          {/* Resume prompt */}
-          {showResumePrompt ? (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Tiene progreso guardado de una sesión anterior
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button
-                  size="lg"
-                  onClick={handleResume}
-                  leftIcon={<RotateCcw className="w-5 h-5" />}
-                  style={{ backgroundColor: brand.primary }}
-                  className="text-white min-h-[48px]"
-                >
-                  Continuar ({answeredCount || '...'})
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={handleStartFresh}
-                  className="min-h-[48px]"
-                >
-                  Empezar de nuevo
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button
-              size="lg"
-              onClick={handleStart}
-              rightIcon={<ChevronRight className="w-5 h-5" />}
-              style={{ backgroundColor: brand.primary }}
-              className="text-white min-h-[48px] w-full sm:w-auto px-8"
-            >
-              Comenzar Encuesta
-            </Button>
-          )}
-
-          {temas.length === 0 && (
-            <Alert variant="warning" className="mt-6">
-              No se encontraron preguntas para esta encuesta.
-            </Alert>
-          )}
         </div>
       </PublicLayout>
     );
@@ -537,39 +543,37 @@ export default function EncuestaPublicaPage() {
 
     return (
       <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
-        <div className="max-w-2xl mx-auto px-4 py-6">
-          <div className="text-center mb-6">
-            <ListChecks className="w-10 h-10 mx-auto mb-3" style={{ color: brand.primary }} />
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+          <div className="text-center mb-8">
+            <ListChecks className="w-12 h-12 mx-auto mb-4" style={{ color: brand.primary }} />
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               Resumen de respuestas
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm sm:text-base text-gray-500 mt-2">
               {answeredCount} de {temas.length} preguntas respondidas
             </p>
           </div>
 
           {unanswered.length > 0 && (
-            <Alert variant="warning" className="mb-4">
+            <Alert variant="warning" className="mb-6">
               Faltan {unanswered.length} pregunta(s) por responder.
             </Alert>
           )}
 
-          {/* Compact summary list */}
-          <div className="space-y-2 mb-6 max-h-[50vh] overflow-y-auto">
+          {/* Summary grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 max-h-[55vh] overflow-y-auto pr-1">
             {temas.map((tema, i) => {
               const r = respuestas[tema.id];
               const answered = !!(r?.clasificacion && r?.impacto_percibido);
               return (
-                <Button
+                <button
                   key={tema.id}
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={() => {
                     setQuestionIndex(i);
                     setScreen('question');
                   }}
-                  className={`w-full !justify-start !p-3 !min-h-[44px] rounded-lg border transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all hover:shadow-sm active:scale-[0.99] ${
                     answered
                       ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                       : 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
@@ -582,7 +586,7 @@ export default function EncuestaPublicaPage() {
                       <AlertCircle className="w-5 h-5 text-amber-500" />
                     )}
                   </span>
-                  <div className="flex-1 min-w-0 text-left">
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {i + 1}. {tema.titulo}
                     </p>
@@ -593,7 +597,7 @@ export default function EncuestaPublicaPage() {
                     )}
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                </Button>
+                </button>
               );
             })}
           </div>
@@ -617,14 +621,14 @@ export default function EncuestaPublicaPage() {
               onClick={handleSubmit}
               leftIcon={<Send className="w-5 h-5" />}
               style={allAnswered ? { backgroundColor: brand.primary } : undefined}
-              className={allAnswered ? 'text-white min-h-[48px]' : 'min-h-[48px]'}
+              className={allAnswered ? 'text-white min-h-[48px] shadow-lg px-8' : 'min-h-[48px]'}
             >
               {responderMutation.isPending ? 'Enviando...' : 'Enviar Respuestas'}
             </Button>
           </div>
 
           {responderMutation.isError && (
-            <Alert variant="error" className="mt-4">
+            <Alert variant="error" className="mt-6">
               {(responderMutation.error as Error)?.message?.includes('ya respondido')
                 ? 'Ya ha respondido esta encuesta anteriormente.'
                 : 'Error al enviar las respuestas. Intente nuevamente.'}
@@ -650,31 +654,29 @@ export default function EncuestaPublicaPage() {
   const sectionLabel = isPciPoam ? getSectionLabel(currentTema) : '';
   const isFirstQuestion = questionIndex === 0;
   const isLastQuestion = questionIndex === temas.length - 1;
-
-  // Check if we're entering a new section
   const prevTema = questionIndex > 0 ? temas[questionIndex - 1] : null;
   const showSectionHeader = isPciPoam && (!prevTema || getSectionLabel(prevTema) !== sectionLabel);
 
   return (
     <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
       <div
-        className="max-w-lg mx-auto px-4 py-4 sm:py-6"
+        className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
         {/* Progress bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+        <div className="mb-6">
+          <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
             <span className="font-medium">
               Pregunta {questionIndex + 1} de {temas.length}
             </span>
-            <span className="font-semibold" style={{ color: brand.primary }}>
+            <span className="font-bold text-base" style={{ color: brand.primary }}>
               {Math.round(((questionIndex + 1) / temas.length) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
             <div
-              className="h-2 rounded-full transition-all duration-500 ease-out"
+              className="h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{
                 width: `${((questionIndex + 1) / temas.length) * 100}%`,
                 backgroundColor: brand.primary,
@@ -683,7 +685,7 @@ export default function EncuestaPublicaPage() {
           </div>
           {sectionLabel && (
             <div
-              className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
               style={{
                 backgroundColor: `${brand.primary}12`,
                 color: brand.primary,
@@ -697,13 +699,13 @@ export default function EncuestaPublicaPage() {
         {/* Section transition header */}
         {showSectionHeader && (
           <div
-            className="rounded-lg p-3 mb-4 border text-center"
+            className="rounded-xl p-4 mb-6 border text-center"
             style={{
               backgroundColor: `${brand.primary}08`,
               borderColor: `${brand.primary}25`,
             }}
           >
-            <p className="text-sm font-semibold" style={{ color: brand.primary }}>
+            <p className="text-sm font-bold" style={{ color: brand.primary }}>
               {sectionLabel}
             </p>
           </div>
@@ -711,42 +713,39 @@ export default function EncuestaPublicaPage() {
 
         {/* Question card */}
         <div
-          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 sm:p-6 transition-transform duration-300 ease-in-out"
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-100 dark:border-gray-700 p-6 sm:p-8 transition-transform duration-300 ease-in-out"
           key={currentTema.id}
           style={{
             animation: `slideIn${slideDirection === 'right' ? 'Right' : 'Left'} 0.3s ease-out`,
           }}
         >
-          {/* Question title */}
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-relaxed mb-5">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-relaxed mb-6">
             {currentTema.titulo}
           </h3>
 
           {currentTema.descripcion && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">
               {currentTema.descripcion}
             </p>
           )}
 
-          {/* Clasificación */}
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">
-              Clasificación *
+          {/* Clasificacion */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Clasificacion *
             </label>
-            <div className={`grid gap-2.5 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <div className="grid grid-cols-2 gap-3">
               {(currentTema.clasificacion_esperada === 'oa'
                 ? (['oportunidad', 'amenaza'] as const)
                 : (['fortaleza', 'debilidad'] as const)
               ).map((c) => {
                 const isSelected = currentRespuesta?.clasificacion === c;
                 return (
-                  <Button
+                  <button
                     key={c}
                     type="button"
-                    variant="ghost"
-                    size="sm"
                     onClick={() => updateRespuesta(currentTema.id, 'clasificacion', c)}
-                    className={`!py-3 !px-4 rounded-xl border-2 text-sm font-semibold transition-all !min-h-[48px] w-full ${
+                    className={`py-4 px-4 rounded-xl border-2 text-sm font-bold transition-all min-h-[56px] w-full ${
                       isSelected
                         ? 'shadow-md scale-[1.02]'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
@@ -755,68 +754,66 @@ export default function EncuestaPublicaPage() {
                       isSelected
                         ? {
                             borderColor: getClasificacionColor(c),
-                            backgroundColor: `${getClasificacionColor(c)}12`,
+                            backgroundColor: `${getClasificacionColor(c)}15`,
                             color: getClasificacionColor(c),
                           }
                         : undefined
                     }
                   >
                     {getClasificacionLabel(c)}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
           </div>
 
           {/* Impacto */}
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Nivel de Impacto *
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {(['alto', 'medio', 'bajo'] as const).map((nivel) => {
                 const isSelected = currentRespuesta?.impacto_percibido === nivel;
                 const impactoColor =
                   nivel === 'alto' ? '#ef4444' : nivel === 'medio' ? '#f59e0b' : '#3b82f6';
                 return (
-                  <Button
+                  <button
                     key={nivel}
                     type="button"
-                    variant="ghost"
-                    size="sm"
                     onClick={() => updateRespuesta(currentTema.id, 'impacto_percibido', nivel)}
-                    className={`!py-2.5 !px-3 rounded-lg border-2 text-sm font-medium transition-all !min-h-[48px] w-full ${
+                    className={`py-3.5 px-3 rounded-xl border-2 text-sm font-semibold transition-all min-h-[52px] w-full ${
                       isSelected
-                        ? 'shadow-sm'
+                        ? 'shadow-sm scale-[1.02]'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
                     }`}
                     style={
                       isSelected
                         ? {
                             borderColor: impactoColor,
-                            backgroundColor: `${impactoColor}12`,
+                            backgroundColor: `${impactoColor}15`,
                             color: impactoColor,
                           }
                         : undefined
                     }
                   >
                     {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
-                  </Button>
+                  </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Justificación */}
+          {/* Justificacion */}
           {enc.requiere_justificacion && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                Justificación (opcional)
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Justificacion (opcional)
               </label>
               <Textarea
                 value={currentRespuesta?.justificacion || ''}
                 onChange={(e) => updateRespuesta(currentTema.id, 'justificacion', e.target.value)}
-                rows={2}
+                rows={3}
                 placeholder="Explique brevemente su respuesta..."
               />
             </div>
@@ -824,7 +821,7 @@ export default function EncuestaPublicaPage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-6 gap-3">
+        <div className="flex items-center justify-between mt-8 gap-4">
           <Button
             variant="outline"
             onClick={goPrev}
@@ -834,25 +831,23 @@ export default function EncuestaPublicaPage() {
             {isFirstQuestion ? 'Inicio' : 'Anterior'}
           </Button>
 
-          {/* Dots indicator (compact, only on desktop) */}
-          {!isMobile && temas.length <= 20 && (
-            <div className="flex items-center gap-1 overflow-hidden">
+          {/* Dots indicator (desktop, max 30 questions) */}
+          {!isMobile && temas.length <= 30 && (
+            <div className="flex items-center gap-1.5 overflow-hidden flex-wrap justify-center max-w-[300px]">
               {temas.map((_, i) => {
                 const t = temas[i];
                 const answered = !!(
                   respuestas[t.id]?.clasificacion && respuestas[t.id]?.impacto_percibido
                 );
                 return (
-                  <Button
+                  <button
                     key={i}
                     type="button"
-                    variant="ghost"
-                    size="sm"
                     onClick={() => {
                       setSlideDirection(i > questionIndex ? 'right' : 'left');
                       setQuestionIndex(i);
                     }}
-                    className="!w-2 !h-2 !min-h-0 !p-0 rounded-full transition-all"
+                    className="w-2.5 h-2.5 rounded-full transition-all hover:opacity-80"
                     style={{
                       backgroundColor:
                         i === questionIndex
@@ -860,7 +855,7 @@ export default function EncuestaPublicaPage() {
                           : answered
                             ? `${brand.primary}60`
                             : '#d1d5db',
-                      transform: i === questionIndex ? 'scale(1.5)' : 'scale(1)',
+                      transform: i === questionIndex ? 'scale(1.4)' : 'scale(1)',
                     }}
                   />
                 );
@@ -873,20 +868,19 @@ export default function EncuestaPublicaPage() {
             disabled={!currentAnswered}
             rightIcon={<ChevronRight className="w-4 h-4" />}
             style={currentAnswered ? { backgroundColor: brand.primary } : undefined}
-            className={currentAnswered ? 'text-white min-h-[48px]' : 'min-h-[48px]'}
+            className={currentAnswered ? 'text-white min-h-[48px] shadow-md' : 'min-h-[48px]'}
           >
             {isLastQuestion ? 'Revisar' : 'Siguiente'}
           </Button>
         </div>
 
         {/* Answered counter */}
-        <p className="text-center text-xs text-gray-400 mt-3">
+        <p className="text-center text-xs sm:text-sm text-gray-400 mt-4">
           {answeredCount} de {temas.length} respondidas
           {isMobile && ' · Deslice para navegar'}
         </p>
       </div>
 
-      {/* CSS animations */}
       <style>{`
         @keyframes slideInRight {
           from { opacity: 0; transform: translateX(30px); }
@@ -902,7 +896,7 @@ export default function EncuestaPublicaPage() {
 }
 
 // ============================================================================
-// CLASIFICACIÓN HELPERS
+// CLASIFICACION HELPERS
 // ============================================================================
 
 function getClasificacionLabel(c: Clasificacion): string {
@@ -925,8 +919,6 @@ function getClasificacionColor(c: Clasificacion): string {
   return colors[c] || '#6b7280';
 }
 
-// Emojis eliminados — usamos solo Design System (colores + íconos Lucide)
-
 // ============================================================================
 // LAYOUT COMPONENTS
 // ============================================================================
@@ -944,26 +936,25 @@ function PublicLayout({
 }) {
   const primaryColor = brand?.primary || '#3b82f6';
   const [logoError, setLogoError] = useState(false);
-
   const showLogo = logoUrl && !logoError;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3 sm:py-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      {/* Header — full width */}
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-10">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {showLogo ? (
                 <img
                   src={logoUrl}
                   alt={empresaNombre || 'Logo'}
-                  className="h-9 sm:h-11 w-auto max-w-[160px] sm:max-w-[200px] object-contain flex-shrink-0"
+                  className="h-10 sm:h-12 w-auto max-w-[180px] sm:max-w-[220px] object-contain flex-shrink-0"
                   onError={() => setLogoError(true)}
                 />
               ) : (
                 <div
-                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: primaryColor }}
                 >
                   <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -971,31 +962,39 @@ function PublicLayout({
               )}
               <div className="min-w-0">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
-                  {empresaNombre || 'Organización'}
+                  {empresaNombre || 'Organizacion'}
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Diagnóstico Organizacional
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  Diagnostico Organizacional
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400 flex-shrink-0">
-              <Shield className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Anónima y confidencial</span>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 flex-shrink-0">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Anonima y confidencial</span>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto">{children}</main>
+      {/* Main — flex-1 to push footer down */}
+      <main className="flex-1 w-full">{children}</main>
 
-      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 mt-auto">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-gray-400">
-            {empresaNombre || 'Organización'} &middot; Encuesta anónima y confidencial
+      {/* Footer — always at bottom */}
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-xs sm:text-sm text-gray-400">
+            {empresaNombre || 'Organizacion'} &middot; Encuesta anonima y confidencial
           </p>
-          <p className="text-xs text-gray-300">
-            Powered by <span className="font-medium text-gray-400">StrateKaz</span>
-          </p>
+          <a
+            href={MARKETING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            Powered by <span className="font-semibold">StrateKaz</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       </footer>
     </div>
@@ -1005,14 +1004,14 @@ function PublicLayout({
 function ErrorLayout({ message, icon }: { message: string; icon?: React.ReactNode }) {
   return (
     <PublicLayout>
-      <div className="max-w-md mx-auto text-center py-16 px-4">
-        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 text-center">
           Encuesta no disponible
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">{message}</p>
+        <p className="text-gray-600 dark:text-gray-400 text-center max-w-md">{message}</p>
       </div>
     </PublicLayout>
   );

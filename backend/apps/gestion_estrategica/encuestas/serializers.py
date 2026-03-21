@@ -486,12 +486,25 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
         ]
 
     def get_empresa_nombre(self, obj):
-        """Obtiene el nombre de la empresa del tenant."""
+        """Obtiene el nombre de la empresa con cadena de fallback robusta."""
+        # 1. Intentar EmpresaConfig.razon_social (fuente primaria)
         try:
             from apps.gestion_estrategica.configuracion.models import EmpresaConfig
             config = EmpresaConfig.objects.first()
-            if config:
+            if config and config.razon_social and config.razon_social not in (
+                'Empresa Sin Configurar', 'Sin Configurar', ''
+            ):
                 return config.razon_social
+        except Exception:
+            pass
+        # 2. Fallback: nombre del tenant (siempre disponible)
+        try:
+            from django.db import connection
+            tenant = connection.tenant
+            if hasattr(tenant, 'nombre_comercial') and tenant.nombre_comercial:
+                return tenant.nombre_comercial
+            if hasattr(tenant, 'name') and tenant.name:
+                return tenant.name
         except Exception:
             pass
         return 'Organización'
@@ -509,7 +522,7 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
                     'accent_color': bd.get('accent_color', '#ec4899'),
                     'logo_url': bd.get('logo') or '',
                     'favicon_url': bd.get('favicon') or '',
-                    'empresa_nombre': bd.get('company_name', ''),
+                    'empresa_nombre': bd.get('company_short_name') or bd.get('company_name', ''),
                 }
         except Exception:
             pass

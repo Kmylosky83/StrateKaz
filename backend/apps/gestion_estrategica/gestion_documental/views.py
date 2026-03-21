@@ -247,11 +247,20 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def reordenar(self, request):
-        """Reordena campos de formulario"""
-        orden_campos = request.data.get('orden', [])
-
-        for index, campo_id in enumerate(orden_campos):
-            CampoFormulario.objects.filter(id=campo_id).update(orden=index)
+        """Reordena campos de formulario.
+        Acepta dos formatos:
+        - {campos: [{id, orden}, ...]} — frontend actual
+        - {orden: [id1, id2, ...]} — formato legacy
+        """
+        campos = request.data.get('campos', [])
+        if campos:
+            for item in campos:
+                CampoFormulario.objects.filter(id=item['id']).update(orden=item['orden'])
+        else:
+            # Formato legacy: lista plana de IDs
+            orden_campos = request.data.get('orden', [])
+            for index, campo_id in enumerate(orden_campos):
+                CampoFormulario.objects.filter(id=campo_id).update(orden=index)
 
         return Response({'message': 'Campos reordenados exitosamente'})
 

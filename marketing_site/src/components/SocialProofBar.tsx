@@ -39,42 +39,43 @@ interface StrategicContent {
 
 const STRATEGIC_CONTENT: StrategicContent = {
   headline: {
-    text: 'Pilares de la Plataforma',
+    text: 'Todo lo que tu empresa necesita',
     subtext:
-      '6 ejes que cubren el 100% de la gestión empresarial — desde cumplimiento normativo hasta inteligencia de negocio',
+      'Desde seguridad laboral y talento humano hasta certificaciones ISO y firma digital — todo integrado en una sola plataforma',
   },
+  // Orden: de lo más buscado (gancho PYME) a lo más avanzado
   pillars: [
     {
-      name: 'Gobierno & Cumplimiento',
-      description: 'ISO 9001 | 14001 | 45001 | 27001 | SAGRILAFT',
-      icon: Award,
-      color: 'text-system-blue-500',
-      bgColor: 'bg-system-blue-500/10',
+      name: 'Seguridad Laboral',
+      description: 'SG-SST | Decreto 1072 | Res. 0312 | HSEQ',
+      icon: HardHat,
+      color: 'text-system-red-500',
+      bgColor: 'bg-system-red-500/10',
     },
     {
-      name: 'Operaciones & Cadena de Valor',
-      description: 'Supply Chain | Producción | Logística | CRM',
-      icon: Boxes,
-      color: 'text-system-green-500',
-      bgColor: 'bg-system-green-500/10',
-    },
-    {
-      name: 'Capital Humano',
+      name: 'Talento Humano',
       description: 'Selección | Nómina | Desempeño | Formación',
       icon: Users2,
       color: 'text-system-orange-500',
       bgColor: 'bg-system-orange-500/10',
     },
     {
-      name: 'HSEQ & SST',
-      description: 'Accidentalidad | Higiene | Emergencias | Ambiental',
-      icon: HardHat,
-      color: 'text-system-red-500',
-      bgColor: 'bg-system-red-500/10',
+      name: 'Gestión de Calidad',
+      description: 'ISO 9001 | 14001 | 45001 | 27001',
+      icon: Award,
+      color: 'text-system-blue-500',
+      bgColor: 'bg-system-blue-500/10',
     },
     {
-      name: 'Automatización & Flujos',
-      description: 'Workflows BPMN | Firma Digital | Alertas',
+      name: 'PESV & Flota',
+      description: 'Seguridad Vial | Res. 40595 | Transporte',
+      icon: Boxes,
+      color: 'text-system-green-500',
+      bgColor: 'bg-system-green-500/10',
+    },
+    {
+      name: 'Firma Digital',
+      description: 'SHA-256 | Verificación | Workflows BPMN',
       icon: Workflow,
       color: 'text-system-purple-500',
       bgColor: 'bg-system-purple-500/10',

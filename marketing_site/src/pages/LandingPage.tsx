@@ -8,7 +8,7 @@ import { FinalCTASection } from '../components/sections/FinalCTASection';
 
 const LandingPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'StrateKaz | Consultoría 4.0 + Plataforma de Gestión 360°';
+    document.title = 'StrateKaz | Consultoría 4.0 — SST, Talento Humano, PESV e ISO | Colombia';
   }, []);
 
   const handleTrialStart = async (_tierId?: string) => {

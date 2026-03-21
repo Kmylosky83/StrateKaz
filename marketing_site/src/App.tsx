@@ -2,7 +2,6 @@ import React, { Suspense, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { MarketingLayout } from '@components/MarketingLayout';
 import { ScrollToTop } from '@/utils/ScrollToTop';
-import { PWAInstallPrompt } from '@components/PWAInstallPrompt';
 import { WebVitalsDebugger } from '@components/WebVitalsDebugger';
 import { webVitalsMonitor } from '@/utils/webVitals';
 
@@ -34,7 +33,6 @@ const App: React.FC = () => {
           <Route path='*' element={<LandingPage />} />
         </Routes>
       </Suspense>
-      <PWAInstallPrompt />
       {import.meta.env.DEV && <WebVitalsDebugger />}
     </MarketingLayout>
   );

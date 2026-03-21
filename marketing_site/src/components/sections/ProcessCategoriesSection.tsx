@@ -17,7 +17,6 @@ import {
   Scale,
   UserCheck,
   Wallet,
-  Calculator,
   ClipboardCheck,
   Brain,
   ChevronRight,
@@ -39,14 +38,57 @@ interface ModuleLayer {
   modules: PlatformModule[];
 }
 
+// Orden: de lo más buscado (gancho PYME) a lo más técnico
 const PLATFORM_LAYERS: ModuleLayer[] = [
   {
-    name: 'Gobierno & Cumplimiento',
-    description: 'ISO Multi-Norma + GRC + Debida Diligencia',
+    name: 'Seguridad Laboral & Talento Humano',
+    description: 'SST + HSEQ + Capital Humano — lo esencial',
     modules: [
       {
-        name: 'Sistema de Gestión Integral',
-        description: 'Trinorma ISO + PESV + auditorías internas',
+        name: 'Seguridad y Salud en el Trabajo',
+        description: 'SG-SST, Decreto 1072, Resolución 0312',
+        icon: <HardHat className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Accidentalidad', 'Seguridad Industrial', 'Higiene', 'Medicina', 'Emergencias', 'Comités'],
+        color: 'text-red-400',
+        borderColor: 'border-red-500/30',
+        bgGradient: 'from-red-500/10 to-red-600/5',
+      },
+      {
+        name: 'Talento Humano',
+        description: 'Ciclo completo del colaborador',
+        icon: <Users className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Selección', 'Onboarding', 'Formación', 'Desempeño', 'Nómina', 'Offboarding'],
+        color: 'text-orange-400',
+        borderColor: 'border-orange-500/30',
+        bgGradient: 'from-orange-500/10 to-orange-600/5',
+      },
+      {
+        name: 'Gestión Ambiental',
+        description: 'ISO 14001, aspectos e impactos ambientales',
+        icon: <Leaf className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Aspectos Ambientales', 'Programas', 'Indicadores', 'Residuos'],
+        color: 'text-emerald-400',
+        borderColor: 'border-emerald-500/30',
+        bgGradient: 'from-emerald-500/10 to-emerald-600/5',
+      },
+      {
+        name: 'Admin & Finanzas',
+        description: 'Presupuesto, tesorería, nómina, activos',
+        icon: <Wallet className='h-6 w-6' aria-hidden='true' />,
+        subApps: ['Presupuesto', 'Tesorería', 'Activos Fijos', 'Contabilidad'],
+        color: 'text-lime-400',
+        borderColor: 'border-lime-500/30',
+        bgGradient: 'from-lime-500/10 to-lime-600/5',
+      },
+    ],
+  },
+  {
+    name: 'Certificaciones & Cumplimiento',
+    description: 'ISO Multi-Norma + PESV + GRC + SAGRILAFT',
+    modules: [
+      {
+        name: 'ISO Multi-Norma',
+        description: 'Trinorma + PESV + auditorías internas',
         icon: <Award className='h-6 w-6' aria-hidden='true' />,
         subApps: ['ISO 9001', 'ISO 14001', 'ISO 45001', 'ISO 27001', 'PESV'],
         color: 'text-blue-400',
@@ -84,7 +126,7 @@ const PLATFORM_LAYERS: ModuleLayer[] = [
   },
   {
     name: 'Operaciones & Cadena de Valor',
-    description: 'ERP completo + Logística + CRM',
+    description: 'ERP completo + Logística + PESV + CRM',
     modules: [
       {
         name: 'Supply Chain',
@@ -105,10 +147,10 @@ const PLATFORM_LAYERS: ModuleLayer[] = [
         bgGradient: 'from-amber-500/10 to-amber-600/5',
       },
       {
-        name: 'Logistics & Fleet',
-        description: 'Flota vehicular y gestión de transporte',
+        name: 'Logística & PESV',
+        description: 'Flota vehicular, transporte, seguridad vial',
         icon: <Settings className='h-6 w-6' aria-hidden='true' />,
-        subApps: ['Gestión Flota', 'Transporte'],
+        subApps: ['Gestión Flota', 'Transporte', 'PESV Res. 40595'],
         color: 'text-teal-400',
         borderColor: 'border-teal-500/30',
         bgGradient: 'from-teal-500/10 to-teal-600/5',
@@ -121,48 +163,6 @@ const PLATFORM_LAYERS: ModuleLayer[] = [
         color: 'text-pink-400',
         borderColor: 'border-pink-500/30',
         bgGradient: 'from-pink-500/10 to-pink-600/5',
-      },
-    ],
-  },
-  {
-    name: 'Capital Humano & HSEQ',
-    description: 'Talento + SST + Seguridad Industrial',
-    modules: [
-      {
-        name: 'Talent Hub',
-        description: 'Ciclo completo del colaborador',
-        icon: <Users className='h-6 w-6' aria-hidden='true' />,
-        subApps: ['Selección', 'Onboarding', 'Formación', 'Desempeño', 'Nómina', 'Offboarding'],
-        color: 'text-orange-400',
-        borderColor: 'border-orange-500/30',
-        bgGradient: 'from-orange-500/10 to-orange-600/5',
-      },
-      {
-        name: 'HSEQ Management',
-        description: '7 sub-módulos de seguridad integral',
-        icon: <HardHat className='h-6 w-6' aria-hidden='true' />,
-        subApps: ['Accidentalidad', 'Seguridad Industrial', 'Higiene', 'Medicina', 'Emergencias', 'Ambiental', 'Comités'],
-        color: 'text-yellow-400',
-        borderColor: 'border-yellow-500/30',
-        bgGradient: 'from-yellow-500/10 to-yellow-600/5',
-      },
-      {
-        name: 'Admin & Finanzas',
-        description: 'Presupuesto, tesorería, activos',
-        icon: <Wallet className='h-6 w-6' aria-hidden='true' />,
-        subApps: ['Presupuesto', 'Tesorería', 'Activos Fijos', 'Servicios'],
-        color: 'text-lime-400',
-        borderColor: 'border-lime-500/30',
-        bgGradient: 'from-lime-500/10 to-lime-600/5',
-      },
-      {
-        name: 'Contabilidad',
-        description: 'Config contable, movimientos, informes',
-        icon: <Calculator className='h-6 w-6' aria-hidden='true' />,
-        subApps: ['Config Contable', 'Movimientos', 'Informes', 'Integración'],
-        color: 'text-green-400',
-        borderColor: 'border-green-500/30',
-        bgGradient: 'from-green-500/10 to-green-600/5',
       },
     ],
   },
@@ -234,15 +234,14 @@ export const ProcessCategoriesSection: React.FC<{
         {/* Header */}
         <div className='text-center mb-8'>
           <h2 className='text-fluid-2xl lg:text-fluid-3xl font-bold font-title text-white-text mb-4'>
-            <span className='sm:hidden'>84+ Módulos Integrados</span>
+            <span className='sm:hidden'>84+ Módulos en Una Plataforma</span>
             <span className='hidden sm:inline'>
-              Plataforma con 84+ Módulos Integrados
+              Seguridad Laboral, Talento Humano, ISO y mucho más
             </span>
           </h2>
           <div className='hidden sm:block container-content'>
             <p className='text-xl text-white-muted'>
-              SGI + ERP + GRC + HSEQ + HCM + BI — todo lo que necesita tu
-              empresa en un solo ecosistema multi-tenant
+              84+ módulos integrados: SST, Talento Humano, PESV, ISO, Firma Digital, ERP y BI — todo lo que tu empresa necesita en un solo lugar
             </p>
           </div>
         </div>

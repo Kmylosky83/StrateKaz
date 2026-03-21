@@ -6,9 +6,9 @@ import { TrialCTA } from '@components/CTAButton';
  * Contenido empresarial enfocado en Consultoría 4.0 + Plataforma 360°
  */
 const FINAL_CTA_CONTENT = {
-  title: '84+ módulos. Una sola plataforma. Tu empresa.',
+  title: 'Seguridad Laboral, Talento Humano, ISO y más — todo en uno.',
   subtitle:
-    'Consultoría 4.0 + Plataforma de Gestión 360° — SGI, ERP, GRC, HSEQ, Firma Digital y BI integrados. Sin miedo al éxito.',
+    'Una sola plataforma para SST, PESV, Talento Humano, ISO Multi-Norma, Firma Digital y 84+ módulos más. Empieza hoy.',
   cta: {
     text: 'Agendar Reunión',
     subtext: '',

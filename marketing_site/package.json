@@ -44,7 +44,6 @@
   "license": "MIT",
   "description": "Marketing site for StrateKaz — Consultoría 4.0 + Plataforma de Gestión 360°",
   "dependencies": {
-    "@react-three/drei": "^9.117.0",
     "@react-three/fiber": "^8.17.10",
     "@sentry/react": "^10.21.0",
     "@types/three": "^0.181.0",

@@ -11,7 +11,9 @@ import { PresenceMapSection } from '@components/sections/PresenceMapSection';
  */
 const ContactPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'StrateKaz | Agendar Reunión';
+    document.title = 'StrateKaz | Agendar Reunión — Consultoría SST, ISO y Talento Humano';
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', 'Agenda una reunión con StrateKaz. Consultoría en Seguridad Laboral, Talento Humano, PESV e ISO para empresas colombianas. 20+ años de experiencia, 100% éxito en certificaciones.');
   }, []);
 
   return (

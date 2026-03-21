@@ -25,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
                   src='/logo-light.png'
                   alt={COMPANY_INFO.name}
                   className='h-8 sm:h-10 w-auto'
+                  width={160}
+                  height={40}
                 />
                 <span className='text-xs font-medium text-brand-500 tracking-wide'>
                   Consultoría 4.0

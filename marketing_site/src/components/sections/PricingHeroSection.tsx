@@ -22,41 +22,42 @@ export const PricingHeroSection: React.FC = () => {
   const [displayedText, setDisplayedText] = React.useState('');
   const heroRef = React.useRef<HTMLElement>(null);
 
+  // Orden: de gancho PYME (más buscado) a más técnico
   const services = [
     {
       name: 'Seguridad y Salud en el Trabajo',
       icon: Shield,
       ...SERVICE_COLORS.sst,
-      benefit: 'Reduce accidentes 85%',
-      description: 'Protege tu equipo, garantiza el cumplimiento',
+      benefit: 'Cumplimiento Decreto 1072',
+      description: 'Protege tu equipo, garantiza el cumplimiento legal',
     },
     {
-      name: 'Gestión de Calidad',
-      icon: Award,
-      ...SERVICE_COLORS.calidad,
-      benefit: 'Certificación ISO 9001',
-      description: 'Excelencia operacional garantizada',
-    },
-    {
-      name: 'Coaching',
+      name: 'Talento Humano',
       icon: Users,
       ...SERVICE_COLORS.coaching,
-      benefit: 'Liderazgo transformador',
-      description: 'Desarrolla el potencial de tu equipo',
+      benefit: 'Gestión integral de personal',
+      description: 'Selección, nómina, desempeño y formación',
+    },
+    {
+      name: 'PESV — Seguridad Vial',
+      icon: Navigation,
+      ...SERVICE_COLORS.pesv,
+      benefit: 'Resolución 40595',
+      description: 'Plan estratégico de seguridad vial completo',
+    },
+    {
+      name: 'ISO Multi-Norma',
+      icon: Award,
+      ...SERVICE_COLORS.calidad,
+      benefit: 'ISO 9001 + 14001 + 45001',
+      description: 'Certificación garantizada, 100% éxito',
     },
     {
       name: 'Gestión Ambiental',
       icon: Lightbulb,
       ...SERVICE_COLORS.ambiental,
-      benefit: 'Sostenibilidad rentable',
-      description: 'Impacto positivo, resultados medibles',
-    },
-    {
-      name: 'PESV',
-      icon: Navigation,
-      ...SERVICE_COLORS.pesv,
-      benefit: 'Movilidad segura',
-      description: 'Plan estratégico de seguridad vial',
+      benefit: 'ISO 14001',
+      description: 'Sostenibilidad rentable, impacto medible',
     },
   ];
 

@@ -9,7 +9,6 @@ import {
   Zap,
   Settings,
   Activity,
-  Boxes,
   FileSignature,
   BarChart3,
   Truck,
@@ -24,13 +23,15 @@ export const HERO_CONTENT = {
     main: 'Consultoría',
     highlight: 'Estratégica',
     continuation: '+ Plataforma',
+    // Orden: de gancho PYME (lo que más buscan) a ecosistema completo
     dynamicWords: [
-      'de Gestión 360°',
-      'ISO Multi-Norma',
-      'ERP Integrado',
-      'GRC & Compliance',
-      'de Firma Digital',
-      'HSEQ Inteligente',
+      'de Gestión Empresarial',       // Universal — todo el mundo entiende
+      'de Seguridad Laboral',         // #1 en búsquedas Colombia (obligatorio)
+      'de Talento Humano',            // #2 — nómina, desempeño, selección
+      'PESV — Seguridad Vial',        // #3 — obligatorio empresas con flota
+      'ISO Multi-Norma',              // Aspiracional — certificación
+      'de Firma Digital',             // Diferenciador tecnológico
+      '360° Todo en Uno',             // Cierre — todo integrado
     ],
     structure: {
       lineBreakAfterBPM: true,
@@ -38,22 +39,22 @@ export const HERO_CONTENT = {
     },
   },
   description:
-    'Consultoría 4.0 respaldada por una plataforma con 84+ módulos integrados: SGI, ERP, GRC, HSEQ, Talento Humano, Firma Digital y Business Intelligence en un solo ecosistema.',
+    'Seguridad Laboral, Talento Humano, PESV, ISO y Firma Digital — todo en una sola plataforma con 84+ módulos integrados para empresas colombianas.',
   keyBenefits: [
     {
-      text: 'ISO Multi-Norma',
-      icon: Award,
-      color: 'text-system-blue-500',
-    },
-    {
-      text: 'GRC & Debida Diligencia',
+      text: 'Seguridad Laboral (SST)',
       icon: Shield,
       color: 'text-system-red-500',
     },
     {
-      text: 'ERP & Cadena de Valor',
-      icon: Boxes,
+      text: 'Talento Humano',
+      icon: Users,
       color: 'text-system-orange-500',
+    },
+    {
+      text: 'ISO Multi-Norma',
+      icon: Award,
+      color: 'text-system-blue-500',
     },
     {
       text: 'Firma Digital SHA-256',

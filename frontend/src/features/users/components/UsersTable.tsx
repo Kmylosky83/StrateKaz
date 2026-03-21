@@ -17,8 +17,8 @@ import { Avatar } from '@/components/common/Avatar';
 import { Badge } from '@/components/common/Badge';
 import { UserStatusBadge } from '@/components/users/UserStatusBadge';
 import { CargoLevelBadge } from '@/components/users/CargoLevelBadge';
-import type { User } from '@/types/users.types';
-import { ORIGEN_LABELS, ORIGEN_COLORS } from '@/types/users.types';
+import type { User, NivelFirma } from '@/types/users.types';
+import { ORIGEN_LABELS, ORIGEN_COLORS, NIVEL_FIRMA_COLORS } from '@/types/users.types';
 import type { BadgeVariant } from '@/components/common/Badge';
 
 interface UsersTableProps {
@@ -131,6 +131,7 @@ export const UsersTable = ({
               <th className={thBase}>Cargo</th>
               <th className={thBase}>Origen</th>
               <th className={thBase}>Estado</th>
+              <th className={thBase}>Firma</th>
               <th className={thSortable} onClick={() => handleSort('email')}>
                 Correo <SortIcon field="email" activeField={sortField} direction={sortDirection} />
               </th>
@@ -211,6 +212,29 @@ export const UsersTable = ({
                   {/* Estado */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <UserStatusBadge isActive={user.is_active} />
+                  </td>
+
+                  {/* Nivel Firma */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const nivel = (user.nivel_firma || 1) as NivelFirma;
+                      const variant = NIVEL_FIRMA_COLORS[nivel] as BadgeVariant;
+                      return (
+                        <Badge
+                          variant={variant}
+                          size="sm"
+                          title={
+                            nivel === 1
+                              ? 'Sin 2FA al firmar'
+                              : nivel === 2
+                                ? 'TOTP obligatorio al firmar'
+                                : 'TOTP + Email OTP al firmar'
+                          }
+                        >
+                          {nivel === 1 ? 'N1' : nivel === 2 ? 'N2 TOTP' : 'N3 2FA'}
+                        </Badge>
+                      );
+                    })()}
                   </td>
 
                   {/* Correo */}

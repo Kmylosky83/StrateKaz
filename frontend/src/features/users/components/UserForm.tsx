@@ -22,6 +22,7 @@ import {
   Lock,
   Shield,
   AlertTriangle,
+  Fingerprint,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -29,7 +30,13 @@ import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { useAuthStore } from '@/store/authStore';
-import type { User, CreateUserDTO, UpdateUserDTO, Cargo } from '@/types/users.types';
+import type { User, CreateUserDTO, UpdateUserDTO, Cargo, NivelFirma } from '@/types/users.types';
+import {
+  NIVEL_FIRMA_LABELS,
+  NIVEL_FIRMA_DESCRIPTIONS,
+  NIVEL_FIRMA_COLORS,
+} from '@/types/users.types';
+import { Switch } from '@/components/forms/Switch';
 
 // =============================================================================
 // SCHEMAS
@@ -143,6 +150,112 @@ const Section = ({ title, icon, helpText, children, defaultOpen = true, badge }:
       </button>
       {isOpen && <div className="p-4 space-y-4">{children}</div>}
     </div>
+  );
+};
+
+// =============================================================================
+// NIVEL FIRMA SECTION (read-only display in edit mode)
+// =============================================================================
+
+const NIVEL_BADGE_STYLES: Record<NivelFirma, string> = {
+  1: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  2: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  3: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
+const NivelFirmaSection = ({ user }: { user: User }) => {
+  const nivel = (user.nivel_firma || 1) as NivelFirma;
+  const isManual = user.nivel_firma_manual || false;
+  const cargoNivel = user.cargo?.level ?? 0;
+
+  // Calcular nivel esperado del cargo
+  const expectedFromCargo: NivelFirma = cargoNivel >= 3 ? 3 : cargoNivel >= 2 ? 2 : 1;
+
+  return (
+    <Section
+      title="Firma Digital"
+      icon={<Fingerprint className="w-5 h-5" />}
+      defaultOpen={false}
+      helpText="Nivel de verificación 2FA al firmar documentos. Se hereda automáticamente del cargo."
+      badge={
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${NIVEL_BADGE_STYLES[nivel]}`}
+        >
+          Nivel {nivel}
+        </span>
+      }
+    >
+      <div className="space-y-3">
+        {/* Badge principal */}
+        <div
+          className={`p-3 rounded-lg border ${
+            nivel === 3
+              ? 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-800'
+              : nivel === 2
+                ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800'
+                : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {NIVEL_FIRMA_LABELS[nivel]}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {NIVEL_FIRMA_DESCRIPTIONS[nivel]}
+              </p>
+            </div>
+            <Fingerprint
+              className={`w-8 h-8 ${
+                nivel === 3 ? 'text-red-400' : nivel === 2 ? 'text-amber-400' : 'text-gray-400'
+              }`}
+            />
+          </div>
+        </div>
+
+        {/* Info de herencia */}
+        <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div>
+            {isManual ? (
+              <p>
+                <span className="font-medium text-amber-600 dark:text-amber-400">
+                  Nivel asignado manualmente
+                </span>
+                {' — no se actualiza al cambiar de cargo.'}
+              </p>
+            ) : (
+              <p>
+                Heredado del cargo:{' '}
+                <span className="font-medium">{user.cargo?.name || 'Sin cargo'}</span>
+                {user.cargo && ` (nivel jerárquico → firma nivel ${expectedFromCargo})`}
+              </p>
+            )}
+            <p className="mt-1">
+              Para cambiar el nivel de firma, edita desde{' '}
+              <strong>Configuración &rarr; Usuarios</strong> (nivel_firma_manual).
+            </p>
+          </div>
+        </div>
+
+        {/* Resumen de niveles */}
+        <div className="grid grid-cols-3 gap-2">
+          {([1, 2, 3] as NivelFirma[]).map((n) => (
+            <div
+              key={n}
+              className={`p-2 rounded border text-center text-xs ${
+                n === nivel
+                  ? NIVEL_BADGE_STYLES[n] + ' border-current font-medium'
+                  : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
+              }`}
+            >
+              <div className="font-medium">Nivel {n}</div>
+              <div className="mt-0.5">{n === 1 ? 'Sin 2FA' : n === 2 ? 'TOTP' : 'TOTP + OTP'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Section>
   );
 };
 
@@ -401,7 +514,10 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           )}
         </Section>
 
-        {/* SECCIÓN 3: ROLES ADICIONALES (SOLO INFO) */}
+        {/* SECCIÓN 3: NIVEL DE FIRMA DIGITAL (solo edición) */}
+        {isEditMode && user && <NivelFirmaSection user={user} />}
+
+        {/* SECCIÓN 4: ROLES ADICIONALES (SOLO INFO) */}
         <Section
           title="Roles Adicionales"
           icon={<Award className="w-5 h-5" />}

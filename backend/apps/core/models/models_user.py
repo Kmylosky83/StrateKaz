@@ -411,11 +411,27 @@ class Cargo(models.Model):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+    # Mapeo nivel_jerarquico → level (legacy) — SSOT
+    NIVEL_JERARQUICO_TO_LEVEL = {
+        'ESTRATEGICO': 3,
+        'TACTICO': 2,
+        'OPERATIVO': 1,
+        'APOYO': 0,
+        'EXTERNO': 0,
+    }
+
+    def save(self, *args, **kwargs):
+        """Auto-sincroniza level desde nivel_jerarquico al guardar."""
+        self.level = self.NIVEL_JERARQUICO_TO_LEVEL.get(
+            self.nivel_jerarquico, 0
+        )
+        super().save(*args, **kwargs)
+
     def clean(self):
         """Validaciones personalizadas"""
         # Validar que el cargo padre tenga nivel superior o igual
         if self.parent_cargo:
-            niveles_orden = {'ESTRATEGICO': 3, 'TACTICO': 2, 'OPERATIVO': 1, 'APOYO': 0}
+            niveles_orden = self.NIVEL_JERARQUICO_TO_LEVEL
             nivel_padre = niveles_orden.get(self.parent_cargo.nivel_jerarquico, 0)
             nivel_actual = niveles_orden.get(self.nivel_jerarquico, 0)
             if nivel_padre < nivel_actual:

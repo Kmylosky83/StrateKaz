@@ -105,6 +105,7 @@ class UserListSerializer(serializers.ModelSerializer):
             'is_active',
             'date_joined',
             'origen',
+            'nivel_firma',
         ]
 
     def get_full_name(self, obj):
@@ -205,6 +206,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Cliente vinculado
             'cliente',
             'cliente_nombre',
+            # Firma digital
+            'nivel_firma',
+            'nivel_firma_manual',
         ]
         read_only_fields = [
             'id',
@@ -419,29 +423,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text='ID del proveedor vinculado (para usuarios externos)',
     )
-
-    def validate_proveedor_id(self, value):
-        """Valida que el proveedor exista si se proporciona un ID"""
-        if value is None:
-            return None
-        try:
-            from django.apps import apps
-            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
-            Proveedor.objects.get(id=value, is_active=True)
-            return value  # Retorna el ID, no la instancia
-        except LookupError:
-            return value  # Módulo no activo, aceptar ID sin validar
-        except Exception:
-            raise serializers.ValidationError('Proveedor no encontrado o inactivo')
-
-    def update(self, instance, validated_data):
-        """Override para manejar proveedor_id como IntegerField"""
-        proveedor_id = validated_data.pop('proveedor_id', 'NOT_SET')
-        instance = super().update(instance, validated_data)
-        if proveedor_id != 'NOT_SET':
-            instance.proveedor_id_ext = proveedor_id
-            instance.save(update_fields=['proveedor_id_ext'])
-        return instance
+    nivel_firma = serializers.IntegerField(
+        required=False,
+        min_value=1,
+        max_value=3,
+        help_text='Nivel de firma digital (1=Sin 2FA, 2=TOTP, 3=TOTP+Email OTP)',
+    )
+    nivel_firma_manual = serializers.BooleanField(
+        required=False,
+        help_text='Si True, nivel_firma no se auto-asigna al cambiar cargo',
+    )
 
     class Meta:
         model = User
@@ -454,34 +445,52 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'proveedor_id',
             'is_active',
             'is_staff',
+            'nivel_firma',
+            'nivel_firma_manual',
         ]
+
+    def validate_proveedor_id(self, value):
+        """Valida que el proveedor exista si se proporciona un ID"""
+        if value is None:
+            return None
+        try:
+            from django.apps import apps
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor.objects.get(id=value, is_active=True)
+            return value
+        except LookupError:
+            return value
+        except Exception:
+            raise serializers.ValidationError('Proveedor no encontrado o inactivo')
 
     def validate_email(self, value):
         """Validar email válido y único (excepto usuario actual)"""
         if not value or '@' not in value:
             raise serializers.ValidationError('Proporcione un email válido')
-
-        # Verificar que no exista otro usuario con el mismo email
         user_id = self.instance.id if self.instance else None
         if User.objects.filter(email=value).exclude(id=user_id).exists():
             raise serializers.ValidationError('Este email ya está registrado')
-
         return value
 
     def validate_cargo_id(self, value):
         """Validar que el cargo está activo"""
         if value and not value.is_active:
             raise serializers.ValidationError('El cargo seleccionado no está activo')
-
         return value
 
     def update(self, instance, validated_data):
-        """Actualizar usuario"""
-        # Actualizar campos
+        """Actualizar usuario con soporte para proveedor_id y nivel_firma"""
+        proveedor_id = validated_data.pop('proveedor_id', 'NOT_SET')
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
+
+        if proveedor_id != 'NOT_SET':
+            instance.proveedor_id_ext = proveedor_id
+            instance.save(update_fields=['proveedor_id_ext'])
+
         return instance
 
 

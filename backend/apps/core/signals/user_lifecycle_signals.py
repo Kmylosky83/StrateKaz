@@ -6,6 +6,7 @@ Cuando se crea un User dentro de un tenant schema:
 2. Auto-crea TenantUserAccess (vincula TenantUser con el tenant actual)
 3. Auto-llena VacanteActiva del cargo asignado (solo flujo manual)
 4. Envia email de bienvenida via Celery
+5. Auto-asigna nivel_firma basado en cargo.nivel_jerarquico
 
 Los signals respetan el flag _from_contratacion para evitar duplicados
 cuando ContratacionService ya maneja la vacante y el Colaborador.
@@ -18,6 +19,15 @@ from django.dispatch import receiver
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+# Mapeo: nivel_jerarquico del Cargo → nivel_firma del User
+NIVEL_JERARQUICO_TO_NIVEL_FIRMA = {
+    'ESTRATEGICO': 3,  # TOTP + Email OTP
+    'TACTICO': 2,      # TOTP obligatorio
+    'OPERATIVO': 1,    # Solo firma manuscrita
+    'APOYO': 1,        # Solo firma manuscrita
+    'EXTERNO': 1,      # Solo firma manuscrita
+}
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -289,4 +299,44 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
         logger.warning(
             'No se pudo programar email de bienvenida para User %s (%s): %s',
             user.id, user.email, e
+        )
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def auto_assign_nivel_firma(sender, instance, **kwargs):
+    """
+    Auto-asigna nivel_firma basado en cargo.nivel_jerarquico.
+
+    Se ejecuta en creación Y actualización del usuario para cubrir:
+    - Creación de usuario con cargo asignado
+    - Cambio de cargo en usuario existente
+
+    Si nivel_firma_manual=True, NO se sobreescribe (override del admin).
+    Usa update() directo para evitar loop infinito de post_save.
+    """
+    user = instance
+
+    # Respetar override manual
+    if user.nivel_firma_manual:
+        return
+
+    # Calcular nivel esperado
+    if user.cargo and hasattr(user.cargo, 'nivel_jerarquico'):
+        expected = NIVEL_JERARQUICO_TO_NIVEL_FIRMA.get(
+            user.cargo.nivel_jerarquico, 1
+        )
+    else:
+        expected = 1
+
+    # Solo actualizar si cambió (evitar queries innecesarios)
+    if user.nivel_firma != expected:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        User.objects.filter(pk=user.pk).update(nivel_firma=expected)
+        logger.info(
+            'nivel_firma auto-asignado: User %s (%s) → nivel %d '
+            '(cargo: %s, nivel_jerarquico: %s)',
+            user.pk, user.email, expected,
+            getattr(user.cargo, 'code', 'N/A'),
+            getattr(user.cargo, 'nivel_jerarquico', 'N/A'),
         )

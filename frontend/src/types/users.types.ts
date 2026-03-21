@@ -33,6 +33,26 @@ export const ORIGEN_COLORS: Record<UserOrigen, string> = {
   manual: 'gray',
 };
 
+export type NivelFirma = 1 | 2 | 3;
+
+export const NIVEL_FIRMA_LABELS: Record<NivelFirma, string> = {
+  1: 'Nivel 1 — Operativo',
+  2: 'Nivel 2 — TOTP',
+  3: 'Nivel 3 — TOTP + Email',
+};
+
+export const NIVEL_FIRMA_DESCRIPTIONS: Record<NivelFirma, string> = {
+  1: 'Solo firma manuscrita digital (sin verificación 2FA)',
+  2: 'Firma manuscrita + código TOTP obligatorio',
+  3: 'Firma manuscrita + TOTP o código OTP por email',
+};
+
+export const NIVEL_FIRMA_COLORS: Record<NivelFirma, string> = {
+  1: 'gray',
+  2: 'warning',
+  3: 'danger',
+};
+
 export interface User {
   id: number;
   username: string;
@@ -55,6 +75,8 @@ export interface User {
   last_login?: string | null;
   date_joined: string;
   origen?: UserOrigen;
+  nivel_firma: NivelFirma;
+  nivel_firma_manual?: boolean;
 }
 
 export interface CreateUserDTO {
@@ -83,6 +105,8 @@ export interface UpdateUserDTO {
   document_number?: string;
   is_active?: boolean;
   is_staff?: boolean;
+  nivel_firma?: NivelFirma;
+  nivel_firma_manual?: boolean;
 }
 
 export interface ChangePasswordDTO {

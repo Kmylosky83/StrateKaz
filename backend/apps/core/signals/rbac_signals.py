@@ -397,3 +397,48 @@ def _log_propagation(section, count: int):
             )
     except Exception as e:
         logger.error(f"ERROR_LOGGING_PROPAGATION: {e}")
+
+
+# =============================================================================
+# SIGNAL: Al modificar Cargo → Propagar nivel_firma a usuarios
+# =============================================================================
+@receiver(post_save, sender='core.Cargo')
+def propagate_nivel_firma_on_cargo_change(sender, instance, created, **kwargs):
+    """
+    Cuando se modifica nivel_jerarquico de un Cargo, propaga nivel_firma
+    a todos los usuarios con ese cargo (que no tengan nivel_firma_manual=True).
+
+    Solo se ejecuta en actualización (no creación — los usuarios aún no existen).
+    """
+    if created:
+        return
+
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    # Mapeo nivel_jerarquico → nivel_firma
+    NIVEL_MAP = {
+        'ESTRATEGICO': 3,
+        'TACTICO': 2,
+        'OPERATIVO': 1,
+        'APOYO': 1,
+        'EXTERNO': 1,
+    }
+
+    expected_nivel = NIVEL_MAP.get(instance.nivel_jerarquico, 1)
+
+    updated = User.objects.filter(
+        cargo=instance,
+        nivel_firma_manual=False,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).exclude(
+        nivel_firma=expected_nivel
+    ).update(nivel_firma=expected_nivel)
+
+    if updated:
+        logger.info(
+            "CARGO_NIVEL_FIRMA_PROPAGATED: Cargo '%s' (%s) → %d usuarios "
+            "actualizados a nivel_firma=%d",
+            instance.code, instance.nivel_jerarquico, updated, expected_nivel
+        )

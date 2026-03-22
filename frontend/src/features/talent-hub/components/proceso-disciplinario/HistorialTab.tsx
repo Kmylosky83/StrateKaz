@@ -73,7 +73,7 @@ export const HistorialTab = () => {
 
         return acc;
       },
-      {} as Record<number, any>
+      {} as Record<number, unknown>
     );
 
     return Object.values(agrupado) as HistorialResumen[];

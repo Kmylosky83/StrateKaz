@@ -18,12 +18,10 @@
  * a su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
 import { useCallback, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
+import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
-import { PortalLayout } from './PortalLayout';
 
 const MAX_PROFILE_RETRIES = 5;
 
@@ -33,27 +31,7 @@ function getRetryDelay(attempt: number): number {
   return Math.min(2000 * Math.pow(2, attempt - 2), 16_000);
 }
 
-/**
- * PortalRedirect — Navega imperativamente mostrando un spinner.
- *
- * A diferencia de <Navigate> (que renderiza null → flash negro),
- * este componente muestra un spinner visible mientras la navegación
- * se completa. Funciona tanto para impersonación como para reload.
- */
-const PortalRedirect = ({ to }: { to: string }) => {
-  const navigate = useNavigate();
-  useEffect(() => {
-    navigate(to, { replace: true });
-  }, [to, navigate]);
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-    </div>
-  );
-};
-
 export const AdaptiveLayout = () => {
-  const location = useLocation();
   const retryCount = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

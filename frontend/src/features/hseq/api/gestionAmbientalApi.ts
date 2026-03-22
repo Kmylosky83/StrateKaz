@@ -93,7 +93,7 @@ export const tipoResiduoApi = {
     await apiClient.delete(`${BASE_URL}/tipos-residuos/${id}/`);
   },
 
-  porClase: async (): Promise<Record<string, any>> => {
+  porClase: async (): Promise<Record<string, unknown>> => {
     const response = await apiClient.get(`${BASE_URL}/tipos-residuos/por-clase/`);
     return response.data;
   },
@@ -133,7 +133,7 @@ export const gestorAmbientalApi = {
     await apiClient.delete(`${BASE_URL}/gestores/${id}/`);
   },
 
-  verificarLicencia: async (id: number): Promise<any> => {
+  verificarLicencia: async (id: number): Promise<unknown> => {
     const response = await apiClient.get(`${BASE_URL}/gestores/${id}/licencias-vencidas/`);
     return response.data;
   },
@@ -391,8 +391,8 @@ export const consumoRecursoApi = {
     year?: number
   ): Promise<{
     year: number;
-    por_recurso: any[];
-    por_mes: any[];
+    por_recurso: unknown[];
+    por_mes: unknown[];
     total_costo_anual: number;
     total_emision_co2_anual: number;
   }> => {

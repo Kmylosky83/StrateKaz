@@ -71,7 +71,7 @@ function HeatmapWidget({ widget }: Props) {
   const option: EChartsOption = {
     tooltip: {
       position: 'top',
-      formatter: (params: any) => {
+      formatter: (params: unknown) => {
         const date = new Date(params.data[0]).toLocaleDateString('es-CO');
         const value = params.data[1].toFixed(2);
         return `${date}<br/>Valor: ${value}`;

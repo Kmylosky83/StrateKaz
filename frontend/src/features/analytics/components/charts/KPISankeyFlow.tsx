@@ -90,7 +90,7 @@ export function KPISankeyFlow({
         borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
         textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           if (params.dataType === 'node') {
             const node = nodes.find((n) => n.name === params.name);
             const typeLabels = {
@@ -181,7 +181,7 @@ export function KPISankeyFlow({
             position: orientation === 'horizontal' ? 'right' : 'bottom',
             fontSize: 11,
             color: CHART_AXIS_COLORS.tooltip.text,
-            formatter: (params: any) => {
+            formatter: (params: unknown) => {
               // Truncar nombres largos
               const name = params.name;
               return name.length > 25 ? name.substring(0, 22) + '...' : name;
@@ -217,7 +217,7 @@ export function KPISankeyFlow({
     };
   }, [nodes, links, title, orientation]);
 
-  const handleChartClick = (params: any) => {
+  const handleChartClick = (params: unknown) => {
     if (params.dataType === 'node' && onNodeClick) {
       const node = nodes.find((n) => n.name === params.name);
       if (node) {

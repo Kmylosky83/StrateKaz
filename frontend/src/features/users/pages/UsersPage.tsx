@@ -103,7 +103,7 @@ export default function UsersPage() {
         await createUserMutation.mutateAsync(data as CreateUserDTO);
       }
       handleCloseForm();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting form:', error);
       console.error('Error response:', error.response?.data);
       alert(`Error: ${JSON.stringify(error.response?.data || error.message)}`);
@@ -160,7 +160,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleFilterChange = (key: keyof UserFilters, value: any) => {
+  const handleFilterChange = (key: keyof UserFilters, value: unknown) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 

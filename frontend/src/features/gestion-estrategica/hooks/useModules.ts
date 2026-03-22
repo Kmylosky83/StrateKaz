@@ -238,7 +238,7 @@ export function useToggleModule() {
         toast.success(response.message);
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.message || 'Error al cambiar estado del módulo';
       toast.error(message);
     },
@@ -281,7 +281,7 @@ export function useToggleTab() {
         toast.success(response.message);
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.message || 'Error al cambiar estado del tab';
       toast.error(message);
     },
@@ -317,7 +317,7 @@ export function useToggleSection() {
       queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('modulos') });
       toast.success(response.message);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.message || 'Error al cambiar estado de la sección';
       toast.error(message);
     },

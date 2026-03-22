@@ -145,7 +145,7 @@ export const NormaFormModal = ({ norma, isOpen, onClose }: NormaFormModalProps) 
         await createMutation.mutateAsync(formData);
       }
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Los errores del backend se mostrarán automáticamente
       console.error('Error al guardar norma:', error);
     }

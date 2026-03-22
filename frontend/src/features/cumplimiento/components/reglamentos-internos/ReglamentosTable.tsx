@@ -126,7 +126,7 @@ const SistemasBadges = ({ reglamento }: { reglamento: Reglamento }) => {
   return (
     <div className="flex flex-wrap gap-1">
       {sistemas.map((sistema) => (
-        <Badge key={sistema.label} variant={sistema.color as any} size="sm">
+        <Badge key={sistema.label} variant={sistema.color as unknown} size="sm">
           {sistema.label}
         </Badge>
       ))}

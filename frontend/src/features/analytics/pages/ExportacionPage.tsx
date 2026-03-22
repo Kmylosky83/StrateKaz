@@ -82,12 +82,12 @@ const getTipoLogColor = (tipo: string) => {
 const ConfiguracionSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedConfig, setSelectedConfig] = useState<any>(null);
+  const [selectedConfig, setSelectedConfig] = useState<unknown>(null);
 
   const { data: configuracionesData, isLoading } = useConfiguracionesExportacion();
   const configuraciones = configuracionesData || [];
 
-  const handleEdit = (config: any) => {
+  const handleEdit = (config: unknown) => {
     setSelectedConfig(config);
     setShowFormModal(true);
   };

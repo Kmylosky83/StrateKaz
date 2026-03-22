@@ -28,7 +28,7 @@ import type {
 const BASE_URL = '/supply-chain/almacenamiento';
 
 const inventarioApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<InventarioList>>(`${BASE_URL}/inventarios/`, { params }),
   getById: (id: number) => apiClient.get<Inventario>(`${BASE_URL}/inventarios/${id}/`),
   create: (data: CreateInventarioDTO) =>
@@ -43,7 +43,7 @@ const inventarioApi = {
 };
 
 const movimientoApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<MovimientoInventarioList>>(`${BASE_URL}/movimientos/`, {
       params,
     }),
@@ -57,14 +57,14 @@ const movimientoApi = {
 const kardexApi = {
   consultar: (params: ConsultaKardexParams) =>
     apiClient.get<KardexResponse>(`${BASE_URL}/kardex/consultar/`, { params }),
-  getByInventario: (inventarioId: number, params?: Record<string, any>) =>
+  getByInventario: (inventarioId: number, params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<Kardex>>(`${BASE_URL}/kardex/inventario/${inventarioId}/`, {
       params,
     }),
 };
 
 const alertaApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<AlertaStockList>>(`${BASE_URL}/alertas/`, { params }),
   getById: (id: number) => apiClient.get<AlertaStock>(`${BASE_URL}/alertas/${id}/`),
   create: (data: CreateAlertaStockDTO) => apiClient.post<AlertaStock>(`${BASE_URL}/alertas/`, data),
@@ -78,7 +78,7 @@ const alertaApi = {
 };
 
 const configuracionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<ConfiguracionStockList>>(`${BASE_URL}/configuraciones/`, {
       params,
     }),

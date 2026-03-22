@@ -7,8 +7,8 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import DOMPurify from 'dompurify';
-import { BookOpen, CheckCircle, X, Clock, AlertTriangle } from 'lucide-react';
-import { Button, Badge, Spinner, ConfirmDialog } from '@/components/common';
+import { BookOpen, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Button, Badge, ConfirmDialog } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Textarea } from '@/components/forms';
 import {

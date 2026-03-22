@@ -54,7 +54,7 @@ const getTendenciaIcon = (tendencia: string) => {
 // ==================== COMPONENTS ====================
 
 interface KPIListItemProps {
-  kpi: any;
+  kpi: unknown;
   onRegistrarValor: (kpi: CatalogoKPI) => void;
   onVerHistorial: (kpi: CatalogoKPI) => void;
 }
@@ -158,7 +158,7 @@ const CategoriaSection = ({
   onRegistrarValor,
   onVerHistorial,
 }: {
-  kpis: any[];
+  kpis: unknown[];
   onRegistrarValor: (kpi: CatalogoKPI) => void;
   onVerHistorial: (kpi: CatalogoKPI) => void;
 }) => {
@@ -218,7 +218,7 @@ const CategoriaSection = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {kpis.map((kpi: any) => (
+        {kpis.map((kpi: unknown) => (
           <KPIListItem
             key={kpi.id || kpi.kpi?.id}
             kpi={kpi}

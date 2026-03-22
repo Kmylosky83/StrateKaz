@@ -6,8 +6,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 /** Normaliza respuesta paginada: {results:[]} → [] */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const asList = <T>(data: any): T[] => (Array.isArray(data) ? data : (data?.results ?? []));
+ 
+const asList = <T>(data: Record<string, unknown>): T[] => (Array.isArray(data) ? data : (data?.results ?? []));
 
 import {
   configuracionAuditoriaApi,
@@ -92,7 +92,7 @@ export const useUpdateConfiguracionAuditoria = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       configuracionAuditoriaApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['configuraciones-auditoria'] });
@@ -206,7 +206,7 @@ export const useUpdateTipoNotificacion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => tiposNotificacionApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tiposNotificacionApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-notificacion'] });
     },
@@ -316,7 +316,7 @@ export const useUpdatePreferenciaNotificacion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       preferenciasNotificacionApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['preferencias-notificacion'] });
@@ -385,7 +385,7 @@ export const useUpdateTipoAlerta = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => tiposAlertaApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tiposAlertaApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-alerta'] });
     },
@@ -418,7 +418,7 @@ export const useUpdateConfiguracionAlerta = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       configuracionesAlertaApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['configuraciones-alerta'] });
@@ -579,7 +579,7 @@ export const useUpdateTarea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => tareasApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tareasApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tareas'] });
       queryClient.invalidateQueries({ queryKey: ['tarea', variables.id] });
@@ -656,7 +656,7 @@ export const useUpdateRecordatorio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => recordatoriosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => recordatoriosApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recordatorios'] });
     },
@@ -710,7 +710,7 @@ export const useUpdateEvento = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => eventosCalendarioApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => eventosCalendarioApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eventos-calendario'] });
     },

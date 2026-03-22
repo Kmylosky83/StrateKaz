@@ -77,7 +77,7 @@ const catalogosApi = {
 // ==================== PROGRAMACIONES ====================
 
 const programacionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<ProgramacionList>>(`${BASE_URL}/programaciones/`, { params }),
 
   getById: (id: number) => apiClient.get<Programacion>(`${BASE_URL}/programaciones/${id}/`),
@@ -105,7 +105,7 @@ const programacionApi = {
 // ==================== ASIGNACIÓN DE RECURSOS ====================
 
 const asignacionRecursoApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<AsignacionRecurso>>(`${BASE_URL}/asignaciones-recursos/`, {
       params,
     }),
@@ -132,7 +132,7 @@ const asignacionRecursoApi = {
 // ==================== EJECUCIONES ====================
 
 const ejecucionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<Ejecucion>>(`${BASE_URL}/ejecuciones/`, { params }),
 
   getById: (id: number) => apiClient.get<Ejecucion>(`${BASE_URL}/ejecuciones/${id}/`),
@@ -152,7 +152,7 @@ const ejecucionApi = {
 // ==================== LIQUIDACIONES ====================
 
 const liquidacionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<Liquidacion>>(`${BASE_URL}/liquidaciones/`, { params }),
 
   getById: (id: number) => apiClient.get<Liquidacion>(`${BASE_URL}/liquidaciones/${id}/`),

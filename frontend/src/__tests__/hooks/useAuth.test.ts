@@ -31,7 +31,7 @@ describe('useAuthStore', () => {
       first_name: 'Test',
       last_name: 'User',
       username: 'testuser',
-    } as any;
+    } as unknown;
 
     act(() => {
       result.current.setUser(mockUser);
@@ -52,7 +52,7 @@ describe('useAuthStore', () => {
         first_name: 'Test',
         last_name: 'User',
         username: 'testuser',
-      } as any,
+      } as unknown,
       accessToken: 'test-access-token',
       refreshToken: 'test-refresh-token',
       isAuthenticated: true,

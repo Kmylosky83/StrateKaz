@@ -366,10 +366,10 @@ function MapaCalorSection({
   const [selectedCell, setSelectedCell] = useState<{
     probabilidad: number;
     impacto: number;
-    riesgos: any[];
+    riesgos: unknown[];
   } | null>(null);
 
-  const handleCellClick = (probabilidad: number, impacto: number, riesgosEnCelda: any[]) => {
+  const handleCellClick = (probabilidad: number, impacto: number, riesgosEnCelda: unknown[]) => {
     setSelectedCell({ probabilidad, impacto, riesgos: riesgosEnCelda });
   };
 

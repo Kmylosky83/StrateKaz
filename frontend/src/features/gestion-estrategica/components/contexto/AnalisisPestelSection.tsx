@@ -123,7 +123,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
   const [viewMode, setViewMode] = useState<ViewMode>('tabla');
   const [filters, setFilters] = useState<FactorPESTELFilters>({});
   const [selectedAnalisis, setSelectedAnalisis] = useState<AnalisisPESTEL | null>(null);
-  const [selectedFactor, setSelectedFactor] = useState<FactorPESTEL | null>(null);
+  const [_selectedFactor, setSelectedFactor] = useState<FactorPESTEL | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<FactorPESTEL | null>(null);
   const [alertMessage, setAlertMessage] = useState<{
@@ -318,7 +318,7 @@ export const AnalisisPestelSection = ({ triggerNewForm }: AnalisisPestelSectionP
     if (triggerNewForm && triggerNewForm > 0) {
       handleCreate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [triggerNewForm]);
 
   // Render badge de dimensión

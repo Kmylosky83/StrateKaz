@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { oportunidadesApi, actividadesApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreateOportunidadDTO,
   UpdateOportunidadDTO,
@@ -15,7 +16,7 @@ import type {
 
 // ==================== OPORTUNIDADES ====================
 
-export function useOportunidades(params?: any) {
+export function useOportunidades(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.oportunidadesFiltered(params) : salesCRMKeys.oportunidades(),
     queryFn: () => oportunidadesApi.getAll(params),
@@ -54,8 +55,8 @@ export function useCreateOportunidad() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
       toast.success('Oportunidad creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear oportunidad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear oportunidad'));
     },
   });
 }
@@ -71,8 +72,8 @@ export function useUpdateOportunidad() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.oportunidadById(id) });
       toast.success('Oportunidad actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar oportunidad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar oportunidad'));
     },
   });
 }
@@ -88,8 +89,8 @@ export function useDeleteOportunidad() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
       toast.success('Oportunidad eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar oportunidad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar oportunidad'));
     },
   });
 }
@@ -107,8 +108,8 @@ export function useCambiarEtapa() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
       toast.success('Etapa actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cambiar etapa');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al cambiar etapa'));
     },
   });
 }
@@ -125,8 +126,8 @@ export function useCerrarGanada() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
       toast.success('Oportunidad cerrada como GANADA');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar oportunidad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al cerrar oportunidad'));
     },
   });
 }
@@ -143,15 +144,15 @@ export function useCerrarPerdida() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
       toast.success('Oportunidad cerrada como PERDIDA');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar oportunidad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al cerrar oportunidad'));
     },
   });
 }
 
 // ==================== ACTIVIDADES ====================
 
-export function useActividades(params?: any) {
+export function useActividades(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.actividadesFiltered(params) : salesCRMKeys.actividades(),
     queryFn: () => actividadesApi.getAll(params),
@@ -162,13 +163,13 @@ export function useCreateActividad() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => actividadesApi.create(datos),
+    mutationFn: (datos: Record<string, unknown>) => actividadesApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.actividades() });
       toast.success('Actividad registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear actividad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear actividad'));
     },
   });
 }
@@ -177,13 +178,13 @@ export function useUpdateActividad() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) => actividadesApi.update(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: Record<string, unknown> }) => actividadesApi.update(id, datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.actividades() });
       toast.success('Actividad actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar actividad');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar actividad'));
     },
   });
 }

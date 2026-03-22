@@ -130,7 +130,7 @@ export const GestionCambioTab = () => {
       try {
         const result = await proyectosApi.crearDesdeCambio({ cambio_id: cambio.id });
         toast.success(result.detail);
-      } catch (error: any) {
+      } catch (error: unknown) {
         const message = error?.response?.data?.detail || 'Error al crear el proyecto';
         toast.error(message);
       }
@@ -369,8 +369,8 @@ export const GestionCambioTab = () => {
                         className={`px-6 py-4 whitespace-nowrap text-sm ${column.className || ''}`}
                       >
                         {column.render
-                          ? column.render(cambio[column.accessor] as any)
-                          : (cambio[column.accessor] as any)}
+                          ? column.render(cambio[column.accessor] as unknown)
+                          : (cambio[column.accessor] as unknown)}
                       </td>
                     ))}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

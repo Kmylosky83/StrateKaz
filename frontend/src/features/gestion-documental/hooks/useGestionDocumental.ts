@@ -629,7 +629,7 @@ export function useImportarPlantilla() {
       queryClient.invalidateQueries({ queryKey: gdPlantillasKeys.lists() });
       toast.success('Plantilla importada exitosamente desde la biblioteca');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const msg = error?.response?.data?.error || 'Error al importar plantilla';
       toast.error(msg);
     },

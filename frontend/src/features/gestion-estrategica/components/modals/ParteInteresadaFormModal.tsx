@@ -280,7 +280,7 @@ const ParteInteresadaFormModalComponent = ({
         es_requisito_legal: parteInteresada.es_requisito_legal || false,
         frecuencia_comunicacion: parteInteresada.frecuencia_comunicacion || 'mensual',
         // Usar normas_relacionadas del backend o array vacío
-        normas_relacionadas: (parteInteresada as any).normas_relacionadas || [],
+        normas_relacionadas: (parteInteresada as unknown).normas_relacionadas || [],
       });
     } else if (!isEditing) {
       setFormData(defaultFormData);
@@ -366,7 +366,7 @@ const ParteInteresadaFormModalComponent = ({
   }, []);
 
   // Handler genérico para cambios de campo - evita crear nuevas funciones en cada render
-  const handleFieldChange = useCallback((field: keyof FormData, value: any) => {
+  const handleFieldChange = useCallback((field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 

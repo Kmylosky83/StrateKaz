@@ -167,7 +167,7 @@ export const ObjetivoNode = memo(({ data, selected }: NodeProps<ObjetivoNodeData
             />
             <div className="flex-1 space-y-1">
               <Badge
-                variant={statusConfig.color as any}
+                variant={statusConfig.color as unknown}
                 size="sm"
                 className="w-full justify-center"
               >

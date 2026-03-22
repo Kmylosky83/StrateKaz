@@ -13,6 +13,7 @@ import {
   FileText,
   Truck,
   Package,
+  type LucideIcon,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -27,7 +28,7 @@ import type { PedidoList, EstadoPedido } from '../types';
 
 const ESTADO_CONFIG: Record<
   EstadoPedido,
-  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: any }
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: LucideIcon }
 > = {
   BORRADOR: { variant: 'default', label: 'Borrador', icon: FileText },
   CONFIRMADO: { variant: 'primary', label: 'Confirmado', icon: CheckCircle },
@@ -142,7 +143,7 @@ function PedidoCard({ pedido, onView, onAprobar, onCancelar, onGenerarFactura }:
 }
 
 export default function PedidosPage() {
-  const [filters, _setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<unknown>({});
 
   const { data: pedidosData, isLoading } = usePedidos(filters);
 

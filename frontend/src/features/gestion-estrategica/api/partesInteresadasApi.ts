@@ -522,7 +522,7 @@ export const partesInteresadasApi = {
   ): Promise<{
     message: string;
     created: boolean;
-    data: any;
+    data: unknown;
   }> => {
     const response = await apiClient.post(
       `${BASE_URL}/partes-interesadas/generar-matriz-comunicacion/`,

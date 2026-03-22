@@ -170,7 +170,7 @@ function FacturaCard({ factura, onView, onRegistrarPago, onAnular }: FacturaCard
 }
 
 export default function FacturasPage() {
-  const [filters, _setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<unknown>({});
 
   const { data: facturasData, isLoading } = useFacturas(filters);
 

@@ -58,8 +58,8 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     );
   }, [data, search, superadminId]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleImpersonate = async (userId: number, userItem: any) => {
+   
+  const handleImpersonate = async (userId: number, userItem: unknown) => {
     try {
       setLoading(userId);
       await startUserImpersonation(userId);

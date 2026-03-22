@@ -116,7 +116,7 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries y mutations
-  const { data, isLoading, error } = useEncuestas({ ...filters } as any);
+  const { data, isLoading, error } = useEncuestas({ ...filters } as unknown);
   const deleteMutation = useDeleteEncuesta();
   const activarMutation = useActivarEncuesta();
   const cerrarMutation = useCerrarEncuesta();

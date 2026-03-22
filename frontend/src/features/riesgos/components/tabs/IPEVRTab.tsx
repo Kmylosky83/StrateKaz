@@ -412,7 +412,7 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
             </div>
 
             <div className="space-y-3">
-              {Object.values(peligrosData).map((grupo: any) =>
+              {Object.values(peligrosData).map((grupo: unknown) =>
                 grupo.peligros?.map((peligro: PeligroGTC45) => (
                   <div key={peligro.id} className="p-4 border rounded-lg">
                     <div className="flex items-start justify-between gap-3">

@@ -74,12 +74,12 @@ const getEstadoInformeIcon = (estado: string) => {
 const PlantillasSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedPlantilla, setSelectedPlantilla] = useState<any>(null);
+  const [selectedPlantilla, setSelectedPlantilla] = useState<unknown>(null);
 
   const { data: plantillasData, isLoading } = usePlantillasInforme();
   const plantillas = plantillasData || [];
 
-  const handleEdit = (plantilla: any) => {
+  const handleEdit = (plantilla: unknown) => {
     setSelectedPlantilla(plantilla);
     setShowFormModal(true);
   };
@@ -533,8 +533,8 @@ const HistorialSection = () => {
 
   const stats = {
     total: historial.length,
-    exitosos: historial.filter((h: any) => h.estado === 'completado').length,
-    fallidos: historial.filter((h: any) => h.estado === 'error').length,
+    exitosos: historial.filter((h: unknown) => h.estado === 'completado').length,
+    fallidos: historial.filter((h: unknown) => h.estado === 'error').length,
   };
 
   return (
@@ -599,7 +599,7 @@ const HistorialSection = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {historial.map((item: any) => (
+                {historial.map((item: unknown) => (
                   <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                       {item.fecha_ejecucion || '-'}

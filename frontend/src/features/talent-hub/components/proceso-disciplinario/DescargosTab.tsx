@@ -118,7 +118,7 @@ export const DescargosTab = () => {
   const handleEmitirDecision = async () => {
     if (!emitirDecisionModal) return;
     const data: EmitirDecisionData = {
-      decision: decision as any,
+      decision: decision as unknown,
       justificacion_decision: justificacion,
     };
     await emitirMutation.mutateAsync({ id: emitirDecisionModal.id, data });

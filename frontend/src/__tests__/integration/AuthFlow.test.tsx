@@ -121,7 +121,7 @@ describe('Auth Store Login/Logout Flow', () => {
     it('should clear all auth state', () => {
       // Simulate an authenticated state
       useAuthStore.setState({
-        user: { id: 1, email: 'test@test.com' } as any,
+        user: { id: 1, email: 'test@test.com' } as unknown,
         accessToken: 'fake-access-token',
         refreshToken: 'fake-refresh-token',
         isAuthenticated: true,
@@ -167,7 +167,7 @@ describe('Auth Store Login/Logout Flow', () => {
         cargo_code: 'COORD',
         cargo_level: 2,
         permission_codes: ['mod.section.view'],
-      } as any;
+      } as unknown;
 
       useAuthStore.getState().setUser(mockUser);
       expect(useAuthStore.getState().user).toEqual(mockUser);
@@ -186,9 +186,9 @@ describe('Auth Store Login/Logout Flow', () => {
     });
 
     it('should clear impersonation on stopUserImpersonation', () => {
-      const originalUser = { id: 1, email: 'admin@test.com' } as any;
+      const originalUser = { id: 1, email: 'admin@test.com' } as unknown;
       useAuthStore.setState({
-        user: { id: 42, email: 'impersonated@test.com' } as any,
+        user: { id: 42, email: 'impersonated@test.com' } as unknown,
         originalUser,
         impersonatedUserId: 42,
         isImpersonating: true,
@@ -206,7 +206,7 @@ describe('Auth Store Login/Logout Flow', () => {
   describe('setCurrentTenantId', () => {
     it('should set tenant ID in state and localStorage', () => {
       useAuthStore.setState({
-        accessibleTenants: [{ tenant: { id: 5, name: 'Test Tenant' } } as any],
+        accessibleTenants: [{ tenant: { id: 5, name: 'Test Tenant' } } as unknown],
       });
 
       useAuthStore.getState().setCurrentTenantId(5);
@@ -228,8 +228,8 @@ describe('Auth Store Login/Logout Flow', () => {
     it('should clear all tenant and impersonation state', () => {
       useAuthStore.setState({
         currentTenantId: 1,
-        currentTenant: { id: 1, name: 'Test' } as any,
-        user: { id: 1 } as any,
+        currentTenant: { id: 1, name: 'Test' } as unknown,
+        user: { id: 1 } as unknown,
         isImpersonating: true,
         impersonatedUserId: 42,
       });

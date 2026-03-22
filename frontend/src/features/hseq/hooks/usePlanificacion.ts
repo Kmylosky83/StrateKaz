@@ -65,7 +65,7 @@ export interface ActividadPlan {
   costo_estimado?: number;
   costo_real?: number;
   porcentaje_avance: number;
-  evidencias: any[];
+  evidencias: unknown[];
   resultado_obtenido?: string;
   observaciones?: string;
   requiere_aprobacion: boolean;

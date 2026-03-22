@@ -352,13 +352,13 @@ export const EncuestaFormModal = ({
 
   // Options
   const analisisOptions =
-    analisisData?.results?.map((a: any) => ({
+    analisisData?.results?.map((a: unknown) => ({
       value: a.id.toString(),
       label: a.nombre,
     })) || [];
 
   const pestelOptions =
-    pestelData?.results?.map((a: any) => ({
+    pestelData?.results?.map((a: unknown) => ({
       value: a.id.toString(),
       label: a.nombre || a.titulo || `PESTEL #${a.id}`,
     })) || [];

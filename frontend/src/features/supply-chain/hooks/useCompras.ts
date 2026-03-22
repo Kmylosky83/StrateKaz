@@ -7,6 +7,7 @@ import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import comprasApi from '../api/comprasApi';
 import type { ApiError } from '@/types';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreateRequisicionDTO,
   UpdateRequisicionDTO,
@@ -187,7 +188,7 @@ export function useCreateRequisicion() {
       toast.success('Requisición creada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear requisición');
+      toast.error(getApiErrorMessage(error, 'Error al crear requisición'));
     },
   });
 }
@@ -205,7 +206,7 @@ export function useUpdateRequisicion() {
       toast.success('Requisición actualizada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar requisición');
+      toast.error(getApiErrorMessage(error, 'Error al actualizar requisición'));
     },
   });
 }
@@ -221,7 +222,7 @@ export function useDeleteRequisicion() {
       toast.success('Requisición eliminada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar requisición');
+      toast.error(getApiErrorMessage(error, 'Error al eliminar requisición'));
     },
   });
 }
@@ -239,7 +240,7 @@ export function useAprobarRequisicion() {
       toast.success('Requisición aprobada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar requisición');
+      toast.error(getApiErrorMessage(error, 'Error al aprobar requisición'));
     },
   });
 }
@@ -257,7 +258,7 @@ export function useRechazarRequisicion() {
       toast.success('Requisición rechazada');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al rechazar requisición');
+      toast.error(getApiErrorMessage(error, 'Error al rechazar requisición'));
     },
   });
 }
@@ -297,7 +298,7 @@ export function useCreateCotizacion() {
       toast.success('Cotización creada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear cotización');
+      toast.error(getApiErrorMessage(error, 'Error al crear cotización'));
     },
   });
 }
@@ -315,7 +316,7 @@ export function useUpdateCotizacion() {
       toast.success('Cotización actualizada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar cotización');
+      toast.error(getApiErrorMessage(error, 'Error al actualizar cotización'));
     },
   });
 }
@@ -331,7 +332,7 @@ export function useDeleteCotizacion() {
       toast.success('Cotización eliminada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar cotización');
+      toast.error(getApiErrorMessage(error, 'Error al eliminar cotización'));
     },
   });
 }
@@ -349,7 +350,7 @@ export function useEvaluarCotizacion() {
       toast.success('Cotización evaluada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al evaluar cotización');
+      toast.error(getApiErrorMessage(error, 'Error al evaluar cotización'));
     },
   });
 }
@@ -367,7 +368,7 @@ export function useSeleccionarCotizacion() {
       toast.success('Cotización seleccionada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al seleccionar cotización');
+      toast.error(getApiErrorMessage(error, 'Error al seleccionar cotización'));
     },
   });
 }
@@ -408,7 +409,7 @@ export function useCreateOrdenCompra() {
       toast.success('Orden de compra creada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear orden de compra');
+      toast.error(getApiErrorMessage(error, 'Error al crear orden de compra'));
     },
   });
 }
@@ -426,7 +427,7 @@ export function useUpdateOrdenCompra() {
       toast.success('Orden de compra actualizada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar orden de compra');
+      toast.error(getApiErrorMessage(error, 'Error al actualizar orden de compra'));
     },
   });
 }
@@ -442,7 +443,7 @@ export function useDeleteOrdenCompra() {
       toast.success('Orden de compra eliminada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar orden de compra');
+      toast.error(getApiErrorMessage(error, 'Error al eliminar orden de compra'));
     },
   });
 }
@@ -467,7 +468,7 @@ export function useRecepcionarOrdenCompra() {
       toast.success('Recepción registrada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar recepción');
+      toast.error(getApiErrorMessage(error, 'Error al registrar recepción'));
     },
   });
 }
@@ -507,7 +508,7 @@ export function useCreateContrato() {
       toast.success('Contrato creado exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear contrato');
+      toast.error(getApiErrorMessage(error, 'Error al crear contrato'));
     },
   });
 }
@@ -525,7 +526,7 @@ export function useUpdateContrato() {
       toast.success('Contrato actualizado exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar contrato');
+      toast.error(getApiErrorMessage(error, 'Error al actualizar contrato'));
     },
   });
 }
@@ -541,7 +542,7 @@ export function useDeleteContrato() {
       toast.success('Contrato eliminado exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar contrato');
+      toast.error(getApiErrorMessage(error, 'Error al eliminar contrato'));
     },
   });
 }
@@ -603,7 +604,7 @@ export function useCreateRecepcionCompra() {
       toast.success('Recepción de compra creada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear recepción');
+      toast.error(getApiErrorMessage(error, 'Error al crear recepción'));
     },
   });
 }
@@ -621,7 +622,7 @@ export function useUpdateRecepcionCompra() {
       toast.success('Recepción actualizada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar recepción');
+      toast.error(getApiErrorMessage(error, 'Error al actualizar recepción'));
     },
   });
 }
@@ -638,7 +639,7 @@ export function useDeleteRecepcionCompra() {
       toast.success('Recepción eliminada exitosamente');
     },
     onError: (error: AxiosError<ApiError>) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar recepción');
+      toast.error(getApiErrorMessage(error, 'Error al eliminar recepción'));
     },
   });
 }

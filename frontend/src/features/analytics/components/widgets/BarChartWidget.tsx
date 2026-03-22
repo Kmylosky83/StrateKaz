@@ -85,11 +85,11 @@ function BarChartWidget({ widget }: Props) {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      formatter: (params: any) => {
+      formatter: (params: unknown) => {
         if (!Array.isArray(params)) return '';
         const date = params[0]?.axisValue || '';
         let content = `<strong>${date}</strong><br/>`;
-        params.forEach((param: any) => {
+        params.forEach((param: unknown) => {
           const value = param.value !== null ? param.value.toFixed(2) : 'N/A';
           content += `${param.marker} ${param.seriesName}: ${value}<br/>`;
         });
@@ -121,7 +121,7 @@ function BarChartWidget({ widget }: Props) {
         type: 'bar',
         data: valoresData,
         itemStyle: {
-          color: (params: any) => barColors[params.dataIndex] || chartColors.bar,
+          color: (params: unknown) => barColors[params.dataIndex] || chartColors.bar,
           borderRadius: [4, 4, 0, 0],
         },
         barMaxWidth: 40,

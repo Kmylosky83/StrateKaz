@@ -10,7 +10,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import {
@@ -350,7 +350,7 @@ export default function MiPortalPage() {
   // Perfil del colaborador — no disparar para superadmins (nunca tienen Colaborador)
   const { data: perfil, isLoading: perfilLoading } = useMiPerfil(!isSuperAdmin);
   const { isExterno } = useIsExterno();
-  const hasPerfil = !!perfil;
+  const _hasPerfil = !!perfil;
 
   // Greeting
   const { text: greetingText, Icon: GreetingIcon } = getGreeting();

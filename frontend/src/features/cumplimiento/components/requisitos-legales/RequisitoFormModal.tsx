@@ -119,7 +119,7 @@ export const RequisitoFormModal = ({
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setFormData({ ...formData, documento_soporte: file as any });
+      setFormData({ ...formData, documento_soporte: file as unknown });
     }
   };
 
@@ -131,7 +131,7 @@ export const RequisitoFormModal = ({
     try {
       const submitData = { ...formData };
       if (selectedFile) {
-        submitData.documento_soporte = selectedFile as any;
+        submitData.documento_soporte = selectedFile as unknown;
       }
 
       if (isEditing && requisito) {
@@ -140,7 +140,7 @@ export const RequisitoFormModal = ({
         await createMutation.mutateAsync(submitData);
       }
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al guardar requisito:', error);
     }
   };

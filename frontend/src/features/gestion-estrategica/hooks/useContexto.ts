@@ -828,7 +828,7 @@ export function useConvertirEstrategiaObjetivo() {
         }
       );
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage =
         error?.response?.data?.error ||
         error?.message ||

@@ -406,7 +406,7 @@ export const simulacroApi = {
     await apiClient.delete(`${BASE_URL}/simulacros/${id}/`);
   },
 
-  programarSimulacro: async (data: any): Promise<Simulacro> => {
+  programarSimulacro: async (data: Record<string, unknown>): Promise<Simulacro> => {
     const response = await apiClient.post(`${BASE_URL}/simulacros/programar-simulacro/`, data);
     return response.data;
   },
@@ -424,7 +424,7 @@ export const simulacroApi = {
     return response.data;
   },
 
-  registrarEvaluacion: async (data: any): Promise<EvaluacionSimulacro> => {
+  registrarEvaluacion: async (data: Record<string, unknown>): Promise<EvaluacionSimulacro> => {
     const response = await apiClient.post(`${BASE_URL}/simulacros/registrar-evaluacion/`, data);
     return response.data;
   },
@@ -450,12 +450,12 @@ export const evaluacionSimulacroApi = {
     return response.data;
   },
 
-  create: async (data: any): Promise<EvaluacionSimulacro> => {
+  create: async (data: Record<string, unknown>): Promise<EvaluacionSimulacro> => {
     const response = await apiClient.post(`${BASE_URL}/evaluaciones-simulacros/`, data);
     return response.data;
   },
 
-  update: async (id: number, data: any): Promise<EvaluacionSimulacro> => {
+  update: async (id: number, data: unknown): Promise<EvaluacionSimulacro> => {
     const response = await apiClient.patch(`${BASE_URL}/evaluaciones-simulacros/${id}/`, data);
     return response.data;
   },

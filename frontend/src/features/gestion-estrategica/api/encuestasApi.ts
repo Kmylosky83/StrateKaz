@@ -225,7 +225,7 @@ export const preguntasContextoApi = {
     const response = await apiClient.get<PreguntaContexto[]>(
       `${BASE_URL}/preguntas-contexto/${query ? `?${query}` : ''}`
     );
-    return Array.isArray(response.data) ? response.data : ((response.data as any)?.results ?? []);
+    return Array.isArray(response.data) ? response.data : ((response.data as unknown)?.results ?? []);
   },
 };
 

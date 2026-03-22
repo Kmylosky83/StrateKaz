@@ -85,11 +85,11 @@ function LineChartWidget({ widget }: Props) {
   const option: EChartsOption = {
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => {
+      formatter: (params: unknown) => {
         if (!Array.isArray(params)) return '';
         const date = params[0]?.axisValue || '';
         let content = `<strong>${date}</strong><br/>`;
-        params.forEach((param: any) => {
+        params.forEach((param: unknown) => {
           const value = param.value !== null ? param.value.toFixed(2) : 'N/A';
           content += `${param.marker} ${param.seriesName}: ${value}<br/>`;
         });
@@ -123,7 +123,7 @@ function LineChartWidget({ widget }: Props) {
         smooth: true,
         lineStyle: { color: chartColors.line, width: 2 },
         itemStyle: {
-          color: (params: any) => pointColors[params.dataIndex] || chartColors.primary,
+          color: (params: unknown) => pointColors[params.dataIndex] || chartColors.primary,
         },
         areaStyle: {
           color: {

@@ -41,7 +41,7 @@ describe('useDynamicTheme Hook', () => {
       pwaIcon192: '',
       pwaIcon512: '',
       pwaThemeColor: '',
-    } as any);
+    } as unknown);
   });
 
   afterEach(() => {
@@ -79,7 +79,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as any);
+      } as unknown);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -112,7 +112,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as any);
+      } as unknown);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -147,7 +147,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as any);
+      } as unknown);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -180,7 +180,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as any);
+      } as unknown);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -217,7 +217,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as any);
+      } as unknown);
 
       renderHook(() => useDynamicTheme());
       expect(document.title).toBe('Mi Empresa SAS');

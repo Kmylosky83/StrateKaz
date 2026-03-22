@@ -4,7 +4,7 @@
  * Contiene: Formas de Pago.
  */
 import { useState, useMemo } from 'react';
-import { Wallet, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Wallet, Pencil, Trash2 } from 'lucide-react';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
 import { Badge } from '@/components/common/Badge';

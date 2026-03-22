@@ -35,7 +35,7 @@ export const useCreateUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario creado exitosamente');
     },
-    onError: (_error: any) => {
+    onError: (_error: unknown) => {
       const message = error.response?.data?.message || 'Error al crear el usuario';
       toast.error(message);
     },
@@ -68,7 +68,7 @@ export const useUpdateUser = () => {
 
       toast.success('Usuario actualizado exitosamente');
     },
-    onError: (_error: any) => {
+    onError: (_error: unknown) => {
       const message = error.response?.data?.message || 'Error al actualizar el usuario';
       toast.error(message);
     },
@@ -86,7 +86,7 @@ export const useDeleteUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario eliminado exitosamente');
     },
-    onError: (_error: any) => {
+    onError: (_error: unknown) => {
       const message = error.response?.data?.message || 'Error al eliminar el usuario';
       toast.error(message);
     },
@@ -105,7 +105,7 @@ export const useToggleUserStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Estado del usuario actualizado');
     },
-    onError: (_error: any) => {
+    onError: (_error: unknown) => {
       toast.error('Error al cambiar el estado del usuario');
     },
   });
@@ -125,7 +125,7 @@ export const useChangePassword = () => {
     onSuccess: () => {
       toast.success('Contraseña cambiada exitosamente');
     },
-    onError: (_error: any) => {
+    onError: (_error: unknown) => {
       const message = error.response?.data?.message || 'Error al cambiar la contraseña';
       toast.error(message);
     },
@@ -158,7 +158,7 @@ export const useUsersByCargoCode = (cargoCode?: string, enabled: boolean = true)
 export const useUsersByPermission = (permission: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: ['users', { has_permission: permission }],
-    queryFn: () => usersAPI.getUsers({ has_permission: permission } as any),
+    queryFn: () => usersAPI.getUsers({ has_permission: permission } as unknown),
     enabled: enabled && !!permission,
   });
 };

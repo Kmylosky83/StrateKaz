@@ -48,7 +48,7 @@ export default function TipoAgenteFormModal({ item, isOpen, onClose }: TipoAgent
     }
   }, [item]);
 
-  const handleChange = (field: keyof CreateTipoAgenteDTO, value: any) => {
+  const handleChange = (field: keyof CreateTipoAgenteDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

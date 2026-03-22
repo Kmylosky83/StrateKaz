@@ -18,7 +18,8 @@ import {
   useMarcarTodasLeidas,
   useArchivarNotificacion,
 } from '../hooks/useNotificaciones';
-import { NotificacionDetailModal, getCategoriaIcon, getCategoriaColor } from './notificacion-utils';
+import { NotificacionDetailModal } from './notificacion-utils';
+import { getCategoriaIcon, getCategoriaColor } from './notificacion-helpers';
 import type { Notificacion } from '../types/notificaciones.types';
 
 export function BandejaNotificaciones() {

@@ -37,7 +37,7 @@ export const useUpdatePreferences = () => {
       queryClient.setQueryData(['user-preferences'], data);
       toast.success('Preferencias actualizadas correctamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.detail || 'Error al actualizar preferencias';
       toast.error(message);
     },
@@ -56,7 +56,7 @@ export const usePatchPreferences = () => {
       queryClient.setQueryData(['user-preferences'], data);
       toast.success('Preferencias actualizadas correctamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.detail || 'Error al actualizar preferencias';
       toast.error(message);
     },

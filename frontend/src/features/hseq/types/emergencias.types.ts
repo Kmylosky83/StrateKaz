@@ -212,7 +212,7 @@ export interface PlanEmergencia {
   descripcion_instalaciones: string;
   numero_personas: number;
   horarios_operacion: string;
-  contactos_emergencia: Record<string, any>;
+  contactos_emergencia: Record<string, unknown>;
   documento_plan: string | null;
   estado: EstadoPlanEmergencia;
   fecha_aprobacion: string | null;
@@ -291,8 +291,8 @@ export interface PlanoEvacuacion {
   descripcion: string;
   capacidad_personas: number;
   numero_rutas: number;
-  rutas_detalle: any[];
-  puntos_encuentro: any[];
+  rutas_detalle: unknown[];
+  puntos_encuentro: unknown[];
   punto_encuentro_principal: string;
   punto_encuentro_alterno: string;
   salidas_emergencia: number;
@@ -696,7 +696,7 @@ export interface CreatePlanEmergenciaDTO {
   descripcion_instalaciones?: string;
   numero_personas?: number;
   horarios_operacion?: string;
-  contactos_emergencia?: Record<string, any>;
+  contactos_emergencia?: Record<string, unknown>;
 }
 
 export interface CreateProcedimientoEmergenciaDTO {
@@ -730,8 +730,8 @@ export interface CreatePlanoEvacuacionDTO {
   descripcion?: string;
   capacidad_personas?: number;
   numero_rutas?: number;
-  rutas_detalle?: any[];
-  puntos_encuentro?: any[];
+  rutas_detalle?: unknown[];
+  puntos_encuentro?: unknown[];
   punto_encuentro_principal?: string;
   punto_encuentro_alterno?: string;
   salidas_emergencia?: number;

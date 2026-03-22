@@ -167,7 +167,7 @@ export default function EncuestaPublicaPage() {
   }, []);
 
   const enc = encuesta as EncuestaPublicaType | undefined;
-  const temas = enc?.temas || [];
+  const temas = useMemo(() => enc?.temas || [], [enc?.temas]);
 
   // Keyboard navigation: Enter/→ = siguiente, ←/Escape = anterior
   useEffect(() => {

@@ -328,7 +328,7 @@ const VistaDashboardFormModal = ({ isOpen, onClose, vista }: VistaDashboardFormM
           <Select
             label="Perspectiva BSC"
             value={formData.perspectiva}
-            onChange={(e) => setFormData({ ...formData, perspectiva: e.target.value as any })}
+            onChange={(e) => setFormData({ ...formData, perspectiva: e.target.value as unknown })}
             options={[
               { value: 'general', label: 'General' },
               { value: 'financiera', label: 'Financiera' },
@@ -340,7 +340,7 @@ const VistaDashboardFormModal = ({ isOpen, onClose, vista }: VistaDashboardFormM
           <Select
             label="Categoría"
             value={formData.categoria}
-            onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
+            onChange={(e) => setFormData({ ...formData, categoria: e.target.value as unknown })}
             options={[
               { value: '', label: 'Todas' },
               { value: 'sst', label: 'SST' },

@@ -84,8 +84,8 @@ export default function SeguridadInformacionPage() {
     return Array.isArray(incidentesData) ? incidentesData : (incidentesData?.results ?? []);
   }, [incidentesData]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const statsData = estadisticas as Record<string, any> | undefined;
+   
+  const statsData = estadisticas as Record<string, unknown> | undefined;
 
   const stats: StatItem[] = useMemo(
     () => [

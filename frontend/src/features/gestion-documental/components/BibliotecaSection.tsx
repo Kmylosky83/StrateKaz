@@ -4,7 +4,7 @@
  * Botón "Importar" copia la plantilla al tenant actual.
  */
 import { useState } from 'react';
-import { BookOpen, Download, Search, Filter } from 'lucide-react';
+import { BookOpen, Download, Search } from 'lucide-react';
 import { Card, Button, Badge, Spinner, EmptyState } from '@/components/common';
 import { Input, Select } from '@/components/forms';
 import { useBibliotecaPlantillas, useImportarPlantilla } from '../hooks/useGestionDocumental';

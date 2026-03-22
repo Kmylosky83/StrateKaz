@@ -210,7 +210,7 @@ export const tenantsApi = {
     }
 
     // Si es objeto normal, procesar como antes
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { code, subdomain, ...rest } = data as CreateTenantDTO & {
       code?: string;
       subdomain?: string;

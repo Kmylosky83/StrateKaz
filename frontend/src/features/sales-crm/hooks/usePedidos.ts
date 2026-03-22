@@ -5,9 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { pedidosApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type { CreatePedidoDTO, UpdatePedidoDTO, AprobarPedidoDTO, CancelarPedidoDTO } from '../types';
 
-export function usePedidos(params?: any) {
+export function usePedidos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.pedidosFiltered(params) : salesCRMKeys.pedidos(),
     queryFn: () => pedidosApi.getAll(params),
@@ -31,8 +32,8 @@ export function useCreatePedido() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pedidos() });
       toast.success('Pedido creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear pedido');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear pedido'));
     },
   });
 }
@@ -48,8 +49,8 @@ export function useUpdatePedido() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pedidoById(id) });
       toast.success('Pedido actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar pedido');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar pedido'));
     },
   });
 }
@@ -65,8 +66,8 @@ export function useAprobarPedido() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pedidoById(id) });
       toast.success('Pedido aprobado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar pedido');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al aprobar pedido'));
     },
   });
 }
@@ -82,8 +83,8 @@ export function useCancelarPedido() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pedidoById(id) });
       toast.success('Pedido cancelado');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cancelar pedido');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al cancelar pedido'));
     },
   });
 }
@@ -98,8 +99,8 @@ export function useGenerarFactura() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.facturas() });
       toast.success('Factura generada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al generar factura');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al generar factura'));
     },
   });
 }

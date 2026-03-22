@@ -232,7 +232,7 @@ export default function AnalyticsPage() {
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {kpiSummary.slice(0, 6).map((item: any) => {
+              {kpiSummary.slice(0, 6).map((item: unknown) => {
                 const kpi = item.kpi || item;
                 const ultimoValor = item.ultimo_valor?.valor_numerico ?? item.ultimo_valor ?? 0;
                 const meta = item.meta_actual?.meta_esperada ?? item.meta ?? 0;

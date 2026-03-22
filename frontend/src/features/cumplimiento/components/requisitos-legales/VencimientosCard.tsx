@@ -185,7 +185,7 @@ export const VencimientosCard = ({ requisitos, onRequisitoClick }: VencimientosC
 
                       <div className="text-right">
                         <Badge
-                          variant={color as any}
+                          variant={color as unknown}
                           size="sm"
                           className="whitespace-nowrap mb-1"
                         >

@@ -31,7 +31,7 @@ interface NivelFidelizacion {
   color: string;
   puntosMinimos: number;
   puntosMaximos: number;
-  icon: any;
+  icon: unknown;
 }
 
 const NIVELES: NivelFidelizacion[] = [
@@ -184,7 +184,7 @@ function ClienteFidelizacionCard({
 }
 
 export default function FidelizacionPage() {
-  const [filters, _setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<unknown>({});
 
   const { data: puntosData, isLoading } = usePuntosFidelizacion(filters);
 

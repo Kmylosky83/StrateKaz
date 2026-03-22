@@ -145,7 +145,7 @@ function EncuestaCard({ encuesta, onView, onEnviar }: EncuestaCardProps) {
 }
 
 export default function EncuestasPage() {
-  const [filters, _setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<unknown>({});
 
   const { data: encuestasData, isLoading: isLoadingEncuestas } = useEncuestas(filters);
   const { data: npsDashboard, isLoading: isLoadingNPS } = useNPSDashboard();

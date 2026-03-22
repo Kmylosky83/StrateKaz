@@ -158,7 +158,7 @@ export const ReglamentoFormModal = ({
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      setFormData({ ...formData, documento: file as any });
+      setFormData({ ...formData, documento: file as unknown });
     }
   };
 
@@ -170,7 +170,7 @@ export const ReglamentoFormModal = ({
     try {
       const submitData = { ...formData };
       if (selectedFile) {
-        submitData.documento = selectedFile as any;
+        submitData.documento = selectedFile as unknown;
       }
 
       if (isEditing && reglamento) {
@@ -179,7 +179,7 @@ export const ReglamentoFormModal = ({
         await createMutation.mutateAsync(submitData);
       }
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al guardar reglamento:', error);
     }
   };

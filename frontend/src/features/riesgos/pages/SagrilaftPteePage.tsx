@@ -85,8 +85,8 @@ export default function SagrilaftPteePage() {
     return Array.isArray(diligenciasData) ? diligenciasData : (diligenciasData?.results ?? []);
   }, [diligenciasData]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const resumenData = resumen as Record<string, any> | undefined;
+   
+  const resumenData = resumen as Record<string, unknown> | undefined;
 
   const stats: StatItem[] = useMemo(
     () => [

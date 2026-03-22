@@ -127,7 +127,7 @@ export const MatrizLegalTab = ({ activeSection: _activeSection }: MatrizLegalTab
   const handleEdit = (norma: NormaLegalList) => {
     // Necesitamos el objeto completo, por ahora usamos el de la lista
     // En producción, hacer una llamada para obtener el detalle completo
-    setSelectedNorma(norma as any);
+    setSelectedNorma(norma as unknown);
     setShowFormModal(true);
   };
 

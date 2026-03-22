@@ -7,6 +7,7 @@
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import { authAPI } from '@/api/auth.api';
 import { useAuthStore } from '@/store/authStore';
 
@@ -23,11 +24,17 @@ export const useUploadPhoto = () => {
       queryClient.invalidateQueries({ queryKey: ['mi-portal', 'perfil'] });
       toast.success('Foto de perfil actualizada exitosamente');
     },
-    onError: (error: any) => {
-      const errorMessage =
-        error?.response?.data?.photo?.[0] ||
-        error?.response?.data?.detail ||
-        'Error al subir la foto de perfil';
+    onError: (error: unknown) => {
+      let errorMessage = 'Error al subir la foto de perfil';
+      if (error instanceof AxiosError && error.response?.data) {
+        const data = error.response.data as Record<string, unknown>;
+        const photo = data.photo;
+        if (Array.isArray(photo) && typeof photo[0] === 'string') {
+          errorMessage = photo[0];
+        } else if (typeof data.detail === 'string') {
+          errorMessage = data.detail;
+        }
+      }
       toast.error(errorMessage);
     },
   });

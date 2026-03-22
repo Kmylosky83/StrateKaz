@@ -597,7 +597,7 @@ export const spinnerVariants: Variants = {
 
 /** Indicador de tab activo */
 export const tabIndicatorVariants: Variants = {
-  initial: false as any,
+  initial: false as unknown,
   animate: {
     transition: {
       type: 'spring',
@@ -759,7 +759,7 @@ export const isLowPerformanceDevice = (): boolean => {
   if (typeof window === 'undefined') return false;
   const lowCores = navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false;
   const smallScreen = window.innerWidth < 768;
-  const lowMemory = (navigator as any).deviceMemory ? (navigator as any).deviceMemory < 4 : false;
+  const lowMemory = (navigator as unknown).deviceMemory ? (navigator as unknown).deviceMemory < 4 : false;
   return lowCores || smallScreen || lowMemory;
 };
 

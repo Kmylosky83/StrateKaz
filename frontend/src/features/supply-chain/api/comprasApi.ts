@@ -32,7 +32,7 @@ import type {
 const BASE_URL = '/supply-chain/compras';
 
 const requisicionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<RequisicionList>>(`${BASE_URL}/requisiciones/`, { params }),
   getById: (id: number) => apiClient.get<Requisicion>(`${BASE_URL}/requisiciones/${id}/`),
   create: (data: CreateRequisicionDTO) =>
@@ -46,7 +46,7 @@ const requisicionApi = {
 };
 
 const cotizacionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<CotizacionList>>(`${BASE_URL}/cotizaciones/`, { params }),
   getById: (id: number) => apiClient.get<Cotizacion>(`${BASE_URL}/cotizaciones/${id}/`),
   create: (data: CreateCotizacionDTO) =>
@@ -61,7 +61,7 @@ const cotizacionApi = {
 };
 
 const ordenCompraApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<OrdenCompraList>>(`${BASE_URL}/ordenes-compra/`, { params }),
   getById: (id: number) => apiClient.get<OrdenCompra>(`${BASE_URL}/ordenes-compra/${id}/`),
   create: (data: CreateOrdenCompraDTO) =>
@@ -73,7 +73,7 @@ const ordenCompraApi = {
 };
 
 const contratoApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<ContratoList>>(`${BASE_URL}/contratos/`, { params }),
   getById: (id: number) => apiClient.get<Contrato>(`${BASE_URL}/contratos/${id}/`),
   create: (data: CreateContratoDTO) => apiClient.post<Contrato>(`${BASE_URL}/contratos/`, data),
@@ -86,7 +86,7 @@ const contratoApi = {
 };
 
 const recepcionApi = {
-  getAll: (params?: Record<string, any>) =>
+  getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PaginatedResponse<RecepcionCompraList>>(`${BASE_URL}/recepciones/`, { params }),
   getById: (id: number) => apiClient.get<RecepcionCompra>(`${BASE_URL}/recepciones/${id}/`),
   create: (data: CreateRecepcionCompraDTO) =>

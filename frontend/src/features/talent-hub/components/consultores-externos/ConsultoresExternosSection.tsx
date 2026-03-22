@@ -6,7 +6,7 @@
  * Muestra consultores y contratistas externos vinculados a la organización.
  */
 import { useState, useMemo } from 'react';
-import { UserCog, Users, UserCheck, UserX, Building2, User, Power } from 'lucide-react';
+import { UserCog, Users, UserCheck, Building2, User, Power } from 'lucide-react';
 import { Badge, Card, EmptyState, SectionHeader, ResponsiveTable } from '@/components/common';
 import type { ResponsiveTableColumn } from '@/components/common';
 import { StatsGrid } from '@/components/layout';
@@ -78,7 +78,7 @@ export const ConsultoresExternosSection = () => {
   const toggleMutation = useToggleConsultorActivo();
 
   // Cargo options for filter
-  const cargoOptions = useMemo(() => {
+  const _cargoOptions = useMemo(() => {
     const options = [{ value: '', label: 'Todos los cargos' }];
     if (cargosData) {
       cargosData.forEach((c) => options.push({ value: String(c.id), label: c.label }));

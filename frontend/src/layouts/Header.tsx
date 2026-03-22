@@ -9,7 +9,7 @@
  *   - Tenant: Busqueda + Notificaciones + Tema + UserMenu completo
  */
 import { useState, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Bell, Moon, Sun, Search, LogOut } from 'lucide-react';
 import NotificationPanel from '@/features/audit-system/components/NotificationPanel';
 import { useThemeStore } from '@/store/themeStore';
@@ -38,7 +38,6 @@ export const Header = ({
   isMobileMenuOpen = false,
   impersonationOffset = false,
 }: HeaderProps) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useThemeStore();
   const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();

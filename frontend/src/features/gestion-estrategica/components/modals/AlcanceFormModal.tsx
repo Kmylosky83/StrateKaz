@@ -11,7 +11,6 @@ import { Target, MapPin, Workflow, AlertTriangle, Check } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Textarea } from '@/components/forms/Textarea';
-import { Switch } from '@/components/forms/Switch';
 import { useUpdateIdentity } from '../../hooks/useStrategic';
 import { useAreas } from '../../hooks/useAreas';
 import type { CorporateIdentity } from '../../types/strategic.types';

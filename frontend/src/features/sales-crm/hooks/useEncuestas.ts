@@ -5,9 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { encuestasApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type { CreateEncuestaDTO, UpdateEncuestaDTO, ResponderEncuestaDTO } from '../types';
 
-export function useEncuestas(params?: any) {
+export function useEncuestas(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.encuestasFiltered(params) : salesCRMKeys.encuestas(),
     queryFn: () => encuestasApi.getAll(params),
@@ -38,8 +39,8 @@ export function useCreateEncuesta() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.encuestas() });
       toast.success('Encuesta creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear encuesta');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear encuesta'));
     },
   });
 }
@@ -55,8 +56,8 @@ export function useUpdateEncuesta() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.encuestaById(id) });
       toast.success('Encuesta actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar encuesta');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar encuesta'));
     },
   });
 }
@@ -70,8 +71,8 @@ export function useEnviarEncuesta() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.encuestas() });
       toast.success('Encuesta enviada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al enviar encuesta');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al enviar encuesta'));
     },
   });
 }
@@ -88,8 +89,8 @@ export function useResponderEncuesta() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.npsDashboard() });
       toast.success('Encuesta respondida exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al responder encuesta');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al responder encuesta'));
     },
   });
 }

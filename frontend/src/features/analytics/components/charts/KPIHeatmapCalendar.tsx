@@ -144,7 +144,7 @@ export function KPIHeatmapCalendar({
         borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
         textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const date = params.data[0];
           const value = params.data[1];
           const formattedDate = format(parseISO(date), "EEEE d 'de' MMMM, yyyy", { locale: es });
@@ -231,7 +231,7 @@ export function KPIHeatmapCalendar({
     };
   }, [processedData, year, title, colorScheme, valueLabel, unit, showMonthLabels, showDayLabels]);
 
-  const handleChartClick = (params: any) => {
+  const handleChartClick = (params: unknown) => {
     if (onDayClick && params.data) {
       onDayClick(params.data[0], params.data[1]);
     }

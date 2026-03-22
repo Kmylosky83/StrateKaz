@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cotizacionesApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreateCotizacionDTO,
   UpdateCotizacionDTO,
@@ -12,7 +13,7 @@ import type {
   RechazarCotizacionDTO,
 } from '../types';
 
-export function useCotizaciones(params?: any) {
+export function useCotizaciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.cotizacionesFiltered(params) : salesCRMKeys.cotizaciones(),
     queryFn: () => cotizacionesApi.getAll(params),
@@ -36,8 +37,8 @@ export function useCreateCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizaciones() });
       toast.success('Cotización creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear cotización'));
     },
   });
 }
@@ -53,8 +54,8 @@ export function useUpdateCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizacionById(id) });
       toast.success('Cotización actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar cotización'));
     },
   });
 }
@@ -68,8 +69,8 @@ export function useDeleteCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizaciones() });
       toast.success('Cotización eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar cotización'));
     },
   });
 }
@@ -85,8 +86,8 @@ export function useAprobarCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizacionById(id) });
       toast.success('Cotización aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al aprobar cotización'));
     },
   });
 }
@@ -102,8 +103,8 @@ export function useRechazarCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizacionById(id) });
       toast.success('Cotización rechazada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al rechazar cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al rechazar cotización'));
     },
   });
 }
@@ -117,8 +118,8 @@ export function useClonarCotizacion() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizaciones() });
       toast.success('Cotización clonada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al clonar cotización');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al clonar cotización'));
     },
   });
 }
@@ -133,8 +134,8 @@ export function useConvertirAPedido() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pedidos() });
       toast.success('Pedido generado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al convertir a pedido');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al convertir a pedido'));
     },
   });
 }

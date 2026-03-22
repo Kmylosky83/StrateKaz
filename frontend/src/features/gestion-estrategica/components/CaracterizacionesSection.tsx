@@ -66,7 +66,10 @@ export const CaracterizacionesSection = () => {
   const { data: caracterizacionesData, isLoading, error } = useCaracterizaciones();
   const deleteMutation = useDeleteCaracterizacion();
 
-  const items = Array.isArray(caracterizacionesData) ? caracterizacionesData : [];
+  const items = useMemo(
+    () => (Array.isArray(caracterizacionesData) ? caracterizacionesData : []),
+    [caracterizacionesData]
+  );
 
   // StatsGrid
   const stats: StatItem[] = useMemo(() => {

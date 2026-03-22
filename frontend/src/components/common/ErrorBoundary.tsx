@@ -119,7 +119,7 @@ function ErrorFallback({
   onReset,
   onReload,
 }: ErrorFallbackProps): JSX.Element {
-  const isDev = import.meta.env.DEV;
+  const _isDev = import.meta.env.DEV;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">

@@ -267,7 +267,7 @@ export const ConvertirObjetivoModal = ({
             className={cn('p-4 rounded-lg border-2', towsConfig.bgClass, towsConfig.borderClass)}
           >
             <div className="flex items-start justify-between mb-2">
-              <Badge variant={towsConfig.color as any} size="lg">
+              <Badge variant={towsConfig.color as unknown} size="lg">
                 {towsConfig.label}
               </Badge>
               {estrategia.prioridad && (

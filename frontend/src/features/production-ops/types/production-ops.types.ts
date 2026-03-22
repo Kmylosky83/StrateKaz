@@ -673,8 +673,8 @@ export interface Calibracion {
   incertidumbre_medicion: string | null;
 
   // Valores
-  valores_antes: Record<string, any>;
-  valores_despues: Record<string, any>;
+  valores_antes: Record<string, unknown>;
+  valores_despues: Record<string, unknown>;
 
   // Documentación
   certificado_url: string;
@@ -973,7 +973,7 @@ export interface CertificadoCalidad {
   fecha_vencimiento: string | null;
 
   // Parámetros
-  parametros_certificados: Record<string, any>;
+  parametros_certificados: Record<string, unknown>;
 
   observaciones: string;
 
@@ -1144,8 +1144,8 @@ export interface CreateCalibracionDTO {
   responsable: number;
   patron_utilizado?: string;
   incertidumbre_medicion?: string;
-  valores_antes?: Record<string, any>;
-  valores_despues?: Record<string, any>;
+  valores_antes?: Record<string, unknown>;
+  valores_despues?: Record<string, unknown>;
   certificado_url?: string;
   observaciones?: string;
 }
@@ -1201,7 +1201,7 @@ export interface CreateCertificadoCalidadDTO {
   liberacion: number;
   cliente_nombre: string;
   emitido_por: number;
-  parametros_certificados?: Record<string, any>;
+  parametros_certificados?: Record<string, unknown>;
   fecha_vencimiento?: string;
   observaciones?: string;
 }

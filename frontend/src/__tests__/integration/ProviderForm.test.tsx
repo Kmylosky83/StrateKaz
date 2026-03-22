@@ -5,7 +5,7 @@ import { renderWithProviders as render } from '../utils/test-utils';
 import { mockProveedor, mockApiResponse } from '../setup/mocks';
 
 // This is a placeholder - replace with actual component import when testing
-const MockProviderForm = ({ onSubmit }: { onSubmit: (data: any) => void }) => (
+const MockProviderForm = ({ onSubmit }: { onSubmit: (data: Record<string, unknown>) => void }) => (
   <form
     onSubmit={(e) => {
       e.preventDefault();

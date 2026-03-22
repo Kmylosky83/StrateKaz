@@ -435,7 +435,7 @@ const MapaCanvasInner = ({
         {showMinimap && (
           <MiniMap
             nodeColor={(node) => {
-              const data = node.data as any;
+              const data = node.data as unknown;
               if (data?.perspectiveConfig?.color) {
                 const colorMap: Record<string, string> = {
                   green: '#22c55e',

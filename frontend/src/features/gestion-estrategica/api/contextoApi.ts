@@ -661,7 +661,7 @@ export const estrategiasTowsApi = {
     }
   ): Promise<{
     message: string;
-    objetivo: any; // Tipo del objetivo estratégico
+    objetivo: unknown; // Tipo del objetivo estratégico
     estrategia: EstrategiaTOWS;
   }> => {
     const response = await apiClient.post(

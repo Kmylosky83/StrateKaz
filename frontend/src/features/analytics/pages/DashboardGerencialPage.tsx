@@ -59,7 +59,7 @@ const getTendenciaColor = (tendencia: string, variacion: number) => {
 
 // ==================== COMPONENTS ====================
 
-const KPICard = ({ kpi }: { kpi: any }) => {
+const KPICard = ({ kpi }: { kpi: Record<string, unknown> }) => {
   const kpiData = kpi.kpi || kpi;
   const valor = kpi.ultimo_valor?.valor_numerico ?? kpi.valor ?? 0;
   const meta = kpi.meta_actual?.meta_esperada ?? kpi.meta ?? 0;
@@ -139,7 +139,7 @@ const KPICard = ({ kpi }: { kpi: any }) => {
   );
 };
 
-const PerspectivaSection = ({ kpis }: { kpis: any[] }) => {
+const PerspectivaSection = ({ kpis }: { kpis: unknown[] }) => {
   const kpisVerde = kpis.filter((k) => {
     const s = k.ultimo_valor?.color_semaforo || k.semaforo;
     return s === 'verde';
@@ -194,7 +194,7 @@ const PerspectivaSection = ({ kpis }: { kpis: any[] }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {kpis.map((kpi: any) => (
+        {kpis.map((kpi: unknown) => (
           <KPICard key={kpi.id || kpi.kpi?.id} kpi={kpi} />
         ))}
       </div>

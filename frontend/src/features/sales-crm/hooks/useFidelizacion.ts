@@ -5,9 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { programasFidelizacionApi, puntosFidelizacionApi, movimientosPuntosApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type { AcumularPuntosDTO, CanjearPuntosDTO } from '../types';
 
-export function useProgramasFidelizacion(params?: any) {
+export function useProgramasFidelizacion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: salesCRMKeys.programasFidelizacion(),
     queryFn: () => programasFidelizacionApi.getAll(params),
@@ -26,13 +27,13 @@ export function useCreateProgramaFidelizacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => programasFidelizacionApi.create(datos),
+    mutationFn: (datos: Record<string, unknown>) => programasFidelizacionApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.programasFidelizacion() });
       toast.success('Programa creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear programa');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear programa'));
     },
   });
 }
@@ -41,20 +42,20 @@ export function useUpdateProgramaFidelizacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) =>
+    mutationFn: ({ id, datos }: { id: number; datos: Record<string, unknown> }) =>
       programasFidelizacionApi.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.programasFidelizacion() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.programaFidelizacionById(id) });
       toast.success('Programa actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar programa');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar programa'));
     },
   });
 }
 
-export function usePuntosFidelizacion(params?: any) {
+export function usePuntosFidelizacion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.puntosFidelizacionFiltered(params) : salesCRMKeys.puntosFidelizacion(),
     queryFn: () => puntosFidelizacionApi.getAll(params),
@@ -79,8 +80,8 @@ export function useAcumularPuntos() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.movimientosPuntos() });
       toast.success('Puntos acumulados exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al acumular puntos');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al acumular puntos'));
     },
   });
 }
@@ -95,13 +96,13 @@ export function useCanjearPuntos() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.movimientosPuntos() });
       toast.success('Puntos canjeados exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al canjear puntos');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al canjear puntos'));
     },
   });
 }
 
-export function useMovimientosPuntos(params?: any) {
+export function useMovimientosPuntos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.movimientosPuntosFiltered(params) : salesCRMKeys.movimientosPuntos(),
     queryFn: () => movimientosPuntosApi.getAll(params),

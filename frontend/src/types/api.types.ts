@@ -88,7 +88,7 @@ export interface FilterParams {
   ordering?: string;
 
   /** Filtros adicionales específicos por endpoint */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

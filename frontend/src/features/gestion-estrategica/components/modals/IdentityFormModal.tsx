@@ -23,7 +23,6 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { RichTextEditor } from '@/components/forms/RichTextEditor';
-import { Switch } from '@/components/forms/Switch';
 import { useCreateIdentity, useUpdateIdentity } from '../../hooks/useStrategic';
 import { useAreas } from '../../hooks/useAreas';
 import type {

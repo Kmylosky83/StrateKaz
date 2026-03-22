@@ -227,7 +227,7 @@ export function KPIGaugeAdvanced({
       ];
     }
 
-    const series: any[] = [
+    const series: unknown[] = [
       // Gauge principal
       {
         type: 'gauge',

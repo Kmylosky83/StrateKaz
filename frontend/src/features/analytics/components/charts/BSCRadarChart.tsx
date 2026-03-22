@@ -198,7 +198,7 @@ export function BSCRadarChart({
         textStyle: {
           color: CHART_AXIS_COLORS.tooltip.text,
         },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const dataIndex = params.dataIndex;
           const perspective = data[dataIndex];
           if (!perspective) return '';
@@ -299,7 +299,7 @@ export function BSCRadarChart({
     };
   }, [data, title, showProjection, showPrevious, showLegend, animated]);
 
-  const handleChartClick = (params: any) => {
+  const handleChartClick = (params: unknown) => {
     if (onPerspectiveClick && params.dataIndex !== undefined) {
       const perspective = data[params.dataIndex];
       if (perspective) {

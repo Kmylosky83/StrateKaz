@@ -5,7 +5,7 @@
  * Tipo A: SectionToolbar + ResponsiveTable.
  */
 import { useState, useMemo } from 'react';
-import { Plug, Plus, Pencil, Trash2, Wifi, Power } from 'lucide-react';
+import { Plug, Pencil, Trash2, Wifi, Power } from 'lucide-react';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
 import { Badge } from '@/components/common/Badge';
@@ -175,7 +175,7 @@ export const IntegracionesSection = () => {
         ),
       },
     ],
-    [canEdit, canDelete, testMutation.isPending, toggleMutation.isPending]
+    [canEdit, canDelete, testMutation, toggleMutation]
   );
 
   if (isLoading) {

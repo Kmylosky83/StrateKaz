@@ -462,7 +462,7 @@ export const votacionApi = {
   ): Promise<{
     message: string;
     votacion: Votacion;
-    resultados: Record<string, any>;
+    resultados: Record<string, unknown>;
   }> => {
     const response = await apiClient.post(`${BASE_URL}/votaciones/${id}/cerrar/`, data);
     return response.data;
@@ -472,7 +472,7 @@ export const votacionApi = {
     id: number
   ): Promise<{
     votacion: Votacion;
-    resultados: Record<string, any>;
+    resultados: Record<string, unknown>;
     opcion_ganadora: string;
     total_votos: number;
   }> => {

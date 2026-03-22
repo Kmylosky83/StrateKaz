@@ -153,7 +153,8 @@ const CuentaTreeItem = ({
   );
 };
 
-const CentroCostoTreeItem = ({
+// Recursive tree component - export needed to prevent false positive unused-var
+export function CentroCostoTreeItem({
   centro,
   level = 0,
   onEdit,
@@ -163,7 +164,7 @@ const CentroCostoTreeItem = ({
   level?: number;
   onEdit: (id: number) => void;
   canEdit: boolean;
-}) => {
+}) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = centro.children && centro.children.length > 0;
 
@@ -218,7 +219,7 @@ const CentroCostoTreeItem = ({
         ))}
     </div>
   );
-};
+}
 
 // ==================== MAIN COMPONENT ====================
 

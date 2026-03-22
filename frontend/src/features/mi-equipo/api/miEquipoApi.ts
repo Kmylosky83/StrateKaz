@@ -77,7 +77,7 @@ export function useAprobarSolicitud() {
       const accionLabel = variables.data.accion === 'aprobar' ? 'aprobada' : 'rechazada';
       toast.success(`Solicitud ${accionLabel} exitosamente`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al procesar solicitud');
     },
   });

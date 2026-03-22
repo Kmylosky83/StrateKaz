@@ -319,7 +319,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       // Guardar directamente
       await onSave(signatureData);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message || 'Error al guardar la firma');
     } finally {
       setIsSaving(false);
@@ -339,7 +339,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
 
       await onSave(signatureDataWithTotp);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message || 'Error al guardar la firma');
       setStep('sign');
     } finally {

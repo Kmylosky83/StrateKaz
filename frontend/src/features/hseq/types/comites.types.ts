@@ -314,7 +314,7 @@ export interface ActaReunion {
   archivo_pdf: string | null;
 
   // Firmas digitales
-  firmas: any[];
+  firmas: unknown[];
 
   observaciones_revision: string;
 
@@ -374,7 +374,7 @@ export interface Compromiso {
   prioridad: PrioridadCompromiso;
 
   // Evidencias
-  evidencias: any[];
+  evidencias: unknown[];
 
   // Verificación
   verificado_por_id: number | null;
@@ -424,7 +424,7 @@ export interface SeguimientoCompromiso {
   fecha_seguimiento: string;
   avance_reportado: number;
   descripcion_avance: string;
-  evidencias: any[];
+  evidencias: unknown[];
 
   dificultades: string;
   requiere_apoyo: boolean;
@@ -471,7 +471,7 @@ export interface Votacion {
 
   // Resultados
   total_votos_emitidos: number;
-  resultados: Record<string, any>;
+  resultados: Record<string, unknown>;
   opcion_ganadora: string;
 
   // Cierre
@@ -619,7 +619,7 @@ export interface CreateSeguimientoCompromisoDTO {
   fecha_seguimiento: string;
   avance_reportado: number;
   descripcion_avance: string;
-  evidencias?: any[];
+  evidencias?: unknown[];
   dificultades?: string;
   requiere_apoyo?: boolean;
   tipo_apoyo_requerido?: string;
@@ -688,7 +688,7 @@ export interface UpdateCompromisoDTO extends Partial<CreateCompromisoDTO> {
   estado?: EstadoCompromiso;
   porcentaje_avance?: number;
   fecha_cierre?: string;
-  evidencias?: any[];
+  evidencias?: unknown[];
   observaciones?: string;
 }
 
@@ -720,7 +720,7 @@ export interface CerrarCompromisoDTO {
   verificado_por_id: number;
   verificado_por_nombre: string;
   observaciones_verificacion?: string;
-  evidencias?: any[];
+  evidencias?: unknown[];
 }
 
 export interface CerrarVotacionDTO {

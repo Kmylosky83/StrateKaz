@@ -85,7 +85,7 @@ export const RequisitosLegalesTab = ({
   } = useEmpresaRequisitos({
     empresa_id: empresaId,
     ...filters,
-  } as any);
+  } as unknown);
 
   // Mutation para eliminar requisito
   const deleteMutation = useDeleteEmpresaRequisito();

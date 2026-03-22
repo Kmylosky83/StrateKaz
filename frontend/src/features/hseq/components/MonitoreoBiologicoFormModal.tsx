@@ -57,7 +57,7 @@ export default function MonitoreoBiologicoFormModal({ item, isOpen, onClose }: M
     }
   }, [item]);
 
-  const handleChange = (field: keyof CreateMonitoreoBiologicoDTO, value: any) => {
+  const handleChange = (field: keyof CreateMonitoreoBiologicoDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

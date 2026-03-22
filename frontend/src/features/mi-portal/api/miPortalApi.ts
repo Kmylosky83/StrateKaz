@@ -71,7 +71,7 @@ export function useUpdateMiPerfil() {
       queryClient.invalidateQueries({ queryKey: miPortalKeys.perfil() });
       toast.success('Datos personales actualizados');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al actualizar datos');
     },
   });
@@ -90,7 +90,7 @@ export function useUploadMiPhoto() {
       refreshUserProfile();
       toast.success('Foto actualizada');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al subir la foto');
     },
   });
@@ -141,7 +141,7 @@ export function useGuardarFirma() {
       refreshUserProfile();
       toast.success('Firma guardada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al guardar la firma');
     },
   });
@@ -182,7 +182,7 @@ export function useMisDocumentos(colaboradorId: number | null | undefined) {
           `/mi-equipo/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
         );
         return response.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // 404 = no tiene hoja de vida aun
         if (error.response?.status === 404) return null;
         throw error;
@@ -222,7 +222,7 @@ export function useSolicitarVacaciones() {
       queryClient.invalidateQueries({ queryKey: miPortalKeys.vacaciones() });
       toast.success('Solicitud de vacaciones creada');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al solicitar vacaciones');
     },
   });
@@ -244,7 +244,7 @@ export function useSolicitarPermiso() {
       queryClient.invalidateQueries({ queryKey: miPortalKeys.all });
       toast.success('Permiso solicitado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.detail || 'Error al solicitar permiso');
     },
   });

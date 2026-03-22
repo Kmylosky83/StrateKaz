@@ -5,6 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import catalogosApi from '../api/catalogos.api';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreateCategoriaMateriaPrimaDTO,
   UpdateCategoriaMateriaPrimaDTO,
@@ -80,8 +81,8 @@ export function useCreateCategoriaMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
       toast.success('Categoría creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear categoría');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear categoría'));
     },
   });
 }
@@ -95,8 +96,8 @@ export function useUpdateCategoriaMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
       toast.success('Categoría actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar categoría');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar categoría'));
     },
   });
 }
@@ -109,8 +110,8 @@ export function useDeleteCategoriaMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
       toast.success('Categoría eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar categoría');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar categoría'));
     },
   });
 }
@@ -144,8 +145,8 @@ export function useCreateTipoMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
       toast.success('Tipo de materia prima creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de materia prima');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear tipo de materia prima'));
     },
   });
 }
@@ -159,8 +160,8 @@ export function useUpdateTipoMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
       toast.success('Tipo de materia prima actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de materia prima');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar tipo de materia prima'));
     },
   });
 }
@@ -173,8 +174,8 @@ export function useDeleteTipoMateriaPrima() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
       toast.success('Tipo de materia prima eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar tipo de materia prima');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar tipo de materia prima'));
     },
   });
 }
@@ -201,8 +202,8 @@ export function useCreateTipoProveedor() {
       queryClient.invalidateQueries({ queryKey: catalogosKeys.tiposProveedor() });
       toast.success('Tipo de proveedor creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de proveedor');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear tipo de proveedor'));
     },
   });
 }

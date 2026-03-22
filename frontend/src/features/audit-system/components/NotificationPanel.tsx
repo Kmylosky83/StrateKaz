@@ -7,14 +7,14 @@ import { useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, ExternalLink, Inbox } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button, Badge } from '@/components/common';
+import { Badge } from '@/components/common';
 import { cn } from '@/utils/cn';
 import {
   useNotificacionesNoLeidas,
   useMarcarLeida,
   useMarcarTodasLeidas,
 } from '../hooks/useNotificaciones';
-import { getCategoriaIcon, getCategoriaColor } from './notificacion-utils';
+import { getCategoriaIcon, getCategoriaColor } from './notificacion-helpers';
 import type { Notificacion } from '../types/notificaciones.types';
 import { ROUTES } from '@/constants';
 

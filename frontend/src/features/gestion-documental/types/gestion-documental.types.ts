@@ -219,7 +219,7 @@ export interface Documento {
   motivo_cambio: string;
   es_politica_integral: boolean;
   // Firmas ahora vienen de workflow_engine.firma_digital
-  firmas_digitales?: any[];
+  firmas_digitales?: unknown[];
   controles?: ControlDocumental[];
   // OCR / Extracción de texto (Fase 5)
   texto_extraido?: string;

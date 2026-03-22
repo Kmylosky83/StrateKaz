@@ -84,7 +84,7 @@ export function useCreatePlanTrabajo() {
       queryClient.invalidateQueries({ queryKey: ['planes-trabajo'] });
       toast.success('Plan de trabajo creado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al crear el plan de trabajo');
     },
   });
@@ -104,7 +104,7 @@ export function useUpdatePlanTrabajo() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', variables.id] });
       toast.success('Plan de trabajo actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al actualizar el plan de trabajo');
     },
   });
@@ -123,7 +123,7 @@ export function useAprobarPlanTrabajo() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', id] });
       toast.success('Plan de trabajo aprobado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al aprobar el plan de trabajo');
     },
   });
@@ -148,7 +148,7 @@ export function useCambiarEstadoPlanTrabajo() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', variables.id] });
       toast.success('Estado del plan actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al cambiar estado del plan');
     },
   });
@@ -218,7 +218,7 @@ export function useCreateActividadPlan() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', data.plan_trabajo] });
       toast.success('Actividad creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al crear la actividad');
     },
   });
@@ -286,7 +286,7 @@ export function useActualizarAvanceActividad() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', data.plan_trabajo] });
       toast.success('Avance actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al actualizar el avance');
     },
   });
@@ -340,7 +340,7 @@ export function useCreateObjetivoSistema() {
       queryClient.invalidateQueries({ queryKey: ['objetivos-sistema'] });
       toast.success('Objetivo creado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al crear el objetivo');
     },
   });
@@ -406,7 +406,7 @@ export function useActualizarCumplimientoObjetivo() {
       queryClient.invalidateQueries({ queryKey: ['objetivos-sistema'] });
       toast.success('Cumplimiento actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al actualizar el cumplimiento');
     },
   });
@@ -455,7 +455,7 @@ export function useCreateProgramaGestion() {
       queryClient.invalidateQueries({ queryKey: ['programas-gestion'] });
       toast.success('Programa creado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al crear el programa');
     },
   });
@@ -514,7 +514,7 @@ export function useActualizarAvancePrograma() {
       queryClient.invalidateQueries({ queryKey: ['programas-gestion'] });
       toast.success('Avance del programa actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al actualizar el avance del programa');
     },
   });
@@ -562,7 +562,7 @@ export function useCreateActividadPrograma() {
       queryClient.invalidateQueries({ queryKey: ['actividades-programa'] });
       toast.success('Actividad creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al crear la actividad');
     },
   });
@@ -628,7 +628,7 @@ export function useEjecutarActividadPrograma() {
       queryClient.invalidateQueries({ queryKey: ['actividades-programa'] });
       toast.success('Actividad ejecutada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al ejecutar la actividad');
     },
   });
@@ -647,7 +647,7 @@ export function useCancelarActividadPrograma() {
       queryClient.invalidateQueries({ queryKey: ['actividades-programa'] });
       toast.success('Actividad cancelada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al cancelar la actividad');
     },
   });
@@ -695,7 +695,7 @@ export function useCreateSeguimientoCronograma() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', data.plan_trabajo] });
       toast.success('Seguimiento registrado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al registrar el seguimiento');
     },
   });
@@ -715,7 +715,7 @@ export function useGenerarSeguimientoAutomatico() {
       queryClient.invalidateQueries({ queryKey: ['plan-trabajo', data.plan_trabajo] });
       toast.success('Seguimiento generado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al generar el seguimiento');
     },
   });
@@ -743,7 +743,7 @@ export function useGenerarReporteSeguimiento() {
       }
       toast.success('Reporte generado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(error.response?.data?.message || 'Error al generar el reporte');
     },
   });

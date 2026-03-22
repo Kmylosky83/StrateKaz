@@ -197,7 +197,7 @@ export function KPICorrelationMatrix({
         borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
         textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const [x, y, value] = params.data;
           const kpi1 = kpis[y];
           const kpi2 = kpis[x];
@@ -314,7 +314,7 @@ export function KPICorrelationMatrix({
           label: showValues
             ? {
                 show: true,
-                formatter: (params: any) => {
+                formatter: (params: unknown) => {
                   const value = params.data[2];
                   if (params.data[0] === params.data[1]) return '1';
                   return value.toFixed(2);
@@ -336,7 +336,7 @@ export function KPICorrelationMatrix({
     };
   }, [kpis, matrix, title, showValues]);
 
-  const handleChartClick = (params: any) => {
+  const handleChartClick = (params: unknown) => {
     if (params.data) {
       const [x, y, value] = params.data;
       if (x !== y) {

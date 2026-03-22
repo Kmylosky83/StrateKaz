@@ -95,7 +95,7 @@ export const ResetPasswordPage = () => {
       toast.success('Contrasena restablecida exitosamente');
       // Redirigir al login despues de 3 segundos
       setTimeout(() => navigate('/login'), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const detail = error.response?.data?.detail;
       if (detail === 'Token invalido o expirado') {
         setInvalidLink(true);

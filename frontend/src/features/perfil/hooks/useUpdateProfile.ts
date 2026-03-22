@@ -28,7 +28,7 @@ export const useUpdateProfile = () => {
 
       toast.success('Perfil actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMessage =
         error.response?.data?.detail ||
         error.response?.data?.message ||

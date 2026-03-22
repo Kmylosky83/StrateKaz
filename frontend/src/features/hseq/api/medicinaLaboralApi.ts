@@ -266,7 +266,7 @@ export const examenMedicoApi = {
     fecha_fin?: string;
     tipo_examen?: number;
     colaborador_id?: number;
-  }): Promise<any> => {
+  }): Promise<unknown> => {
     const response = await apiClient.get(`${BASE_URL}/examenes/estadisticas/`, { params });
     return response.data;
   },
@@ -480,7 +480,7 @@ export const programaVigilanciaApi = {
   /**
    * Obtener dashboard de un programa de vigilancia
    */
-  getDashboard: async (): Promise<any> => {
+  getDashboard: async (): Promise<unknown> => {
     const response = await apiClient.get(`${BASE_URL}/programas-vigilancia/dashboard/`);
     return response.data;
   },

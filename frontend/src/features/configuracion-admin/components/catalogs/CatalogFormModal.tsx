@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import { Switch } from '@/components/forms/Switch';
 import { Button } from '@/components/common/Button';
 import type { SimpleCatalogItem } from '../../types/config-admin.types';
 

@@ -140,9 +140,9 @@ export interface ProgramaVigilancia {
   alcance?: string;
   cargos_aplicables: number[];
   areas_aplicables: number[];
-  actividades_vigilancia: any[];
+  actividades_vigilancia: unknown[];
   frecuencia_evaluacion_meses: number;
-  indicadores: any[];
+  indicadores: unknown[];
   fecha_inicio: string;
   fecha_revision?: string;
   proxima_revision?: string;
@@ -174,7 +174,7 @@ export interface CasoVigilancia {
   factores_riesgo_identificados?: string;
   exposicion_laboral?: string;
   plan_intervencion?: string;
-  acciones_implementadas: any[];
+  acciones_implementadas: unknown[];
   seguimientos: Array<{ fecha: string; descripcion: string; responsable_id: number }>;
   fecha_ultimo_seguimiento?: string;
   fecha_proximo_seguimiento?: string;
@@ -320,9 +320,9 @@ export interface CreateProgramaVigilanciaDTO {
   alcance?: string;
   cargos_aplicables?: number[];
   areas_aplicables?: number[];
-  actividades_vigilancia?: any[];
+  actividades_vigilancia?: unknown[];
   frecuencia_evaluacion_meses?: number;
-  indicadores?: any[];
+  indicadores?: unknown[];
   fecha_inicio: string;
   responsable_id?: number;
   observaciones?: string;

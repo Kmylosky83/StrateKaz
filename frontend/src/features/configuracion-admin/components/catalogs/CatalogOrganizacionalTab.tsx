@@ -4,7 +4,7 @@
  * Contiene: Normas ISO aplicables.
  */
 import { useState, useMemo } from 'react';
-import { Award, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Award, Pencil, Trash2 } from 'lucide-react';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
 import { Badge } from '@/components/common/Badge';

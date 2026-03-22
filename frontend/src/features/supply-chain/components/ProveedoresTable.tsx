@@ -92,7 +92,7 @@ export function ProveedoresTable({
     }
   };
 
-  const handleFilterChange = (key: keyof Filtros, value: any) => {
+  const handleFilterChange = (key: keyof Filtros, value: unknown) => {
     setFiltros((prev) => ({ ...prev, [key]: value }));
     setPage(1);
   };

@@ -192,7 +192,7 @@ export interface Vertimiento {
   dqo_mg_l: string | null;
   sst_mg_l: string | null;
   grasas_aceites_mg_l: string | null;
-  parametros_adicionales: Record<string, any>;
+  parametros_adicionales: Record<string, unknown>;
   cumple_normativa: boolean | null;
   norma_referencia: string;
   tratamiento_previo: string;
@@ -370,7 +370,7 @@ export interface CalculoHuellaCarbono {
   huella_total: string;
   numero_empleados: number | null;
   huella_per_capita: string | null;
-  detalle_calculos: Record<string, any>;
+  detalle_calculos: Record<string, unknown>;
   verificado: boolean;
   verificador_externo: string;
   fecha_verificacion: string | null;
@@ -484,11 +484,11 @@ export interface ResumenGestionResiduos {
 
 export interface EstadisticasAmbientales {
   periodo: string;
-  residuos: Record<string, any>;
-  vertimientos: Record<string, any>;
-  emisiones: Record<string, any>;
-  consumos: Record<string, any>;
-  huella_carbono: Record<string, any>;
+  residuos: Record<string, unknown>;
+  vertimientos: Record<string, unknown>;
+  emisiones: Record<string, unknown>;
+  consumos: Record<string, unknown>;
+  huella_carbono: Record<string, unknown>;
 }
 
 // ==================== DTOs - CREATE ====================
@@ -559,7 +559,7 @@ export interface CreateVertimientoDTO {
   dqo_mg_l?: number;
   sst_mg_l?: number;
   grasas_aceites_mg_l?: number;
-  parametros_adicionales?: Record<string, any>;
+  parametros_adicionales?: Record<string, unknown>;
   cumple_normativa?: boolean;
   norma_referencia?: string;
   tratamiento_previo?: string;
@@ -651,7 +651,7 @@ export interface CreateCalculoHuellaCarbonoDTO {
   alcance3_residuos?: number;
   alcance3_otros?: number;
   numero_empleados?: number;
-  detalle_calculos?: Record<string, any>;
+  detalle_calculos?: Record<string, unknown>;
   compensaciones_co2?: number;
   observaciones?: string;
 }
@@ -684,7 +684,7 @@ export interface CalcularHuellaInputDTO {
   empresa_id: number;
   periodo_year: number;
   incluir_alcance_3?: boolean;
-  factores_emision_personalizados?: Record<string, any>;
+  factores_emision_personalizados?: Record<string, unknown>;
 }
 
 // ==================== DTOs - UPDATE ====================

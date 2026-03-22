@@ -118,7 +118,7 @@ export const SetupPasswordPage = () => {
       toast.success('Contraseña configurada exitosamente');
       // Redirigir al login despues de 3 segundos
       setTimeout(() => navigate('/login'), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message = error.response?.data?.message;
       if (message?.includes('expirado') || message?.includes('invalido')) {
         setInvalidLink(true);

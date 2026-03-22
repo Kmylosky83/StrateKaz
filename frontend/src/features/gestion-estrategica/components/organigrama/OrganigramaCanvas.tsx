@@ -107,10 +107,10 @@ const OrganigramaCanvasInner = ({
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
   const [isExporting, setIsExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [edges, setEdges, onEdgesChange] = useEdgesState<any>([]);
+   
+  const [nodes, setNodes, onNodesChange] = useNodesState<unknown>([]);
+   
+  const [edges, setEdges, onEdgesChange] = useEdgesState<unknown>([]);
 
   // RBAC
   const { canDo } = usePermissions();

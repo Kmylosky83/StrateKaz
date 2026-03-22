@@ -80,7 +80,7 @@ export const useCreateNormaISO = () => {
       queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
       toast.success('Norma creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.code?.[0] ||
@@ -104,7 +104,7 @@ export const useUpdateNormaISO = () => {
       queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
       toast.success('Norma actualizada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.code?.[0] ||
@@ -128,7 +128,7 @@ export const useDeleteNormaISO = () => {
       queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
       toast.success('Norma eliminada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||

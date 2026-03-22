@@ -59,7 +59,7 @@ export const use2FA = () => {
       setSetupData(data);
       toast.success('QR generado. Escanéalo con tu app de autenticación.');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMsg =
         error?.response?.data?.password?.[0] ||
         error?.response?.data?.error ||
@@ -76,7 +76,7 @@ export const use2FA = () => {
       toast.success('2FA habilitado exitosamente');
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMsg =
         error?.response?.data?.error ||
         error?.response?.data?.token?.[0] ||
@@ -94,7 +94,7 @@ export const use2FA = () => {
       setSetupData(null);
       setBackupCodes([]);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMsg =
         error?.response?.data?.password?.[0] ||
         error?.response?.data?.error ||
@@ -111,7 +111,7 @@ export const use2FA = () => {
       toast.success('Códigos de backup regenerados exitosamente');
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const errorMsg =
         error?.response?.data?.password?.[0] ||
         error?.response?.data?.error ||

@@ -255,7 +255,7 @@ export function KPITrendPrediction({
         borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
         textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const xIndex = params[0]?.dataIndex;
           const period = xLabels[xIndex] || '';
           const isProjection = xIndex >= measurements.length;
@@ -264,7 +264,7 @@ export function KPITrendPrediction({
           content += `<div style="font-weight: bold; margin-bottom: 8px; ${isProjection ? 'color: #8b5cf6;' : ''}">`;
           content += `${period} ${isProjection ? '(Proyección)' : ''}</div>`;
 
-          params.forEach((param: any) => {
+          params.forEach((param: unknown) => {
             if (param.value !== undefined && param.value[1] !== undefined) {
               content += `<div style="display: flex; justify-content: space-between; margin: 4px 0;">`;
               content += `<span style="color: ${param.color};">● ${param.seriesName}:</span>`;

@@ -64,7 +64,7 @@ export default function MedicionAmbientalFormModal({ item, isOpen, onClose }: Me
     }
   }, [item]);
 
-  const handleChange = (field: keyof CreateMedicionAmbientalDTO, value: any) => {
+  const handleChange = (field: keyof CreateMedicionAmbientalDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

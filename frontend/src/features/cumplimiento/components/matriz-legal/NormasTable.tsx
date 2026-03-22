@@ -73,7 +73,7 @@ export const NormasTable = ({
           const variant = colorMap[codigo] || 'gray';
 
           return (
-            <Badge variant={variant as any} size="sm">
+            <Badge variant={variant as unknown} size="sm">
               {codigo}
             </Badge>
           );
@@ -118,7 +118,7 @@ export const NormasTable = ({
           return (
             <div className="flex flex-wrap gap-1">
               {sistemas.map((sistema, idx) => (
-                <Badge key={idx} variant={sistema.variant as any} size="sm">
+                <Badge key={idx} variant={sistema.variant as unknown} size="sm">
                   {sistema.label}
                 </Badge>
               ))}

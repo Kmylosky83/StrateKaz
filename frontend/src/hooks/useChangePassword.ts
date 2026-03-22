@@ -16,7 +16,7 @@ export const useChangePassword = () => {
     onSuccess: () => {
       toast.success('Contraseña cambiada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       const message = error.response?.data?.message || 'Error al cambiar la contraseña';
       toast.error(message);
     },

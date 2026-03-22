@@ -99,7 +99,7 @@ function GaugeWidget({ widget }: Props) {
         axisLine: {
           lineStyle: {
             width: 20,
-            color: axisLineColor as any,
+            color: axisLineColor as unknown,
           },
         },
         axisTick: {

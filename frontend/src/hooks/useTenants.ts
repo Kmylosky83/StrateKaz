@@ -45,7 +45,7 @@ export const useTenants = (): UseTenantState & UseTenantActions => {
         error: null,
       });
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const errorMessage =
         error.response?.data?.detail || 'Error al obtener empresas';
       setState((prev) => ({
@@ -70,7 +70,7 @@ export const useTenants = (): UseTenantState & UseTenantActions => {
         useAuthStore.getState().setCurrentTenantId(tenantId);
         setState((prev) => ({ ...prev, isLoading: false }));
         return response.redirect_url;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const errorMessage =
           error.response?.data?.detail || 'Error al seleccionar empresa';
         setState((prev) => ({

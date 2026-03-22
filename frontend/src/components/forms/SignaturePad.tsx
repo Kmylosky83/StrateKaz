@@ -121,7 +121,7 @@ export interface SignaturePadRef {
   fromDataURL: (dataUrl: string) => void;
 
   /** Obtiene puntos de la firma (para verificación) */
-  getPoints: () => any[];
+  getPoints: () => Array<{ x: number; y: number; time: number }>;
 }
 
 // Altura del footer con botones

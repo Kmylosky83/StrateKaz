@@ -5,7 +5,7 @@
  * Navegación interna via PageTabs pills.
  */
 import { useState, useMemo } from 'react';
-import { Ruler, FileText, CreditCard, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Ruler, FileText, CreditCard, Pencil, Trash2 } from 'lucide-react';
 import { PageTabs } from '@/components/layout/PageTabs';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
@@ -15,7 +15,6 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useModuleColor } from '@/hooks/useModuleColor';
 import { Modules, Sections } from '@/constants/permissions';
 import {
   useUnidadesMedidaConfig,

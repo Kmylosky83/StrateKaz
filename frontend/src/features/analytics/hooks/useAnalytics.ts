@@ -64,7 +64,7 @@ export const useCreateCatalogoKPI = () => {
 export const useUpdateCatalogoKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       catalogoKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['catalogos-kpi'] });
@@ -121,7 +121,7 @@ export const useCreateFichaTecnica = () => {
 export const useUpdateFichaTecnica = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       fichasTecnicasApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fichas-tecnicas'] });
@@ -177,7 +177,7 @@ export const useCreateMetaKPI = () => {
 export const useUpdateMetaKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) => metasKPIApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) => metasKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['metas-kpi'] });
       queryClient.invalidateQueries({ queryKey: ['meta-kpi', variables.id] });
@@ -232,7 +232,7 @@ export const useCreateSemaforo = () => {
 export const useUpdateSemaforo = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) => semaforosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) => semaforosApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['semaforos'] });
       queryClient.invalidateQueries({ queryKey: ['semaforo', variables.id] });
@@ -297,7 +297,7 @@ export const useCreateVistaDashboard = () => {
 export const useUpdateVistaDashboard = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       vistasDashboardApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['vistas-dashboard'] });
@@ -353,7 +353,7 @@ export const useCreateWidgetDashboard = () => {
 export const useUpdateWidgetDashboard = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       widgetsDashboardApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['widgets-dashboard'] });
@@ -449,7 +449,7 @@ export const useCreateValorKPI = () => {
 export const useUpdateValorKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       valoresKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['valores-kpi'] });
@@ -517,7 +517,7 @@ export const useCreateAccionKPI = () => {
 export const useUpdateAccionKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       accionesKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['acciones-kpi'] });
@@ -735,7 +735,7 @@ export const useCreatePlantillaInforme = () => {
 export const useUpdatePlantillaInforme = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       plantillasInformeApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plantillas-informe'] });
@@ -816,7 +816,7 @@ export const useCreatePlanAccionKPI = () => {
 export const useUpdatePlanAccionKPI = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<any> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<unknown> }) =>
       planesAccionKPIApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['planes-accion-kpi'] });

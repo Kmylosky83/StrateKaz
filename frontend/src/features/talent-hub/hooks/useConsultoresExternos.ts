@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { thKeys } from '../api/queryKeys';
 import { consultorExternoApi } from '../api/talentHubApi';
 import type {
-  ConsultorExternoList,
   ConsultorExternoFilters,
   ConsultorExternoEstadisticas,
 } from '../types';

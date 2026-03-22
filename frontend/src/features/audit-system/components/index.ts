@@ -4,4 +4,5 @@
 export { TipoNotificacionModal } from './TipoNotificacionModal';
 export { BandejaNotificaciones } from './BandejaNotificaciones';
 export { PreferenciasNotificaciones } from './PreferenciasNotificaciones';
-export { NotificacionDetailModal, getCategoriaIcon, getCategoriaColor } from './notificacion-utils';
+export { NotificacionDetailModal } from './notificacion-utils';
+export { getCategoriaIcon, getCategoriaColor } from './notificacion-helpers';

@@ -31,7 +31,7 @@ import {
 import { useSelectCargos, useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
 import { TipoNotificacionModal } from '../components';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { getCategoriaIcon, getCategoriaColor } from '../components/notificacion-utils';
+import { getCategoriaIcon, getCategoriaColor } from '../components/notificacion-helpers';
 import type { TipoNotificacion } from '../types/notificaciones.types';
 
 // ==================== TIPOS TAB ====================
@@ -416,7 +416,7 @@ function MasivasTab() {
       return;
     }
 
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       tipo: parseInt(formData.tipo),
       titulo: formData.titulo,
       mensaje: formData.mensaje,

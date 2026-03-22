@@ -8,7 +8,7 @@
  * prefix, suffix, current_number, padding, categoria, ejemplo_formato
  */
 import { useState, useMemo } from 'react';
-import { Hash, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Hash, Pencil, Trash2 } from 'lucide-react';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
 import { Badge } from '@/components/common/Badge';

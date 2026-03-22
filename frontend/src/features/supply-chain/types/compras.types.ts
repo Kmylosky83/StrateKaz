@@ -235,7 +235,7 @@ export interface EvaluacionCotizacion {
   evaluado_por: number;
   evaluado_por_nombre?: string;
   fecha_evaluacion: string;
-  criterios_evaluacion: Record<string, any>;
+  criterios_evaluacion: Record<string, unknown>;
   puntaje_total: number;
   recomendacion: string;
   observaciones?: string;
@@ -446,7 +446,7 @@ export interface CreateCotizacionDTO {
 
 export interface CreateEvaluacionCotizacionDTO {
   cotizacion: number;
-  criterios_evaluacion: Record<string, any>;
+  criterios_evaluacion: Record<string, unknown>;
   recomendacion: string;
   observaciones?: string;
 }

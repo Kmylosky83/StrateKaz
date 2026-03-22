@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { pqrsApi, seguimientoPQRSApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreatePQRSDTO,
   UpdatePQRSDTO,
@@ -14,7 +15,7 @@ import type {
   CerrarPQRSDTO,
 } from '../types';
 
-export function usePQRS(params?: any) {
+export function usePQRS(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? salesCRMKeys.pqrsFiltered(params) : salesCRMKeys.pqrs(),
     queryFn: () => pqrsApi.getAll(params),
@@ -46,8 +47,8 @@ export function useCreatePQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsDashboard() });
       toast.success('PQRS creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear PQRS'));
     },
   });
 }
@@ -62,8 +63,8 @@ export function useUpdatePQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsById(id) });
       toast.success('PQRS actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar PQRS'));
     },
   });
 }
@@ -78,8 +79,8 @@ export function useDeletePQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsDashboard() });
       toast.success('PQRS eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar PQRS'));
     },
   });
 }
@@ -95,8 +96,8 @@ export function useAsignarPQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsById(id) });
       toast.success('PQRS asignada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al asignar PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al asignar PQRS'));
     },
   });
 }
@@ -112,8 +113,8 @@ export function useEscalarPQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsById(id) });
       toast.success('PQRS escalada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al escalar PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al escalar PQRS'));
     },
   });
 }
@@ -130,8 +131,8 @@ export function useResolverPQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsDashboard() });
       toast.success('PQRS resuelta exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al resolver PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al resolver PQRS'));
     },
   });
 }
@@ -147,13 +148,13 @@ export function useCerrarPQRS() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsDashboard() });
       toast.success('PQRS cerrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar PQRS');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al cerrar PQRS'));
     },
   });
 }
 
-export function useSeguimientoPQRS(params?: any) {
+export function useSeguimientoPQRS(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params
       ? salesCRMKeys.seguimientoPQRSFiltered(params)
@@ -166,13 +167,13 @@ export function useCreateSeguimientoPQRS() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => seguimientoPQRSApi.create(datos),
+    mutationFn: (datos: Record<string, unknown>) => seguimientoPQRSApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.seguimientoPQRS() });
       toast.success('Seguimiento registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar seguimiento');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al registrar seguimiento'));
     },
   });
 }

@@ -9,7 +9,6 @@ import {
   Stethoscope,
   ClipboardCheck,
   Trash2 as TrashIcon,
-  Plus,
   Pencil,
 } from 'lucide-react';
 import { PageTabs } from '@/components/layout/PageTabs';

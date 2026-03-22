@@ -233,7 +233,7 @@ export function useUpdateVacanteActiva() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      vacanteActivaApi.update(id, data as any),
+      vacanteActivaApi.update(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
       toast.success('Vacante actualizada exitosamente');
@@ -315,7 +315,7 @@ export function useCandidatosPorVacante(vacanteId: number) {
 export function useCreateCandidato() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       if (data.hoja_vida || data.carta_presentacion) {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -345,7 +345,7 @@ export function useUpdateCandidato() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      candidatoApi.update(id, data as any),
+      candidatoApi.update(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
       toast.success('Candidato actualizado exitosamente');
@@ -431,7 +431,7 @@ export function useUpdateEntrevista() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      entrevistaApi.update(id, data as any),
+      entrevistaApi.update(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
       toast.success('Entrevista actualizada exitosamente');
@@ -444,7 +444,7 @@ export function useRealizarEntrevista() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      entrevistaApi.realizar(id, data as any),
+      entrevistaApi.realizar(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
       queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
@@ -606,7 +606,7 @@ export function useUpdateAfiliacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      afiliacionSSApi.update(id, data as any),
+      afiliacionSSApi.update(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.afiliaciones.all });
       toast.success('Afiliacion actualizada');
@@ -647,7 +647,7 @@ export function useContratosPorVencer(dias = 30) {
 export function useCreateHistorialContrato() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       if (data.archivo_contrato) {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -846,7 +846,7 @@ export function useUpdatePlantillaPrueba() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      plantillaPruebaApi.update(id, data as any),
+      plantillaPruebaApi.update(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Plantilla actualizada exitosamente');
@@ -1016,7 +1016,7 @@ export function useEvaluarEntrevistaAsync() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      entrevistaAsincronicaApi.evaluar(id, data as any),
+      entrevistaAsincronicaApi.evaluar(id, data as unknown),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: thKeys.entrevistasAsync.all });
       queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });

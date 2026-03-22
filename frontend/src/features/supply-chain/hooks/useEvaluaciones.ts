@@ -4,6 +4,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import evaluacionesApi from '../api/evaluaciones.api';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 import type {
   CreateCriterioEvaluacionDTO,
   UpdateCriterioEvaluacionDTO,
@@ -19,7 +20,7 @@ export const evaluacionesKeys = {
   criterios: () => [...evaluacionesKeys.all, 'criterios'] as const,
   criteriosActivos: () => [...evaluacionesKeys.criterios(), 'activos'] as const,
   evaluaciones: () => [...evaluacionesKeys.all, 'list'] as const,
-  evaluacionesFiltered: (filters: Record<string, any>) =>
+  evaluacionesFiltered: (filters: Record<string, unknown>) =>
     [...evaluacionesKeys.evaluaciones(), 'filtered', filters] as const,
   evaluacion: (id: number) => [...evaluacionesKeys.all, 'detail', id] as const,
   evaluacionesPorProveedor: (proveedorId: number) =>
@@ -50,8 +51,8 @@ export function useCreateCriterio() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.criterios() });
       toast.success('Criterio creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear criterio');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear criterio'));
     },
   });
 }
@@ -65,8 +66,8 @@ export function useUpdateCriterio() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.criterios() });
       toast.success('Criterio actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar criterio');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar criterio'));
     },
   });
 }
@@ -79,8 +80,8 @@ export function useDeleteCriterio() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.criterios() });
       toast.success('Criterio eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar criterio');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar criterio'));
     },
   });
 }
@@ -114,8 +115,8 @@ export function useCreateEvaluacion() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.estadisticas() });
       toast.success('Evaluación creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear evaluación');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear evaluación'));
     },
   });
 }
@@ -130,8 +131,8 @@ export function useUpdateEvaluacion() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.evaluacion(id) });
       toast.success('Evaluación actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar evaluación');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar evaluación'));
     },
   });
 }
@@ -146,8 +147,8 @@ export function useAprobarEvaluacion() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.evaluacion(id) });
       toast.success('Evaluación aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar evaluación');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al aprobar evaluación'));
     },
   });
 }
@@ -162,8 +163,8 @@ export function useRechazarEvaluacion() {
       queryClient.invalidateQueries({ queryKey: evaluacionesKeys.evaluacion(id) });
       toast.success('Evaluación rechazada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al rechazar evaluación');
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al rechazar evaluación'));
     },
   });
 }

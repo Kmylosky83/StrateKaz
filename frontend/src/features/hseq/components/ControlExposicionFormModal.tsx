@@ -71,7 +71,7 @@ export default function ControlExposicionFormModal({
     }
   }, [item]);
 
-  const handleChange = (field: keyof CreateControlExposicionDTO, value: any) => {
+  const handleChange = (field: keyof CreateControlExposicionDTO, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

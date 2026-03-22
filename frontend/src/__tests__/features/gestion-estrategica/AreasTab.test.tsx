@@ -40,7 +40,7 @@ vi.mock('sonner', () => ({
 
 // Mock del modal de formulario
 vi.mock('@/features/gestion-estrategica/components/modals/AreaFormModal', () => ({
-  AreaFormModal: ({ isOpen, onClose }: any) =>
+  AreaFormModal: ({ isOpen, onClose }: unknown) =>
     isOpen ? (
       <div data-testid="area-form-modal">
         <button onClick={onClose}>Close Modal</button>
@@ -133,21 +133,21 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       vi.mocked(useAreasTree).mockReturnValue({
         data: undefined,
-      } as any);
+      } as unknown);
 
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -167,21 +167,21 @@ describe('AreasTab', () => {
         isError: true,
         isFetching: false,
         refetch: refetchMock,
-      } as any);
+      } as unknown);
 
       vi.mocked(useAreasTree).mockReturnValue({
         data: undefined,
-      } as any);
+      } as unknown);
 
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -199,17 +199,17 @@ describe('AreasTab', () => {
         isError: true,
         isFetching: false,
         refetch: refetchMock,
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: undefined } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: undefined } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -228,17 +228,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: [] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [] } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -255,17 +255,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: allAreas } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: allAreas } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
     });
 
     it('debe renderizar lista de áreas', () => {
@@ -320,17 +320,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: allAreas } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: allAreas } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
     });
 
     it('debe mostrar indicador de expansión para áreas con hijos', () => {
@@ -413,15 +413,15 @@ describe('AreasTab', () => {
 
   describe('Filtros', () => {
     beforeEach(() => {
-      vi.mocked(useAreasTree).mockReturnValue({ data: [] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [] } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
     });
 
     it('debe filtrar por término de búsqueda', async () => {
@@ -434,7 +434,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -448,7 +448,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       // El input debe tener el valor
       expect(searchInput).toHaveValue('Producción');
@@ -463,7 +463,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -478,7 +478,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       // Re-render con datos vacíos (simular respuesta del filtro)
       // El componente internamente maneja esto con el estado
@@ -491,7 +491,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -508,7 +508,7 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -526,7 +526,7 @@ describe('AreasTab', () => {
           isError: false,
           isFetching: false,
           refetch: vi.fn(),
-        } as any);
+        } as unknown);
       }
     });
   });
@@ -539,9 +539,9 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as unknown);
     });
 
     it('debe abrir modal al hacer clic en nueva área', async () => {
@@ -550,11 +550,11 @@ describe('AreasTab', () => {
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -572,11 +572,11 @@ describe('AreasTab', () => {
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -593,11 +593,11 @@ describe('AreasTab', () => {
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -612,11 +612,11 @@ describe('AreasTab', () => {
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: deleteMock,
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -642,11 +642,11 @@ describe('AreasTab', () => {
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: toggleMock,
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -672,17 +672,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: true, // Indicando que está refrescando
         refetch: refetchMock,
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -705,17 +705,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: refetchMock,
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
 
       render(<AreasTab />);
 
@@ -734,17 +734,17 @@ describe('AreasTab', () => {
         isError: false,
         isFetching: false,
         refetch: vi.fn(),
-      } as any);
+      } as unknown);
 
-      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as any);
+      vi.mocked(useAreasTree).mockReturnValue({ data: [mockAreaProd] } as unknown);
       vi.mocked(useDeleteArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
       vi.mocked(useToggleArea).mockReturnValue({
         mutateAsync: vi.fn(),
         isPending: false,
-      } as any);
+      } as unknown);
     });
 
     it('debe tener títulos descriptivos en botones', () => {

@@ -34,9 +34,7 @@ import type { User, CreateUserDTO, UpdateUserDTO, Cargo, NivelFirma } from '@/ty
 import {
   NIVEL_FIRMA_LABELS,
   NIVEL_FIRMA_DESCRIPTIONS,
-  NIVEL_FIRMA_COLORS,
 } from '@/types/users.types';
-import { Switch } from '@/components/forms/Switch';
 
 // =============================================================================
 // SCHEMAS
@@ -450,14 +448,14 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                 label="Contraseña *"
                 type="password"
                 {...register('password' as keyof CreateUserFormData)}
-                error={(errors as any).password?.message}
+                error={(errors as Record<string, { message?: string }>).password?.message}
                 placeholder="Mínimo 8 caracteres"
               />
               <Input
                 label="Confirmar Contraseña *"
                 type="password"
                 {...register('password_confirm' as keyof CreateUserFormData)}
-                error={(errors as any).password_confirm?.message}
+                error={(errors as Record<string, { message?: string }>).password_confirm?.message}
                 placeholder="Repetir contraseña"
               />
             </div>

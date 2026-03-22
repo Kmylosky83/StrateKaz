@@ -149,7 +149,7 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
     setError(null);
   }, [item, isEditing, isOpen]);
 
-  const handleFieldChange = useCallback((field: keyof FormData, value: any) => {
+  const handleFieldChange = useCallback((field: keyof FormData, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
@@ -207,8 +207,8 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
       const payload = {
         parte_interesada: parseInt(formData.parte_interesada),
         que_comunicar: formData.que_comunicar.trim(),
-        cuando_comunicar: formData.cuando_comunicar as any,
-        como_comunicar: formData.como_comunicar as any,
+        cuando_comunicar: formData.cuando_comunicar as unknown,
+        como_comunicar: formData.como_comunicar as unknown,
         responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
         registro_evidencia: formData.registro_evidencia.trim() || undefined,
         es_obligatoria: formData.es_obligatoria,

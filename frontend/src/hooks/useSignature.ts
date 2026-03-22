@@ -35,7 +35,7 @@ export interface SignatureRecord {
   userEmail?: string;
   userId?: number;
   timestamp: string;
-  metadata?: any;
+  metadata?: unknown;
   isValid: boolean;
   createdAt: string;
   updatedAt: string;

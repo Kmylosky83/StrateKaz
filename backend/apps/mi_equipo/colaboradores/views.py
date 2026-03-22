@@ -6,8 +6,6 @@ ViewSets CRUD completos para colaboradores, hojas de vida,
 información personal e historial laboral.
 """
 import logging
-import uuid
-from datetime import timedelta
 
 from django.apps import apps
 from rest_framework import viewsets, status
@@ -18,7 +16,6 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.conf import settings
 
 from apps.core.base_models import get_tenant_empresa
 from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
@@ -216,81 +213,49 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 colaborador, email_corporativo.strip(), username.strip(), empresa, user
             )
 
-    def _create_user_for_colaborador(self, colaborador, email, username, empresa, created_by):
-        """Crea cuenta de usuario vinculada al colaborador y envia email de setup."""
-        # Password temporal aleatorio (el usuario lo configura via email)
-        temp_password = uuid.uuid4().hex
+    def _create_user_for_colaborador(
+        self, colaborador, email, username, empresa, created_by
+    ):
+        """
+        Crea cuenta de usuario vinculada al colaborador y envía
+        email de setup vía UserSetupFactory (centralizado en core).
+        """
+        from apps.core.utils.user_factory import UserSetupFactory
 
-        # Crear User con flag _from_contratacion para evitar signal duplicado
-        new_user = User(
-            username=username,
+        # Crear User con setup token via factory centralizada
+        new_user, _token = UserSetupFactory.create_user_with_setup(
             email=email,
+            username=username,
             first_name=colaborador.primer_nombre,
             last_name=colaborador.primer_apellido,
             cargo=colaborador.cargo,
+            created_by=created_by,
             document_type=colaborador.tipo_documento,
             document_number=colaborador.numero_identificacion,
             phone=colaborador.telefono_movil or '',
             fecha_ingreso=colaborador.fecha_ingreso,
-            is_active=True,
-            created_by=created_by,
         )
-        new_user._from_contratacion = True
-        new_user.set_password(temp_password)
-
-        # Generar token de setup de contraseña
-        setup_token = uuid.uuid4().hex
-        new_user.password_setup_token = setup_token
-        new_user.password_setup_expires = timezone.now() + timedelta(hours=User.PASSWORD_SETUP_EXPIRY_HOURS)
-        new_user.save()
 
         # Vincular Colaborador al User
         colaborador.usuario = new_user
         colaborador.save(update_fields=['usuario'])
 
-        # Enviar email de configuracion de contraseña (async)
-        try:
-            from apps.core.tasks import send_setup_password_email_task
-            from django.db import connection
+        # Enviar email de setup de contraseña (async)
+        UserSetupFactory.send_setup_email(
+            new_user,
+            empresa=empresa,
+            cargo_name=(
+                colaborador.cargo.name if colaborador.cargo else ''
+            ),
+        )
 
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-            tenant_id = getattr(connection.tenant, 'id', '')
-            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
-
-            # Prioridad: razon_social configurada > tenant.name > fallback
-            tenant_name = 'StrateKaz'
-            if hasattr(empresa, 'razon_social') and empresa.razon_social and empresa.razon_social != 'Empresa Sin Configurar':
-                tenant_name = empresa.razon_social
-            elif hasattr(connection, 'tenant') and hasattr(connection.tenant, 'name') and connection.tenant.name:
-                tenant_name = connection.tenant.name
-
-            # Obtener colores del tenant para el email con branding corporativo
-            try:
-                primary_color = connection.tenant.primary_color or '#ec268f'
-                secondary_color = connection.tenant.secondary_color or '#000000'
-            except Exception:
-                primary_color = '#ec268f'
-                secondary_color = '#000000'
-
-            send_setup_password_email_task.delay(
-                user_email=email,
-                user_name=colaborador.get_nombre_completo(),
-                tenant_name=tenant_name,
-                cargo_name=colaborador.cargo.name if colaborador.cargo else '',
-                setup_url=setup_url,
-                expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
-                primary_color=primary_color,
-                secondary_color=secondary_color,
-            )
-            logger.info(
-                'User %s creado para Colaborador %s, email de setup enviado a %s',
-                new_user.id, colaborador.id, email
-            )
-        except Exception as e:
-            logger.error(
-                'Error enviando email de setup para User %s: %s',
-                new_user.id, e, exc_info=True
-            )
+        logger.info(
+            'User #%s creado para Colaborador #%s, '
+            'email de setup enviado a %s',
+            new_user.pk,
+            colaborador.pk,
+            email,
+        )
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

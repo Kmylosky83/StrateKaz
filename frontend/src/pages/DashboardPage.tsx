@@ -6,7 +6,7 @@
  * Cada carril tiene una barra de color identificadora de la capa.
  * Usa Framer Motion para animaciones stagger y hover.
  */
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
@@ -21,6 +21,9 @@ import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicI
 import { cn } from '@/utils/cn';
 import { getMappedColorSafe } from '@/utils/moduleColors';
 import { PHVA_COLORS } from '@/constants/defaults';
+
+const OnboardingChecklist = lazy(() => import('@/components/common/OnboardingChecklist'));
+
 import {
   moduleCardHoverVariants,
   moduleIconVariants,
@@ -495,6 +498,13 @@ export const DashboardPage = () => {
           />
         </motion.div>
       )}
+
+      {/* Onboarding checklist para usuarios nuevos */}
+      <Suspense fallback={null}>
+        <motion.div variants={headerVariants}>
+          <OnboardingChecklist />
+        </motion.div>
+      </Suspense>
 
       {/* Header */}
       <motion.header variants={headerVariants}>

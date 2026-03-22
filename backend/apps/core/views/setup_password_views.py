@@ -6,8 +6,6 @@ Endpoints publicos (sin auth):
 - POST /api/core/setup-password/resend/ → Reenviar enlace si token expiró
 """
 import logging
-import uuid
-from datetime import timedelta
 
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
@@ -18,10 +16,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import connection
+from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+security_logger = logging.getLogger('security')
 
 User = get_user_model()
 
@@ -73,53 +72,81 @@ class SetupPasswordView(APIView):
         email = serializer.validated_data['email']
         new_password = serializer.validated_data['new_password']
 
-        # Buscar usuario con token valido
-        try:
-            user = User.objects.get(
-                email=email,
-                password_setup_token=token,
+        # Buscar usuario por email y verificar token hasheado
+        user = User.objects.filter(email=email).first()
+        if not user or not user.verify_password_setup_token(token):
+            security_logger.warning(
+                'Setup password fallido — token inválido para %s',
+                email
             )
-        except User.DoesNotExist:
             return Response(
-                {'message': 'Token invalido o expirado.'},
+                {'message': 'Token inválido o expirado.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verificar expiracion
-        if not user.password_setup_expires or user.password_setup_expires < timezone.now():
+        # Verificar expiración
+        if (
+            not user.password_setup_expires
+            or user.password_setup_expires < timezone.now()
+        ):
             # Limpiar token expirado
             user.password_setup_token = None
             user.password_setup_expires = None
-            user.save(update_fields=['password_setup_token', 'password_setup_expires'])
+            user.save(
+                update_fields=[
+                    'password_setup_token',
+                    'password_setup_expires',
+                ]
+            )
+            security_logger.warning(
+                'Setup password fallido — token expirado para %s',
+                email
+            )
             return Response(
-                {'message': 'El enlace ha expirado. Solicita un nuevo enlace a tu administrador.'},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    'message': (
+                        'El enlace ha expirado. Solicita un '
+                        'nuevo enlace a tu administrador.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Configurar contraseña en User del tenant
-        user.set_password(new_password)
-        user.password_setup_token = None
-        user.password_setup_expires = None
-        user.save(update_fields=['password', 'password_setup_token', 'password_setup_expires'])
+        # Configurar contraseña con atomicidad y lock de fila
+        with transaction.atomic():
+            user = (
+                User.objects.select_for_update()
+                .get(pk=user.pk)
+            )
+            user.set_password(new_password)
+            user.password_setup_token = None
+            user.password_setup_expires = None
+            user.save(
+                update_fields=[
+                    'password',
+                    'password_setup_token',
+                    'password_setup_expires',
+                ]
+            )
 
-        logger.info(
+        security_logger.info(
             'Contraseña configurada exitosamente para User %s (%s)',
             user.id, user.email
         )
 
-        # Actualizar TenantUser directamente en public schema (login valida contra TenantUser)
-        # Doble estrategia: sync desde User + update directo como fallback
+        # Sincronizar password a TenantUser (public schema)
         tenant_user_synced = False
         try:
             from apps.core.utils import sync_password_to_tenant_user
             tenant_user_synced = sync_password_to_tenant_user(user)
         except Exception as e:
             logger.error(
-                'Error en sync_password_to_tenant_user para User %s (%s): %s',
+                'Error en sync_password_to_tenant_user para '
+                'User %s (%s): %s',
                 user.id, user.email, e, exc_info=True
             )
 
-        # Fallback: actualizar TenantUser directamente (mismo patrón que ResetPasswordView)
+        # Fallback: actualizar TenantUser directamente
         if not tenant_user_synced:
             try:
                 from django_tenants.utils import schema_context
@@ -130,10 +157,13 @@ class SetupPasswordView(APIView):
                     ).first()
                     if tenant_user:
                         tenant_user.set_password(new_password)
-                        tenant_user.save(update_fields=['password'])
+                        tenant_user.save(
+                            update_fields=['password']
+                        )
                         tenant_user_synced = True
                         logger.info(
-                            'TenantUser actualizado via fallback directo para %s',
+                            'TenantUser actualizado via fallback '
+                            'directo para %s',
                             email
                         )
                     else:
@@ -144,19 +174,27 @@ class SetupPasswordView(APIView):
                         )
             except Exception as e:
                 logger.error(
-                    'Error en fallback directo de TenantUser para %s: %s',
+                    'Error en fallback directo de '
+                    'TenantUser para %s: %s',
                     email, e, exc_info=True
                 )
 
         if not tenant_user_synced:
             return Response({
-                'message': 'Contraseña configurada, pero hubo un problema '
-                           'sincronizando con el sistema de login. '
-                           'Usa "Olvidé mi contraseña" para restablecer el acceso.',
-            }, status=status.HTTP_207_MULTI_STATUS)
+                'message': (
+                    'Contraseña configurada, pero hubo un '
+                    'problema sincronizando con el sistema de '
+                    'login. Usa "Olvidé mi contraseña" para '
+                    'restablecer el acceso.'
+                ),
+                'partial_success': True,
+            })
 
         return Response({
-            'message': 'Contraseña configurada exitosamente. Ya puedes iniciar sesión.'
+            'message': (
+                'Contraseña configurada exitosamente. '
+                'Ya puedes iniciar sesión.'
+            )
         })
 
 
@@ -208,13 +246,14 @@ class ResendSetupPasswordView(APIView):
             if user.has_usable_password():
                 return generic_response
 
-        # Generar nuevo token
-        new_token = uuid.uuid4().hex
-        user.password_setup_token = new_token
-        user.password_setup_expires = timezone.now() + timedelta(
-            hours=User.PASSWORD_SETUP_EXPIRY_HOURS
+        # Generar nuevo token (hasheado en BD, raw para email)
+        new_token = user.set_password_setup_token()
+        user.save(
+            update_fields=[
+                'password_setup_token',
+                'password_setup_expires',
+            ]
         )
-        user.save(update_fields=['password_setup_token', 'password_setup_expires'])
 
         # Enviar email de setup
         try:

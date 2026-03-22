@@ -9,9 +9,14 @@ Arquitectura:
 - Schema 'tenant_xxx': Todos los modelos de negocio (aislados)
 """
 
+import hashlib
+import uuid
+from datetime import timedelta
+
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.contrib.auth.hashers import make_password, check_password as django_check_password
 from django_tenants.models import TenantMixin, DomainMixin
 
@@ -961,6 +966,42 @@ class TenantUser(models.Model):
     def check_password(self, raw_password: str) -> bool:
         """Verifica la contraseña."""
         return django_check_password(raw_password, self.password)
+
+    # ------------------------------------------------------------------
+    # Token hashing (seguridad: nunca almacenar tokens en texto plano)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _hash_token(raw_token: str) -> str:
+        """Genera SHA-256 hex digest de un token."""
+        return hashlib.sha256(
+            raw_token.encode('utf-8')
+        ).hexdigest()
+
+    def set_password_reset_token(self) -> str:
+        """
+        Genera token de reset, almacena su HASH SHA-256 en BD y
+        retorna el token raw (para enviar por email).
+        Expira en 1 hora.
+        """
+        raw_token = uuid.uuid4().hex
+        self.password_reset_token = self._hash_token(raw_token)
+        self.password_reset_expires = (
+            timezone.now() + timedelta(hours=1)
+        )
+        return raw_token
+
+    def verify_password_reset_token(self, raw_token: str) -> bool:
+        """
+        Verifica un token de reset comparando su hash con el
+        almacenado, usando constant_time_compare contra timing.
+        """
+        if not self.password_reset_token or not raw_token:
+            return False
+        hashed_input = self._hash_token(raw_token)
+        return constant_time_compare(
+            hashed_input, self.password_reset_token
+        )
 
     def get_accessible_tenants(self):
         """Retorna los tenants a los que tiene acceso activo."""

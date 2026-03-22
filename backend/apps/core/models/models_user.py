@@ -5,9 +5,13 @@ User: Modelo de usuario personalizado
 Cargo: Puestos de trabajo con manual de funciones
 RiesgoOcupacional: Catálogo de riesgos para SST
 """
+import hashlib
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare
 from django.core.exceptions import ValidationError
 
 
@@ -893,6 +897,40 @@ class User(AbstractUser):
         verbose_name='Roles Adicionales',
         help_text='Roles especiales asignados además del cargo base (COPASST, Brigadista, etc.)'
     )
+
+    # ==========================================================================
+    # TOKEN HASHING (seguridad: nunca almacenar tokens en texto plano)
+    # ==========================================================================
+
+    @staticmethod
+    def _hash_token(raw_token: str) -> str:
+        """Genera SHA-256 hex digest de un token."""
+        return hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+
+    def set_password_setup_token(self) -> str:
+        """
+        Genera un token de setup de contraseña, almacena su HASH
+        en la BD y retorna el token raw (para enviar por email).
+        """
+        raw_token = uuid.uuid4().hex
+        self.password_setup_token = self._hash_token(raw_token)
+        self.password_setup_expires = timezone.now() + timezone.timedelta(
+            hours=self.PASSWORD_SETUP_EXPIRY_HOURS
+        )
+        return raw_token
+
+    def verify_password_setup_token(self, raw_token: str) -> bool:
+        """
+        Verifica un token de setup comparando su hash con el
+        almacenado, usando constant_time_compare para evitar
+        ataques de timing.
+        """
+        if not self.password_setup_token or not raw_token:
+            return False
+        hashed_input = self._hash_token(raw_token)
+        return constant_time_compare(
+            hashed_input, self.password_setup_token
+        )
 
     class Meta:
         db_table = 'core_user'

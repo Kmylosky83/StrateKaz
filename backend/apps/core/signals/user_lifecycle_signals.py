@@ -62,7 +62,9 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
         current_tenant = getattr(connection, 'tenant', None)
         if not current_tenant:
             try:
-                current_tenant = Tenant.objects.get(schema_name=current_schema)
+                current_tenant = Tenant.objects.get(
+                    schema_name=current_schema
+                )
             except Tenant.DoesNotExist:
                 logger.warning(
                     'Auto-create TenantUser omitido para User %s (%s): '
@@ -94,11 +96,13 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
             # en un nuevo tenant, así que necesita poder hacer login.
             if not tenant_user.is_active:
                 tenant_user.is_active = True
-                tenant_user.password = user.password  # Sincronizar password
+                tenant_user.password = user.password
                 tenant_user.save(update_fields=['is_active', 'password'])
                 logger.info(
-                    'TenantUser #%s REACTIVADO para User %s (%s) en tenant "%s"',
-                    tenant_user.id, user.id, user.email, current_tenant.name
+                    'TenantUser #%s REACTIVADO para User %s (%s) '
+                    'en tenant "%s"',
+                    tenant_user.id, user.id, user.email,
+                    current_tenant.name,
                 )
             else:
                 logger.info(
@@ -124,8 +128,6 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
                 tenant_user.id, current_tenant.name
             )
         elif not access.is_active:
-            # El acceso existía pero estaba desactivado (offboarding u otra
-            # desactivación intencional). NO reactivar automáticamente.
             logger.warning(
                 'TenantUserAccess INACTIVO encontrado para TenantUser #%s '
                 '-> Tenant "%s". El acceso NO fue reactivado '
@@ -134,10 +136,16 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
             )
 
     except Exception as e:
-        logger.error(
-            'Error al crear TenantUser para User %s (%s): %s',
-            user.id, user.email, e,
-            exc_info=True
+        # CRITICAL: Si falla la creación de TenantUser, el usuario no
+        # podrá hacer login (el flujo de auth usa TenantUser en public).
+        # NO re-raise para no bloquear la creación del User en el tenant,
+        # pero sí loguear como CRITICAL para alertar al equipo.
+        logger.critical(
+            'FALLO al crear TenantUser/TenantUserAccess para User %s (%s) '
+            'en schema "%s". El usuario NO podrá hacer login hasta que se '
+            'corrija manualmente. Error: %s',
+            user.id, user.email, current_schema, e,
+            exc_info=True,
         )
 
 
@@ -169,29 +177,44 @@ def auto_fill_vacancy_on_user_created(sender, instance, created, **kwargs):
         return
 
     try:
-        from apps.mi_equipo.seleccion_contratacion.models import VacanteActiva
+        from django.db import transaction
+        from apps.mi_equipo.seleccion_contratacion.models import (
+            VacanteActiva,
+        )
 
-        # Buscar vacante abierta o en proceso para este cargo
-        vacante = VacanteActiva.objects.filter(
-            cargo=user.cargo,
-            estado__in=['abierta', 'en_proceso'],
-        ).order_by('-created_at').first()
+        # select_for_update() evita race condition cuando múltiples
+        # usuarios se crean simultáneamente para el mismo cargo.
+        with transaction.atomic():
+            vacante = (
+                VacanteActiva.objects.select_for_update()
+                .filter(
+                    cargo=user.cargo,
+                    estado__in=['abierta', 'en_proceso'],
+                )
+                .order_by('-created_at')
+                .first()
+            )
 
-        if not vacante:
-            return
+            if not vacante:
+                return
 
-        # Incrementar posiciones cubiertas
-        vacante.posiciones_cubiertas += 1
+            # Incrementar posiciones cubiertas
+            vacante.posiciones_cubiertas += 1
 
-        # Si todas las posiciones estan cubiertas, cerrar vacante
-        if vacante.posiciones_cubiertas >= vacante.numero_posiciones:
-            vacante.estado = 'cerrada'
+            # Si todas las posiciones están cubiertas, cerrar vacante
+            if (
+                vacante.posiciones_cubiertas
+                >= vacante.numero_posiciones
+            ):
+                vacante.estado = 'cerrada'
 
-        vacante.save(update_fields=['posiciones_cubiertas', 'estado'])
+            vacante.save(
+                update_fields=['posiciones_cubiertas', 'estado']
+            )
 
         logger.info(
             'VacanteActiva %s actualizada: %s/%s posiciones (%s) '
-            'por asignacion de User %s al cargo %s',
+            'por asignación de User %s al cargo %s',
             vacante.codigo_vacante,
             vacante.posiciones_cubiertas,
             vacante.numero_posiciones,
@@ -201,12 +224,12 @@ def auto_fill_vacancy_on_user_created(sender, instance, created, **kwargs):
         )
 
     except ImportError:
-        pass  # Modulo seleccion_contratacion no instalado
+        pass  # Módulo seleccion_contratacion no instalado
     except Exception as e:
         logger.error(
             'Error al actualizar vacante para User %s (cargo %s): %s',
             user.id, getattr(user.cargo, 'code', '?'), e,
-            exc_info=True
+            exc_info=True,
         )
 
 

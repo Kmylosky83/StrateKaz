@@ -18,6 +18,42 @@ from django.db.models import Q
 logger = logging.getLogger(__name__)
 
 
+def _log_email_failure_if_final(task, email_type, user_email, tenant, exc):
+    """
+    Si este es el último reintento, loguear como CRITICAL (dead letter).
+
+    Esto permite que herramientas de monitoreo (Sentry, CloudWatch, etc.)
+    detecten emails que nunca se pudieron enviar después de todos los
+    reintentos, sin necesidad de un modelo FailedEmailTask.
+    """
+    retries = getattr(task.request, 'retries', 0)
+    max_retries = getattr(task, 'max_retries', 3)
+
+    if retries >= max_retries:
+        logger.critical(
+            '[DEAD-LETTER] Email de %s FALLIDO definitivamente '
+            'después de %d reintentos. '
+            'Destinatario: %s | Tenant: %s | Task ID: %s | Error: %s',
+            email_type,
+            retries,
+            user_email,
+            tenant,
+            task.request.id,
+            exc,
+        )
+    else:
+        logger.error(
+            '[Task %s] Error enviando email de %s a %s '
+            '(intento %d/%d): %s',
+            task.request.id,
+            email_type,
+            user_email,
+            retries + 1,
+            max_retries,
+            exc,
+        )
+
+
 # ═══════════════════════════════════════════════════
 # TAREAS DE EMAIL
 # ═══════════════════════════════════════════════════
@@ -153,7 +189,9 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
         }
 
     except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error enviando bienvenida a {user_email}: {exc}")
+        _log_email_failure_if_final(
+            self, 'bienvenida', user_email, tenant_name, exc
+        )
         raise self.retry(exc=exc)
 
 
@@ -174,12 +212,14 @@ def send_setup_password_email_task(
     expiry_hours: int = 168,
     primary_color: str = '#ec268f',
     secondary_color: str = '#000000',
+    invited_by_name: str = '',
 ) -> Dict[str, Any]:
     """
     Envia email con enlace para configurar contraseña inicial.
 
     Se usa cuando RH crea un colaborador con acceso al sistema desde Talent Hub.
     El empleado recibe este email para establecer su contraseña.
+    invited_by_name: nombre del admin que creó la cuenta (personaliza el email).
     """
     try:
         logger.info(f"[Task {self.request.id}] Enviando setup password a {user_email}")
@@ -193,6 +233,7 @@ def send_setup_password_email_task(
             'expiry_days': max(1, expiry_hours // 24),
             'primary_color': primary_color,
             'secondary_color': secondary_color,
+            'invited_by_name': invited_by_name,
             'current_year': datetime.now().year,
         })
 
@@ -217,7 +258,9 @@ def send_setup_password_email_task(
         }
 
     except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error enviando setup password a {user_email}: {exc}")
+        _log_email_failure_if_final(
+            self, 'setup password', user_email, tenant_name, exc
+        )
         raise self.retry(exc=exc)
 
 
@@ -278,7 +321,9 @@ def send_new_access_email_task(
         }
 
     except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error enviando nuevo acceso a {user_email}: {exc}")
+        _log_email_failure_if_final(
+            self, 'nuevo acceso', user_email, tenant_name, exc
+        )
         raise self.retry(exc=exc)
 
 

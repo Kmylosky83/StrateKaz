@@ -15,8 +15,6 @@ FLUJO DE LOGIN:
 6. Requests subsiguientes incluyen X-Tenant-ID header
 """
 import logging
-import uuid
-from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
@@ -496,14 +494,20 @@ class ForgotPasswordView(APIView):
             )
             return Response({'message': success_message})
 
-        # Generar token y expiracion (1 hora)
-        token = uuid.uuid4().hex
-        user.password_reset_token = token
-        user.password_reset_expires = timezone.now() + timedelta(hours=1)
-        user.save(update_fields=['password_reset_token', 'password_reset_expires'])
+        # Generar token hasheado (raw para email, hash en BD)
+        raw_token = user.set_password_reset_token()
+        user.save(
+            update_fields=[
+                'password_reset_token',
+                'password_reset_expires',
+            ]
+        )
 
         # Enviar email con tenant_id si fue proporcionado
-        self._send_reset_email(user, token, requested_tenant_id=requested_tenant_id)
+        self._send_reset_email(
+            user, raw_token,
+            requested_tenant_id=requested_tenant_id,
+        )
 
         security_logger.info(
             f"Password reset enviado a {email} - IP: {ip_address}"
@@ -784,61 +788,135 @@ class ResetPasswordView(APIView):
         # Validar datos requeridos
         if not email or not token or not new_password:
             return Response(
-                {'detail': 'Email, token y nueva contrasena son requeridos'},
+                {'detail': 'Email, token y nueva contraseña son requeridos'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validar complejidad de contrasena
-        if len(new_password) < 8:
-            return Response(
-                {'detail': 'La contrasena debe tener al menos 8 caracteres'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Validar contraseña con validadores de Django
+        from django.contrib.auth.password_validation import (
+            validate_password,
+        )
+        from django.core.exceptions import (
+            ValidationError as DjangoValidationError,
+        )
 
-        # Buscar usuario y validar token
         try:
-            user = TenantUser.objects.get(
-                email=email,
-                password_reset_token=token,
-                is_active=True
-            )
-        except TenantUser.DoesNotExist:
-            security_logger.warning(
-                f"Reset password fallido - token invalido para {email} - IP: {ip_address}"
-            )
+            validate_password(new_password)
+        except DjangoValidationError as e:
             return Response(
-                {'detail': 'Enlace invalido o expirado. Solicita uno nuevo.'},
+                {'detail': list(e.messages)},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verificar expiracion
-        if not user.password_reset_expires or user.password_reset_expires < timezone.now():
-            # Limpiar token expirado
+        # Buscar usuario por email y verificar token hasheado
+        user = TenantUser.objects.filter(
+            email=email, is_active=True
+        ).first()
+
+        if not user or not user.verify_password_reset_token(token):
+            security_logger.warning(
+                "Reset password fallido — token inválido "
+                "para %s — IP: %s",
+                email, ip_address
+            )
+            return Response(
+                {
+                    'detail': (
+                        'Enlace inválido o expirado. '
+                        'Solicita uno nuevo.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar expiración
+        if (
+            not user.password_reset_expires
+            or user.password_reset_expires < timezone.now()
+        ):
             user.password_reset_token = None
             user.password_reset_expires = None
-            user.save(update_fields=['password_reset_token', 'password_reset_expires'])
+            user.save(
+                update_fields=[
+                    'password_reset_token',
+                    'password_reset_expires',
+                ]
+            )
 
             security_logger.warning(
-                f"Reset password fallido - token expirado para {email} - IP: {ip_address}"
+                "Reset password fallido — token expirado "
+                "para %s — IP: %s",
+                email, ip_address
             )
             return Response(
-                {'detail': 'El enlace ha expirado. Solicita uno nuevo.'},
+                {
+                    'detail': (
+                        'El enlace ha expirado. '
+                        'Solicita uno nuevo.'
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Cambiar contrasena y limpiar token
+        # Cambiar contraseña en TenantUser y limpiar token
         user.set_password(new_password)
         user.password_reset_token = None
         user.password_reset_expires = None
-        user.save(update_fields=['password', 'password_reset_token', 'password_reset_expires'])
+        user.save(
+            update_fields=[
+                'password',
+                'password_reset_token',
+                'password_reset_expires',
+            ]
+        )
+
+        # Sincronizar contraseña a User en schemas de tenant
+        self._sync_password_to_tenant_schemas(user, new_password)
 
         security_logger.info(
-            f"Password restablecido exitosamente para {email} - IP: {ip_address}"
+            "Password restablecido exitosamente para %s — IP: %s",
+            email, ip_address
         )
 
         return Response({
-            'message': 'Contrasena restablecida exitosamente. Ya puedes iniciar sesion.'
+            'message': (
+                'Contraseña restablecida exitosamente. '
+                'Ya puedes iniciar sesión.'
+            )
         })
+
+    def _sync_password_to_tenant_schemas(
+        self, tenant_user, new_password
+    ):
+        """
+        Sincroniza la contraseña al User (core_user) en cada
+        schema de tenant al que el usuario tenga acceso.
+        """
+        from django_tenants.utils import schema_context
+        from django.apps import apps
+
+        accessible_tenants = tenant_user.get_accessible_tenants()
+        for tenant_obj in accessible_tenants:
+            try:
+                with schema_context(tenant_obj.schema_name):
+                    UserModel = apps.get_model('core', 'User')
+                    tenant_schema_user = UserModel.objects.filter(
+                        email=tenant_user.email, is_active=True
+                    ).first()
+                    if tenant_schema_user:
+                        tenant_schema_user.set_password(new_password)
+                        tenant_schema_user.save(
+                            update_fields=['password']
+                        )
+            except Exception as e:
+                logger.error(
+                    "Error sincronizando password a schema "
+                    "%s para %s: %s",
+                    tenant_obj.schema_name,
+                    tenant_user.email,
+                    e,
+                    exc_info=True,
+                )
 
     def _get_client_ip(self, request):
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

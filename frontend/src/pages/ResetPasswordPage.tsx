@@ -2,7 +2,6 @@ import { useState, lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { motion, type Variants } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
@@ -12,26 +11,10 @@ import { Lock, ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { authAPI } from '@/api/auth.api';
+import { passwordSchema, PASSWORD_REQUIREMENTS, type PasswordFormData } from '@/utils/passwordValidation';
 
 // Lazy load NetworkBackground for better initial load performance
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
-
-const resetPasswordSchema = z
-  .object({
-    new_password: z
-      .string()
-      .min(8, 'Minimo 8 caracteres')
-      .regex(/[A-Z]/, 'Debe contener al menos una mayuscula')
-      .regex(/[a-z]/, 'Debe contener al menos una minuscula')
-      .regex(/[0-9]/, 'Debe contener al menos un numero'),
-    confirm_password: z.string().min(1, 'Confirma tu contrasena'),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: 'Las contrasenas no coinciden',
-    path: ['confirm_password'],
-  });
-
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -58,8 +41,8 @@ export const ResetPasswordPage = () => {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
+  } = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
   });
 
   // Verificar que tenemos token y email
@@ -69,18 +52,16 @@ export const ResetPasswordPage = () => {
     }
   }, [token, email]);
 
-  // Validacion visual de requisitos
+  // Validación visual de requisitos
   const password = watch('new_password', '');
-  const requirements = [
-    { label: 'Minimo 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayuscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minuscula', met: /[a-z]/.test(password) },
-    { label: 'Un numero', met: /[0-9]/.test(password) },
-  ];
+  const requirements = PASSWORD_REQUIREMENTS.map((req) => ({
+    label: req.label,
+    met: req.test(password),
+  }));
 
-  const onSubmit = async (data: ResetPasswordFormData) => {
+  const onSubmit = async (data: PasswordFormData) => {
     if (!token || !email) {
-      toast.error('Enlace invalido. Solicita uno nuevo.');
+      toast.error('Enlace inválido. Solicita uno nuevo.');
       return;
     }
 
@@ -92,15 +73,16 @@ export const ResetPasswordPage = () => {
         new_password: data.new_password,
       });
       setResetSuccess(true);
-      toast.success('Contrasena restablecida exitosamente');
-      // Redirigir al login despues de 3 segundos
+      toast.success('Contraseña restablecida exitosamente');
+      // Redirigir al login después de 3 segundos
       setTimeout(() => navigate('/login'), 3000);
     } catch (error: unknown) {
-      const detail = error.response?.data?.detail;
+      const axiosError = error as { response?: { data?: { detail?: string } } };
+      const detail = axiosError.response?.data?.detail;
       if (detail === 'Token invalido o expirado') {
         setInvalidLink(true);
       } else {
-        toast.error(detail || 'Error al restablecer contrasena. Intenta de nuevo.');
+        toast.error(detail || 'Error al restablecer contraseña. Intenta de nuevo.');
       }
     } finally {
       setIsLoading(false);
@@ -178,18 +160,18 @@ export const ResetPasswordPage = () => {
 
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-heading leading-tight text-white">
               {resetSuccess
-                ? 'Contrasena restablecida'
+                ? 'Contraseña restablecida'
                 : invalidLink
-                  ? 'Enlace invalido'
-                  : 'Nueva contrasena'}
+                  ? 'Enlace inválido'
+                  : 'Nueva contraseña'}
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-neutral-400">
               {resetSuccess
-                ? 'Tu contrasena ha sido actualizada exitosamente'
+                ? 'Tu contraseña ha sido actualizada exitosamente'
                 : invalidLink
-                  ? 'El enlace ha expirado o no es valido'
-                  : 'Ingresa tu nueva contrasena'}
+                  ? 'El enlace ha expirado o no es válido'
+                  : 'Ingresa tu nueva contraseña'}
             </p>
           </motion.div>
 
@@ -200,10 +182,10 @@ export const ResetPasswordPage = () => {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="h-5 w-5 mt-0.5 flex-shrink-0 text-emerald-400" />
                   <div className="text-sm text-emerald-200">
-                    <p className="font-medium mb-1">Listo</p>
+                    <p className="font-medium mb-1">¡Listo!</p>
                     <p className="text-xs text-emerald-300/80">
-                      Tu contrasena ha sido cambiada exitosamente. Seras redirigido al inicio de
-                      sesion en unos segundos...
+                      Tu contraseña ha sido cambiada exitosamente. Serás redirigido al inicio de
+                      sesión en unos segundos...
                     </p>
                   </div>
                 </div>
@@ -214,12 +196,12 @@ export const ResetPasswordPage = () => {
                   type="button"
                   className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
-                  Ir al inicio de sesion
+                  Ir al inicio de sesión
                 </Button>
               </Link>
             </motion.div>
           ) : invalidLink ? (
-            /* Estado: Enlace invalido */
+            /* Estado: Enlace inválido */
             <motion.div className="space-y-5" variants={itemVariants} key="invalid-state">
               <div className="rounded-lg p-4 bg-amber-900/30 border border-amber-700/50">
                 <div className="flex items-start gap-3">
@@ -227,8 +209,8 @@ export const ResetPasswordPage = () => {
                   <div className="text-sm text-amber-200">
                     <p className="font-medium mb-1">Enlace expirado</p>
                     <p className="text-xs text-amber-300/80">
-                      Este enlace de recuperacion ya no es valido. Los enlaces expiran despues de 1
-                      hora o al ser usados. Solicita uno nuevo desde la pagina de recuperacion.
+                      Este enlace de recuperación ya no es válido. Los enlaces expiran después de 1
+                      hora o al ser usados. Solicita uno nuevo desde la página de recuperación.
                     </p>
                   </div>
                 </div>
@@ -251,7 +233,7 @@ export const ResetPasswordPage = () => {
                     className="w-full border-neutral-600 text-neutral-300 hover:bg-neutral-800"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Volver al inicio de sesion
+                    Volver al inicio de sesión
                   </Button>
                 </Link>
               </div>
@@ -266,26 +248,28 @@ export const ResetPasswordPage = () => {
             >
               <div className="space-y-4">
                 <Input
-                  label="Nueva contrasena"
+                  label="Nueva contraseña"
                   type="password"
                   autoComplete="new-password"
                   autoFocus
+                  showPasswordToggle
                   leftIcon={<Lock className="h-5 w-5 text-neutral-400" />}
                   {...register('new_password')}
                   error={errors.new_password?.message}
-                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500"
+                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500 min-h-[48px]"
                   style={{ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties}
                   labelClassName="text-neutral-300"
                 />
 
                 <Input
-                  label="Confirmar contrasena"
+                  label="Confirmar contraseña"
                   type="password"
                   autoComplete="new-password"
+                  showPasswordToggle
                   leftIcon={<Lock className="h-5 w-5 text-neutral-400" />}
                   {...register('confirm_password')}
                   error={errors.confirm_password?.message}
-                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500"
+                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500 min-h-[48px]"
                   style={{ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties}
                   labelClassName="text-neutral-300"
                 />
@@ -295,7 +279,7 @@ export const ResetPasswordPage = () => {
               {password.length > 0 && (
                 <div className="rounded-lg p-3 bg-neutral-800/50 border border-neutral-700/50">
                   <p className="text-xs text-neutral-400 mb-2 font-medium">Requisitos:</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {requirements.map((req) => (
                       <div
                         key={req.label}
@@ -320,7 +304,7 @@ export const ResetPasswordPage = () => {
                 className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300"
                 isLoading={isLoading}
               >
-                {isLoading ? 'Restableciendo...' : 'Restablecer contrasena'}
+                {isLoading ? 'Restableciendo...' : 'Restablecer contraseña'}
               </Button>
 
               <div className="text-center">
@@ -330,7 +314,7 @@ export const ResetPasswordPage = () => {
                   style={{ color: primaryColor }}
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Volver al inicio de sesion
+                  Volver al inicio de sesión
                 </Link>
               </div>
             </motion.form>

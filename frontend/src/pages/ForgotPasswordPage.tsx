@@ -17,7 +17,7 @@ import { authAPI } from '@/api/auth.api';
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
 
 const forgotPasswordSchema = z.object({
-  email: z.string().min(1, 'Email requerido').email('Email invalido'),
+  email: z.string().min(1, 'Correo requerido').email('Correo electrónico inválido'),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -119,13 +119,13 @@ export const ForgotPasswordPage = () => {
             )}
 
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-heading leading-tight text-white">
-              {emailSent ? 'Revisa tu correo' : 'Recuperar contrasena'}
+              {emailSent ? 'Revisa tu correo' : 'Recuperar contraseña'}
             </h1>
 
             <p className="mt-2 text-xs sm:text-sm text-neutral-400">
               {emailSent
-                ? 'Te enviamos las instrucciones para restablecer tu contrasena'
-                : 'Ingresa tu correo y te enviaremos un enlace para restablecer tu contrasena'}
+                ? 'Te enviamos las instrucciones para restablecer tu contraseña'
+                : 'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña'}
             </p>
           </motion.div>
 
@@ -138,8 +138,8 @@ export const ForgotPasswordPage = () => {
                   <div className="text-sm text-emerald-200">
                     <p className="font-medium mb-1">Enlace enviado</p>
                     <p className="text-xs text-emerald-300/80">
-                      Si el correo esta registrado en el sistema, recibiras un enlace para
-                      restablecer tu contrasena. El enlace expira en 1 hora.
+                      Si el correo está registrado en el sistema, recibirás un enlace para
+                      restablecer tu contraseña. El enlace expira en 1 hora.
                     </p>
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export const ForgotPasswordPage = () => {
                   className="w-full border-neutral-600 text-neutral-300 hover:bg-neutral-800"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver al inicio de sesion
+                  Volver al inicio de sesión
                 </Button>
               </Link>
             </motion.div>
@@ -165,7 +165,7 @@ export const ForgotPasswordPage = () => {
               key="forgot-form"
             >
               <Input
-                label="Correo electronico"
+                label="Correo electrónico"
                 type="email"
                 autoComplete="email"
                 autoFocus
@@ -183,7 +183,7 @@ export const ForgotPasswordPage = () => {
                 className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300"
                 isLoading={isLoading}
               >
-                {isLoading ? 'Enviando...' : 'Enviar enlace de recuperacion'}
+                {isLoading ? 'Enviando...' : 'Enviar enlace de recuperación'}
               </Button>
 
               <div className="text-center">
@@ -193,7 +193,7 @@ export const ForgotPasswordPage = () => {
                   style={{ color: primaryColor }}
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
-                  Volver al inicio de sesion
+                  Volver al inicio de sesión
                 </Link>
               </div>
             </motion.form>

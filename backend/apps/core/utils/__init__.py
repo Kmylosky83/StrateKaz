@@ -10,6 +10,7 @@ from .sanitization import (
     sanitize_url,
 )
 from .image_processing import ImageProcessor, image_processor
+from .user_factory import UserSetupFactory
 
 __all__ = [
     'sanitize_html',
@@ -24,4 +25,6 @@ __all__ = [
     # Image processing
     'ImageProcessor',
     'image_processor',
+    # User factory
+    'UserSetupFactory',
 ]

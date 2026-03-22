@@ -8,30 +8,20 @@ import { motion, type Variants } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { Lock, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Lock, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw, Mail } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { authAPI } from '@/api/auth.api';
+import { passwordSchema, PASSWORD_REQUIREMENTS, type PasswordFormData } from '@/utils/passwordValidation';
 
 // Lazy load NetworkBackground for better initial load performance
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
 
-const setupPasswordSchema = z
-  .object({
-    new_password: z
-      .string()
-      .min(8, 'Mínimo 8 caracteres')
-      .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-      .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-      .regex(/[0-9]/, 'Debe contener al menos un número'),
-    confirm_password: z.string().min(1, 'Confirma tu contraseña'),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirm_password'],
-  });
-
-type SetupPasswordFormData = z.infer<typeof setupPasswordSchema>;
+// Schema para el formulario de reenvío
+const resendSchema = z.object({
+  email: z.string().min(1, 'Correo requerido').email('Correo electrónico inválido'),
+});
+type ResendFormData = z.infer<typeof resendSchema>;
 
 export const SetupPasswordPage = () => {
   const navigate = useNavigate();
@@ -76,8 +66,17 @@ export const SetupPasswordPage = () => {
     handleSubmit,
     formState: { errors },
     watch,
-  } = useForm<SetupPasswordFormData>({
-    resolver: zodResolver(setupPasswordSchema),
+  } = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+  });
+
+  // Formulario de reenvío (cuando no hay token ni email)
+  const {
+    register: registerResend,
+    handleSubmit: handleSubmitResend,
+    formState: { errors: resendErrors },
+  } = useForm<ResendFormData>({
+    resolver: zodResolver(resendSchema),
   });
 
   // Verificar que tenemos token y email (de URL o sessionStorage)
@@ -89,14 +88,12 @@ export const SetupPasswordPage = () => {
 
   // Validacion visual de requisitos
   const password = watch('new_password', '');
-  const requirements = [
-    { label: 'Mínimo 8 caracteres', met: password.length >= 8 },
-    { label: 'Una letra mayúscula', met: /[A-Z]/.test(password) },
-    { label: 'Una letra minúscula', met: /[a-z]/.test(password) },
-    { label: 'Un número', met: /[0-9]/.test(password) },
-  ];
+  const requirements = PASSWORD_REQUIREMENTS.map((req) => ({
+    label: req.label,
+    met: req.test(password),
+  }));
 
-  const onSubmit = async (data: SetupPasswordFormData) => {
+  const onSubmit = async (data: PasswordFormData) => {
     if (!token || !email) {
       toast.error('Enlace inválido. Solicita uno nuevo a tu administrador.');
       return;
@@ -119,7 +116,8 @@ export const SetupPasswordPage = () => {
       // Redirigir al login despues de 3 segundos
       setTimeout(() => navigate('/login'), 3000);
     } catch (error: unknown) {
-      const message = error.response?.data?.message;
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const message = axiosError.response?.data?.message;
       if (message?.includes('expirado') || message?.includes('invalido')) {
         setInvalidLink(true);
       } else {
@@ -130,14 +128,15 @@ export const SetupPasswordPage = () => {
     }
   };
 
-  const handleResendLink = async () => {
-    if (!email) {
+  const handleResendLink = async (resendEmail?: string) => {
+    const targetEmail = resendEmail || email;
+    if (!targetEmail) {
       toast.error('No se encontró el correo electrónico.');
       return;
     }
     setIsResending(true);
     try {
-      await authAPI.resendSetupPassword(email);
+      await authAPI.resendSetupPassword(targetEmail);
       setResendSuccess(true);
       toast.success('Se ha enviado un nuevo enlace a tu correo.');
     } catch {
@@ -145,6 +144,10 @@ export const SetupPasswordPage = () => {
     } finally {
       setIsResending(false);
     }
+  };
+
+  const onResendSubmit = (data: ResendFormData) => {
+    handleResendLink(data.email);
   };
 
   // Reduced motion detection
@@ -295,14 +298,42 @@ export const SetupPasswordPage = () => {
               ) : email ? (
                 <Button
                   type="button"
-                  onClick={handleResendLink}
+                  onClick={() => handleResendLink()}
                   isLoading={isResending}
                   className="w-full shadow-lg"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   {isResending ? 'Reenviando...' : 'Reenviar enlace de configuración'}
                 </Button>
-              ) : null}
+              ) : (
+                /* Formulario de reenvío cuando no hay email */
+                <form onSubmit={handleSubmitResend(onResendSubmit)} className="space-y-3">
+                  <p className="text-xs text-neutral-400">
+                    Ingresa tu correo electrónico para recibir un nuevo enlace de configuración.
+                  </p>
+                  <Input
+                    label="Correo electrónico"
+                    type="email"
+                    autoComplete="email"
+                    autoFocus
+                    leftIcon={<Mail className="h-5 w-5 text-neutral-400" />}
+                    {...registerResend('email')}
+                    error={resendErrors.email?.message}
+                    className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500 min-h-[48px]"
+                    style={{ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties}
+                    labelClassName="text-neutral-300"
+                    placeholder="correo@ejemplo.com"
+                  />
+                  <Button
+                    type="submit"
+                    isLoading={isResending}
+                    className="w-full shadow-lg"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    {isResending ? 'Reenviando...' : 'Reenviar enlace'}
+                  </Button>
+                </form>
+              )}
 
               <Link to="/login">
                 <Button
@@ -329,10 +360,11 @@ export const SetupPasswordPage = () => {
                   type="password"
                   autoComplete="new-password"
                   autoFocus
+                  showPasswordToggle
                   leftIcon={<Lock className="h-5 w-5 text-neutral-400" />}
                   {...register('new_password')}
                   error={errors.new_password?.message}
-                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500"
+                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500 min-h-[48px]"
                   style={{ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties}
                   labelClassName="text-neutral-300"
                 />
@@ -341,10 +373,11 @@ export const SetupPasswordPage = () => {
                   label="Confirmar contraseña"
                   type="password"
                   autoComplete="new-password"
+                  showPasswordToggle
                   leftIcon={<Lock className="h-5 w-5 text-neutral-400" />}
                   {...register('confirm_password')}
                   error={errors.confirm_password?.message}
-                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500"
+                  className="bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500 min-h-[48px]"
                   style={{ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties}
                   labelClassName="text-neutral-300"
                 />
@@ -354,7 +387,7 @@ export const SetupPasswordPage = () => {
               {password.length > 0 && (
                 <div className="rounded-lg p-3 bg-neutral-800/50 border border-neutral-700/50">
                   <p className="text-xs text-neutral-400 mb-2 font-medium">Requisitos:</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {requirements.map((req) => (
                       <div
                         key={req.label}

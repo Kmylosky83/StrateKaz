@@ -18,17 +18,17 @@ export const userMenuItems: NavigationItem[] = [];
 
 export const footerLinks: FooterLinks = {
   services: [
-    { name: 'Consultoría 4.0', href: '/#services' },
-    { name: 'Plataforma SGI 360°', href: '/#services' },
+    { name: 'Seguridad y Salud en el Trabajo', href: '/#services' },
+    { name: 'Talento Humano', href: '/#services' },
+    { name: 'PESV — Seguridad Vial', href: '/#services' },
     { name: 'Certificaciones ISO', href: '/#services' },
     { name: 'Firma Digital', href: '/#services' },
-    { name: 'SAGRILAFT', href: '/#services' },
   ],
   clients: [
     { name: 'Empresas de Consultoría', href: '/#clients' },
-    { name: 'Industria & Manufactura', href: '/#clients' },
+    { name: 'Industria y Manufactura', href: '/#clients' },
+    { name: 'Transporte y Logística', href: '/#clients' },
     { name: 'Empresas de Servicios', href: '/#clients' },
-    { name: 'Sector Público', href: '/#clients' },
   ],
   coverage: [
     { name: 'Cúcuta', href: '/#coverage' },

@@ -24,6 +24,20 @@ const getColorClasses = (color: string) => {
         inactive:
           'bg-black-card hover:bg-black-hover text-white-text-soft hover:text-white-text border-black-border hover:border-system-yellow-500/50',
       };
+    case 'red':
+      return {
+        active:
+          'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/20',
+        inactive:
+          'bg-black-card hover:bg-black-hover text-white-text-soft hover:text-white-text border-black-border hover:border-red-500/50',
+      };
+    case 'orange':
+      return {
+        active:
+          'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20',
+        inactive:
+          'bg-black-card hover:bg-black-hover text-white-text-soft hover:text-white-text border-black-border hover:border-orange-500/50',
+      };
     case 'purple':
       return {
         active:
@@ -55,7 +69,7 @@ export const FeatureTabs: React.FC<FeatureTabsProps> = ({
   return (
     <>
       {/* Mobile: Cards in grid */}
-      <div className='sm:hidden grid grid-cols-2 gap-3 mb-6 px-2'>
+      <div className='sm:hidden grid grid-cols-3 gap-2 mb-6 px-2'>
         {features.map((feature, index) => {
           const colors = getColorClasses(feature.color);
           const isActive = activeFeature === index;

@@ -65,13 +65,14 @@ export const ContactHeroSection: React.FC = () => {
     x: processSteps[0].x,
   });
 
+  // Orden: gancho PYME (lo más buscado en Colombia) → aspiracional
   const rotatingTexts = [
+    'Seguridad y Salud en el Trabajo',
+    'Gestión de Talento Humano',
+    'Plan Estratégico de Seguridad Vial',
+    'Certificación ISO Multi-Norma',
+    'Firma Digital y Workflows',
     'Plataforma de Gestión 360°',
-    'Certificación ISO',
-    'Cumplimiento SAGRILAFT',
-    'Firma Digital SHA-256',
-    'Gestión HSEQ',
-    'Transformación Digital',
   ];
 
   const [currentTextIndex, setCurrentTextIndex] = React.useState(0);
@@ -129,9 +130,8 @@ export const ContactHeroSection: React.FC = () => {
             {/* Description and benefits - Hidden on mobile */}
             <div className='hidden sm:block container-content mb-6'>
               <p className='text-xl text-white-muted'>
-                Consultoría 4.0 respaldada por una plataforma con 84+ módulos
-                integrados. SGI, ERP, GRC, HSEQ, Firma Digital y BI en un
-                solo ecosistema.
+                Consultoría 4.0 en SST, Talento Humano, PESV e ISO — respaldada
+                por una plataforma con 84+ módulos integrados para empresas colombianas.
               </p>
             </div>
 

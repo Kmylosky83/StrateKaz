@@ -1,13 +1,117 @@
-import { Shield, FileSignature, Workflow, BarChart3 } from 'lucide-react';
+import { Shield, FileSignature, Workflow, BarChart3, HardHat, Users } from 'lucide-react';
 import { FeatureShowcaseContent } from './types';
 
 export const FEATURE_SHOWCASE_CONTENT: FeatureShowcaseContent = {
   header: {
-    title: 'Lo Que Nos Hace Diferentes',
+    title: 'Todo lo que tu Empresa Necesita',
     subtitle:
-      'Capacidades únicas que no encontrarás en un ERP o SGI convencional',
+      'Desde Seguridad Laboral y Talento Humano hasta Firma Digital y Business Intelligence — 84+ módulos integrados',
   },
   features: [
+    {
+      id: 'sst',
+      icon: <HardHat className='h-8 w-8' aria-hidden='true' />,
+      title: 'Seguridad y Salud en el Trabajo',
+      color: 'red',
+      description:
+        'SG-SST completo según Decreto 1072 y Resolución 0312. Accidentalidad, higiene industrial, medicina laboral, emergencias y gestión de comités COPASST/CCL.',
+      metrics: {
+        primary: 'SG-SST',
+        secondary: 'Decreto 1072 | Res. 0312',
+      },
+      benefits: [
+        'Gestión de accidentalidad e incidentes',
+        'Matriz IPEVR según GTC-45',
+        'Medicina laboral y exámenes ocupacionales',
+        'Plan de emergencias y simulacros',
+      ],
+      preview: (
+        <div className='bg-black-card-soft border border-black-border rounded-xl p-3 sm:p-4 lg:p-6 h-[160px] sm:h-[200px] flex flex-col justify-center'>
+          <div className='space-y-3 sm:space-y-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center space-x-2'>
+                <HardHat className='w-4 h-4 sm:w-5 sm:h-5 text-system-red-500' aria-hidden='true' />
+                <span className='text-xs sm:text-sm font-semibold text-white-text'>SG-SST</span>
+              </div>
+              <span className='text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full'>Cumpliendo</span>
+            </div>
+            <div className='grid grid-cols-2 gap-2'>
+              <div className='bg-gradient-to-br from-red-500/20 to-red-600/30 p-2 rounded-lg border border-red-500/40 text-center'>
+                <div className='text-base sm:text-lg font-bold text-red-400'>0</div>
+                <div className='text-xs text-red-300'>Accidentes</div>
+              </div>
+              <div className='bg-gradient-to-br from-green-500/20 to-green-600/30 p-2 rounded-lg border border-green-500/40 text-center'>
+                <div className='text-base sm:text-lg font-bold text-green-400'>95%</div>
+                <div className='text-xs text-green-300'>Cumplimiento</div>
+              </div>
+            </div>
+            <div className='bg-black-hover-soft p-3 rounded-lg border border-red-500/30'>
+              <div className='flex justify-between items-center mb-2'>
+                <span className='text-xs font-medium text-white-text-soft'>Decreto 1072</span>
+                <span className='text-xs text-green-400'>Conforme</span>
+              </div>
+              <div className='w-full bg-neutral-800 rounded-full h-1.5'>
+                <div className='bg-gradient-to-r from-red-500 to-orange-400 h-1.5 rounded-full' style={{ width: '95%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'talento-humano',
+      icon: <Users className='h-8 w-8' aria-hidden='true' />,
+      title: 'Talento Humano Integral',
+      color: 'orange',
+      description:
+        'Ciclo completo del colaborador: selección, contratación, onboarding, formación, desempeño, nómina y offboarding. Todo integrado con SST.',
+      metrics: {
+        primary: 'HCM',
+        secondary: 'ciclo completo del colaborador',
+      },
+      benefits: [
+        'Selección y contratación digital',
+        'Evaluación de desempeño 360°',
+        'Gestión de nómina integrada',
+        'Formación y reinducción programada',
+      ],
+      preview: (
+        <div className='bg-black-card-soft border border-black-border rounded-xl p-3 sm:p-4 lg:p-6 h-[160px] sm:h-[200px] flex flex-col justify-center'>
+          <div className='space-y-3 sm:space-y-4'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center space-x-2'>
+                <Users className='w-4 h-4 sm:w-5 sm:h-5 text-system-orange-500' aria-hidden='true' />
+                <span className='text-xs sm:text-sm font-semibold text-white-text'>Talento Humano</span>
+              </div>
+              <span className='text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full'>Activo</span>
+            </div>
+            <div className='grid grid-cols-3 gap-2'>
+              <div className='bg-gradient-to-br from-orange-500/20 to-orange-600/30 p-2 rounded-lg border border-orange-500/40 text-center'>
+                <div className='text-xs font-bold text-orange-400'>48</div>
+                <div className='text-xs text-orange-300 hidden sm:block'>Empleados</div>
+              </div>
+              <div className='bg-gradient-to-br from-green-500/20 to-green-600/30 p-2 rounded-lg border border-green-500/40 text-center'>
+                <div className='text-xs font-bold text-green-400'>92%</div>
+                <div className='text-xs text-green-300 hidden sm:block'>Desempeño</div>
+              </div>
+              <div className='bg-gradient-to-br from-blue-500/20 to-blue-600/30 p-2 rounded-lg border border-blue-500/40 text-center'>
+                <div className='text-xs font-bold text-blue-400'>3</div>
+                <div className='text-xs text-blue-300 hidden sm:block'>Vacantes</div>
+              </div>
+            </div>
+            <div className='bg-black-hover-soft p-3 rounded-lg border border-orange-500/30'>
+              <div className='flex justify-between items-center mb-2'>
+                <span className='text-xs font-medium text-white-text-soft'>Formación Q1</span>
+                <span className='text-xs text-green-400'>78% completado</span>
+              </div>
+              <div className='w-full bg-neutral-800 rounded-full h-1.5'>
+                <div className='bg-gradient-to-r from-orange-500 to-yellow-400 h-1.5 rounded-full' style={{ width: '78%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
     {
       id: 'firma-digital',
       icon: <FileSignature className='h-8 w-8' aria-hidden='true' />,

@@ -49,7 +49,7 @@ export const PricingHeroSection: React.FC = () => {
       name: 'ISO Multi-Norma',
       icon: Award,
       ...SERVICE_COLORS.calidad,
-      benefit: 'ISO 9001 + 14001 + 45001',
+      benefit: 'ISO 9001 + 14001 + 45001 + 27001',
       description: 'Certificación garantizada, 100% éxito',
     },
     {
@@ -161,7 +161,7 @@ export const PricingHeroSection: React.FC = () => {
           <h1 className='text-fluid-3xl lg:text-fluid-4xl font-bold font-title text-white-text mb-6'>
             Consultoría Estratégica
             <span className='text-white-text block'>
-              + Plataforma <span className='text-brand-500'>Integral</span>
+              + Plataforma <span className='text-brand-500'>360°</span>
             </span>
           </h1>
 
@@ -173,7 +173,7 @@ export const PricingHeroSection: React.FC = () => {
               animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Servicios de consultoría integral en
+              Consultoría 4.0 + Plataforma 360° en
             </motion.p>
 
             {/* Contenedor dinámico del servicio actual */}

@@ -12,7 +12,7 @@ export const FeatureHeader: React.FC<FeatureHeaderProps> = ({
   return (
     <div className='text-center mb-6 sm:mb-8'>
       <h2 className='text-fluid-3xl font-bold font-title text-white-text mb-3 sm:mb-4'>
-        <span className='sm:hidden'>Servicios Profesionales</span>
+        <span className='sm:hidden'>Nuestras Soluciones</span>
         <span className='hidden sm:inline'>{title}</span>
       </h2>
       <div className='hidden sm:block container-content'>

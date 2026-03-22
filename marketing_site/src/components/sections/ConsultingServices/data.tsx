@@ -6,7 +6,6 @@ import {
   Building,
   Crown,
   Car,
-  Rocket,
 } from 'lucide-react';
 import {
   ServicePackage,
@@ -21,7 +20,7 @@ export const servicePackages: ServicePackage[] = [
     title: 'Sistemas Integrados de Gestión ISO',
     description: 'Implementación completa de ISO 9001, 14001, 45001, 27001',
     timeline: '4-12 meses',
-    investment: 'Desde $150 USD',
+    investment: 'Por cotización',
     icon: <Award className='h-8 w-8' aria-hidden='true' />,
     color: 'blue',
     popular: true,
@@ -31,7 +30,7 @@ export const servicePackages: ServicePackage[] = [
       'Capacitación de equipos internos',
       'Auditorías internas preparatorias',
       'Acompañamiento hasta certificación',
-      'Plataforma de Gestión Integral GRATIS',
+      'Plataforma 360° incluida',
     ],
     deliverables: [
       'Manual de calidad integrado',
@@ -53,7 +52,7 @@ export const servicePackages: ServicePackage[] = [
     title: 'Seguridad y Salud en el Trabajo',
     description: 'Cumplimiento normativo SST según legislación colombiana',
     timeline: '4-12 meses',
-    investment: 'Desde $130 USD',
+    investment: 'Por cotización',
     icon: <Shield className='h-8 w-8' aria-hidden='true' />,
     color: 'yellow',
     includes: [
@@ -62,7 +61,7 @@ export const servicePackages: ServicePackage[] = [
       'Procedimientos de emergencia',
       'Indicadores y seguimiento',
       'Plan de trabajo anual SST',
-      'Plataforma de Gestión Integral GRATIS',
+      'Plataforma 360° incluida',
     ],
     deliverables: [
       'SG-SST completo y documentado',
@@ -84,7 +83,7 @@ export const servicePackages: ServicePackage[] = [
     title: 'Plan Estratégico de Seguridad Vial',
     description: 'PESV completo según Resolución 40595 de 2022',
     timeline: '4-12 meses',
-    investment: 'Desde $130 USD',
+    investment: 'Por cotización',
     icon: <Car className='h-8 w-8' aria-hidden='true' />,
     color: 'red',
     includes: [
@@ -93,7 +92,7 @@ export const servicePackages: ServicePackage[] = [
       'Capacitaciones especializadas',
       'Indicadores de gestión vial',
       'Seguimiento y mejora continua',
-      'Plataforma de Gestión Integral GRATIS',
+      'Plataforma 360° incluida',
     ],
     deliverables: [
       'PESV completo y aprobado',
@@ -115,7 +114,7 @@ export const servicePackages: ServicePackage[] = [
     title: 'Transformación Digital y BI',
     description: 'Digitalización de procesos y Business Intelligence',
     timeline: '6-18 meses',
-    investment: 'Desde $200 USD',
+    investment: 'Por cotización',
     icon: <TrendingUp className='h-8 w-8' aria-hidden='true' />,
     color: 'orange',
     includes: [
@@ -124,7 +123,7 @@ export const servicePackages: ServicePackage[] = [
       'Implementación de BI',
       'Automatización de procesos',
       'Desarrollo de aplicativos',
-      'Plataforma de Gestión Integral GRATIS',
+      'Plataforma 360° incluida',
     ],
     deliverables: [
       'Plan de transformación digital',
@@ -147,7 +146,7 @@ export const userProfiles: UserProfile[] = [
   {
     id: 'consulting-firms',
     title: 'Empresas Consultoras',
-    description: 'Plataforma de Gestión Integral para gestionar múltiples clientes y proyectos',
+    description: 'Plataforma 360° para gestionar múltiples clientes y proyectos',
     icon: <Building className='h-6 w-6' aria-hidden='true' />,
     color: 'blue',
     benefits: [
@@ -206,23 +205,23 @@ export const userProfiles: UserProfile[] = [
     ],
   },
   {
-    id: 'entrepreneurs',
-    title: 'Emprendedores',
-    description: 'Soluciones completas incluyendo desarrollo de apps',
-    icon: <Rocket className='h-6 w-6' aria-hidden='true' />,
+    id: 'transport-logistics',
+    title: 'Transporte y Logística',
+    description: 'PESV, gestión de flota y cumplimiento vial integrado',
+    icon: <Car className='h-6 w-6' aria-hidden='true' />,
     color: 'purple',
     benefits: [
-      'Desarrollo de aplicativos',
-      'Soluciones móviles',
-      'Integración con e-commerce',
-      'Automatización de ventas',
-      'Escalabilidad garantizada',
+      'PESV según Resolución 40595',
+      'Gestión de flota vehicular',
+      'Control de rutas y conductores',
+      'Indicadores de seguridad vial',
+      'Integración SST + transporte',
     ],
     useCases: [
-      'Apps móviles',
-      'Plataformas web',
-      'E-commerce',
-      'Sistemas de gestión',
+      'Empresas de transporte',
+      'Flotas corporativas',
+      'Logística y distribución',
+      'Operadores de carga',
     ],
   },
 ];
@@ -232,9 +231,9 @@ export const faqs: FAQCategory[] = [
     category: 'Servicios de Consultoría',
     items: [
       {
-        question: '¿Qué incluye exactamente la Plataforma de Gestión Integral gratuita?',
+        question: '¿Qué incluye exactamente la Plataforma 360° gratuita?',
         answer:
-          'Nuestra Plataforma de Gestión Integral incluye gestión completa de documentos, workflows automatizados, tableros de control, reportes en tiempo real, y todas las funcionalidades necesarias para gestionar sistemas ISO, SST y PESV, así como para optimizar sus procesos sin tener que pensar en certificaciones que mantener a largo tiempo.',
+          'Nuestra Plataforma 360° incluye gestión completa de documentos, workflows automatizados, tableros de control, reportes en tiempo real, y todas las funcionalidades necesarias para gestionar sistemas ISO, SST y PESV, así como para optimizar sus procesos sin tener que pensar en certificaciones que mantener a largo tiempo.',
       },
       {
         question: '¿Cuánto tiempo toma una implementación ISO completa?',
@@ -255,12 +254,12 @@ export const faqs: FAQCategory[] = [
     ],
   },
   {
-    category: 'Plataforma de Gestión Integral',
+    category: 'Plataforma 360°',
     items: [
       {
         question: '¿Puedo usar la plataforma sin contratar consultoría?',
         answer:
-          'Sí, nuestra Plataforma de Gestión Integral funciona como SaaS (Software as a Service) con licencias independientes. Los valores se calculan por planes según la cantidad de integrantes de su organización, ofreciendo escalabilidad desde pequeñas empresas hasta corporaciones.',
+          'Sí, nuestra Plataforma 360° funciona como SaaS (Software as a Service) con licencias independientes. Los valores se calculan por planes según la cantidad de integrantes de su organización, ofreciendo escalabilidad desde pequeñas empresas hasta corporaciones.',
       },
       {
         question: '¿La plataforma funciona en la nube o on-premise?',

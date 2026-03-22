@@ -12,6 +12,7 @@ Regla: Cada modulo de C2 llama a estos endpoints en vez de importar
 hooks/modelos de otro modulo de C2.
 """
 from django.apps import apps
+from django.db.models import Count
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -179,12 +180,22 @@ def select_cargos(request):
     Supply Chain (crear acceso), Audit (notificaciones)
     """
     Cargo = apps.get_model('core', 'Cargo')
+    User = apps.get_model('core', 'User')
+
     qs = Cargo.objects.filter(
         is_system=False,
         is_active=True,
     ).values(
         'id', 'name', 'code', 'rol_sistema__name', 'rol_sistema__code'
     ).order_by('name')[:200]
+
+    # Contar usuarios activos por cargo (para preview en encuestas)
+    usuarios_por_cargo = dict(
+        User.objects.filter(is_active=True, cargo_id__isnull=False)
+        .values_list('cargo_id')
+        .annotate(total=Count('id'))
+        .values_list('cargo_id', 'total')
+    )
 
     return Response([
         {
@@ -194,6 +205,7 @@ def select_cargos(request):
                 'code': c.get('code', ''),
                 'rol': c.get('rol_sistema__name', ''),
                 'rol_code': c.get('rol_sistema__code', ''),
+                'usuarios_activos': usuarios_por_cargo.get(c['id'], 0),
             }
         }
         for c in qs

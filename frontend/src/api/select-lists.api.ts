@@ -13,7 +13,7 @@ import apiClient from './axios-config';
 export interface SelectListItem {
   id: number;
   label: string;
-  extra?: Record<string, string>;
+  extra?: Record<string, string | number>;
 }
 
 const BASE = '/core/select-lists';

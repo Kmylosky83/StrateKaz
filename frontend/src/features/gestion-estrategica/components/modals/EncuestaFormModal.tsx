@@ -1028,7 +1028,7 @@ export const EncuestaFormModal = ({
           {/* Selector segun tipo */}
           {newParticipante.tipo === 'area' && (
             <Select
-              label="Seleccione el Area"
+              label="Seleccione el Área"
               value={newParticipante.area?.toString() || ''}
               onChange={(e) =>
                 setNewParticipante({
@@ -1073,7 +1073,17 @@ export const EncuestaFormModal = ({
                 })
               }
               options={[{ value: '', label: 'Seleccione un cargo...' }, ...cargoOptions]}
-              helperText="Todos los colaboradores con este cargo seran invitados"
+              helperText={
+                newParticipante.cargo
+                  ? (() => {
+                      const cargo = cargosData?.find((c) => c.id === newParticipante.cargo);
+                      const count = cargo?.extra?.usuarios_activos;
+                      if (count === undefined) return 'Todos los colaboradores con este cargo serán invitados';
+                      if (count === 0) return 'No hay colaboradores activos con este cargo';
+                      return `${count} colaborador${Number(count) !== 1 ? 'es' : ''} activo${Number(count) !== 1 ? 's' : ''} serán invitados`;
+                    })()
+                  : 'Todos los colaboradores con este cargo serán invitados'
+              }
             />
           )}
 

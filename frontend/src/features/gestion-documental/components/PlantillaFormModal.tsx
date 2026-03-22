@@ -6,6 +6,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { toast } from 'sonner';
 import { Button, Badge, Spinner } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea } from '@/components/forms';
@@ -184,9 +185,15 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         data.contenido_plantilla = '';
       }
 
-      // Include firmantes por defecto (filter out incomplete entries)
-      const validFirmantes = firmantes.filter((f) => f.cargo_code && f.rol_firma);
-      data.firmantes_por_defecto = validFirmantes.length > 0 ? validFirmantes : [];
+      // Validar firmantes incompletos — no permitir guardar con firmantes sin cargo
+      const incompleteFirmantes = firmantes.filter((f) => !f.cargo_code?.trim() || !f.rol_firma);
+      if (incompleteFirmantes.length > 0) {
+        toast.error('Todos los firmantes deben tener rol y cargo asignados');
+        return;
+      }
+
+      // Include firmantes por defecto
+      data.firmantes_por_defecto = firmantes.length > 0 ? firmantes : [];
 
       let savedId: number;
       if (isEdit && plantillaId) {

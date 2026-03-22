@@ -5,6 +5,7 @@ Migrado desde: apps.hseq_management.sistema_documental
 NOTA: FirmaDocumentoSerializer ha sido eliminado.
 Las firmas digitales usan FirmaDigitalSerializer de workflow_engine.firma_digital
 """
+from django.apps import apps
 from rest_framework import serializers
 from .models import (
     TipoDocumento,
@@ -113,6 +114,34 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'codigo': {'required': False, 'allow_blank': True},
         }
+
+    def validate_firmantes_por_defecto(self, value):
+        """Validar que cada firmante tenga cargo_code válido y existente."""
+        if not value:
+            return value
+
+        Cargo = apps.get_model('core', 'Cargo')
+        roles_validos = {'ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'}
+
+        for config in value:
+            rol = config.get('rol_firma', '')
+            if rol not in roles_validos:
+                raise serializers.ValidationError(
+                    f'Rol de firma "{rol}" no es válido. Opciones: {", ".join(sorted(roles_validos))}'
+                )
+
+            cargo_code = config.get('cargo_code', '')
+            if not cargo_code:
+                raise serializers.ValidationError(
+                    'Cada firmante debe tener un cargo asignado (cargo_code)'
+                )
+
+            if not Cargo.objects.filter(code=cargo_code, is_active=True).exists():
+                raise serializers.ValidationError(
+                    f'Cargo "{cargo_code}" no existe o está inactivo'
+                )
+
+        return value
 
 
 # =============================================================================

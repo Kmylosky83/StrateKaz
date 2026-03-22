@@ -13,6 +13,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { PenTool, Trash2, Save, RotateCcw, Type } from 'lucide-react';
 import { Card, Button, Badge, Spinner } from '@/components/common';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { SignaturePad } from '@/components/forms';
 import type { SignaturePadRef } from '@/components/forms/SignaturePad';
 import { useFirmaGuardada, useGuardarFirma } from '../api/miPortalApi';
@@ -26,6 +27,7 @@ export function MiFirmaDigital() {
   const guardarMutation = useGuardarFirma();
 
   const [drawMode, setDrawMode] = useState<DrawMode>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<'firma' | 'iniciales' | null>(null);
   const signatureRef = useRef<SignaturePadRef>(null);
 
   const handleSave = useCallback(() => {
@@ -34,24 +36,24 @@ export function MiFirmaDigital() {
     const dataUrl = signatureRef.current.getDataURL();
 
     if (drawMode === 'firma') {
-      guardarMutation.mutate({ firma_guardada: dataUrl });
+      guardarMutation.mutate({ firma_guardada: dataUrl }, {
+        onSuccess: () => setDrawMode(null),
+      });
     } else if (drawMode === 'iniciales') {
-      guardarMutation.mutate({ iniciales_guardadas: dataUrl });
+      guardarMutation.mutate({ iniciales_guardadas: dataUrl }, {
+        onSuccess: () => setDrawMode(null),
+      });
     }
-
-    setDrawMode(null);
   }, [drawMode, guardarMutation]);
 
-  const handleDelete = useCallback(
-    (type: 'firma' | 'iniciales') => {
-      if (type === 'firma') {
-        guardarMutation.mutate({ firma_guardada: null });
-      } else {
-        guardarMutation.mutate({ iniciales_guardadas: null });
-      }
-    },
-    [guardarMutation]
-  );
+  const handleDeleteConfirm = useCallback(() => {
+    if (deleteConfirm === 'firma') {
+      guardarMutation.mutate({ firma_guardada: null });
+    } else if (deleteConfirm === 'iniciales') {
+      guardarMutation.mutate({ iniciales_guardadas: null });
+    }
+    setDeleteConfirm(null);
+  }, [deleteConfirm, guardarMutation]);
 
   const handleCancel = useCallback(() => {
     setDrawMode(null);
@@ -180,7 +182,7 @@ export function MiFirmaDigital() {
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => handleDelete('firma')}
+                    onClick={() => setDeleteConfirm('firma')}
                     loading={guardarMutation.isPending}
                     title="Eliminar firma guardada"
                   >
@@ -234,7 +236,7 @@ export function MiFirmaDigital() {
                   <Button
                     variant="danger"
                     size="sm"
-                    onClick={() => handleDelete('iniciales')}
+                    onClick={() => setDeleteConfirm('iniciales')}
                     loading={guardarMutation.isPending}
                     title="Eliminar iniciales guardadas"
                   >
@@ -246,6 +248,18 @@ export function MiFirmaDigital() {
           </Card>
         </div>
       )}
+
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title={`Eliminar ${deleteConfirm === 'firma' ? 'firma' : 'iniciales'}`}
+        message={`¿Está seguro de eliminar ${deleteConfirm === 'firma' ? 'su firma guardada' : 'sus iniciales guardadas'}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={guardarMutation.isPending}
+        onConfirm={handleDeleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

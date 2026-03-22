@@ -431,18 +431,41 @@ class UserViewSet(viewsets.ModelViewSet):
             })
 
         # PATCH
+        MAX_SIGNATURE_SIZE = 500 * 1024  # 500 KB de base64
         allowed_fields = ['firma_guardada', 'iniciales_guardadas']
         update_fields = []
 
         for field in allowed_fields:
             if field in request.data:
                 value = request.data[field]
-                # Validar formato base64 si no es null
-                if value is not None and not isinstance(value, str):
+
+                # Permitir null (eliminar firma)
+                if value is None:
+                    setattr(user, field, value)
+                    update_fields.append(field)
+                    continue
+
+                # Validar tipo string
+                if not isinstance(value, str):
                     return Response(
                         {field: 'Debe ser una cadena base64 o null'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
+
+                # Validar formato dataURL
+                if not value.startswith('data:image/'):
+                    return Response(
+                        {field: 'Formato inválido. Debe ser data:image/png;base64,... o data:image/jpeg;base64,...'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Validar tamaño máximo (protección contra DoS)
+                if len(value) > MAX_SIGNATURE_SIZE:
+                    return Response(
+                        {field: f'La firma no puede exceder 500 KB ({len(value) // 1024} KB recibidos)'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
                 setattr(user, field, value)
                 update_fields.append(field)
 

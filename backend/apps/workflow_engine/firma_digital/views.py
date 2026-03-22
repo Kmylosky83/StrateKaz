@@ -598,6 +598,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                 nodo_flujo=firma.nodo_flujo,
                 delegante=request.user,
                 es_delegada=True,
+                created_by=request.user,
             )
 
             HistorialFirma.objects.create(
@@ -739,6 +740,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                     documento_hash='pending',
                     ip_address='0.0.0.0',
                     user_agent='',
+                    created_by=request.user,
                 )
                 firmas_creadas.append(firma)
 

@@ -354,6 +354,8 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
 
   const handleModalClose = () => {
     if (!isSaving) {
+      setUsingSavedSignature(false);
+      setSavedSignaturePreview(null);
       onClose();
     }
   };

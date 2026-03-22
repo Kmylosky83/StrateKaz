@@ -43,6 +43,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const tenantUser = useAuthStore((state) => state.tenantUser);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
   const selectTenant = useAuthStore((state) => state.selectTenant);
@@ -50,6 +51,28 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loginStep, setLoginStep] = useState<LoginStep>('credentials');
+
+  // Si ya hay sesión activa (tokens válidos + Zustand rehidratado), redirigir al dashboard.
+  // Esto cubre el caso donde el usuario navega a /login manualmente o desde la barra de direcciones
+  // cuando ya tiene sesión. También aplica si la PWA abre en /login como última URL.
+  useEffect(() => {
+    const hasTokens =
+      !!localStorage.getItem('access_token') && !!localStorage.getItem('refresh_token');
+    if (hasTokens && isAuthenticated) {
+      // Determinar landing page según tipo de usuario
+      const { user: currentUser, isSuperadmin: isSA, currentTenantId } = useAuthStore.getState();
+
+      if (isSA && !currentTenantId) {
+        navigate('/admin-global', { replace: true });
+      } else if (isClientePortalUser(currentUser)) {
+        navigate('/cliente-portal', { replace: true });
+      } else if (isPortalOnlyUser(currentUser)) {
+        navigate('/proveedor-portal', { replace: true });
+      } else {
+        navigate('/mi-portal', { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate]);
   const [email, setEmail] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
 

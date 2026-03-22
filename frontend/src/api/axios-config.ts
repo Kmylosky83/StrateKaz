@@ -154,8 +154,6 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Si el error es 401 y no hemos reintentado aún
-    // IMPORTANTE: No intentar refresh en páginas públicas (evita loops/logouts inesperados)
     const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
     const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
 
@@ -163,12 +161,13 @@ axiosInstance.interceptors.response.use(
     // Si no hay token en localStorage, es un request que salió antes de que
     // Zustand rehidratara — no hacer refresh ni logout, dejar que ProtectedRoute maneje.
     const hasTokenInStorage = !!localStorage.getItem('access_token');
+    const hasRefreshToken = !!localStorage.getItem('refresh_token');
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !isPublicPage &&
-      hasTokenInStorage
+      hasTokenInStorage &&
+      hasRefreshToken
     ) {
       originalRequest._retry = true;
 
@@ -220,10 +219,15 @@ axiosInstance.interceptors.response.use(
           }
 
           // Token realmente inválido → logout
-          // forceLogout limpia localStorage + Zustand + RQ cache.
-          // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
-          // NO usar window.location.href: causa hard reload que borra estado y hace loop.
-          useAuthStore.getState().forceLogout();
+          // En páginas públicas (/login), NO hacer forceLogout — el usuario está
+          // llegando por URL directa y LoginPage se encargará del redirect si hay sesión.
+          // forceLogout aquí destruiría tokens válidos que solo necesitan refresh.
+          if (!isPublicPage) {
+            // forceLogout limpia localStorage + Zustand + RQ cache.
+            // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
+            // NO usar window.location.href: causa hard reload que borra estado y hace loop.
+            useAuthStore.getState().forceLogout();
+          }
         }
         // Para otros errores (network, 5xx), no hacer logout — el usuario puede reintentar
         return Promise.reject(refreshError);

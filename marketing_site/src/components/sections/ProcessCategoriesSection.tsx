@@ -42,7 +42,7 @@ interface ModuleLayer {
 const PLATFORM_LAYERS: ModuleLayer[] = [
   {
     name: 'Seguridad Laboral & Talento Humano',
-    description: 'SST + HSEQ + Capital Humano — lo esencial',
+    description: 'SST + HSEQ + Capital Humano | lo esencial',
     modules: [
       {
         name: 'Seguridad y Salud en el Trabajo',
@@ -241,7 +241,7 @@ export const ProcessCategoriesSection: React.FC<{
           </h2>
           <div className='hidden sm:block container-content'>
             <p className='text-xl text-white-muted'>
-              84+ módulos integrados: SST, Talento Humano, PESV, ISO, Firma Digital, ERP y BI — todo lo que tu empresa necesita en un solo lugar
+              84+ módulos integrados: SST, Talento Humano, PESV, ISO, Firma Digital, ERP y BI | todo lo que tu empresa necesita en un solo lugar
             </p>
           </div>
         </div>

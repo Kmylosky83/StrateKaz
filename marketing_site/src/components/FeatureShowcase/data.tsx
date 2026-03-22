@@ -5,7 +5,7 @@ export const FEATURE_SHOWCASE_CONTENT: FeatureShowcaseContent = {
   header: {
     title: 'Todo lo que tu Empresa Necesita',
     subtitle:
-      'Desde Seguridad Laboral y Talento Humano hasta Firma Digital y Business Intelligence — 84+ módulos integrados',
+      'Desde Seguridad Laboral y Talento Humano hasta Firma Digital y Business Intelligence | 84+ módulos integrados',
   },
   features: [
     {
@@ -195,7 +195,7 @@ export const FEATURE_SHOWCASE_CONTENT: FeatureShowcaseContent = {
         secondary: 'automatizado + PEP screening',
       },
       benefits: [
-        'KYC — Conocimiento del cliente automatizado',
+        'KYC | Conocimiento del cliente automatizado',
         'Screening PEP en listas restrictivas',
         'Perfilamiento de riesgo por contraparte',
         'Reportes para UIAF y compliance officer',

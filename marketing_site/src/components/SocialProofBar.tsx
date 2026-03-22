@@ -41,7 +41,7 @@ const STRATEGIC_CONTENT: StrategicContent = {
   headline: {
     text: 'Todo lo que tu empresa necesita',
     subtext:
-      'Desde seguridad laboral y talento humano hasta certificaciones ISO y firma digital — todo integrado en una sola plataforma',
+      'Desde seguridad laboral y talento humano hasta certificaciones ISO y firma digital | todo integrado en una sola plataforma',
   },
   // Orden: de lo más buscado (gancho PYME) a lo más avanzado
   pillars: [

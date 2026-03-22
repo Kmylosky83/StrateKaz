@@ -28,7 +28,7 @@ export const HERO_CONTENT = {
       'de Gestión Empresarial',       // Universal — todo el mundo entiende
       'de Seguridad Laboral',         // #1 en búsquedas Colombia (obligatorio)
       'de Talento Humano',            // #2 — nómina, desempeño, selección
-      'PESV — Seguridad Vial',        // #3 — obligatorio empresas con flota
+      'PESV | Seguridad Vial',         // #3 — obligatorio empresas con flota
       'ISO Multi-Norma',              // Aspiracional — certificación
       'de Firma Digital',             // Diferenciador tecnológico
       '360° Todo en Uno',             // Cierre — todo integrado
@@ -39,7 +39,7 @@ export const HERO_CONTENT = {
     },
   },
   description:
-    'Seguridad Laboral, Talento Humano, PESV, ISO y Firma Digital — todo en una sola plataforma con 84+ módulos integrados para empresas colombianas.',
+    'Seguridad Laboral, Talento Humano, PESV, ISO y Firma Digital | todo en una sola plataforma con 84+ módulos integrados para empresas colombianas.',
   keyBenefits: [
     {
       text: 'Seguridad Laboral (SST)',
@@ -92,7 +92,7 @@ export const HERO_CONTENT = {
     main: 'Transformación Digital',
     highlight: '360°',
     description:
-      'SGI + ERP + GRC + HSEQ + BI — todo integrado, todo en uno',
+      'SGI + ERP + GRC + HSEQ + BI | todo integrado, todo en uno',
     icon: Zap,
   },
   dashboardStats: [

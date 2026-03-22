@@ -664,7 +664,7 @@ export const PricingPage: React.FC = () => {
   ];
 
   React.useEffect(() => {
-    document.title = 'StrateKaz | Consultoría SST, Talento Humano, PESV e ISO — Precios Colombia';
+    document.title = 'StrateKaz | Consultoría SST, Talento Humano, PESV e ISO | Precios Colombia';
     const meta = document.querySelector('meta[name="description"]');
     if (meta) meta.setAttribute('content', 'Servicios de consultoría y plataforma StrateKaz: Seguridad y Salud en el Trabajo, Talento Humano, PESV, ISO 9001/14001/45001, Firma Digital. Desde $20.000 COP/usuario/mes. Empresas colombianas.');
   }, []);

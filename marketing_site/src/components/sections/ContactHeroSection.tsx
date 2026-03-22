@@ -130,7 +130,7 @@ export const ContactHeroSection: React.FC = () => {
             {/* Description and benefits - Hidden on mobile */}
             <div className='hidden sm:block container-content mb-6'>
               <p className='text-xl text-white-muted'>
-                Consultoría 4.0 en SST, Talento Humano, PESV e ISO — respaldada
+                Consultoría 4.0 en SST, Talento Humano, PESV e ISO | respaldada
                 por una plataforma con 84+ módulos integrados para empresas colombianas.
               </p>
             </div>

@@ -6,7 +6,7 @@ import { TrialCTA } from '@components/CTAButton';
  * Contenido empresarial enfocado en Consultoría 4.0 + Plataforma 360°
  */
 const FINAL_CTA_CONTENT = {
-  title: 'Seguridad Laboral, Talento Humano, ISO y más — todo en uno.',
+  title: 'Seguridad Laboral, Talento Humano, ISO y más | todo en uno.',
   subtitle:
     'Una sola plataforma para SST, PESV, Talento Humano, ISO Multi-Norma, Firma Digital y 84+ módulos más. Empieza hoy.',
   cta: {

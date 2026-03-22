@@ -39,7 +39,7 @@ export const PricingHeroSection: React.FC = () => {
       description: 'Selección, nómina, desempeño y formación',
     },
     {
-      name: 'PESV — Seguridad Vial',
+      name: 'PESV | Seguridad Vial',
       icon: Navigation,
       ...SERVICE_COLORS.pesv,
       benefit: 'Resolución 40595',

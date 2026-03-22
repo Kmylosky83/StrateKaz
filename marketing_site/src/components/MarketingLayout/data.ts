@@ -20,7 +20,7 @@ export const footerLinks: FooterLinks = {
   services: [
     { name: 'Seguridad y Salud en el Trabajo', href: '/#services' },
     { name: 'Talento Humano', href: '/#services' },
-    { name: 'PESV — Seguridad Vial', href: '/#services' },
+    { name: 'PESV | Seguridad Vial', href: '/#services' },
     { name: 'Certificaciones ISO', href: '/#services' },
     { name: 'Firma Digital', href: '/#services' },
   ],

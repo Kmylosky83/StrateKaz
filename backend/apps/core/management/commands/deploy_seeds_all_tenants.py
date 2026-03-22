@@ -40,7 +40,7 @@ class Command(BaseCommand):
         ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
         ('procesos', 'seed_procesos_base', [], 'Catálogo base de procesos organizacionales (17 procesos ISO)'),
         ('cargos', 'seed_cargos_base', [], 'Catálogo base de cargos organizacionales (13 cargos)'),
-        ('juego_sst', 'seed_juego_sst', [], 'Juego SST: Nivel 1 + 10 preguntas quiz (Los Héroes de la Seguridad)'),
+        ('juego_sst', 'seed_juego_sst', [], 'Juego SST: Nivel 1 + 10 preguntas quiz (Los Héroes de la Seguridad) [gamificacion]'),
         ('tipos_dofa', 'seed_tipos_analisis_dofa', [], 'Tipos de Análisis DOFA (10 catálogos estándar)'),
         ('tipos_pestel', 'seed_tipos_analisis_pestel', [], 'Tipos de Análisis PESTEL (10 catálogos estándar)'),
         ('preguntas_pci', 'seed_preguntas_pci_poam', [], 'Banco de preguntas PCI-POAM (75 preguntas estándar)'),

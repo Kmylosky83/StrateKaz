@@ -112,6 +112,12 @@ TENANT_APPS = [
     'apps.gestion_estrategica.gestion_documental',
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # GAMIFICACIÓN — Módulo independiente (Juego SST)
+    # Desacoplado de talent_hub. Accesible desde Mi Portal.
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.gamificacion.juego_sst',
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 20: PLANEACIÓN ESTRATÉGICA
     # Descomentar cuando Level 15 esté estabilizado con datos reales
     # ═══════════════════════════════════════════════════════════════════════════

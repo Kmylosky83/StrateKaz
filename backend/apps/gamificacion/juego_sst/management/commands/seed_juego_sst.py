@@ -2,6 +2,8 @@
 Seed para Juego SST: Los Héroes de la Seguridad
 Crea el Nivel 1 (Planta Industrial) + 10 preguntas quiz SST
 
+Módulo independiente — apps.gamificacion.juego_sst
+
 Uso:
   python manage.py seed_juego_sst
   python manage.py seed_juego_sst --force  (recrear todo)
@@ -9,9 +11,7 @@ Uso:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.talent_hub.formacion_reinduccion.models import (
-    GameLevel, GameQuizQuestion,
-)
+from apps.gamificacion.juego_sst.models import GameLevel, GameQuizQuestion
 
 
 # =============================================================================
@@ -26,10 +26,10 @@ NIVEL_1 = {
         'RISKORP, identifica riesgos, recolecta el EPP necesario y demuestra '
         'tus conocimientos en seguridad y salud en el trabajo.'
     ),
-    'zona': 'industrial',
+    'zona': 'industria',
     'numero_nivel': 1,
     'puntos_completar': 500,
-    'tiempo_limite_segundos': 600,  # 10 minutos
+    'tiempo_limite_segundos': 600,
     'min_preguntas_correctas': 4,
     'total_epps': 5,
     'mapa_key': 'level-1',
@@ -60,8 +60,8 @@ PREGUNTAS_NIVEL_1 = [
         ],
         'explicacion': 'El SG-SST busca anticipar, reconocer, evaluar y controlar los riesgos que puedan afectar la seguridad y salud en el trabajo (Decreto 1072 de 2015, Art. 2.2.4.6.4).',
         'norma_referencia': 'Decreto 1072 de 2015 - Art. 2.2.4.6.4',
-        'categoria': 'normativa',
-        'dificultad': 'basico',
+        'categoria': 'normas',
+        'dificultad': 'facil',
         'puntos': 100,
         'orden': 1,
     },
@@ -76,7 +76,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'EPP significa Equipo de Protección Personal. Son dispositivos, accesorios y vestimentas que protegen al trabajador de riesgos que puedan amenazar su seguridad o salud.',
         'norma_referencia': 'Resolución 2400 de 1979 - Título IV',
         'categoria': 'epp',
-        'dificultad': 'basico',
+        'dificultad': 'facil',
         'puntos': 100,
         'orden': 2,
     },
@@ -91,7 +91,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'La jerarquía de controles establece que primero se debe intentar eliminar el riesgo, luego sustituir, aplicar controles de ingeniería, controles administrativos y como última medida el EPP (ISO 45001:2018, Cláusula 8.1.2).',
         'norma_referencia': 'ISO 45001:2018 - Cláusula 8.1.2',
         'categoria': 'riesgos',
-        'dificultad': 'intermedio',
+        'dificultad': 'medio',
         'puntos': 150,
         'orden': 3,
     },
@@ -106,7 +106,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'En zonas de riesgo químico se requiere protección respiratoria (respirador), protección ocular (gafas) y protección dérmica (guantes químicos) como mínimo, según la ficha de datos de seguridad del producto.',
         'norma_referencia': 'Resolución 2400 de 1979 - Arts. 176-201',
         'categoria': 'epp',
-        'dificultad': 'intermedio',
+        'dificultad': 'medio',
         'puntos': 150,
         'orden': 4,
     },
@@ -121,7 +121,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'La identificación de peligros y valoración de riesgos debe actualizarse como mínimo una vez al año, cuando ocurran accidentes mortales o eventos catastróficos, o cuando haya cambios en procesos o instalaciones.',
         'norma_referencia': 'Decreto 1072 de 2015 - Art. 2.2.4.6.15',
         'categoria': 'riesgos',
-        'dificultad': 'intermedio',
+        'dificultad': 'medio',
         'puntos': 150,
         'orden': 5,
     },
@@ -136,7 +136,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'Todo trabajador tiene el deber de reportar inmediatamente condiciones inseguras o actos subestándar. La comunicación oportuna previene accidentes (Decreto 1072, Art. 2.2.4.6.10).',
         'norma_referencia': 'Decreto 1072 de 2015 - Art. 2.2.4.6.10',
         'categoria': 'procedimientos',
-        'dificultad': 'basico',
+        'dificultad': 'facil',
         'puntos': 100,
         'orden': 6,
     },
@@ -151,7 +151,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'La GTC 45 clasifica los peligros en: biológico, físico, químico, psicosocial, biomecánico, condiciones de seguridad y fenómenos naturales. El riesgo financiero no es un peligro ocupacional.',
         'norma_referencia': 'GTC 45:2012 - Tabla 1',
         'categoria': 'riesgos',
-        'dificultad': 'basico',
+        'dificultad': 'facil',
         'puntos': 100,
         'orden': 7,
     },
@@ -166,7 +166,7 @@ PREGUNTAS_NIVEL_1 = [
         'explicacion': 'El color rojo en señalización de seguridad indica prohibición, peligro, alarma o equipos de lucha contra incendios. El amarillo indica advertencia, el azul obligación y el verde información de seguridad.',
         'norma_referencia': 'NTC 1461 - Colores y señales de seguridad',
         'categoria': 'senalizacion',
-        'dificultad': 'basico',
+        'dificultad': 'facil',
         'puntos': 100,
         'orden': 8,
     },
@@ -180,8 +180,8 @@ PREGUNTAS_NIVEL_1 = [
         ],
         'explicacion': 'La Resolución 0312 exige que el responsable del SG-SST cuente con 50 horas de capacitación en SST, y que exista un plan de capacitación anual para todos los trabajadores según los peligros identificados.',
         'norma_referencia': 'Resolución 0312 de 2019 - Estándar 4.1',
-        'categoria': 'normativa',
-        'dificultad': 'avanzado',
+        'categoria': 'normas',
+        'dificultad': 'dificil',
         'puntos': 200,
         'orden': 9,
     },
@@ -195,8 +195,8 @@ PREGUNTAS_NIVEL_1 = [
         ],
         'explicacion': 'El empleador debe reportar el accidente de trabajo a la ARL dentro de los 2 días hábiles siguientes a la ocurrencia del evento, según el Decreto 1072 de 2015.',
         'norma_referencia': 'Decreto 1072 de 2015 - Art. 2.2.4.1.6',
-        'categoria': 'accidentes',
-        'dificultad': 'intermedio',
+        'categoria': 'procedimientos',
+        'dificultad': 'medio',
         'puntos': 150,
         'orden': 10,
     },
@@ -253,7 +253,6 @@ class Command(BaseCommand):
                 skipped_count = 0
 
                 for pregunta_data in PREGUNTAS_NIVEL_1:
-                    # Unique key: nivel + orden
                     existing = GameQuizQuestion.objects.filter(
                         nivel=nivel, orden=pregunta_data['orden']
                     ).first()
@@ -287,13 +286,13 @@ class Command(BaseCommand):
 
                 # Summary
                 self.stdout.write('')
-                self.stdout.write(self.style.SUCCESS(f'  [✓] Preguntas creadas: {created_count}'))
+                self.stdout.write(self.style.SUCCESS(f'  [+] Preguntas creadas: {created_count}'))
                 if updated_count:
                     self.stdout.write(self.style.HTTP_INFO(f'  [~] Preguntas actualizadas: {updated_count}'))
                 if skipped_count:
                     self.stdout.write(f'  [SKIP] Preguntas existentes: {skipped_count}')
                 self.stdout.write('')
-                self.stdout.write(self.style.SUCCESS('  ¡Seed completado exitosamente!'))
+                self.stdout.write(self.style.SUCCESS('  Seed completado exitosamente!'))
                 self.stdout.write('')
 
         except Exception as e:

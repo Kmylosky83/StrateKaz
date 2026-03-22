@@ -227,6 +227,12 @@ if is_app_installed('apps.mi_equipo'):
     urlpatterns.append(path('api/mi-equipo/', include('apps.mi_equipo.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
+# GAMIFICACIÓN — Módulo independiente (Juego SST)
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.gamificacion.juego_sst'):
+    urlpatterns.append(path('api/game/', include('apps.gamificacion.juego_sst.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
 # NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)
 # talent_hub/urls.py se auto-detecta: solo monta sub-apps instaladas
 # ═══════════════════════════════════════════════════════════════════════════

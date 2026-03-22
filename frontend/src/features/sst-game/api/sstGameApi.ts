@@ -1,6 +1,6 @@
 /**
  * API client para Juego SST: Los Héroes de la Seguridad
- * Talent Hub - StrateKaz
+ * Módulo independiente — gamificacion/juego_sst
  */
 import apiClient from '@/api/axios-config';
 import type {
@@ -13,7 +13,7 @@ import type {
   GameSession,
 } from '../types/game.types';
 
-const BASE_URL = '/talent-hub/formacion/juego-sst';
+const BASE_URL = '/game';
 
 export const sstGameApi = {
   /** Obtiene el progreso del jugador actual (lo crea si no existe) */

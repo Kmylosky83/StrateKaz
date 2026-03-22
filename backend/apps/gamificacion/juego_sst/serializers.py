@@ -1,8 +1,6 @@
 """
 Serializers para Juego SST: Los Héroes de la Seguridad
-Talent Hub - StrateKaz
-
-Serializers para niveles, preguntas quiz, progreso y sesiones del juego.
+Módulo independiente — apps.gamificacion.juego_sst
 """
 from rest_framework import serializers
 from .models import GameLevel, GameQuizQuestion, GameProgress, GameSession
@@ -83,9 +81,6 @@ class GameProgressSerializer(serializers.ModelSerializer):
             'tiempo_jugado_segundos', 'sesiones_jugadas', 'ultima_sesion',
             'porcentaje_xp', 'precision_quizzes', 'tiempo_jugado_formateado',
         ]
-        read_only_fields = [
-            'empresa', 'colaborador', 'created_at', 'updated_at',
-        ]
 
 
 # =============================================================================
@@ -104,10 +99,6 @@ class GameSessionSerializer(serializers.ModelSerializer):
             'puntaje', 'xp_ganado', 'preguntas_correctas', 'preguntas_totales',
             'epps_recolectados', 'completado', 'duracion_segundos',
             'detalle_respuestas', 'fecha_sesion',
-        ]
-        read_only_fields = [
-            'empresa', 'colaborador', 'fecha_sesion',
-            'created_at', 'updated_at',
         ]
 
 
@@ -137,9 +128,7 @@ class CompletarNivelSerializer(serializers.Serializer):
 
     def validate_nivel_id(self, value):
         """Valida que el nivel exista y esté activo."""
-        try:
-            GameLevel.objects.get(id=value, is_active=True)
-        except GameLevel.DoesNotExist:
+        if not GameLevel.objects.filter(id=value, is_active=True).exists():
             raise serializers.ValidationError('Nivel no encontrado o no disponible.')
         return value
 

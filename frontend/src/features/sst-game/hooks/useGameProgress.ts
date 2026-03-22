@@ -1,6 +1,6 @@
 /**
  * React Query hooks para Juego SST
- * Talent Hub - StrateKaz
+ * Módulo independiente — gamificacion/juego_sst
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createQueryKeys } from '@/lib/query-keys';

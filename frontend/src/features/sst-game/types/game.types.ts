@@ -1,6 +1,6 @@
 /**
  * Types para Juego SST: Los Héroes de la Seguridad
- * Talent Hub - StrateKaz
+ * Módulo independiente — gamificacion/juego_sst
  */
 
 // =============================================================================

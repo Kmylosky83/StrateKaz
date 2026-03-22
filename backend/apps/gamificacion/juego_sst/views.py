@@ -1,6 +1,6 @@
 """
 Views para Juego SST: Los Héroes de la Seguridad
-Talent Hub - StrateKaz
+Módulo independiente — apps.gamificacion.juego_sst
 
 Endpoints para niveles, preguntas, progreso y sesiones del juego.
 Accesible desde Mi Portal por todos los colaboradores.
@@ -13,13 +13,11 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import F
 
-from apps.core.base_models.mixins import get_tenant_empresa
-
 from .models import (
     GameLevel, GameQuizQuestion, GameProgress, GameSession,
-    GamificacionColaborador,
+    GamificacionColaborador, NOMBRES_NIVEL,
 )
-from .game_serializers import (
+from .serializers import (
     GameLevelListSerializer, GameLevelDetailSerializer,
     GameQuizQuestionSerializer, GameProgressSerializer,
     GameSessionSerializer, CompletarNivelSerializer,
@@ -50,11 +48,9 @@ class GameViewSet(viewsets.ViewSet):
 
     def _get_or_create_progress(self, colaborador):
         """Obtiene o crea el progreso del juego para un colaborador."""
-        empresa = get_tenant_empresa()
         progress, created = GameProgress.objects.get_or_create(
             colaborador=colaborador,
             defaults={
-                'empresa': empresa,
                 'created_by': colaborador.usuario,
                 'updated_by': colaborador.usuario,
             }
@@ -109,7 +105,6 @@ class GameViewSet(viewsets.ViewSet):
                     if numero == 1:
                         nivel_data['desbloqueado'] = True
                     else:
-                        # Buscar si el nivel anterior está completado
                         nivel_anterior = GameLevel.objects.filter(
                             numero_nivel=numero - 1, is_active=True
                         ).first()
@@ -170,7 +165,6 @@ class GameViewSet(viewsets.ViewSet):
         data = serializer.validated_data
 
         nivel = GameLevel.objects.get(id=data['nivel_id'])
-        empresa = get_tenant_empresa()
         progress = self._get_or_create_progress(colaborador)
 
         # Calcular XP ganado
@@ -187,7 +181,6 @@ class GameViewSet(viewsets.ViewSet):
 
         # 1. Crear GameSession
         session = GameSession.objects.create(
-            empresa=empresa,
             colaborador=colaborador,
             nivel=nivel,
             puntaje=data['puntaje'],
@@ -252,17 +245,14 @@ class GameViewSet(viewsets.ViewSet):
             'progreso': GameProgressSerializer(progress).data,
             'completado': completado,
             'xp_ganado': xp_ganado,
-            'level_up': progress.nivel_actual > (progress.nivel_actual - 1),
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     def _sync_gamificacion(self, colaborador, game_progress, xp_ganado):
         """Sincroniza el progreso del juego con GamificacionColaborador."""
-        empresa = get_tenant_empresa()
         gamificacion, _ = GamificacionColaborador.objects.get_or_create(
             colaborador=colaborador,
             defaults={
-                'empresa': empresa,
                 'created_by': colaborador.usuario,
                 'updated_by': colaborador.usuario,
             }
@@ -275,12 +265,6 @@ class GameViewSet(viewsets.ViewSet):
         gamificacion.ultima_actividad = timezone.now()
 
         # Sincronizar nivel
-        NOMBRES_NIVEL = {
-            1: 'Novato', 2: 'Aprendiz', 3: 'Inspector Jr.',
-            4: 'Inspector', 5: 'Inspector Sr.', 6: 'Supervisor SST',
-            7: 'Jefe SST', 8: 'Director SST', 9: 'Experto SST',
-            10: 'Héroe de la Seguridad',
-        }
         gamificacion.nivel = game_progress.nivel_actual
         gamificacion.nombre_nivel = NOMBRES_NIVEL.get(
             game_progress.nivel_actual,

@@ -106,6 +106,16 @@ export function useActivarPlantilla() {
   });
 }
 
+/** Preview de resolución de firmantes por defecto a usuarios actuales */
+export function useResolverFirmantes(plantillaId: number | null) {
+  return useQuery({
+    queryKey: ['gd-plantillas', 'resolver-firmantes', plantillaId],
+    queryFn: () => plantillaDocumentoApi.resolverFirmantes(plantillaId!),
+    enabled: !!plantillaId && plantillaId > 0,
+    staleTime: 1000 * 60 * 2, // 2 min
+  });
+}
+
 // ==================== DOCUMENTOS (via factory + custom) ====================
 
 const documentoHooks = createCrudHooks<Documento, CreateDocumentoDTO, UpdateDocumentoDTO>(

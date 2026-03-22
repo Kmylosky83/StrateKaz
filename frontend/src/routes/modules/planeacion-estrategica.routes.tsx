@@ -7,7 +7,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ContextoPage = lazy(() => import('@/features/gestion-estrategica/pages/ContextoPage'));
 const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica/pages/PlaneacionPage'));
@@ -26,25 +26,29 @@ export const planeacionEstrategicaRoutes = (
     {/* Tab 1: Contexto Organizacional (DOFA, PESTEL, Porter, TOWS) */}
     <Route
       path="/planeacion-estrategica/contexto"
-      element={withModuleGuard(ContextoPage, 'planeacion_estrategica')}
+      element={withFullGuard(ContextoPage, 'planeacion_estrategica', 'contexto')}
     />
 
     {/* Tab 2: Planeación Estratégica (BSC, KPIs, mapa estratégico) */}
     <Route
       path="/planeacion-estrategica/planeacion"
-      element={withModuleGuard(PlaneacionPage, 'planeacion_estrategica')}
+      element={withFullGuard(PlaneacionPage, 'planeacion_estrategica', 'planeacion')}
     />
 
     {/* Tab 3: Riesgos y Oportunidades (ISO 6.1) */}
     <Route
       path="/planeacion-estrategica/riesgos-oportunidades"
-      element={withModuleGuard(RiesgosOportunidadesPage, 'planeacion_estrategica')}
+      element={withFullGuard(
+        RiesgosOportunidadesPage,
+        'planeacion_estrategica',
+        'riesgos_oportunidades'
+      )}
     />
 
     {/* Tab 4: Gestión de Proyectos */}
     <Route
       path="/planeacion-estrategica/proyectos"
-      element={withModuleGuard(ProyectosPage, 'planeacion_estrategica')}
+      element={withFullGuard(ProyectosPage, 'planeacion_estrategica', 'proyectos')}
     />
   </>
 );

@@ -9,6 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from apps.core.permissions import GranularActionPermission
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -73,7 +74,8 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
     destroy: Elimina configuración
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = ConfiguracionFlujoFirmaSerializer
     filterset_fields = ['tipo_flujo', 'permite_delegacion']
     search_fields = ['nombre', 'codigo', 'descripcion']
@@ -137,7 +139,8 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
 class FlowNodeViewSet(viewsets.ModelViewSet):
     """ViewSet para gestionar nodos de flujo"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = FlowNodeSerializer
     filterset_fields = ['configuracion_flujo', 'rol_firma', 'cargo', 'es_requerido']
     ordering_fields = ['orden']
@@ -161,7 +164,8 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
     create: Crea nueva firma (proceso de firma)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = FirmaDigitalSerializer
     filterset_fields = ['estado', 'rol_firma', 'usuario', 'content_type', 'object_id']
     search_fields = ['comentarios', 'usuario__first_name', 'usuario__last_name']
@@ -838,7 +842,8 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 class HistorialFirmaViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet de solo lectura para historial de firmas"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = HistorialFirmaSerializer
     filterset_fields = ['firma', 'accion', 'usuario']
     ordering_fields = ['created_at']
@@ -863,7 +868,8 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
     update: Actualiza delegación
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = DelegacionFirmaSerializer
     filterset_fields = ['delegante', 'delegado', 'cargo', 'esta_activa']
     ordering_fields = ['fecha_inicio', 'fecha_fin']
@@ -944,7 +950,8 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
 class ConfiguracionRevisionViewSet(viewsets.ModelViewSet):
     """ViewSet para configuraciones de revisión periódica"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = ConfiguracionRevisionSerializer
     filterset_fields = ['frecuencia', 'responsable_revision', 'renovacion_automatica']
     search_fields = ['nombre', 'descripcion']
@@ -977,7 +984,8 @@ class ConfiguracionRevisionViewSet(viewsets.ModelViewSet):
 class AlertaRevisionViewSet(viewsets.ModelViewSet):
     """ViewSet para alertas de revisión"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = AlertaRevisionSerializer
     filterset_fields = ['estado', 'tipo_alerta', 'content_type', 'object_id']
     ordering_fields = ['fecha_programada', 'fecha_vencimiento']
@@ -1078,7 +1086,8 @@ class AlertaRevisionViewSet(viewsets.ModelViewSet):
 class HistorialVersionViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet de solo lectura para historial de versiones"""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
     serializer_class = HistorialVersionSerializer
     filterset_fields = ['content_type', 'object_id', 'tipo_cambio', 'estado_documento']
     search_fields = ['titulo', 'motivo_cambio', 'version']
@@ -1174,7 +1183,8 @@ class WorkflowPoliticasViewSet(viewsets.ViewSet):
     - Consultar estado
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'firma_digital'
 
     @action(detail=False, methods=['post'], url_path='iniciar-revision')
     def iniciar_revision(self, request):

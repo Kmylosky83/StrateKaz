@@ -228,9 +228,10 @@ if is_app_installed('apps.mi_equipo'):
 
 # ═══════════════════════════════════════════════════════════════════════════
 # GAMIFICACIÓN — Módulo independiente (Juego SST)
+# Requiere refactor completo antes de activar.
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.gamificacion.juego_sst'):
-    urlpatterns.append(path('api/game/', include('apps.gamificacion.juego_sst.urls')))
+# if is_app_installed('apps.gamificacion.juego_sst'):
+#     urlpatterns.append(path('api/game/', include('apps.gamificacion.juego_sst.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)

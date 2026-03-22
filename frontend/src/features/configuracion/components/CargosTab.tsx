@@ -28,6 +28,7 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
+import { ProtectedAction } from '@/components/common';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { Select } from '@/components/forms/Select';
 import { Input } from '@/components/forms/Input';
@@ -114,8 +115,6 @@ export const CargosTab = () => {
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.FUNDACION, Sections.CARGOS, 'create');
-  const canEdit = canDo(Modules.FUNDACION, Sections.CARGOS, 'edit');
-  const canDelete = canDo(Modules.FUNDACION, Sections.CARGOS, 'delete');
 
   // Color del módulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('fundacion');
@@ -277,18 +276,18 @@ export const CargosTab = () => {
               ]}
               className="w-44"
             />
-            {canCreate && (
-              <>
-                <Button onClick={() => setIsImportOpen(true)} variant="outline" size="sm">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar
-                </Button>
-                <Button onClick={handleCreate} variant="primary" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Cargo
-                </Button>
-              </>
-            )}
+            <ProtectedAction permission="fundacion.cargos.create">
+              <Button onClick={() => setIsImportOpen(true)} variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Importar
+              </Button>
+            </ProtectedAction>
+            <ProtectedAction permission="fundacion.cargos.create">
+              <Button onClick={handleCreate} variant="primary" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Cargo
+              </Button>
+            </ProtectedAction>
           </div>
         }
       />
@@ -344,44 +343,40 @@ export const CargosTab = () => {
                 const c = item as unknown as CargoList;
                 return <span>{c.area_nombre || 'Sin proceso'}</span>;
               }}
-              renderActions={
-                canEdit || canDelete
-                  ? (item) => {
-                      const cargo = item as unknown as CargoList;
-                      return (
-                        <div className="flex items-center gap-2">
-                          {canEdit && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(cargo)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {canDelete && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteRequest(cargo)}
-                              disabled={cargo.is_system || (cargo.users_count || 0) > 0}
-                              title={
-                                cargo.is_system
-                                  ? 'Cargo del sistema'
-                                  : (cargo.users_count || 0) > 0
-                                    ? 'Tiene usuarios asignados'
-                                    : 'Eliminar'
-                              }
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    }
-                  : undefined
-              }
+              renderActions={(item) => {
+                const cargo = item as unknown as CargoList;
+                return (
+                  <div className="flex items-center gap-2">
+                    <ProtectedAction permission="fundacion.cargos.edit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(cargo)}
+                        title="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </ProtectedAction>
+                    <ProtectedAction permission="fundacion.cargos.delete">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteRequest(cargo)}
+                        disabled={cargo.is_system || (cargo.users_count || 0) > 0}
+                        title={
+                          cargo.is_system
+                            ? 'Cargo del sistema'
+                            : (cargo.users_count || 0) > 0
+                              ? 'Tiene usuarios asignados'
+                              : 'Eliminar'
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </ProtectedAction>
+                  </div>
+                );
+              }}
               hoverable
             />
 

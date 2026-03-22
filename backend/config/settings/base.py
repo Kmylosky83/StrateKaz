@@ -32,6 +32,20 @@ PLATFORM_DOMAIN = config('PLATFORM_DOMAIN', default='stratekaz.com')
 # Email subject prefix (Django default es "[Django] " — lo eliminamos)
 EMAIL_SUBJECT_PREFIX = ''
 
+# Email para alertas del sistema (health checks, backups fallidos, etc.)
+# Puede ser string (un email) o lista de strings (varios destinatarios)
+ALERT_EMAIL = config('ALERT_EMAIL', default='')
+
+# Admins reciben alertas de Django (500 errors) y de tareas Celery si ALERT_EMAIL no está definido
+ADMINS = [
+    (name.strip(), email.strip())
+    for name, email in (
+        pair.split(':')
+        for pair in config('DJANGO_ADMINS', default='').split(',')
+        if ':' in pair
+    )
+]
+
 # =============================================================================
 # DJANGO-TENANTS CONFIGURATION
 # =============================================================================
@@ -113,9 +127,9 @@ TENANT_APPS = [
 
     # ═══════════════════════════════════════════════════════════════════════════
     # GAMIFICACIÓN — Módulo independiente (Juego SST)
-    # Desacoplado de talent_hub. Accesible desde Mi Portal.
+    # Desacoplado de talent_hub. Requiere refactor completo antes de activar.
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.gamificacion.juego_sst',
+    # 'apps.gamificacion.juego_sst',
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 20: PLANEACIÓN ESTRATÉGICA
@@ -517,3 +531,9 @@ SESSION_COOKIE_HTTPONLY = True
 # Deshabilitado globalmente - los modelos deben registrarse explícitamente
 # Esto evita que intente auditar modelos en schemas donde auditlog no existe
 AUDITLOG_INCLUDE_ALL_MODELS = False
+
+# =============================================================================
+# HEALTH CHECK & MONITORING
+# =============================================================================
+HEALTH_CHECK_SSL_DOMAIN = config('HEALTH_CHECK_SSL_DOMAIN', default='app.stratekaz.com')
+HEALTH_CHECK_BACKUP_DIR = config('HEALTH_CHECK_BACKUP_DIR', default='/var/backups/stratekaz/')

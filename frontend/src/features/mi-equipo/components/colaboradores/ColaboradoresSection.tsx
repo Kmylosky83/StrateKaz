@@ -27,6 +27,7 @@ import type { StatItem } from '@/components/layout/StatsGrid';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { Avatar } from '@/components/common/Avatar';
+import { ProtectedAction } from '@/components/common';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import {
@@ -41,8 +42,6 @@ import {
   Shield,
   Upload,
 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
 import {
   useColaboradores,
   useColaboradoresEstadisticas,
@@ -104,12 +103,6 @@ const CONTRATO_LABELS: Record<TipoContratoColaborador, string> = {
 };
 
 export const ColaboradoresSection = () => {
-  // RBAC
-  const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'create');
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'edit');
-  const canDelete = canDo(Modules.TALENT_HUB, Sections.DIRECTORIO, 'delete');
-
   // State
   const [filters, setFilters] = useState<ColaboradorFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -366,18 +359,18 @@ export const ColaboradoresSection = () => {
               options={ESTADO_OPTIONS}
               className="w-36"
             />
-            {canCreate && (
+            <ProtectedAction permission="talent_hub.directorio.create">
               <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
                 <Upload size={16} className="mr-1" />
                 Importar
               </Button>
-            )}
-            {canCreate && (
+            </ProtectedAction>
+            <ProtectedAction permission="talent_hub.directorio.create">
               <Button variant="primary" size="sm" onClick={handleCreate}>
                 <UserPlus size={16} className="mr-1" />
                 Nuevo
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         }
       />
@@ -430,7 +423,7 @@ export const ColaboradoresSection = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                {canEdit && (
+                <ProtectedAction permission="talent_hub.directorio.edit">
                   <Button
                     type="button"
                     variant="ghost"
@@ -440,30 +433,34 @@ export const ColaboradoresSection = () => {
                   >
                     <Pencil size={16} />
                   </Button>
+                </ProtectedAction>
+                {!c.usuario && c.estado === 'activo' && (
+                  <ProtectedAction permission="talent_hub.directorio.create">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCrearAcceso(c as unknown as Colaborador)}
+                      title="Crear Acceso al Sistema"
+                      className="text-green-500 hover:text-green-700"
+                    >
+                      <Shield size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
-                {canCreate && !c.usuario && c.estado === 'activo' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCrearAcceso(c as unknown as Colaborador)}
-                    title="Crear Acceso al Sistema"
-                    className="text-green-500 hover:text-green-700"
-                  >
-                    <Shield size={16} />
-                  </Button>
-                )}
-                {canDelete && c.estado === 'activo' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRetire(c as unknown as Colaborador)}
-                    title="Retirar"
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <LogOut size={16} />
-                  </Button>
+                {c.estado === 'activo' && (
+                  <ProtectedAction permission="talent_hub.directorio.delete">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRetire(c as unknown as Colaborador)}
+                      title="Retirar"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <LogOut size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
               </>
             )}

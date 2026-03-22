@@ -5,7 +5,9 @@ Views del módulo Logs del Sistema - Audit System
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.core.permissions import GranularActionPermission
 from .models import (
     ConfiguracionAuditoria,
     LogAcceso,
@@ -25,6 +27,8 @@ class ConfiguracionAuditoriaViewSet(viewsets.ModelViewSet):
 
     queryset = ConfiguracionAuditoria.objects.all()
     serializer_class = ConfiguracionAuditoriaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'logs_sistema'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['modulo', 'modelo', 'is_active']
     search_fields = ['modulo', 'modelo']
@@ -37,6 +41,8 @@ class LogAccesoViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = LogAcceso.objects.select_related('usuario')
     serializer_class = LogAccesoSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'logs_sistema'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['usuario', 'tipo_evento', 'fue_exitoso']
     search_fields = ['usuario__first_name', 'usuario__last_name', 'ip_address']
@@ -59,6 +65,8 @@ class LogCambioViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = LogCambio.objects.select_related('usuario', 'content_type')
     serializer_class = LogCambioSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'logs_sistema'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['usuario', 'accion', 'content_type']
     search_fields = ['object_repr', 'usuario__first_name', 'usuario__last_name']
@@ -96,6 +104,8 @@ class LogConsultaViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = LogConsulta.objects.select_related('usuario')
     serializer_class = LogConsultaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'logs_sistema'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['usuario', 'modulo', 'fue_exportacion']
     search_fields = ['modulo', 'endpoint', 'usuario__first_name', 'usuario__last_name']

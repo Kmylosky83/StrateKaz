@@ -135,6 +135,19 @@ export const queryKeys = {
 
   // Talent Hub
   peopleAnalytics: createQueryKeys('people-analytics'),
+
+  // Workflow Engine
+  wfCategorias: createQueryKeys('wf-categorias'),
+  wfPlantillas: createQueryKeys('wf-plantillas'),
+  wfNodos: createQueryKeys('wf-nodos'),
+  wfTransiciones: createQueryKeys('wf-transiciones'),
+  wfCampos: createQueryKeys('wf-campos'),
+  wfRoles: createQueryKeys('wf-roles'),
+  wfInstancias: createQueryKeys('wf-instancias'),
+  wfTareas: createQueryKeys('wf-tareas'),
+  wfHistorial: createQueryKeys('wf-historial'),
+  wfNotificaciones: createQueryKeys('wf-notificaciones'),
+  wfMonitoreo: createQueryKeys('wf-monitoreo'),
 } as const;
 
 /**

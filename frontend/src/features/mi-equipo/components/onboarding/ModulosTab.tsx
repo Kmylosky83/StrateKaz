@@ -14,8 +14,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { BookOpen, Plus, Pencil, Trash2, Clock, CheckCircle } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
+import { ProtectedAction } from '@/components/common';
 import { useModulosInduccion, useDeleteModuloInduccion } from '../../hooks/useOnboardingInduccion';
 import type { ModuloInduccion } from '../../types';
 import { ModuloFormModal } from './ModuloFormModal';
@@ -44,12 +43,6 @@ const FORMATO_LABELS: Record<string, string> = {
 };
 
 export const ModulosTab = () => {
-  // RBAC
-  const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'create');
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'edit');
-  const canDelete = canDo(Modules.TALENT_HUB, Sections.PROGRAMAS_INDUCCION, 'delete');
-
   const [searchTerm, setSearchTerm] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [selectedModulo, setSelectedModulo] = useState<ModuloInduccion | null>(null);
@@ -116,12 +109,12 @@ export const ModulosTab = () => {
               options={TIPO_OPTIONS}
               className="w-44"
             />
-            {canCreate && (
+            <ProtectedAction permission="talent_hub.programas_induccion.create">
               <Button variant="primary" size="sm" onClick={handleCreate}>
                 <Plus size={16} className="mr-1" />
                 Nuevo Modulo
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         }
       />
@@ -226,7 +219,7 @@ export const ModulosTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {canEdit && (
+                        <ProtectedAction permission="talent_hub.programas_induccion.edit">
                           <Button
                             type="button"
                             variant="ghost"
@@ -236,8 +229,8 @@ export const ModulosTab = () => {
                           >
                             <Pencil size={16} />
                           </Button>
-                        )}
-                        {canDelete && (
+                        </ProtectedAction>
+                        <ProtectedAction permission="talent_hub.programas_induccion.delete">
                           <Button
                             type="button"
                             variant="ghost"
@@ -248,7 +241,7 @@ export const ModulosTab = () => {
                           >
                             <Trash2 size={16} />
                           </Button>
-                        )}
+                        </ProtectedAction>
                       </div>
                     </td>
                   </tr>

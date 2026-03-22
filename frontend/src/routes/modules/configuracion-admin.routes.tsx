@@ -6,13 +6,11 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ConfiguracionAdminPage = lazy(
   () => import('@/features/configuracion-admin/pages/ConfiguracionAdminPage')
 );
-
-const GuardedPage = withModuleGuard(ConfiguracionAdminPage, 'configuracion_plataforma');
 
 export const configuracionAdminRoutes = (
   <>
@@ -20,8 +18,17 @@ export const configuracionAdminRoutes = (
       path="/configuracion-admin"
       element={<Navigate to="/configuracion-admin/general" replace />}
     />
-    <Route path="/configuracion-admin/general" element={GuardedPage} />
-    <Route path="/configuracion-admin/catalogos" element={GuardedPage} />
-    <Route path="/configuracion-admin/conexiones" element={GuardedPage} />
+    <Route
+      path="/configuracion-admin/general"
+      element={withFullGuard(ConfiguracionAdminPage, 'configuracion_plataforma', 'general')}
+    />
+    <Route
+      path="/configuracion-admin/catalogos"
+      element={withFullGuard(ConfiguracionAdminPage, 'configuracion_plataforma', 'catalogos')}
+    />
+    <Route
+      path="/configuracion-admin/conexiones"
+      element={withFullGuard(ConfiguracionAdminPage, 'configuracion_plataforma', 'conexiones')}
+    />
   </>
 );

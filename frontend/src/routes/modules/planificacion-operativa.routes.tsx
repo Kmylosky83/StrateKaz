@@ -6,7 +6,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const PlanificacionSistemaPage = lazy(
   () => import('@/features/planificacion-operativa/pages/PlanificacionSistemaPage')
@@ -20,7 +20,7 @@ export const planificacionOperativaRoutes = (
     />
     <Route
       path="/planificacion-operativa/planificacion"
-      element={withModuleGuard(PlanificacionSistemaPage, 'planificacion_operativa')}
+      element={withFullGuard(PlanificacionSistemaPage, 'planificacion_operativa', 'planificacion')}
     />
   </>
 );

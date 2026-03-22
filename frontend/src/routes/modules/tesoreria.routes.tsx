@@ -6,7 +6,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const TesoreriaPage = lazy(() =>
   import('@/features/tesoreria').then((m) => ({ default: m.TesoreriaPage }))
@@ -15,7 +15,10 @@ const TesoreriaPage = lazy(() =>
 export const tesoreriaRoutes = (
   <>
     <Route path="/tesoreria" element={<Navigate to="/tesoreria/tesoreria" replace />} />
-    <Route path="/tesoreria/tesoreria" element={withModuleGuard(TesoreriaPage, 'tesoreria')} />
-    <Route path="/tesoreria/pagos" element={withModuleGuard(TesoreriaPage, 'tesoreria')} />
+    <Route
+      path="/tesoreria/tesoreria"
+      element={withFullGuard(TesoreriaPage, 'tesoreria', 'tesoreria')}
+    />
+    <Route path="/tesoreria/pagos" element={withFullGuard(TesoreriaPage, 'tesoreria', 'pagos')} />
   </>
 );

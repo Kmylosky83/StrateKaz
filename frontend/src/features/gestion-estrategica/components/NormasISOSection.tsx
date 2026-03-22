@@ -16,7 +16,14 @@
  */
 import { useState } from 'react';
 import { Plus, FileCheck, Lock } from 'lucide-react';
-import { Card, Badge, Button, BrandedSkeleton, DynamicIcon } from '@/components/common';
+import {
+  Card,
+  Badge,
+  Button,
+  BrandedSkeleton,
+  DynamicIcon,
+  ProtectedAction,
+} from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -82,12 +89,12 @@ export const NormasISOSection = () => {
               </p>
             </div>
           </div>
-          {canDo(Modules.FUNDACION, Sections.NORMAS_ISO, 'create') && (
+          <ProtectedAction permission="fundacion.normas_iso.create">
             <Button variant="primary" size="sm" onClick={handleAdd}>
               <Plus className="h-4 w-4 mr-2" />
               Agregar Norma
             </Button>
-          )}
+          </ProtectedAction>
         </div>
 
         {/* Data Table Card */}
@@ -221,12 +228,12 @@ export const NormasISOSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue normas ISO, PESV, SG-SST u otras normativas aplicables a su organización
               </p>
-              {canDo(Modules.FUNDACION, Sections.NORMAS_ISO, 'create') && (
+              <ProtectedAction permission="fundacion.normas_iso.create">
                 <Button variant="primary" onClick={handleAdd}>
                   <Plus className="h-4 w-4 mr-2" />
                   Agregar Primera Norma
                 </Button>
-              )}
+              </ProtectedAction>
             </div>
           </Card>
         )}

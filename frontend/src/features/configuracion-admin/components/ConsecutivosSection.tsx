@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { useModuleColor } from '@/hooks/useModuleColor';
+import { ProtectedAction } from '@/components/common';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { useConsecutivosConfig, useDeleteConsecutivo } from '../hooks/useConfigAdmin';
@@ -28,8 +29,6 @@ export const ConsecutivosSection = () => {
   const deleteMutation = useDeleteConsecutivo();
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.CONFIGURACION_PLATAFORMA, Sections.CONSECUTIVOS, 'create');
-  const canEdit = canDo(Modules.CONFIGURACION_PLATAFORMA, Sections.CONSECUTIVOS, 'edit');
-  const canDelete = canDo(Modules.CONFIGURACION_PLATAFORMA, Sections.CONSECUTIVOS, 'delete');
   const { color: moduleColor } = useModuleColor('configuracion_plataforma');
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -107,26 +106,30 @@ export const ConsecutivosSection = () => {
         header: '',
         cell: (row) => (
           <div className="flex items-center gap-1 justify-end">
-            {canEdit && !row.es_sistema && (
-              <Button variant="ghost" size="sm" title="Editar" onClick={() => openEdit(row)}>
-                <Pencil size={14} />
-              </Button>
+            {!row.es_sistema && (
+              <ProtectedAction permission="configuracion_plataforma.consecutivos.edit">
+                <Button variant="ghost" size="sm" title="Editar" onClick={() => openEdit(row)}>
+                  <Pencil size={14} />
+                </Button>
+              </ProtectedAction>
             )}
-            {canDelete && !row.es_sistema && (
-              <Button
-                variant="ghost"
-                size="sm"
-                title="Eliminar"
-                onClick={() => setDeleteId(row.id)}
-              >
-                <Trash2 size={14} className="text-red-500" />
-              </Button>
+            {!row.es_sistema && (
+              <ProtectedAction permission="configuracion_plataforma.consecutivos.delete">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Eliminar"
+                  onClick={() => setDeleteId(row.id)}
+                >
+                  <Trash2 size={14} className="text-red-500" />
+                </Button>
+              </ProtectedAction>
             )}
           </div>
         ),
       },
     ],
-    [canEdit, canDelete]
+    []
   );
 
   if (isLoading) {

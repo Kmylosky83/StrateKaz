@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const DisenadorFlujosPage = lazy(() =>
   import('@/features/workflows').then((m) => ({ default: m.DisenadorFlujosPage }))
@@ -21,15 +21,15 @@ export const workflowsRoutes = (
     <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
     <Route
       path="/workflows/disenador"
-      element={withModuleGuard(DisenadorFlujosPage, 'workflow_engine')}
+      element={withFullGuard(DisenadorFlujosPage, 'workflow_engine', 'disenador_flujos')}
     />
     <Route
       path="/workflows/ejecucion"
-      element={withModuleGuard(EjecucionPage, 'workflow_engine')}
+      element={withFullGuard(EjecucionPage, 'workflow_engine', 'ejecucion')}
     />
     <Route
       path="/workflows/monitoreo"
-      element={withModuleGuard(MonitoreoPage, 'workflow_engine')}
+      element={withFullGuard(MonitoreoPage, 'workflow_engine', 'monitoreo')}
     />
   </>
 );

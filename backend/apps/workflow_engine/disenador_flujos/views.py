@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 
+from apps.core.permissions import GranularActionPermission
 from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     CategoriaFlujo,
@@ -35,7 +36,8 @@ from .serializers import (
 
 class CategoriaFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = CategoriaFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['activo', 'codigo']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['orden', 'nombre', 'created_at']
@@ -50,7 +52,8 @@ class CategoriaFlujoViewSet(viewsets.ModelViewSet):
 
 class PlantillaFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = PlantillaFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['categoria', 'estado', 'version', 'codigo']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['nombre', 'version', 'created_at']
@@ -123,7 +126,8 @@ class PlantillaFlujoViewSet(viewsets.ModelViewSet):
 
 class NodoFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = NodoFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['plantilla', 'tipo', 'rol_asignado']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre']
@@ -138,7 +142,8 @@ class NodoFlujoViewSet(viewsets.ModelViewSet):
 
 class TransicionFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = TransicionFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['plantilla', 'nodo_origen', 'nodo_destino']
     search_fields = ['nombre']
     ordering_fields = ['prioridad', 'nombre']
@@ -153,7 +158,8 @@ class TransicionFlujoViewSet(viewsets.ModelViewSet):
 
 class CampoFormularioViewSet(viewsets.ModelViewSet):
     serializer_class = CampoFormularioSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['nodo', 'tipo', 'requerido']
     search_fields = ['nombre', 'etiqueta']
     ordering_fields = ['orden', 'nombre']
@@ -168,7 +174,8 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
 
 class RolFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = RolFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['activo', 'tipo_asignacion', 'codigo']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['nombre', 'created_at']
@@ -198,7 +205,8 @@ class FormularioDiligenciadoViewSet(viewsets.ModelViewSet):
     - POST /formularios-diligenciados/{id}/completar/ - Marcar como completado
     - POST /formularios-diligenciados/{id}/guardar_respuesta/ - Guardar respuesta
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['plantilla_flujo', 'estado', 'diligenciado_por']
     search_fields = ['numero_formulario', 'titulo']
     ordering_fields = ['fecha_diligenciamiento', 'titulo', 'estado']
@@ -348,7 +356,8 @@ class RespuestaCampoViewSet(viewsets.ModelViewSet):
     La creación masiva se realiza mediante FormularioDiligenciado.guardar_respuesta
     """
     serializer_class = RespuestaCampoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['formulario_diligenciado', 'campo_formulario', 'es_valido']
     ordering_fields = ['campo_formulario__orden', 'fecha_modificacion']
     ordering = ['campo_formulario__orden']
@@ -380,7 +389,8 @@ class AsignacionFormularioViewSet(viewsets.ModelViewSet):
     - POST /asignaciones-formularios/{id}/iniciar/ - Iniciar diligenciamiento
     - POST /asignaciones-formularios/{id}/cancelar/ - Cancelar asignación
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'disenador_flujos'
     filterset_fields = ['plantilla_flujo', 'estado', 'asignado_a', 'prioridad']
     search_fields = ['titulo', 'descripcion']
     ordering_fields = ['fecha_asignacion', 'fecha_limite', 'prioridad']

@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ConfigContablePage = lazy(() =>
   import('@/features/accounting').then((m) => ({ default: m.ConfigContablePage }))
@@ -24,19 +24,19 @@ export const accountingRoutes = (
     <Route path="/contabilidad" element={<Navigate to="/contabilidad/configuracion" replace />} />
     <Route
       path="/contabilidad/configuracion"
-      element={withModuleGuard(ConfigContablePage, 'accounting')}
+      element={withFullGuard(ConfigContablePage, 'accounting', 'config_contable')}
     />
     <Route
       path="/contabilidad/movimientos"
-      element={withModuleGuard(MovimientosContablesPage, 'accounting')}
+      element={withFullGuard(MovimientosContablesPage, 'accounting', 'movimientos')}
     />
     <Route
       path="/contabilidad/informes"
-      element={withModuleGuard(InformesContablesPage, 'accounting')}
+      element={withFullGuard(InformesContablesPage, 'accounting', 'informes')}
     />
     <Route
       path="/contabilidad/integracion"
-      element={withModuleGuard(IntegracionContablePage, 'accounting')}
+      element={withFullGuard(IntegracionContablePage, 'accounting', 'integracion')}
     />
   </>
 );

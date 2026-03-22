@@ -6,7 +6,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ActivosFijosPage = lazy(() =>
   import('@/features/administracion').then((m) => ({ default: m.ActivosFijosPage }))
@@ -26,15 +26,15 @@ export const administracionRoutes = (
     />
     <Route
       path="/administracion/activos-fijos"
-      element={withModuleGuard(ActivosFijosPage, 'administracion')}
+      element={withFullGuard(ActivosFijosPage, 'administracion', 'activos_fijos')}
     />
     <Route
       path="/administracion/servicios-generales"
-      element={withModuleGuard(ServiciosGeneralesPage, 'administracion')}
+      element={withFullGuard(ServiciosGeneralesPage, 'administracion', 'servicios_generales')}
     />
     <Route
       path="/administracion/presupuesto"
-      element={withModuleGuard(PresupuestoPage, 'administracion')}
+      element={withFullGuard(PresupuestoPage, 'administracion', 'presupuesto')}
     />
   </>
 );

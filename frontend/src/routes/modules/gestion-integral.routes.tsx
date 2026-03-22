@@ -8,7 +8,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
 const MedicinaLaboralPage = lazy(() =>
@@ -41,31 +41,37 @@ export const gestionIntegralRoutes = (
       path="/gestion-integral"
       element={<Navigate to="/gestion-integral/medicina-laboral" replace />}
     />
-    <Route path="/gestion-integral/dashboard" element={withModuleGuard(HSEQPage, MODULE)} />
+    <Route
+      path="/gestion-integral/dashboard"
+      element={withFullGuard(HSEQPage, MODULE, 'dashboard')}
+    />
     <Route
       path="/gestion-integral/medicina-laboral"
-      element={withModuleGuard(MedicinaLaboralPage, MODULE)}
+      element={withFullGuard(MedicinaLaboralPage, MODULE, 'medicina_laboral')}
     />
     <Route
       path="/gestion-integral/seguridad-industrial"
-      element={withModuleGuard(SeguridadIndustrialPage, MODULE)}
+      element={withFullGuard(SeguridadIndustrialPage, MODULE, 'seguridad_industrial')}
     />
     <Route
       path="/gestion-integral/higiene-industrial"
-      element={withModuleGuard(HigieneIndustrialPage, MODULE)}
+      element={withFullGuard(HigieneIndustrialPage, MODULE, 'higiene_industrial')}
     />
-    <Route path="/gestion-integral/comites" element={withModuleGuard(GestionComitesPage, MODULE)} />
+    <Route
+      path="/gestion-integral/comites"
+      element={withFullGuard(GestionComitesPage, MODULE, 'comites')}
+    />
     <Route
       path="/gestion-integral/accidentalidad"
-      element={withModuleGuard(AccidentalidadPage, MODULE)}
+      element={withFullGuard(AccidentalidadPage, MODULE, 'accidentalidad')}
     />
     <Route
       path="/gestion-integral/emergencias"
-      element={withModuleGuard(EmergenciasPage, MODULE)}
+      element={withFullGuard(EmergenciasPage, MODULE, 'emergencias')}
     />
     <Route
       path="/gestion-integral/gestion-ambiental"
-      element={withModuleGuard(GestionAmbientalPage, MODULE)}
+      element={withFullGuard(GestionAmbientalPage, MODULE, 'gestion_ambiental')}
     />
   </>
 );

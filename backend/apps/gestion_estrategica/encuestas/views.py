@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from apps.core.permissions import GranularActionPermission
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.shortcuts import get_object_or_404
@@ -59,7 +60,8 @@ class PreguntaContextoViewSet(StandardViewSetMixin, viewsets.ReadOnlyModelViewSe
         is_active=True
     ).order_by('orden')
     serializer_class = PreguntaContextoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'encuestas'
     pagination_class = None
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['perfil', 'capacidad_pci', 'factor_poam', 'clasificacion_esperada']
@@ -89,7 +91,8 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     queryset = EncuestaDofa.objects.select_related(
         'analisis_dofa', 'analisis_pestel', 'responsable'
     ).prefetch_related('temas', 'participantes').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'es_publica', 'analisis_dofa', 'tipo_encuesta']
     search_fields = ['titulo', 'descripcion']
@@ -317,7 +320,8 @@ class TemaEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
 
     queryset = TemaEncuesta.objects.select_related('encuesta', 'area').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['encuesta', 'area']
     ordering_fields = ['orden', 'created_at']
@@ -346,7 +350,8 @@ class ParticipanteEncuestaViewSet(viewsets.ModelViewSet):
     queryset = ParticipanteEncuesta.objects.select_related(
         'encuesta', 'usuario', 'area', 'cargo'
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['encuesta', 'tipo', 'estado']
     ordering_fields = ['created_at', 'estado']
@@ -375,7 +380,8 @@ class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
     queryset = RespuestaEncuesta.objects.select_related(
         'tema', 'tema__encuesta', 'respondente'
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['tema', 'tema__encuesta', 'clasificacion', 'respondente']
     ordering_fields = ['created_at']

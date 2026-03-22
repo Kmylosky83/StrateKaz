@@ -8,6 +8,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
+from apps.core.permissions import GranularActionPermission
 from apps.core.base_models.mixins import get_tenant_empresa
 from .models import MetricaFlujo, AlertaFlujo, ReglaSLA, DashboardWidget, ReporteAutomatico
 from .serializers import MetricaFlujoSerializer, AlertaFlujoSerializer, ReglaSLASerializer, DashboardWidgetSerializer, ReporteAutomaticoSerializer
@@ -15,7 +16,8 @@ from .serializers import MetricaFlujoSerializer, AlertaFlujoSerializer, ReglaSLA
 
 class MetricaFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = MetricaFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'monitoreo_flujos'
     filterset_fields = ["plantilla", "periodo"]
     ordering = ["-fecha_inicio"]
 
@@ -269,7 +271,8 @@ class MetricaFlujoViewSet(viewsets.ModelViewSet):
 
 class AlertaFlujoViewSet(viewsets.ModelViewSet):
     serializer_class = AlertaFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'monitoreo_flujos'
     filterset_fields = ["tipo", "severidad", "estado"]
     ordering = ["-fecha_generacion"]
 
@@ -306,7 +309,8 @@ class AlertaFlujoViewSet(viewsets.ModelViewSet):
 
 class ReglaSLAViewSet(viewsets.ModelViewSet):
     serializer_class = ReglaSLASerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'monitoreo_flujos'
     filterset_fields = ["plantilla", "nodo", "is_active"]
     ordering = ["plantilla", "nodo"]
 
@@ -319,7 +323,8 @@ class ReglaSLAViewSet(viewsets.ModelViewSet):
 
 class DashboardWidgetViewSet(viewsets.ModelViewSet):
     serializer_class = DashboardWidgetSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'monitoreo_flujos'
     filterset_fields = ["tipo_widget", "is_visible"]
     ordering = ["posicion_y", "posicion_x"]
 
@@ -337,7 +342,8 @@ class DashboardWidgetViewSet(viewsets.ModelViewSet):
 
 class ReporteAutomaticoViewSet(viewsets.ModelViewSet):
     serializer_class = ReporteAutomaticoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'monitoreo_flujos'
     filterset_fields = ["frecuencia", "formato", "is_active"]
     ordering = ["nombre"]
 

@@ -7,7 +7,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const AccionesMejoraPage = lazy(
   () => import('@/features/acciones-mejora/pages/AccionesMejoraPage')
@@ -21,15 +21,15 @@ export const accionesMejoraRoutes = (
     />
     <Route
       path="/acciones-mejora/no-conformidades"
-      element={withModuleGuard(AccionesMejoraPage, 'acciones_mejora')}
+      element={withFullGuard(AccionesMejoraPage, 'acciones_mejora', 'no_conformidades')}
     />
     <Route
       path="/acciones-mejora/acciones-correctivas"
-      element={withModuleGuard(AccionesMejoraPage, 'acciones_mejora')}
+      element={withFullGuard(AccionesMejoraPage, 'acciones_mejora', 'acciones_correctivas')}
     />
     <Route
       path="/acciones-mejora/oportunidades-mejora"
-      element={withModuleGuard(AccionesMejoraPage, 'acciones_mejora')}
+      element={withFullGuard(AccionesMejoraPage, 'acciones_mejora', 'oportunidades_mejora')}
     />
   </>
 );

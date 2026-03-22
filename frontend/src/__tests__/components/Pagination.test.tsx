@@ -73,9 +73,10 @@ describe('Pagination Component', () => {
 
     it('should call onPageChange with clicked page number', async () => {
       const onPageChange = vi.fn();
-      render(<Pagination currentPage={1} totalPages={5} onPageChange={onPageChange} />);
-      await userEvent.click(screen.getByText('3'));
-      expect(onPageChange).toHaveBeenCalledWith(3);
+      // Use currentPage=3 so siblings 2,3,4 are visible along with 1 and 5
+      render(<Pagination currentPage={3} totalPages={5} onPageChange={onPageChange} />);
+      await userEvent.click(screen.getByText('5'));
+      expect(onPageChange).toHaveBeenCalledWith(5);
     });
   });
 

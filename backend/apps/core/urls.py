@@ -15,7 +15,7 @@ NOTA: Branding se maneja ahora en /api/tenant/public/branding/
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import health_check, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView, ResendSetupPasswordView
+from .views import health_check, health_check_deep, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView, ResendSetupPasswordView
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
 from .viewsets_rbac import (
     PermissionViewSet,
@@ -119,6 +119,7 @@ router.register(r'ciudades', CoreCiudadViewSet, basename='ciudad')
 urlpatterns = [
     # Endpoints funcionales
     path('health/', health_check, name='health_check'),
+    path('health-deep/', health_check_deep, name='health_check_deep'),
     path('users/me/', current_user, name='current_user'),
 
     # Endpoints Celery Tasks

@@ -355,7 +355,8 @@ class OrganigramaNodePositionView(APIView):
     POST /api/organizacion/organigrama/positions/ (bulk upsert)
     DELETE /api/organizacion/organigrama/positions/?view_mode=X&direction=Y (reset)
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'organigrama'
 
     def get(self, request):
         """Cargar posiciones guardadas para un view_mode y direction"""

@@ -23,22 +23,18 @@ describe('Button Component', () => {
 
     it('should render with different sizes', () => {
       const { rerender } = render(<Button size="sm">Small</Button>);
-      expect(screen.getByRole('button')).toHaveClass('px-3', 'py-1.5', 'text-sm');
+      expect(screen.getByRole('button')).toHaveClass('px-4', 'py-2.5', 'text-sm');
 
       rerender(<Button size="md">Medium</Button>);
-      expect(screen.getByRole('button')).toHaveClass('px-4', 'py-2', 'text-base');
+      expect(screen.getByRole('button')).toHaveClass('px-5', 'py-3', 'text-base');
 
       rerender(<Button size="lg">Large</Button>);
-      expect(screen.getByRole('button')).toHaveClass('px-6', 'py-3', 'text-lg');
+      expect(screen.getByRole('button')).toHaveClass('px-6', 'py-4', 'text-lg');
     });
 
     it('should render with left icon', () => {
       const LeftIcon = () => <span data-testid="left-icon">←</span>;
-      render(
-        <Button leftIcon={<LeftIcon />}>
-          With Left Icon
-        </Button>
-      );
+      render(<Button leftIcon={<LeftIcon />}>With Left Icon</Button>);
 
       expect(screen.getByTestId('left-icon')).toBeInTheDocument();
       expect(screen.getByText('With Left Icon')).toBeInTheDocument();
@@ -46,11 +42,7 @@ describe('Button Component', () => {
 
     it('should render with right icon', () => {
       const RightIcon = () => <span data-testid="right-icon">→</span>;
-      render(
-        <Button rightIcon={<RightIcon />}>
-          With Right Icon
-        </Button>
-      );
+      render(<Button rightIcon={<RightIcon />}>With Right Icon</Button>);
 
       expect(screen.getByTestId('right-icon')).toBeInTheDocument();
       expect(screen.getByText('With Right Icon')).toBeInTheDocument();

@@ -35,8 +35,9 @@ export const useCreateUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario creado exitosamente');
     },
-    onError: (_error: unknown) => {
-      const message = error.response?.data?.message || 'Error al crear el usuario';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err.response?.data?.message || 'Error al crear el usuario';
       toast.error(message);
     },
   });
@@ -68,8 +69,9 @@ export const useUpdateUser = () => {
 
       toast.success('Usuario actualizado exitosamente');
     },
-    onError: (_error: unknown) => {
-      const message = error.response?.data?.message || 'Error al actualizar el usuario';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err.response?.data?.message || 'Error al actualizar el usuario';
       toast.error(message);
     },
   });
@@ -86,8 +88,9 @@ export const useDeleteUser = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario eliminado exitosamente');
     },
-    onError: (_error: unknown) => {
-      const message = error.response?.data?.message || 'Error al eliminar el usuario';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err.response?.data?.message || 'Error al eliminar el usuario';
       toast.error(message);
     },
   });
@@ -105,7 +108,7 @@ export const useToggleUserStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Estado del usuario actualizado');
     },
-    onError: (_error: unknown) => {
+    onError: () => {
       toast.error('Error al cambiar el estado del usuario');
     },
   });
@@ -125,8 +128,9 @@ export const useChangePassword = () => {
     onSuccess: () => {
       toast.success('Contraseña cambiada exitosamente');
     },
-    onError: (_error: unknown) => {
-      const message = error.response?.data?.message || 'Error al cambiar la contraseña';
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      const message = err.response?.data?.message || 'Error al cambiar la contraseña';
       toast.error(message);
     },
   });

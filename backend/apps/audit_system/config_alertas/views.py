@@ -2,25 +2,33 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.core.permissions import GranularActionPermission
 from .models import TipoAlerta, ConfiguracionAlerta, AlertaGenerada, EscalamientoAlerta
 from .serializers import TipoAlertaSerializer, ConfiguracionAlertaSerializer, AlertaGeneradaSerializer, EscalamientoAlertaSerializer
 
 class TipoAlertaViewSet(viewsets.ModelViewSet):
     queryset = TipoAlerta.objects.all()
     serializer_class = TipoAlertaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_alertas'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['categoria', 'modulo_origen', 'is_active']
 
 class ConfiguracionAlertaViewSet(viewsets.ModelViewSet):
     queryset = ConfiguracionAlerta.objects.all()
     serializer_class = ConfiguracionAlertaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_alertas'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['tipo_alerta', 'is_active']
 
 class AlertaGeneradaViewSet(viewsets.ModelViewSet):
     queryset = AlertaGenerada.objects.select_related('configuracion')
     serializer_class = AlertaGeneradaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_alertas'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['severidad', 'esta_atendida']
     
@@ -51,3 +59,5 @@ class AlertaGeneradaViewSet(viewsets.ModelViewSet):
 class EscalamientoAlertaViewSet(viewsets.ModelViewSet):
     queryset = EscalamientoAlerta.objects.all()
     serializer_class = EscalamientoAlertaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_alertas'

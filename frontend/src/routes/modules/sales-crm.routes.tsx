@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ClientesPage = lazy(() =>
   import('@/features/sales-crm').then((m) => ({ default: m.ClientesPage }))
@@ -32,13 +32,22 @@ const FidelizacionPage = lazy(() =>
 export const salesCrmRoutes = (
   <>
     <Route path="/ventas" element={<Navigate to="/ventas/clientes" replace />} />
-    <Route path="/ventas/clientes" element={withModuleGuard(ClientesPage, 'sales_crm')} />
-    <Route path="/ventas/pipeline" element={withModuleGuard(PipelinePage, 'sales_crm')} />
-    <Route path="/ventas/cotizaciones" element={withModuleGuard(CotizacionesPage, 'sales_crm')} />
-    <Route path="/ventas/pedidos" element={withModuleGuard(PedidosPage, 'sales_crm')} />
-    <Route path="/ventas/facturas" element={withModuleGuard(FacturasPage, 'sales_crm')} />
-    <Route path="/ventas/pqrs" element={withModuleGuard(PQRSPage, 'sales_crm')} />
-    <Route path="/ventas/encuestas" element={withModuleGuard(EncuestasPage, 'sales_crm')} />
-    <Route path="/ventas/fidelizacion" element={withModuleGuard(FidelizacionPage, 'sales_crm')} />
+    <Route path="/ventas/clientes" element={withFullGuard(ClientesPage, 'sales_crm', 'clientes')} />
+    <Route path="/ventas/pipeline" element={withFullGuard(PipelinePage, 'sales_crm', 'pipeline')} />
+    <Route
+      path="/ventas/cotizaciones"
+      element={withFullGuard(CotizacionesPage, 'sales_crm', 'cotizaciones')}
+    />
+    <Route path="/ventas/pedidos" element={withFullGuard(PedidosPage, 'sales_crm', 'pedidos')} />
+    <Route path="/ventas/facturas" element={withFullGuard(FacturasPage, 'sales_crm', 'facturas')} />
+    <Route path="/ventas/pqrs" element={withFullGuard(PQRSPage, 'sales_crm', 'pqrs')} />
+    <Route
+      path="/ventas/encuestas"
+      element={withFullGuard(EncuestasPage, 'sales_crm', 'encuestas')}
+    />
+    <Route
+      path="/ventas/fidelizacion"
+      element={withFullGuard(FidelizacionPage, 'sales_crm', 'fidelizacion')}
+    />
   </>
 );

@@ -95,7 +95,7 @@ describe('Sistema Documental - API Tests', () => {
 
       expect(result.current.data).toEqual(mockTipos);
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/gestion-estrategica/gestion-documental/tipos/',
+        '/gestion-estrategica/gestion-documental/tipos-documento/',
         { params: undefined }
       );
     });
@@ -202,7 +202,7 @@ describe('Sistema Documental - API Tests', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/gestion-estrategica/gestion-documental/documentos/',
+        '/gestion-estrategica/gestion-documental/documentos/',
         {
           params: { tipo: 1 },
         }
@@ -223,7 +223,7 @@ describe('Sistema Documental - API Tests', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/gestion-estrategica/gestion-documental/documentos/',
+        '/gestion-estrategica/gestion-documental/documentos/',
         {
           params: { estado: 'APROBADO' },
         }
@@ -309,7 +309,8 @@ describe('Sistema Documental - API Tests', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(apiClient.get).toHaveBeenCalledWith(
-        '/api/gestion-estrategica/gestion-documental/documentos/listado-maestro/'
+        '/gestion-estrategica/gestion-documental/documentos/listado-maestro/',
+        { params: undefined }
       );
       expect(result.current.data).toEqual(mockListadoMaestro);
       expect(result.current.data).toHaveLength(2);

@@ -28,12 +28,16 @@ describe('Button', () => {
       render(<Button>Default</Button>);
       const button = screen.getByRole('button');
       expect(button).toHaveClass('bg-primary-600');
-      expect(button).toHaveClass('px-4');
-      expect(button).toHaveClass('py-2');
+      expect(button).toHaveClass('px-5');
+      expect(button).toHaveClass('py-3');
     });
 
     it('pasa atributos HTML nativos', () => {
-      render(<Button type="submit" data-testid="submit-btn">Submit</Button>);
+      render(
+        <Button type="submit" data-testid="submit-btn">
+          Submit
+        </Button>
+      );
       const button = screen.getByTestId('submit-btn');
       expect(button).toHaveAttribute('type', 'submit');
     });
@@ -82,16 +86,16 @@ describe('Button', () => {
     it('aplica tamaño sm', () => {
       render(<Button size="sm">Small</Button>);
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('px-3');
-      expect(button).toHaveClass('py-1.5');
+      expect(button).toHaveClass('px-4');
+      expect(button).toHaveClass('py-2.5');
       expect(button).toHaveClass('text-sm');
     });
 
     it('aplica tamaño md (default)', () => {
       render(<Button size="md">Medium</Button>);
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('px-4');
-      expect(button).toHaveClass('py-2');
+      expect(button).toHaveClass('px-5');
+      expect(button).toHaveClass('py-3');
       expect(button).toHaveClass('text-base');
     });
 
@@ -99,7 +103,7 @@ describe('Button', () => {
       render(<Button size="lg">Large</Button>);
       const button = screen.getByRole('button');
       expect(button).toHaveClass('px-6');
-      expect(button).toHaveClass('py-3');
+      expect(button).toHaveClass('py-4');
       expect(button).toHaveClass('text-lg');
     });
   });
@@ -143,7 +147,11 @@ describe('Button', () => {
 
     it('no dispara onClick cuando disabled', () => {
       const handleClick = vi.fn();
-      render(<Button disabled onClick={handleClick}>Disabled</Button>);
+      render(
+        <Button disabled onClick={handleClick}>
+          Disabled
+        </Button>
+      );
       fireEvent.click(screen.getByRole('button'));
       expect(handleClick).not.toHaveBeenCalled();
     });
@@ -154,16 +162,12 @@ describe('Button', () => {
   // ============================================
   describe('Iconos', () => {
     it('renderiza leftIcon correctamente', () => {
-      render(
-        <Button leftIcon={<Plus data-testid="left-icon" />}>Add Item</Button>
-      );
+      render(<Button leftIcon={<Plus data-testid="left-icon" />}>Add Item</Button>);
       expect(screen.getByTestId('left-icon')).toBeInTheDocument();
     });
 
     it('renderiza rightIcon correctamente', () => {
-      render(
-        <Button rightIcon={<ArrowRight data-testid="right-icon" />}>Next</Button>
-      );
+      render(<Button rightIcon={<ArrowRight data-testid="right-icon" />}>Next</Button>);
       expect(screen.getByTestId('right-icon')).toBeInTheDocument();
     });
 
@@ -212,7 +216,11 @@ describe('Button', () => {
     });
 
     it('mantiene las clases base junto con las personalizadas', () => {
-      render(<Button className="custom" variant="primary">Custom</Button>);
+      render(
+        <Button className="custom" variant="primary">
+          Custom
+        </Button>
+      );
       const button = screen.getByRole('button');
       expect(button).toHaveClass('custom');
       expect(button).toHaveClass('bg-primary-600');
@@ -234,7 +242,11 @@ describe('Button', () => {
     });
 
     it('soporta aria-disabled cuando disabled', () => {
-      render(<Button disabled aria-disabled="true">Disabled</Button>);
+      render(
+        <Button disabled aria-disabled="true">
+          Disabled
+        </Button>
+      );
       expect(screen.getByRole('button')).toHaveAttribute('aria-disabled', 'true');
     });
   });

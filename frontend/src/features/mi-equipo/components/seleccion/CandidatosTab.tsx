@@ -40,8 +40,7 @@ import {
   MapPin,
   Briefcase,
 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
+import { ProtectedAction } from '@/components/common';
 import {
   useCandidatos,
   useProcesoSeleccionEstadisticas,
@@ -59,11 +58,6 @@ import { HireFromCandidateModal } from './HireFromCandidateModal';
 // ============================================================================
 
 export const CandidatosTab = () => {
-  // RBAC
-  const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'create');
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.CANDIDATOS, 'edit');
-
   // State
   const [filters, setFilters] = useState<CandidatoFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -325,12 +319,12 @@ export const CandidatosTab = () => {
               options={estadoOptions}
               className="w-40"
             />
-            {canCreate && (
+            <ProtectedAction permission="talent_hub.candidatos.create">
               <Button variant="primary" size="sm" onClick={handleCreate}>
                 <UserPlus size={16} className="mr-1" />
                 Nuevo
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         }
       />
@@ -383,7 +377,7 @@ export const CandidatosTab = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                {canEdit && (
+                <ProtectedAction permission="talent_hub.candidatos.edit">
                   <Button
                     type="button"
                     variant="ghost"
@@ -396,35 +390,39 @@ export const CandidatosTab = () => {
                   >
                     <Pencil size={16} />
                   </Button>
+                </ProtectedAction>
+                {c.estado === 'aprobado' && (
+                  <ProtectedAction permission="talent_hub.candidatos.edit">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleContratar(c as unknown as Candidato);
+                      }}
+                      title="Contratar"
+                      className="text-green-500 hover:text-green-700"
+                    >
+                      <Briefcase size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
-                {canEdit && c.estado === 'aprobado' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleContratar(c as unknown as Candidato);
-                    }}
-                    title="Contratar"
-                    className="text-green-500 hover:text-green-700"
-                  >
-                    <Briefcase size={16} />
-                  </Button>
-                )}
-                {canEdit && c.estado !== 'contratado' && c.estado !== 'rechazado' && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCambiarEstado(c as unknown as Candidato);
-                    }}
-                    title="Cambiar estado"
-                  >
-                    <ArrowRightLeft size={16} />
-                  </Button>
+                {c.estado !== 'contratado' && c.estado !== 'rechazado' && (
+                  <ProtectedAction permission="talent_hub.candidatos.edit">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCambiarEstado(c as unknown as Candidato);
+                      }}
+                      title="Cambiar estado"
+                    >
+                      <ArrowRightLeft size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
               </>
             )}

@@ -548,7 +548,8 @@ class IconRegistryViewSet(viewsets.ModelViewSet):
         deleted_at__isnull=True
     )
     serializer_class = IconRegistrySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['category', 'es_sistema']
     search_fields = ['name', 'label', 'keywords']
@@ -804,7 +805,8 @@ class TipoContratoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = TipoContrato.objects.all()
     serializer_class = TipoContratoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['tipo', 'is_active', 'requiere_poliza']
     search_fields = ['nombre', 'descripcion']

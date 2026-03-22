@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q, Count
+from apps.core.permissions import GranularActionPermission
 from .models import (
     InstanciaFlujo,
     TareaActiva,
@@ -31,7 +32,8 @@ logger = logging.getLogger('workflow')
 class InstanciaFlujoViewSet(viewsets.ModelViewSet):
     """ViewSet para instancias de flujos"""
     serializer_class = InstanciaFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'ejecucion_flujos'
     filterset_fields = ['estado', 'prioridad', 'plantilla', 'responsable_actual']
     search_fields = ['codigo_instancia', 'titulo', 'descripcion']
     ordering_fields = ['fecha_inicio', 'fecha_limite', 'prioridad']
@@ -242,7 +244,8 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
 class TareaActivaViewSet(viewsets.ModelViewSet):
     """ViewSet para tareas activas"""
     serializer_class = TareaActivaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'ejecucion_flujos'
     filterset_fields = ['estado', 'instancia', 'asignado_a', 'tipo_tarea', 'rol_asignado']
     search_fields = ['codigo_tarea', 'nombre_tarea', 'descripcion']
     ordering_fields = ['fecha_creacion', 'fecha_vencimiento', 'fecha_completada']
@@ -495,7 +498,8 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
 class HistorialTareaViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet para historial de tareas (solo lectura)"""
     serializer_class = HistorialTareaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'ejecucion_flujos'
     filterset_fields = ['tarea', 'instancia', 'accion', 'usuario']
     ordering_fields = ['fecha_accion']
     ordering = ['-fecha_accion']
@@ -533,7 +537,8 @@ class HistorialTareaViewSet(viewsets.ReadOnlyModelViewSet):
 class ArchivoAdjuntoViewSet(viewsets.ModelViewSet):
     """ViewSet para archivos adjuntos"""
     serializer_class = ArchivoAdjuntoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'ejecucion_flujos'
     filterset_fields = ['instancia', 'tarea', 'tipo_archivo', 'subido_por']
     ordering_fields = ['fecha_subida']
     ordering = ['-fecha_subida']
@@ -603,7 +608,8 @@ class ArchivoAdjuntoViewSet(viewsets.ModelViewSet):
 class NotificacionFlujoViewSet(viewsets.ModelViewSet):
     """ViewSet para notificaciones de flujos"""
     serializer_class = NotificacionFlujoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'ejecucion_flujos'
     filterset_fields = ['tipo_notificacion', 'prioridad', 'leida', 'destinatario']
     ordering_fields = ['fecha_creacion']
     ordering = ['-fecha_creacion']

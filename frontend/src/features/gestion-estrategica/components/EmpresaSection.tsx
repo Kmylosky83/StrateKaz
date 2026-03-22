@@ -8,7 +8,7 @@
  */
 import { useState } from 'react';
 import { Building2, Phone, Palette, Globe, Save, X, Upload, Smartphone, Info } from 'lucide-react';
-import { Card, Button, BrandedSkeleton, SectionHeader } from '@/components/common';
+import { Card, Button, BrandedSkeleton, SectionHeader, ProtectedAction } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCurrentTenant, useUpdateCurrentTenant } from '../hooks/useStrategic';
 import type { CurrentTenantData } from '../api/strategicApi';
@@ -226,11 +226,13 @@ export const EmpresaSection = () => {
                 {updateMutation.isPending ? 'Guardando...' : 'Guardar'}
               </Button>
             </>
-          ) : canEdit ? (
-            <Button variant="outline" size="sm" onClick={startEditing}>
-              Editar
-            </Button>
-          ) : null}
+          ) : (
+            <ProtectedAction permission="fundacion.empresa.edit">
+              <Button variant="outline" size="sm" onClick={startEditing}>
+                Editar
+              </Button>
+            </ProtectedAction>
+          )}
         </div>
       </div>
 

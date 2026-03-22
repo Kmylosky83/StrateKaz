@@ -2,13 +2,17 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from apps.core.permissions import GranularActionPermission
 from .models import Tarea, Recordatorio, EventoCalendario, ComentarioTarea
 from .serializers import TareaSerializer, RecordatorioSerializer, EventoCalendarioSerializer, ComentarioTareaSerializer
 
 class TareaViewSet(viewsets.ModelViewSet):
     queryset = Tarea.objects.select_related('asignado_a', 'creado_por', 'content_type')
     serializer_class = TareaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'tareas_recordatorios'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['asignado_a', 'estado', 'prioridad', 'tipo']
     
@@ -52,6 +56,8 @@ class TareaViewSet(viewsets.ModelViewSet):
 class RecordatorioViewSet(viewsets.ModelViewSet):
     queryset = Recordatorio.objects.select_related('usuario', 'tarea')
     serializer_class = RecordatorioSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'tareas_recordatorios'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['usuario', 'esta_activo', 'repetir']
     
@@ -72,6 +78,8 @@ class RecordatorioViewSet(viewsets.ModelViewSet):
 class EventoCalendarioViewSet(viewsets.ModelViewSet):
     queryset = EventoCalendario.objects.prefetch_related('participantes')
     serializer_class = EventoCalendarioSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'tareas_recordatorios'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['tipo', 'creado_por']
     
@@ -96,5 +104,7 @@ class EventoCalendarioViewSet(viewsets.ModelViewSet):
 class ComentarioTareaViewSet(viewsets.ModelViewSet):
     queryset = ComentarioTarea.objects.select_related('tarea', 'usuario')
     serializer_class = ComentarioTareaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'tareas_recordatorios'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['tarea']

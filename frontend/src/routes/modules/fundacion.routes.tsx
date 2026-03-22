@@ -14,7 +14,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const MiEmpresaPage = lazy(() => import('@/features/gestion-estrategica/pages/MiEmpresaPage'));
 const ContextoIdentidadPage = lazy(
@@ -29,18 +29,21 @@ export const fundacionRoutes = (
     <Route path="/fundacion" element={<Navigate to="/fundacion/mi-empresa" replace />} />
 
     {/* Tab 1: Mi Empresa (empresa, sedes, unidades de negocio) */}
-    <Route path="/fundacion/mi-empresa" element={withModuleGuard(MiEmpresaPage, 'fundacion')} />
+    <Route
+      path="/fundacion/mi-empresa"
+      element={withFullGuard(MiEmpresaPage, 'fundacion', 'empresa')}
+    />
 
     {/* Tab 2: Mi Contexto e Identidad (stakeholders, contexto, misión, valores, normas, alcance) */}
     <Route
       path="/fundacion/contexto-identidad"
-      element={withModuleGuard(ContextoIdentidadPage, 'fundacion')}
+      element={withFullGuard(ContextoIdentidadPage, 'fundacion', 'analisis_contexto')}
     />
 
     {/* Tab 3: Mi Organización (áreas, cargos, organigrama, caracterizaciones, mapa) */}
     <Route
       path="/fundacion/organizacion"
-      element={withModuleGuard(OrganizacionPage, 'fundacion')}
+      element={withFullGuard(OrganizacionPage, 'fundacion', 'organizacion')}
     />
   </>
 );

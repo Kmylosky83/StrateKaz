@@ -6,6 +6,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.db import connection
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status as http_status
+from celery.result import AsyncResult
 
 
 @require_GET
@@ -44,23 +49,26 @@ def health_check(request):
         }, status=503)
 
 
-@require_GET
-@csrf_exempt
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def health_check_deep(request):
     """
     Endpoint de health check profundo para diagnóstico detallado.
+    Requiere autenticación (IsAuthenticated).
+
+    GET /api/core/health-deep/
 
     Verifica:
     - Conectividad a la base de datos con query de prueba
     - Espacio en disco disponible
-    - Estado del cache (si está configurado)
+    - Estado del cache (Redis)
+    - Celery workers
     - Timestamp de verificación
 
     Returns:
-        JsonResponse con status 200 si todo está OK
-        JsonResponse con status 503 si hay problemas críticos
+        Response con status 200 si todo está OK
+        Response con status 503 si hay problemas críticos
     """
-    import os
     import shutil
     from datetime import datetime
     from django.conf import settings
@@ -69,7 +77,7 @@ def health_check_deep(request):
     checks = {
         'timestamp': datetime.now().isoformat(),
         'service': 'stratekaz-backend',
-        'version': '1.0.0',
+        'version': '5.3.0',
         'environment': getattr(settings, 'SENTRY_ENVIRONMENT', 'unknown'),
     }
     all_healthy = True
@@ -78,7 +86,6 @@ def health_check_deep(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
-            # Verificar que podemos hacer una query real
             cursor.execute("SELECT COUNT(*) FROM django_migrations")
             migration_count = cursor.fetchone()[0]
         checks['database'] = {
@@ -96,17 +103,21 @@ def health_check_deep(request):
     try:
         base_path = settings.BASE_DIR
         total, used, free = shutil.disk_usage(base_path)
-        free_gb = free // (1024 ** 3)
-        free_percent = (free / total) * 100
+        used_percent = (used / total) * 100
+        free_gb = free / (1024 ** 3)
 
-        disk_status = 'ok' if free_percent > 10 else 'warning' if free_percent > 5 else 'critical'
-        if disk_status == 'critical':
+        if used_percent > 90:
+            disk_status = 'critical'
             all_healthy = False
+        elif used_percent > 80:
+            disk_status = 'warning'
+        else:
+            disk_status = 'healthy'
 
         checks['disk'] = {
             'status': disk_status,
-            'free_gb': free_gb,
-            'free_percent': round(free_percent, 2),
+            'used_percent': round(used_percent, 1),
+            'free_gb': round(free_gb, 1),
             'path': str(base_path),
         }
     except Exception as e:
@@ -115,7 +126,7 @@ def health_check_deep(request):
             'error': str(e),
         }
 
-    # 3. Verificar cache
+    # 3. Verificar cache (Redis)
     try:
         cache_key = '_health_check_test_'
         cache.set(cache_key, 'ok', 10)
@@ -126,25 +137,52 @@ def health_check_deep(request):
             'status': 'connected' if cache_value == 'ok' else 'error',
             'backend': settings.CACHES.get('default', {}).get('BACKEND', 'unknown').split('.')[-1],
         }
+        if cache_value != 'ok':
+            all_healthy = False
     except Exception as e:
         checks['cache'] = {
             'status': 'error',
             'error': str(e),
         }
+        all_healthy = False
 
-    # 4. Verificar directorio de logs
+    # 4. Verificar Celery workers
+    try:
+        from config.celery import app as celery_app
+
+        inspector = celery_app.control.inspect(timeout=3.0)
+        ping_result = inspector.ping()
+        if ping_result:
+            worker_count = len(ping_result)
+            checks['celery'] = {
+                'status': 'healthy',
+                'workers': worker_count,
+            }
+        else:
+            checks['celery'] = {
+                'status': 'error',
+                'message': 'No hay workers respondiendo',
+            }
+            all_healthy = False
+    except Exception as e:
+        checks['celery'] = {
+            'status': 'error',
+            'error': str(e),
+        }
+
+    # 5. Verificar directorio de logs
     try:
         logs_dir = settings.BASE_DIR / 'logs'
         if logs_dir.exists():
             log_files = list(logs_dir.glob('*.log'))
-            total_log_size = sum(f.stat().st_size for f in log_files) / (1024 * 1024)  # MB
+            total_log_size = sum(f.stat().st_size for f in log_files) / (1024 * 1024)
             checks['logs'] = {
                 'status': 'ok' if total_log_size < 100 else 'warning',
                 'total_size_mb': round(total_log_size, 2),
                 'file_count': len(log_files),
             }
         else:
-            checks['logs'] = {'status': 'ok', 'message': 'logs directory not found'}
+            checks['logs'] = {'status': 'ok', 'message': 'directorio de logs no encontrado'}
     except Exception as e:
         checks['logs'] = {
             'status': 'error',
@@ -154,14 +192,7 @@ def health_check_deep(request):
     # Resultado final
     checks['overall_status'] = 'healthy' if all_healthy else 'unhealthy'
 
-    return JsonResponse(checks, status=200 if all_healthy else 503)
-
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status as http_status
-from celery.result import AsyncResult
+    return Response(checks, status=http_status.HTTP_200_OK if all_healthy else http_status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 @api_view(['GET'])

@@ -7,7 +7,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const RevisionDireccionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
@@ -23,7 +23,7 @@ export const revisionDireccionRoutes = (
     {/* Revisión por la Dirección (programación, actas, compromisos) */}
     <Route
       path="/revision-direccion/programacion"
-      element={withModuleGuard(RevisionDireccionPage, 'revision_direccion')}
+      element={withFullGuard(RevisionDireccionPage, 'revision_direccion', 'programacion')}
     />
   </>
 );

@@ -16,9 +16,10 @@ import { PageLoader } from '@/components/common/PageLoader';
 const MiPortalPage = lazy(() =>
   import('@/features/mi-portal').then((m) => ({ default: m.MiPortalPage }))
 );
-const SSTGamePage = lazy(() =>
-  import('@/features/sst-game').then((m) => ({ default: m.SSTGamePage }))
-);
+// Juego SST desactivado — requiere refactor completo
+// const SSTGamePage = lazy(() =>
+//   import('@/features/sst-game').then((m) => ({ default: m.SSTGamePage }))
+// );
 const MiEquipoPage = lazy(() =>
   import('@/features/mi-equipo').then((m) => ({ default: m.MiEquipoPage }))
 );
@@ -34,7 +35,8 @@ const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
 export const portalsRoutes = (
   <>
     <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
-    <Route path="/mi-portal/juego-sst" element={withSuspense(SSTGamePage)} />
+    {/* Juego SST desactivado — requiere refactor completo */}
+    {/* <Route path="/mi-portal/juego-sst" element={withSuspense(SSTGamePage)} /> */}
     <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
 
     {/* Portales desactivados — redirect a mi-portal hasta que se libere su level */}

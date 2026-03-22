@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const LogsSistemaPage = lazy(() =>
   import('@/features/audit-system').then((m) => ({ default: m.LogsSistemaPage }))
@@ -22,12 +22,18 @@ const TareasPage = lazy(() =>
 export const auditSystemRoutes = (
   <>
     <Route path="/auditoria" element={<Navigate to="/auditoria/logs" replace />} />
-    <Route path="/auditoria/logs" element={withModuleGuard(LogsSistemaPage, 'audit_system')} />
+    <Route
+      path="/auditoria/logs"
+      element={withFullGuard(LogsSistemaPage, 'audit_system', 'logs_sistema')}
+    />
     <Route
       path="/auditoria/notificaciones"
-      element={withModuleGuard(NotificacionesPage, 'audit_system')}
+      element={withFullGuard(NotificacionesPage, 'audit_system', 'notificaciones')}
     />
-    <Route path="/auditoria/alertas" element={withModuleGuard(AlertasPage, 'audit_system')} />
-    <Route path="/auditoria/tareas" element={withModuleGuard(TareasPage, 'audit_system')} />
+    <Route
+      path="/auditoria/alertas"
+      element={withFullGuard(AlertasPage, 'audit_system', 'alertas')}
+    />
+    <Route path="/auditoria/tareas" element={withFullGuard(TareasPage, 'audit_system', 'tareas')} />
   </>
 );

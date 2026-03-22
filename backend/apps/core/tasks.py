@@ -3,6 +3,9 @@ Tareas asíncronas de Celery para el módulo Core
 StrateKaz
 """
 import logging
+import os
+import shutil
+import subprocess
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -14,6 +17,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.core.files.storage import default_storage
 from django.db.models import Q
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -578,76 +582,311 @@ def cleanup_temp_files(self) -> Dict[str, Any]:
         raise
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, time_limit=1800, soft_time_limit=1500)
 def backup_database(self) -> Dict[str, Any]:
     """
-    Tarea periódica: Realizar backup de la base de datos.
+    Tarea periódica: Realizar backup de la base de datos con pg_dump.
 
-    Esta tarea se ejecuta automáticamente según el schedule configurado en celery.py
+    Crea un backup en formato custom (comprimido) de PostgreSQL.
+    Limpia backups antiguos (>7 días) generados por esta tarea.
+    Se ejecuta cada 6 horas via Celery Beat.
     """
+    logger.info(f"[Task {self.request.id}] Iniciando backup de base de datos")
+
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+
+    # Determinar directorio de backups según entorno
+    if os.path.exists('/opt/stratekaz'):
+        # Producción (VPS)
+        backup_dir = '/var/backups/stratekaz/celery'
+    elif os.path.exists('/app'):
+        # Docker
+        backup_dir = '/app/backups'
+    else:
+        # Desarrollo local / fallback
+        backup_dir = str(Path(settings.BASE_DIR) / 'backups')
+
     try:
-        logger.info(f"[Task {self.request.id}] Iniciando backup de base de datos")
+        os.makedirs(backup_dir, exist_ok=True)
+    except OSError as e:
+        logger.error(f"[Task {self.request.id}] No se pudo crear directorio de backups: {e}")
+        _send_backup_alert(f'No se pudo crear directorio {backup_dir}: {e}')
+        return {'status': 'error', 'error': f'No se pudo crear directorio: {e}'}
 
-        # Aquí iría la lógica de backup
-        # Ejemplo: Ejecutar mysqldump o pg_dump
+    backup_file = os.path.join(backup_dir, f'backup_{timestamp}.dump')
 
-        backup_name = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql.gz"
+    db = settings.DATABASES['default']
 
-        logger.info(f"[Task {self.request.id}] Backup completado: {backup_name}")
+    # Verificar que pg_dump está disponible
+    try:
+        subprocess.run(
+            ['pg_dump', '--version'],
+            capture_output=True, text=True, timeout=10,
+        )
+    except FileNotFoundError:
+        error_msg = 'pg_dump no encontrado en el PATH del sistema'
+        logger.error(f"[Task {self.request.id}] {error_msg}")
+        _send_backup_alert(error_msg)
+        return {'status': 'error', 'error': error_msg}
 
-        return {
-            'status': 'success',
-            'backup_name': backup_name,
-            'task_id': self.request.id,
-            'timestamp': datetime.now().isoformat(),
-        }
+    cmd = [
+        'pg_dump',
+        '-h', db.get('HOST', 'localhost'),
+        '-p', str(db.get('PORT', 5432)),
+        '-U', db['USER'],
+        '-d', db['NAME'],
+        '-Fc',  # Custom format (comprimido)
+        '-f', backup_file,
+    ]
 
-    except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error en backup: {str(exc)}")
-        raise
+    env = os.environ.copy()
+    env['PGPASSWORD'] = db['PASSWORD']
+
+    try:
+        result = subprocess.run(
+            cmd, env=env, capture_output=True, text=True, timeout=1500,
+        )
+    except subprocess.TimeoutExpired:
+        error_msg = 'pg_dump excedió el tiempo límite de 25 minutos'
+        logger.error(f"[Task {self.request.id}] {error_msg}")
+        _send_backup_alert(error_msg)
+        # Limpiar archivo parcial si existe
+        if os.path.exists(backup_file):
+            os.remove(backup_file)
+        return {'status': 'error', 'error': error_msg}
+
+    if result.returncode != 0:
+        error_msg = result.stderr.strip() or f'pg_dump retornó código {result.returncode}'
+        logger.error(f"[Task {self.request.id}] Backup falló: {error_msg}")
+        _send_backup_alert(error_msg)
+        # Limpiar archivo fallido si existe
+        if os.path.exists(backup_file):
+            os.remove(backup_file)
+        return {'status': 'error', 'error': error_msg}
+
+    # Verificar que el archivo se creó y tiene contenido
+    if not os.path.exists(backup_file) or os.path.getsize(backup_file) == 0:
+        error_msg = 'Backup completó pero el archivo está vacío o no existe'
+        logger.error(f"[Task {self.request.id}] {error_msg}")
+        _send_backup_alert(error_msg)
+        return {'status': 'error', 'error': error_msg}
+
+    size_bytes = os.path.getsize(backup_file)
+    size_mb = size_bytes / (1024 * 1024)
+
+    # Limpiar backups antiguos (>7 días) generados por Celery
+    cleaned = _cleanup_old_backups(backup_dir, days=7)
+
+    logger.info(
+        f"[Task {self.request.id}] Backup creado exitosamente: "
+        f"{backup_file} ({size_mb:.1f} MB). "
+        f"Backups antiguos eliminados: {cleaned}"
+    )
+
+    return {
+        'status': 'success',
+        'file': backup_file,
+        'size_mb': round(size_mb, 2),
+        'old_backups_cleaned': cleaned,
+        'task_id': self.request.id,
+        'timestamp': timezone.now().isoformat(),
+    }
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, time_limit=120, soft_time_limit=90)
 def system_health_check(self) -> Dict[str, Any]:
     """
     Tarea periódica: Verificar el estado de salud del sistema.
 
-    Esta tarea se ejecuta automáticamente según el schedule configurado en celery.py
+    Ejecuta chequeos reales de base de datos, Redis, espacio en disco
+    y Celery. Envía alerta por email si detecta errores.
+    Se ejecuta cada 15 minutos via Celery Beat.
+    """
+    logger.info(f"[Task {self.request.id}] Iniciando health check del sistema")
+    results = {}
+
+    # 1. Database check
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        results['database'] = 'healthy'
+    except Exception as e:
+        results['database'] = f'error: {str(e)}'
+
+    # 2. Redis check
+    try:
+        from django_redis import get_redis_connection
+        redis_conn = get_redis_connection("default")
+        redis_conn.ping()
+        results['redis'] = 'healthy'
+    except Exception as e:
+        results['redis'] = f'error: {str(e)}'
+
+    # 3. Disk space check
+    try:
+        disk_path = '/' if os.name != 'nt' else 'C:\\'
+        total, used, free = shutil.disk_usage(disk_path)
+        disk_pct = (used / total) * 100
+        if disk_pct >= 95:
+            results['disk_space'] = f'critical: {disk_pct:.1f}% used'
+        elif disk_pct >= 90:
+            results['disk_space'] = f'warning: {disk_pct:.1f}% used'
+        else:
+            results['disk_space'] = f'healthy ({disk_pct:.1f}% used)'
+    except Exception as e:
+        results['disk_space'] = f'error: {str(e)}'
+
+    # 4. Celery worker check — si esta tarea se ejecuta, Celery funciona
+    results['celery'] = 'healthy'
+
+    # 5. Tenant schemas check (cantidad de tenants activos)
+    try:
+        from apps.tenant.models import Tenant
+        active_tenants = Tenant.objects.filter(is_active=True).count()
+        results['active_tenants'] = active_tenants
+    except Exception as e:
+        results['active_tenants'] = f'error: {str(e)}'
+
+    # 6. Detectar errores y enviar alerta si hay problemas
+    errors = {k: v for k, v in results.items() if isinstance(v, str) and 'error' in v}
+    warnings = {k: v for k, v in results.items() if isinstance(v, str) and 'warning' in v}
+    criticals = {k: v for k, v in results.items() if isinstance(v, str) and 'critical' in v}
+
+    if errors or criticals:
+        _send_health_alert(errors={**errors, **criticals}, warnings=warnings)
+
+    overall = 'error' if errors or criticals else ('warning' if warnings else 'healthy')
+    logger.info(
+        f"[Task {self.request.id}] Health check completado: {overall} — {results}"
+    )
+
+    return {
+        'status': overall,
+        'health_status': results,
+        'task_id': self.request.id,
+        'timestamp': timezone.now().isoformat(),
+    }
+
+
+# ═══════════════════════════════════════════════════
+# HELPERS INTERNOS — ALERTAS Y LIMPIEZA
+# ═══════════════════════════════════════════════════
+
+def _get_alert_recipients() -> List[str]:
+    """
+    Obtener lista de destinatarios para alertas del sistema.
+    Prioridad: ALERT_EMAIL > ADMINS > DEFAULT_FROM_EMAIL (fallback).
+    """
+    alert_email = getattr(settings, 'ALERT_EMAIL', None)
+    if alert_email:
+        if isinstance(alert_email, str):
+            return [alert_email]
+        return list(alert_email)
+
+    admins = getattr(settings, 'ADMINS', [])
+    if admins:
+        return [email for _, email in admins]
+
+    return [settings.DEFAULT_FROM_EMAIL]
+
+
+def _send_health_alert(errors: Dict[str, str], warnings: Dict[str, str] = None):
+    """
+    Enviar alerta por email cuando el health check detecta problemas.
     """
     try:
-        logger.info(f"[Task {self.request.id}] Verificando estado del sistema")
+        recipients = _get_alert_recipients()
 
-        health_status = {
-            'database': 'healthy',
-            'redis': 'healthy',
-            'celery': 'healthy',
-            'disk_space': 'healthy',
-        }
+        error_lines = '\n'.join(f'  - {k}: {v}' for k, v in errors.items())
+        warning_lines = ''
+        if warnings:
+            warning_lines = '\nAdvertencias:\n' + '\n'.join(
+                f'  - {k}: {v}' for k, v in warnings.items()
+            )
 
-        # Aquí iría la lógica de verificación
-        # - Verificar conexión a base de datos
-        # - Verificar conexión a Redis
-        # - Verificar espacio en disco
-        # - Verificar servicios críticos
-
-        return {
-            'status': 'success',
-            'health_status': health_status,
-            'task_id': self.request.id,
-            'timestamp': datetime.now().isoformat(),
-        }
-
-    except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error en health check: {str(exc)}")
-
-        # Enviar alerta a administradores
-        send_email_async.delay(
-            subject='ALERTA: Error en Health Check del Sistema',
-            message=f'Se detectó un error durante la verificación de salud del sistema: {str(exc)}',
-            recipient_list=[settings.DEFAULT_FROM_EMAIL],
+        subject = '[StrateKaz] ALERTA: Health Check del Sistema'
+        message = (
+            f'Se detectaron problemas en el health check del sistema.\n\n'
+            f'Errores críticos:\n{error_lines}'
+            f'{warning_lines}\n\n'
+            f'Timestamp: {timezone.now().isoformat()}\n'
+            f'Servidor: {os.uname().nodename if hasattr(os, "uname") else "unknown"}\n\n'
+            f'Verificar el estado de los servicios lo antes posible.'
         )
 
-        raise
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            fail_silently=True,
+        )
+        logger.info(f"Alerta de health check enviada a {recipients}")
+    except Exception as e:
+        logger.error(f"No se pudo enviar alerta de health check: {e}")
+
+
+def _send_backup_alert(error_msg: str):
+    """
+    Enviar alerta por email cuando el backup de BD falla.
+    """
+    try:
+        recipients = _get_alert_recipients()
+
+        subject = '[StrateKaz] ALERTA: Fallo en Backup de Base de Datos'
+        message = (
+            f'El backup automático de la base de datos ha fallado.\n\n'
+            f'Error: {error_msg}\n\n'
+            f'Timestamp: {timezone.now().isoformat()}\n'
+            f'Base de datos: {settings.DATABASES["default"]["NAME"]}\n\n'
+            f'Se requiere intervención manual para verificar el estado '
+            f'de los backups y la base de datos.'
+        )
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            fail_silently=True,
+        )
+        logger.info(f"Alerta de backup enviada a {recipients}")
+    except Exception as e:
+        logger.error(f"No se pudo enviar alerta de backup: {e}")
+
+
+def _cleanup_old_backups(directory: str, days: int = 7) -> int:
+    """
+    Eliminar archivos de backup más antiguos que `days` días.
+    Solo elimina archivos con patrón backup_*.dump para no tocar
+    otros archivos en el directorio.
+
+    Returns:
+        Cantidad de archivos eliminados.
+    """
+    deleted = 0
+    cutoff = timezone.now().timestamp() - (days * 86400)
+
+    try:
+        for entry in os.scandir(directory):
+            if (
+                entry.is_file()
+                and entry.name.startswith('backup_')
+                and entry.name.endswith('.dump')
+                and entry.stat().st_mtime < cutoff
+            ):
+                try:
+                    os.remove(entry.path)
+                    deleted += 1
+                    logger.debug(f"Backup antiguo eliminado: {entry.name}")
+                except OSError as e:
+                    logger.warning(f"No se pudo eliminar backup {entry.name}: {e}")
+    except OSError as e:
+        logger.warning(f"Error al limpiar backups en {directory}: {e}")
+
+    return deleted
 
 
 # ═══════════════════════════════════════════════════

@@ -8,7 +8,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const TalentHubPage = lazy(() =>
   import('@/features/talent-hub').then((m) => ({ default: m.TalentHubPage }))
@@ -32,18 +32,33 @@ export const talentHubRoutes = (
     <Route path="/talento/onboarding" element={<Navigate to="/mi-equipo/onboarding" replace />} />
 
     {/* Talent Hub — Gestión continua */}
-    <Route path="/talento/formacion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-    <Route path="/talento/desempeno" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-    <Route path="/talento/control-tiempo" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+    <Route
+      path="/talento/formacion"
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'formacion')}
+    />
+    <Route
+      path="/talento/desempeno"
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'desempeno')}
+    />
+    <Route
+      path="/talento/control-tiempo"
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'control_tiempo')}
+    />
     <Route
       path="/talento/novedades-nomina"
-      element={withModuleGuard(TalentHubPage, 'talent_hub')}
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'novedades_nomina')}
     />
-    <Route path="/talento/disciplinario" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-    <Route path="/talento/off-boarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+    <Route
+      path="/talento/disciplinario"
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'disciplinario')}
+    />
+    <Route
+      path="/talento/off-boarding"
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'off_boarding')}
+    />
     <Route
       path="/talento/consultores-externos"
-      element={withModuleGuard(TalentHubPage, 'talent_hub')}
+      element={withFullGuard(TalentHubPage, 'talent_hub', 'consultores_externos')}
     />
 
     {/* Legacy redirects (tabs fusionados en V2) */}

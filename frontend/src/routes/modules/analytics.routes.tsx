@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const ConfigIndicadoresPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.ConfigIndicadoresPage }))
@@ -39,30 +39,36 @@ export const analyticsRoutes = (
     <Route path="/analytics" element={<Navigate to="/analytics/configuracion" replace />} />
     <Route
       path="/analytics/configuracion"
-      element={withModuleGuard(ConfigIndicadoresPage, 'analytics')}
+      element={withFullGuard(ConfigIndicadoresPage, 'analytics', 'config_indicadores')}
     />
     <Route
       path="/analytics/dashboards"
-      element={withModuleGuard(DashboardGerencialPage, 'analytics')}
+      element={withFullGuard(DashboardGerencialPage, 'analytics', 'dashboard_gerencial')}
     />
     <Route
       path="/analytics/indicadores"
-      element={withModuleGuard(IndicadoresAreaPage, 'analytics')}
+      element={withFullGuard(IndicadoresAreaPage, 'analytics', 'indicadores_area')}
     />
     <Route
       path="/analytics/analisis"
-      element={withModuleGuard(AnalisisTendenciasPage, 'analytics')}
+      element={withFullGuard(AnalisisTendenciasPage, 'analytics', 'analisis_tendencias')}
     />
     <Route
       path="/analytics/informes"
-      element={withModuleGuard(GeneradorInformesPage, 'analytics')}
+      element={withFullGuard(GeneradorInformesPage, 'analytics', 'generador_informes')}
     />
     <Route
       path="/analytics/acciones"
-      element={withModuleGuard(AccionesIndicadorPage, 'analytics')}
+      element={withFullGuard(AccionesIndicadorPage, 'analytics', 'acciones_indicador')}
     />
-    <Route path="/analytics/exportacion" element={withModuleGuard(ExportacionPage, 'analytics')} />
-    <Route path="/analytics/builder" element={withModuleGuard(DashboardBuilderPage, 'analytics')} />
-    <Route path="/analytics/demo" element={withModuleGuard(AnalyticsDemoPage, 'analytics')} />
+    <Route
+      path="/analytics/exportacion"
+      element={withFullGuard(ExportacionPage, 'analytics', 'exportacion')}
+    />
+    <Route
+      path="/analytics/builder"
+      element={withFullGuard(DashboardBuilderPage, 'analytics', 'dashboard_builder')}
+    />
+    <Route path="/analytics/demo" element={withFullGuard(AnalyticsDemoPage, 'analytics', 'demo')} />
   </>
 );

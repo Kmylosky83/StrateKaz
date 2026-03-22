@@ -104,6 +104,8 @@ class TipoAnalisisDOFAViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     queryset = TipoAnalisisDOFA.objects.all()
     serializer_class = TipoAnalisisDOFASerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'contexto_organizacional'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
@@ -532,6 +534,8 @@ class TipoAnalisisPESTELViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     queryset = TipoAnalisisPESTEL.objects.all()
     serializer_class = TipoAnalisisPESTELSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'contexto_organizacional'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
@@ -1171,6 +1175,8 @@ class GrupoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     queryset = GrupoParteInteresada.objects.all()
     serializer_class = GrupoParteInteresadaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'partes_interesadas'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'es_sistema']
     search_fields = ['codigo', 'nombre', 'descripcion']
@@ -1201,6 +1207,8 @@ class TipoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     queryset = TipoParteInteresada.objects.select_related('grupo').all()
     serializer_class = TipoParteInteresadaSerializer
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'partes_interesadas'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['grupo', 'categoria', 'es_sistema', 'is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']

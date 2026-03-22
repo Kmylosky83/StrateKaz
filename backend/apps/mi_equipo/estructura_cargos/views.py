@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 
 from apps.core.base_models import get_tenant_empresa
+from apps.core.permissions import GranularActionPermission
 from .models import Profesiograma, MatrizCompetencia, RequisitoEspecial, Vacante
 from .serializers import (
     # Profesiograma
@@ -47,7 +48,8 @@ class ProfesiogramaViewSet(viewsets.ModelViewSet):
     - GET /profesiogramas/vigentes/ - Solo profesiogramas vigentes
     - GET /profesiogramas/por-cargo/{cargo_id}/ - Filtrar por cargo
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'estructura_cargos'
 
     def get_queryset(self):
         queryset = Profesiograma.objects.filter(is_active=True)
@@ -146,7 +148,8 @@ class MatrizCompetenciaViewSet(viewsets.ModelViewSet):
     - DELETE /competencias/{id}/ - Eliminar competencia
     - GET /competencias/por-profesiograma/{id}/ - Competencias por profesiograma
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'estructura_cargos'
 
     def get_queryset(self):
         queryset = MatrizCompetencia.objects.filter(is_active=True)
@@ -204,7 +207,8 @@ class RequisitoEspecialViewSet(viewsets.ModelViewSet):
     - DELETE /requisitos-especiales/{id}/ - Eliminar
     - GET /requisitos-especiales/por-profesiograma/{id}/ - Por profesiograma
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'estructura_cargos'
 
     def get_queryset(self):
         queryset = RequisitoEspecial.objects.filter(is_active=True)
@@ -258,7 +262,8 @@ class VacanteViewSet(viewsets.ModelViewSet):
     - GET /vacantes/abiertas/ - Solo abiertas
     - POST /vacantes/{id}/cerrar/ - Cerrar vacante
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'estructura_cargos'
 
     def get_queryset(self):
         queryset = Vacante.objects.filter(is_active=True)

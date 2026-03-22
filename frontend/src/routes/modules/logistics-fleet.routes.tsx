@@ -4,7 +4,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const LogisticsFleetPage = lazy(
   () => import('@/features/logistics-fleet/pages/LogisticsFleetPage')
@@ -15,19 +15,19 @@ export const logisticsFleetRoutes = (
     <Route path="/logistica" element={<Navigate to="/logistica/transporte" replace />} />
     <Route
       path="/logistica/transporte"
-      element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+      element={withFullGuard(LogisticsFleetPage, 'logistics_fleet', 'transporte')}
     />
     <Route
       path="/logistica/despachos"
-      element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+      element={withFullGuard(LogisticsFleetPage, 'logistics_fleet', 'despachos')}
     />
     <Route
       path="/logistica/flota"
-      element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+      element={withFullGuard(LogisticsFleetPage, 'logistics_fleet', 'flota')}
     />
     <Route
       path="/logistica/pesv"
-      element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+      element={withFullGuard(LogisticsFleetPage, 'logistics_fleet', 'pesv')}
     />
   </>
 );

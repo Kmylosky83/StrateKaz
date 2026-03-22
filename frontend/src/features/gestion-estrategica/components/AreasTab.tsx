@@ -40,6 +40,7 @@ import {
   DynamicIcon,
   BrandedSkeleton,
   SectionHeader,
+  ProtectedAction,
 } from '@/components/common';
 import { Input, Switch } from '@/components/forms';
 import { StatsGrid } from '@/components/layout';
@@ -84,8 +85,8 @@ const AreaCard = ({
   onEdit,
   onDelete,
   onToggleActive,
-  canEdit,
-  canDelete,
+  canEdit: _canEdit,
+  canDelete: _canDelete,
 }: AreaCardProps) => {
   // Obtener clases de color dinámicas (Design System centralizado)
   const colorClasses = getModuleColorClasses(getMappedColorSafe(area.color));
@@ -168,7 +169,7 @@ const AreaCard = ({
 
       {/* Acciones */}
       <div className="flex items-center gap-1 flex-shrink-0 ml-4">
-        {canEdit && (
+        <ProtectedAction permission="fundacion.areas.edit">
           <Button
             variant="ghost"
             size="sm"
@@ -182,13 +183,13 @@ const AreaCard = ({
           >
             {area.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
           </Button>
-        )}
-        {canEdit && (
+        </ProtectedAction>
+        <ProtectedAction permission="fundacion.areas.edit">
           <Button variant="ghost" size="sm" onClick={() => onEdit(area)} title="Editar proceso">
             <Edit className="h-4 w-4" />
           </Button>
-        )}
-        {canDelete && (
+        </ProtectedAction>
+        <ProtectedAction permission="fundacion.areas.delete">
           <Button
             variant="ghost"
             size="sm"
@@ -198,7 +199,7 @@ const AreaCard = ({
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        )}
+        </ProtectedAction>
       </div>
     </div>
   );
@@ -462,12 +463,12 @@ export const AreasTab = () => {
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
-            {canCreate && (
+            <ProtectedAction permission="fundacion.areas.create">
               <Button variant="primary" size="sm" onClick={handleAdd}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Proceso
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         }
       />

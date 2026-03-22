@@ -8,7 +8,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 // ── Cumplimiento Legal ──
 const MatrizLegalPage = lazy(() => import('@/features/cumplimiento/pages/MatrizLegalPage'));
@@ -40,42 +40,48 @@ export const proteccionCumplimientoRoutes = (
     {/* Tab 1: Cumplimiento Legal */}
     <Route
       path="/proteccion/cumplimiento-legal"
-      element={withModuleGuard(MatrizLegalPage, MODULE)}
+      element={withFullGuard(MatrizLegalPage, MODULE, 'cumplimiento_legal')}
     />
     <Route
       path="/proteccion/requisitos-legales"
-      element={withModuleGuard(RequisitosLegalesPage, MODULE)}
+      element={withFullGuard(RequisitosLegalesPage, MODULE, 'requisitos_legales')}
     />
     <Route
       path="/proteccion/reglamentos-internos"
-      element={withModuleGuard(ReglamentosInternosPage, MODULE)}
+      element={withFullGuard(ReglamentosInternosPage, MODULE, 'reglamentos_internos')}
     />
 
     {/* Tab 2: Riesgos por Proceso */}
     <Route
       path="/proteccion/riesgos-procesos"
-      element={withModuleGuard(RiesgosProcesosPage, MODULE)}
+      element={withFullGuard(RiesgosProcesosPage, MODULE, 'riesgos_procesos')}
     />
 
     {/* Tab 3: IPEVR (GTC-45) */}
-    <Route path="/proteccion/ipevr" element={withModuleGuard(IPEVRPage, MODULE)} />
+    <Route path="/proteccion/ipevr" element={withFullGuard(IPEVRPage, MODULE, 'ipevr')} />
 
     {/* Tab 4: Aspectos Ambientales */}
     <Route
       path="/proteccion/aspectos-ambientales"
-      element={withModuleGuard(AspectosAmbientalesPage, MODULE)}
+      element={withFullGuard(AspectosAmbientalesPage, MODULE, 'aspectos_ambientales')}
     />
 
     {/* Tab 5: Riesgos Viales */}
-    <Route path="/proteccion/riesgos-viales" element={withModuleGuard(RiesgosVialesPage, MODULE)} />
+    <Route
+      path="/proteccion/riesgos-viales"
+      element={withFullGuard(RiesgosVialesPage, MODULE, 'riesgos_viales')}
+    />
 
     {/* Tab 6: Seguridad de la Información */}
     <Route
       path="/proteccion/seguridad-info"
-      element={withModuleGuard(SeguridadInformacionPage, MODULE)}
+      element={withFullGuard(SeguridadInformacionPage, MODULE, 'seguridad_informacion')}
     />
 
     {/* Tab 7: SAGRILAFT/PTEE */}
-    <Route path="/proteccion/sagrilaft" element={withModuleGuard(SagrilaftPteePage, MODULE)} />
+    <Route
+      path="/proteccion/sagrilaft"
+      element={withFullGuard(SagrilaftPteePage, MODULE, 'sagrilaft')}
+    />
   </>
 );

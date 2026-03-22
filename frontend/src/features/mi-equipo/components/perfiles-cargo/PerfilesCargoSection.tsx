@@ -8,13 +8,12 @@ import { Briefcase, Pencil, Search } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { Alert, BrandedSkeleton } from '@/components/common';
+import { Alert, BrandedSkeleton, ProtectedAction } from '@/components/common';
 import { DataSection } from '@/components/data-display';
 import { DataTableCard } from '@/components/layout';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
-import { usePermissions, useModuleColor } from '@/hooks';
-import { Modules, Sections } from '@/constants/permissions';
+import { useModuleColor } from '@/hooks';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
 import { useCargos } from '@/features/configuracion/hooks/useCargos';
@@ -29,10 +28,6 @@ export const PerfilesCargoSection = () => {
   const [selectedCargo, setSelectedCargo] = useState<CargoList | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // RBAC
-  const { canDo } = usePermissions();
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.PERFILES_CARGO, 'edit');
 
   // Data
   const {
@@ -115,7 +110,7 @@ export const PerfilesCargoSection = () => {
         const c = row as unknown as CargoList;
         return (
           <div className="flex justify-end">
-            {canEdit && (
+            <ProtectedAction permission="talent_hub.perfiles_cargo.edit">
               <Button
                 variant="ghost"
                 size="sm"
@@ -125,7 +120,7 @@ export const PerfilesCargoSection = () => {
               >
                 <Pencil className="h-4 w-4 text-gray-500 hover:text-violet-600" />
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         );
       },

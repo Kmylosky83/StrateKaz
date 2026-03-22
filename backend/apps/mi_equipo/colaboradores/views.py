@@ -13,6 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
+from apps.core.permissions import GranularActionPermission
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -57,7 +58,8 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     - POST /colaboradores/{id}/retirar/ - Marcar como retirado
     - GET /colaboradores/{id}/completo/ - Obtener perfil completo
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'colaboradores'
 
     # ResumenRevisionMixin config
     resumen_date_field = 'fecha_ingreso'
@@ -607,7 +609,8 @@ class HojaVidaViewSet(viewsets.ModelViewSet):
     - DELETE /hojas-vida/{id}/ - Eliminar
     - GET /hojas-vida/por-colaborador/{colaborador_id}/ - Por colaborador
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'colaboradores'
 
     def get_queryset(self):
         queryset = HojaVida.objects.filter(is_active=True)
@@ -671,7 +674,8 @@ class InfoPersonalViewSet(viewsets.ModelViewSet):
     - DELETE /info-personal/{id}/ - Eliminar
     - GET /info-personal/por-colaborador/{colaborador_id}/ - Por colaborador
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'colaboradores'
 
     def get_queryset(self):
         queryset = InfoPersonal.objects.filter(is_active=True)
@@ -733,7 +737,8 @@ class HistorialLaboralViewSet(viewsets.ModelViewSet):
     - GET /historial-laboral/ascensos/ - Solo ascensos
     - GET /historial-laboral/traslados/ - Solo traslados
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'colaboradores'
 
     def get_queryset(self):
         queryset = HistorialLaboral.objects.filter(is_active=True)

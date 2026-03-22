@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+from apps.core.permissions import GranularActionPermission
 from django.db.models import Count, Q
 from datetime import timedelta
 
@@ -48,7 +49,8 @@ from .serializers import (
 
 class ModuloInduccionViewSet(viewsets.ModelViewSet):
     """ViewSet para gestión de módulos de inducción."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     filterset_fields = ['tipo_modulo', 'formato_contenido', 'es_obligatorio', 'is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['orden', 'nombre', 'created_at']
@@ -99,7 +101,8 @@ class ModuloInduccionViewSet(viewsets.ModelViewSet):
 
 class AsignacionPorCargoViewSet(viewsets.ModelViewSet):
     """ViewSet para asignaciones de módulos por cargo."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     serializer_class = AsignacionPorCargoSerializer
     filterset_fields = ['cargo', 'modulo', 'es_obligatorio']
     ordering = ['cargo', 'orden_ejecucion']
@@ -126,7 +129,8 @@ class AsignacionPorCargoViewSet(viewsets.ModelViewSet):
 
 class ItemChecklistViewSet(viewsets.ModelViewSet):
     """ViewSet para items de checklist de onboarding."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     serializer_class = ItemChecklistSerializer
     filterset_fields = ['categoria', 'aplica_a_todos', 'is_active']
     search_fields = ['codigo', 'descripcion']
@@ -143,7 +147,8 @@ class ItemChecklistViewSet(viewsets.ModelViewSet):
 
 class ChecklistIngresoViewSet(viewsets.ModelViewSet):
     """ViewSet para seguimiento de checklist por colaborador."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     filterset_fields = ['colaborador', 'estado']
     ordering = ['colaborador', 'item__orden']
 
@@ -199,7 +204,8 @@ class ChecklistIngresoViewSet(viewsets.ModelViewSet):
 
 class EjecucionIntegralViewSet(viewsets.ModelViewSet):
     """ViewSet para ejecución de inducciones."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     filterset_fields = ['colaborador', 'modulo', 'estado']
     ordering = ['colaborador', 'modulo__orden']
 
@@ -296,7 +302,8 @@ class EjecucionIntegralViewSet(viewsets.ModelViewSet):
 
 class EntregaActivoViewSet(viewsets.ModelViewSet):
     """ViewSet para entregas de activos."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     filterset_fields = ['colaborador', 'tipo_activo', 'devuelto']
     ordering = ['-fecha_entrega']
 
@@ -358,7 +365,8 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
 
 class FirmaDocumentoViewSet(viewsets.ModelViewSet):
     """ViewSet para firmas de documentos."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
     filterset_fields = ['colaborador', 'tipo_documento', 'firmado']
     ordering = ['-fecha_firma']
 
@@ -420,7 +428,8 @@ class FirmaDocumentoViewSet(viewsets.ModelViewSet):
 
 class OnboardingEstadisticasViewSet(viewsets.ViewSet):
     """ViewSet para estadísticas generales de onboarding."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'onboarding_induccion'
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):

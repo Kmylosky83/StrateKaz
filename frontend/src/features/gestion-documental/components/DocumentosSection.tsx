@@ -24,6 +24,7 @@ import {
   Spinner,
   ConfirmDialog,
   ExportButton,
+  ProtectedAction,
 } from '@/components/common';
 import { Input } from '@/components/forms';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -53,8 +54,6 @@ export function DocumentosSection({
 }: DocumentosSectionProps) {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
-  const canEdit = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'edit');
-  const canDelete = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'delete');
 
   const { data: documentos, isLoading } = useDocumentos();
   const { data: listadoMaestro } = useListadoMaestro();
@@ -153,24 +152,24 @@ export function DocumentosSection({
               leftIcon={<Search className="w-5 h-5" />}
             />
           </div>
-          {canCreate && (
-            <>
-              <Button
-                variant="outline"
-                leftIcon={<Upload className="w-4 h-4" />}
-                onClick={() => setShowIngestarModal(true)}
-              >
-                Ingestar PDF
-              </Button>
-              <Button
-                variant="primary"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={onCreateDocumento}
-              >
-                Crear Documento
-              </Button>
-            </>
-          )}
+          <ProtectedAction permission="gestion_documental.documentos.create">
+            <Button
+              variant="outline"
+              leftIcon={<Upload className="w-4 h-4" />}
+              onClick={() => setShowIngestarModal(true)}
+            >
+              Ingestar PDF
+            </Button>
+          </ProtectedAction>
+          <ProtectedAction permission="gestion_documental.documentos.create">
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onCreateDocumento}
+            >
+              Crear Documento
+            </Button>
+          </ProtectedAction>
           <ExportButton
             endpoint="/api/gestion-estrategica/gestion-documental/documentos/export/"
             filename="documentos"
@@ -260,7 +259,7 @@ export function DocumentosSection({
                       </Button>
                       {documento.estado === 'BORRADOR' && (
                         <>
-                          {canEdit && (
+                          <ProtectedAction permission="gestion_documental.documentos.edit">
                             <Button
                               variant="primary"
                               size="sm"
@@ -274,8 +273,8 @@ export function DocumentosSection({
                             >
                               Solicitar Firmas
                             </Button>
-                          )}
-                          {canEdit && (
+                          </ProtectedAction>
+                          <ProtectedAction permission="gestion_documental.documentos.edit">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -284,8 +283,8 @@ export function DocumentosSection({
                             >
                               Editar
                             </Button>
-                          )}
-                          {canDelete && (
+                          </ProtectedAction>
+                          <ProtectedAction permission="gestion_documental.documentos.delete">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -294,7 +293,7 @@ export function DocumentosSection({
                                 setConfirmDelete({ id: documento.id, titulo: documento.titulo })
                               }
                             />
-                          )}
+                          </ProtectedAction>
                         </>
                       )}
                     </div>

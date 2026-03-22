@@ -14,7 +14,15 @@ import {
   Tag,
   MoreVertical,
 } from 'lucide-react';
-import { Card, Button, EmptyState, Badge, Spinner, ConfirmDialog } from '@/components/common';
+import {
+  Card,
+  Button,
+  EmptyState,
+  Badge,
+  Spinner,
+  ConfirmDialog,
+  ProtectedAction,
+} from '@/components/common';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
@@ -42,11 +50,7 @@ export function TiposPlantillasSection({
 }: TiposPlantillasSectionProps) {
   const { canDo } = usePermissions();
   const canCreateTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'create');
-  const canEditTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'edit');
-  const canDeleteTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'delete');
   const canCreatePlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
-  const canEditPlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'edit');
-  const canDeletePlantilla = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'delete');
 
   const { data: tipos, isLoading: isLoadingTipos } = useTiposDocumento();
   const { data: plantillas, isLoading: isLoadingPlantillas } = usePlantillasDocumento();
@@ -79,7 +83,7 @@ export function TiposPlantillasSection({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Tipos de Documento
             </h3>
-            {canCreateTipo && (
+            <ProtectedAction permission="gestion_documental.tipos_documento.create">
               <Button
                 variant="primary"
                 size="sm"
@@ -88,7 +92,7 @@ export function TiposPlantillasSection({
               >
                 Nuevo Tipo
               </Button>
-            )}
+            </ProtectedAction>
           </div>
 
           {!tipos || tipos.length === 0 ? (
@@ -166,7 +170,7 @@ export function TiposPlantillasSection({
                             className="absolute right-0 top-8 z-50 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {canEditTipo && (
+                            <ProtectedAction permission="gestion_documental.tipos_documento.edit">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -178,8 +182,8 @@ export function TiposPlantillasSection({
                               >
                                 <Edit className="w-3 h-3" /> Editar
                               </Button>
-                            )}
-                            {canDeleteTipo && (
+                            </ProtectedAction>
+                            <ProtectedAction permission="gestion_documental.tipos_documento.delete">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -191,7 +195,7 @@ export function TiposPlantillasSection({
                               >
                                 <Trash2 className="w-3 h-3" /> Eliminar
                               </Button>
-                            )}
+                            </ProtectedAction>
                           </div>
                         )}
                       </div>
@@ -207,7 +211,7 @@ export function TiposPlantillasSection({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
-            {canCreatePlantilla && (
+            <ProtectedAction permission="gestion_documental.documentos.create">
               <Button
                 variant="primary"
                 size="sm"
@@ -216,7 +220,7 @@ export function TiposPlantillasSection({
               >
                 Nueva Plantilla
               </Button>
-            )}
+            </ProtectedAction>
           </div>
 
           {!plantillas || plantillas.length === 0 ? (
@@ -281,7 +285,7 @@ export function TiposPlantillasSection({
                         </Button>
                         {plantillaMenuOpen === plantilla.id && (
                           <div className="absolute right-0 top-8 z-50 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
-                            {canEditPlantilla && (
+                            <ProtectedAction permission="gestion_documental.documentos.edit">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -293,21 +297,23 @@ export function TiposPlantillasSection({
                               >
                                 <Edit className="w-3 h-3" /> Editar
                               </Button>
+                            </ProtectedAction>
+                            {plantilla.estado !== 'ACTIVA' && (
+                              <ProtectedAction permission="gestion_documental.documentos.edit">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-green-600"
+                                  onClick={() => {
+                                    activarPlantillaMutation.mutate(plantilla.id);
+                                    setPlantillaMenuOpen(null);
+                                  }}
+                                >
+                                  <CheckCircle className="w-3 h-3" /> Activar
+                                </Button>
+                              </ProtectedAction>
                             )}
-                            {canEditPlantilla && plantilla.estado !== 'ACTIVA' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-green-600"
-                                onClick={() => {
-                                  activarPlantillaMutation.mutate(plantilla.id);
-                                  setPlantillaMenuOpen(null);
-                                }}
-                              >
-                                <CheckCircle className="w-3 h-3" /> Activar
-                              </Button>
-                            )}
-                            {canDeletePlantilla && (
+                            <ProtectedAction permission="gestion_documental.documentos.delete">
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -319,7 +325,7 @@ export function TiposPlantillasSection({
                               >
                                 <Trash2 className="w-3 h-3" /> Eliminar
                               </Button>
-                            )}
+                            </ProtectedAction>
                           </div>
                         )}
                       </div>

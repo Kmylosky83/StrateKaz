@@ -9,6 +9,7 @@ from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.permissions import GranularActionPermission
 from .models import CatalogoKPI, FichaTecnicaKPI, MetaKPI, ConfiguracionSemaforo
 from .serializers import (
     CatalogoKPISerializer, FichaTecnicaKPISerializer,
@@ -60,7 +61,8 @@ class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = CatalogoKPI.objects.select_related('empresa')
     serializer_class = CatalogoKPISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_indicadores'
     filterset_fields = ['categoria', 'tipo_indicador', 'frecuencia_medicion', 'is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre', 'categoria', 'created_at']
@@ -116,7 +118,8 @@ class FichaTecnicaKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para FichaTecnicaKPI"""
     queryset = FichaTecnicaKPI.objects.select_related('kpi', 'empresa')
     serializer_class = FichaTecnicaKPISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_indicadores'
     filterset_fields = ['kpi', 'is_active']
     search_fields = ['kpi__codigo', 'kpi__nombre', 'objetivo']
     ordering_fields = ['kpi__codigo', 'created_at']
@@ -134,7 +137,8 @@ class MetaKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para MetaKPI"""
     queryset = MetaKPI.objects.select_related('kpi', 'empresa')
     serializer_class = MetaKPISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_indicadores'
     filterset_fields = ['kpi', 'is_active']
     search_fields = ['kpi__codigo', 'kpi__nombre']
     ordering_fields = ['periodo_inicio', 'periodo_fin', 'created_at']
@@ -152,7 +156,8 @@ class ConfiguracionSemaforoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para ConfiguracionSemaforo"""
     queryset = ConfiguracionSemaforo.objects.select_related('kpi', 'empresa')
     serializer_class = ConfiguracionSemaforoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'config_indicadores'
     filterset_fields = ['kpi', 'is_active']
     search_fields = ['kpi__codigo', 'kpi__nombre']
     ordering_fields = ['kpi__codigo', 'created_at']

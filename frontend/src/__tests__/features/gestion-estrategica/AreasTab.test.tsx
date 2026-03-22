@@ -38,6 +38,22 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// Mock de usePermissions — grant all permissions by default
+vi.mock('@/hooks/usePermissions', () => ({
+  usePermissions: () => ({
+    canDo: () => true,
+    hasPermission: () => true,
+    isSuperAdmin: true,
+    hasCargo: () => false,
+    canAccess: () => true,
+  }),
+}));
+
+// Mock de useModuleColor
+vi.mock('@/hooks/useModuleColor', () => ({
+  useModuleColor: () => ({ color: 'blue', isLoading: false, module: null }),
+}));
+
 // Mock del modal de formulario
 vi.mock('@/features/gestion-estrategica/components/modals/AreaFormModal', () => ({
   AreaFormModal: ({ isOpen, onClose }: unknown) =>
@@ -65,6 +81,9 @@ describe('AreasTab', () => {
     is_active: true,
     children_count: 2,
     level: 0,
+    color: 'blue',
+    icon: 'Building2',
+    manager: 1,
   });
 
   const mockAreaProdPlanta1 = createMockAreaList({
@@ -75,6 +94,9 @@ describe('AreasTab', () => {
     is_active: true,
     children_count: 0,
     level: 1,
+    color: 'blue',
+    icon: 'Building2',
+    manager: null,
   });
 
   const mockAreaProdPlanta2 = createMockAreaList({
@@ -85,6 +107,9 @@ describe('AreasTab', () => {
     is_active: true,
     children_count: 0,
     level: 1,
+    color: 'blue',
+    icon: 'Building2',
+    manager: null,
   });
 
   const mockAreaAdmin = createMockAreaList({
@@ -95,6 +120,9 @@ describe('AreasTab', () => {
     is_active: true,
     children_count: 0,
     level: 0,
+    color: 'green',
+    icon: 'Building2',
+    manager: null,
   });
 
   const mockAreaInactiva = createMockAreaList({
@@ -105,6 +133,9 @@ describe('AreasTab', () => {
     is_active: false,
     children_count: 0,
     level: 0,
+    color: 'gray',
+    icon: 'Building2',
+    manager: null,
   });
 
   const allAreas = [
@@ -185,7 +216,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      expect(screen.getByText(/error al cargar áreas/i)).toBeInTheDocument();
+      expect(screen.getByText(/error al cargar procesos/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
     });
 
@@ -242,8 +273,8 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      expect(screen.getByText(/sin áreas configuradas/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /crear primera área/i })).toBeInTheDocument();
+      expect(screen.getByText(/sin procesos configurados/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /crear primer proceso/i })).toBeInTheDocument();
     });
   });
 
@@ -294,21 +325,21 @@ describe('AreasTab', () => {
     it('debe mostrar contador de subáreas', () => {
       render(<AreasTab />);
 
-      expect(screen.getByText(/2 subáreas/i)).toBeInTheDocument();
+      expect(screen.getByText(/2 subprocesos/i)).toBeInTheDocument();
     });
 
     it('debe renderizar StatsGrid con estadísticas', () => {
       render(<AreasTab />);
 
-      expect(screen.getByText('Total Áreas')).toBeInTheDocument();
-      expect(screen.getByText('Áreas Activas')).toBeInTheDocument();
-      expect(screen.getByText('Áreas Raíz')).toBeInTheDocument();
+      expect(screen.getByText('Total Procesos')).toBeInTheDocument();
+      expect(screen.getByText('Procesos Activos')).toBeInTheDocument();
+      expect(screen.getByText('Procesos Raiz')).toBeInTheDocument();
     });
 
     it('debe mostrar botón de nueva área', () => {
       render(<AreasTab />);
 
-      expect(screen.getByRole('button', { name: /nueva área/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /nuevo proceso/i })).toBeInTheDocument();
     });
   });
 
@@ -438,7 +469,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const searchInput = screen.getByPlaceholderText(/buscar por código o nombre/i);
+      const searchInput = screen.getByPlaceholderText(/buscar/i);
       await user.type(searchInput, 'Producción');
 
       // Simular que el API devuelve resultados filtrados
@@ -468,7 +499,7 @@ describe('AreasTab', () => {
       render(<AreasTab />);
 
       // Buscar algo que no existe
-      const searchInput = screen.getByPlaceholderText(/buscar por código o nombre/i);
+      const searchInput = screen.getByPlaceholderText(/buscar/i);
       await user.type(searchInput, 'xyz-no-existe');
 
       // Simular que el API devuelve resultados vacíos con el filtro
@@ -558,7 +589,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const newButton = screen.getByRole('button', { name: /nueva área/i });
+      const newButton = screen.getByRole('button', { name: /nuevo proceso/i });
       await user.click(newButton);
 
       await waitFor(() => {
@@ -581,7 +612,7 @@ describe('AreasTab', () => {
       render(<AreasTab />);
 
       // Buscar botón de editar (tiene icono Edit)
-      const editButtons = screen.getAllByTitle(/editar área/i);
+      const editButtons = screen.getAllByTitle(/editar proceso/i);
       await user.click(editButtons[0]);
 
       await waitFor(() => {
@@ -601,7 +632,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const deleteButtons = screen.getAllByTitle(/eliminar área/i);
+      const deleteButtons = screen.getAllByTitle(/eliminar proceso/i);
       expect(deleteButtons.length).toBeGreaterThan(0);
     });
 
@@ -620,7 +651,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const deleteButtons = screen.getAllByTitle(/eliminar área/i);
+      const deleteButtons = screen.getAllByTitle(/eliminar proceso/i);
       await user.click(deleteButtons[0]);
 
       await waitFor(() => {
@@ -650,7 +681,7 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      const toggleButtons = screen.getAllByTitle(/desactivar área/i);
+      const toggleButtons = screen.getAllByTitle(/desactivar proceso/i);
       await user.click(toggleButtons[0]);
 
       await waitFor(() => {
@@ -750,22 +781,22 @@ describe('AreasTab', () => {
     it('debe tener títulos descriptivos en botones', () => {
       render(<AreasTab />);
 
-      expect(screen.getByTitle(/editar área/i)).toBeInTheDocument();
-      expect(screen.getByTitle(/eliminar área/i)).toBeInTheDocument();
-      expect(screen.getByTitle(/desactivar área/i)).toBeInTheDocument();
+      expect(screen.getByTitle(/editar proceso/i)).toBeInTheDocument();
+      expect(screen.getByTitle(/eliminar proceso/i)).toBeInTheDocument();
+      expect(screen.getByTitle(/desactivar proceso/i)).toBeInTheDocument();
       expect(screen.getByTitle(/actualizar lista/i)).toBeInTheDocument();
     });
 
     it('debe tener placeholder descriptivo en búsqueda', () => {
       render(<AreasTab />);
 
-      expect(screen.getByPlaceholderText(/buscar por código o nombre/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/buscar/i)).toBeInTheDocument();
     });
 
     it('debe tener estructura semántica con headings', () => {
       render(<AreasTab />);
 
-      expect(screen.getByRole('heading', { name: /áreas y departamentos/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /procesos/i })).toBeInTheDocument();
     });
   });
 });

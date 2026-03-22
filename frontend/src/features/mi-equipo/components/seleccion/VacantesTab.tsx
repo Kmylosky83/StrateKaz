@@ -38,8 +38,7 @@ import {
   Globe,
   ExternalLink,
 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Modules, Sections } from '@/constants/permissions';
+import { ProtectedAction } from '@/components/common';
 import {
   useVacantesActivas,
   useProcesoSeleccionEstadisticas,
@@ -65,12 +64,6 @@ import { VacanteFormModal } from './VacanteFormModal';
 // ============================================================================
 
 export const VacantesTab = () => {
-  // RBAC
-  const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'create');
-  const canEdit = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'edit');
-  const canDelete = canDo(Modules.TALENT_HUB, Sections.VACANTES, 'delete');
-
   // State
   const [filters, setFilters] = useState<VacanteActivaFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -331,12 +324,12 @@ export const VacantesTab = () => {
               <ExternalLink size={14} />
               Portal público
             </a>
-            {canCreate && (
+            <ProtectedAction permission="talent_hub.vacantes.create">
               <Button variant="primary" size="sm" onClick={handleCreate}>
                 <Plus size={16} className="mr-1" />
                 Nueva Vacante
               </Button>
-            )}
+            </ProtectedAction>
           </div>
         }
       />
@@ -385,7 +378,7 @@ export const VacantesTab = () => {
                 >
                   <Eye size={16} />
                 </Button>
-                {canEdit && (
+                <ProtectedAction permission="talent_hub.vacantes.edit">
                   <Button
                     type="button"
                     variant="ghost"
@@ -395,39 +388,43 @@ export const VacantesTab = () => {
                   >
                     <Pencil size={16} />
                   </Button>
+                </ProtectedAction>
+                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                  <ProtectedAction permission="talent_hub.vacantes.edit">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handlePublicar(v as unknown as VacanteActiva)}
+                      title={
+                        v.publicada_externamente
+                          ? 'Despublicar del portal público'
+                          : 'Publicar en portal público'
+                      }
+                      disabled={publicarMutation.isPending}
+                      className={
+                        v.publicada_externamente
+                          ? 'text-green-500 hover:text-green-700'
+                          : 'text-gray-400 hover:text-green-600'
+                      }
+                    >
+                      <Globe size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
-                {canEdit && (v.estado === 'abierta' || v.estado === 'en_proceso') && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handlePublicar(v as unknown as VacanteActiva)}
-                    title={
-                      v.publicada_externamente
-                        ? 'Despublicar del portal público'
-                        : 'Publicar en portal público'
-                    }
-                    disabled={publicarMutation.isPending}
-                    className={
-                      v.publicada_externamente
-                        ? 'text-green-500 hover:text-green-700'
-                        : 'text-gray-400 hover:text-green-600'
-                    }
-                  >
-                    <Globe size={16} />
-                  </Button>
-                )}
-                {canDelete && (v.estado === 'abierta' || v.estado === 'en_proceso') && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCerrar(v as unknown as VacanteActiva)}
-                    title="Cerrar vacante"
-                    className="text-gray-400 hover:text-danger-600"
-                  >
-                    <XCircle size={16} />
-                  </Button>
+                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                  <ProtectedAction permission="talent_hub.vacantes.delete">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCerrar(v as unknown as VacanteActiva)}
+                      title="Cerrar vacante"
+                      className="text-gray-400 hover:text-danger-600"
+                    >
+                      <XCircle size={16} />
+                    </Button>
+                  </ProtectedAction>
                 )}
               </>
             )}

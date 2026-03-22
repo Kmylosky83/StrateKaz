@@ -31,7 +31,6 @@ import {
   Eye,
   LayoutDashboard,
   ArrowRight,
-  Swords,
   PenTool,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -40,13 +39,20 @@ import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useIsExterno } from '@/hooks/useIsExterno';
 import { useMiPerfil } from '../api/miPortalApi';
-import { MiPerfilCard, MiPerfilEditForm, MisDocumentos, MiHSEQ, MiFirmaDigital } from '../components';
+import {
+  MiPerfilCard,
+  MiPerfilEditForm,
+  MisDocumentos,
+  MiHSEQ,
+  MiFirmaDigital,
+} from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
-const GameEntryCard = lazy(() =>
-  import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
-);
+// Juego SST desactivado — requiere refactor completo antes de activar
+// const GameEntryCard = lazy(() =>
+//   import('@/features/sst-game').then((m) => ({ default: m.GameEntryCard }))
+// );
 
 const LecturasPendientesTab = lazy(
   () => import('@/features/gestion-documental/components/LecturasPendientesTab')
@@ -113,11 +119,12 @@ const ALL_PORTAL_TABS = [
     icon: <GraduationCap className="w-4 h-4" />,
   },
   { id: 'evaluacion' as const, label: 'Evaluación', icon: <BarChart3 className="w-4 h-4" /> },
-  {
-    id: 'juego_sst' as const,
-    label: 'Héroes SST',
-    icon: <Swords className="w-4 h-4" />,
-  },
+  // Juego SST desactivado — requiere refactor completo
+  // {
+  //   id: 'juego_sst' as const,
+  //   label: 'Héroes SST',
+  //   icon: <Swords className="w-4 h-4" />,
+  // },
 ];
 
 // ============================================================================
@@ -535,13 +542,7 @@ export default function MiPortalPage() {
           )}
           {safeActiveTab === 'documentos' && <MisDocumentos />}
           {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
-          {safeActiveTab === 'juego_sst' && (
-            <Suspense
-              fallback={<div className="py-8 text-center text-gray-400 text-sm">Cargando...</div>}
-            >
-              <GameEntryCard />
-            </Suspense>
-          )}
+          {/* Juego SST desactivado — requiere refactor completo */}
         </motion.div>
 
         {/* ================================================================

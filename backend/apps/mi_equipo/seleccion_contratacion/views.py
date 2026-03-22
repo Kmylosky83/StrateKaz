@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.throttling import AnonRateThrottle
+from apps.core.permissions import GranularActionPermission
 from django.db.models import Count, Avg, Q, F, Value, DecimalField
 from decimal import Decimal
 from django.utils import timezone
@@ -82,20 +83,23 @@ class TipoContratoViewSet(viewsets.ModelViewSet):
     """ViewSet para TipoContrato"""
     queryset = TipoContrato.objects.filter(is_active=True).order_by('orden')
     serializer_class = TipoContratoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
 
 class TipoEntidadViewSet(viewsets.ModelViewSet):
     """ViewSet para TipoEntidad"""
     queryset = TipoEntidad.objects.filter(is_active=True).order_by('orden')
     serializer_class = TipoEntidadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
 
 class EntidadSeguridadSocialViewSet(viewsets.ModelViewSet):
     """ViewSet para EntidadSeguridadSocial"""
     serializer_class = EntidadSeguridadSocialSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = EntidadSeguridadSocial.objects.filter(
@@ -117,7 +121,8 @@ class TipoPruebaViewSet(viewsets.ModelViewSet):
     """ViewSet para TipoPrueba"""
     queryset = TipoPrueba.objects.filter(is_active=True).order_by('orden')
     serializer_class = TipoPruebaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
 
 # =============================================================================
@@ -138,7 +143,8 @@ class VacanteActivaViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     - POST /vacantes-activas/{id}/cerrar/ - Cerrar vacante
     - POST /vacantes-activas/{id}/publicar/ - Publicar externamente
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     # ResumenRevisionMixin config
     resumen_date_field = 'created_at'
@@ -414,7 +420,8 @@ class CandidatoViewSet(viewsets.ModelViewSet):
     - POST /candidatos/{id}/cambiar-estado/ - Cambiar estado
     - POST /candidatos/{id}/contratar/ - Marcar como contratado
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = Candidato.objects.filter(is_active=True)
@@ -558,7 +565,8 @@ class EntrevistaViewSet(viewsets.ModelViewSet):
     - POST /entrevistas/{id}/realizar/ - Marcar como realizada
     - POST /entrevistas/{id}/cancelar/ - Cancelar entrevista
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = Entrevista.objects.filter(is_active=True)
@@ -655,7 +663,8 @@ class PruebaViewSet(viewsets.ModelViewSet):
     - GET /pruebas/por-candidato/{id}/ - Filtrar por candidato
     - POST /pruebas/{id}/calificar/ - Registrar calificación
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = Prueba.objects.filter(is_active=True)
@@ -739,7 +748,8 @@ class AfiliacionSSViewSet(viewsets.ModelViewSet):
     - GET /afiliaciones/por-candidato/{id}/ - Por candidato
     - POST /afiliaciones/{id}/confirmar/ - Confirmar afiliación
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = AfiliacionSS.objects.filter(is_active=True)
@@ -803,7 +813,8 @@ class AfiliacionSSViewSet(viewsets.ModelViewSet):
 
 class ProcesoSeleccionEstadisticasViewSet(viewsets.ViewSet):
     """ViewSet para estadísticas del proceso de selección"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def list(self, request):
         """Retorna estadísticas generales del proceso de selección"""
@@ -876,7 +887,8 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
     - Justificación obligatoria para contratos no indefinidos
     - Warnings automáticos sin bloqueo
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = HistorialContrato.objects.filter(is_active=True)
@@ -1140,6 +1152,8 @@ class FirmarContratoPublicView(viewsets.ViewSet):
     GET  /firmar-contrato/{token}/ → Ver información del contrato
     PUT  /firmar-contrato/{token}/ → Enviar firma y marcar como firmado
     """
+    # AllowAny: endpoint público accedido por colaboradores via token único en email.
+    # La autenticación se realiza mediante firma_token (UUID single-use con expiración).
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -1270,7 +1284,8 @@ class PlantillaPruebaDinamicaViewSet(viewsets.ModelViewSet):
     """
     CRUD de Plantillas de Pruebas Dinámicas (Form Builder).
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
     filterset_fields = ['categoria', 'tipo_scoring', 'is_active']
     search_fields = ['nombre', 'descripcion', 'categoria']
     ordering_fields = ['nombre', 'created_at', 'total_asignaciones']
@@ -1324,7 +1339,8 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
     """
     CRUD de Asignaciones de Pruebas Dinámicas.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
     filterset_fields = ['candidato', 'plantilla', 'estado']
     search_fields = ['candidato__nombres', 'candidato__apellidos', 'plantilla__nombre']
     ordering = ['-fecha_asignacion']
@@ -1477,6 +1493,8 @@ class ResponderPruebaDinamicaViewSet(viewsets.ViewSet):
     GET  /responder-prueba/{token}/ → Obtener datos de la prueba
     POST /responder-prueba/{token}/ → Enviar respuestas
     """
+    # AllowAny: candidatos externos responden pruebas via token único enviado por email.
+    # La autenticación se realiza mediante token UUID con expiración.
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -1606,7 +1624,8 @@ class EntrevistaAsincronicaViewSet(viewsets.ModelViewSet):
     - POST /entrevistas-async/{id}/reenviar-email/ - Reenviar email
     - POST /entrevistas-async/{id}/cancelar/ - Cancelar
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'seleccion_contratacion'
 
     def get_queryset(self):
         queryset = EntrevistaAsincronica.objects.filter(is_active=True)
@@ -1784,6 +1803,8 @@ class ResponderEntrevistaAsincronicaViewSet(viewsets.ViewSet):
     GET /responder-entrevista/{token}/ - Ver preguntas
     PUT /responder-entrevista/{token}/ - Enviar respuestas
     """
+    # AllowAny: candidatos externos responden entrevistas via token único enviado por email.
+    # La autenticación se realiza mediante token UUID con expiración. Protegido por AnonRateThrottle.
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_classes = [AnonRateThrottle]
@@ -1895,6 +1916,8 @@ class VacantePublicaViewSet(viewsets.ReadOnlyModelViewSet):
     - GET /vacantes-publicas/{id}/ - Detalle de vacante
     - GET /vacantes-publicas/empresa-info/ - Info básica de la empresa
     """
+    # AllowAny: portal público de empleo, solo lectura de vacantes abiertas y publicadas.
+    # Protegido por AnonRateThrottle y filtro queryset (solo estado='abierta' + publicada_externamente=True).
     permission_classes = [AllowAny]
     authentication_classes = []
     throttle_classes = [AnonRateThrottle]
@@ -1960,6 +1983,8 @@ class PostulacionPublicaView(viewsets.ViewSet):
 
     POST /vacantes-publicas/{vacante_id}/postular/ - Crear postulación
     """
+    # AllowAny: candidatos externos postulan desde el portal público de empleo.
+    # Protegido por PostulacionThrottle (5/hora por IP) y validación de duplicados.
     permission_classes = [AllowAny]
     authentication_classes = []
     parser_classes = [MultiPartParser, FormParser]

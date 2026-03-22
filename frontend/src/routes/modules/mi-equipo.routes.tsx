@@ -7,7 +7,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const MiEquipoModulePage = lazy(() => import('@/features/mi-equipo/pages/MiEquipoModulePage'));
 
@@ -18,22 +18,25 @@ export const miEquipoRoutes = (
     {/* Tab 1: Perfiles de Cargo */}
     <Route
       path="/mi-equipo/perfiles-cargo"
-      element={withModuleGuard(MiEquipoModulePage, 'mi_equipo')}
+      element={withFullGuard(MiEquipoModulePage, 'mi_equipo', 'perfiles_cargo')}
     />
 
     {/* Tab 2: Selección y Contratación */}
-    <Route path="/mi-equipo/seleccion" element={withModuleGuard(MiEquipoModulePage, 'mi_equipo')} />
+    <Route
+      path="/mi-equipo/seleccion"
+      element={withFullGuard(MiEquipoModulePage, 'mi_equipo', 'seleccion')}
+    />
 
     {/* Tab 3: Colaboradores */}
     <Route
       path="/mi-equipo/colaboradores"
-      element={withModuleGuard(MiEquipoModulePage, 'mi_equipo')}
+      element={withFullGuard(MiEquipoModulePage, 'mi_equipo', 'colaboradores')}
     />
 
     {/* Tab 4: Onboarding e Inducción */}
     <Route
       path="/mi-equipo/onboarding"
-      element={withModuleGuard(MiEquipoModulePage, 'mi_equipo')}
+      element={withFullGuard(MiEquipoModulePage, 'mi_equipo', 'onboarding')}
     />
   </>
 );

@@ -89,12 +89,12 @@ describe('Input Component', () => {
       expect(screen.getByRole('textbox')).toBeDisabled();
     });
 
-    it('should not fire onChange when disabled', () => {
+    it('should not fire onChange when disabled', async () => {
       const handleChange = vi.fn();
       render(<Input disabled onChange={handleChange} />);
       const input = screen.getByRole('textbox');
-      fireEvent.change(input, { target: { value: 'test' } });
-      // Disabled input should have value but onChange is not called by userEvent
+      // userEvent.type respects the disabled attribute (unlike fireEvent)
+      await userEvent.type(input, 'test');
       expect(handleChange).not.toHaveBeenCalled();
     });
   });

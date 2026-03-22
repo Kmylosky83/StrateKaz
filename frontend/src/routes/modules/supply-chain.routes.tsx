@@ -8,7 +8,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const SupplyChainPage = lazy(() =>
   import('@/features/supply-chain').then((m) => ({ default: m.SupplyChainPage }))
@@ -19,31 +19,31 @@ export const supplyChainRoutes = (
     <Route path="/supply-chain" element={<Navigate to="/supply-chain/proveedores" replace />} />
     <Route
       path="/supply-chain/proveedores"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'proveedores')}
     />
     <Route
       path="/supply-chain/precios"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'precios')}
     />
     <Route
       path="/supply-chain/compras"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'compras')}
     />
     <Route
       path="/supply-chain/almacenamiento"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'almacenamiento')}
     />
     <Route
       path="/supply-chain/programacion"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'programacion')}
     />
     <Route
       path="/supply-chain/evaluaciones"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'evaluaciones')}
     />
     <Route
       path="/supply-chain/catalogos"
-      element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'catalogos')}
     />
   </>
 );

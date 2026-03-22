@@ -6,7 +6,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { createQueryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/lib/query-keys';
 import {
   plantillasApi,
   categoriasApi,
@@ -42,17 +42,17 @@ import type {
 // QUERY KEYS
 // ============================================================
 
-const categoriaKeys = createQueryKeys('wf-categorias');
-const plantillaKeys = createQueryKeys<PlantillaFilters>('wf-plantillas');
-const nodoKeys = createQueryKeys('wf-nodos');
-const transicionKeys = createQueryKeys('wf-transiciones');
-const campoKeys = createQueryKeys('wf-campos');
-const rolKeys = createQueryKeys('wf-roles');
-const instanciaKeys = createQueryKeys<InstanciaFilters>('wf-instancias');
-const tareaKeys = createQueryKeys<TareaFilters>('wf-tareas');
-const historialKeys = createQueryKeys('wf-historial');
-const notificacionKeys = createQueryKeys<NotificacionFilters>('wf-notificaciones');
-const monitoreoKeys = createQueryKeys('wf-monitoreo');
+const categoriaKeys = queryKeys.wfCategorias;
+const plantillaKeys = queryKeys.wfPlantillas;
+const nodoKeys = queryKeys.wfNodos;
+const transicionKeys = queryKeys.wfTransiciones;
+const campoKeys = queryKeys.wfCampos;
+const rolKeys = queryKeys.wfRoles;
+const instanciaKeys = queryKeys.wfInstancias;
+const tareaKeys = queryKeys.wfTareas;
+const historialKeys = queryKeys.wfHistorial;
+const notificacionKeys = queryKeys.wfNotificaciones;
+const monitoreoKeys = queryKeys.wfMonitoreo;
 
 // ============================================================
 // CATEGORIAS

@@ -8,7 +8,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
+import { withFullGuard } from '../helpers';
 
 const GestionDocumentalPage = lazy(
   () => import('@/features/gestion-documental/pages/GestionDocumentalPage')
@@ -22,7 +22,7 @@ export const gestionDocumentalRoutes = (
     />
     <Route
       path="/gestion-documental/documentos"
-      element={withModuleGuard(GestionDocumentalPage, 'gestion_documental')}
+      element={withFullGuard(GestionDocumentalPage, 'gestion_documental', 'documentos')}
     />
     {/* Auditorías Internas → se activará con NIVEL_INTELIGENCIA (L30) */}
     <Route

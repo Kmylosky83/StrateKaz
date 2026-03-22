@@ -21,7 +21,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from apps.core.base_models import TimestampedModel, AuditModel, BaseCompanyModel
+from utils.models import TenantModel
 import hashlib
 import json
 from decimal import Decimal
@@ -81,7 +81,7 @@ ESTADO_ALERTA_CHOICES = [
 # MODELOS DE CONFIGURACIÓN
 # ==============================================================================
 
-class ConfiguracionFlujoFirma(BaseCompanyModel):
+class ConfiguracionFlujoFirma(TenantModel):
     """
     Configuración de flujos de firma personalizables por tipo de documento.
 
@@ -191,7 +191,7 @@ class ConfiguracionFlujoFirma(BaseCompanyModel):
         return False
 
 
-class FlowNode(BaseCompanyModel):
+class FlowNode(TenantModel):
     """
     Nodos individuales de un flujo de firma.
 
@@ -263,7 +263,7 @@ class FlowNode(BaseCompanyModel):
 # MODELOS DE FIRMA DIGITAL
 # ==============================================================================
 
-class FirmaDigital(TimestampedModel):
+class FirmaDigital(TenantModel):
     """
     Firma digital manuscrita con hash SHA-256.
 
@@ -462,7 +462,7 @@ class FirmaDigital(TimestampedModel):
         self.save(update_fields=['estado', 'comentarios'])
 
 
-class HistorialFirma(TimestampedModel):
+class HistorialFirma(TenantModel):
     """
     Historial completo de firmas para auditoría.
 
@@ -537,7 +537,7 @@ class HistorialFirma(TimestampedModel):
         return f"{self.get_accion_display()} - {self.usuario.get_full_name()} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
 
 
-class DelegacionFirma(BaseCompanyModel):
+class DelegacionFirma(TenantModel):
     """
     Delegación temporal de autoridad de firma.
 
@@ -660,7 +660,7 @@ class DelegacionFirma(BaseCompanyModel):
 # MODELOS DE REVISIÓN PERIÓDICA
 # ==============================================================================
 
-class ConfiguracionRevision(BaseCompanyModel):
+class ConfiguracionRevision(TenantModel):
     """
     Configuración de ciclos de revisión periódica para políticas.
 
@@ -838,7 +838,7 @@ class ConfiguracionRevision(BaseCompanyModel):
         return alertas
 
 
-class AlertaRevision(TimestampedModel):
+class AlertaRevision(TenantModel):
     """
     Alertas automáticas de revisión de políticas.
 
@@ -1026,7 +1026,7 @@ class AlertaRevision(TimestampedModel):
 # MODELOS DE VERSIONAMIENTO
 # ==============================================================================
 
-class HistorialVersion(BaseCompanyModel):
+class HistorialVersion(TenantModel):
     """
     Historial de versiones de políticas y documentos.
 
@@ -1196,7 +1196,7 @@ class HistorialVersion(BaseCompanyModel):
             fecha_version=timezone.now(),
             usuario_version=usuario,
             estado_documento=getattr(documento, 'status', getattr(documento, 'estado', '')),
-            empresa=getattr(documento, 'empresa', None)
+            created_by=usuario
         )
 
         # Calcular diff si existe versión anterior

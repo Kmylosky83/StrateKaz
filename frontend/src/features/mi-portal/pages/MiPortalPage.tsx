@@ -32,6 +32,7 @@ import {
   LayoutDashboard,
   ArrowRight,
   Swords,
+  PenTool,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton, Button } from '@/components/common';
@@ -39,7 +40,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useIsExterno } from '@/hooks/useIsExterno';
 import { useMiPerfil } from '../api/miPortalApi';
-import { MiPerfilCard, MiPerfilEditForm, MisDocumentos, MiHSEQ } from '../components';
+import { MiPerfilCard, MiPerfilEditForm, MisDocumentos, MiHSEQ, MiFirmaDigital } from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
@@ -99,6 +100,7 @@ const L60_TABS = new Set<MiPortalTab>([
 
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mis datos', icon: <User className="w-4 h-4" /> },
+  { id: 'firma' as const, label: 'Mi Firma', icon: <PenTool className="w-4 h-4" /> },
   { id: 'lecturas' as const, label: 'Lecturas Pendientes', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'documentos' as const, label: 'Documentos', icon: <FolderOpen className="w-4 h-4" /> },
   { id: 'hseq' as const, label: 'HSEQ', icon: <ShieldCheck className="w-4 h-4" /> },
@@ -523,6 +525,8 @@ export default function MiPortalPage() {
               onAvatarClick={() => setShowAvatarModal(true)}
             />
           )}
+
+          {safeActiveTab === 'firma' && <MiFirmaDigital />}
 
           {safeActiveTab === 'lecturas' && (
             <Suspense fallback={<Skeleton count={3} />}>

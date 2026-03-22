@@ -8,3 +8,4 @@ export { CapacitacionesList } from './CapacitacionesList';
 export { EvaluacionResumen } from './EvaluacionResumen';
 export { MisDocumentos } from './MisDocumentos';
 export { MiHSEQ } from './MiHSEQ';
+export { MiFirmaDigital } from './MiFirmaDigital';

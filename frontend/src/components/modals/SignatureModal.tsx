@@ -32,6 +32,7 @@ import { Alert } from '../common/Alert';
 import { TotpVerificationStep } from './TotpVerificationStep';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useAuthStore } from '@/store/authStore';
 
 export interface SignatureData {
   /** Firma en Base64 */
@@ -210,57 +211,102 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [step, setStep] = useState<'sign' | 'totp'>('sign');
   const [pendingSignatureData, setPendingSignatureData] = useState<SignatureData | null>(null);
+  const [usingSavedSignature, setUsingSavedSignature] = useState(false);
+  const [savedSignaturePreview, setSavedSignaturePreview] = useState<string | null>(null);
+
+  const user = useAuthStore((s) => s.user);
+  const hasSavedSignature = user?.tiene_firma_guardada ?? false;
+
+  const handleUseSavedSignature = async () => {
+    setError(null);
+    setIsSaving(true);
+
+    try {
+      // Fetch saved signature from API
+      const { api } = await import('@/lib/api-client');
+      const response = await api.get<{ firma_guardada: string | null }>(
+        '/core/users/firma-guardada/'
+      );
+      const firmaBase64 = response.data.firma_guardada;
+
+      if (!firmaBase64) {
+        setError('No se encontr\u00f3 firma guardada');
+        setIsSaving(false);
+        return;
+      }
+
+      setSavedSignaturePreview(firmaBase64);
+      setUsingSavedSignature(true);
+      setIsSaving(false);
+    } catch {
+      setError('Error al cargar la firma guardada');
+      setIsSaving(false);
+    }
+  };
+
+  const handleDrawNew = () => {
+    setUsingSavedSignature(false);
+    setSavedSignaturePreview(null);
+  };
+
+  const buildSignatureData = async (
+    signatureDataUrl: string,
+    signatureBase64: string
+  ): Promise<SignatureData> => {
+    const timestamp = new Date().toISOString();
+
+    let signatureHash: string | undefined;
+    if (calculateHash) {
+      signatureHash = await calculateSHA256(signatureBase64);
+    }
+
+    const metadata: SignatureData['metadata'] = {
+      userAgent: navigator.userAgent,
+      screenResolution: `${window.screen.width}x${window.screen.height}`,
+    };
+
+    if (captureGeolocation) {
+      metadata.geolocation = await getGeolocation();
+    }
+
+    return {
+      signatureBase64,
+      signatureDataUrl,
+      timestamp,
+      userName,
+      userEmail,
+      userId,
+      documentType,
+      documentId,
+      signatureHash,
+      metadata,
+    };
+  };
 
   const handleSave = async () => {
-    if (!signatureRef.current) return;
+    let signatureDataUrl: string;
+    let signatureBase64: string;
 
-    // Validar que no esté vacía
-    if (signatureRef.current.isEmpty()) {
-      setError('Por favor, firme antes de continuar');
-      return;
+    if (usingSavedSignature && savedSignaturePreview) {
+      signatureDataUrl = savedSignaturePreview;
+      signatureBase64 = savedSignaturePreview.replace(/^data:image\/\w+;base64,/, '');
+    } else {
+      if (!signatureRef.current) return;
+
+      if (signatureRef.current.isEmpty()) {
+        setError('Por favor, firme antes de continuar');
+        return;
+      }
+
+      signatureDataUrl = signatureRef.current.getDataURL();
+      signatureBase64 = signatureRef.current.getBase64();
     }
 
     setError(null);
     setIsSaving(true);
 
     try {
-      // Obtener firma
-      const signatureDataUrl = signatureRef.current.getDataURL();
-      const signatureBase64 = signatureRef.current.getBase64();
-
-      // Timestamp
-      const timestamp = new Date().toISOString();
-
-      // Calcular hash si se requiere
-      let signatureHash: string | undefined;
-      if (calculateHash) {
-        signatureHash = await calculateSHA256(signatureBase64);
-      }
-
-      // Metadatos
-      const metadata: SignatureData['metadata'] = {
-        userAgent: navigator.userAgent,
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-      };
-
-      // Geolocalización
-      if (captureGeolocation) {
-        metadata.geolocation = await getGeolocation();
-      }
-
-      // Construir data completa
-      const signatureData: SignatureData = {
-        signatureBase64,
-        signatureDataUrl,
-        timestamp,
-        userName,
-        userEmail,
-        userId,
-        documentType,
-        documentId,
-        signatureHash,
-        metadata,
-      };
+      const signatureData = await buildSignatureData(signatureDataUrl, signatureBase64);
 
       // Si requiere TOTP, mostrar paso de verificación
       if (requiresTotp && nivelFirma >= 2) {
@@ -398,19 +444,67 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               </Alert>
             )}
 
-            {/* SignaturePad */}
-            <SignaturePad
-              ref={signatureRef}
-              label="Firma Manuscrita"
-              helpText="Firme en el recuadro usando su dedo (móvil) o mouse (computadora)"
-              required
-              height={isMobile ? 180 : 220}
-              defaultValue={existingSignature}
-              error={error || undefined}
-              disabled={isSaving}
-              showGrid
-              placeholder="Firme aquí con su dedo o mouse"
-            />
+            {/* Usar firma guardada */}
+            {hasSavedSignature && !usingSavedSignature && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                      Firma guardada disponible
+                    </h4>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                      Puede usar su firma guardada en lugar de dibujar una nueva
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleUseSavedSignature}
+                    disabled={isSaving}
+                    loading={isSaving}
+                  >
+                    Usar firma guardada
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Preview firma guardada */}
+            {usingSavedSignature && savedSignaturePreview && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Firma guardada seleccionada
+                  </h4>
+                  <Button variant="secondary" size="sm" onClick={handleDrawNew}>
+                    Dibujar nueva firma
+                  </Button>
+                </div>
+                <div className="border-2 border-green-300 dark:border-green-700 rounded-lg p-6 bg-white dark:bg-gray-800">
+                  <img
+                    src={savedSignaturePreview}
+                    alt="Firma guardada"
+                    className="max-h-40 mx-auto object-contain"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* SignaturePad (oculto si usa firma guardada) */}
+            {!usingSavedSignature && (
+              <SignaturePad
+                ref={signatureRef}
+                label="Firma Manuscrita"
+                helpText="Firme en el recuadro usando su dedo (m\u00f3vil) o mouse (computadora)"
+                required
+                height={isMobile ? 180 : 220}
+                defaultValue={existingSignature}
+                error={error || undefined}
+                disabled={isSaving}
+                showGrid
+                placeholder="Firme aqu\u00ed con su dedo o mouse"
+              />
+            )}
 
             {/* Acciones */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -432,9 +526,11 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               >
                 {isSaving
                   ? 'Guardando...'
-                  : existingSignature
-                    ? 'Actualizar Firma'
-                    : 'Guardar Firma'}
+                  : usingSavedSignature
+                    ? 'Firmar con firma guardada'
+                    : existingSignature
+                      ? 'Actualizar Firma'
+                      : 'Guardar Firma'}
               </Button>
             </div>
 

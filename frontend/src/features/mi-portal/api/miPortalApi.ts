@@ -97,6 +97,57 @@ export function useUploadMiPhoto() {
 }
 
 // ============================================================================
+// HOOKS - FIRMA GUARDADA
+// ============================================================================
+
+interface FirmaGuardadaResponse {
+  firma_guardada: string | null;
+  iniciales_guardadas: string | null;
+}
+
+export const firmaGuardadaKeys = {
+  all: ['firma-guardada'] as const,
+  detail: () => [...firmaGuardadaKeys.all, 'detail'] as const,
+};
+
+export function useFirmaGuardada() {
+  return useQuery({
+    queryKey: firmaGuardadaKeys.detail(),
+    queryFn: async (): Promise<FirmaGuardadaResponse> => {
+      const response = await api.get<FirmaGuardadaResponse>(
+        '/core/users/firma-guardada/'
+      );
+      return response.data;
+    },
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useGuardarFirma() {
+  const queryClient = useQueryClient();
+  const refreshUserProfile = useAuthStore((s) => s.refreshUserProfile);
+
+  return useMutation({
+    mutationFn: async (data: {
+      firma_guardada?: string | null;
+      iniciales_guardadas?: string | null;
+    }) => {
+      const response = await api.patch('/core/users/firma-guardada/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: firmaGuardadaKeys.all });
+      refreshUserProfile();
+      toast.success('Firma guardada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al guardar la firma');
+    },
+  });
+}
+
+// ============================================================================
 // HOOKS - DOCUMENTOS (HOJA DE VIDA)
 // ============================================================================
 

@@ -68,6 +68,12 @@ export interface User {
   cliente?: number | null;
   /** Nombre comercial del cliente vinculado */
   cliente_nombre?: string | null;
+  /** Nivel de firma digital (1=sin 2FA, 2=TOTP, 3=TOTP+OTP) */
+  nivel_firma?: number;
+  /** Si tiene firma manuscrita guardada en perfil */
+  tiene_firma_guardada?: boolean;
+  /** Si tiene iniciales guardadas en perfil */
+  tiene_iniciales_guardadas?: boolean;
 }
 
 export interface LoginCredentials {

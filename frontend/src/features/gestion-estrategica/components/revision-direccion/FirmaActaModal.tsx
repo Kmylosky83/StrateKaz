@@ -17,6 +17,7 @@ import { Button, Badge, Spinner } from '@/components/common';
 import { SignaturePad } from '@/components/forms';
 import { Textarea } from '@/components/forms';
 import { useEstadoFirmas, useIniciarFirma, useFirmarActa } from '../../hooks/useRevisionDireccion';
+import { useAuthStore } from '@/store/authStore';
 import type { ActaRevision, RolFirma, FirmaSlot } from '../../types/revision-direccion.types';
 
 interface FirmaActaModalProps {
@@ -41,10 +42,13 @@ export function FirmaActaModal({ isOpen, onClose, acta }: FirmaActaModalProps) {
   const [firmaActiva, setFirmaActiva] = useState<RolFirma | null>(null);
   const [firmaBase64, setFirmaBase64] = useState<string>('');
   const [observaciones, setObservaciones] = useState('');
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   const { data: estadoFirmas, isLoading } = useEstadoFirmas(acta.id);
   const iniciarFirmaMutation = useIniciarFirma();
   const firmarMutation = useFirmarActa();
+  const authUser = useAuthStore((s) => s.user);
+  const hasSavedSignature = authUser?.tiene_firma_guardada ?? false;
 
   const handleIniciarFirma = useCallback(() => {
     iniciarFirmaMutation.mutate(acta.id);
@@ -52,6 +56,23 @@ export function FirmaActaModal({ isOpen, onClose, acta }: FirmaActaModalProps) {
 
   const handleSignature = useCallback((signature: string) => {
     setFirmaBase64(signature);
+  }, []);
+
+  const handleUseSavedSignature = useCallback(async () => {
+    setLoadingSaved(true);
+    try {
+      const { api } = await import('@/lib/api-client');
+      const response = await api.get<{ firma_guardada: string | null }>(
+        '/core/users/firma-guardada/'
+      );
+      if (response.data.firma_guardada) {
+        setFirmaBase64(response.data.firma_guardada);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingSaved(false);
+    }
   }, []);
 
   const handleFirmar = useCallback(() => {
@@ -168,13 +189,39 @@ export function FirmaActaModal({ isOpen, onClose, acta }: FirmaActaModalProps) {
         {/* Active Signature Capture */}
         {isActive && (
           <div className="mt-4 space-y-3">
-            <SignaturePad
-              label={`Firma — ${ROL_LABELS[firma.rol]}`}
-              onSignature={handleSignature}
-              required
-              height={160}
-              placeholder="Firme aquí con el mouse o toque la pantalla"
-            />
+            {hasSavedSignature && !firmaBase64 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                onClick={handleUseSavedSignature}
+                loading={loadingSaved}
+                disabled={loadingSaved}
+              >
+                <PenTool className="w-3.5 h-3.5 mr-1.5" />
+                Usar firma guardada
+              </Button>
+            )}
+
+            {firmaBase64 && firmaBase64.startsWith('data:image') && (
+              <div className="border border-green-300 dark:border-green-700 rounded-lg p-3 bg-white dark:bg-gray-800">
+                <img
+                  src={firmaBase64}
+                  alt="Firma seleccionada"
+                  className="max-h-24 mx-auto object-contain"
+                />
+              </div>
+            )}
+
+            {!firmaBase64 && (
+              <SignaturePad
+                label={`Firma \u2014 ${ROL_LABELS[firma.rol]}`}
+                onSignature={handleSignature}
+                required
+                height={160}
+                placeholder="Firme aqu\u00ed con el mouse o toque la pantalla"
+              />
+            )}
 
             <Textarea
               label="Observaciones (opcional)"

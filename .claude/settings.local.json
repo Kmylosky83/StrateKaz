@@ -141,7 +141,9 @@
       "Bash(sed -i 's/from apps\\\\.talent_hub\\\\.colaboradores\\\\.models import Colaborador/from apps.mi_equipo.colaboradores.models import Colaborador/g' apps/analytics/indicadores_area/tests/conftest.py)",
       "Bash(sed -i 's/from apps\\\\.talent_hub\\\\.estructura_cargos\\\\.models import Cargo/from apps.mi_equipo.estructura_cargos.models import Cargo/g' apps/analytics/config_indicadores/tests/conftest.py)",
       "Bash(find . -name \"models.py\" -exec sed -i \"s/db_table = ''''talent_hub_/db_table = ''''mi_equipo_/g\" {})",
-      "Bash(find /c/Proyectos/StrateKaz/frontend -type f \\\\\\(-name *encuesta* -o -name *Encuesta* \\\\\\))"
+      "Bash(find /c/Proyectos/StrateKaz/frontend -type f \\\\\\(-name *encuesta* -o -name *Encuesta* \\\\\\))",
+      "WebFetch(domain:pagespeed.web.dev)",
+      "Bash(grep -r class.*\\\\\\(TenantModel\\\\\\) backend/apps/gestion_estrategica/configuracion/models.py)"
     ],
     "deny": [],
     "ask": []

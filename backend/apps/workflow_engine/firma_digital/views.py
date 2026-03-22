@@ -75,14 +75,14 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
     serializer_class = ConfiguracionFlujoFirmaSerializer
-    filterset_fields = ['tipo_flujo', 'permite_delegacion', 'empresa']
+    filterset_fields = ['tipo_flujo', 'permite_delegacion']
     search_fields = ['nombre', 'codigo', 'descripcion']
     ordering_fields = ['nombre', 'created_at']
 
     def get_queryset(self):
-        return ConfiguracionFlujoFirma.objects.filter(
-            is_active=True
-        ).prefetch_related('nodos', 'nodos__cargo')
+        return ConfiguracionFlujoFirma.objects.prefetch_related(
+            'nodos', 'nodos__cargo'
+        )
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -104,7 +104,7 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
         serializer = FlowNodeSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.save(configuracion_flujo=flujo, empresa=flujo.empresa)
+            serializer.save(configuracion_flujo=flujo)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -143,9 +143,9 @@ class FlowNodeViewSet(viewsets.ModelViewSet):
     ordering_fields = ['orden']
 
     def get_queryset(self):
-        return FlowNode.objects.filter(
-            is_active=True
-        ).select_related('configuracion_flujo', 'cargo')
+        return FlowNode.objects.select_related(
+            'configuracion_flujo', 'cargo'
+        )
 
 
 # ==============================================================================
@@ -597,7 +597,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                 configuracion_flujo=firma.configuracion_flujo,
                 nodo_flujo=firma.nodo_flujo,
                 delegante=request.user,
-                empresa=firma.empresa,
+                es_delegada=True,
             )
 
             HistorialFirma.objects.create(
@@ -867,34 +867,22 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha_inicio', 'fecha_fin']
 
     def get_queryset(self):
-        from apps.core.base_models.mixins import get_tenant_empresa
-
         user = self.request.user
-        empresa = get_tenant_empresa(auto_create=False)
 
-        qs = DelegacionFirma.objects.filter(
+        return DelegacionFirma.objects.filter(
             Q(delegante=user) | Q(delegado=user),
-            is_active=True
         ).select_related('delegante', 'delegado', 'cargo')
-
-        if empresa:
-            qs = qs.filter(empresa=empresa)
-
-        return qs
 
     def perform_create(self, serializer):
         """Crea delegación validando permisos"""
-        from apps.core.base_models.mixins import get_tenant_empresa
-
         user = self.request.user
-        empresa = get_tenant_empresa()
 
         # Validar que el usuario sea el delegante
         if serializer.validated_data['delegante'] != user:
             from rest_framework import serializers as drf_serializers
             raise drf_serializers.ValidationError("Solo puede delegar su propia autoridad")
 
-        serializer.save(empresa=empresa, created_by=user)
+        serializer.save(created_by=user)
 
     @action(detail=True, methods=['post'])
     def revocar(self, request, pk=None):
@@ -961,9 +949,9 @@ class ConfiguracionRevisionViewSet(viewsets.ModelViewSet):
     ordering_fields = ['nombre', 'created_at']
 
     def get_queryset(self):
-        return ConfiguracionRevision.objects.filter(
-            is_active=True
-        ).select_related('responsable_revision', 'responsable_escalamiento', 'flujo_firma_renovacion')
+        return ConfiguracionRevision.objects.select_related(
+            'responsable_revision', 'responsable_escalamiento', 'flujo_firma_renovacion'
+        )
 
     @action(detail=True, methods=['post'], url_path='calcular-proxima-revision')
     def calcular_proxima_revision(self, request, pk=None):
@@ -1095,9 +1083,9 @@ class HistorialVersionViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['fecha_version', 'version']
 
     def get_queryset(self):
-        return HistorialVersion.objects.filter(
-            is_active=True
-        ).select_related('usuario_version').prefetch_related('firmas')
+        return HistorialVersion.objects.select_related(
+            'usuario_version'
+        ).prefetch_related('firmas')
 
     def get_serializer_class(self):
         if self.action == 'retrieve':

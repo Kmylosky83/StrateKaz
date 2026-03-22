@@ -108,6 +108,7 @@ class UserViewSet(viewsets.ModelViewSet):
         'me': 'can_view', # Usually allowany or authenticated, but for now map to view
         'update_profile': 'can_view', # Self-service action, user updates own profile
         'upload_photo': 'can_view', # Self-service action, user uploads own photo
+        'firma_guardada': 'can_view', # Self-service action, user manages own signature
         'impersonate_profile': 'can_view', # Custom superuser check inside action
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -404,6 +405,60 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get', 'patch'], url_path='firma-guardada')
+    def firma_guardada(self, request):
+        """
+        Obtener o guardar/actualizar firma guardada del usuario autenticado.
+
+        GET /api/core/users/firma-guardada/
+        Retorna firma_guardada e iniciales_guardadas (base64 completo).
+
+        PATCH /api/core/users/firma-guardada/
+        {
+            "firma_guardada": "data:image/png;base64,...",
+            "iniciales_guardadas": "data:image/png;base64,..."
+        }
+
+        Enviar null para eliminar firma/iniciales.
+        """
+        user = request.user
+
+        if request.method == 'GET':
+            return Response({
+                'firma_guardada': user.firma_guardada,
+                'iniciales_guardadas': user.iniciales_guardadas,
+            })
+
+        # PATCH
+        allowed_fields = ['firma_guardada', 'iniciales_guardadas']
+        update_fields = []
+
+        for field in allowed_fields:
+            if field in request.data:
+                value = request.data[field]
+                # Validar formato base64 si no es null
+                if value is not None and not isinstance(value, str):
+                    return Response(
+                        {field: 'Debe ser una cadena base64 o null'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                setattr(user, field, value)
+                update_fields.append(field)
+
+        if not update_fields:
+            return Response(
+                {'error': 'Debe enviar al menos un campo: firma_guardada o iniciales_guardadas'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.save(update_fields=update_fields)
+
+        return Response({
+            'message': 'Firma guardada actualizada exitosamente',
+            'firma_guardada': bool(user.firma_guardada),
+            'iniciales_guardadas': bool(user.iniciales_guardadas),
+        })
 
     @action(detail=True, methods=['get'], url_path='impersonate-profile')
     def impersonate_profile(self, request, pk=None):

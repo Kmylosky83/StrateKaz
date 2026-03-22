@@ -165,6 +165,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
     cliente = serializers.IntegerField(source='cliente_id_ext', read_only=True, allow_null=True)
     cliente_nombre = serializers.SerializerMethodField()
 
+    # Firma guardada (solo booleanos para no exponer base64 en /me)
+    tiene_firma_guardada = serializers.SerializerMethodField()
+    tiene_iniciales_guardadas = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -209,6 +213,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Firma digital
             'nivel_firma',
             'nivel_firma_manual',
+            # Firma guardada
+            'tiene_firma_guardada',
+            'tiene_iniciales_guardadas',
         ]
         read_only_fields = [
             'id',
@@ -275,6 +282,14 @@ class UserDetailSerializer(serializers.ModelSerializer):
             return (cli.nombre_comercial or cli.razon_social) if cli else None
         except LookupError:
             return None
+
+    def get_tiene_firma_guardada(self, obj):
+        """Indica si el usuario tiene firma guardada"""
+        return bool(obj.firma_guardada)
+
+    def get_tiene_iniciales_guardadas(self, obj):
+        """Indica si el usuario tiene iniciales guardadas"""
+        return bool(obj.iniciales_guardadas)
 
     def get_section_ids(self, obj):
         """

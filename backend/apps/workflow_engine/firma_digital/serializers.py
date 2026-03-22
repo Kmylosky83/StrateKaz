@@ -65,7 +65,7 @@ class ConfiguracionFlujoFirmaCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionFlujoFirma
         fields = [
-            'id', 'nombre', 'codigo', 'descripcion', 'empresa',
+            'id', 'nombre', 'codigo', 'descripcion',
             'tipo_flujo', 'configuracion_nodos',
             'permite_delegacion', 'dias_max_firma', 'requiere_comentario_rechazo',
             'nodos'
@@ -203,7 +203,7 @@ class ConfiguracionRevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionRevision
         fields = [
-            'id', 'nombre', 'descripcion', 'empresa',
+            'id', 'nombre', 'descripcion',
             'frecuencia', 'frecuencia_display', 'dias_personalizados',
             'dias_alerta_1', 'dias_alerta_2', 'dias_alerta_3',
             'alerta_dia_vencimiento', 'alertas_post_vencimiento', 'dias_escalamiento',

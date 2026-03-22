@@ -866,6 +866,22 @@ class User(AbstractUser):
     )
 
     # ==========================================================================
+    # FIRMA GUARDADA (estilo Adobe Sign)
+    # ==========================================================================
+    firma_guardada = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Firma guardada',
+        help_text='Imagen Base64 de la firma manuscrita del usuario'
+    )
+    iniciales_guardadas = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Iniciales guardadas',
+        help_text='Imagen Base64 de las iniciales del usuario'
+    )
+
+    # ==========================================================================
     # RBAC HÍBRIDO - ROLES ADICIONALES
     # ==========================================================================
     roles_adicionales = models.ManyToManyField(

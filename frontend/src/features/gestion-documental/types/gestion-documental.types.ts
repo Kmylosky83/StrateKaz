@@ -113,6 +113,28 @@ export interface FirmantePorDefecto {
   es_requerido?: boolean;
 }
 
+/** Opciones centralizadas de rol de firma — reutilizar en FirmantesEditor y AsignarFirmantesModal */
+export const ROL_FIRMA_OPTIONS: ReadonlyArray<{ value: RolFirma; label: string }> = [
+  { value: 'ELABORO', label: 'Elaboro' },
+  { value: 'REVISO', label: 'Reviso' },
+  { value: 'APROBO', label: 'Aprobo' },
+  { value: 'VALIDO', label: 'Valido' },
+  { value: 'AUTORIZO', label: 'Autorizo' },
+] as const;
+
+/** Resultado del endpoint resolver-firmantes */
+export interface FirmanteResuelto {
+  rol_firma: RolFirma;
+  cargo_code: string;
+  orden: number;
+  es_requerido: boolean;
+  cargo_nombre: string | null;
+  usuario_nombre: string | null;
+  usuario_id: number | null;
+  resuelto: boolean;
+  warning: string | null;
+}
+
 // ==================== PLANTILLA DOCUMENTO ====================
 
 export interface PlantillaDocumento {
@@ -377,6 +399,7 @@ export interface CreatePlantillaDocumentoDTO {
   version?: string;
   estado?: EstadoPlantilla;
   es_por_defecto?: boolean;
+  firmantes_por_defecto?: FirmantePorDefecto[];
 }
 
 export interface CreateDocumentoDTO {

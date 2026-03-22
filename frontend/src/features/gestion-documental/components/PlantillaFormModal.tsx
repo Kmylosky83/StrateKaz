@@ -22,7 +22,12 @@ import {
   useDeleteCampoFormulario,
   useReorderCampos,
 } from '../hooks/useGestionDocumental';
-import type { CreatePlantillaDocumentoDTO, TipoPlantilla } from '../types/gestion-documental.types';
+import type {
+  CreatePlantillaDocumentoDTO,
+  TipoPlantilla,
+  FirmantePorDefecto,
+} from '../types/gestion-documental.types';
+import { FirmantesEditor } from './FirmantesEditor';
 
 interface PlantillaFormModalProps {
   isOpen: boolean;
@@ -45,6 +50,8 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
 
   // FormBuilder state
   const [localCampos, setLocalCampos] = useState<Partial<CampoFormulario>[]>([]);
+  // Firmantes por defecto state
+  const [firmantes, setFirmantes] = useState<FirmantePorDefecto[]>([]);
   const { data: existingCampos } = useCamposFormulario(
     isEdit && existing?.tipo_plantilla === 'FORMULARIO' ? plantillaId! : 0
   );
@@ -92,6 +99,8 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         variables_disponibles: existing.variables_disponibles || [],
         version: existing.version,
       });
+      // Load existing firmantes
+      setFirmantes(existing.firmantes_por_defecto || []);
     } else if (!isEdit) {
       reset({
         codigo: '',
@@ -104,6 +113,7 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         version: '1.0',
       });
       setLocalCampos([]);
+      setFirmantes([]);
     }
   }, [isEdit, existing, reset]);
 
@@ -173,6 +183,10 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
       if (isFormulario && !data.contenido_plantilla) {
         data.contenido_plantilla = '';
       }
+
+      // Include firmantes por defecto (filter out incomplete entries)
+      const validFirmantes = firmantes.filter((f) => f.cargo_code && f.rol_firma);
+      data.firmantes_por_defecto = validFirmantes.length > 0 ? validFirmantes : [];
 
       let savedId: number;
       if (isEdit && plantillaId) {
@@ -300,6 +314,13 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
             error={errors.contenido_plantilla?.message}
           />
         )}
+
+        {/* Firmantes por Defecto */}
+        <FirmantesEditor
+          firmantes={firmantes}
+          onChange={setFirmantes}
+          plantillaId={isEdit ? plantillaId : null}
+        />
 
         {isEdit && existing && (
           <div className="flex items-center gap-2">

@@ -18,6 +18,8 @@ import {
   useWorkflowFirmas,
   type AsignarFirmantesDTO,
 } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
+import { ROL_FIRMA_OPTIONS } from '../types/gestion-documental.types';
+import type { RolFirma } from '../types/gestion-documental.types';
 
 // ==================== TYPES ====================
 
@@ -33,21 +35,13 @@ interface FirmanteRow {
   colaborador_id: string; // id del Colaborador para lookup
   usuario_id: number;
   cargo_id: string;
-  rol_firma: 'ELABORO' | 'REVISO' | 'APROBO' | 'VALIDO' | 'AUTORIZO';
+  rol_firma: RolFirma;
   orden: number;
 }
 
 interface FormValues {
   firmantes: FirmanteRow[];
 }
-
-const ROL_OPTIONS = [
-  { value: 'ELABORO', label: 'Elaboró' },
-  { value: 'REVISO', label: 'Revisó' },
-  { value: 'APROBO', label: 'Aprobó' },
-  { value: 'VALIDO', label: 'Validó' },
-  { value: 'AUTORIZO', label: 'Autorizó' },
-] as const;
 
 // ==================== COMPONENT ====================
 
@@ -104,7 +98,7 @@ export function AsignarFirmantesModal({
   const handleAddFirmante = () => {
     const nextOrden = fields.length + 1;
     // Suggest next role in typical flow
-    const suggestedRoles: Array<FirmanteRow['rol_firma']> = [
+    const suggestedRoles: RolFirma[] = [
       'ELABORO',
       'REVISO',
       'APROBO',
@@ -279,7 +273,7 @@ export function AsignarFirmantesModal({
                   <Select
                     label="Rol de Firma *"
                     {...register(`firmantes.${index}.rol_firma` as const)}
-                    options={ROL_OPTIONS}
+                    options={ROL_FIRMA_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
                   />
                 </div>
 

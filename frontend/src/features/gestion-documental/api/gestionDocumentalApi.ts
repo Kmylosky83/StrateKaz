@@ -34,6 +34,7 @@ import type {
   RegistrarProgresoDTO,
   AceptacionResumen,
   BibliotecaPlantilla,
+  FirmanteResuelto,
 } from '../types/gestion-documental.types';
 
 const BASE_URL = '/gestion-estrategica/gestion-documental';
@@ -68,6 +69,12 @@ export const plantillaDocumentoApi = {
     const response = await apiClient.post(`${BASE_URL}/plantillas/${id}/marcar-obsoleta/`, {
       motivo,
     });
+    return response.data;
+  },
+  resolverFirmantes: async (
+    id: number
+  ): Promise<{ firmantes: FirmanteResuelto[]; mensaje?: string }> => {
+    const response = await apiClient.get(`${BASE_URL}/plantillas/${id}/resolver-firmantes/`);
     return response.data;
   },
 };

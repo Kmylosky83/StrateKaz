@@ -2,18 +2,11 @@ import React from 'react';
 import { ContactHeroSection } from '@components/sections/ContactHeroSection';
 import { ContactFormSection } from '@components/sections/ContactFormSection';
 import { PresenceMapSection } from '@components/sections/PresenceMapSection';
+import { seoManager, marketingSEO } from '../utils/seo';
 
-/**
- * ContactPage Component
- *
- * Main contact page with separated sections for better modularity.
- * Includes: Hero, Contact Form, and Presence Map.
- */
 const ContactPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'StrateKaz | Agendar Reunión | Consultoría SST, ISO y Talento Humano';
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', 'Agenda una reunión con StrateKaz. Consultoría en Seguridad Laboral, Talento Humano, PESV e ISO para empresas colombianas. 20+ años de experiencia, 100% éxito en certificaciones.');
+    seoManager.setPageSEO(marketingSEO.contact);
   }, []);
 
   return (

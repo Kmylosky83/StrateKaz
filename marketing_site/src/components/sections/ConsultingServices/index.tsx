@@ -13,7 +13,7 @@ export const ConsultingServicesSection: React.FC = () => {
   );
 
   const handleConsultationRequest = (serviceId?: string) => {
-    window.location.href = `/contact?service=${serviceId || 'general'}&type=consultation`;
+    window.location.href = `/contacto?service=${serviceId || 'general'}&type=consultation`;
   };
 
   const toggleFAQ = (question: string) => {

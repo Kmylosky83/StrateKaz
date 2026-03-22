@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { MarketingLayout } from '@components/MarketingLayout';
 import { ScrollToTop } from '@/utils/ScrollToTop';
 import { WebVitalsDebugger } from '@components/WebVitalsDebugger';
@@ -26,11 +26,15 @@ const App: React.FC = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path='/' element={<LandingPage />} />
-          <Route path='/pricing' element={<PricingPage />} />
-          <Route path='/contact' element={<ContactPage />} />
+          <Route path='/precios' element={<PricingPage />} />
+          <Route path='/contacto' element={<ContactPage />} />
 
-          {/* Catch all route - redirect to home */}
-          <Route path='*' element={<LandingPage />} />
+          {/* Redirects from old English routes */}
+          <Route path='/pricing' element={<Navigate to='/precios' replace />} />
+          <Route path='/contact' element={<Navigate to='/contacto' replace />} />
+
+          {/* Catch all — redirect to home */}
+          <Route path='*' element={<Navigate to='/' replace />} />
         </Routes>
       </Suspense>
       {import.meta.env.DEV && <WebVitalsDebugger />}

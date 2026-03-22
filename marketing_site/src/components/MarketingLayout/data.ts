@@ -4,12 +4,12 @@ import { NavigationItem, FooterLinks } from './types';
 export const navigationItems: NavigationItem[] = [
   {
     name: 'Precios',
-    href: '/pricing',
+    href: '/precios',
     icon: DollarSign,
   },
   {
     name: 'Contacto',
-    href: '/contact',
+    href: '/contacto',
     icon: MessageCircle,
   },
 ];
@@ -41,6 +41,6 @@ export const footerLinks: FooterLinks = {
     { name: 'Términos de Servicio', href: '/terms' },
     { name: 'Política de Privacidad', href: '/privacy' },
     { name: 'Política de Cookies', href: '/cookies' },
-    { name: 'Contacto', href: '/contact' },
+    { name: 'Contacto', href: '/contacto' },
   ],
 };

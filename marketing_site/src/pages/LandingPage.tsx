@@ -5,20 +5,21 @@ import { TrustedBySection } from '../components/sections/TrustedBySection';
 import { FeatureShowcase } from '../components/FeatureShowcase';
 import { ProcessCategoriesSection } from '../components/sections/ProcessCategoriesSection';
 import { FinalCTASection } from '../components/sections/FinalCTASection';
+import { seoManager, marketingSEO } from '../utils/seo';
 
 const LandingPage: React.FC = () => {
   React.useEffect(() => {
-    document.title = 'StrateKaz | Consultoría 4.0 | SST, Talento Humano, PESV e ISO | Colombia';
+    seoManager.setPageSEO(marketingSEO.landing);
   }, []);
 
   const handleTrialStart = async (_tierId?: string) => {
     // Navigate to contact page for trial request
-    window.location.href = '/contact';
+    window.location.href = '/contacto';
   };
 
   const handleDemoClick = () => {
     // Navigate to contact page for demo request
-    window.location.href = '/contact';
+    window.location.href = '/contacto';
   };
 
   return (

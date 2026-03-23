@@ -295,6 +295,29 @@ def current_user(request):
         'cliente_nombre': cliente_nombre,
         # 2FA status (para verificación pre-impersonación)
         'has_2fa_enabled': has_2fa_enabled,
+        # Active additional roles for this user
+        'roles_adicionales': [
+            {
+                'id': ura.rol_adicional.id,
+                'code': ura.rol_adicional.code,
+                'nombre': ura.rol_adicional.nombre,
+            }
+            for ura in user.usuarios_roles_adicionales.filter(
+                is_active=True
+            ).select_related('rol_adicional')
+            if ura.is_valid
+        ] if hasattr(user, 'usuarios_roles_adicionales') else [],
+        # Groups the user belongs to
+        'groups': [
+            {
+                'id': ug.group.id,
+                'code': ug.group.code,
+                'name': ug.group.name,
+            }
+            for ug in user.user_groups.filter(
+                group__is_active=True
+            ).select_related('group')
+        ] if hasattr(user, 'user_groups') else [],
     })
 
 

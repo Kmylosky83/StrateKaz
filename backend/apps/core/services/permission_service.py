@@ -285,37 +285,166 @@ class CombinedPermissionService:
         """
         Agrega permisos de roles adicionales activos del usuario para una sección.
 
-        Los roles adicionales otorgan permisos legacy (Permiso), no CargoSectionAccess.
-        Aquí verificamos si algún rol adicional tiene permisos que implican acceso.
+        Carga RolAdicionalSectionAccess para cada UserRolAdicional válido
+        y los combina con lógica OR.
         """
-        # Los roles adicionales en el sistema actual usan permisos legacy,
-        # no CargoSectionAccess directamente. Por ahora retornamos sin cambios.
-        # En una futura implementación, se podría crear RolAdicionalSectionAccess.
+        from apps.core.models import RolAdicionalSectionAccess
+
+        if not hasattr(user, 'usuarios_roles_adicionales'):
+            return combined
+
+        # Obtener IDs de roles adicionales válidos del usuario
+        valid_rol_ids = [
+            ura.rol_adicional_id
+            for ura in user.usuarios_roles_adicionales.select_related(
+                'rol_adicional'
+            ).filter(is_active=True)
+            if ura.is_valid
+        ]
+
+        if not valid_rol_ids:
+            return combined
+
+        # Cargar accesos de sección para esos roles
+        rol_accesses = RolAdicionalSectionAccess.objects.filter(
+            rol_adicional_id__in=valid_rol_ids,
+            section_id=section_id,
+        )
+
+        for access in rol_accesses:
+            combined = cls._merge_access(combined, {
+                'can_view': access.can_view,
+                'can_create': access.can_create,
+                'can_edit': access.can_edit,
+                'can_delete': access.can_delete,
+                'custom_actions': access.custom_actions or {},
+            })
+
         return combined
 
     @classmethod
     def _add_group_access(cls, user, section_id: int, combined: Dict) -> Dict:
         """
-        Agrega permisos de grupos del usuario para una sección.
+        Agrega permisos de grupos activos del usuario para una sección.
 
-        Similar a roles adicionales, los grupos usan permisos legacy.
+        Busca GroupSectionAccess para cada grupo activo al que pertenece el user.
+        Combina con lógica OR.
         """
+        from apps.core.models import GroupSectionAccess, UserGroup
+
+        # Get active group IDs for this user
+        group_ids = list(
+            UserGroup.objects.filter(
+                user=user,
+                group__is_active=True
+            ).values_list('group_id', flat=True)
+        )
+
+        if not group_ids:
+            return combined
+
+        # Get GroupSectionAccess for these groups and this section
+        group_accesses = GroupSectionAccess.objects.filter(
+            group_id__in=group_ids,
+            section_id=section_id
+        )
+
+        for access in group_accesses:
+            combined = cls._merge_access(combined, {
+                'can_view': access.can_view,
+                'can_create': access.can_create,
+                'can_edit': access.can_edit,
+                'can_delete': access.can_delete,
+                'custom_actions': access.custom_actions or {},
+            })
+
         return combined
 
     @classmethod
     def _add_all_additional_roles_access(cls, user, result: Dict) -> Dict:
         """
         Agrega permisos de todos los roles adicionales a todas las secciones.
+
+        Itera los RolAdicionalSectionAccess de cada UserRolAdicional válido
+        y los fusiona con lógica OR sobre el resultado existente.
         """
-        # Implementación futura cuando se cree RolAdicionalSectionAccess
+        from apps.core.models import RolAdicionalSectionAccess
+
+        if not hasattr(user, 'usuarios_roles_adicionales'):
+            return result
+
+        # Obtener IDs de roles adicionales válidos del usuario
+        valid_rol_ids = [
+            ura.rol_adicional_id
+            for ura in user.usuarios_roles_adicionales.select_related(
+                'rol_adicional'
+            ).filter(is_active=True)
+            if ura.is_valid
+        ]
+
+        if not valid_rol_ids:
+            return result
+
+        # Cargar todos los accesos de sección para esos roles
+        rol_accesses = RolAdicionalSectionAccess.objects.filter(
+            rol_adicional_id__in=valid_rol_ids,
+        ).select_related('section__tab__module')
+
+        for access in rol_accesses:
+            sid = str(access.section_id)
+            if sid in result:
+                result[sid] = cls._merge_access(result[sid], {
+                    'section_code': access.section.code,
+                    'section_name': access.section.name,
+                    'module_code': access.section.tab.module.code,
+                    'tab_code': access.section.tab.code,
+                    'can_view': access.can_view,
+                    'can_create': access.can_create,
+                    'can_edit': access.can_edit,
+                    'can_delete': access.can_delete,
+                    'custom_actions': access.custom_actions or {},
+                })
+
         return result
 
     @classmethod
     def _add_all_group_access(cls, user, result: Dict) -> Dict:
         """
-        Agrega permisos de todos los grupos a todas las secciones.
+        Agrega permisos de todos los grupos activos del usuario a todas las secciones.
         """
-        # Implementación futura cuando se cree GroupSectionAccess
+        from apps.core.models import GroupSectionAccess, UserGroup
+
+        # Get active group IDs for this user
+        group_ids = list(
+            UserGroup.objects.filter(
+                user=user,
+                group__is_active=True
+            ).values_list('group_id', flat=True)
+        )
+
+        if not group_ids:
+            return result
+
+        # Get all GroupSectionAccess for these groups
+        group_accesses = GroupSectionAccess.objects.filter(
+            group_id__in=group_ids
+        ).select_related('section__tab__module')
+
+        for access in group_accesses:
+            sid = str(access.section_id)
+            if sid in result:
+                result[sid] = cls._merge_access(result[sid], {
+                    'section_code': access.section.code,
+                    'section_name': access.section.name,
+                    'module_code': access.section.tab.module.code,
+                    'tab_code': access.section.tab.code,
+                    'can_view': access.can_view,
+                    'can_create': access.can_create,
+                    'can_edit': access.can_edit,
+                    'can_delete': access.can_delete,
+                    'custom_actions': access.custom_actions or {},
+                })
+
         return result
 
     # ==========================================================================
@@ -459,22 +588,40 @@ class CombinedPermissionService:
 
         # Roles adicionales
         if hasattr(user, 'usuarios_roles_adicionales'):
+            from apps.core.models import RolAdicionalSectionAccess
+
             roles = user.usuarios_roles_adicionales.filter(
                 is_active=True
             ).select_related('rol_adicional')
             report['roles_adicionales'] = [
-                {'code': r.rol_adicional.code, 'nombre': r.rol_adicional.nombre}
+                {
+                    'code': r.rol_adicional.code,
+                    'nombre': r.rol_adicional.nombre,
+                    'is_valid': r.is_valid,
+                    'section_accesses_count': RolAdicionalSectionAccess.objects.filter(
+                        rol_adicional=r.rol_adicional
+                    ).count(),
+                }
                 for r in roles
             ]
 
         # Grupos
         if hasattr(user, 'user_groups'):
+            from apps.core.models import GroupSectionAccess
+
             groups = user.user_groups.filter(
-                is_active=True
+                group__is_active=True
             ).select_related('group')
-            report['groups'] = [
-                {'code': g.group.code, 'name': g.group.name}
-                for g in groups
-            ]
+            group_data = []
+            for g in groups:
+                section_count = GroupSectionAccess.objects.filter(
+                    group=g.group
+                ).count()
+                group_data.append({
+                    'code': g.group.code,
+                    'name': g.group.name,
+                    'section_accesses_count': section_count,
+                })
+            report['groups'] = group_data
 
         return report

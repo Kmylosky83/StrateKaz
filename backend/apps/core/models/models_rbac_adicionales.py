@@ -425,6 +425,114 @@ class UserRolAdicional(models.Model):
         return 'VIGENTE'
 
 
+class RolAdicionalSectionAccess(models.Model):
+    """
+    Acceso a secciones por RolAdicional — complementa CargoSectionAccess.
+
+    Permite que roles adicionales (COPASST, Brigadista, Auditor SST, etc.)
+    otorguen acceso a secciones del sistema de forma análoga a CargoSectionAccess.
+
+    Los permisos se combinan con lógica OR:
+    - Si el Cargo NO da acceso a una sección pero el RolAdicional SÍ → acceso permitido
+    - Si ambos dan acceso, se toman los permisos más permisivos
+
+    Ejemplo:
+        rol=Brigadista, section=Plan Emergencias, can_view=True, can_create=True
+        → El brigadista puede ver Y crear registros en la sección
+    """
+
+    rol_adicional = models.ForeignKey(
+        RolAdicional,
+        on_delete=models.CASCADE,
+        related_name='section_accesses',
+        verbose_name='Rol Adicional'
+    )
+    section = models.ForeignKey(
+        'core.TabSection',
+        on_delete=models.CASCADE,
+        related_name='rol_adicional_accesses',
+        verbose_name='Sección'
+    )
+
+    # Acciones CRUD — misma estructura que CargoSectionAccess
+    can_view = models.BooleanField(
+        default=True,
+        verbose_name='Puede ver',
+        help_text='Permite ver/acceder a esta sección'
+    )
+    can_create = models.BooleanField(
+        default=False,
+        verbose_name='Puede crear',
+        help_text='Permite crear nuevos registros en esta sección'
+    )
+    can_edit = models.BooleanField(
+        default=False,
+        verbose_name='Puede editar',
+        help_text='Permite modificar registros existentes'
+    )
+    can_delete = models.BooleanField(
+        default=False,
+        verbose_name='Puede eliminar',
+        help_text='Permite eliminar registros'
+    )
+    custom_actions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Acciones personalizadas',
+        help_text='Estado de acciones extra (ej: {"enviar": true})'
+    )
+
+    granted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de asignación'
+    )
+    granted_by = models.ForeignKey(
+        'core.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rol_adicional_section_accesses_granted',
+        verbose_name='Otorgado por'
+    )
+
+    class Meta:
+        db_table = 'core_rol_adicional_section_access'
+        verbose_name = 'Acceso a Sección por Rol Adicional'
+        verbose_name_plural = 'Accesos a Secciones por Rol Adicional'
+        unique_together = [['rol_adicional', 'section']]
+        ordering = ['rol_adicional', 'section']
+        indexes = [
+            models.Index(fields=['rol_adicional']),
+            models.Index(fields=['section']),
+        ]
+
+    def __str__(self):
+        actions = []
+        if self.can_view:
+            actions.append('V')
+        if self.can_create:
+            actions.append('C')
+        if self.can_edit:
+            actions.append('E')
+        if self.can_delete:
+            actions.append('D')
+        return f"{self.rol_adicional.code} -> {self.section.name} [{'/'.join(actions)}]"
+
+    @property
+    def actions_list(self):
+        """Retorna lista de acciones permitidas."""
+        actions = []
+        if self.can_view:
+            actions.append('view')
+        if self.can_create:
+            actions.append('create')
+        if self.can_edit:
+            actions.append('edit')
+        if self.can_delete:
+            actions.append('delete')
+        return actions
+
+
 class CargoSectionAccess(models.Model):
     """
     Define qué secciones del sistema puede acceder cada cargo y qué acciones puede realizar.

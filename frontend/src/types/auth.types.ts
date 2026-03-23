@@ -76,6 +76,10 @@ export interface User {
   tiene_iniciales_guardadas?: boolean;
   /** Si el usuario tiene 2FA habilitado (usado para flujo de impersonación) */
   has_2fa_enabled?: boolean;
+  /** Roles adicionales activos del usuario */
+  roles_adicionales?: Array<{ id: number; code: string; nombre: string }>;
+  /** Grupos a los que pertenece el usuario */
+  groups?: Array<{ id: number; code: string; name: string }>;
 }
 
 export interface LoginCredentials {

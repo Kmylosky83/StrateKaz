@@ -11,7 +11,9 @@ class CoreConfig(AppConfig):
 
         Signals registrados:
         - rbac_signals: Propagación automática de permisos RBAC
+        - rbac_cache_signals: Invalidación automática de cache RBAC
         - user_lifecycle_signals: TenantUser, vacantes, email de bienvenida
         """
         import apps.core.signals.rbac_signals  # noqa: F401
+        import apps.core.signals.rbac_cache_signals  # noqa: F401
         import apps.core.signals.user_lifecycle_signals  # noqa: F401

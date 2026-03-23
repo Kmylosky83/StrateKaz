@@ -5,7 +5,8 @@ Este paquete contiene los modelos del módulo Core organizados por dominio:
 - models_user: User, Cargo, RiesgoOcupacional
 - models_rbac_permisos: Permiso, PermisoModulo, PermisoAccion, PermisoAlcance
 - models_rbac_roles: Role, Group, UserRole, UserGroup
-- models_rbac_adicionales: RolAdicional, UserRolAdicional, CargoSectionAccess
+- models_rbac_adicionales: RolAdicional, UserRolAdicional, RolAdicionalSectionAccess, CargoSectionAccess
+- models_rbac_roles: also exports GroupSectionAccess
 - models_system_modules: SystemModule, ModuleTab, TabSection
 - models_menu: MenuItem
 - models_datos_maestros: TipoDocumentoIdentidad, Departamento, Ciudad
@@ -40,6 +41,7 @@ from apps.core.models.models_rbac_roles import (
     RolePermiso,
     GrupoTipo,
     Group,
+    GroupSectionAccess,
     GroupRole,
     UserRole,
     UserGroup,
@@ -53,6 +55,7 @@ from apps.core.models.models_rbac_adicionales import (
     RolAdicional,
     RolAdicionalPermiso,
     UserRolAdicional,
+    RolAdicionalSectionAccess,
     CargoSectionAccess,
 )
 
@@ -171,6 +174,7 @@ __all__ = [
     'RolePermiso',
     'GrupoTipo',
     'Group',
+    'GroupSectionAccess',
     'GroupRole',
     'UserRole',
     'UserGroup',
@@ -179,6 +183,7 @@ __all__ = [
     'RolAdicional',
     'RolAdicionalPermiso',
     'UserRolAdicional',
+    'RolAdicionalSectionAccess',
     'CargoSectionAccess',
     # Permission Templates (v4.1)
     'PermissionTemplate',

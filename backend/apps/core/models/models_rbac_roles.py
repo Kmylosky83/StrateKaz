@@ -3,7 +3,9 @@ Modelos de Roles y Grupos - Sistema RBAC StrateKaz
 
 Role: Agrupa permisos por función
 Group: Organiza usuarios por equipos
+GroupSectionAccess: Acceso a secciones por Group (complementa CargoSectionAccess)
 """
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -258,6 +260,113 @@ class Group(models.Model):
         return Permiso.objects.filter(
             Q(roles__groups=self) & Q(is_active=True)
         ).distinct()
+
+
+class GroupSectionAccess(models.Model):
+    """
+    Acceso a secciones por Group — complementa CargoSectionAccess.
+
+    Permite asignar permisos de sección a nivel de grupo, de forma que
+    los usuarios miembros del grupo hereden estos permisos adicionales.
+
+    Los permisos se combinan con lógica OR: si el cargo O el grupo
+    otorgan un permiso, el usuario lo tiene.
+
+    Ejemplo:
+        group=Comité SST, section=Accidentalidad, can_view=True, can_edit=True
+        → Todos los miembros del comité pueden ver y editar accidentalidad
+    """
+
+    group = models.ForeignKey(
+        'Group',
+        on_delete=models.CASCADE,
+        related_name='section_accesses',
+        verbose_name='Grupo'
+    )
+    section = models.ForeignKey(
+        'core.TabSection',
+        on_delete=models.CASCADE,
+        related_name='group_accesses',
+        verbose_name='Sección'
+    )
+
+    # Acciones CRUD — lógica idéntica a CargoSectionAccess
+    can_view = models.BooleanField(
+        default=True,
+        verbose_name='Puede ver',
+        help_text='Permite ver/acceder a esta sección'
+    )
+    can_create = models.BooleanField(
+        default=False,
+        verbose_name='Puede crear',
+        help_text='Permite crear nuevos registros en esta sección'
+    )
+    can_edit = models.BooleanField(
+        default=False,
+        verbose_name='Puede editar',
+        help_text='Permite modificar registros existentes'
+    )
+    can_delete = models.BooleanField(
+        default=False,
+        verbose_name='Puede eliminar',
+        help_text='Permite eliminar registros'
+    )
+    custom_actions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Acciones personalizadas',
+        help_text='Estado de acciones extra (ej: {"aprobar": true})'
+    )
+
+    granted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de asignación'
+    )
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='group_section_accesses_granted',
+        verbose_name='Otorgado por'
+    )
+
+    class Meta:
+        db_table = 'core_group_section_access'
+        verbose_name = 'Acceso a Sección por Grupo'
+        verbose_name_plural = 'Accesos a Secciones por Grupo'
+        unique_together = [['group', 'section']]
+        ordering = ['group', 'section']
+        indexes = [
+            models.Index(fields=['group']),
+            models.Index(fields=['section']),
+        ]
+
+    def __str__(self):
+        actions = []
+        if self.can_view:
+            actions.append('V')
+        if self.can_create:
+            actions.append('C')
+        if self.can_edit:
+            actions.append('E')
+        if self.can_delete:
+            actions.append('D')
+        return f"{self.group.name} -> {self.section.name} [{'/'.join(actions)}]"
+
+    @property
+    def actions_list(self):
+        """Retorna lista de acciones permitidas."""
+        actions = []
+        if self.can_view:
+            actions.append('view')
+        if self.can_create:
+            actions.append('create')
+        if self.can_edit:
+            actions.append('edit')
+        if self.can_delete:
+            actions.append('delete')
+        return actions
 
 
 class GroupRole(models.Model):

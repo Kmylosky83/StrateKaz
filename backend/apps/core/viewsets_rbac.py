@@ -1342,12 +1342,12 @@ class RBACStatsViewSet(viewsets.ViewSet):
             'active_permissions': Permiso.objects.filter(is_active=True).count(),
             'total_users': User.objects.filter(
                 deleted_at__isnull=True
-            ).exclude(is_superuser=True).count(),
+            ).exclude(is_superuser=True, cargo__isnull=True).count(),
             'users_with_cargo': User.objects.filter(
                 cargo__isnull=False,
                 is_active=True,
                 deleted_at__isnull=True
-            ).exclude(is_superuser=True).count(),
+            ).count(),
         }
 
         return Response(stats)

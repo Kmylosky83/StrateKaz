@@ -121,8 +121,9 @@ class UserViewSet(viewsets.ModelViewSet):
         """Excluir usuarios eliminados y superusuarios por defecto"""
         queryset = super().get_queryset()
 
-        # Excluir superusuarios (usuario técnico, no es colaborador real)
-        queryset = queryset.exclude(is_superuser=True)
+        # Excluir superusuarios SIN cargo (admin plataforma puro).
+        # Superusuarios CON cargo son parte de la empresa (modelo B2B2B).
+        queryset = queryset.exclude(is_superuser=True, cargo__isnull=True)
 
         # Excluir eliminados lógicamente
         include_deleted = self.request.query_params.get('include_deleted', 'false')
@@ -602,8 +603,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
         GET /api/core/users/stats/
         """
-        # Excluir superusuarios (usuario técnico, no es colaborador real)
-        base_qs = User.objects.exclude(is_superuser=True)
+        # Excluir superusuarios SIN cargo (admin plataforma puro).
+        base_qs = User.objects.exclude(is_superuser=True, cargo__isnull=True)
 
         alive_qs = base_qs.filter(deleted_at__isnull=True)
         total_users = alive_qs.count()

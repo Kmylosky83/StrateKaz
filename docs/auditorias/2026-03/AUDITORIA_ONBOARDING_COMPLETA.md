@@ -33,7 +33,7 @@ Auditoría profunda del flujo completo de onboarding en StrateKaz SGI, desde la 
 | **S1** | No hay auto-registro / trial self-service | ALTA | ⏳ Fuera de alcance — arquitectura preparada |
 | **S2** | No hay campo `tenant_type` (Consultora/Directa/Independiente) | MEDIA | ⏳ Fuera de alcance |
 | **S3** | API crear tenant no crea primer User automáticamente | ALTA | ✅ Agente A (A5) + B (B3) + D (D4) |
-| **S4** | No hay modelo B2B2B (consultora → clientes) | ALTA | ⚠️ Parcial — contexto reconocido, no implementado |
+| **S4** | No hay modelo B2B2B (consultora → clientes) | ALTA | ✅ Implementado — tipo contratista + filtro superadmin con cargo (§13) |
 | **S5** | Trial sin auto-expiración (lógica existe pero incompleta) | BAJA | ⏳ Fuera de alcance |
 | **S6** | Solo 1 plan en BD (`empresarial`) | BAJA | ⏳ Fuera de alcance |
 | **S7** | Flujo A (admin directo) no envía link de setup contraseña | ALTA | ✅ Agente A (A6) + C (C2) |
@@ -614,7 +614,7 @@ Estos gaps quedan documentados para sprints futuros:
 |----|-----|-----------------|
 | S1 | Auto-registro / trial self-service | L30+ |
 | S2 | Campo `tenant_type` | L30+ |
-| S4 | Modelo B2B2B consultora → clientes | L30+ |
+| S4 | ~~Modelo B2B2B consultora → clientes~~ | ✅ Resuelto §13 |
 | S5 | Trial auto-expiración completa | L25 |
 | D1 | Deprecar campos duplicados en User | L60 (Talent Hub) |
 | D6 | Sync dirección | L60 |
@@ -663,8 +663,95 @@ Estos gaps quedan documentados para sprints futuros:
 | 3 | Tests unitarios para modelos/signals/servicio | MEDIA | Sprint siguiente |
 | 4 | Actualizar branding en 11 templates existentes | BAJA | Reemplazar `|default:'#ec268f'` por `{{ primary_color }}` |
 
+## 13. Extensión B2B2B (23 de marzo de 2026)
+
+### 13.1 Contexto
+
+El documento `MODELO_B2B2B_STRATEKAZ.docx` definió 7 tipos de experiencia de usuario y reveló
+que el OnboardingService no cubría el tipo **contratista** (consultor externo con cargo real).
+Se identificaron 4 brechas nuevas y se implementaron 2 fixes.
+
+### 13.2 Brechas B2B2B identificadas
+
+| # | Brecha | Severidad | Resolución |
+|---|--------|-----------|------------|
+| **B1** | `_resolve_onboarding_type()` no detecta contratista — `cargo.is_externo` ignorado | ALTA | ✅ Tipo 'contratista' agregado en cadena de prioridad |
+| **B2** | ContratistaOnboarding (4 pasos) no existe | ALTA | ✅ Steps: perfil → firma → políticas → HSEQ |
+| **B3** | UI creación usuario no expone `tipo_contrato` ni `proveedor_origen` | MEDIA | ⏳ L25 |
+| **B4** | Auto-create Colaborador no distingue `tipo_contrato` por `is_externo` | MEDIA | ✅ `prestacion_servicios` cuando `is_externo=True` |
+
+### 13.3 Cambio de criterio: Superadmin y visibilidad
+
+**Antes:** `queryset.exclude(is_superuser=True)` — TODOS los superadmins ocultos de lista de usuarios y métricas.
+
+**Después:** `queryset.exclude(is_superuser=True, cargo__isnull=True)` — Solo oculta superadmins SIN cargo (admin plataforma puro).
+
+| Tipo superadmin | cargo | Visible en lista | Cuenta en métricas | Mi Portal |
+|----------------|:-----:|:----------------:|:------------------:|-----------|
+| Admin plataforma (sin cargo) | null | ❌ | ❌ | AdminPortalView (impersonación) |
+| Admin empresa (con cargo) | ✅ | ✅ | ✅ | Mi Portal completo |
+| Contratista con cargo externo | ✅ `is_externo` | ✅ | ✅ (como contratista) | Mi Portal sin HR tabs |
+
+### 13.4 Cadena de detección actualizada (6 tipos)
+
+```
+1. is_superuser                                     → 'admin'     (8 pasos)
+2. cargo.is_jefatura=True                           → 'jefe'      (3 pasos)
+3. cargo.is_externo=True + cargo real (no portal)   → 'contratista' (4 pasos) ← NUEVO
+4. proveedor_id_ext / PROVEEDOR_PORTAL              → 'proveedor' (2 pasos)
+5. cliente_id_ext / CLIENTE_PORTAL                  → 'cliente'   (2 pasos)
+6. default                                          → 'empleado'  (3 pasos)
+```
+
+### 13.5 Steps del Contratista (Tipo 3)
+
+| # | Key | Label | Auto-detección |
+|---|-----|-------|----------------|
+| 1 | perfil | Completa tu perfil | has_photo + has_firma |
+| 2 | firma | Configura tu firma digital | has_firma |
+| 3 | politicas | Lee las políticas del cliente | placeholder (futuro: lectura obligatoria) |
+| 4 | hseq | Verifica tu cumplimiento HSEQ | placeholder (futuro: EPP + exámenes) |
+
+### 13.6 Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `apps/core/models/models_onboarding.py` | `_resolve_onboarding_type()` — tipo 'contratista' |
+| `apps/core/services/onboarding_service.py` | Steps contratista + `_calc_steps` |
+| `apps/mi_equipo/colaboradores/signals.py` | `tipo_contrato` por `is_externo` |
+| `apps/core/viewsets.py` | Filtro `exclude(is_superuser=True, cargo__isnull=True)` |
+| `apps/core/viewsets_rbac.py` | Métricas RBAC con mismo criterio |
+| `frontend/src/components/common/SmartOnboardingChecklist.tsx` | TITLE_MAP + ICON_MAP contratista |
+
+### 13.7 Bugfixes incluidos (pre-B2B2B, mismo día)
+
+| Commit | Fix |
+|--------|-----|
+| `9631a58d` | `empresa` lee de `Tenant.nit/razon_social` (no EmpresaConfig eliminado) |
+| `9631a58d` | `effective_modules` distingue vacío vs no configurado |
+| `fe1d3b63` | Tipo contratista + `tipo_contrato` auto + filtro superadmin con cargo |
+
+### 13.8 E2E Verificación en producción (23 marzo 2026)
+
+| Escenario | Estado | Observaciones |
+|-----------|--------|---------------|
+| Dashboard SmartOnboarding admin (StrateKaz Demo) | ✅ | 5/8 pasos, 62%, título correcto |
+| Mi Portal superadmin sin cargo | ✅ | AdminPortalView con guía impersonación |
+| Avatar "Sin cargo asignado" | ✅ | Correcto — se resuelve al asignar cargo |
+| Módulos visibles iguales con/sin selección Admin Global | ✅ CORREGIDO | `effective_modules` ya distingue |
+
+### 13.9 Pendientes B2B2B
+
+| # | Pendiente | Prioridad | Sprint |
+|---|-----------|-----------|--------|
+| 1 | Asignar cargo al superadmin en StrateKaz Demo (Gerente General) | ALTA | Inmediato |
+| 2 | Crear usuario empleado para Escenario 3 (invitación + setup password) | ALTA | Inmediato |
+| 3 | Exponer `tipo_contrato` y `proveedor_origen` en UI de creación | MEDIA | L25 |
+| 4 | Renombrar tenant demo → tenant StrateKaz real | BAJA | L25 |
+| 5 | Registrar StrateKaz como proveedor en tenants clientes | BAJA | L50 |
+
 ---
 
 *Documento generado: 22 de marzo de 2026*
-*Última actualización: 22 de marzo de 2026*
-*Estado: COMPLETADO — Verificado en producción*
+*Última actualización: 23 de marzo de 2026*
+*Estado: EN PROGRESO — B2B2B implementado, pendiente verificación Escenario 3*

@@ -45,6 +45,7 @@ import { cn } from '@/utils/cn';
 const TITLE_MAP: Record<string, string> = {
   admin: 'Configura tu empresa',
   jefe: 'Primeros pasos como líder',
+  contratista: 'Bienvenido como contratista',
   empleado: 'Bienvenido al equipo',
   proveedor: 'Bienvenido al portal',
   cliente: 'Bienvenido al portal',
@@ -78,6 +79,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   // Documentos
   documentos: FileText,
   pendientes: FileText,
+  politicas: FileText,
   documents: FileText,
   // Emergencia
   emergencia: AlertTriangle,

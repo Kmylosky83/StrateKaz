@@ -126,9 +126,10 @@ def _resolve_onboarding_type(user) -> str:
     Lógica (en orden de prioridad):
     1. is_superuser → 'admin'
     2. Cargo con is_jefatura=True → 'jefe'
-    3. proveedor_id_ext definido → 'proveedor'
-    4. cliente_id_ext definido → 'cliente'
-    5. Default → 'empleado'
+    3. Cargo con is_externo=True y cargo real (no portal) → 'contratista'
+    4. proveedor_id_ext o cargo PROVEEDOR_PORTAL → 'proveedor'
+    5. cliente_id_ext o cargo CLIENTE_PORTAL → 'cliente'
+    6. Default → 'empleado'
     """
     if user.is_superuser:
         return 'admin'
@@ -136,10 +137,24 @@ def _resolve_onboarding_type(user) -> str:
     if user.cargo_id and getattr(user.cargo, 'is_jefatura', False):
         return 'jefe'
 
+    # Contratista con cargo real (consultor/externo que trabaja en módulos)
+    if user.cargo_id:
+        cargo = user.cargo
+        cargo_code = getattr(cargo, 'code', '') or ''
+        is_externo = getattr(cargo, 'is_externo', False)
+        if is_externo and cargo_code not in ('PROVEEDOR_PORTAL', 'CLIENTE_PORTAL'):
+            return 'contratista'
+
+    # Proveedor portal-only (acceso limitado PortalLayout)
     if getattr(user, 'proveedor_id_ext', None):
         return 'proveedor'
+    if user.cargo_id and getattr(user.cargo, 'code', '') == 'PROVEEDOR_PORTAL':
+        return 'proveedor'
 
+    # Cliente portal-only
     if getattr(user, 'cliente_id_ext', None):
+        return 'cliente'
+    if user.cargo_id and getattr(user.cargo, 'code', '') == 'CLIENTE_PORTAL':
         return 'cliente'
 
     return 'empleado'

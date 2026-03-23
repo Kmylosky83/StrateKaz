@@ -174,7 +174,7 @@ class OnboardingService:
             icon:        str  — nombre de ícono Lucide
 
         Args:
-            onboarding_type: 'admin' | 'jefe' | 'empleado' | 'proveedor' | 'cliente'
+            onboarding_type: 'admin' | 'jefe' | 'contratista' | 'empleado' | 'proveedor' | 'cliente'
 
         Returns:
             Lista de dicts de pasos en orden de presentación
@@ -268,6 +268,32 @@ class OnboardingService:
                     'label': 'Explora el portal',
                     'description': 'Visita Mi Portal para ver tus documentos y tareas.',
                     'icon': 'LayoutDashboard',
+                },
+            ],
+            'contratista': [
+                {
+                    'key': 'perfil',
+                    'label': 'Completa tu perfil',
+                    'description': 'Agrega tu foto y firma digital.',
+                    'icon': 'UserCircle',
+                },
+                {
+                    'key': 'firma',
+                    'label': 'Configura tu firma digital',
+                    'description': 'Registra tu firma para aprobar documentos electrónicamente.',
+                    'icon': 'PenTool',
+                },
+                {
+                    'key': 'politicas',
+                    'label': 'Lee las políticas del cliente',
+                    'description': 'Revisa las políticas y reglamentos internos de la empresa.',
+                    'icon': 'FileText',
+                },
+                {
+                    'key': 'hseq',
+                    'label': 'Verifica tu cumplimiento HSEQ',
+                    'description': 'Confirma tus exámenes médicos, EPP y certificaciones SST.',
+                    'icon': 'ShieldCheck',
                 },
             ],
             'proveedor': [
@@ -415,6 +441,14 @@ class OnboardingService:
                 'perfil':     perfil_completo,
                 'emergencia': has_emergencia,
                 'explorar':   False,  # placeholder — se activa via evento futuro
+            }
+
+        if onboarding_type == 'contratista':
+            return {
+                'perfil':     perfil_completo,
+                'firma':      has_firma,
+                'politicas':  False,  # placeholder — se activa cuando lea políticas
+                'hseq':       False,  # placeholder — se activa cuando complete HSEQ
             }
 
         # proveedor / cliente

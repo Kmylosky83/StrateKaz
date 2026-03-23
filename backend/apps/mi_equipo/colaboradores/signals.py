@@ -150,7 +150,11 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
             area=user.cargo.area,
             foto=user.photo if user.photo else None,
             fecha_ingreso=date.today(),
-            tipo_contrato='indefinido',
+            tipo_contrato=(
+                'prestacion_servicios'
+                if getattr(user.cargo, 'is_externo', False)
+                else 'indefinido'
+            ),
             salario=0,  # Placeholder - requiere configuracion manual
             estado='activo',
             created_by=user,

@@ -30,10 +30,15 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Badge de completitud del perfil (solo para usuarios en contexto tenant)
-  const { data: profileData } = useProfileCompleteness(!!user);
+  // Badge de completitud del perfil.
+  // No mostrar para superadmins sin cargo (no tienen Colaborador, nunca llegan a 100%).
+  const hasCargo = !!user?.cargo;
+  const isSuperAdmin = user?.is_superuser;
+  const shouldFetchProfile = !!user && (!isSuperAdmin || hasCargo);
+  const { data: profileData } = useProfileCompleteness(shouldFetchProfile);
   const profilePercentage = profileData?.percentage ?? null;
-  const showProfileBadge = profilePercentage !== null && profilePercentage < 100;
+  const showProfileBadge =
+    shouldFetchProfile && profilePercentage !== null && profilePercentage < 100;
 
   // Cerrar al hacer click fuera
   useEffect(() => {

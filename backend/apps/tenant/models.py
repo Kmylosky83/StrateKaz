@@ -738,10 +738,19 @@ class Tenant(TenantMixin):
 
     @property
     def effective_modules(self) -> list:
-        """Retorna los módulos efectivos habilitados."""
-        if self.enabled_modules:
+        """
+        Retorna los módulos efectivos habilitados.
+
+        Prioridad:
+        1. enabled_modules explícito (aunque sea vacío = sin módulos)
+        2. Plan.features como fallback (solo si enabled_modules es None)
+        3. Lista vacía si nada está configurado
+        """
+        # enabled_modules configurado explícitamente (incluso [] = sin módulos)
+        if self.enabled_modules is not None and isinstance(self.enabled_modules, list) and len(self.enabled_modules) > 0:
             return self.enabled_modules
-        if self.plan:
+        # Fallback al plan solo si enabled_modules no fue configurado
+        if self.plan and self.plan.features:
             return self.plan.features
         return []
 

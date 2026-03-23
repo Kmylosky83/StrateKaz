@@ -678,9 +678,15 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             return None
 
         # Obtener effective_modules (propiedad del modelo Tenant)
+        # Retorna: lista con códigos = filtrar, lista vacía = sin módulos, None no ocurre
         effective_modules = getattr(tenant, 'effective_modules', None)
 
-        # Si no hay módulos configurados, no hay restricción
+        # None = propiedad no existe (edge case) → sin restricción
+        if effective_modules is None:
+            return None
+
+        # Lista vacía [] = ni tenant ni plan tienen módulos → sin restricción (fallback)
+        # Lista con contenido = filtrar a esos módulos
         if not effective_modules:
             return None
 

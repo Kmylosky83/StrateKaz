@@ -451,25 +451,23 @@ class OnboardingService:
         }
 
         # ── empresa ───────────────────────────────────────────────────
-        # label de la app: 'configuracion' (ver apps.gestion_estrategica.configuracion.apps)
+        # Los datos fiscales (NIT, razón social) están en Tenant (schema public),
+        # NO en EmpresaConfig (eliminado). Leer desde connection.tenant.
         try:
-            EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
-            empresa = EmpresaConfig.objects.first()
-            # Excluir los valores de placeholder generados en el seed
-            nit = getattr(empresa, 'nit', '') or ''
-            razon_social = getattr(empresa, 'razon_social', '') or ''
-            if (
-                empresa
-                and nit
-                and nit != '000000000-0'
-                and razon_social
-                and razon_social != 'Empresa Sin Configurar'
-            ):
-                steps['empresa'] = True
-        except LookupError:
-            logger.debug('Modelo EmpresaConfig no disponible para onboarding admin')
+            from django.db import connection as db_connection
+            tenant = getattr(db_connection, 'tenant', None)
+            if tenant:
+                nit = getattr(tenant, 'nit', '') or ''
+                razon_social = getattr(tenant, 'razon_social', '') or ''
+                if (
+                    nit
+                    and nit != '000000000-0'
+                    and razon_social
+                    and razon_social != 'Empresa Sin Configurar'
+                ):
+                    steps['empresa'] = True
         except Exception as exc:
-            logger.debug('Error verificando EmpresaConfig: %s', exc)
+            logger.debug('Error verificando datos empresa del tenant: %s', exc)
 
         # ── sedes ─────────────────────────────────────────────────────
         try:

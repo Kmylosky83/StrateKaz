@@ -44,6 +44,18 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
     # A6+: Superuser sin cargo — crear cargo 'Administrador General' como fallback
     # para que tenga Colaborador y pueda acceder a Mi Portal completamente (gap U3).
     if user.is_superuser and not user.cargo:
+        # C14: Verificar que EmpresaConfig existe ANTES de intentar crear cargo/Colaborador
+        from apps.core.base_models.mixins import get_tenant_empresa as _get_empresa
+        empresa_check = _get_empresa(auto_create=False)
+        if not empresa_check:
+            logger.warning(
+                'C14: No se puede crear Colaborador para superuser %s (%s): '
+                'EmpresaConfig no encontrada. Se creará cuando el admin '
+                'configure la empresa.',
+                user.id, user.email,
+            )
+            return
+
         try:
             from django.apps import apps as _apps
             from apps.core.models import Cargo
@@ -318,6 +330,420 @@ def sync_colaborador_document_to_user(sender, instance, **kwargs):
         logger.error(
             'Error sincronizando documento Colaborador %s -> User %s: %s',
             instance.pk, user.pk, exc
+        )
+
+
+# ==============================================================================
+# A4 — Invalidación de cache de onboarding
+# ==============================================================================
+
+def _invalidate_onboarding(user_id: int) -> None:
+    """Helper para invalidar cache de onboarding sin crashear si el servicio falla."""
+    try:
+        from apps.core.services.onboarding_service import OnboardingService
+        OnboardingService.invalidate_cache(user_id)
+    except Exception as exc:
+        logger.debug(
+            'No se pudo invalidar cache onboarding para user_id=%s: %s',
+            user_id, exc
+        )
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def invalidate_onboarding_cache_on_user_save(sender, instance, **kwargs):
+    """
+    Invalida el cache de onboarding cuando se modifica cualquier campo del User.
+
+    No actúa en creaciones nuevas (handled by compute al crear UserOnboarding).
+    Solo actúa cuando update_fields está definido (cambios explícitos).
+    """
+    if kwargs.get('created'):
+        return
+    update_fields = kwargs.get('update_fields')
+    if not update_fields:
+        return
+    _invalidate_onboarding(instance.pk)
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def invalidate_onboarding_cache_on_colaborador_save(sender, instance, **kwargs):
+    """
+    Invalida el cache de onboarding cuando se modifica el Colaborador.
+
+    Solo actúa cuando update_fields está definido para evitar invalidaciones
+    masivas innecesarias.
+    """
+    update_fields = kwargs.get('update_fields')
+    if not update_fields:
+        return
+    user = getattr(instance, 'usuario', None)
+    if user:
+        _invalidate_onboarding(user.pk)
+
+
+@receiver(post_save, sender='colaboradores.InfoPersonal')
+def invalidate_onboarding_cache_on_info_personal_save(sender, instance, **kwargs):
+    """
+    Invalida el cache de onboarding cuando se modifica InfoPersonal.
+
+    Solo actúa cuando update_fields está definido para evitar invalidaciones
+    masivas innecesarias.
+    """
+    update_fields = kwargs.get('update_fields')
+    if not update_fields:
+        return
+    try:
+        colaborador = getattr(instance, 'colaborador', None)
+        if colaborador:
+            user = getattr(colaborador, 'usuario', None)
+            if user:
+                _invalidate_onboarding(user.pk)
+    except Exception as exc:
+        logger.debug(
+            'Error obteniendo user desde InfoPersonal %s para invalidar cache: %s',
+            instance.pk, exc
+        )
+
+
+# ==============================================================================
+# C14 — Retry Colaborador para superusers cuando EmpresaConfig se crea
+# ==============================================================================
+
+@receiver(post_save, sender='configuracion.EmpresaConfig')
+def retry_colaborador_for_superusers_on_empresa_create(sender, instance, created, **kwargs):
+    """
+    C14: Cuando EmpresaConfig se crea por primera vez, busca superusers sin
+    Colaborador y re-intenta la creación automática.
+
+    Esto cubre el caso donde un superuser fue creado ANTES de que existiera
+    EmpresaConfig en el tenant (bootstrap race condition).
+    """
+    if not created:
+        return
+
+    from django.contrib.auth import get_user_model
+    from .models import Colaborador
+
+    User = get_user_model()
+
+    superusers_sin_colaborador = User.objects.filter(
+        is_superuser=True,
+        is_active=True,
+    ).exclude(
+        id__in=Colaborador.objects.values_list('usuario_id', flat=True)
+    )
+
+    for user in superusers_sin_colaborador:
+        logger.info(
+            'C14: Re-intentando auto-create Colaborador para superuser %s (%s) '
+            'tras creación de EmpresaConfig.',
+            user.id, user.email,
+        )
+        # Disparar la lógica de auto_create_colaborador manualmente
+        # Usamos post_save.send() para re-ejecutar el signal con created=True
+        try:
+            auto_create_colaborador(
+                sender=User,
+                instance=user,
+                created=True,
+            )
+        except Exception as exc:
+            logger.error(
+                'C14: Error re-creando Colaborador para superuser %s tras '
+                'EmpresaConfig: %s',
+                user.id, exc, exc_info=True,
+            )
+
+# ==============================================================================
+# C1 — SYNC Colaborador → User (cargo, salario, fecha_ingreso, tipo_contrato,
+#      estado) — 5 campos duplicados sin sync previo
+# ==============================================================================
+
+# Mapping: Colaborador.estado (lowercase) → User.estado_empleado (UPPERCASE)
+_ESTADO_COL_TO_USER = {
+    'activo': 'ACTIVO',
+    'inactivo': 'RETIRADO',
+    'suspendido': 'SUSPENDIDO',
+    'retirado': 'RETIRADO',
+}
+
+# Mapping: Colaborador.tipo_contrato (lowercase) → User.tipo_contrato (UPPERCASE)
+_TIPO_CONTRATO_COL_TO_USER = {
+    'indefinido': 'INDEFINIDO',
+    'fijo': 'FIJO',
+    'obra_labor': 'OBRA_LABOR',
+    'aprendizaje': 'APRENDIZAJE',
+    'prestacion_servicios': 'PRESTACION_SERVICIOS',
+}
+
+# Mapping inverso: User.tipo_contrato (UPPERCASE) → Colaborador (lowercase)
+_TIPO_CONTRATO_USER_TO_COL = {v: k for k, v in _TIPO_CONTRATO_COL_TO_USER.items()}
+# TEMPORAL solo existe en User; no se mapea a Colaborador.
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def sync_colaborador_cargo_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar Colaborador.cargo → User.cargo."""
+    update_fields = kwargs.get('update_fields')
+    if update_fields and 'cargo' not in update_fields:
+        return
+
+    user = getattr(instance, 'usuario', None)
+    if not user:
+        return
+
+    # Evitar loop con sync_user_cargo_to_colaborador
+    if getattr(instance, '_syncing_cargo_from_user', False):
+        return
+
+    try:
+        from apps.core.models import User
+        if user.cargo_id != instance.cargo_id:
+            User.objects.filter(pk=user.pk).update(cargo=instance.cargo_id)
+            logger.debug(
+                'Cargo sincronizado Colaborador %s -> User %s',
+                instance.pk, user.pk,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync cargo Colaborador %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def sync_colaborador_salario_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar Colaborador.salario → User.salario_base."""
+    update_fields = kwargs.get('update_fields')
+    if update_fields and 'salario' not in update_fields:
+        return
+
+    user = getattr(instance, 'usuario', None)
+    if not user:
+        return
+
+    try:
+        from apps.core.models import User
+        if user.salario_base != instance.salario:
+            User.objects.filter(pk=user.pk).update(
+                salario_base=instance.salario,
+            )
+            logger.debug(
+                'Salario sincronizado Colaborador %s -> User %s',
+                instance.pk, user.pk,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync salario Colaborador %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def sync_colaborador_fecha_ingreso_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar Colaborador.fecha_ingreso → User.fecha_ingreso."""
+    update_fields = kwargs.get('update_fields')
+    if update_fields and 'fecha_ingreso' not in update_fields:
+        return
+
+    user = getattr(instance, 'usuario', None)
+    if not user:
+        return
+
+    try:
+        from apps.core.models import User
+        if user.fecha_ingreso != instance.fecha_ingreso:
+            User.objects.filter(pk=user.pk).update(
+                fecha_ingreso=instance.fecha_ingreso,
+            )
+            logger.debug(
+                'Fecha ingreso sincronizada Colaborador %s -> User %s',
+                instance.pk, user.pk,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync fecha_ingreso Colaborador %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def sync_colaborador_tipo_contrato_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar Colaborador.tipo_contrato → User.tipo_contrato.
+
+    Mapping: lowercase → UPPERCASE (ej: 'indefinido' → 'INDEFINIDO').
+    """
+    update_fields = kwargs.get('update_fields')
+    if update_fields and 'tipo_contrato' not in update_fields:
+        return
+
+    user = getattr(instance, 'usuario', None)
+    if not user:
+        return
+
+    try:
+        from apps.core.models import User
+        mapped = _TIPO_CONTRATO_COL_TO_USER.get(instance.tipo_contrato)
+        if mapped is None:
+            # Valor desconocido en Colaborador — no sincronizar
+            logger.warning(
+                'tipo_contrato "%s" de Colaborador %s no tiene mapping a User',
+                instance.tipo_contrato, instance.pk,
+            )
+            return
+        if user.tipo_contrato != mapped:
+            User.objects.filter(pk=user.pk).update(tipo_contrato=mapped)
+            logger.debug(
+                'Tipo contrato sincronizado Colaborador %s -> User %s '
+                '(%s -> %s)',
+                instance.pk, user.pk, instance.tipo_contrato, mapped,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync tipo_contrato Colaborador %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+@receiver(post_save, sender='colaboradores.Colaborador')
+def sync_colaborador_estado_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar Colaborador.estado → User.estado_empleado.
+
+    Mapping:
+        activo → ACTIVO
+        inactivo → RETIRADO
+        suspendido → SUSPENDIDO
+        retirado → RETIRADO
+    """
+    update_fields = kwargs.get('update_fields')
+    if update_fields and 'estado' not in update_fields:
+        return
+
+    user = getattr(instance, 'usuario', None)
+    if not user:
+        return
+
+    try:
+        from apps.core.models import User
+        mapped = _ESTADO_COL_TO_USER.get(instance.estado)
+        if mapped is None:
+            logger.warning(
+                'estado "%s" de Colaborador %s no tiene mapping a User',
+                instance.estado, instance.pk,
+            )
+            return
+        if user.estado_empleado != mapped:
+            User.objects.filter(pk=user.pk).update(estado_empleado=mapped)
+            logger.debug(
+                'Estado sincronizado Colaborador %s -> User %s (%s -> %s)',
+                instance.pk, user.pk, instance.estado, mapped,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync estado Colaborador %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+# ==============================================================================
+# C1 — SYNC InfoPersonal → User (tipo_sangre, eps, arl, fondo_pensiones,
+#      caja_compensacion) — 5 campos duplicados sin sync previo
+# ==============================================================================
+
+_INFO_PERSONAL_SYNC_FIELDS = {
+    'tipo_sangre', 'eps', 'arl', 'fondo_pensiones', 'caja_compensacion',
+}
+
+
+@receiver(post_save, sender='colaboradores.InfoPersonal')
+def sync_info_personal_to_user(sender, instance, **kwargs):
+    """C1: Sincronizar InfoPersonal → User para 5 campos SST.
+
+    Campos: tipo_sangre, eps, arl, fondo_pensiones, caja_compensacion.
+    Todos son CharField con copia directa (mismo formato en ambos modelos).
+    """
+    update_fields = kwargs.get('update_fields')
+    if update_fields and not _INFO_PERSONAL_SYNC_FIELDS.intersection(
+        update_fields
+    ):
+        return
+
+    # Chain: InfoPersonal → Colaborador → User
+    colaborador = getattr(instance, 'colaborador', None)
+    if not colaborador:
+        return
+    user = getattr(colaborador, 'usuario', None)
+    if not user:
+        return
+
+    try:
+        from apps.core.models import User
+
+        # Calcular qué campos realmente cambiaron
+        updates = {}
+        fields_to_check = (
+            _INFO_PERSONAL_SYNC_FIELDS.intersection(update_fields)
+            if update_fields
+            else _INFO_PERSONAL_SYNC_FIELDS
+        )
+
+        for field in fields_to_check:
+            new_val = getattr(instance, field, '') or ''
+            old_val = getattr(user, field, '') or ''
+            if new_val != old_val:
+                updates[field] = new_val or None  # '' → None para User
+
+        if updates:
+            User.objects.filter(pk=user.pk).update(**updates)
+            logger.debug(
+                'InfoPersonal sincronizada -> User %s: %s',
+                user.pk, list(updates.keys()),
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync InfoPersonal %s -> User %s: %s',
+            instance.pk, user.pk, exc,
+        )
+
+
+# ==============================================================================
+# C1 — SYNC bidireccional: User.cargo → Colaborador.cargo
+# ==============================================================================
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def sync_user_cargo_to_colaborador(sender, instance, **kwargs):
+    """C1: Sincronizar User.cargo → Colaborador.cargo (bidireccional).
+
+    Necesario porque el admin puede cambiar cargo desde el panel de usuarios.
+    Solo actúa cuando update_fields incluye 'cargo'.
+    Usa flag _syncing_cargo_from_user para evitar loop infinito con
+    sync_colaborador_cargo_to_user.
+    """
+    update_fields = kwargs.get('update_fields')
+    if not update_fields or 'cargo' not in update_fields:
+        return
+
+    from .models import Colaborador
+    try:
+        colaborador = Colaborador.objects.get(usuario=instance)
+    except Colaborador.DoesNotExist:
+        return
+
+    try:
+        if colaborador.cargo_id != instance.cargo_id:
+            # Flag anti-loop: sync_colaborador_cargo_to_user la revisa
+            colaborador._syncing_cargo_from_user = True
+            Colaborador.objects.filter(pk=colaborador.pk).update(
+                cargo=instance.cargo_id,
+            )
+            logger.debug(
+                'Cargo sincronizado User %s -> Colaborador %s',
+                instance.pk, colaborador.pk,
+            )
+    except Exception as exc:
+        logger.error(
+            'Error sync cargo User %s -> Colaborador %s: %s',
+            instance.pk, colaborador.pk, exc,
         )
 
 

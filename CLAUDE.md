@@ -289,6 +289,15 @@ Documentacion detallada en auto-memory (se carga automaticamente):
 - `ui-standards.md` — 3 tipos de vista, Design System obligatorio
 - `audit-api-sync.md` — @action url_path, tipos TS exactos
 
+### Source of Truth — Modelos de Identidad
+
+- **Colaborador** es master de datos de empleado (nombre, cargo, salario, estado, documento, teléfono)
+- **User** solo contiene identidad digital (email, password, firma, photo, nivel_firma)
+- **InfoPersonal** contiene datos sensibles (bancarios, salud, emergencia, dirección)
+- **HojaVida** contiene educación, certificaciones, experiencia previa
+- **NUNCA escribir datos de empleado directamente en User** — escribir en Colaborador y dejar que el signal sincronice
+- Ver `docs/01-arquitectura/SOURCE_OF_TRUTH.md` para detalle completo
+
 ### Quick Reference
 
 **Backend:** Black (88 chars) | Ruff | Locale es-co | Models heredan `TenantModel`/`SharedModel` | Apps: `apps.modulo.submodulo`
@@ -301,7 +310,7 @@ Documentacion detallada en auto-memory (se carga automaticamente):
 
 ```
 docs/
-├── 01-arquitectura/       # ADMIN-GLOBAL, ARQUITECTURA-DINAMICA, DATABASE, MULTI-TENANT, RBAC
+├── 01-arquitectura/       # ADMIN-GLOBAL, ARQUITECTURA-DINAMICA, DATABASE, MULTI-TENANT, RBAC, SOURCE_OF_TRUTH
 ├── 02-desarrollo/         # API endpoints, auth, convenciones, testing, logging, snippets
 │   ├── backend/           # Branding dinamico, integraciones, workflows/firmas
 │   └── frontend/          # Design system, hooks, layout, iconos, React Query, navegacion

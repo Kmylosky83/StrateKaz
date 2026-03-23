@@ -15,6 +15,7 @@ from .utils.audit_logging import (
     log_user_created, log_user_deleted, log_user_restored, log_password_changed,
     log_user_photo_updated
 )
+from .utils.impersonation import block_during_impersonation, is_impersonating
 from .serializers import (
     CargoSerializer,
     CargoDetailSerializer,
@@ -198,12 +199,26 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         """
-        Actualizar usuario con protección contra auto-degradación.
+        Actualizar usuario con protección contra auto-degradación y
+        bloqueo de campos sensibles durante impersonación.
 
         Si el usuario está cambiando su propio cargo y es el último ADMIN
         del tenant, se rechaza el cambio para evitar dejar el tenant sin
         administrador.
         """
+        # S3: Bloquear modificación de campos sensibles durante impersonación
+        if is_impersonating(self.request):
+            sensitive_fields = {'is_active', 'is_staff'}
+            changed_sensitive = sensitive_fields & set(
+                serializer.validated_data.keys()
+            )
+            if changed_sensitive:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f"No se puede modificar {', '.join(changed_sensitive)} "
+                    f"durante impersonación"
+                )
+
         instance = serializer.instance
         new_cargo_id = serializer.validated_data.get('cargo')
 
@@ -233,12 +248,22 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         log_user_created(self.request, user)
 
+    @block_during_impersonation(
+        "No se puede eliminar usuarios durante impersonación"
+    )
+    def destroy(self, request, *args, **kwargs):
+        """Soft delete en lugar de eliminación física — bloqueado durante impersonación."""
+        return super().destroy(request, *args, **kwargs)
+
     def perform_destroy(self, instance):
         """Soft delete en lugar de eliminación física"""
         instance.soft_delete()
         log_user_deleted(self.request, instance)
 
     @action(detail=True, methods=['post'])
+    @block_during_impersonation(
+        "No se puede cambiar la contraseña durante impersonación"
+    )
     def change_password(self, request, pk=None):
         """
         Cambiar contraseña de usuario
@@ -428,6 +453,13 @@ class UserViewSet(viewsets.ModelViewSet):
         Enviar null para eliminar firma/iniciales.
         """
         user = request.user
+
+        # S3: Bloquear escritura de firma durante impersonación
+        if request.method == 'PATCH' and is_impersonating(request):
+            return Response(
+                {'error': 'No se puede modificar la firma durante impersonación'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if request.method == 'GET':
             return Response({

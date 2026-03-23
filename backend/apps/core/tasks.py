@@ -331,6 +331,81 @@ def send_new_access_email_task(
         raise self.retry(exc=exc)
 
 
+@shared_task(
+    bind=True,
+    max_retries=2,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def notify_admin_password_sync_failure(
+    self,
+    user_id: int,
+    user_email: str,
+) -> Dict[str, Any]:
+    """
+    C11: Notifica al admin del tenant que la sincronización de password falló.
+
+    Se dispara cuando sync_password_to_tenant_user() falla después de 3 intentos.
+    El admin debe intervenir manualmente para que el usuario pueda hacer login.
+    """
+    security_logger = logging.getLogger('security')
+
+    try:
+        security_logger.error(
+            'C11: Notificando admin sobre fallo de sync de password '
+            'para User %s (%s)',
+            user_id, user_email,
+        )
+
+        subject = (
+            '[StrateKaz ALERTA] Fallo de sincronización de contraseña'
+        )
+        message = (
+            f'La sincronización de contraseña falló para el usuario '
+            f'{user_email} (ID: {user_id}) después de 3 intentos.\n\n'
+            f'El usuario configuró su contraseña localmente pero NO se '
+            f'sincronizó con TenantUser (schema public). Esto significa '
+            f'que el usuario NO podrá hacer login.\n\n'
+            f'Acción requerida: Verificar manualmente la sincronización '
+            f'o solicitar al usuario que restablezca su contraseña.'
+        )
+
+        # Enviar al email de alerta configurado o al DEFAULT_FROM_EMAIL como fallback
+        alert_email = getattr(
+            settings, 'ALERT_EMAIL', settings.DEFAULT_FROM_EMAIL
+        )
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[alert_email],
+            fail_silently=False,
+        )
+
+        logger.info(
+            'C11: Notificación de fallo de sync enviada a %s',
+            alert_email,
+        )
+
+        return {
+            'status': 'success',
+            'user_id': user_id,
+            'user_email': user_email,
+            'task_id': self.request.id,
+            'timestamp': datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+        logger.error(
+            'C11: Error enviando notificación de fallo de sync '
+            'para User %s: %s',
+            user_id, exc,
+        )
+        raise self.retry(exc=exc)
+
+
 @shared_task(bind=True, max_retries=3)
 def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any],
                             schema_name: str = None) -> Dict[str, Any]:

@@ -134,61 +134,29 @@ class SetupPasswordView(APIView):
             user.id, user.email
         )
 
-        # Sincronizar password a TenantUser (public schema)
+        # C11: Sincronizar password a TenantUser (public schema) con retry
         tenant_user_synced = False
         try:
             from apps.core.utils import sync_password_to_tenant_user
             tenant_user_synced = sync_password_to_tenant_user(user)
         except Exception as e:
-            logger.error(
-                'Error en sync_password_to_tenant_user para '
+            security_logger.error(
+                'C11: Error en sync_password_to_tenant_user para '
                 'User %s (%s): %s',
                 user.id, user.email, e, exc_info=True
             )
 
-        # Fallback: actualizar TenantUser directamente
         if not tenant_user_synced:
-            try:
-                from django_tenants.utils import schema_context
-                with schema_context('public'):
-                    from apps.tenant.models import TenantUser
-                    tenant_user = TenantUser.objects.filter(
-                        email=email.lower().strip()
-                    ).first()
-                    if tenant_user:
-                        tenant_user.set_password(new_password)
-                        tenant_user.save(
-                            update_fields=['password']
-                        )
-                        tenant_user_synced = True
-                        logger.info(
-                            'TenantUser actualizado via fallback '
-                            'directo para %s',
-                            email
-                        )
-                    else:
-                        logger.error(
-                            'TenantUser NO encontrado para %s. '
-                            'El usuario no podrá hacer login.',
-                            email
-                        )
-            except Exception as e:
-                logger.error(
-                    'Error en fallback directo de '
-                    'TenantUser para %s: %s',
-                    email, e, exc_info=True
-                )
-
-        if not tenant_user_synced:
-            return Response({
-                'message': (
-                    'Contraseña configurada, pero hubo un '
-                    'problema sincronizando con el sistema de '
-                    'login. Usa "Olvidé mi contraseña" para '
-                    'restablecer el acceso.'
-                ),
-                'partial_success': True,
-            })
+            return Response(
+                {
+                    'message': (
+                        'La contraseña se configuró localmente pero '
+                        'hubo un error de sincronización. '
+                        'Contacta al administrador.'
+                    ),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response({
             'message': (

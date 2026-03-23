@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '@/utils/constants';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore, isImpersonationExpired } from '@/store/authStore';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -35,7 +35,20 @@ axiosInstance.interceptors.request.use(
     // devolver datos del usuario impersonado en vez del superadmin
     const impersonatedUserId = localStorage.getItem('impersonated_user_id');
     if (impersonatedUserId && config.headers) {
-      config.headers['X-Impersonated-User-ID'] = impersonatedUserId;
+      // Verificar que la impersonación no haya expirado (60 min)
+      if (isImpersonationExpired()) {
+        // Expiró: limpiar localStorage y NO enviar el header
+        localStorage.removeItem('impersonated_user_id');
+        localStorage.removeItem('impersonation_started_at');
+        // Detener impersonación en el store (async-safe, no bloquea request)
+        try {
+          useAuthStore.getState().stopUserImpersonation();
+        } catch {
+          // Store puede no estar inicializado aún — ignorar
+        }
+      } else {
+        config.headers['X-Impersonated-User-ID'] = impersonatedUserId;
+      }
     }
 
     return config;

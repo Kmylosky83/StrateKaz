@@ -248,6 +248,12 @@ def current_user(request):
         except (LookupError, Exception):
             pass
 
+    # 8. Estado 2FA del usuario (para flujo de impersonación)
+    from apps.core.models import TwoFactorAuth
+    has_2fa_enabled = TwoFactorAuth.objects.filter(
+        user=user, is_enabled=True
+    ).exists()
+
     return Response({
         'id': user.id,
         'username': user.username,
@@ -287,6 +293,8 @@ def current_user(request):
         'proveedor_nombre': proveedor_nombre,
         'cliente': user.cliente_id_ext,
         'cliente_nombre': cliente_nombre,
+        # 2FA status (para verificación pre-impersonación)
+        'has_2fa_enabled': has_2fa_enabled,
     })
 
 

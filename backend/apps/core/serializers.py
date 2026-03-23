@@ -448,6 +448,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 'cargo_id': 'El cargo seleccionado no está activo'
             })
 
+        # C6: Validar que el cargo tenga área asignada (requerido para auto-crear Colaborador)
+        # Excepción: cargos externos (proveedores/clientes) no necesitan área
+        if cargo and not getattr(cargo, 'is_externo', False) and not cargo.area:
+            raise serializers.ValidationError({
+                'cargo_id': (
+                    'El cargo seleccionado no tiene área asignada. '
+                    'Asigne un área al cargo antes de crear el usuario.'
+                )
+            })
+
         return attrs
 
     def create(self, validated_data):

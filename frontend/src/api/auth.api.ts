@@ -168,11 +168,36 @@ export const authAPI = {
   },
 
   /**
+   * Verificar código 2FA antes de impersonar un usuario (solo superadmins con 2FA).
+   * Retorna un token temporal firmado (5 min TTL) para usar en impersonate-profile.
+   */
+  verifyImpersonation: async (
+    targetUserId: number,
+    code: string
+  ): Promise<{
+    impersonation_token: string;
+    expires_in: number;
+    backup_codes_remaining?: number;
+  }> => {
+    const response = await axios.post(`/core/users/${targetUserId}/impersonate-verify/`, {
+      code,
+    });
+    return response.data;
+  },
+
+  /**
    * Obtener perfil de un usuario para impersonación (solo superadmins).
    * Retorna el mismo formato que getProfile() pero para el usuario especificado.
+   * Si el superadmin tiene 2FA, requiere X-Impersonation-Token header.
    */
-  getImpersonateProfile: async (userId: number): Promise<User> => {
-    const response = await axios.get<User>(`/core/users/${userId}/impersonate-profile/`);
+  getImpersonateProfile: async (userId: number, impersonationToken?: string): Promise<User> => {
+    const headers: Record<string, string> = {};
+    if (impersonationToken) {
+      headers['X-Impersonation-Token'] = impersonationToken;
+    }
+    const response = await axios.get<User>(`/core/users/${userId}/impersonate-profile/`, {
+      headers,
+    });
     return response.data;
   },
 

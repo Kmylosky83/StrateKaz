@@ -20,28 +20,60 @@ def _user_str(user):
     return f"{user.username}" if user and user.is_authenticated else "anonymous"
 
 
+def get_audit_context(request):
+    """
+    Retorna contexto de impersonación para incluir en logs.
+
+    Si la request es durante impersonación, retorna un string con info
+    del superadmin que está impersonando. Si no, retorna string vacío.
+
+    Returns:
+        str: ' [IMPERSONATED by superadmin_username (ID:X)]' o ''
+    """
+    if not request:
+        return ''
+
+    try:
+        from apps.core.utils.impersonation import is_impersonating
+        if is_impersonating(request):
+            impersonated_id = request.META.get('HTTP_X_IMPERSONATED_USER_ID')
+            return (
+                f" [IMPERSONATED by {request.user.username} "
+                f"(ID:{request.user.id}) target={impersonated_id}]"
+            )
+    except Exception:
+        pass
+
+    return ''
+
+
+def _impersonation_tag(request):
+    """Shortcut para agregar tag de impersonación a logs existentes."""
+    return get_audit_context(request)
+
+
 # USER OPERATIONS
 def log_user_created(request, new_user):
-    security_logger.info(f"USER_CREATED: {new_user.username} (ID:{new_user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"USER_CREATED: {new_user.username} (ID:{new_user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_user_deleted(request, user, hard=False):
     t = "HARD_DELETED" if hard else "SOFT_DELETED"
-    security_logger.warning(f"USER_{t}: {user.username} (ID:{user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.warning(f"USER_{t}: {user.username} (ID:{user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_user_restored(request, user):
-    security_logger.info(f"USER_RESTORED: {user.username} (ID:{user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"USER_RESTORED: {user.username} (ID:{user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_user_updated(request, user, self_update=False):
     by = "self" if self_update else f"by {_user_str(request.user)}"
-    security_logger.info(f"USER_UPDATED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}")
+    security_logger.info(f"USER_UPDATED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_password_changed(request, user, self_change=False):
     by = "self" if self_change else f"by {_user_str(request.user)}"
-    security_logger.warning(f"PASSWORD_CHANGED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}")
+    security_logger.warning(f"PASSWORD_CHANGED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_user_photo_updated(request, user):
@@ -52,46 +84,46 @@ def log_user_photo_updated(request, user):
 # RBAC OPERATIONS
 def log_permissions_assigned(request, target, target_type, perm_ids, action='assigned'):
     v = "ASSIGNED" if action == 'assigned' else "REMOVED"
-    security_logger.info(f"PERMISSIONS_{v}: {len(perm_ids)} to {target_type} '{target}' by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"PERMISSIONS_{v}: {len(perm_ids)} to {target_type} '{target}' by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_section_access_changed(request, cargo, count, action='assigned'):
     v = "ASSIGNED" if action == 'assigned' else "CLEARED"
-    security_logger.info(f"SECTION_ACCESS_{v}: {count} sections to cargo '{cargo.name}' by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"SECTION_ACCESS_{v}: {count} sections to cargo '{cargo.name}' by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_role_assigned(request, user, role, action='assigned'):
     v = "ASSIGNED" if action == 'assigned' else "REMOVED"
-    security_logger.info(f"ROLE_{v}: '{role.name}' to user '{user.username}' by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"ROLE_{v}: '{role.name}' to user '{user.username}' by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_additional_role_changed(request, user, rol, action='assigned'):
     v = "ASSIGNED" if action == 'assigned' else "REVOKED"
-    security_logger.info(f"ADDITIONAL_ROLE_{v}: '{rol.nombre}' to '{user.username}' by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"ADDITIONAL_ROLE_{v}: '{rol.nombre}' to '{user.username}' by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_group_membership_changed(request, group, user_ids, action='added'):
     v = "ADDED" if action == 'added' else "REMOVED"
-    security_logger.info(f"GROUP_MEMBERS_{v}: {len(user_ids)} users to group '{group.name}' by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    security_logger.info(f"GROUP_MEMBERS_{v}: {len(user_ids)} users to group '{group.name}' by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 # FINANCIAL OPERATIONS
 def log_financial_operation(request, comprobante, operation):
-    audit_logger.warning(f"COMPROBANTE_{operation.upper()}: #{comprobante.numero} (ID:{comprobante.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    audit_logger.warning(f"COMPROBANTE_{operation.upper()}: #{comprobante.numero} (ID:{comprobante.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 # DOCUMENT/SIGNATURE OPERATIONS
 def log_document_signed(request, doc, doc_type):
-    audit_logger.info(f"DOCUMENT_SIGNED: {doc_type} (ID:{doc.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    audit_logger.info(f"DOCUMENT_SIGNED: {doc_type} (ID:{doc.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_document_approved(request, doc, doc_type):
-    audit_logger.info(f"DOCUMENT_APPROVED: {doc_type} (ID:{doc.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
+    audit_logger.info(f"DOCUMENT_APPROVED: {doc_type} (ID:{doc.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}{_impersonation_tag(request)}")
 
 
 def log_signature_revoked(request, sig, reason=None):
     r = f" - Reason: {reason}" if reason else ""
-    security_logger.warning(f"SIGNATURE_REVOKED: ID:{sig.id} by {_user_str(request.user)} - IP: {get_client_ip(request)}{r}")
+    security_logger.warning(f"SIGNATURE_REVOKED: ID:{sig.id} by {_user_str(request.user)} - IP: {get_client_ip(request)}{r}{_impersonation_tag(request)}")
 
 
 # TWO FACTOR AUTHENTICATION OPERATIONS

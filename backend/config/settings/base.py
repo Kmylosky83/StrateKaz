@@ -280,6 +280,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'csp.middleware.CSPMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+    # Auditoría y bloqueo de acciones durante impersonación
+    'apps.core.middleware.ImpersonationAuditMiddleware',
     # Validar que módulos estén activos antes de permitir acceso a APIs
     'apps.core.middleware.ModuleAccessMiddleware',
 ]

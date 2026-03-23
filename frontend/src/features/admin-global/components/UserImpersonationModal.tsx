@@ -4,16 +4,29 @@
  * Se abre cuando el superadmin selecciona "Ver como usuario" en un tenant.
  * Muestra los usuarios del tenant actual y permite seleccionar uno para
  * ver la aplicación desde su perspectiva (permisos, sidebar, portals).
+ *
+ * Si el superadmin tiene 2FA habilitado, requiere verificación antes de
+ * permitir la impersonación (S1 — seguridad pre-impersonación).
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Eye, Search, User as UserIcon, Briefcase, ExternalLink } from 'lucide-react';
+import {
+  Eye,
+  Search,
+  User as UserIcon,
+  Briefcase,
+  ExternalLink,
+  ShieldCheck,
+  AlertTriangle,
+  ArrowLeft,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
+import { authAPI } from '@/api/auth.api';
 import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 import { usersAPI } from '@/api/users.api';
 import { cn } from '@/utils/cn';
@@ -23,16 +36,39 @@ interface UserImpersonationModalProps {
   onClose: () => void;
 }
 
+/** Vista interna: selección de usuario o verificación 2FA */
+type ModalView = 'user-list' | '2fa-verify';
+
+/** Datos del usuario seleccionado para impersonar */
+interface SelectedTarget {
+  userId: number;
+  userItem: unknown;
+  fullName: string;
+}
+
 export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationModalProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Estado del modal
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState<number | null>(null);
+  const [view, setView] = useState<ModalView>('user-list');
+  const [selectedTarget, setSelectedTarget] = useState<SelectedTarget | null>(null);
+
+  // Estado 2FA
+  const [twoFaCode, setTwoFaCode] = useState('');
+  const [twoFaError, setTwoFaError] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // Auth store
   const startUserImpersonation = useAuthStore((state) => state.startUserImpersonation);
   const currentTenant = useAuthStore((state) => state.currentTenant);
   const originalUser = useAuthStore((state) => state.originalUser);
   const currentUser = useAuthStore((state) => state.user);
   const superadminId = originalUser?.id ?? currentUser?.id;
+  const has2faEnabled = currentUser?.has_2fa_enabled ?? false;
 
   // Obtener usuarios del tenant actual
   const { data, isLoading } = useQuery({
@@ -44,7 +80,6 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
   // Filtrar por búsqueda y excluir al superadmin
   const users = useMemo(() => {
     const results = Array.isArray(data) ? data : (data?.results ?? []);
-    // Excluir al superadmin de la lista (no puede impersonarse a sí mismo)
     const filtered = results.filter((u) => u.id !== superadminId);
     if (!search.trim()) return filtered;
     const term = search.toLowerCase();
@@ -58,27 +93,72 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     );
   }, [data, search, superadminId]);
 
-   
+  // Reset al cerrar modal
+  const handleClose = useCallback(() => {
+    setView('user-list');
+    setSelectedTarget(null);
+    setTwoFaCode('');
+    setTwoFaError('');
+    setVerifying(false);
+    setLoading(null);
+    onClose();
+  }, [onClose]);
+
+  // Focus en input de código cuando se muestra la vista 2FA
+  useEffect(() => {
+    if (view === '2fa-verify' && codeInputRef.current) {
+      // Pequeño delay para que el DOM se actualice
+      const timer = setTimeout(() => codeInputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [view]);
+
+  /**
+   * Ejecuta la impersonación con token opcional.
+   */
+  const executeImpersonation = async (
+    userId: number,
+    userItem: unknown,
+    impersonationToken?: string
+  ) => {
+    await startUserImpersonation(userId, impersonationToken);
+    queryClient.removeQueries({ queryKey: ['modules'] });
+
+    const portalOnly = isPortalOnlyUser(userItem);
+    const isCliente = isClientePortalUser(userItem);
+
+    handleClose();
+
+    if (portalOnly) {
+      navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  /**
+   * Click en "Ver como" de un usuario.
+   * Si el superadmin tiene 2FA, muestra paso de verificación.
+   * Si no tiene 2FA, impersona directamente.
+   */
   const handleImpersonate = async (userId: number, userItem: unknown) => {
+    if (has2faEnabled) {
+      // Mostrar paso de verificación 2FA
+      const fullName =
+        (userItem as { full_name?: string; first_name?: string; last_name?: string })?.full_name ||
+        `${(userItem as { first_name?: string })?.first_name ?? ''} ${(userItem as { last_name?: string })?.last_name ?? ''}`.trim();
+
+      setSelectedTarget({ userId, userItem, fullName });
+      setTwoFaCode('');
+      setTwoFaError('');
+      setView('2fa-verify');
+      return;
+    }
+
+    // Sin 2FA: impersonar directamente (flujo legacy)
     try {
       setLoading(userId);
-      await startUserImpersonation(userId);
-      // Limpiar cache de módulos para que se carguen con permisos del usuario impersonado
-      queryClient.removeQueries({ queryKey: ['modules'] });
-
-      // Determinar destino ANTES de cerrar modal y navegar.
-      // CRÍTICO: Usar cargo.code (via isPortalOnlyUser) en vez de user.proveedor
-      // porque UserListSerializer NO incluye 'proveedor' en su response.
-      const portalOnly = isPortalOnlyUser(userItem);
-      const isCliente = isClientePortalUser(userItem);
-
-      onClose();
-
-      if (portalOnly) {
-        navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
-      } else {
-        navigate('/dashboard');
-      }
+      await executeImpersonation(userId, userItem);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
       toast.error(err?.response?.data?.error || 'No se pudo ver como este usuario');
@@ -87,14 +167,173 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     }
   };
 
+  /**
+   * Verificar código 2FA y proceder con impersonación.
+   */
+  const handleVerify2FA = async () => {
+    if (!selectedTarget) return;
+
+    const code = twoFaCode.trim();
+    if (!code) {
+      setTwoFaError('Ingresa el código de verificación');
+      return;
+    }
+
+    try {
+      setVerifying(true);
+      setTwoFaError('');
+
+      // Verificar código y obtener token temporal
+      const result = await authAPI.verifyImpersonation(selectedTarget.userId, code);
+
+      // Si usó backup code, notificar códigos restantes
+      if (result.backup_codes_remaining !== undefined) {
+        toast.info(
+          `Código de respaldo usado. Te quedan ${result.backup_codes_remaining} códigos de respaldo.`
+        );
+      }
+
+      // Impersonar con el token verificado
+      await executeImpersonation(
+        selectedTarget.userId,
+        selectedTarget.userItem,
+        result.impersonation_token
+      );
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { error?: string } } };
+      const errorMsg = err?.response?.data?.error || 'No se pudo verificar el código';
+
+      if (err?.response?.status === 401) {
+        setTwoFaError('Código incorrecto. Inténtalo de nuevo.');
+      } else {
+        setTwoFaError(errorMsg);
+      }
+      setTwoFaCode('');
+      codeInputRef.current?.focus();
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  /**
+   * Manejar Enter en el input de código 2FA.
+   */
+  const handleCodeKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && twoFaCode.trim()) {
+      handleVerify2FA();
+    }
+  };
+
+  /**
+   * Volver a la lista de usuarios desde la vista 2FA.
+   */
+  const handleBackToList = () => {
+    setView('user-list');
+    setSelectedTarget(null);
+    setTwoFaCode('');
+    setTwoFaError('');
+  };
+
+  // ─── Render: Vista de verificación 2FA ────────────────────────────────
+  if (view === '2fa-verify' && selectedTarget) {
+    return (
+      <BaseModal isOpen={isOpen} onClose={handleClose} title="Verificación de seguridad" size="md">
+        <div className="space-y-5">
+          {/* Header con ícono */}
+          <div className="flex flex-col items-center gap-3 pt-2">
+            <div className="w-14 h-14 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <ShieldCheck className="w-7 h-7 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                Ingresa tu código de verificación para impersonar a
+              </p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1">
+                {selectedTarget.fullName}
+              </p>
+            </div>
+          </div>
+
+          {/* Input de código */}
+          <div className="space-y-2">
+            <Input
+              ref={codeInputRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="Código de 6 dígitos"
+              value={twoFaCode}
+              onChange={(e) => {
+                // Solo permitir dígitos, máximo 6
+                const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setTwoFaCode(val);
+                if (twoFaError) setTwoFaError('');
+              }}
+              onKeyDown={handleCodeKeyDown}
+              className={cn(
+                'text-center text-lg tracking-[0.5em] font-mono',
+                twoFaError && 'border-red-500 focus:ring-red-500'
+              )}
+            />
+            {twoFaError && (
+              <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400 text-xs">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{twoFaError}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Hint */}
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+            Ingresa el código de tu aplicación de autenticación o un código de respaldo.
+          </p>
+
+          {/* Botones */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={handleBackToList}
+              disabled={verifying}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+              className="flex-1"
+            >
+              Volver
+            </Button>
+            <Button
+              onClick={handleVerify2FA}
+              disabled={!twoFaCode.trim() || verifying}
+              isLoading={verifying}
+              leftIcon={!verifying ? <ShieldCheck className="w-4 h-4" /> : undefined}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              Verificar e impersonar
+            </Button>
+          </div>
+        </div>
+      </BaseModal>
+    );
+  }
+
+  // ─── Render: Vista de lista de usuarios (default) ─────────────────────
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} title="Ver como usuario" size="2xl">
+    <BaseModal isOpen={isOpen} onClose={handleClose} title="Ver como usuario" size="2xl">
       <div className="space-y-4">
         {/* Info del tenant */}
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Selecciona un usuario de <strong>{currentTenant?.name}</strong> para ver la aplicación
           desde su perspectiva.
         </p>
+
+        {/* Warning si no tiene 2FA */}
+        {currentUser?.is_superuser && !has2faEnabled && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Recomendamos habilitar la autenticación de dos factores (2FA) para mayor seguridad al
+              impersonar usuarios.
+            </p>
+          </div>
+        )}
 
         {/* Buscador */}
         <Input

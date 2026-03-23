@@ -350,3 +350,118 @@ class LogConsulta(TimestampedModel):
     def __str__(self):
         usuario_str = self.usuario.get_full_name() if self.usuario else 'Desconocido'
         return f'{self.modulo} - {usuario_str} - {self.created_at}'
+
+
+# ==============================================================================
+# IMPERSONATION AUDIT TRAIL
+# ==============================================================================
+
+ACTION_CHOICES = [
+    ('view_profile', 'Ver perfil'),
+    ('edit_profile', 'Editar perfil'),
+    ('create_record', 'Crear registro'),
+    ('update_record', 'Actualizar registro'),
+    ('delete_record', 'Eliminar registro'),
+    ('view_permissions', 'Ver permisos'),
+    ('view_signature', 'Ver firma'),
+    ('api_read', 'Lectura API'),
+    ('api_write', 'Escritura API'),
+    ('blocked_action', 'Acción bloqueada'),
+]
+
+
+class AuditImpersonation(models.Model):
+    """
+    Registro de acciones realizadas durante impersonación.
+
+    Cada vez que un superadmin impersona a un usuario y realiza una acción
+    que modifica datos (POST/PUT/PATCH/DELETE) o accede a endpoints sensibles,
+    se crea un registro aquí para trazabilidad completa.
+
+    Este modelo vive en el schema del tenant (TENANT_APPS) para que cada
+    empresa tenga su propio historial de impersonación.
+    """
+
+    superadmin = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='impersonation_actions',
+        verbose_name='Superadmin',
+        help_text='Superadmin que realizó la impersonación',
+    )
+    target_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='impersonated_actions',
+        verbose_name='Usuario impersonado',
+        help_text='Usuario que estaba siendo impersonado',
+    )
+
+    action = models.CharField(
+        max_length=50,
+        choices=ACTION_CHOICES,
+        default='api_write',
+        verbose_name='Acción',
+        help_text='Tipo de acción realizada durante impersonación',
+        db_index=True,
+    )
+    endpoint = models.CharField(
+        max_length=500,
+        verbose_name='Endpoint',
+        help_text='URL path del endpoint accedido',
+    )
+    method = models.CharField(
+        max_length=10,
+        verbose_name='Método HTTP',
+        help_text='GET, POST, PUT, PATCH, DELETE',
+    )
+
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        verbose_name='Dirección IP',
+    )
+    user_agent = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='User Agent',
+    )
+
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+        verbose_name='Fecha y hora',
+    )
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos',
+        help_text='Contexto adicional: query params, body summary, response status, etc.',
+    )
+
+    class Meta:
+        db_table = 'audit_impersonation'
+        verbose_name = 'Log de Impersonación'
+        verbose_name_plural = 'Logs de Impersonación'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(
+                fields=['superadmin', '-timestamp'],
+                name='idx_imp_superadmin_ts',
+            ),
+            models.Index(
+                fields=['target_user', '-timestamp'],
+                name='idx_imp_target_ts',
+            ),
+            models.Index(
+                fields=['action', '-timestamp'],
+                name='idx_imp_action_ts',
+            ),
+        ]
+
+    def __str__(self):
+        sa = self.superadmin.username if self.superadmin else '?'
+        tu = self.target_user.username if self.target_user else '?'
+        return f'{sa} → {tu} | {self.action} | {self.endpoint} | {self.timestamp}'

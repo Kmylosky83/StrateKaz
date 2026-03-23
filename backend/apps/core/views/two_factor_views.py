@@ -42,6 +42,7 @@ from apps.core.utils.audit_logging import (
     log_backup_codes_generated,
     log_backup_code_used,
 )
+from apps.core.utils.impersonation import block_during_impersonation
 
 # Logger de seguridad
 security_logger = logging.getLogger('security')
@@ -73,6 +74,9 @@ class TwoFactorSetupView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @block_during_impersonation(
+        "No se puede configurar 2FA durante impersonación"
+    )
     def post(self, request):
         """Genera QR code y secret para configurar 2FA"""
         serializer = TwoFactorSetupSerializer(
@@ -135,6 +139,9 @@ class TwoFactorEnableView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @block_during_impersonation(
+        "No se puede habilitar 2FA durante impersonación"
+    )
     def post(self, request):
         """Habilita 2FA tras verificar el código"""
         serializer = TwoFactorEnableSerializer(data=request.data)
@@ -231,6 +238,9 @@ class TwoFactorDisableView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @block_during_impersonation(
+        "No se puede deshabilitar 2FA durante impersonación"
+    )
     def post(self, request):
         """Deshabilita 2FA tras verificar la contraseña"""
         serializer = TwoFactorDisableSerializer(
@@ -453,6 +463,9 @@ class TwoFactorRegenerateBackupCodesView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @block_during_impersonation(
+        "No se pueden regenerar códigos de respaldo durante impersonación"
+    )
     def post(self, request):
         """Regenera los códigos de backup"""
         serializer = TwoFactorRegenerateBackupCodesSerializer(

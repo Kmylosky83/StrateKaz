@@ -5,6 +5,9 @@ import { clearLastRoute } from '@/hooks/useLastRoute';
 import { invalidateAllQueries, clearAllQueries } from '@/lib/queryClient';
 import type { AuthState, LoginCredentials, User, TenantInfo } from '@/types/auth.types';
 
+// Duración máxima de impersonación: 60 minutos
+const IMPERSONATION_TTL_MS = 60 * 60 * 1000;
+
 // Constantes para claves de localStorage
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
@@ -12,6 +15,7 @@ const STORAGE_KEYS = {
   CURRENT_TENANT_ID: 'current_tenant_id',
   IS_IMPERSONATING: 'is_impersonating',
   IMPERSONATED_USER_ID: 'impersonated_user_id',
+  IMPERSONATION_STARTED_AT: 'impersonation_started_at',
 } as const;
 
 // Inicializar currentTenantId desde localStorage
@@ -32,6 +36,17 @@ const getInitialImpersonatedUserId = (): number | null => {
   if (typeof window === 'undefined') return null;
   const stored = localStorage.getItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
   return stored ? Number(stored) : null;
+};
+
+/**
+ * Verifica si la impersonación de usuario ha expirado (>60 min).
+ * Retorna true si expiró o si no hay timestamp registrado.
+ */
+export const isImpersonationExpired = (): boolean => {
+  const startedAt = localStorage.getItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT);
+  if (!startedAt) return true;
+  const elapsed = Date.now() - Number(startedAt);
+  return elapsed > IMPERSONATION_TTL_MS;
 };
 
 /**
@@ -207,6 +222,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
         localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
         localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT);
 
         // Limpiar última ruta
         clearLastRoute();
@@ -333,7 +349,15 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoadingUser: true });
 
-          const impersonatedId = getInitialImpersonatedUserId();
+          let impersonatedId = getInitialImpersonatedUserId();
+
+          // Verificar si la impersonación expiró (>60 min)
+          if (impersonatedId && isImpersonationExpired()) {
+            console.warn('Impersonación expirada — restaurando perfil de superadmin');
+            localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+            localStorage.removeItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT);
+            impersonatedId = null;
+          }
 
           if (impersonatedId) {
             // Estamos impersonando: recargar perfil del usuario target
@@ -421,6 +445,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
         localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
         localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT);
         set({
           currentTenantId: null,
           currentTenant: null,
@@ -458,19 +483,23 @@ export const useAuthStore = create<AuthState>()(
        * El JWT sigue siendo del superadmin (acceso completo a APIs),
        * pero el rendering del frontend (sidebar, guards, portals) se adapta
        * al perfil del usuario impersonado.
+       *
+       * @param userId - ID del usuario a impersonar
+       * @param impersonationToken - Token 2FA temporal (requerido si superadmin tiene 2FA)
        */
-      startUserImpersonation: async (userId: number) => {
+      startUserImpersonation: async (userId: number, impersonationToken?: string) => {
         const { user } = get();
 
         // Guardar perfil original del superadmin
         const originalUser = user;
 
         // Obtener perfil completo del usuario target
-        const impersonatedProfile = await authAPI.getImpersonateProfile(userId);
+        const impersonatedProfile = await authAPI.getImpersonateProfile(userId, impersonationToken);
 
         // Persistir en localStorage para sobrevivir F5
         localStorage.setItem(STORAGE_KEYS.IMPERSONATED_USER_ID, String(userId));
         localStorage.setItem(STORAGE_KEYS.IS_IMPERSONATING, 'true');
+        localStorage.setItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT, String(Date.now()));
 
         // Override del user en el store
         set({
@@ -491,6 +520,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Limpiar localStorage de impersonación de usuario
         localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATION_STARTED_AT);
 
         // Restaurar perfil original, mantener contexto de tenant
         set({

@@ -74,6 +74,8 @@ export interface User {
   tiene_firma_guardada?: boolean;
   /** Si tiene iniciales guardadas en perfil */
   tiene_iniciales_guardadas?: boolean;
+  /** Si el usuario tiene 2FA habilitado (usado para flujo de impersonación) */
+  has_2fa_enabled?: boolean;
 }
 
 export interface LoginCredentials {
@@ -193,7 +195,7 @@ export interface AuthState {
   /** Superadmin sale del tenant y vuelve a Admin Global */
   stopImpersonation: () => void;
   /** Superadmin ve la app como un usuario específico dentro del tenant */
-  startUserImpersonation: (userId: number) => Promise<void>;
+  startUserImpersonation: (userId: number, impersonationToken?: string) => Promise<void>;
   /** Deja de ver como usuario específico (vuelve a vista admin en el tenant) */
   stopUserImpersonation: () => void;
   /** Controla el flag pendingUserSelection */

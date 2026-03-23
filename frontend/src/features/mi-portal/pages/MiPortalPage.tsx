@@ -34,7 +34,16 @@ import {
   PenTool,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton, Button } from '@/components/common';
+import {
+  Tabs,
+  AnimatedPage,
+  Badge,
+  Card,
+  Avatar,
+  Skeleton,
+  Button,
+  ProfileProgressBar,
+} from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useIsExterno } from '@/hooks/useIsExterno';
@@ -162,7 +171,8 @@ function AdminPortalView() {
 
   return (
     <AnimatedPage>
-      <div className="max-w-2xl mx-auto py-12 px-4">
+      <div className="max-w-2xl mx-auto py-12 px-4 space-y-6">
+        {/* Tarjeta principal del administrador */}
         <Card padding="none" className="overflow-hidden">
           {/* Gradient accent bar */}
           <div
@@ -228,6 +238,21 @@ function AdminPortalView() {
             </div>
           </div>
         </Card>
+
+        {/* Fallback: caso borde — admin sin Colaborador (no debería ocurrir tras A6+) */}
+        <Card padding="lg" className="text-center">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Configurando tu perfil de administrador...
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </Button>
+        </Card>
       </div>
     </AnimatedPage>
   );
@@ -241,11 +266,16 @@ function UserPortalView() {
   const user = useAuthStore((s) => s.user);
   const { primaryColor } = useBrandingConfig();
   const { isExterno } = useIsExterno();
+  const isSuperAdmin = useIsSuperAdmin();
   const { text: greetingText, Icon: GreetingIcon } = getGreeting();
   const currentDate = getCurrentDateFormatted();
 
   const firstName = user?.first_name || 'Usuario';
   const fullName = user?.full_name || user?.first_name || 'Usuario';
+
+  // Etiqueta del cargo: "Administrador del Sistema" para superadmins sin cargo asignado
+  const cargoLabel =
+    user?.cargo?.name || (isSuperAdmin ? 'Administrador del Sistema' : 'Sin cargo asignado');
 
   return (
     <AnimatedPage>
@@ -276,8 +306,8 @@ function UserPortalView() {
                   {firstName}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  {user?.cargo?.name && <span>{user.cargo.name}</span>}
-                  {user?.cargo?.name && user?.area_nombre && (
+                  {cargoLabel && <span>{cargoLabel}</span>}
+                  {cargoLabel && user?.area_nombre && (
                     <span className="hidden md:inline text-gray-300 dark:text-gray-600">|</span>
                   )}
                   {user?.area_nombre && <span>{user.area_nombre}</span>}
@@ -504,6 +534,12 @@ export default function MiPortalPage() {
             </div>
           </Card>
         )}
+
+        {/* ================================================================
+            BARRA DE COMPLETITUD DEL PERFIL
+            Se auto-oculta cuando el perfil llega al 100%
+            ================================================================ */}
+        <ProfileProgressBar />
 
         {/* ================================================================
             TABS

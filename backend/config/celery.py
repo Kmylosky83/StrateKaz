@@ -316,6 +316,24 @@ app.conf.beat_schedule = {
     },
 
     # ═══════════════════════════════════════════════════
+    # CORE - ONBOARDING — RECORDATORIOS AUTOMÁTICOS
+    # ═══════════════════════════════════════════════════
+
+    # Recordar activaciones pendientes — cada 12 horas
+    'core-check-pending-activations': {
+        'task': 'apps.core.tasks.check_pending_activations',
+        'schedule': crontab(hour='*/12'),
+        'options': {'queue': 'notifications'},
+    },
+
+    # Recordar perfiles incompletos — diario a las 10:00 AM (hora Bogotá)
+    'core-check-incomplete-profiles': {
+        'task': 'apps.core.tasks.check_incomplete_profiles',
+        'schedule': crontab(hour=10, minute=0),
+        'options': {'queue': 'notifications'},
+    },
+
+    # ═══════════════════════════════════════════════════
     # AUDIT SYSTEM - ALERTAS AUTOMATICAS
     # ═══════════════════════════════════════════════════
 
@@ -375,6 +393,8 @@ app.conf.task_routes = {
     'apps.core.tasks.cleanup_*': {'queue': 'maintenance'},
     'apps.core.tasks.backup_*': {'queue': 'maintenance'},
     'apps.core.tasks.*_health_check': {'queue': 'monitoring'},
+    'apps.core.tasks.check_pending_activations': {'queue': 'notifications'},
+    'apps.core.tasks.check_incomplete_profiles': {'queue': 'notifications'},
 
     # Tenant tasks (operaciones largas de schema + suscripciones)
     'apps.tenant.tasks.create_tenant_schema': {'queue': 'tenant_ops'},

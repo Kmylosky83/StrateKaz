@@ -1,0 +1,132 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Completa tu perfil — {{ tenant_name }}{% endblock %}
+
+{# Header con branding del tenant #}
+{% block header %}
+<div style="height: 4px; background: linear-gradient(90deg, {{ primary_color }}, {{ secondary_color }}99);"></div>
+<div style="background-color: #1f2937; padding: 32px 24px; text-align: center;">
+    <p style="color: {{ primary_color }}; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; font-weight: 700;">Sistema de Gestión Integral</p>
+    <h1 style="color: #ffffff; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">{{ tenant_name }}</h1>
+    <p style="color: #9ca3af; font-size: 13px; margin: 8px 0 0 0;">Plataforma StrateKaz</p>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# Greeting card con acento de color #}
+<div style="border-left: 4px solid {{ primary_color }}; background-color: #f8fafc; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 28px;">
+    <p style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #111827;">Hola, {{ user_name }}</p>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">Tu perfil en {{ tenant_name }} está incompleto</p>
+</div>
+
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 24px 0;">
+    Tu perfil en <strong>{{ tenant_name }}</strong> está al <strong>{{ percentage }}%</strong>.
+    Completarlo te permite acceder a todas las funciones del sistema y mantener tu información actualizada.
+</p>
+
+{# Barra de progreso #}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+    <tr>
+        <td style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px 24px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td>
+                        <p style="color: #374151; font-size: 13px; font-weight: 700; margin: 0 0 10px 0;">Progreso del perfil</p>
+                    </td>
+                    <td style="text-align: right;">
+                        <p style="color: {{ primary_color }}; font-size: 18px; font-weight: 700; margin: 0 0 10px 0;">{{ percentage }}%</p>
+                    </td>
+                </tr>
+            </table>
+            {# Barra de fondo #}
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td style="background-color: #e5e7eb; border-radius: 999px; height: 12px; overflow: hidden;">
+                        {# Barra de progreso rellena — usa width inline calculado desde el contexto #}
+                        <div style="background-color: {{ primary_color }}; height: 12px; border-radius: 999px; width: {{ percentage }}%; max-width: 100%;"></div>
+                    </td>
+                </tr>
+            </table>
+            <p style="color: #9ca3af; font-size: 12px; margin: 8px 0 0 0;">
+                {% if percentage >= 80 %}¡Casi listo! Solo faltan algunos datos.
+                {% elif percentage >= 50 %}Vas bien, sigue completando tu información.
+                {% else %}Tienes varios campos por completar.{% endif %}
+            </p>
+        </td>
+    </tr>
+</table>
+
+{# Lista de ítems faltantes #}
+{% if missing_items %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+    <tr>
+        <td style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px 24px;">
+            <p style="color: #374151; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 14px 0;">Información pendiente</p>
+            {% for item in missing_items %}
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                    <td style="padding: 5px 0;">
+                        <table role="presentation" cellspacing="0" cellpadding="0">
+                            <tr>
+                                <td style="width: 24px; vertical-align: middle;">
+                                    <span style="display: inline-block; width: 10px; height: 10px; border: 2px solid {{ primary_color }}; border-radius: 50%;"></span>
+                                </td>
+                                <td>
+                                    <span style="color: #374151; font-size: 14px;">{{ item }}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            {% endfor %}
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+{# CTA principal #}
+<div style="text-align: center; padding: 8px 0 32px 0;">
+    <a href="{{ portal_url }}"
+       style="display: inline-block;
+              background-color: {{ primary_color }};
+              color: #ffffff !important;
+              padding: 16px 40px;
+              border-radius: 10px;
+              text-decoration: none;
+              font-weight: 700;
+              font-size: 16px;
+              letter-spacing: 0.3px;">
+        Completar mi perfil &rarr;
+    </a>
+</div>
+
+{# Tarjeta informativa #}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+        <td style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 18px 20px;">
+            <p style="color: #065f46; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">&#10003; ¿Por qué es importante?</p>
+            <p style="color: #064e3b; font-size: 15px; margin: 0; line-height: 1.6;">
+                Un perfil completo te permite recibir capacitaciones asignadas, firmar documentos
+                y participar en todos los procesos de <strong>{{ tenant_name }}</strong>.
+            </p>
+        </td>
+    </tr>
+</table>
+
+{# Separador #}
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 28px 0;" />
+
+<p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0;">
+    Si crees que este mensaje fue enviado por error, contacta al administrador de tu empresa.
+</p>
+
+{% endblock %}
+
+{% block footer %}
+<p style="color: #6b7280; font-size: 14px; margin: 0 0 6px 0;"><strong>{{ tenant_name }}</strong> &middot; StrateKaz</p>
+<p style="color: #9ca3af; font-size: 12px; margin: 0 0 8px 0;">Este es un mensaje automático. Por favor no respondas a este correo.</p>
+<p style="color: #d1d5db; font-size: 11px; margin: 0;">
+    &copy; {{ current_year|default:"2026" }} StrateKaz &mdash; Sistema de Gestión Integral
+</p>
+{% endblock %}

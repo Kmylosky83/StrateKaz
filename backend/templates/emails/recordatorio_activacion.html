@@ -1,0 +1,125 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}{% if is_urgent %}Tu invitación expira pronto{% else %}Activa tu cuenta{% endif %} — {{ tenant_name }}{% endblock %}
+
+{# Header con branding del tenant #}
+{% block header %}
+<div style="height: 4px; background: linear-gradient(90deg, {{ primary_color }}, {{ secondary_color }}99);"></div>
+<div style="background-color: #1f2937; padding: 32px 24px; text-align: center;">
+    <p style="color: {{ primary_color }}; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; font-weight: 700;">Sistema de Gestión Integral</p>
+    <h1 style="color: #ffffff; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">{{ tenant_name }}</h1>
+    <p style="color: #9ca3af; font-size: 13px; margin: 8px 0 0 0;">Plataforma StrateKaz</p>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{# Greeting card con acento de color — urgente usa rojo, normal usa el color del tenant #}
+{% if is_urgent %}
+<div style="border-left: 4px solid #ef4444; background-color: #fef2f2; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 28px;">
+    <p style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #111827;">Hola, {{ user_name }}</p>
+    <p style="margin: 0; font-size: 14px; color: #b91c1c; font-weight: 600;">
+        Tu invitación expira en <strong>{{ days_remaining }} día{% if days_remaining != 1 %}s{% endif %}</strong>
+    </p>
+</div>
+{% else %}
+<div style="border-left: 4px solid {{ primary_color }}; background-color: #f8fafc; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 28px;">
+    <p style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #111827;">Hola, {{ user_name }}</p>
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">Tienes una cuenta pendiente de activar en {{ tenant_name }}</p>
+</div>
+{% endif %}
+
+{% if is_urgent %}
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 28px 0;">
+    Tu invitación a <strong>{{ tenant_name }}</strong> en StrateKaz expira en
+    <strong>{{ days_remaining }} día{% if days_remaining != 1 %}s{% endif %}</strong>.
+    Activa tu cuenta ahora para no perder el acceso.
+</p>
+{% else %}
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0;">
+    Aún no has configurado tu cuenta en <strong>{{ tenant_name }}</strong>. ¡Es rápido y solo toma unos minutos!
+</p>
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 28px 0;">
+    Una vez actives tu cuenta podrás acceder a tu portal, gestionar documentos, capacitaciones y mucho más.
+</p>
+{% endif %}
+
+{# CTA principal — urgente usa rojo, normal usa el color del tenant #}
+<div style="text-align: center; padding: 8px 0 32px 0;">
+    {% if is_urgent %}
+    <a href="{{ setup_url }}"
+       style="display: inline-block;
+              background-color: #ef4444;
+              color: #ffffff !important;
+              padding: 16px 40px;
+              border-radius: 10px;
+              text-decoration: none;
+              font-weight: 700;
+              font-size: 16px;
+              letter-spacing: 0.3px;">
+        Activar mi cuenta ahora &rarr;
+    </a>
+    {% else %}
+    <a href="{{ setup_url }}"
+       style="display: inline-block;
+              background-color: {{ primary_color }};
+              color: #ffffff !important;
+              padding: 16px 40px;
+              border-radius: 10px;
+              text-decoration: none;
+              font-weight: 700;
+              font-size: 16px;
+              letter-spacing: 0.3px;">
+        Configurar mi cuenta &rarr;
+    </a>
+    {% endif %}
+</div>
+
+{# Tarjeta informativa según urgencia #}
+{% if is_urgent %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+        <td style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 18px 20px;">
+            <p style="color: #991b1b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">&#9888; Enlace por vencer</p>
+            <p style="color: #7f1d1d; font-size: 15px; margin: 0; line-height: 1.6;">
+                Tu enlace de activación vence en <strong>{{ days_remaining }} día{% if days_remaining != 1 %}s{% endif %}</strong>.
+                Pasado ese plazo necesitarás solicitar un nuevo enlace a tu administrador.
+            </p>
+        </td>
+    </tr>
+</table>
+{% else %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+    <tr>
+        <td style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 18px 20px;">
+            <p style="color: #92400e; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">&#9200; Recuerda</p>
+            <p style="color: #78350f; font-size: 15px; margin: 0; line-height: 1.6;">
+                Este enlace de activación tiene una vigencia limitada.
+                Si expira, contacta a tu administrador para solicitar uno nuevo.
+            </p>
+        </td>
+    </tr>
+</table>
+{% endif %}
+
+{# Separador #}
+<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 28px 0;" />
+
+<p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0 0 12px 0;">
+    Si no esperabas este correo o crees que fue un error, ignóralo o contacta a tu administrador.
+</p>
+
+<p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0;">
+    Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+    <a href="{{ setup_url }}" style="color: {{ primary_color }}; word-break: break-all; font-size: 11px;">{{ setup_url }}</a>
+</p>
+
+{% endblock %}
+
+{% block footer %}
+<p style="color: #6b7280; font-size: 14px; margin: 0 0 6px 0;"><strong>{{ tenant_name }}</strong> &middot; StrateKaz</p>
+<p style="color: #9ca3af; font-size: 12px; margin: 0 0 8px 0;">Este es un mensaje automático. Por favor no respondas a este correo.</p>
+<p style="color: #d1d5db; font-size: 11px; margin: 0;">
+    &copy; {{ current_year|default:"2026" }} StrateKaz &mdash; Sistema de Gestión Integral
+</p>
+{% endblock %}

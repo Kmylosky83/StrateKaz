@@ -24,4 +24,5 @@ export type {
   TabBrandingProps,
   TabPwaProps,
   TabModulosProps,
+  AdminInitialData,
 } from './types';

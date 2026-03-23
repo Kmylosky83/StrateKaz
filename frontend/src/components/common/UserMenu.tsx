@@ -13,6 +13,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Settings, LogOut, ChevronDown, Shield, Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import { cn } from '@/utils/cn';
 import { USER_MENU_LABELS, ROUTES } from '@/constants';
 
@@ -28,6 +29,11 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const { user, logout } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Badge de completitud del perfil (solo para usuarios en contexto tenant)
+  const { data: profileData } = useProfileCompleteness(!!user);
+  const profilePercentage = profileData?.percentage ?? null;
+  const showProfileBadge = profilePercentage !== null && profilePercentage < 100;
 
   // Cerrar al hacer click fuera
   useEffect(() => {
@@ -93,26 +99,50 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
           compact ? 'p-1' : 'p-2 pr-3'
         )}
       >
-        {/* Avatar */}
-        {user?.photo_url ? (
-          <img
-            src={user.photo_url}
-            alt={displayName}
-            className={cn('rounded-full object-cover shadow-sm', compact ? 'h-8 w-8' : 'h-10 w-10')}
-          />
-        ) : (
-          <div
-            className={cn(
-              'flex items-center justify-center rounded-full',
-              'bg-gradient-to-br from-primary-500 to-primary-600',
-              'text-white font-semibold',
-              'shadow-sm',
-              compact ? 'h-8 w-8 text-sm' : 'h-10 w-10 text-base'
-            )}
-          >
-            {initials}
-          </div>
-        )}
+        {/* Avatar con badge de completitud */}
+        <div className="relative flex-shrink-0">
+          {user?.photo_url ? (
+            <img
+              src={user.photo_url}
+              alt={displayName}
+              className={cn(
+                'rounded-full object-cover shadow-sm',
+                compact ? 'h-8 w-8' : 'h-10 w-10'
+              )}
+            />
+          ) : (
+            <div
+              className={cn(
+                'flex items-center justify-center rounded-full',
+                'bg-gradient-to-br from-primary-500 to-primary-600',
+                'text-white font-semibold',
+                'shadow-sm',
+                compact ? 'h-8 w-8 text-sm' : 'h-10 w-10 text-base'
+              )}
+            >
+              {initials}
+            </div>
+          )}
+          {/* Badge de porcentaje de completitud */}
+          {showProfileBadge && profilePercentage !== null && (
+            <span
+              className={cn(
+                'absolute -bottom-0.5 -right-0.5 flex items-center justify-center',
+                'w-5 h-5 rounded-full text-[10px] font-bold text-white',
+                'ring-2 ring-white dark:ring-gray-800',
+                profilePercentage < 50
+                  ? 'bg-amber-500'
+                  : profilePercentage < 80
+                    ? 'bg-blue-500'
+                    : 'bg-emerald-500'
+              )}
+              title={`Perfil al ${profilePercentage}% completado`}
+              aria-label={`Perfil al ${profilePercentage}% completado`}
+            >
+              {profilePercentage}
+            </span>
+          )}
+        </div>
 
         {/* Info (solo en modo expandido) */}
         {!compact && (

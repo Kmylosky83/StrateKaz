@@ -11,11 +11,24 @@ export interface TenantTabProps {
   isEditing: boolean;
 }
 
+/** Datos del administrador inicial (solo al crear tenant) */
+export interface AdminInitialData {
+  admin_mode: 'new' | 'existing';
+  admin_email: string;
+  admin_first_name: string;
+  admin_last_name: string;
+  admin_cargo_name: string;
+}
+
 /** Props adicionales para TabBasico */
 export interface TabBasicoProps extends TenantTabProps {
   plans: Plan[] | undefined;
   generateCode: () => void;
   generateSubdomain: () => void;
+  /** Datos del administrador inicial (solo al crear) */
+  adminData?: AdminInitialData;
+  /** Handler para cambiar campos del administrador inicial */
+  onAdminChange?: (field: keyof AdminInitialData, value: string) => void;
 }
 
 /** Props adicionales para TabBranding */

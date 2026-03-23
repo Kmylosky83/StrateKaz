@@ -37,6 +37,12 @@ from .setup_password_views import (
     ResendSetupPasswordView,
 )
 
+from .onboarding_views import (
+    OnboardingView,
+    OnboardingDismissView,
+    ProfileCompletenessView,
+)
+
 __all__ = [
     # Security views
     'ratelimit_error_view',
@@ -65,4 +71,8 @@ __all__ = [
     # Setup Password view (Talent Hub)
     'SetupPasswordView',
     'ResendSetupPasswordView',
+    # Onboarding views (B1 + B2)
+    'OnboardingView',
+    'OnboardingDismissView',
+    'ProfileCompletenessView',
 ]

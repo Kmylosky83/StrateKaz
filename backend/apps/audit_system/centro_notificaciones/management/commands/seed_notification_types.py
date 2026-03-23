@@ -797,4 +797,60 @@ TIPOS_NOTIFICACION = [
         'es_email': True,
         'es_push': False,
     },
+
+    # =========================================================================
+    # ONBOARDING — Activación y perfil de usuario
+    # =========================================================================
+    {
+        'codigo': 'PERFIL_INCOMPLETO',
+        'nombre': 'Completa tu perfil',
+        'descripcion': 'Recuerda al usuario completar su perfil tras el primer ingreso al sistema',
+        'categoria': 'recordatorio',
+        'color': '#6366F1',  # Indigo
+        'icono': 'UserCircle',
+        'plantilla_titulo': 'Tu perfil está al {porcentaje}%',
+        'plantilla_mensaje': 'Hola {nombre}, tu perfil en {empresa} está incompleto. Complétalo para acceder a todas las funciones.',
+        'url_template': '/mi-portal',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'FIRMA_PENDIENTE_ONBOARDING',
+        'nombre': 'Configura tu firma digital',
+        'descripcion': 'Notifica al usuario que aún no ha configurado su firma digital durante el onboarding',
+        'categoria': 'tarea',
+        'color': '#8B5CF6',  # Purple
+        'icono': 'PenTool',
+        'plantilla_titulo': 'Configura tu firma digital',
+        'plantilla_mensaje': 'Hola {nombre}, aún no has configurado tu firma digital en {empresa}. Es necesaria para firmar documentos y contratos.',
+        'url_template': '/mi-portal',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'EMERGENCIA_PENDIENTE',
+        'nombre': 'Actualiza datos de emergencia',
+        'descripcion': 'Recuerda al usuario registrar o actualizar sus contactos y datos de emergencia',
+        'categoria': 'recordatorio',
+        'color': '#F59E0B',  # Amber
+        'icono': 'AlertTriangle',
+        'plantilla_titulo': 'Actualiza tus datos de emergencia',
+        'plantilla_mensaje': 'Hola {nombre}, no tienes datos de emergencia registrados en {empresa}. Por tu seguridad, completa esta información.',
+        'url_template': '/mi-portal',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'ACTIVACION_PENDIENTE',
+        'nombre': 'Usuario no activó su cuenta',
+        'descripcion': 'Alerta al administrador cuando un usuario invitado no ha activado su cuenta',
+        'categoria': 'alerta',
+        'color': '#EF4444',  # Red
+        'icono': 'UserX',
+        'plantilla_titulo': 'Usuario sin activar: {usuario_nombre}',
+        'plantilla_mensaje': 'El usuario {usuario_nombre} ({usuario_email}) aún no ha activado su cuenta en {empresa}. La invitación vence en {dias_restantes} días.',
+        'url_template': '/talento/colaboradores',
+        'es_email': False,
+        'es_push': True,
+    },
 ]

@@ -303,3 +303,7 @@ export type { AIAssistantButtonProps } from './AIAssistantButton';
 
 export { AIHelpModal } from './AIHelpModal';
 export type { AIHelpModalProps } from './AIHelpModal';
+
+// Profile Completeness Bar (Mi Portal + Header badge)
+export { ProfileProgressBar } from './ProfileProgressBar';
+export type { ProfileProgressBarProps } from './ProfileProgressBar';

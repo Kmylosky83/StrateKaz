@@ -165,7 +165,13 @@
                     <tr>
                         <td class="email-header">
                             {% block header %}
-                            <h1>StrateKaz</h1>
+                            {% if logo_url %}
+                            <img src="{{ logo_url }}" alt="{{ tenant_name }}" style="max-height: 40px; margin-bottom: 8px;">
+                            {% endif %}
+                            <h1>{{ tenant_name|default:"StrateKaz" }}</h1>
+                            {% if tenant_slogan %}
+                            <p style="color: #9ca3af; font-size: 13px; margin: 4px 0 0 0;">{{ tenant_slogan }}</p>
+                            {% endif %}
                             {% endblock %}
                         </td>
                     </tr>
@@ -181,10 +187,13 @@
                     <tr>
                         <td class="email-footer">
                             {% block footer %}
-                            <p>Este es un mensaje automático del sistema StrateKaz.</p>
+                            <p>Este es un mensaje automático del sistema.</p>
                             <p>Por favor no responda a este correo.</p>
                             <p class="text-muted mt-4">
-                                &copy; {{ current_year|default:"2026" }} StrateKaz - Sistema de Gestión Integral
+                                &copy; {{ current_year|default:"2026" }} {{ tenant_name|default:"StrateKaz" }}
+                                {% if platform_name and tenant_name != platform_name %}
+                                &middot; Powered by {{ platform_name }}
+                                {% endif %}
                             </p>
                             {% endblock %}
                         </td>

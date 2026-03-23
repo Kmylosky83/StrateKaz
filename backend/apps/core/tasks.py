@@ -890,6 +890,415 @@ def _cleanup_old_backups(directory: str, days: int = 7) -> int:
 
 
 # ═══════════════════════════════════════════════════
+# TAREAS DE ONBOARDING — RECORDATORIOS AUTOMÁTICOS
+# ═══════════════════════════════════════════════════
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=120,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def check_pending_activations(self) -> Dict[str, Any]:
+    """
+    Tarea periódica: Recordar a usuarios que no han activado su cuenta.
+
+    Lógica:
+    - Usuarios con last_login=None, is_active=True, creados hace >48h y con
+      password_setup_token no vacío.
+    - Si el último recordatorio fue hace >48h (o nunca se envió):
+      - days_remaining > 2  → email recordatorio normal
+      - 0 < days_remaining <= 2 → email recordatorio urgente
+      - days_remaining <= 0  → notificación in-app para admin/jefe
+    - Itera sobre todos los tenants con schema_status='ready' e is_active=True.
+
+    Se ejecuta cada 12 horas vía Celery Beat.
+    """
+    from django_tenants.utils import schema_context
+    from apps.core.utils.email_branding import get_email_branding_context
+
+    try:
+        from apps.tenant.models import Tenant
+    except ImportError:
+        logger.error('[check_pending_activations] No se pudo importar Tenant')
+        return {'status': 'error', 'error': 'Tenant no disponible'}
+
+    logger.info('[Task %s] Iniciando check_pending_activations', self.request.id)
+
+    checked = 0
+    reminders_sent = 0
+    urgent_sent = 0
+    expired_notified = 0
+
+    tenants = Tenant.objects.filter(
+        schema_status='ready',
+        is_active=True,
+    ).exclude(schema_name='public')
+
+    now = timezone.now()
+    cutoff_created = now - timedelta(hours=48)
+    cutoff_reminder = now - timedelta(hours=48)
+
+    for tenant in tenants:
+        try:
+            with schema_context(tenant.schema_name):
+                from django.contrib.auth import get_user_model
+                from apps.core.models import UserOnboarding
+
+                User = get_user_model()
+
+                pending_users = User.objects.filter(
+                    last_login__isnull=True,
+                    is_active=True,
+                    date_joined__lt=cutoff_created,
+                ).exclude(password_setup_token='')
+
+                for user in pending_users:
+                    checked += 1
+                    try:
+                        onboarding, _ = UserOnboarding.objects.get_or_create(user=user)
+
+                        # Verificar si hay que enviar recordatorio
+                        if (
+                            onboarding.last_reminder_sent is not None
+                            and onboarding.last_reminder_sent >= cutoff_reminder
+                        ):
+                            continue
+
+                        # Calcular días restantes hasta expiración del token
+                        days_remaining = 0
+                        if user.password_setup_expires:
+                            delta = user.password_setup_expires - now
+                            days_remaining = delta.days + (1 if delta.seconds > 0 else 0)
+
+                        if days_remaining > 0:
+                            is_urgent = days_remaining <= 2
+                            branding = get_email_branding_context(tenant=tenant)
+                            frontend_url = branding.get(
+                                'frontend_url',
+                                getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com'),
+                            )
+
+                            html_content = render_to_string(
+                                'emails/recordatorio_activacion.html',
+                                {
+                                    **branding,
+                                    'user_name': user.get_full_name() or user.email,
+                                    'user_email': user.email,
+                                    'days_remaining': days_remaining,
+                                    'is_urgent': is_urgent,
+                                    'login_url': f'{frontend_url}/setup-password',
+                                },
+                            )
+                            text_content = strip_tags(html_content)
+
+                            subject = (
+                                f'⚠️ Último aviso: activa tu cuenta en {branding["tenant_name"]}'
+                                if is_urgent
+                                else f'Recordatorio: activa tu cuenta en {branding["tenant_name"]}'
+                            )
+
+                            email = EmailMultiAlternatives(
+                                subject=subject,
+                                body=text_content,
+                                from_email=settings.DEFAULT_FROM_EMAIL,
+                                to=[user.email],
+                            )
+                            email.attach_alternative(html_content, 'text/html')
+                            email.send(fail_silently=False)
+
+                            if is_urgent:
+                                urgent_sent += 1
+                            else:
+                                reminders_sent += 1
+
+                        else:
+                            # Token expirado — notificación in-app para admin/jefe
+                            _create_expired_activation_notification(user, tenant)
+                            expired_notified += 1
+
+                        # Actualizar timestamp de último recordatorio
+                        onboarding.last_reminder_sent = now
+                        onboarding.save(update_fields=['last_reminder_sent', 'updated_at'])
+
+                    except Exception as exc:
+                        logger.error(
+                            '[check_pending_activations] Error procesando usuario %s '
+                            '(tenant %s): %s',
+                            user.pk,
+                            tenant.schema_name,
+                            exc,
+                        )
+
+        except Exception as exc:
+            logger.error(
+                '[check_pending_activations] Error en tenant %s: %s',
+                tenant.schema_name,
+                exc,
+            )
+
+    summary = {
+        'status': 'success',
+        'checked': checked,
+        'reminders_sent': reminders_sent,
+        'urgent_sent': urgent_sent,
+        'expired_notified': expired_notified,
+        'task_id': self.request.id,
+        'timestamp': timezone.now().isoformat(),
+    }
+    logger.info(
+        '[Task %s] check_pending_activations completado: %s',
+        self.request.id,
+        summary,
+    )
+    return summary
+
+
+def _create_expired_activation_notification(user, tenant) -> None:
+    """
+    Crea una notificación in-app para admin/jefe cuando el token de activación
+    de un usuario ha expirado.
+    """
+    try:
+        from django.contrib.auth import get_user_model
+        from apps.audit_system.centro_notificaciones.models import (
+            Notificacion,
+            TipoNotificacion,
+        )
+
+        User = get_user_model()
+        admins = User.objects.filter(
+            is_active=True,
+        ).filter(
+            Q(is_superuser=True)
+            | Q(cargo__is_jefatura=True)
+        ).distinct()
+
+        tipo_notif = None
+        try:
+            tipo_notif = TipoNotificacion.objects.filter(
+                codigo='ACTIVACION_PENDIENTE',
+                is_active=True,
+            ).first()
+        except Exception:
+            pass
+
+        user_name = user.first_name or user.email
+
+        for admin in admins:
+            try:
+                Notificacion.objects.create(
+                    usuario=admin,
+                    tipo=tipo_notif,
+                    titulo='Cuenta sin activar',
+                    mensaje=(
+                        f'{user_name} no activó su cuenta. '
+                        f'El enlace de configuración ha expirado.'
+                    ),
+                    url=None,
+                    prioridad='alta',
+                    datos_extra={
+                        'user_id': user.pk,
+                        'user_email': user.email,
+                        'tenant_schema': tenant.schema_name,
+                    },
+                    esta_leida=False,
+                    esta_archivada=False,
+                )
+            except Exception as exc:
+                logger.warning(
+                    '_create_expired_activation_notification: error creando '
+                    'notificación para admin %s: %s',
+                    admin.pk,
+                    exc,
+                )
+    except ImportError:
+        logger.warning(
+            '_create_expired_activation_notification: centro_notificaciones '
+            'no disponible en tenant %s',
+            getattr(tenant, 'schema_name', '?'),
+        )
+    except Exception as exc:
+        logger.error(
+            '_create_expired_activation_notification: error inesperado '
+            'en tenant %s: %s',
+            getattr(tenant, 'schema_name', '?'),
+            exc,
+        )
+
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=120,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def check_incomplete_profiles(self) -> Dict[str, Any]:
+    """
+    Tarea periódica: Recordar a usuarios con perfiles incompletos.
+
+    Lógica:
+    - Usuarios que ya hicieron login (last_login IS NOT NULL), is_active=True
+      y cuyo primer login fue hace más de 3 días.
+    - Si onboarding.profile_percentage < 80 y el último recordatorio fue
+      hace >7 días (o nunca):
+      - Llama a OnboardingService.compute() para refrescar datos.
+      - Envía email 'perfil_incompleto' con el porcentaje y pasos faltantes.
+      - Actualiza last_reminder_sent.
+    - Itera sobre todos los tenants con schema_status='ready' e is_active=True.
+
+    Se ejecuta diariamente a las 10:00 AM hora Bogotá vía Celery Beat.
+    """
+    from django_tenants.utils import schema_context
+    from apps.core.utils.email_branding import get_email_branding_context
+    from apps.core.services.onboarding_service import OnboardingService
+
+    try:
+        from apps.tenant.models import Tenant
+    except ImportError:
+        logger.error('[check_incomplete_profiles] No se pudo importar Tenant')
+        return {'status': 'error', 'error': 'Tenant no disponible'}
+
+    logger.info('[Task %s] Iniciando check_incomplete_profiles', self.request.id)
+
+    checked = 0
+    reminders_sent = 0
+
+    tenants = Tenant.objects.filter(
+        schema_status='ready',
+        is_active=True,
+    ).exclude(schema_name='public')
+
+    now = timezone.now()
+    cutoff_first_login = now - timedelta(days=3)
+    cutoff_reminder = now - timedelta(days=7)
+
+    for tenant in tenants:
+        try:
+            with schema_context(tenant.schema_name):
+                from django.contrib.auth import get_user_model
+                from apps.core.models import UserOnboarding
+
+                User = get_user_model()
+
+                active_users = User.objects.filter(
+                    last_login__isnull=False,
+                    last_login__lt=cutoff_first_login,
+                    is_active=True,
+                )
+
+                for user in active_users:
+                    checked += 1
+                    try:
+                        onboarding, _ = UserOnboarding.objects.get_or_create(user=user)
+
+                        if onboarding.profile_percentage >= 80:
+                            continue
+
+                        # Verificar si hay que enviar recordatorio
+                        if (
+                            onboarding.last_reminder_sent is not None
+                            and onboarding.last_reminder_sent >= cutoff_reminder
+                        ):
+                            continue
+
+                        # Refrescar datos de onboarding
+                        try:
+                            onboarding = OnboardingService.compute(user)
+                        except Exception as exc:
+                            logger.warning(
+                                '[check_incomplete_profiles] OnboardingService.compute '
+                                'falló para user %s: %s',
+                                user.pk,
+                                exc,
+                            )
+
+                        # Volver a verificar tras refresco
+                        if onboarding.profile_percentage >= 80:
+                            continue
+
+                        # Construir lista de pasos faltantes
+                        steps = onboarding.steps_completed or {}
+                        missing_items = [
+                            key for key, done in steps.items() if not done
+                        ]
+
+                        branding = get_email_branding_context(tenant=tenant)
+                        frontend_url = branding.get(
+                            'frontend_url',
+                            getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com'),
+                        )
+
+                        html_content = render_to_string(
+                            'emails/perfil_incompleto.html',
+                            {
+                                **branding,
+                                'user_name': user.get_full_name() or user.email,
+                                'user_email': user.email,
+                                'profile_percentage': onboarding.profile_percentage,
+                                'missing_items': missing_items,
+                                'profile_url': f'{frontend_url}/mi-portal/perfil',
+                            },
+                        )
+                        text_content = strip_tags(html_content)
+
+                        email = EmailMultiAlternatives(
+                            subject=(
+                                f'Completa tu perfil en {branding["tenant_name"]} '
+                                f'({onboarding.profile_percentage}% completado)'
+                            ),
+                            body=text_content,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            to=[user.email],
+                        )
+                        email.attach_alternative(html_content, 'text/html')
+                        email.send(fail_silently=False)
+
+                        reminders_sent += 1
+
+                        # Actualizar timestamp (sin pisar el update_fields de compute)
+                        UserOnboarding.objects.filter(pk=onboarding.pk).update(
+                            last_reminder_sent=now,
+                        )
+
+                    except Exception as exc:
+                        logger.error(
+                            '[check_incomplete_profiles] Error procesando usuario %s '
+                            '(tenant %s): %s',
+                            user.pk,
+                            tenant.schema_name,
+                            exc,
+                        )
+
+        except Exception as exc:
+            logger.error(
+                '[check_incomplete_profiles] Error en tenant %s: %s',
+                tenant.schema_name,
+                exc,
+            )
+
+    summary = {
+        'status': 'success',
+        'checked': checked,
+        'reminders_sent': reminders_sent,
+        'task_id': self.request.id,
+        'timestamp': timezone.now().isoformat(),
+    }
+    logger.info(
+        '[Task %s] check_incomplete_profiles completado: %s',
+        self.request.id,
+        summary,
+    )
+    return summary
+
+
+# ═══════════════════════════════════════════════════
 # TAREAS DE EJEMPLO Y TESTING
 # ═══════════════════════════════════════════════════
 

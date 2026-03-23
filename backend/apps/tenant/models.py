@@ -1086,3 +1086,9 @@ class TenantUserAccess(models.Model):
 
     def __str__(self):
         return f"{self.tenant_user.email} -> {self.tenant.name}"
+
+
+# =============================================================================
+# ONBOARDING (schema public)
+# =============================================================================
+from apps.tenant.models_onboarding import TenantOnboarding  # noqa: E402, F401

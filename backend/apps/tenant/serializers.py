@@ -188,12 +188,14 @@ class TenantCreateSerializer(serializers.ModelSerializer):
     - Validación de dominio único
     - Transacción atómica para garantizar consistencia
     - Encolamiento de tarea Celery para crear el schema
+    - Configuración opcional de admin (nuevo o existente)
 
     FLUJO:
     1. Crea el registro del Tenant (sin schema)
     2. Crea el dominio asociado (subdomain + PLATFORM_DOMAIN del settings)
     3. Encola la tarea Celery para crear el schema
-    4. Retorna inmediatamente con task_id para seguimiento
+    4. La tarea encadena setup_tenant_admin_task si admin_email fue provisto
+    5. Retorna inmediatamente con task_id para seguimiento
 
     El frontend puede consultar el progreso via:
     - GET /api/tenant/tenants/{id}/creation-status/
@@ -203,6 +205,13 @@ class TenantCreateSerializer(serializers.ModelSerializer):
     El backend construye el dominio completo usando settings.PLATFORM_DOMAIN
     (ej: "miempresa.stratekaz.com"). También acepta "domain" legacy para
     compatibilidad, pero lo normaliza al dominio correcto.
+
+    CAMPOS ADMIN (todos opcionales — backward compatible):
+    - admin_mode: 'new' (crear usuario) | 'existing' (reutilizar usuario existente)
+    - admin_email: email del admin
+    - admin_first_name / admin_last_name: nombres del admin (requeridos para 'new')
+    - admin_cargo_name: nombre del cargo (default 'Administrador General')
+    Si admin_mode no se provee, el setup de admin se omite completamente.
     """
     # Acepta subdomain (preferido) o domain (legacy)
     subdomain = serializers.CharField(write_only=True, required=False)
@@ -210,6 +219,47 @@ class TenantCreateSerializer(serializers.ModelSerializer):
     # Campos de solo lectura que se retornan después de crear
     task_id = serializers.CharField(read_only=True)
     schema_status = serializers.CharField(read_only=True)
+
+    # ── Campos de configuración de admin (todos opcionales) ──────────────────
+    admin_mode = serializers.ChoiceField(
+        choices=['existing', 'new'],
+        default=None,
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text="'new' para crear TenantUser, 'existing' para usar uno ya existente. "
+                  "Omitir para no configurar admin ahora.",
+    )
+    admin_email = serializers.EmailField(
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text="Email del admin. Requerido cuando admin_mode está presente.",
+    )
+    admin_first_name = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        write_only=True,
+        help_text="Nombre del admin. Requerido cuando admin_mode='new'.",
+    )
+    admin_last_name = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        write_only=True,
+        help_text="Apellido del admin. Opcional cuando admin_mode='new'.",
+    )
+    admin_cargo_name = serializers.CharField(
+        max_length=200,
+        required=False,
+        default='Administrador General',
+        allow_blank=True,
+        write_only=True,
+        help_text="Nombre del cargo a asignar al admin (default: 'Administrador General').",
+    )
 
     class Meta:
         model = Tenant
@@ -221,6 +271,9 @@ class TenantCreateSerializer(serializers.ModelSerializer):
             'subdomain', 'domain',
             # Read-only fields retornados después de crear
             'task_id', 'schema_status',
+            # Configuración de admin (write-only, todos opcionales)
+            'admin_mode', 'admin_email',
+            'admin_first_name', 'admin_last_name', 'admin_cargo_name',
         ]
 
     def validate_code(self, value):
@@ -251,7 +304,7 @@ class TenantCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        """Construir dominio completo desde subdomain o domain."""
+        """Construir dominio completo desde subdomain o domain. Validar admin fields."""
         from django.conf import settings
 
         subdomain = attrs.pop('subdomain', None)
@@ -287,6 +340,38 @@ class TenantCreateSerializer(serializers.ModelSerializer):
             )
 
         attrs['_full_domain'] = full_domain
+
+        # ── Validación de campos admin ────────────────────────────────────────
+        admin_mode = attrs.get('admin_mode')
+
+        if admin_mode:
+            admin_email = attrs.get('admin_email')
+            if not admin_email:
+                raise serializers.ValidationError(
+                    {'admin_email': 'El email del admin es requerido cuando admin_mode está presente.'}
+                )
+
+            if admin_mode == 'new':
+                # El usuario NO debe existir como TenantUser activo
+                if TenantUser.objects.filter(email=admin_email, is_active=True).exists():
+                    raise serializers.ValidationError(
+                        {'admin_email': f"Ya existe un usuario activo con el email '{admin_email}'. "
+                                        "Usa admin_mode='existing' para asignarle acceso."}
+                    )
+                # Nombre requerido para crear usuario nuevo
+                if not attrs.get('admin_first_name', '').strip():
+                    raise serializers.ValidationError(
+                        {'admin_first_name': "El nombre del admin es requerido cuando admin_mode='new'."}
+                    )
+
+            elif admin_mode == 'existing':
+                # El usuario SÍ debe existir como TenantUser activo
+                if not TenantUser.objects.filter(email=admin_email, is_active=True).exists():
+                    raise serializers.ValidationError(
+                        {'admin_email': f"No existe un usuario activo con el email '{admin_email}'. "
+                                        "Usa admin_mode='new' para crearlo."}
+                    )
+
         return attrs
 
     @transaction.atomic
@@ -300,11 +385,21 @@ class TenantCreateSerializer(serializers.ModelSerializer):
         el schema 'public'. Como esta request puede llegar desde un dominio
         de tenant (ej: app.stratekaz.com → tenant_stratekaz), usamos
         schema_context('public') para forzar el schema correcto.
+
+        Si admin_mode fue provisto, create_tenant_schema_task encadenará
+        setup_tenant_admin_task al finalizar, sin bloquear esta respuesta.
         """
         from django_tenants.utils import schema_context
         from apps.tenant.tasks import create_tenant_schema_task
 
         domain_name = validated_data.pop('_full_domain')
+
+        # Extraer campos de admin (no pertenecen al modelo Tenant)
+        admin_mode = validated_data.pop('admin_mode', None)
+        admin_email = validated_data.pop('admin_email', None)
+        admin_first_name = validated_data.pop('admin_first_name', None) or ''
+        admin_last_name = validated_data.pop('admin_last_name', None) or ''
+        admin_cargo_name = validated_data.pop('admin_cargo_name', None) or 'Administrador General'
 
         # Forzar schema public para crear Tenant y Domain
         # (django-tenants exige que sean creados en public)
@@ -329,11 +424,21 @@ class TenantCreateSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user') and request.user.is_authenticated:
             created_by_id = request.user.id
 
-        # Lanzar tarea asíncrona
-        task = create_tenant_schema_task.delay(
+        # Lanzar tarea asíncrona (admin_* solo se pasan si admin_mode fue provisto)
+        task_kwargs = dict(
             tenant_id=tenant.id,
-            created_by_id=created_by_id
+            created_by_id=created_by_id,
         )
+        if admin_mode:
+            task_kwargs.update(
+                admin_mode=admin_mode,
+                admin_email=admin_email,
+                admin_first_name=admin_first_name,
+                admin_last_name=admin_last_name,
+                admin_cargo_name=admin_cargo_name,
+            )
+
+        task = create_tenant_schema_task.delay(**task_kwargs)
 
         # Actualizar tenant con el task_id (también en public)
         with schema_context('public'):

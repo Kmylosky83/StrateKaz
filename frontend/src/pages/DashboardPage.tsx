@@ -21,8 +21,9 @@ import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicI
 import { cn } from '@/utils/cn';
 import { getMappedColorSafe } from '@/utils/moduleColors';
 import { PHVA_COLORS } from '@/constants/defaults';
+import { useIsSuperAdmin } from '@/hooks/usePermissions';
 
-const OnboardingChecklist = lazy(() => import('@/components/common/OnboardingChecklist'));
+const SmartOnboardingChecklist = lazy(() => import('@/components/common/SmartOnboardingChecklist'));
 
 import {
   moduleCardHoverVariants,
@@ -390,6 +391,7 @@ export const DashboardPage = () => {
   const { companyName } = useBrandingConfig();
   const { data: modulesTree, isLoading } = useModulesTree();
   const { data: fundacionProgress } = useFundacionProgress();
+  const isSuperAdmin = useIsSuperAdmin();
 
   const [showWelcome, setShowWelcome] = useState(
     !localStorage.getItem('stratekaz_welcome_dismissed')
@@ -499,10 +501,10 @@ export const DashboardPage = () => {
         </motion.div>
       )}
 
-      {/* Onboarding checklist para usuarios nuevos */}
+      {/* Onboarding checklist inteligente — personalizado por tipo de usuario */}
       <Suspense fallback={null}>
         <motion.div variants={headerVariants}>
-          <OnboardingChecklist />
+          <SmartOnboardingChecklist />
         </motion.div>
       </Suspense>
 
@@ -518,8 +520,8 @@ export const DashboardPage = () => {
         </p>
       </motion.header>
 
-      {/* Checklist de onboarding Fundación */}
-      {fundacionProgress && (
+      {/* Checklist de Fundación — oculto para superadmins (SmartOnboarding admin ya lo cubre) */}
+      {fundacionProgress && !isSuperAdmin && (
         <motion.div variants={headerVariants}>
           <FundacionChecklist data={fundacionProgress} />
         </motion.div>

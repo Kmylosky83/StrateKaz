@@ -24,6 +24,7 @@ import {
   tenantToFormData,
   buildFormDataWithFiles,
 } from './tenant-form-tabs';
+import type { AdminInitialData } from './tenant-form-tabs';
 
 interface TenantFormModalProps {
   isOpen: boolean;
@@ -36,6 +37,11 @@ type TabId = 'basico' | 'fiscal' | 'contacto' | 'regional' | 'branding' | 'pwa' 
 
 /** Mapeo de campos del backend al tab que los contiene (para auto-navegación en errores) */
 const FIELD_TAB_MAP: Record<string, TabId> = {
+  // Administrador inicial
+  admin_email: 'basico',
+  admin_first_name: 'basico',
+  admin_last_name: 'basico',
+  admin_cargo_name: 'basico',
   // Básico
   name: 'basico',
   code: 'basico',
@@ -162,6 +168,15 @@ export const TenantFormModal = ({
   const [activeTab, setActiveTab] = useState<TabId>('basico');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Estado para el administrador inicial (solo al crear)
+  const [adminData, setAdminData] = useState<AdminInitialData>({
+    admin_mode: 'new',
+    admin_email: '',
+    admin_first_name: '',
+    admin_last_name: '',
+    admin_cargo_name: 'Administrador General',
+  });
+
   // Estados para archivos de imagen
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoWhiteFile, setLogoWhiteFile] = useState<File | null>(null);
@@ -191,6 +206,13 @@ export const TenantFormModal = ({
     }
     setActiveTab('basico');
     setErrors({});
+    setAdminData({
+      admin_mode: 'new',
+      admin_email: '',
+      admin_first_name: '',
+      admin_last_name: '',
+      admin_cargo_name: 'Administrador General',
+    });
     setLogoFile(null);
     setLogoWhiteFile(null);
     setLogoDarkFile(null);
@@ -246,6 +268,13 @@ export const TenantFormModal = ({
     }
   };
 
+  const handleAdminChange = (field: keyof AdminInitialData, value: string) => {
+    setAdminData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: '' }));
+    }
+  };
+
   const handleModuleToggle = (moduleCode: string) => {
     const currentModules = formData.enabled_modules || [];
     const isEnabled = currentModules.includes(moduleCode);
@@ -282,6 +311,23 @@ export const TenantFormModal = ({
       newErrors.trial_ends_at = 'Fecha de fin de trial requerida';
     }
 
+    // Validación del administrador inicial (solo al crear)
+    if (!isEditing) {
+      if (!adminData.admin_email?.trim()) {
+        newErrors.admin_email = 'El email del administrador es requerido';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminData.admin_email)) {
+        newErrors.admin_email = 'Email inválido';
+      }
+      if (adminData.admin_mode === 'new') {
+        if (!adminData.admin_first_name?.trim()) {
+          newErrors.admin_first_name = 'El nombre es requerido';
+        }
+        if (!adminData.admin_last_name?.trim()) {
+          newErrors.admin_last_name = 'El apellido es requerido';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -311,7 +357,11 @@ export const TenantFormModal = ({
         await updateTenant.mutateAsync({ id: tenant.id, data });
         onClose();
       } else {
-        const response = await createTenant.mutateAsync(formData as CreateTenantDTO);
+        const createPayload: CreateTenantDTO & Partial<AdminInitialData> = {
+          ...(formData as CreateTenantDTO),
+          ...adminData,
+        };
+        const response = await createTenant.mutateAsync(createPayload as CreateTenantDTO);
         onCreationStarted?.(response.id, response.name);
         onClose();
       }
@@ -367,6 +417,8 @@ export const TenantFormModal = ({
             plans={plans}
             generateCode={generateCode}
             generateSubdomain={generateSubdomain}
+            adminData={!isEditing ? adminData : undefined}
+            onAdminChange={!isEditing ? handleAdminChange : undefined}
           />
         );
       case 'fiscal':

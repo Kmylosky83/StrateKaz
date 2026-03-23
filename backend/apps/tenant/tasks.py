@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from celery import shared_task, current_task
+from django.apps import apps as django_apps
 from django.db import connection, close_old_connections
 from django.core.management import call_command
 from django.conf import settings
@@ -103,7 +104,13 @@ def get_migration_count() -> int:
 def create_tenant_schema_task(
     self,
     tenant_id: int,
-    created_by_id: Optional[int] = None
+    created_by_id: Optional[int] = None,
+    # Campos de configuración de admin (todos opcionales — backward compatible)
+    admin_mode: Optional[str] = None,
+    admin_email: Optional[str] = None,
+    admin_first_name: str = '',
+    admin_last_name: str = '',
+    admin_cargo_name: str = 'Administrador General',
 ) -> Dict[str, Any]:
     """
     Crear el schema de PostgreSQL para un tenant y ejecutar migraciones.
@@ -112,9 +119,18 @@ def create_tenant_schema_task(
     del Tenant en la base de datos. Permite que el usuario no tenga que
     esperar mientras se ejecutan las migraciones (~15-25 minutos).
 
+    Si admin_mode y admin_email son provistos, al finalizar exitosamente
+    se encola setup_tenant_admin_task para crear/vincular el admin en el
+    nuevo schema — sin bloquear ni reintentar esta tarea.
+
     Args:
         tenant_id: ID del Tenant creado
         created_by_id: ID del TenantUser que creó el tenant (opcional)
+        admin_mode: 'new' | 'existing' — si se omite, no se configura admin
+        admin_email: Email del admin (requerido cuando admin_mode != None)
+        admin_first_name: Nombre del admin (para admin_mode='new')
+        admin_last_name: Apellido del admin (para admin_mode='new')
+        admin_cargo_name: Nombre del cargo a asignar (default 'Administrador General')
 
     Returns:
         Dict con el resultado de la operación
@@ -305,6 +321,28 @@ def create_tenant_schema_task(
         tenant.schema_status = 'ready'
         tenant.schema_error = ''
         tenant.save(update_fields=['schema_status', 'schema_error'])
+
+        # Encadenar configuración de admin si fue solicitada
+        if admin_mode and admin_email:
+            try:
+                setup_tenant_admin_task.delay(
+                    tenant_id=tenant_id,
+                    admin_email=admin_email,
+                    admin_first_name=admin_first_name,
+                    admin_last_name=admin_last_name,
+                    admin_cargo_name=admin_cargo_name,
+                    admin_mode=admin_mode,
+                    created_by_id=created_by_id,
+                )
+                logger.info(
+                    f"[Task {task_id}] setup_tenant_admin_task encolada "
+                    f"para admin_email={admin_email} (admin_mode={admin_mode})"
+                )
+            except Exception as e:
+                # No fallar el schema creation por error en el encadenamiento
+                logger.error(
+                    f"[Task {task_id}] Error al encolar setup_tenant_admin_task: {e}"
+                )
 
         # Calcular duración
         duration = (datetime.now() - start_time).total_seconds()
@@ -530,6 +568,261 @@ def get_task_status(task_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.warning(f"Error getting task status: {e}")
         return None
+
+
+@shared_task(
+    bind=True,
+    name='apps.tenant.tasks.setup_tenant_admin',
+    max_retries=2,
+    default_retry_delay=30,
+    acks_late=True,
+    time_limit=10 * 60,
+    soft_time_limit=8 * 60,
+)
+def setup_tenant_admin_task(
+    self,
+    tenant_id: int,
+    admin_email: str,
+    admin_first_name: str = '',
+    admin_last_name: str = '',
+    admin_cargo_name: str = 'Administrador General',
+    admin_mode: str = 'new',
+    created_by_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    Configurar el usuario administrador de un tenant recién creado.
+
+    Se ejecuta automáticamente encadenada desde create_tenant_schema_task
+    cuando admin_mode y admin_email están presentes.
+
+    Flujo admin_mode='new':
+      1. Crea TenantUser (schema public)
+      2. Crea TenantUserAccess vinculando al tenant
+      3. Dentro del schema del tenant crea core.User (is_superuser=True)
+         con Cargo obtenido/creado por admin_cargo_name
+      4. Genera setup token y envía email de bienvenida
+
+    Flujo admin_mode='existing':
+      1. Obtiene TenantUser activo por email
+      2. Crea (o reactiva) TenantUserAccess para este tenant
+      3. Dentro del schema del tenant crea core.User (is_superuser=True)
+         con Cargo obtenido/creado por admin_cargo_name
+      4. Envía email de nuevo acceso concedido
+
+    Args:
+        tenant_id: ID del Tenant donde crear/vincular el admin
+        admin_email: Email del admin
+        admin_first_name: Nombre (requerido para admin_mode='new')
+        admin_last_name: Apellido (opcional)
+        admin_cargo_name: Nombre del cargo a asignar
+        admin_mode: 'new' | 'existing'
+        created_by_id: ID del TenantUser que lanzó la creación (opcional)
+
+    Returns:
+        Dict con resultado de la operación
+    """
+    from apps.tenant.models import Tenant, TenantUser, TenantUserAccess
+    from apps.core.utils.email_branding import get_email_branding_context
+
+    task_id = self.request.id
+    logger.info(
+        f"[Task {task_id}] setup_tenant_admin iniciando "
+        f"tenant_id={tenant_id} admin_email={admin_email} admin_mode={admin_mode}"
+    )
+
+    try:
+        # ── 1. Obtener tenant y verificar que esté listo ──────────────────
+        tenant = Tenant.objects.get(id=tenant_id)
+
+        if tenant.schema_status != 'ready':
+            error_msg = (
+                f"Tenant {tenant_id} tiene schema_status='{tenant.schema_status}', "
+                "se esperaba 'ready'. No se puede configurar el admin."
+            )
+            logger.error(f"[Task {task_id}] {error_msg}")
+            raise ValueError(error_msg)
+
+        schema_name = tenant.schema_name
+
+        # ── 2. Resolver / crear TenantUser en schema public ──────────────
+        tenant_user = None
+
+        if admin_mode == 'new':
+            # Crear TenantUser nuevo con contraseña temporal
+            import uuid as _uuid
+            temp_password = _uuid.uuid4().hex
+            tenant_user = TenantUser(
+                email=admin_email,
+                first_name=admin_first_name,
+                last_name=admin_last_name,
+                is_active=True,
+            )
+            tenant_user.set_password(temp_password)
+            tenant_user.save()
+            logger.info(f"[Task {task_id}] TenantUser creado: {admin_email}")
+
+        elif admin_mode == 'existing':
+            tenant_user = TenantUser.objects.get(email=admin_email, is_active=True)
+            logger.info(f"[Task {task_id}] TenantUser existente encontrado: {admin_email}")
+
+        # ── 3. Crear / reactivar TenantUserAccess ────────────────────────
+        access, created_access = TenantUserAccess.objects.get_or_create(
+            tenant_user=tenant_user,
+            tenant=tenant,
+            defaults={'is_active': True},
+        )
+        if not created_access and not access.is_active:
+            access.is_active = True
+            access.save(update_fields=['is_active'])
+            logger.info(
+                f"[Task {task_id}] TenantUserAccess reactivado para {admin_email}"
+            )
+
+        # ── 4. Crear core.User dentro del schema del tenant ───────────────
+        raw_setup_token = None
+        with schema_context(schema_name):
+            User = django_apps.get_model('core', 'User')
+            Cargo = django_apps.get_model('core', 'Cargo')
+
+            # Obtener o crear Cargo de administrador
+            cargo_code = 'ADMIN_GENERAL'
+            cargo, _ = Cargo.objects.get_or_create(
+                code=cargo_code,
+                defaults={
+                    'name': admin_cargo_name,
+                    'description': 'Cargo de administración general del sistema',
+                },
+            )
+
+            # Verificar si ya existe un User con ese email en el schema
+            if User.objects.filter(email=admin_email).exists():
+                logger.warning(
+                    f"[Task {task_id}] User con email {admin_email} ya existe "
+                    f"en schema {schema_name}. Omitiendo creación."
+                )
+                core_user = User.objects.get(email=admin_email)
+            else:
+                # Generar username único a partir del email
+                base_username = admin_email.split('@')[0].lower()
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f'{base_username}{counter}'
+                    counter += 1
+
+                import uuid as _uuid2
+                temp_pwd = _uuid2.uuid4().hex
+                core_user = User(
+                    username=username,
+                    email=admin_email,
+                    first_name=admin_first_name,
+                    last_name=admin_last_name,
+                    cargo=cargo,
+                    is_active=True,
+                    is_staff=True,
+                    is_superuser=True,
+                )
+                core_user.set_password(temp_pwd)
+                core_user.save()
+                logger.info(
+                    f"[Task {task_id}] core.User creado en schema {schema_name}: "
+                    f"{admin_email}"
+                )
+
+            # ── 5. Enviar email según modo ────────────────────────────────
+            from django.conf import settings as django_settings
+            frontend_url = getattr(
+                django_settings, 'FRONTEND_URL', 'https://app.stratekaz.com'
+            )
+
+            if admin_mode == 'new':
+                # Generar token de setup de contraseña
+                raw_setup_token = core_user.set_password_setup_token()
+                core_user.save(
+                    update_fields=['password_setup_token', 'password_setup_expires']
+                )
+
+                setup_url = (
+                    f"{frontend_url}/setup-password"
+                    f"?token={core_user.password_setup_token}"
+                    f"&email={admin_email}"
+                    f"&tenant_id={tenant_id}"
+                )
+
+                from apps.core.tasks import send_setup_password_email_task
+                send_setup_password_email_task.delay(
+                    user_email=admin_email,
+                    user_name=(
+                        core_user.get_full_name()
+                        or admin_first_name
+                        or admin_email
+                    ),
+                    tenant_name=tenant.name,
+                    cargo_name=admin_cargo_name,
+                    setup_url=setup_url,
+                    expiry_hours=User.PASSWORD_SETUP_EXPIRY_HOURS,
+                    primary_color=tenant.primary_color or '#ec268f',
+                    secondary_color=tenant.secondary_color or '#000000',
+                )
+                logger.info(
+                    f"[Task {task_id}] Email setup_password encolado para {admin_email}"
+                )
+
+            elif admin_mode == 'existing':
+                login_url = f"{frontend_url}/login?tenant_id={tenant_id}"
+                from apps.core.tasks import send_new_access_email_task
+                send_new_access_email_task.delay(
+                    user_email=admin_email,
+                    user_name=(
+                        core_user.get_full_name()
+                        or tenant_user.get_full_name()
+                        or admin_email
+                    ),
+                    tenant_name=tenant.name,
+                    cargo_name=admin_cargo_name,
+                    login_url=login_url,
+                    primary_color=tenant.primary_color or '#ec268f',
+                    secondary_color=tenant.secondary_color or '#000000',
+                )
+                logger.info(
+                    f"[Task {task_id}] Email new_access_granted encolado para {admin_email}"
+                )
+
+        logger.info(
+            f"[Task {task_id}] setup_tenant_admin completado exitosamente "
+            f"para tenant_id={tenant_id}, admin_email={admin_email}"
+        )
+
+        return {
+            'success': True,
+            'tenant_id': tenant_id,
+            'admin_email': admin_email,
+            'admin_mode': admin_mode,
+            'message': (
+                f'Admin configurado correctamente en {tenant.name}'
+            ),
+        }
+
+    except Tenant.DoesNotExist:
+        error_msg = f"Tenant con ID {tenant_id} no encontrado"
+        logger.error(f"[Task {task_id}] {error_msg}")
+        return {'success': False, 'error': error_msg}
+
+    except TenantUser.DoesNotExist:
+        error_msg = (
+            f"TenantUser activo con email '{admin_email}' no encontrado "
+            f"(admin_mode='{admin_mode}')"
+        )
+        logger.error(f"[Task {task_id}] {error_msg}")
+        return {'success': False, 'error': error_msg}
+
+    except Exception as exc:
+        logger.exception(
+            f"[Task {task_id}] Error en setup_tenant_admin "
+            f"tenant_id={tenant_id} admin_email={admin_email}: {exc}"
+        )
+        # Reintentar en errores transitorios (conexión, etc.)
+        raise self.retry(exc=exc)
 
 
 @shared_task(name='apps.tenant.tasks.cleanup_stale_creating_tenants')

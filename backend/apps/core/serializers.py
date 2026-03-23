@@ -148,6 +148,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
     # Campos RBAC para control de acceso
     section_ids = serializers.SerializerMethodField()
     permission_codes = serializers.SerializerMethodField()
+    role_codes = serializers.SerializerMethodField()
+    group_codes = serializers.SerializerMethodField()
 
     # Campos de contexto laboral para perfil/dropdown
     empresa_nombre = serializers.SerializerMethodField()
@@ -199,6 +201,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Campos RBAC
             'section_ids',
             'permission_codes',
+            'role_codes',
+            'group_codes',
             # Campos de contexto laboral
             'empresa_nombre',
             'area_nombre',
@@ -309,21 +313,55 @@ class UserDetailSerializer(serializers.ModelSerializer):
         _, permission_codes = compute_user_rbac(obj)
         return permission_codes
 
+    def get_role_codes(self, obj):
+        """
+        Retorna lista de códigos de roles asignados directamente al usuario.
+        Solo incluye roles activos y no expirados.
+        Usado por hasRole() en el frontend.
+        """
+        from django.utils import timezone
+        now = timezone.now()
+        qs = obj.user_roles.select_related('role').filter(role__is_active=True)
+        return [
+            ur.role.code
+            for ur in qs
+            if ur.expires_at is None or ur.expires_at > now
+        ]
+
+    def get_group_codes(self, obj):
+        """
+        Retorna lista de códigos de grupos a los que pertenece el usuario.
+        Usado por isInGroup() en el frontend.
+        """
+        return list(
+            obj.user_groups.select_related('group').values_list('group__code', flat=True)
+        )
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear usuarios"""
+    """Serializer para crear usuarios.
+
+    La contraseña es OPCIONAL (A6):
+    - Si se proporciona: se usa directamente (flujo clásico).
+    - Si se omite: se genera un uuid4 hex como contraseña temporal
+      inutilizable y se envía email de invitación con link de setup.
+    En ambos casos se llama a UserSetupFactory para generar el token
+    de setup y enviar el correo de invitación al colaborador.
+    """
 
     password = serializers.CharField(
         write_only=True,
-        required=True,
+        required=False,
+        allow_blank=True,
         style={'input_type': 'password'},
-        help_text='Contraseña del usuario (mínimo 8 caracteres)'
+        help_text='Contraseña del usuario (mínimo 8 caracteres). Opcional: si se omite se envía invitación por email.'
     )
     password_confirm = serializers.CharField(
         write_only=True,
-        required=True,
+        required=False,
+        allow_blank=True,
         style={'input_type': 'password'},
-        help_text='Confirmación de contraseña'
+        help_text='Confirmación de contraseña (requerida solo si se envía password)'
     )
     cargo_id = serializers.PrimaryKeyRelatedField(
         queryset=Cargo.objects.filter(is_active=True),
@@ -377,7 +415,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_password(self, value):
-        """Validar contraseña segura"""
+        """Validar contraseña segura (solo si se proporciona)"""
+        if not value:
+            return value
+
         if len(value) < 8:
             raise serializers.ValidationError('La contraseña debe tener al menos 8 caracteres')
 
@@ -390,11 +431,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validaciones cruzadas"""
-        # Validar que las contraseñas coincidan
-        if attrs.get('password') != attrs.pop('password_confirm', None):
-            raise serializers.ValidationError({
-                'password_confirm': 'Las contraseñas no coinciden'
-            })
+        password = attrs.get('password', '')
+        password_confirm = attrs.pop('password_confirm', '')
+
+        # Validar coincidencia solo cuando se proporcionó contraseña
+        if password or password_confirm:
+            if password != password_confirm:
+                raise serializers.ValidationError({
+                    'password_confirm': 'Las contraseñas no coinciden'
+                })
 
         # Validar que el cargo existe y está activo
         cargo = attrs.get('cargo')
@@ -406,19 +451,62 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """Crear usuario con password hasheado correctamente"""
-        password = validated_data.pop('password')
+        """Crear usuario y enviar invitación por email.
+
+        Si no se proporciona contraseña se genera una temporal inutilizable
+        y se emite el email de setup de contraseña vía UserSetupFactory.
+        Si se proporciona contraseña se usa directamente (backward compatible)
+        y aún así se genera token + envía invitación.
+        """
+        import uuid as _uuid
+        import logging as _logging
+        _logger = _logging.getLogger(__name__)
+
+        password = validated_data.pop('password', None) or ''
+
+        # Si no hay contraseña, generar una temporal inutilizable
+        use_setup_flow = not bool(password)
+        if not password:
+            password = _uuid.uuid4().hex
 
         # Obtener usuario creador del contexto
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
 
-        # Crear usuario
+        # Crear usuario con password hasheado
         user = User.objects.create_user(
             password=password,
             **validated_data
         )
+
+        # Siempre generar setup token y enviar invitación (A6)
+        try:
+            from apps.core.utils.user_factory import UserSetupFactory
+
+            # Generar token de setup (hashea en BD, raw va al email)
+            user.set_password_setup_token()
+
+            # Enviar email de invitación con link de setup
+            cargo_name = user.cargo.name if user.cargo else ''
+            UserSetupFactory.send_setup_email(
+                user,
+                cargo_name=cargo_name,
+            )
+            _logger.info(
+                'A6: Setup token generado y email de invitación enviado para User #%s (%s)',
+                user.pk,
+                user.email,
+            )
+        except Exception as exc:
+            # No bloquear la creación del usuario si el email falla
+            _logger.error(
+                'A6: Error generando setup token/enviando invitación para User #%s (%s): %s',
+                user.pk,
+                getattr(user, 'email', '?'),
+                exc,
+                exc_info=True,
+            )
 
         return user
 

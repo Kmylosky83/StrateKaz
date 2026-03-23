@@ -9,6 +9,7 @@ Este paquete contiene los modelos del módulo Core organizados por dominio:
 - models_system_modules: SystemModule, ModuleTab, TabSection
 - models_menu: MenuItem
 - models_datos_maestros: TipoDocumentoIdentidad, Departamento, Ciudad
+- models_onboarding: UserOnboarding
 """
 
 # =============================================================================
@@ -118,6 +119,13 @@ from apps.core.models.models_datos_maestros import (
 )
 
 # =============================================================================
+# ONBOARDING DE USUARIO
+# =============================================================================
+from apps.core.models.models_onboarding import (
+    UserOnboarding,
+)
+
+# =============================================================================
 # ADD DYNAMIC RELATIONS (after all models are loaded)
 # =============================================================================
 
@@ -193,4 +201,6 @@ __all__ = [
     'TipoDocumentoIdentidad',
     'Departamento',
     'Ciudad',
+    # Onboarding de Usuario
+    'UserOnboarding',
 ]

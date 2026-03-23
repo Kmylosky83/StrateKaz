@@ -692,16 +692,66 @@ Se identificaron 4 brechas nuevas y se implementaron 2 fixes.
 | Admin empresa (con cargo) | ✅ | ✅ | ✅ | Mi Portal completo |
 | Contratista con cargo externo | ✅ `is_externo` | ✅ | ✅ (como contratista) | Mi Portal sin HR tabs |
 
-### 13.4 Cadena de detección actualizada (6 tipos)
+### 13.4 Cadena de detección actualizada (6 tipos) — Modelo B2B2B Final
+
+**Principio:** El cargo define el tipo cuando existe. `is_superuser` solo define 'admin'
+si NO tiene cargo (admin plataforma puro).
 
 ```
-1. is_superuser                                     → 'admin'     (8 pasos)
-2. cargo.is_jefatura=True                           → 'jefe'      (3 pasos)
-3. cargo.is_externo=True + cargo real (no portal)   → 'contratista' (4 pasos) ← NUEVO
-4. proveedor_id_ext / PROVEEDOR_PORTAL              → 'proveedor' (2 pasos)
-5. cliente_id_ext / CLIENTE_PORTAL                  → 'cliente'   (2 pasos)
-6. default                                          → 'empleado'  (3 pasos)
+── CON CARGO (cargo tiene prioridad) ──────────────────────
+1. cargo.is_externo=True + cargo real     → 'contratista' (4 pasos)
+   (incluye superadmins en tenant ajeno como consultor)
+2. cargo.code == PROVEEDOR_PORTAL         → 'proveedor'   (2 pasos)
+3. cargo.code == CLIENTE_PORTAL           → 'cliente'     (2 pasos)
+4. cargo.is_jefatura=True                 → 'jefe'        (3 pasos)
+
+── SIN CARGO ──────────────────────────────────────────────
+5. proveedor_id_ext                       → 'proveedor'   (2 pasos)
+6. cliente_id_ext                         → 'cliente'     (2 pasos)
+7. is_superuser                           → 'admin'       (8 pasos)
+8. default                                → 'empleado'    (3 pasos)
 ```
+
+**Escenarios verificados (11/11 PASS):**
+
+| Escenario | Resultado |
+|-----------|-----------|
+| SA sin cargo (plataforma) | admin |
+| SA + cargo interno (su empresa) | admin |
+| SA + cargo externo (cliente) | **contratista** |
+| SA + jefe interno | jefe |
+| Empleado normal | empleado |
+| Jefe área | jefe |
+| Contratista | contratista |
+| Proveedor portal | proveedor |
+| Cliente portal | cliente |
+| Proveedor sin cargo | proveedor |
+| Cliente sin cargo | cliente |
+
+### 13.4.1 Reglas de Impersonación (Modelo B2B2B Final)
+
+**Regla única:** Todo superadmin (con o sin cargo) puede impersonar en cualquier tenant.
+No se bloquea la capacidad, se controla y se registra.
+
+| Aspecto | Comportamiento |
+|---------|---------------|
+| Quién puede | Todo `is_superuser=True` |
+| Banner visible | "Estás viendo como [Usuario]" — prominente, no ocultable |
+| Audit log | `AuditImpersonation(who, as_who, tenant, started_at, ended_at, ip)` |
+| Doble autoría | Acciones registran `created_by` + `impersonated_by` |
+| Métricas | Excluyen registros donde `impersonated_by IS NOT NULL` |
+| Implementación | ⏳ L25 (audit trail completo, hoy funcional sin log) |
+
+### 13.4.2 Reglas de Métricas por Tipo de Vinculación
+
+| Métrica | Filtro | Normativa |
+|---------|--------|-----------|
+| Headcount | `cargo.is_externo=False` | Código Sustantivo del Trabajo |
+| SST (accidentalidad, EPP, exámenes) | Todos (internos + externos) | Decreto 1072 Art. 2.2.4.6.1 |
+| Formaciones | Todos (internos + externos) | Resolución 0312 |
+| Evaluación desempeño | Solo `is_externo=False` | Contratistas → evaluación proveedores (ISO 9001 §8.4) |
+| Nómina | `is_externo=False` AND `tipo_contrato != 'prestacion_servicios'` | Contratistas facturan |
+| Implementación | ⏳ L35+ (C3 Analytics / HSEQ) |
 
 ### 13.5 Steps del Contratista (Tipo 3)
 

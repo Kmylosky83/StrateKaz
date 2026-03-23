@@ -123,39 +123,51 @@ def _resolve_onboarding_type(user) -> str:
     """
     Determina el tipo de onboarding según el rol del usuario.
 
+    Modelo B2B2B: el cargo define el tipo cuando existe. is_superuser solo
+    define 'admin' si NO tiene cargo (admin plataforma puro).
+
     Lógica (en orden de prioridad):
-    1. is_superuser → 'admin'
+    1. Cargo con is_externo=True y cargo real (no portal) → 'contratista'
+       (incluye superadmins operando en tenant ajeno como consultor)
     2. Cargo con is_jefatura=True → 'jefe'
-    3. Cargo con is_externo=True y cargo real (no portal) → 'contratista'
-    4. proveedor_id_ext o cargo PROVEEDOR_PORTAL → 'proveedor'
-    5. cliente_id_ext o cargo CLIENTE_PORTAL → 'cliente'
+    3. proveedor_id_ext o cargo PROVEEDOR_PORTAL → 'proveedor'
+    4. cliente_id_ext o cargo CLIENTE_PORTAL → 'cliente'
+    5. is_superuser (sin cargo o con cargo interno) → 'admin'
     6. Default → 'empleado'
     """
-    if user.is_superuser:
-        return 'admin'
-
-    if user.cargo_id and getattr(user.cargo, 'is_jefatura', False):
-        return 'jefe'
-
-    # Contratista con cargo real (consultor/externo que trabaja en módulos)
+    # ── Cargo define el tipo cuando existe ───────────────────────────
     if user.cargo_id:
         cargo = user.cargo
         cargo_code = getattr(cargo, 'code', '') or ''
         is_externo = getattr(cargo, 'is_externo', False)
+
+        # Contratista con cargo real (consultor/externo en módulos)
         if is_externo and cargo_code not in ('PROVEEDOR_PORTAL', 'CLIENTE_PORTAL'):
             return 'contratista'
 
-    # Proveedor portal-only (acceso limitado PortalLayout)
+        # Portal proveedor
+        if cargo_code == 'PROVEEDOR_PORTAL':
+            return 'proveedor'
+
+        # Portal cliente
+        if cargo_code == 'CLIENTE_PORTAL':
+            return 'cliente'
+
+        # Jefe de área (cargo interno con jefatura)
+        if getattr(cargo, 'is_jefatura', False):
+            return 'jefe'
+
+    # ── Sin cargo o cargo interno sin jefatura ───────────────────────
+    # Proveedor/cliente por campo directo (sin cargo asignado)
     if getattr(user, 'proveedor_id_ext', None):
         return 'proveedor'
-    if user.cargo_id and getattr(user.cargo, 'code', '') == 'PROVEEDOR_PORTAL':
-        return 'proveedor'
-
-    # Cliente portal-only
     if getattr(user, 'cliente_id_ext', None):
         return 'cliente'
-    if user.cargo_id and getattr(user.cargo, 'code', '') == 'CLIENTE_PORTAL':
-        return 'cliente'
+
+    # Superadmin sin cargo = admin plataforma
+    # Superadmin con cargo interno sin jefatura = admin empresa
+    if user.is_superuser:
+        return 'admin'
 
     return 'empleado'
 

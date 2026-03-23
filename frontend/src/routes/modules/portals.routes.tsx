@@ -2,10 +2,10 @@
  * Rutas: Portales ESS/MSS + Usuarios
  * Acceso universal (sin ModuleGuard, excepto Usuarios que requiere RBAC)
  *
- * PORTALES DESACTIVADOS (apps apagadas):
- * - Proveedor Portal → requiere supply_chain (L50) — redirige a /mi-portal
- * - Cliente Portal → requiere sales_crm (L53) — redirige a /mi-portal
- * Se reactivan cuando se libere cada level en INSTALLED_APPS.
+ * PORTALES EXTERNOS:
+ * - Proveedor Portal → redirige a /mi-portal (PortalProveedorView se muestra auto)
+ * - Cliente Portal → redirige a /mi-portal (PortalClienteView se muestra auto)
+ * La detección interna en MiPortalPage distingue proveedor/cliente por user.proveedor/cliente.
  */
 import { lazy, Suspense } from 'react';
 import { Navigate, Route } from 'react-router-dom';
@@ -39,7 +39,8 @@ export const portalsRoutes = (
     {/* <Route path="/mi-portal/juego-sst" element={withSuspense(SSTGamePage)} /> */}
     <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
 
-    {/* Portales desactivados — redirect a mi-portal hasta que se libere su level */}
+    {/* Portales externos — redirigen a mi-portal donde la detección interna
+        muestra PortalProveedorView o PortalClienteView según user.proveedor/cliente */}
     <Route path="/proveedor-portal" element={<Navigate to="/mi-portal" replace />} />
     <Route path="/cliente-portal" element={<Navigate to="/mi-portal" replace />} />
 

@@ -1007,6 +1007,7 @@ def check_pending_activations(self) -> Dict[str, Any]:
     reminders_sent = 0
     urgent_sent = 0
     expired_notified = 0
+    admin_notified = 0
 
     tenants = Tenant.objects.filter(
         schema_status='ready',
@@ -1031,6 +1032,10 @@ def check_pending_activations(self) -> Dict[str, Any]:
                     date_joined__lt=cutoff_created,
                 ).exclude(password_setup_token='')
 
+                # Recopilar usuarios con token activo para notificación
+                # agregada al admin
+                active_token_users = []
+
                 for user in pending_users:
                     checked += 1
                     try:
@@ -1041,6 +1046,10 @@ def check_pending_activations(self) -> Dict[str, Any]:
                             onboarding.last_reminder_sent is not None
                             and onboarding.last_reminder_sent >= cutoff_reminder
                         ):
+                            # Aunque no enviemos recordatorio, si el token
+                            # sigue activo lo incluimos para la notif admin
+                            if user.password_setup_expires and user.password_setup_expires > now:
+                                active_token_users.append(user)
                             continue
 
                         # Calcular días restantes hasta expiración del token
@@ -1090,6 +1099,8 @@ def check_pending_activations(self) -> Dict[str, Any]:
                             else:
                                 reminders_sent += 1
 
+                            active_token_users.append(user)
+
                         else:
                             # Token expirado — notificación in-app para admin/jefe
                             _create_expired_activation_notification(user, tenant)
@@ -1108,6 +1119,14 @@ def check_pending_activations(self) -> Dict[str, Any]:
                             exc,
                         )
 
+                # F2/C10: Notificación agregada in-app para admins sobre
+                # empleados que aún no han configurado su contraseña
+                if active_token_users:
+                    notified = _create_pending_activations_admin_notification(
+                        active_token_users, tenant,
+                    )
+                    admin_notified += notified
+
         except Exception as exc:
             logger.error(
                 '[check_pending_activations] Error en tenant %s: %s',
@@ -1121,6 +1140,7 @@ def check_pending_activations(self) -> Dict[str, Any]:
         'reminders_sent': reminders_sent,
         'urgent_sent': urgent_sent,
         'expired_notified': expired_notified,
+        'admin_notified': admin_notified,
         'task_id': self.request.id,
         'timestamp': timezone.now().isoformat(),
     }
@@ -1203,6 +1223,127 @@ def _create_expired_activation_notification(user, tenant) -> None:
             getattr(tenant, 'schema_name', '?'),
             exc,
         )
+
+
+def _create_pending_activations_admin_notification(
+    pending_users: list, tenant
+) -> int:
+    """
+    F2/C10: Crea una notificación in-app agregada para admins informando
+    sobre empleados que aún no han configurado su contraseña.
+
+    Idempotente: no crea notificación si ya existe una no leída del mismo
+    tipo para el admin en las últimas 24 horas.
+
+    Returns:
+        Cantidad de notificaciones creadas.
+    """
+    if not pending_users:
+        return 0
+
+    created_count = 0
+
+    try:
+        from django.contrib.auth import get_user_model
+        from apps.audit_system.centro_notificaciones.models import (
+            Notificacion,
+            TipoNotificacion,
+        )
+
+        User = get_user_model()
+        admins = User.objects.filter(
+            is_active=True,
+            is_superuser=True,
+        ).distinct()
+
+        if not admins.exists():
+            return 0
+
+        tipo_notif = None
+        try:
+            tipo_notif = TipoNotificacion.objects.filter(
+                codigo='EMPLEADOS_SIN_ACTIVAR',
+                is_active=True,
+            ).first()
+        except Exception:
+            pass
+
+        count = len(pending_users)
+        names = ', '.join(
+            u.get_full_name() or u.email for u in pending_users[:5]
+        )
+        if count > 5:
+            names += f' y {count - 5} más'
+
+        titulo = (
+            f'Tienes {count} empleado{"s" if count != 1 else ""} '
+            f'pendiente{"s" if count != 1 else ""} de activación'
+        )
+        mensaje = (
+            f'Los siguientes empleados no han configurado su contraseña: '
+            f'{names}. Puedes reenviar la invitación desde el panel de '
+            f'usuarios.'
+        )
+
+        cutoff_24h = timezone.now() - timedelta(hours=24)
+
+        for admin in admins:
+            try:
+                # Idempotencia: no crear si ya hay una no leída reciente
+                already_exists = Notificacion.objects.filter(
+                    usuario=admin,
+                    esta_leida=False,
+                    created_at__gte=cutoff_24h,
+                )
+                if tipo_notif:
+                    already_exists = already_exists.filter(tipo=tipo_notif)
+                else:
+                    already_exists = already_exists.filter(
+                        titulo__startswith='Tienes',
+                        titulo__contains='pendiente',
+                    )
+
+                if already_exists.exists():
+                    continue
+
+                Notificacion.objects.create(
+                    usuario=admin,
+                    tipo=tipo_notif,
+                    titulo=titulo,
+                    mensaje=mensaje,
+                    url='/configuracion/usuarios',
+                    prioridad='normal',
+                    datos_extra={
+                        'pending_count': count,
+                        'pending_user_ids': [u.pk for u in pending_users],
+                        'tenant_schema': tenant.schema_name,
+                    },
+                    esta_leida=False,
+                    esta_archivada=False,
+                )
+                created_count += 1
+            except Exception as exc:
+                logger.warning(
+                    '_create_pending_activations_admin_notification: '
+                    'error creando notificación para admin %s: %s',
+                    admin.pk,
+                    exc,
+                )
+    except ImportError:
+        logger.warning(
+            '_create_pending_activations_admin_notification: '
+            'centro_notificaciones no disponible en tenant %s',
+            getattr(tenant, 'schema_name', '?'),
+        )
+    except Exception as exc:
+        logger.error(
+            '_create_pending_activations_admin_notification: '
+            'error inesperado en tenant %s: %s',
+            getattr(tenant, 'schema_name', '?'),
+            exc,
+        )
+
+    return created_count
 
 
 @shared_task(

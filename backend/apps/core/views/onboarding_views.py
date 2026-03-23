@@ -45,15 +45,19 @@ def _build_steps_response(onboarding) -> list:
     """
     # Links y CTA por clave de paso
     _STEP_META = {
-        'empresa':    {'link': '/fundacion/mi-empresa',            'cta_text': 'Configurar empresa'},
-        'sedes':      {'link': '/fundacion/sedes',                 'cta_text': 'Agregar sede'},
-        'identidad':  {'link': '/fundacion/identidad-corporativa', 'cta_text': 'Completar identidad'},
-        'valores':    {'link': '/fundacion/valores-corporativos',  'cta_text': 'Agregar valores'},
-        'estructura': {'link': '/fundacion/estructura-organizacional', 'cta_text': 'Crear estructura'},
-        'perfil':     {'link': '/mi-portal?tab=perfil',            'cta_text': 'Completar perfil'},
-        'invitar':    {'link': '/configuracion/usuarios',          'cta_text': 'Invitar colaborador'},
-        'explorar':   {'link': '/dashboard',                       'cta_text': 'Explorar sistema'},
-        'emergencia': {'link': '/mi-portal?tab=perfil',            'cta_text': 'Registrar contacto'},
+        'empresa':          {'link': '/fundacion/mi-empresa',            'cta_text': 'Configurar empresa'},
+        'sedes':            {'link': '/fundacion/sedes',                 'cta_text': 'Agregar sede'},
+        'identidad':        {'link': '/fundacion/identidad-corporativa', 'cta_text': 'Completar identidad'},
+        'valores':          {'link': '/fundacion/valores-corporativos',  'cta_text': 'Agregar valores'},
+        'estructura':       {'link': '/fundacion/estructura-organizacional', 'cta_text': 'Crear estructura'},
+        'perfil':           {'link': '/mi-portal?tab=perfil',            'cta_text': 'Completar perfil'},
+        'invitar':          {'link': '/configuracion/usuarios',          'cta_text': 'Invitar colaborador'},
+        'emergencia':       {'link': '/mi-portal?tab=perfil',            'cta_text': 'Registrar contacto'},
+        'firma':            {'link': '/mi-portal?tab=firma',             'cta_text': 'Configurar firma'},
+        'primer_documento': {'link': '/gestion-documental',              'cta_text': 'Crear documento'},
+        'primer_lectura':   {'link': '/mi-portal?tab=lecturas',          'cta_text': 'Ver lecturas'},
+        'politicas':        {'link': '/mi-portal?tab=lecturas',          'cta_text': 'Leer políticas'},
+        'hseq':             {'link': '/mi-portal?tab=hseq',              'cta_text': 'Verificar HSEQ'},
     }
 
     steps_def = OnboardingService.get_steps_definition(onboarding.onboarding_type)
@@ -423,3 +427,167 @@ class ProfileCompletenessView(APIView):
             'missing_fields': missing_fields,
             'next_action':    next_action,
         })
+
+
+# =============================================================================
+# D1 — MARK STEP (para pasos manuales como primer_lectura)
+# =============================================================================
+
+# Pasos que pueden marcarse manualmente via este endpoint
+_MARKABLE_STEPS = {'primer_lectura'}
+
+
+class OnboardingMarkStepView(APIView):
+    """
+    Marcar un paso de onboarding como completado manualmente.
+
+    POST /api/core/onboarding/mark-step/
+
+    Body: {"step": "primer_lectura"}
+
+    Solo permite marcar pasos que no tienen verificación automática
+    (e.g. primer_lectura se completa cuando el usuario visita Mi Portal).
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary='Marcar paso de onboarding como completado',
+        description=(
+            'Marca un paso de onboarding como completado manualmente. '
+            'Solo admite pasos sin verificación automática.'
+        ),
+        request={
+            'application/json': {
+                'type': 'object',
+                'properties': {
+                    'step': {
+                        'type': 'string',
+                        'description': 'Clave del paso a marcar',
+                        'enum': list(_MARKABLE_STEPS),
+                    },
+                },
+                'required': ['step'],
+            },
+        },
+        responses={
+            200: OpenApiResponse(
+                description='Paso marcado como completado',
+                examples=[
+                    OpenApiExample(
+                        'Paso marcado',
+                        value={'step': 'primer_lectura', 'marked': True},
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(description='Paso no válido'),
+        },
+        tags=['Onboarding'],
+    )
+    def post(self, request):
+        """
+        POST /api/core/onboarding/mark-step/
+
+        Marca un paso de onboarding como completado en steps_completed.
+        """
+        step_key = (request.data.get('step') or '').strip()
+
+        if step_key not in _MARKABLE_STEPS:
+            return Response(
+                {'error': f'Paso no válido. Pasos permitidos: {", ".join(sorted(_MARKABLE_STEPS))}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from django.apps import apps
+        UserOnboarding = apps.get_model('core', 'UserOnboarding')
+
+        try:
+            onboarding, _ = UserOnboarding.objects.get_or_create(user=request.user)
+            steps = onboarding.steps_completed or {}
+            steps[step_key] = True
+            onboarding.steps_completed = steps
+            onboarding.save(update_fields=['steps_completed', 'updated_at'])
+
+            OnboardingService.invalidate_cache(request.user.pk)
+
+            logger.info(
+                'Paso "%s" marcado como completado por User %s (%s)',
+                step_key, request.user.pk, request.user.email,
+            )
+        except Exception as exc:
+            logger.error(
+                'Error al marcar paso "%s" para User %s: %s',
+                step_key, request.user.pk, exc, exc_info=True,
+            )
+            return Response(
+                {'error': 'No se pudo marcar el paso. Intenta nuevamente.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({'step': step_key, 'marked': True})
+
+
+# =============================================================================
+# D3 — REOPEN (reabrir checklist descartado)
+# =============================================================================
+
+class OnboardingReopenView(APIView):
+    """
+    Reabrir el checklist de onboarding previamente descartado.
+
+    POST /api/core/onboarding/reopen/
+
+    Setea UserOnboarding.dismissed = False para que el widget reaparezca.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary='Reabrir checklist de onboarding',
+        description=(
+            'Revierte el descarte del checklist de onboarding. '
+            'El widget de pasos volverá a mostrarse en el dashboard.'
+        ),
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description='Checklist reabierto',
+                examples=[
+                    OpenApiExample(
+                        'Reabierto exitosamente',
+                        value={'dismissed': False},
+                    ),
+                ],
+            ),
+        },
+        tags=['Onboarding'],
+    )
+    def post(self, request):
+        """
+        POST /api/core/onboarding/reopen/
+
+        Reabre el checklist de onboarding para el usuario actual.
+        """
+        from django.apps import apps
+        UserOnboarding = apps.get_model('core', 'UserOnboarding')
+
+        try:
+            onboarding, _ = UserOnboarding.objects.get_or_create(user=request.user)
+            onboarding.dismissed = False
+            onboarding.save(update_fields=['dismissed', 'updated_at'])
+
+            OnboardingService.invalidate_cache(request.user.pk)
+
+            logger.info(
+                'Onboarding reabierto por User %s (%s)',
+                request.user.pk, request.user.email,
+            )
+        except Exception as exc:
+            logger.error(
+                'Error al reabrir onboarding para User %s: %s',
+                request.user.pk, exc, exc_info=True,
+            )
+            return Response(
+                {'error': 'No se pudo reabrir el checklist. Intenta nuevamente.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response({'dismissed': False})

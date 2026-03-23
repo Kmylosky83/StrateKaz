@@ -853,4 +853,17 @@ TIPOS_NOTIFICACION = [
         'es_email': False,
         'es_push': True,
     },
+    {
+        'codigo': 'EMPLEADOS_SIN_ACTIVAR',
+        'nombre': 'Empleados pendientes de activación',
+        'descripcion': 'Notifica al administrador sobre empleados que no han configurado su contraseña',
+        'categoria': 'recordatorio',
+        'color': '#F59E0B',  # Amber
+        'icono': 'user-plus',
+        'plantilla_titulo': 'Tienes {count} empleados pendientes de activación',
+        'plantilla_mensaje': 'Los siguientes empleados no han configurado su contraseña: {nombres}. Puedes reenviar la invitación desde el panel de usuarios.',
+        'url_template': '/configuracion/usuarios',
+        'es_email': False,
+        'es_push': False,
+    },
 ]

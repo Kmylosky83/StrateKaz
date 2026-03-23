@@ -40,6 +40,8 @@ from .setup_password_views import (
 from .onboarding_views import (
     OnboardingView,
     OnboardingDismissView,
+    OnboardingMarkStepView,
+    OnboardingReopenView,
     ProfileCompletenessView,
 )
 
@@ -74,5 +76,7 @@ __all__ = [
     # Onboarding views (B1 + B2)
     'OnboardingView',
     'OnboardingDismissView',
+    'OnboardingMarkStepView',
+    'OnboardingReopenView',
     'ProfileCompletenessView',
 ]

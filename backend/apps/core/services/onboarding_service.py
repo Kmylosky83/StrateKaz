@@ -224,10 +224,10 @@ class OnboardingService:
                     'icon': 'UserPlus',
                 },
                 {
-                    'key': 'explorar',
-                    'label': 'Explora un módulo',
-                    'description': 'Crea tu primer registro en cualquier módulo del sistema.',
-                    'icon': 'Compass',
+                    'key': 'primer_documento',
+                    'label': 'Crea tu primer documento',
+                    'description': 'Genera un documento desde cualquier módulo para verificar la plataforma.',
+                    'icon': 'FileText',
                 },
             ],
             'jefe': [
@@ -244,9 +244,9 @@ class OnboardingService:
                     'icon': 'Phone',
                 },
                 {
-                    'key': 'explorar',
-                    'label': 'Explora tu módulo de equipo',
-                    'description': 'Revisa el perfil de algún miembro de tu equipo.',
+                    'key': 'primer_lectura',
+                    'label': 'Revisa tu equipo',
+                    'description': 'Visita Mi Equipo para conocer los miembros de tu área.',
                     'icon': 'Users',
                 },
             ],
@@ -254,7 +254,7 @@ class OnboardingService:
                 {
                     'key': 'perfil',
                     'label': 'Completa tu perfil',
-                    'description': 'Agrega tu foto y firma digital.',
+                    'description': 'Sube tu foto de perfil.',
                     'icon': 'UserCircle',
                 },
                 {
@@ -264,10 +264,16 @@ class OnboardingService:
                     'icon': 'Phone',
                 },
                 {
-                    'key': 'explorar',
-                    'label': 'Explora el portal',
-                    'description': 'Visita Mi Portal para ver tus documentos y tareas.',
-                    'icon': 'LayoutDashboard',
+                    'key': 'firma',
+                    'label': 'Configura tu firma digital',
+                    'description': 'La necesitarás cuando debas firmar documentos.',
+                    'icon': 'PenTool',
+                },
+                {
+                    'key': 'primer_lectura',
+                    'label': 'Revisa tus lecturas pendientes',
+                    'description': 'Visita Mi Portal para ver documentos asignados.',
+                    'icon': 'BookOpen',
                 },
             ],
             'contratista': [
@@ -304,10 +310,10 @@ class OnboardingService:
                     'icon': 'UserCircle',
                 },
                 {
-                    'key': 'explorar',
-                    'label': 'Explora el portal de proveedores',
-                    'description': 'Revisa tus documentos y órdenes pendientes.',
-                    'icon': 'Package',
+                    'key': 'primer_lectura',
+                    'label': 'Revisa tus documentos pendientes',
+                    'description': 'Visita el portal para ver órdenes y documentos.',
+                    'icon': 'FileText',
                 },
             ],
             'cliente': [
@@ -318,9 +324,9 @@ class OnboardingService:
                     'icon': 'UserCircle',
                 },
                 {
-                    'key': 'explorar',
-                    'label': 'Explora el portal de clientes',
-                    'description': 'Revisa tus pedidos y documentos.',
+                    'key': 'primer_lectura',
+                    'label': 'Revisa tus pedidos',
+                    'description': 'Visita el portal para ver tus pedidos y documentos.',
                     'icon': 'ShoppingBag',
                 },
             ],
@@ -429,18 +435,34 @@ class OnboardingService:
         """
         onboarding_type = onboarding.onboarding_type
 
-        # Paso de perfil es común a todos los tipos
+        # Paso de perfil: foto + firma para admin/jefe/contratista, solo foto para empleado
         perfil_completo = has_photo and has_firma
 
         if onboarding_type == 'admin':
             return OnboardingService._calc_admin_steps(user, perfil_completo)
 
-        if onboarding_type in ('jefe', 'empleado'):
+        if onboarding_type == 'jefe':
             has_emergencia = onboarding.has_emergencia
+            primer_lectura = OnboardingService._check_step_marked(
+                onboarding, 'primer_lectura'
+            )
             return {
-                'perfil':     perfil_completo,
-                'emergencia': has_emergencia,
-                'explorar':   False,  # placeholder — se activa via evento futuro
+                'perfil':         perfil_completo,
+                'emergencia':     has_emergencia,
+                'primer_lectura': primer_lectura,
+            }
+
+        if onboarding_type == 'empleado':
+            # D2: perfil solo requiere foto (quick win), firma es paso separado
+            has_emergencia = onboarding.has_emergencia
+            primer_lectura = OnboardingService._check_step_marked(
+                onboarding, 'primer_lectura'
+            )
+            return {
+                'perfil':         has_photo,
+                'emergencia':     has_emergencia,
+                'firma':          has_firma,
+                'primer_lectura': primer_lectura,
             }
 
         if onboarding_type == 'contratista':
@@ -452,9 +474,12 @@ class OnboardingService:
             }
 
         # proveedor / cliente
+        primer_lectura = OnboardingService._check_step_marked(
+            onboarding, 'primer_lectura'
+        )
         return {
-            'perfil':   perfil_completo,
-            'explorar': False,
+            'perfil':         has_photo,
+            'primer_lectura': primer_lectura,
         }
 
     @staticmethod
@@ -464,24 +489,24 @@ class OnboardingService:
         Consulta los modelos de fundación usando apps.get_model().
 
         Pasos evaluados:
-        - empresa:  EmpresaConfig tiene nit y razon_social
-        - sedes:    SedeEmpresa existe al menos una
-        - identidad: CorporateIdentity tiene misión y visión
-        - valores:  CorporateValue existe al menos uno
-        - estructura: Area y Cargo existen
-        - perfil:   has_photo y has_firma
-        - invitar:  existe al menos un User activo no superuser
-        - explorar: placeholder (siempre False por ahora)
+        - empresa:          Tenant tiene nit y razon_social
+        - sedes:            SedeEmpresa existe al menos una
+        - identidad:        CorporateIdentity tiene misión y visión
+        - valores:          CorporateValue existe al menos uno
+        - estructura:       Area y Cargo existen
+        - perfil:           has_photo y has_firma
+        - invitar:          existe al menos un User activo no superuser
+        - primer_documento: existe al menos un Documento creado por este usuario
         """
         steps = {
-            'empresa':    False,
-            'sedes':      False,
-            'identidad':  False,
-            'valores':    False,
-            'estructura': False,
-            'perfil':     perfil_completo,
-            'invitar':    False,
-            'explorar':   False,
+            'empresa':          False,
+            'sedes':            False,
+            'identidad':        False,
+            'valores':          False,
+            'estructura':       False,
+            'perfil':           perfil_completo,
+            'invitar':          False,
+            'primer_documento': False,
         }
 
         # ── empresa ───────────────────────────────────────────────────
@@ -554,4 +579,39 @@ class OnboardingService:
         except Exception as exc:
             logger.debug('Error verificando usuarios invitados: %s', exc)
 
+        # ── primer_documento ─────────────────────────────────────────
+        steps['primer_documento'] = OnboardingService._check_primer_documento(user)
+
         return steps
+
+    # ------------------------------------------------------------------
+    # Helpers para pasos medibles
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _check_primer_documento(user) -> bool:
+        """
+        Verifica si el usuario ha creado al menos un Documento en
+        gestión documental. Acceso C2 via apps.get_model().
+        """
+        try:
+            Documento = apps.get_model('gestion_documental', 'Documento')
+            return Documento.objects.filter(elaborado_por=user).exists()
+        except LookupError:
+            logger.debug('Modelo Documento no disponible para onboarding')
+            return False
+        except Exception as exc:
+            logger.debug('Error verificando primer documento: %s', exc)
+            return False
+
+    @staticmethod
+    def _check_step_marked(onboarding, step_key: str) -> bool:
+        """
+        Verifica si un paso fue marcado manualmente como completado
+        en el JSONField steps_completed del onboarding.
+
+        Se usa para pasos que se completan via el endpoint
+        POST /api/core/onboarding/mark-step/ (e.g. primer_lectura).
+        """
+        steps = onboarding.steps_completed or {}
+        return bool(steps.get(step_key, False))

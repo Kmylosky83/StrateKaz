@@ -49,6 +49,7 @@ import { getModuleColorClasses, getMappedColorSafe } from '@/utils/moduleColors'
 import type { ModuleColor } from '@/utils/moduleColors';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { AreaFormModal } from './modals/AreaFormModal';
+import { OrgTemplateSelector } from './OrgTemplateSelector';
 import {
   useAreas,
   // useAreasTree,
@@ -220,6 +221,7 @@ export const AreasTab = () => {
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [showInactive, setShowInactive] = useState(true); // Por defecto mostrar todas
+  const [templateSelectorDismissed, setTemplateSelectorDismissed] = useState(false);
 
   // Queries
   // NOTA: El backend usa 'include_inactive=true' para mostrar todas (activas + inactivas)
@@ -399,6 +401,21 @@ export const AreasTab = () => {
   const reallyEmpty = areas.length === 0 && !searchTerm && showInactive;
 
   if (reallyEmpty) {
+    // Mostrar selector de plantillas si no ha sido descartado
+    if (!templateSelectorDismissed && canCreate) {
+      return (
+        <>
+          <OrgTemplateSelector onSkip={() => setTemplateSelectorDismissed(true)} />
+          <AreaFormModal
+            area={null}
+            isOpen={showFormModal}
+            onClose={() => setShowFormModal(false)}
+          />
+        </>
+      );
+    }
+
+    // Si descartó las plantillas, mostrar empty state clásico
     return (
       <>
         <Card>
@@ -406,7 +423,7 @@ export const AreasTab = () => {
             <EmptyState
               icon={<Building2 className="h-12 w-12" />}
               title="Sin Procesos Configurados"
-              description="No hay procesos definidos. Crea el primer proceso para comenzar a estructurar tu organizacion."
+              description="No hay procesos definidos. Crea el primer proceso para comenzar a estructurar tu organización."
               action={
                 canCreate
                   ? {

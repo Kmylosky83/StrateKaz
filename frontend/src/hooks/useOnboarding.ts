@@ -32,7 +32,7 @@ export interface OnboardingStep {
 }
 
 export interface OnboardingData {
-  onboarding_type: 'admin' | 'jefe' | 'empleado' | 'proveedor' | 'cliente';
+  onboarding_type: 'admin' | 'jefe' | 'empleado' | 'contratista' | 'proveedor' | 'cliente';
   steps: OnboardingStep[];
   done_count: number;
   total: number;
@@ -70,6 +70,34 @@ export function useDismissOnboarding() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.post('/core/onboarding/dismiss/'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: onboardingKeys.all });
+    },
+  });
+}
+
+/**
+ * Mutation para reabrir el checklist de onboarding previamente descartado.
+ * Setea dismissed = false en el backend.
+ */
+export function useReopenOnboarding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post('/core/onboarding/reopen/'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: onboardingKeys.all });
+    },
+  });
+}
+
+/**
+ * Mutation para marcar un paso de onboarding como completado manualmente.
+ * Se usa para pasos sin verificación automática (e.g. primer_lectura).
+ */
+export function useMarkOnboardingStep() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (step: string) => api.post('/core/onboarding/mark-step/', { step }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: onboardingKeys.all });
     },

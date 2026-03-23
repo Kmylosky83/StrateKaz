@@ -23,7 +23,9 @@ import { getMappedColorSafe } from '@/utils/moduleColors';
 import { PHVA_COLORS } from '@/constants/defaults';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 
+import { TwoFactorSuggestionBanner } from '@/components/common/TwoFactorSuggestionBanner';
 const SmartOnboardingChecklist = lazy(() => import('@/components/common/SmartOnboardingChecklist'));
+import { useOnboarding, useReopenOnboarding } from '@/hooks/useOnboarding';
 
 import {
   moduleCardHoverVariants,
@@ -393,6 +395,9 @@ export const DashboardPage = () => {
   const { data: fundacionProgress } = useFundacionProgress();
   const isSuperAdmin = useIsSuperAdmin();
 
+  const { data: onboardingData } = useOnboarding();
+  const reopenMutation = useReopenOnboarding();
+
   const [showWelcome, setShowWelcome] = useState(
     !localStorage.getItem('stratekaz_welcome_dismissed')
   );
@@ -507,6 +512,25 @@ export const DashboardPage = () => {
           <SmartOnboardingChecklist />
         </motion.div>
       </Suspense>
+
+      {/* D3: Botón para reabrir checklist descartado pero no completado */}
+      {onboardingData?.dismissed && !onboardingData?.completed && (
+        <motion.div variants={headerVariants}>
+          <button
+            type="button"
+            onClick={() => reopenMutation.mutate()}
+            disabled={reopenMutation.isPending}
+            className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 hover:underline transition-colors disabled:opacity-50"
+          >
+            {reopenMutation.isPending ? 'Reabriendo...' : 'Reabrir checklist de configuración'}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Sugerencia de 2FA para superadmins sin verificación en dos pasos */}
+      <motion.div variants={headerVariants}>
+        <TwoFactorSuggestionBanner />
+      </motion.div>
 
       {/* Header */}
       <motion.header variants={headerVariants}>

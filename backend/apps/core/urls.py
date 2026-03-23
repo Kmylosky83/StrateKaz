@@ -16,7 +16,8 @@ NOTA: Branding se maneja ahora en /api/tenant/public/branding/
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import health_check, health_check_deep, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView, ResendSetupPasswordView
-from .views.onboarding_views import OnboardingView, OnboardingDismissView, ProfileCompletenessView
+from .views.onboarding_views import OnboardingView, OnboardingDismissView, OnboardingMarkStepView, OnboardingReopenView, ProfileCompletenessView
+from .views.org_templates_views import org_templates_list, org_templates_apply
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
 from .viewsets_rbac import (
     PermissionViewSet,
@@ -147,6 +148,12 @@ urlpatterns = [
     # Onboarding (B1) — progreso + dismiss
     path('onboarding/', OnboardingView.as_view(), name='onboarding'),
     path('onboarding/dismiss/', OnboardingDismissView.as_view(), name='onboarding-dismiss'),
+    path('onboarding/mark-step/', OnboardingMarkStepView.as_view(), name='onboarding-mark-step'),
+    path('onboarding/reopen/', OnboardingReopenView.as_view(), name='onboarding-reopen'),
+
+    # Org Templates (A6) — plantillas de estructura organizacional por industria
+    path('org-templates/', org_templates_list, name='org-templates-list'),
+    path('org-templates/apply/', org_templates_apply, name='org-templates-apply'),
 
     # Completitud de perfil (B2)
     path('profile-completeness/', ProfileCompletenessView.as_view(), name='profile-completeness'),

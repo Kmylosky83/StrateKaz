@@ -27,6 +27,8 @@ import {
   Shield,
   User,
   AlertTriangle,
+  BookOpen,
+  ShoppingBag,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card } from './Card';
@@ -81,6 +83,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   pendientes: FileText,
   politicas: FileText,
   documents: FileText,
+  primer_documento: FileText,
+  // Lecturas
+  primer_lectura: BookOpen,
+  lecturas: BookOpen,
+  // Pedidos (portal clientes)
+  pedidos: ShoppingBag,
   // Emergencia
   emergencia: AlertTriangle,
   alert: AlertTriangle,

@@ -54,6 +54,8 @@ import {
   MisDocumentos,
   MiHSEQ,
   MiFirmaDigital,
+  PortalProveedorView,
+  PortalClienteView,
 } from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
@@ -413,9 +415,12 @@ export default function MiPortalPage() {
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
 
   // ── Sin Colaborador vinculado ─────────────────────────────────────────────
-  // NOTA: Usuarios portal-only (proveedor + PROVEEDOR_PORTAL cargo) NUNCA
-  // llegan aqui — AdaptiveLayout los redirige a /proveedor-portal antes.
-  // Los profesionales colocados (proveedor + cargo real) SI pueden llegar.
+  // Orden de prioridad de vista:
+  // 1. Superadmin sin colaborador → AdminPortalView
+  // 2. Proveedor (user.proveedor) sin colaborador → PortalProveedorView
+  // 3. Cliente (user.cliente) sin colaborador → PortalClienteView
+  // 4. User sin colaborador genérico → UserPortalView
+  // 5. User con colaborador → Full Portal (tabs)
   if (!perfilLoading && perfil == null) {
     // Si el User aun no se ha cargado, mostrar skeleton (evitar render prematuro)
     if (isLoadingUser || !user) {
@@ -431,7 +436,15 @@ export default function MiPortalPage() {
     if (isSuperAdmin) {
       return <AdminPortalView />;
     }
-    // Usuario sin Colaborador (consultores colocados, usuarios nuevos)
+    // Proveedor sin Colaborador → vista informativa de proveedor
+    if (user.proveedor) {
+      return <PortalProveedorView />;
+    }
+    // Cliente sin Colaborador → vista informativa de cliente
+    if (user.cliente) {
+      return <PortalClienteView />;
+    }
+    // Usuario sin Colaborador genérico (usuarios nuevos sin entidad externa)
     // → vista simplificada con datos del User
     return <UserPortalView />;
   }

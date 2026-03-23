@@ -9,3 +9,5 @@ export { EvaluacionResumen } from './EvaluacionResumen';
 export { MisDocumentos } from './MisDocumentos';
 export { MiHSEQ } from './MiHSEQ';
 export { MiFirmaDigital } from './MiFirmaDigital';
+export { PortalProveedorView } from './PortalProveedorView';
+export { PortalClienteView } from './PortalClienteView';

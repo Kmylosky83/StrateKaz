@@ -16,6 +16,7 @@ from .utils.audit_logging import (
     log_user_photo_updated
 )
 from .utils.impersonation import block_during_impersonation, is_impersonating
+from .throttles import ImpersonationRateThrottle
 from .serializers import (
     CargoSerializer,
     CargoDetailSerializer,
@@ -520,6 +521,123 @@ class UserViewSet(viewsets.ModelViewSet):
             'iniciales_guardadas': bool(user.iniciales_guardadas),
         })
 
+    @action(
+        detail=True, methods=['post'], url_path='impersonate-verify',
+        throttle_classes=[ImpersonationRateThrottle]
+    )
+    def impersonate_verify(self, request, pk=None):
+        """
+        Verificar código 2FA antes de impersonar un usuario.
+
+        POST /api/core/users/{id}/impersonate-verify/
+        { "code": "123456" }
+
+        Solo superadmins con 2FA habilitado. Retorna un token temporal
+        firmado (5 min TTL) que el frontend envía en X-Impersonation-Token
+        al llamar impersonate-profile.
+        """
+        from apps.core.models import TwoFactorAuth
+        from apps.core.utils.audit_logging import (
+            log_impersonation_failed, log_2fa_verified, log_2fa_failed,
+            log_backup_code_used,
+        )
+        import jwt
+        from django.conf import settings as django_settings
+        from django.utils import timezone
+
+        # Solo superadmins
+        if not request.user.is_superuser:
+            return Response(
+                {'error': 'Solo superadmins pueden impersonar usuarios'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validar target user
+        try:
+            target_user = User.objects.get(pk=pk, deleted_at__isnull=True)
+        except User.DoesNotExist:
+            log_impersonation_failed(request, f'pk={pk}', reason='user_not_found')
+            return Response(
+                {'error': 'Usuario no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # No auto-impersonación
+        if target_user.id == request.user.id:
+            log_impersonation_failed(request, target_user.username, reason='self_impersonation')
+            return Response(
+                {'error': 'No puedes impersonarte a ti mismo'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar que el superadmin tenga 2FA habilitado
+        try:
+            two_factor = TwoFactorAuth.objects.get(
+                user=request.user, is_enabled=True
+            )
+        except TwoFactorAuth.DoesNotExist:
+            return Response(
+                {'error': 'Debes tener 2FA habilitado para impersonar usuarios'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validar código
+        code = request.data.get('code', '').strip()
+        if not code:
+            return Response(
+                {'error': 'El código 2FA es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Intentar TOTP primero, luego backup code
+        is_backup = False
+        backup_remaining = None
+        if two_factor.verify_token(code):
+            log_2fa_verified(request)
+        elif two_factor.verify_backup_code(code):
+            is_backup = True
+            backup_remaining = two_factor.get_remaining_backup_codes_count()
+            log_backup_code_used(request)
+        else:
+            log_2fa_failed(request)
+            log_impersonation_failed(
+                request, target_user.username, reason='2fa_verification_failed'
+            )
+            return Response(
+                {'error': 'Código 2FA inválido'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Generar token temporal firmado (5 min TTL)
+        now = timezone.now()
+        payload = {
+            'superadmin_id': request.user.id,
+            'target_user_id': target_user.id,
+            'purpose': 'impersonation',
+            'iat': int(now.timestamp()),
+            'exp': int((now + timezone.timedelta(minutes=5)).timestamp()),
+        }
+        impersonation_token = jwt.encode(
+            payload,
+            django_settings.SECRET_KEY,
+            algorithm='HS256'
+        )
+
+        security_logger = __import__('logging').getLogger('security')
+        security_logger.info(
+            f"Impersonation 2FA verified: superadmin={request.user.username} "
+            f"target={target_user.username} backup_code={is_backup}"
+        )
+
+        response_data = {
+            'impersonation_token': impersonation_token,
+            'expires_in': 300,
+        }
+        if backup_remaining is not None:
+            response_data['backup_codes_remaining'] = backup_remaining
+
+        return Response(response_data)
+
     @action(detail=True, methods=['get'], url_path='impersonate-profile')
     def impersonate_profile(self, request, pk=None):
         """
@@ -531,6 +649,9 @@ class UserViewSet(viewsets.ModelViewSet):
         que current_user() (core_views.py) para que el frontend pueda
         hacer override del perfil en el authStore.
 
+        Si el superadmin tiene 2FA habilitado, requiere X-Impersonation-Token
+        header con token obtenido de impersonate-verify.
+
         Uso: Admin Global → "Ver como usuario" → seleccionar usuario →
         frontend reemplaza authStore.user con esta respuesta.
         """
@@ -539,6 +660,37 @@ class UserViewSet(viewsets.ModelViewSet):
                 {'error': 'Solo superadmins pueden impersonar usuarios'},
                 status=status.HTTP_403_FORBIDDEN
             )
+
+        # Validar token 2FA si el superadmin tiene 2FA habilitado
+        from apps.core.models import TwoFactorAuth
+        has_2fa = TwoFactorAuth.objects.filter(
+            user=request.user, is_enabled=True
+        ).exists()
+
+        if has_2fa:
+            import jwt
+            from django.conf import settings as django_settings
+            token = request.META.get('HTTP_X_IMPERSONATION_TOKEN', '')
+            if not token:
+                return Response(
+                    {'error': 'Se requiere verificación 2FA para impersonar'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            try:
+                payload = jwt.decode(
+                    token, django_settings.SECRET_KEY, algorithms=['HS256']
+                )
+                if payload.get('purpose') != 'impersonation':
+                    raise jwt.InvalidTokenError('Purpose mismatch')
+                if payload.get('superadmin_id') != request.user.id:
+                    raise jwt.InvalidTokenError('Superadmin mismatch')
+                if payload.get('target_user_id') != int(pk):
+                    raise jwt.InvalidTokenError('Target user mismatch')
+            except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+                return Response(
+                    {'error': 'Token de impersonación inválido o expirado'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # Buscar el usuario target (bypasa get_queryset que excluye superusers)
         try:

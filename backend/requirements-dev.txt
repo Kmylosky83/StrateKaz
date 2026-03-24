@@ -18,4 +18,5 @@ django-extensions==4.1
 factory-boy==3.3.0
 Faker==40.1.2
 pytest==9.0.2
+pytest-cov==6.1.1
 pytest-django==4.7.0

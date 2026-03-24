@@ -698,7 +698,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Buscar el usuario target (bypasa get_queryset que excluye superusers)
         try:
             target_user = User.objects.select_related(
-                'cargo', 'cargo__area', 'proveedor', 'cliente'
+                'cargo', 'cargo__area'
             ).get(pk=pk, deleted_at__isnull=True)
         except User.DoesNotExist:
             from apps.core.utils.audit_logging import log_impersonation_failed

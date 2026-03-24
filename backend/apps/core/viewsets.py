@@ -814,14 +814,14 @@ class UserViewSet(viewsets.ModelViewSet):
             count=Count('id')
         ).order_by('-count')
 
-        # Origen breakdown
+        # Origen breakdown (proveedor_id_ext / cliente_id_ext son IntegerField, no FK)
         proveedores_portal = alive_qs.filter(
-            proveedor__isnull=False, cargo__code='PROVEEDOR_PORTAL'
+            proveedor_id_ext__isnull=False, cargo__code='PROVEEDOR_PORTAL'
         ).count()
         proveedores_profesional = alive_qs.filter(
-            proveedor__isnull=False
+            proveedor_id_ext__isnull=False
         ).exclude(cargo__code='PROVEEDOR_PORTAL').count()
-        clientes_portal = alive_qs.filter(cliente__isnull=False).count()
+        clientes_portal = alive_qs.filter(cliente_id_ext__isnull=False).count()
         try:
             from django.apps import apps as django_apps
             Colaborador = django_apps.get_model('colaboradores', 'Colaborador')

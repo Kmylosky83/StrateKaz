@@ -84,12 +84,47 @@ def _build_missing_fields(onboarding) -> list:
     Construye la lista de campos de perfil que el usuario no ha completado,
     ordenada por peso descendente (primero los que más aportan).
 
+    Superadmin tiene campos simplificados (sin dependencia de Colaborador).
+
     Args:
         onboarding: instancia de UserOnboarding actualizada por compute()
 
     Returns:
         Lista de dicts {field, label, weight} para los campos incompletos.
     """
+    user = onboarding.user
+
+    # ── Superadmin: solo campos de identidad de plataforma ──
+    if getattr(user, 'is_superuser', False):
+        _ADMIN_FIELDS = {
+            'photo':           {'label': 'Foto de perfil',      'weight': 20},
+            'firma':           {'label': 'Firma digital',        'weight': 25},
+            'nombre_completo': {'label': 'Nombre completo',      'weight': 20},
+            'documento':       {'label': 'Documento de identidad', 'weight': 35},
+        }
+        completed = set()
+        if onboarding.has_photo:
+            completed.add('photo')
+        if onboarding.has_firma:
+            completed.add('firma')
+        nombre = (
+            f"{getattr(user, 'first_name', '') or ''} "
+            f"{getattr(user, 'last_name', '') or ''}"
+        ).strip()
+        if nombre:
+            completed.add('nombre_completo')
+        doc = getattr(user, 'document_number', '') or ''
+        if doc and not doc.startswith('TEMP-'):
+            completed.add('documento')
+        missing = [
+            {'field': f, **meta}
+            for f, meta in _ADMIN_FIELDS.items()
+            if f not in completed
+        ]
+        missing.sort(key=lambda x: x['weight'], reverse=True)
+        return missing
+
+    # ── Usuario regular: todos los campos ──
     _FIELD_META = {
         'photo':           {'label': 'Foto de perfil',           'weight': 10},
         'firma':           {'label': 'Firma digital',            'weight': 15},
@@ -102,8 +137,6 @@ def _build_missing_fields(onboarding) -> list:
         'documento':       {'label': 'Número de documento',      'weight': 15},
     }
 
-    # Determinar qué campos están completos
-    user = onboarding.user
     completed_fields = set()
 
     if onboarding.has_photo:

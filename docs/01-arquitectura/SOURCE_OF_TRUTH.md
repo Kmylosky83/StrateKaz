@@ -39,8 +39,8 @@ Otros modelos de "persona" (Candidato, Cliente, ContactoCliente, Proveedor) son 
 | firma | **User** | — | Solo existe en User |
 | nivel_firma | **User** | — | Solo existe en User |
 | is_superuser | **User** | — | Flag Django |
-| proveedor_id_ext | **User** | — | FK portal proveedores |
-| cliente_id_ext | **User** | — | FK portal clientes |
+| proveedor_id_ext | **User** | — | IntegerField (NO FK) — ID de referencia al proveedor |
+| cliente_id_ext | **User** | — | IntegerField (NO FK) — ID de referencia al cliente |
 
 ### Colaborador (schema tenant)
 
@@ -86,7 +86,35 @@ Otros modelos de "persona" (Candidato, Cliente, ContactoCliente, Proveedor) son 
 
 ---
 
-## Signals de Sincronización
+## Excepcion: Superadmin (is_superuser=True, cargo=None)
+
+El superadmin es una **identidad de plataforma**, no un empleado. No participa en la cadena User > Colaborador > InfoPersonal.
+
+| Aspecto | Comportamiento |
+|---------|----------------|
+| Colaborador | **NUNCA se crea** — signal `auto_create_colaborador` no aplica |
+| Firma digital | **No requerida** — no participa en workflows documentales |
+| Profile completion | Solo 3 campos: foto (25%), nombre (25%), documento (25%), firma (25%) |
+| Emergencia | **No aplica** — no tiene InfoPersonal |
+| Cargo | Internamente `ADMIN_GENERAL` pero UI muestra "Administrador del Sistema" |
+| Impersonacion | Requiere 2FA via `ImpersonateVerifyModal` |
+| Mi Portal | Muestra `AdminPortalView` con stats, no tabs de empleado |
+
+### Creacion de User (POST /api/core/users/)
+
+La creacion de User desde `/usuarios` crea **SOLO** User + TenantUser. **NO** crea Colaborador.
+
+| Flujo | Crea User | Crea Colaborador | Crea TenantUser |
+|-------|:---------:|:----------------:|:---------------:|
+| `/api/core/users/` (Usuarios) | SI | NO | SI (signal) |
+| Mi Equipo > Colaboradores | SI | SI | SI (signal) |
+| Supply Chain > Proveedores | SI | NO | SI (signal) |
+| Sales CRM > Clientes | SI | NO | SI (signal) |
+| Superadmin entra a tenant | SI (auto) | SI (signal, con cargo ADMIN) | SI |
+
+---
+
+## Signals de Sincronizacion
 
 ### Activos (4)
 

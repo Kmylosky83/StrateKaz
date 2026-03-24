@@ -21,7 +21,12 @@ El sistema implementa autenticación basada en JWT (JSON Web Tokens).
 | `/api/auth/refresh/` | POST | Renovar access token |
 | `/api/auth/logout/` | POST | Logout (blacklist token) |
 | `/api/auth/me/` | GET | Usuario actual |
-| `/api/auth/change-password/` | POST | Cambiar contraseña |
+| `/api/auth/change-password/` | POST | Cambiar contrasena |
+| `/api/core/2fa/setup/` | POST | Configurar 2FA (generar QR) |
+| `/api/core/2fa/verify/` | POST | Verificar y activar 2FA |
+| `/api/core/2fa/disable/` | POST | Desactivar 2FA |
+| `/api/core/users/{id}/impersonate-verify/` | POST | Verificar 2FA para impersonar |
+| `/api/core/users/{id}/impersonate-profile/` | GET | Perfil de usuario impersonado |
 
 ---
 
@@ -256,9 +261,53 @@ export function ProtectedRoute({
 
 ---
 
+## 2FA e Impersonacion
+
+### Autenticacion de Dos Factores (TOTP)
+
+El sistema soporta 2FA via TOTP (Time-based One-Time Password) usando apps como Google Authenticator o Authy.
+
+| Endpoint | Metodo | Descripcion |
+|----------|--------|-------------|
+| `/api/core/2fa/setup/` | POST | Generar QR code para configurar 2FA |
+| `/api/core/2fa/verify/` | POST | Verificar codigo TOTP y activar 2FA |
+| `/api/core/2fa/disable/` | POST | Desactivar 2FA |
+
+**Modelo:** `TwoFactorAuth` — almacena secret cifrado (AES via `ENCRYPTION_KEY` en `.env`) con `is_enabled` flag.
+
+**IMPORTANTE:** Configurar `ENCRYPTION_KEY` en `.env` de produccion. Sin ella, se usa clave de desarrollo (inseguro).
+
+### Impersonacion (Superadmin)
+
+Permite al superadmin ver la plataforma como otro usuario. Requiere 2FA obligatorio.
+
+| Endpoint | Metodo | Descripcion |
+|----------|--------|-------------|
+| `/api/core/users/{id}/impersonate-verify/` | POST | Verifica 2FA antes de impersonar |
+| `/api/core/users/{id}/impersonate-profile/` | GET | Carga perfil del usuario impersonado |
+
+**Flujo frontend:**
+1. Superadmin clic en ojo (UsersPage) → abre `ImpersonateVerifyModal`
+2. Ingresa codigo TOTP → `POST impersonate-verify` con `{ totp_code }`
+3. Backend valida via `TwoFactorAuth.verify_token()` (ventana ±60s)
+4. Si pasa → `GET impersonate-profile` con header `X-Impersonated-User-ID`
+5. Frontend carga la vista del usuario target
+
+**Headers de impersonacion:**
+```
+X-Impersonated-User-ID: {target_user_id}
+Authorization: Bearer {superadmin_jwt}
+```
+
+**Audit log:** Cada impersonacion registra `impersonated_by`, `target_user_id`, `2fa_verified_at`.
+
+**NOTA tecnica:** `get_effective_user()` en `impersonation.py` NO usa `select_related('proveedor', 'cliente')` porque `proveedor_id_ext` y `cliente_id_ext` son `IntegerField`, no FK.
+
+---
+
 ## Seguridad
 
-### Buenas Prácticas
+### Buenas Practicas
 
 - Tokens almacenados en localStorage (considerar httpOnly cookies para producción)
 - Refresh token rotado después de cada uso

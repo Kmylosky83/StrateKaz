@@ -497,3 +497,74 @@ Componente del sidebar que permite al usuario cambiar entre empresas:
 | TenantSwitcher | `/api/tenant/auth/select-tenant/` | TenantSelectView |
 
 Para documentacion completa del backend, ver [MULTI-TENANT.md](./MULTI-TENANT.md).
+
+---
+
+## 12. Superadmin dentro del Tenant
+
+### 12.1 Identidad del Superadmin
+
+Cuando un superadmin (`TenantUser.is_superadmin=true`) entra a un tenant, el sistema auto-crea un `User` en ese schema con `is_superuser=True`. **NO se crea Colaborador.**
+
+| Aspecto | Comportamiento |
+|---------|----------------|
+| Label en UI | "Administrador del Sistema" (UserMenu, PerfilPage, AdminPortalView) |
+| Cargo interno | `ADMIN_GENERAL` (auto-creado, solo para permisos internos) |
+| Firma digital | No requerida — superadmin no participa en workflows documentales |
+| Profile completion | Simplificado: foto (25%), nombre (25%), documento (25%), firma (25%) |
+| Mi Portal | Muestra `AdminPortalView` con stats y acciones rapidas |
+| Colaborador | NUNCA se crea para superadmin puro |
+
+### 12.2 Perfil del Superadmin
+
+El superadmin puede editar su perfil desde el avatar (EditProfileModal):
+
+| Campo | Editable | Notas |
+|-------|:--------:|-------|
+| first_name | SI | Nombre |
+| last_name | SI | Apellido |
+| email | SI | Email corporativo |
+| phone | SI | Telefono |
+| document_type | SI | CC, CE, NIT, PA, TI (solo superadmin) |
+| document_number | SI | Reemplaza TEMP-xxx generado automaticamente |
+| photo | SI | Upload via endpoint separado |
+
+Endpoint: `PUT /api/core/users/update_profile/` — campos `document_type` y `document_number` solo permitidos para `is_superuser=True`.
+
+### 12.3 Impersonacion con 2FA
+
+El superadmin puede "ver como" otro usuario mediante impersonacion. Requiere verificacion 2FA obligatoria.
+
+**Flujo:**
+1. Superadmin va a `/usuarios` y hace clic en icono de ojo
+2. Se abre `ImpersonateVerifyModal` — pide codigo TOTP de la app de autenticacion
+3. Frontend envia `POST /api/core/users/{id}/impersonate-verify/` con `{ totp_code: "123456" }`
+4. Backend verifica 2FA via `TwoFactorAuth.verify_token()` y registra audit log
+5. Si pasa, frontend llama `GET /api/core/users/{id}/impersonate-profile/`
+6. Se carga el perfil del usuario target con header `X-Impersonated-User-ID`
+
+**Endpoints:**
+
+| Endpoint | Metodo | Descripcion |
+|----------|--------|-------------|
+| `/api/core/users/{id}/impersonate-verify/` | POST | Verifica 2FA antes de impersonar |
+| `/api/core/users/{id}/impersonate-profile/` | GET | Carga perfil del usuario impersonado |
+
+**Seguridad:**
+- Solo `is_superuser=True` puede impersonar
+- 2FA obligatorio (sin 2FA habilitado, no puede impersonar)
+- Audit log: `impersonated_by`, `target_user_id`, `2fa_verified_at`
+- `get_effective_user()` resuelve el usuario real vs impersonado
+
+**NOTA:** `get_effective_user()` NO usa `select_related('proveedor', 'cliente')` — `proveedor_id_ext` y `cliente_id_ext` son `IntegerField`, no FK.
+
+### 12.4 AdminPortalView
+
+Cuando el superadmin accede a Mi Portal, ve un dashboard con:
+
+- **Hero:** Saludo personalizado + badge "Administrador del Sistema" + nombre del tenant
+- **Stats Grid:** Total usuarios, usuarios activos, pendientes setup, modulos habilitados
+- **Acciones rapidas:** Crear usuario, ver usuarios, ir a dashboard
+- **Guia colapsable:** Como impersonar un usuario (instrucciones paso a paso)
+
+Datos consumidos de `GET /api/core/users/stats/`.

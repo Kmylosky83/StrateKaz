@@ -291,12 +291,25 @@ Documentacion detallada en auto-memory (se carga automaticamente):
 
 ### Source of Truth — Modelos de Identidad
 
-- **Colaborador** es master de datos de empleado (nombre, cargo, salario, estado, documento, teléfono)
+- **Colaborador** es master de datos de empleado (nombre, cargo, salario, estado, documento, telefono)
 - **User** solo contiene identidad digital (email, password, firma, photo, nivel_firma)
-- **InfoPersonal** contiene datos sensibles (bancarios, salud, emergencia, dirección)
-- **HojaVida** contiene educación, certificaciones, experiencia previa
+- **InfoPersonal** contiene datos sensibles (bancarios, salud, emergencia, direccion)
+- **HojaVida** contiene educacion, certificaciones, experiencia previa
 - **NUNCA escribir datos de empleado directamente en User** — escribir en Colaborador y dejar que el signal sincronice
+- **Creacion de User NO crea Colaborador** — `/api/core/users/` crea SOLO User + TenantUser. Colaboradores se crean exclusivamente desde Mi Equipo > Colaboradores
+- **proveedor_id_ext / cliente_id_ext son IntegerField** (NO FK) — almacenan IDs de referencia sin relacion directa
 - Ver `docs/01-arquitectura/SOURCE_OF_TRUTH.md` para detalle completo
+
+### Superadmin — Reglas de Identidad
+
+- **Superadmin** (`is_superuser=True`, `cargo=None`): identidad de plataforma, NO empleado
+- **Label UI:** siempre "Administrador del Sistema" (UserMenu, PerfilPage, AdminPortalView)
+- **Firma digital:** NO requerida para superadmin (no participa en workflows documentales)
+- **Profile completion:** solo foto (25%), nombre (25%), documento (25%), emergencia no aplica
+- **Colaborador:** NUNCA se crea para superadmin puro (sin cargo)
+- **Impersonacion:** requiere 2FA via `ImpersonateVerifyModal` + audit log completo
+- **Mi Portal:** muestra `AdminPortalView` con stats + acciones rapidas (no tabs de empleado)
+- **get_effective_user():** NO usa `select_related('proveedor', 'cliente')` (son IntegerField)
 
 ### Quick Reference
 

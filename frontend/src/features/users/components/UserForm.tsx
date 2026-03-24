@@ -259,9 +259,7 @@ interface UserFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CreateUserDTO | UpdateUserDTO) => void;
-  user?: User & {
-    roles_adicionales?: Array<{ id: number; nombre: string; tipo: string }>;
-  };
+  user?: User;
   cargos: Cargo[];
   isLoading?: boolean;
 }

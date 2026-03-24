@@ -12,7 +12,7 @@ from django.db.models import Q, Count
 
 from .models import User, Cargo, Permiso, CargoPermiso
 from .utils.audit_logging import (
-    log_user_created, log_user_deleted, log_user_restored, log_password_changed,
+    log_user_deleted, log_user_restored, log_password_changed,
     log_user_photo_updated
 )
 from .utils.impersonation import block_during_impersonation, is_impersonating
@@ -22,7 +22,6 @@ from .serializers import (
     CargoDetailSerializer,
     UserListSerializer,
     UserDetailSerializer,
-    UserCreateSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
     UserPhotoUploadSerializer,
@@ -86,16 +85,20 @@ class CargoViewSet(viewsets.ReadOnlyModelViewSet):
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    ViewSet completo para Usuarios
-    
+    ViewSet para Usuarios — centro de control (sin creacion desde tenant).
+
+    La creacion de usuarios se realiza desde sus modulos origen:
+    - Colaboradores: Mi Equipo > Colaboradores (Talent Hub)
+    - Proveedores: Supply Chain > Proveedores
+    - Clientes: Sales CRM > Clientes
+    - Admins tenant: Admin Global (superadmin via DB)
+
     Endpoints:
     - GET /api/core/users/ - Lista de usuarios
-    - POST /api/core/users/ - Crear usuario (requiere permisos)
     - GET /api/core/users/{id}/ - Detalle de usuario
-    - PUT /api/core/users/{id}/ - Actualizar usuario completo
-    - PATCH /api/core/users/{id}/ - Actualizar usuario parcial
+    - PUT/PATCH /api/core/users/{id}/ - Actualizar usuario
     - DELETE /api/core/users/{id}/ - Soft delete de usuario
-    - POST /api/core/users/{id}/change_password/ - Cambiar contraseña
+    - POST /api/core/users/{id}/change_password/ - Cambiar contrasena
     - POST /api/core/users/{id}/restore/ - Restaurar usuario eliminado
     """
     queryset = User.objects.all()
@@ -187,16 +190,32 @@ class UserViewSet(viewsets.ModelViewSet):
         return queryset.select_related('cargo', 'created_by')
 
     def get_serializer_class(self):
-        """Retornar serializer según la acción"""
+        """Retornar serializer segun la accion"""
         if self.action == 'list':
             return UserListSerializer
-        elif self.action in ['create']:
-            return UserCreateSerializer
         elif self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
         elif self.action == 'change_password':
             return ChangePasswordSerializer
         return UserDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        Creacion deshabilitada desde Gestion de Usuarios.
+        Usuarios se crean desde su modulo origen:
+        - Colaboradores → Mi Equipo > Colaboradores
+        - Proveedores → Supply Chain > Proveedores
+        - Clientes → Sales CRM > Clientes
+        - Admin tenant → Admin Global
+        """
+        return Response(
+            {
+                'detail': 'La creacion de usuarios desde este endpoint esta deshabilitada. '
+                          'Use el modulo correspondiente: Colaboradores (Talent Hub), '
+                          'Proveedores (Supply Chain), Clientes (Sales CRM) o Admin Global.'
+            },
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def perform_update(self, serializer):
         """
@@ -243,11 +262,6 @@ class UserViewSet(viewsets.ModelViewSet):
                     })
 
         serializer.save()
-
-    def perform_create(self, serializer):
-        """Crear usuario con logging de auditoría"""
-        user = serializer.save()
-        log_user_created(self.request, user)
 
     @block_during_impersonation(
         "No se puede eliminar usuarios durante impersonación"

@@ -2,12 +2,7 @@
 import { usersAPI } from '@/api/users.api';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
-import type {
-  UserFilters,
-  CreateUserDTO,
-  UpdateUserDTO,
-  ChangePasswordDTO,
-} from '@/types/users.types';
+import type { UserFilters, UpdateUserDTO, ChangePasswordDTO } from '@/types/users.types';
 
 export const useUsers = (filters?: UserFilters) => {
   return useQuery({
@@ -21,25 +16,6 @@ export const useUser = (id: number) => {
     queryKey: ['user', id],
     queryFn: () => usersAPI.getUser(id),
     enabled: !!id,
-  });
-};
-
-export const useCreateUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: CreateUserDTO) => usersAPI.createUser(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      // Nuevo usuario afecta users_count del cargo asignado
-      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
-      toast.success('Usuario creado exitosamente');
-    },
-    onError: (error: unknown) => {
-      const err = error as { response?: { data?: { message?: string } } };
-      const message = err.response?.data?.message || 'Error al crear el usuario';
-      toast.error(message);
-    },
   });
 };
 

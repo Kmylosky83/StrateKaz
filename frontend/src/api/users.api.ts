@@ -1,7 +1,6 @@
 import axiosInstance from './axios-config';
 import type {
   User,
-  CreateUserDTO,
   UpdateUserDTO,
   ChangePasswordDTO,
   UserFilters,
@@ -46,14 +45,6 @@ export const usersAPI = {
    */
   getUser: async (id: number): Promise<User> => {
     const response = await axiosInstance.get<User>(`/core/users/${id}/`);
-    return response.data;
-  },
-
-  /**
-   * Crear nuevo usuario
-   */
-  createUser: async (data: CreateUserDTO): Promise<User> => {
-    const response = await axiosInstance.post<User>('/core/users/', data);
     return response.data;
   },
 

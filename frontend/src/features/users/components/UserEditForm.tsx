@@ -1,12 +1,13 @@
 /**
- * UserForm - Formulario de usuario simplificado
+ * UserEditForm - Formulario de edicion de usuario (solo lectura/edicion, sin creacion)
  *
- * Sistema RBAC v3.3.0:
- * - Cargo: Define permisos base (configurados en Configuracion > Cargos)
+ * Gestion de Usuarios es un centro de control:
+ * - Colaboradores se crean desde Mi Equipo > Colaboradores
+ * - Proveedores se crean desde Supply Chain > Proveedores
+ * - Clientes se crean desde Sales CRM > Clientes
+ * - Admins tenant se crean desde Admin Global (DB)
  *
- * Los permisos se heredan automaticamente del Cargo asignado.
- * Este formulario crea SOLO identidad digital (User + TenantUser).
- * Para empleados completos usar Mi Equipo > Colaboradores.
+ * Este formulario solo permite editar datos de usuarios existentes.
  */
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -25,38 +26,15 @@ import {
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { useAuthStore } from '@/store/authStore';
-import type { User, CreateUserDTO, UpdateUserDTO, Cargo, NivelFirma } from '@/types/users.types';
+import type { User, UpdateUserDTO, Cargo, NivelFirma } from '@/types/users.types';
 import { NIVEL_FIRMA_LABELS, NIVEL_FIRMA_DESCRIPTIONS } from '@/types/users.types';
 
 // =============================================================================
-// SCHEMAS
+// SCHEMA
 // =============================================================================
-
-const createUserSchema = z
-  .object({
-    username: z
-      .string()
-      .min(3, 'Minimo 3 caracteres')
-      .max(20)
-      .regex(/^[a-zA-Z0-9_]+$/, 'Solo letras, numeros y guion bajo'),
-    email: z.string().email('Email invalido'),
-    first_name: z.string().min(2, 'Minimo 2 caracteres'),
-    last_name: z.string().min(2, 'Minimo 2 caracteres'),
-    password: z.string().min(8, 'Minimo 8 caracteres'),
-    password_confirm: z.string(),
-    cargo_id: z.number({ required_error: 'Selecciona un cargo' }),
-    phone: z.string().optional(),
-    document_type: z.enum(['CC', 'CE', 'NIT']),
-    document_number: z.string().min(6, 'Minimo 6 digitos').max(11).regex(/^\d+$/, 'Solo numeros'),
-  })
-  .refine((data) => data.password === data.password_confirm, {
-    message: 'Las contrasenas no coinciden',
-    path: ['password_confirm'],
-  });
 
 const updateUserSchema = z.object({
   username: z
@@ -73,7 +51,6 @@ const updateUserSchema = z.object({
   document_number: z.string().min(6).max(11).regex(/^\d+$/),
 });
 
-type CreateUserFormData = z.infer<typeof createUserSchema>;
 type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 
 // =============================================================================
@@ -82,7 +59,7 @@ type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 
 const HELP_TEXTS = {
   cargo:
-    'El cargo define la posición en el organigrama y otorga permisos automáticamente (configurados en Cargos).',
+    'El cargo define la posicion en el organigrama y otorga permisos automaticamente (configurados en Cargos).',
 };
 
 // =============================================================================
@@ -146,7 +123,7 @@ const Section = ({ title, icon, helpText, children, defaultOpen = true, badge }:
 };
 
 // =============================================================================
-// NIVEL FIRMA SECTION (read-only display in edit mode)
+// NIVEL FIRMA SECTION (read-only)
 // =============================================================================
 
 const NIVEL_BADGE_STYLES: Record<NivelFirma, string> = {
@@ -160,7 +137,6 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
   const isManual = user.nivel_firma_manual || false;
   const cargoNivel = user.cargo?.level ?? 0;
 
-  // Calcular nivel esperado del cargo
   const expectedFromCargo: NivelFirma = cargoNivel >= 3 ? 3 : cargoNivel >= 2 ? 2 : 1;
 
   return (
@@ -168,7 +144,7 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
       title="Firma Digital"
       icon={<Fingerprint className="w-5 h-5" />}
       defaultOpen={false}
-      helpText="Nivel de verificación 2FA al firmar documentos. Se hereda automáticamente del cargo."
+      helpText="Nivel de verificacion 2FA al firmar documentos. Se hereda automaticamente del cargo."
       badge={
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${NIVEL_BADGE_STYLES[nivel]}`}
@@ -178,7 +154,6 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
       }
     >
       <div className="space-y-3">
-        {/* Badge principal */}
         <div
           className={`p-3 rounded-lg border ${
             nivel === 3
@@ -205,7 +180,6 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
           </div>
         </div>
 
-        {/* Info de herencia */}
         <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
           <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <div>
@@ -220,17 +194,12 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
               <p>
                 Heredado del cargo:{' '}
                 <span className="font-medium">{user.cargo?.name || 'Sin cargo'}</span>
-                {user.cargo && ` (nivel jerárquico → firma nivel ${expectedFromCargo})`}
+                {user.cargo && ` (nivel jerarquico → firma nivel ${expectedFromCargo})`}
               </p>
             )}
-            <p className="mt-1">
-              Para cambiar el nivel de firma, edita desde{' '}
-              <strong>Configuración &rarr; Usuarios</strong> (nivel_firma_manual).
-            </p>
           </div>
         </div>
 
-        {/* Resumen de niveles */}
         <div className="grid grid-cols-3 gap-2">
           {([1, 2, 3] as NivelFirma[]).map((n) => (
             <div
@@ -255,54 +224,55 @@ const NivelFirmaSection = ({ user }: { user: User }) => {
 // MAIN COMPONENT
 // =============================================================================
 
-interface UserFormProps {
+interface UserEditFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateUserDTO | UpdateUserDTO) => void;
-  user?: User;
+  onSubmit: (data: UpdateUserDTO) => void;
+  user: User;
   cargos: Cargo[];
   isLoading?: boolean;
 }
 
-export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }: UserFormProps) => {
-  const isEditMode = !!user;
-  const schema = isEditMode ? updateUserSchema : createUserSchema;
-
+export const UserEditForm = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  user,
+  cargos,
+  isLoading,
+}: UserEditFormProps) => {
   const {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
     setValue,
     watch,
-  } = useForm<CreateUserFormData | UpdateUserFormData>({
-    resolver: zodResolver(schema),
-    defaultValues: isEditMode
-      ? {
-          username: user?.username || '',
-          email: user?.email || '',
-          first_name: user?.first_name || '',
-          last_name: user?.last_name || '',
-          cargo_id: user?.cargo?.id || undefined,
-          phone: user?.phone || '',
-          document_type: user?.document_type || 'CC',
-          document_number: user?.document_number || '',
-        }
-      : { document_type: 'CC' },
+  } = useForm<UpdateUserFormData>({
+    resolver: zodResolver(updateUserSchema),
+    defaultValues: {
+      username: user.username || '',
+      email: user.email || '',
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      cargo_id: user.cargo?.id || undefined,
+      phone: user.phone || '',
+      document_type: user.document_type || 'CC',
+      document_number: user.document_number || '',
+    },
   });
 
   const selectedCargoId = watch('cargo_id');
   const selectedCargo = cargos.find((c) => c.id === selectedCargoId);
 
-  // Fase 3: Detección de auto-degradación del último ADMIN
+  // Deteccion de auto-degradacion del ultimo ADMIN
   const currentAuthUser = useAuthStore((state) => state.user);
-  const isEditingSelf = isEditMode && user && currentAuthUser && user.id === currentAuthUser.id;
-  const userHadAdminCargo = user?.cargo?.code === 'ADMIN';
+  const isEditingSelf = currentAuthUser && user.id === currentAuthUser.id;
+  const userHadAdminCargo = user.cargo?.code === 'ADMIN';
   const isChangingFromAdmin =
     isEditingSelf && userHadAdminCargo && selectedCargo && selectedCargo.code !== 'ADMIN';
 
   useEffect(() => {
-    if (isOpen && user) {
+    if (isOpen) {
       setValue('username', user.username);
       setValue('email', user.email);
       setValue('first_name', user.first_name);
@@ -311,17 +281,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
       setValue('phone', user.phone || '');
       setValue('document_type', user.document_type || 'CC');
       setValue('document_number', user.document_number || '');
-    } else if (isOpen && !user) {
-      reset({ document_type: 'CC' });
     }
-  }, [isOpen, user, setValue, reset]);
+  }, [isOpen, user, setValue]);
 
-  const handleFormSubmit = (data: CreateUserFormData | UpdateUserFormData) => {
-    if (isEditMode) {
-      onSubmit(data as UpdateUserDTO);
-    } else {
-      onSubmit(data as CreateUserDTO);
-    }
+  const handleFormSubmit = (data: UpdateUserFormData) => {
+    onSubmit(data as UpdateUserDTO);
   };
 
   const cargoOptions = cargos.map((c) => ({
@@ -330,21 +294,16 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
   }));
 
   const documentTypeOptions = [
-    { value: 'CC', label: 'Cédula de Ciudadanía' },
-    { value: 'CE', label: 'Cédula de Extranjería' },
+    { value: 'CC', label: 'Cedula de Ciudadania' },
+    { value: 'CE', label: 'Cedula de Extranjeria' },
     { value: 'NIT', label: 'NIT' },
   ];
 
   return (
-    <BaseModal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isEditMode ? 'Editar Usuario' : 'Nuevo Usuario'}
-      size="3xl"
-    >
+    <BaseModal isOpen={isOpen} onClose={onClose} title="Editar Usuario" size="3xl">
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         {/* Alerta de Superusuario */}
-        {isEditMode && user?.is_superuser && (
+        {user.is_superuser && (
           <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
@@ -361,32 +320,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           </div>
         )}
 
-        {/* Guía de flujos correctos — solo en modo creación */}
-        {!isEditMode && (
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-start gap-2">
-              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <p className="font-medium text-sm">
-                  Esta página es para cuentas técnicas o administrativas.
-                </p>
-                <p>
-                  Si necesitas registrar un <strong>empleado</strong>, usa{' '}
-                  <strong>Talent Hub &gt; Colaboradores</strong> (incluye contrato, salario y acceso
-                  opcional).
-                </p>
-                <p>
-                  Si necesitas dar acceso a un <strong>proveedor o cliente externo</strong>, usa{' '}
-                  <strong>Supply Chain &gt; Proveedores</strong> o{' '}
-                  <strong>Sales CRM &gt; Clientes</strong>.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SECCIÓN 1: INFORMACIÓN PERSONAL */}
-        <Section title="Información Personal" icon={<UserIcon className="w-5 h-5" />}>
+        {/* SECCION 1: INFORMACION PERSONAL */}
+        <Section title="Informacion Personal" icon={<UserIcon className="w-5 h-5" />}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nombre de Usuario *"
@@ -420,43 +355,24 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
               error={errors.document_type?.message}
             />
             <Input
-              label="Número de Documento *"
+              label="Numero de Documento *"
               {...register('document_number')}
               error={errors.document_number?.message}
               placeholder="1234567890"
             />
             <Input
-              label="Teléfono"
+              label="Telefono"
               type="tel"
               {...register('phone')}
               error={errors.phone?.message}
               placeholder="3001234567"
             />
           </div>
-
-          {!isEditMode && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Input
-                label="Contraseña *"
-                type="password"
-                {...register('password' as keyof CreateUserFormData)}
-                error={(errors as Record<string, { message?: string }>).password?.message}
-                placeholder="Mínimo 8 caracteres"
-              />
-              <Input
-                label="Confirmar Contraseña *"
-                type="password"
-                {...register('password_confirm' as keyof CreateUserFormData)}
-                error={(errors as Record<string, { message?: string }>).password_confirm?.message}
-                placeholder="Repetir contraseña"
-              />
-            </div>
-          )}
         </Section>
 
-        {/* SECCIÓN 2: POSICIÓN ORGANIZACIONAL */}
+        {/* SECCION 2: POSICION ORGANIZACIONAL */}
         <Section
-          title="Posición Organizacional"
+          title="Posicion Organizacional"
           icon={<Building2 className="w-5 h-5" />}
           helpText={HELP_TEXTS.cargo}
         >
@@ -465,7 +381,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
             {...register('cargo_id', { valueAsNumber: true })}
             options={cargoOptions}
             error={errors.cargo_id?.message}
-            placeholder="Selecciona el cargo del empleado"
+            placeholder="Selecciona el cargo"
           />
 
           {isChangingFromAdmin && (
@@ -474,11 +390,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                 <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium text-red-800 dark:text-red-200">
-                    Advertencia: Está cambiando su propio cargo de Administrador
+                    Advertencia: Esta cambiando su propio cargo de Administrador
                   </p>
                   <p className="text-red-600 dark:text-red-300 mt-1">
-                    Si usted es el único administrador, perderá acceso a las funciones de
-                    administración. Asegúrese de que otro usuario tenga el cargo ADMIN antes de
+                    Si usted es el unico administrador, perdera acceso a las funciones de
+                    administracion. Asegurese de que otro usuario tenga el cargo ADMIN antes de
                     continuar.
                   </p>
                 </div>
@@ -495,7 +411,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                     Cargo: {selectedCargo.name}
                   </p>
                   <p className="text-blue-600 dark:text-blue-300 mt-1">
-                    Los permisos de acceso y acciones se configuran en Configuración &rarr; Cargos.
+                    Los permisos de acceso y acciones se configuran en Configuracion &rarr; Cargos.
                     {selectedCargo.level !== undefined && ` Nivel: ${selectedCargo.level}`}
                   </p>
                 </div>
@@ -504,8 +420,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           )}
         </Section>
 
-        {/* SECCIÓN 3: NIVEL DE FIRMA DIGITAL (solo edición) */}
-        {isEditMode && user && <NivelFirmaSection user={user} />}
+        {/* SECCION 3: NIVEL DE FIRMA DIGITAL */}
+        <NivelFirmaSection user={user} />
 
         {/* FOOTER */}
         <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">
@@ -513,7 +429,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
             Cancelar
           </Button>
           <Button type="submit" isLoading={isLoading}>
-            {isEditMode ? 'Actualizar' : 'Crear'} Usuario
+            Actualizar Usuario
           </Button>
         </div>
       </form>

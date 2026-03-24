@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
+import { Users, UserCheck, UserX, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
 import {
   PageHeader,
@@ -15,29 +14,20 @@ import {
 } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { UsersTable } from '../components/UsersTable';
-import { UserForm } from '../components/UserForm';
+import { UserEditForm } from '../components/UserEditForm';
 import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
 import { ImpersonateVerifyModal } from '../components/ImpersonateVerifyModal';
 import {
   useUsers,
   useCargos,
-  useCreateUser,
   useUpdateUser,
   useDeleteUser,
   useToggleUserStatus,
 } from '../hooks/useUsers';
-import { useSelectRoles } from '@/hooks/useSelectLists';
-import type {
-  User,
-  CreateUserDTO,
-  UpdateUserDTO,
-  UserFilters,
-  UserOrigen,
-} from '@/types/users.types';
+import type { User, UpdateUserDTO, UserFilters, UserOrigen } from '@/types/users.types';
 import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
-import { ProtectedAction } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
 
@@ -70,16 +60,9 @@ export default function UsersPage() {
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargosData } = useCargos();
   const cargos = cargosData?.results || [];
-  const { data: rolesData } = useSelectRoles();
-  const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
   const toggleStatusMutation = useToggleUserStatus();
-
-  const handleOpenCreateForm = () => {
-    setSelectedUser(undefined);
-    setIsFormOpen(true);
-  };
 
   const handleOpenEditForm = (user: User) => {
     setSelectedUser(user);
@@ -91,21 +74,16 @@ export default function UsersPage() {
     setSelectedUser(undefined);
   };
 
-  const handleSubmit = async (data: CreateUserDTO | UpdateUserDTO) => {
+  const handleSubmit = async (data: UpdateUserDTO) => {
+    if (!selectedUser) return;
     try {
-      if (selectedUser) {
-        await updateUserMutation.mutateAsync({
-          id: selectedUser.id,
-          data: data as UpdateUserDTO,
-        });
-      } else {
-        await createUserMutation.mutateAsync(data as CreateUserDTO);
-      }
+      await updateUserMutation.mutateAsync({
+        id: selectedUser.id,
+        data,
+      });
       handleCloseForm();
     } catch (error: unknown) {
       console.error('Error submitting form:', error);
-      console.error('Error response:', error.response?.data);
-      alert(`Error: ${JSON.stringify(error.response?.data || error.message)}`);
     }
   };
 
@@ -242,14 +220,7 @@ export default function UsersPage() {
       {/* HEADER */}
       <PageHeader
         title="Gestión de Usuarios"
-        description="Administración de usuarios del sistema"
-        actions={
-          <ProtectedAction permission="core.usuarios.create">
-            <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
-              Nuevo Usuario
-            </Button>
-          </ProtectedAction>
-        }
+        description="Vista centralizada de todos los usuarios del sistema"
       />
 
       {/* ESTADÍSTICAS */}
@@ -330,15 +301,16 @@ export default function UsersPage() {
       </DataTableCard>
 
       {/* Modals */}
-      <UserForm
-        isOpen={isFormOpen}
-        onClose={handleCloseForm}
-        onSubmit={handleSubmit}
-        user={selectedUser}
-        cargos={cargos}
-        roles={rolesData || []}
-        isLoading={createUserMutation.isPending || updateUserMutation.isPending}
-      />
+      {selectedUser && (
+        <UserEditForm
+          isOpen={isFormOpen}
+          onClose={handleCloseForm}
+          onSubmit={handleSubmit}
+          user={selectedUser}
+          cargos={cargos}
+          isLoading={updateUserMutation.isPending}
+        />
+      )}
 
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}

@@ -1,5 +1,5 @@
 /**
- * Tests para UsersPage — Gestion de Usuarios
+ * Tests para UsersPage — Gestion de Usuarios (centro de control)
  *
  * Cobertura:
  * - Renderizado de la pagina principal
@@ -7,8 +7,10 @@
  * - Estado de carga
  * - Estado vacio
  * - Busqueda y filtros
- * - Boton Nuevo Usuario (ProtectedAction)
  * - Lista de usuarios
+ *
+ * Nota: Creacion de usuarios deshabilitada desde este modulo.
+ * Usuarios se crean desde su modulo origen (Colaboradores, Supply Chain, etc.)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
@@ -75,7 +77,6 @@ const mockUsers: User[] = [
 
 const mockUseUsers = vi.fn();
 const mockUseCargos = vi.fn();
-const mockUseCreateUser = vi.fn();
 const mockUseUpdateUser = vi.fn();
 const mockUseDeleteUser = vi.fn();
 const mockUseToggleUserStatus = vi.fn();
@@ -83,14 +84,9 @@ const mockUseToggleUserStatus = vi.fn();
 vi.mock('@/features/users/hooks/useUsers', () => ({
   useUsers: (...args: unknown[]) => mockUseUsers(...args),
   useCargos: (...args: unknown[]) => mockUseCargos(...args),
-  useCreateUser: (...args: unknown[]) => mockUseCreateUser(...args),
   useUpdateUser: (...args: unknown[]) => mockUseUpdateUser(...args),
   useDeleteUser: (...args: unknown[]) => mockUseDeleteUser(...args),
   useToggleUserStatus: (...args: unknown[]) => mockUseToggleUserStatus(...args),
-}));
-
-vi.mock('@/hooks/useSelectLists', () => ({
-  useSelectRoles: () => ({ data: [{ value: 1, label: 'Admin' }] }),
 }));
 
 vi.mock('@/hooks/useModuleColor', () => ({
@@ -145,10 +141,10 @@ vi.mock('@/features/users/components/UsersTable', () => ({
   ),
 }));
 
-// Mock UserForm and DeleteConfirmModal
-vi.mock('@/features/users/components/UserForm', () => ({
-  UserForm: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid="user-form-modal">Form Modal</div> : null,
+// Mock UserEditForm and DeleteConfirmModal
+vi.mock('@/features/users/components/UserEditForm', () => ({
+  UserEditForm: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="user-edit-form-modal">Edit Form Modal</div> : null,
 }));
 
 vi.mock('@/components/users/DeleteConfirmModal', () => ({
@@ -177,7 +173,6 @@ describe('UsersPage', () => {
         ],
       },
     });
-    mockUseCreateUser.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseUpdateUser.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseDeleteUser.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseToggleUserStatus.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
@@ -192,7 +187,9 @@ describe('UsersPage', () => {
       renderWithProviders(<UsersPage />);
 
       expect(screen.getByText(/Gesti.n de Usuarios/i)).toBeInTheDocument();
-      expect(screen.getByText(/Administraci.n de usuarios del sistema/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Vista centralizada de todos los usuarios del sistema/i)
+      ).toBeInTheDocument();
     });
 
     it('debe renderizar la tabla de usuarios', () => {
@@ -268,29 +265,6 @@ describe('UsersPage', () => {
       renderWithProviders(<UsersPage />);
 
       expect(screen.getByText('No se encontraron usuarios')).toBeInTheDocument();
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // BOTON NUEVO USUARIO (ProtectedAction)
-  // --------------------------------------------------------------------------
-
-  describe('Boton Nuevo Usuario', () => {
-    it('debe renderizar el boton Nuevo Usuario', () => {
-      renderWithProviders(<UsersPage />);
-
-      expect(screen.getByText('Nuevo Usuario')).toBeInTheDocument();
-    });
-
-    it('debe abrir el formulario al hacer clic en Nuevo Usuario', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<UsersPage />);
-
-      await user.click(screen.getByText('Nuevo Usuario'));
-
-      await waitFor(() => {
-        expect(screen.getByTestId('user-form-modal')).toBeInTheDocument();
-      });
     });
   });
 

@@ -3,9 +3,10 @@
  *
  * Sistema RBAC v3.3.0:
  * - Cargo: Define permisos base (configurados en Configuracion > Cargos)
- * - Roles Adicionales: Roles especiales (COPASST, Brigadista) gestionados en Talento Humano
  *
  * Los permisos se heredan automaticamente del Cargo asignado.
+ * Este formulario crea SOLO identidad digital (User + TenantUser).
+ * Para empleados completos usar Mi Equipo > Colaboradores.
  */
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -13,13 +14,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
   User as UserIcon,
-  Award,
   Info,
   ChevronDown,
   ChevronUp,
   HelpCircle,
   Building2,
-  Lock,
   Shield,
   AlertTriangle,
   Fingerprint,
@@ -31,10 +30,7 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { useAuthStore } from '@/store/authStore';
 import type { User, CreateUserDTO, UpdateUserDTO, Cargo, NivelFirma } from '@/types/users.types';
-import {
-  NIVEL_FIRMA_LABELS,
-  NIVEL_FIRMA_DESCRIPTIONS,
-} from '@/types/users.types';
+import { NIVEL_FIRMA_LABELS, NIVEL_FIRMA_DESCRIPTIONS } from '@/types/users.types';
 
 // =============================================================================
 // SCHEMAS
@@ -87,8 +83,6 @@ type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 const HELP_TEXTS = {
   cargo:
     'El cargo define la posición en el organigrama y otorga permisos automáticamente (configurados en Cargos).',
-  rolesAdicionales:
-    'Roles especiales (COPASST, Brigadista, Auditor) se asignan desde Talento Humano > Roles Adicionales.',
 };
 
 // =============================================================================
@@ -514,55 +508,6 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
 
         {/* SECCIÓN 3: NIVEL DE FIRMA DIGITAL (solo edición) */}
         {isEditMode && user && <NivelFirmaSection user={user} />}
-
-        {/* SECCIÓN 4: ROLES ADICIONALES (SOLO INFO) */}
-        <Section
-          title="Roles Adicionales"
-          icon={<Award className="w-5 h-5" />}
-          helpText={HELP_TEXTS.rolesAdicionales}
-          defaultOpen={false}
-          badge={
-            user?.roles_adicionales &&
-            user.roles_adicionales.length > 0 && (
-              <Badge variant="warning" size="sm">
-                {user.roles_adicionales.length} asignados
-              </Badge>
-            )
-          }
-        >
-          <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <div className="flex items-start gap-3">
-              <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  Gestión de Roles Adicionales
-                </p>
-                <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
-                  Roles especiales como <strong>COPASST</strong>, <strong>Brigadista</strong>,{' '}
-                  <strong>Auditor ISO</strong>, etc. se asignan desde el módulo de Talento Humano.
-                </p>
-                <p className="text-xs text-amber-500 dark:text-amber-400 mt-2">
-                  Ir a: Talento Humano &rarr; Roles Adicionales
-                </p>
-
-                {user?.roles_adicionales && user.roles_adicionales.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-700">
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-2">
-                      Roles asignados actualmente:
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {user.roles_adicionales.map((ra) => (
-                        <Badge key={ra.id} variant="warning" size="sm">
-                          {ra.nombre}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Section>
 
         {/* FOOTER */}
         <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">

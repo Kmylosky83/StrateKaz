@@ -448,7 +448,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 'cargo_id': 'El cargo seleccionado no está activo'
             })
 
-        # C6: Validar que el cargo tenga área asignada (requerido para auto-crear Colaborador)
+        # C6: Validar que el cargo tenga área asignada (requerido para estructura organizacional)
         # Excepción: cargos externos (proveedores/clientes) no necesitan área
         if cargo and not getattr(cargo, 'is_externo', False) and not cargo.area:
             raise serializers.ValidationError({
@@ -484,11 +484,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
 
-        # Crear usuario con password hasheado
-        user = User.objects.create_user(
-            password=password,
-            **validated_data
+        # Crear usuario con password hasheado.
+        # _from_contratacion=True evita que el signal auto_create_colaborador
+        # cree un Colaborador con datos incompletos.  Colaboradores se crean
+        # exclusivamente desde Mi Equipo > Colaboradores (fuente de verdad).
+        validated_data['email'] = User.objects.normalize_email(
+            validated_data.get('email', '')
         )
+        user = User(**validated_data)
+        user.set_password(password)
+        user._from_contratacion = True
+        user.save()
 
         # Siempre generar setup token y enviar invitación (A6)
         try:

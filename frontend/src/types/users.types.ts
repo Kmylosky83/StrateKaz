@@ -79,21 +79,6 @@ export interface User {
   nivel_firma_manual?: boolean;
 }
 
-export interface CreateUserDTO {
-  username: string;
-  email: string;
-  password: string;
-  password_confirm: string;
-  first_name: string;
-  last_name: string;
-  cargo_id: number;
-  phone?: string;
-  document_type: string;
-  document_number: string;
-  is_active?: boolean;
-  is_staff?: boolean;
-}
-
 export interface UpdateUserDTO {
   username?: string;
   email?: string;

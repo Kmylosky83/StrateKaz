@@ -946,7 +946,6 @@ class ActiveRelationValidator:
     Valida que un objeto relacionado este activo.
 
     Patron encontrado en:
-    - UserCreateSerializer.validate (cargo activo)
     - UserUpdateSerializer.validate_cargo_id
 
     Usage:

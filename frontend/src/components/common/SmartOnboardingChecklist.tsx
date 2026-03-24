@@ -264,10 +264,22 @@ export const SmartOnboardingChecklist = () => {
               initial="hidden"
               animate="visible"
             >
-              {onboarding.steps.map((step) => {
+              {onboarding.steps.map((step, index) => {
                 const StepIcon = resolveIcon(step.icon, step.key);
+                // Separador visual para admin: "Config empresa" vs "Tu perfil"
+                const showAdminDivider =
+                  onboarding.onboarding_type === 'admin' && index > 0 && step.key === 'perfil';
                 return (
                   <motion.div key={step.key} variants={itemVariants}>
+                    {showAdminDivider && (
+                      <div className="flex items-center gap-2 py-2 px-3">
+                        <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                          Tu perfil
+                        </span>
+                        <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
+                      </div>
+                    )}
                     <Link
                       to={step.link}
                       className={cn(

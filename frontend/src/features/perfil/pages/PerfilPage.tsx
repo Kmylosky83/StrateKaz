@@ -36,12 +36,16 @@ export const PerfilPage = () => {
     resetHeader();
   }, [resetHeader]);
 
+  const isSuperAdmin = user?.is_superuser;
+
   const displayName =
     user?.first_name && user?.last_name
       ? `${user.first_name} ${user.last_name}`
       : user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
-  const cargoName = user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
+  const cargoName = isSuperAdmin
+    ? 'Administrador del Sistema'
+    : user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
   const areaName = user?.area_nombre || user?.cargo?.area_nombre || '-';
   const empresaName = user?.empresa_nombre || '-';
 
@@ -111,25 +115,36 @@ export const PerfilPage = () => {
                 icon={IdCard}
                 label="Documento"
                 value={
-                  user?.document_number
-                    ? `${user.document_type_display || user.document_type} ${user.document_number}`
-                    : '-'
+                  user?.document_number?.startsWith('TEMP-')
+                    ? 'Sin configurar — Edita tu perfil'
+                    : user?.document_number
+                      ? `${user.document_type_display || user.document_type} ${user.document_number}`
+                      : '-'
                 }
               />
             </div>
           </div>
 
-          {/* Información Laboral */}
+          {/* Información Laboral / Rol */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-primary-500" />
-              Información Laboral
+              {isSuperAdmin ? 'Rol en el Sistema' : 'Información Laboral'}
             </h3>
             <div className="space-y-3 pl-7">
-              <InfoItem icon={Building2} label="Empresa" value={empresaName} />
-              <InfoItem icon={Briefcase} label="Proceso" value={areaName} />
-              <InfoItem icon={User} label="Cargo" value={cargoName} />
-              <InfoItem icon={Calendar} label="Fecha de ingreso" value={dateJoined} />
+              {isSuperAdmin ? (
+                <>
+                  <InfoItem icon={User} label="Rol" value="Administrador del Sistema" />
+                  <InfoItem icon={Building2} label="Empresa" value={empresaName} />
+                </>
+              ) : (
+                <>
+                  <InfoItem icon={Building2} label="Empresa" value={empresaName} />
+                  <InfoItem icon={Briefcase} label="Proceso" value={areaName} />
+                  <InfoItem icon={User} label="Cargo" value={cargoName} />
+                  <InfoItem icon={Calendar} label="Fecha de ingreso" value={dateJoined} />
+                </>
+              )}
             </div>
           </div>
         </div>

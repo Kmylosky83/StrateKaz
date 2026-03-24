@@ -33,6 +33,7 @@ export const miPortalKeys = {
   recibos: () => [...miPortalKeys.all, 'recibos'] as const,
   capacitaciones: () => [...miPortalKeys.all, 'capacitaciones'] as const,
   evaluacion: () => [...miPortalKeys.all, 'evaluacion'] as const,
+  adminStats: () => [...miPortalKeys.all, 'admin-stats'] as const,
 };
 
 // ============================================================================
@@ -114,9 +115,7 @@ export function useFirmaGuardada() {
   return useQuery({
     queryKey: firmaGuardadaKeys.detail(),
     queryFn: async (): Promise<FirmaGuardadaResponse> => {
-      const response = await api.get<FirmaGuardadaResponse>(
-        '/core/users/firma-guardada/'
-      );
+      const response = await api.get<FirmaGuardadaResponse>('/core/users/firma-guardada/');
       return response.data;
     },
     staleTime: 30 * 60 * 1000,
@@ -294,6 +293,39 @@ export function useMiEvaluacion(enabled = true) {
       return response.data;
     },
     staleTime: 10 * 60 * 1000,
+    enabled,
+  });
+}
+
+// ============================================================================
+// HOOKS - ADMIN STATS (superadmin dashboard en Mi Portal)
+// ============================================================================
+
+export interface AdminStats {
+  total: number;
+  active: number;
+  inactive: number;
+  deleted: number;
+  internos: number;
+  externos: number;
+  by_cargo: Array<{ cargo__name: string | null; cargo__code: string | null; count: number }>;
+  by_origen: {
+    colaborador: number;
+    proveedor_portal: number;
+    proveedor_profesional: number;
+    cliente_portal: number;
+    manual: number;
+  };
+}
+
+export function useAdminStats(enabled = true) {
+  return useQuery({
+    queryKey: miPortalKeys.adminStats(),
+    queryFn: async () => {
+      const response = await api.get<AdminStats>('/core/users/stats/');
+      return response.data;
+    },
+    staleTime: 60 * 1000,
     enabled,
   });
 }

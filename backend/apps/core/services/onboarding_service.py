@@ -90,7 +90,11 @@ class OnboardingService:
         has_firma = bool(getattr(user, 'firma_guardada', None))
 
         # ── 3. Contacto de emergencia (via InfoPersonal en mi_equipo) ─
-        has_emergencia = OnboardingService._check_emergencia(user)
+        # Superadmin: no aplica (identidad de plataforma, no empleado)
+        if getattr(user, 'is_superuser', False):
+            has_emergencia = False
+        else:
+            has_emergencia = OnboardingService._check_emergencia(user)
 
         # ── 4. Porcentaje de perfil ───────────────────────────────────
         profile_percentage = OnboardingService._calc_profile_percentage(
@@ -374,7 +378,28 @@ class OnboardingService:
         - InfoPersonal.direccion, InfoPersonal.ciudad
         - User.first_name/last_name (nombre_completo)
         - User.document_number (documento)
+
+        Superadmin tiene pesos simplificados (sin dependencia de Colaborador).
         """
+        # ── Superadmin: pesos simplificados (identidad de plataforma) ──
+        if getattr(user, 'is_superuser', False):
+            earned = 0
+            if has_photo:
+                earned += 20
+            if has_firma:
+                earned += 25
+            nombre = (
+                f"{getattr(user, 'first_name', '') or ''} "
+                f"{getattr(user, 'last_name', '') or ''}"
+            ).strip()
+            if nombre:
+                earned += 20
+            doc = getattr(user, 'document_number', '') or ''
+            if doc and not doc.startswith('TEMP-'):
+                earned += 35
+            return min(earned, 100)
+
+        # ── Usuario regular: pesos completos ──
         weights = OnboardingService._PROFILE_WEIGHTS
         earned = 0
 

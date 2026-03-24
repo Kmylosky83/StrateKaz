@@ -382,6 +382,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
         # Solo permitir actualizar campos específicos de perfil
         allowed_fields = ['first_name', 'last_name', 'email', 'phone']
+        # Superadmin puede editar su documento (reemplazar TEMP-xxx)
+        if user.is_superuser:
+            allowed_fields += ['document_type', 'document_number']
         data = {k: v for k, v in request.data.items() if k in allowed_fields}
 
         # Usar serializer de actualización

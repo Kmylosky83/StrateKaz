@@ -31,10 +31,10 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Badge de completitud del perfil.
-  // No mostrar para superadmins sin cargo (no tienen Colaborador, nunca llegan a 100%).
+  // Superadmins ahora tienen pesos simplificados (foto, firma, documento, nombre).
   const hasCargo = !!user?.cargo;
   const isSuperAdmin = user?.is_superuser;
-  const shouldFetchProfile = !!user && (!isSuperAdmin || hasCargo);
+  const shouldFetchProfile = !!user;
   const { data: profileData } = useProfileCompleteness(shouldFetchProfile);
   const profilePercentage = profileData?.percentage ?? null;
   const showProfileBadge =
@@ -88,7 +88,9 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const _firstName = user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
   // Cargo y contexto organizacional
-  const cargoName = user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
+  const cargoName = isSuperAdmin
+    ? 'Administrador del Sistema'
+    : user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
   const areaName = user?.area_nombre || user?.cargo?.area_nombre;
   const empresaName = user?.empresa_nombre;
 

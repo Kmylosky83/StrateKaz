@@ -560,6 +560,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'last_name',
             'email',
             'phone',
+            'document_type',
+            'document_number',
             'cargo_id',
             'proveedor_id',
             'is_active',
@@ -589,6 +591,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         user_id = self.instance.id if self.instance else None
         if User.objects.filter(email=value).exclude(id=user_id).exists():
             raise serializers.ValidationError('Este email ya está registrado')
+        return value
+
+    def validate_document_number(self, value):
+        """Validar unicidad de documento (excluyendo el usuario actual)"""
+        if not value:
+            return value
+        user_id = self.instance.id if self.instance else None
+        if User.objects.filter(document_number=value).exclude(id=user_id).exists():
+            raise serializers.ValidationError(
+                'Este número de documento ya está registrado'
+            )
         return value
 
     def validate_cargo_id(self, value):

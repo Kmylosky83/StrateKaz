@@ -356,3 +356,106 @@ Detalle completo en auto-memory `deploy.md`.
 Archivos: `.env.example` (root) | `.env.production.example` | `backend/.env.example` | `frontend/.env.example`
 
 Variables criticas: `SECRET_KEY`, `DJANGO_SETTINGS_MODULE`, `DB_*` (PostgreSQL django-tenants), `REDIS_URL`, `CELERY_BROKER_URL`, `VITE_API_URL`, `JWT_*_LIFETIME`, `SENTRY_DSN` (prod).
+
+---
+
+## Gestion de Usuarios — Arquitectura Centralizada
+
+### Quien crea cada tipo de usuario
+
+| Tipo | Creado desde | Endpoint/UI | Crea User? | Crea Colaborador? |
+|------|-------------|-------------|------------|-------------------|
+| Colaborador (empleado) | Mi Equipo > Colaboradores | `/api/talent-hub/colaboradores/` | Si (signal) | Si |
+| Contratista externo | Mi Equipo > Colaboradores | Mismo, con `is_externo=True` en Cargo | Si (signal) | Si |
+| Proveedor portal | Supply Chain > Proveedores | Futuro | Si | No |
+| Cliente portal | Sales CRM > Clientes | Futuro | Si | No |
+| Admin tenant | Admin Global (DB por ahora) | No hay UI | Manual DB | No |
+| Superadmin | Admin Global (DB) | No hay UI | Manual DB | No |
+
+### Gestion de Usuarios (`/usuarios`) — Solo lectura + control
+
+La pagina de Gestion de Usuarios **NO tiene boton de crear**. Es un centro de control:
+- Lista todos los usuarios del tenant (cualquier origen)
+- Filtros por origen: colaborador, proveedor, cliente, manual
+- Impersonacion (con 2FA via TOTP)
+- Ver detalle, estado, nivel de firma
+- Activar / Desactivar usuarios
+- **NO crear, NO editar cargo** (eso se hace en el modulo origen)
+
+### Regla: NUNCA crear usuarios desde el tenant
+
+El modal "Nuevo Usuario" fue eliminado (2026-03-24). La creacion de usuarios
+se hace exclusivamente desde el modulo que los necesita (Colaboradores, Proveedores, etc).
+
+---
+
+## Estrategia de Apps y Cascada de Desarrollo
+
+### INSTALLED_APPS: 3 entornos, 3 estrategias
+
+| Entorno | Settings | Apps habilitadas | Proposito |
+|---------|----------|-----------------|-----------|
+| **Produccion** | `base.py` | Solo apps estabilizadas | Estabilidad del VPS |
+| **Desarrollo** | `development.py` | base + django_extensions | Desarrollo local |
+| **Testing/CI** | `testing.py` | TODAS las apps | pytest puede importar cualquier modelo |
+
+### Como habilitar una app nueva en produccion
+
+1. Verificar que la app tenga migraciones y seeds listos
+2. Descomentar la app en `base.py` (TENANT_APPS)
+3. Correr `migrate_schemas` en el VPS
+4. Si tiene tareas Celery, descomentar en `config/celery.py` beat_schedule
+5. Deploy con `bash scripts/deploy.sh`
+
+### Como proteger codigo que referencia apps no instaladas
+
+```python
+# En views/urls que dependen de apps opcionales:
+from django.apps import apps
+
+if apps.is_installed('apps.talent_hub.nomina'):
+    from .views import MisRecibosView
+    urlpatterns.append(path('mis-recibos/', MisRecibosView.as_view()))
+
+# En querysets:
+try:
+    Colaborador = apps.get_model('colaboradores', 'Colaborador')
+except LookupError:
+    pass  # App no instalada, skip silenciosamente
+```
+
+### Regla: NUNCA habilitar apps en base.py solo para que el CI pase
+
+Si el CI falla por apps no instaladas, la solucion es:
+1. Agregar guards defensivos (`is_installed`, `try/except LookupError`)
+2. Habilitar en `testing.py` (no afecta produccion)
+3. Marcar el step como `continue-on-error` en ci.yml
+
+---
+
+## CI/CD — Estado Actual (2026-03-24)
+
+### Pasos bloqueantes (deben pasar para CI verde)
+
+- Django checks + migraciones + collectstatic
+- TypeScript type checking + ESLint (max-warnings=0)
+- Vite production build
+
+### Pasos informativos (reportan pero no bloquean)
+
+- pytest, vitest (tests en desarrollo)
+- Black, Ruff (formateo en refactorizacion)
+- pip-audit, npm audit (vulns en dependencias)
+
+### Dependabot
+
+- Solo Alerts + Security Updates habilitados (NO version updates)
+- PRs agrupados por ecosistema (pip/npm)
+- **NUNCA mergear sin verificar compatibilidad cruzada**
+- Major versions requieren actualizacion manual y testing
+
+### Deploy
+
+```bash
+cd /opt/stratekaz && bash scripts/deploy.sh --no-backup
+```

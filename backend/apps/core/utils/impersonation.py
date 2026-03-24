@@ -84,7 +84,7 @@ def get_effective_user(request):
     try:
         User = get_user_model()
         target_user = User.objects.select_related(
-            'cargo', 'cargo__area', 'proveedor', 'cliente'
+            'cargo', 'cargo__area'
         ).get(
             pk=int(impersonated_id),
             is_active=True,

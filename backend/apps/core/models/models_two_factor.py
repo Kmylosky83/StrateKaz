@@ -107,10 +107,13 @@ class TwoFactorAuth(models.Model):
         return f"data:image/png;base64,{img_str}"
 
     def verify_token(self, token):
-        """Verifica un código TOTP de 6 dígitos."""
+        """Verifica un código TOTP de 6 dígitos.
+
+        valid_window=2 acepta ±60 seg de tolerancia (desfase de reloj).
+        """
         raw_secret = self._get_raw_secret()
         totp = pyotp.TOTP(raw_secret)
-        return totp.verify(token, valid_window=1)
+        return totp.verify(token, valid_window=2)
 
     def generate_backup_codes(self, count=10):
         """Genera códigos de respaldo y retorna los códigos sin hashear."""

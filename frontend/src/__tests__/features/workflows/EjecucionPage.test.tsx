@@ -81,10 +81,8 @@ vi.mock('sonner', () => ({
 }));
 
 import {
-  useMisTareas,
   useEstadisticasTareas,
   useEstadisticasInstancias,
-  useInstancias,
 } from '@/features/workflows/hooks/useWorkflows';
 
 describe('EjecucionPage', () => {

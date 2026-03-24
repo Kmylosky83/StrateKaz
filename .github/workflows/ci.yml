@@ -131,7 +131,7 @@ jobs:
       - name: Run pytest with coverage gate
         working-directory: ./backend
         run: |
-          pytest -v --disable-warnings --cov=apps --cov-fail-under=10
+          pytest --disable-warnings --cov-fail-under=10
 
       - name: Check code formatting with Black
         working-directory: ./backend

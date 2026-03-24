@@ -382,21 +382,20 @@ class OnboardingService:
         Superadmin tiene pesos simplificados (sin dependencia de Colaborador).
         """
         # ── Superadmin: pesos simplificados (identidad de plataforma) ──
+        # Sin firma: superadmin no participa en workflows de firma documental.
         if getattr(user, 'is_superuser', False):
             earned = 0
             if has_photo:
-                earned += 20
-            if has_firma:
                 earned += 25
             nombre = (
                 f"{getattr(user, 'first_name', '') or ''} "
                 f"{getattr(user, 'last_name', '') or ''}"
             ).strip()
             if nombre:
-                earned += 20
+                earned += 30
             doc = getattr(user, 'document_number', '') or ''
             if doc and not doc.startswith('TEMP-'):
-                earned += 35
+                earned += 45
             return min(earned, 100)
 
         # ── Usuario regular: pesos completos ──
@@ -460,11 +459,12 @@ class OnboardingService:
         """
         onboarding_type = onboarding.onboarding_type
 
-        # Paso de perfil: foto + firma para admin/jefe/contratista, solo foto para empleado
+        # Paso de perfil: foto + firma para jefe/contratista, solo foto para admin/empleado
         perfil_completo = has_photo and has_firma
 
         if onboarding_type == 'admin':
-            return OnboardingService._calc_admin_steps(user, perfil_completo)
+            # Superadmin: solo foto (no firma — no participa en workflows)
+            return OnboardingService._calc_admin_steps(user, has_photo)
 
         if onboarding_type == 'jefe':
             has_emergencia = onboarding.has_emergencia
@@ -519,7 +519,7 @@ class OnboardingService:
         - identidad:        CorporateIdentity tiene misión y visión
         - valores:          CorporateValue existe al menos uno
         - estructura:       Area y Cargo existen
-        - perfil:           has_photo y has_firma
+        - perfil:           has_photo (superadmin no firma documentos)
         - invitar:          existe al menos un User activo no superuser
         - primer_documento: existe al menos un Documento creado por este usuario
         """

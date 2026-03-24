@@ -17,6 +17,7 @@ import type { StatItem } from '@/components/layout';
 import { UsersTable } from '../components/UsersTable';
 import { UserForm } from '../components/UserForm';
 import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
+import { ImpersonateVerifyModal } from '../components/ImpersonateVerifyModal';
 import {
   useUsers,
   useCargos,
@@ -64,6 +65,7 @@ export default function UsersPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | undefined>();
   const [userToDelete, setUserToDelete] = useState<User | undefined>();
+  const [impersonateTarget, setImpersonateTarget] = useState<User | null>(null);
 
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargosData } = useCargos();
@@ -139,14 +141,24 @@ export default function UsersPage() {
     }
   };
 
-  const handleImpersonate = async (user: User) => {
+  const handleImpersonate = (user: User) => {
+    // Si el superadmin tiene 2FA, abrir modal de verificación primero
+    if (currentUser?.has_2fa_enabled) {
+      setImpersonateTarget(user);
+      return;
+    }
+    // Sin 2FA: impersonar directo
+    executeImpersonation(user.id);
+  };
+
+  const executeImpersonation = async (userId: number, token?: string) => {
     try {
-      await startUserImpersonation(user.id);
-      // Limpiar cache de módulos para que se carguen con permisos del usuario impersonado
+      await startUserImpersonation(userId, token);
       queryClient.removeQueries({ queryKey: ['modules'] });
-      // Navegar según tipo de usuario
-      if (isPortalOnlyUser(user)) {
-        const isCliente = user.cargo?.code === 'CLIENTE_PORTAL';
+      // Buscar usuario para determinar navegación
+      const targetUser = users.find((u) => u.id === userId);
+      if (targetUser && isPortalOnlyUser(targetUser)) {
+        const isCliente = targetUser.cargo?.code === 'CLIENTE_PORTAL';
         navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
       } else {
         navigate('/dashboard');
@@ -334,6 +346,19 @@ export default function UsersPage() {
         onConfirm={handleConfirmDelete}
         userName={userToDelete?.full_name || ''}
         isLoading={deleteUserMutation.isPending}
+      />
+
+      {/* Modal 2FA para impersonación */}
+      <ImpersonateVerifyModal
+        isOpen={!!impersonateTarget}
+        onClose={() => setImpersonateTarget(null)}
+        targetUser={impersonateTarget}
+        onVerified={(token) => {
+          if (impersonateTarget) {
+            executeImpersonation(impersonateTarget.id, token);
+            setImpersonateTarget(null);
+          }
+        }}
       />
     </div>
   );

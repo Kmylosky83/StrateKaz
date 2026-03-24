@@ -95,18 +95,16 @@ def _build_missing_fields(onboarding) -> list:
     user = onboarding.user
 
     # ── Superadmin: solo campos de identidad de plataforma ──
+    # Sin firma: superadmin no participa en workflows de firma documental.
     if getattr(user, 'is_superuser', False):
         _ADMIN_FIELDS = {
-            'photo':           {'label': 'Foto de perfil',      'weight': 20},
-            'firma':           {'label': 'Firma digital',        'weight': 25},
-            'nombre_completo': {'label': 'Nombre completo',      'weight': 20},
-            'documento':       {'label': 'Documento de identidad', 'weight': 35},
+            'photo':           {'label': 'Foto de perfil',        'weight': 25},
+            'nombre_completo': {'label': 'Nombre completo',        'weight': 30},
+            'documento':       {'label': 'Documento de identidad', 'weight': 45},
         }
         completed = set()
         if onboarding.has_photo:
             completed.add('photo')
-        if onboarding.has_firma:
-            completed.add('firma')
         nombre = (
             f"{getattr(user, 'first_name', '') or ''} "
             f"{getattr(user, 'last_name', '') or ''}"
@@ -210,11 +208,26 @@ def _build_next_action(missing_fields: list) -> dict | None:
         'documento':       '/mi-portal?tab=perfil',
     }
 
+    # Superadmin: redirigir a /perfil (no tiene tabs de Mi Portal ESS)
+    _ADMIN_FIELD_LINKS = {
+        'photo':           '/perfil',
+        'nombre_completo': '/perfil',
+        'documento':       '/perfil',
+    }
+
     top = missing_fields[0]
+    user = getattr(missing_fields, '_user', None)
+    # Detectar si es superadmin por los campos: admin solo tiene photo/nombre/documento
+    is_admin_fields = all(
+        f['field'] in ('photo', 'nombre_completo', 'documento')
+        for f in missing_fields
+    )
+    links = _ADMIN_FIELD_LINKS if is_admin_fields else _FIELD_LINKS
+
     return {
         'field': top['field'],
         'label': top['label'],
-        'link':  _FIELD_LINKS.get(top['field'], '/mi-portal?tab=perfil'),
+        'link':  links.get(top['field'], '/perfil' if is_admin_fields else '/mi-portal?tab=perfil'),
     }
 
 

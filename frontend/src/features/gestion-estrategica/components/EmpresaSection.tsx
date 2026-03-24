@@ -86,7 +86,8 @@ export const EmpresaSection = () => {
   const { data: tenant, isLoading } = useCurrentTenant();
   const updateMutation = useUpdateCurrentTenant();
   const { canDo } = usePermissions();
-  const canEdit = canDo(Modules.FUNDACION, Sections.EMPRESA, 'edit');
+  // TODO: usar canEdit para condicionar botón de edición cuando se implemente RBAC en esta sección
+  const _canEdit = canDo(Modules.FUNDACION, Sections.EMPRESA, 'edit');
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<EditableFields>({});

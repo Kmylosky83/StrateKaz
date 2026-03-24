@@ -86,7 +86,7 @@ const UPCOMING_FEATURES: FeatureCard[] = [
 
 export function PortalClienteView() {
   const user = useAuthStore((s) => s.user);
-  const { primaryColor, companyName } = useBrandingConfig();
+  const { primaryColor: _primaryColor, companyName } = useBrandingConfig();
 
   const clienteNombre = user?.cliente_nombre || 'Cliente';
   const BLUE = '#3B82F6';

@@ -86,7 +86,7 @@ const UPCOMING_FEATURES: FeatureCard[] = [
 
 export function PortalProveedorView() {
   const user = useAuthStore((s) => s.user);
-  const { primaryColor, companyName } = useBrandingConfig();
+  const { primaryColor: _primaryColor, companyName } = useBrandingConfig();
 
   const proveedorNombre = user?.proveedor_nombre || 'Proveedor';
   const GREEN = '#10B981';

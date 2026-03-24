@@ -33,7 +33,8 @@ import { NormaISOFormModal } from './modals/NormaISOFormModal';
 import type { NormaISO } from '../api/strategicApi';
 
 export const NormasISOSection = () => {
-  const { canDo } = usePermissions();
+  // TODO: usar canDo para condicionar acciones CRUD cuando se implemente RBAC en esta sección
+  const { canDo: _canDo } = usePermissions();
   const { data: normasData, isLoading } = useNormasISO();
   const deleteMutation = useDeleteNormaISO();
 

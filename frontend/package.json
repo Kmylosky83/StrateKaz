@@ -58,7 +58,7 @@
     "echarts-stat": "^1.2.0",
     "framer-motion": "^12.23.26",
     "html-to-image": "^1.11.13",
-    "jspdf": "^2.5.2",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.468.0",
     "nipplejs": "^0.10.2",
     "phaser": "^3.90.0",

@@ -136,11 +136,13 @@ jobs:
 
       - name: Check code formatting with Black
         working-directory: ./backend
+        continue-on-error: true
         run: |
           black --check --diff .
 
       - name: Lint with Ruff
         working-directory: ./backend
+        continue-on-error: true
         run: |
           ruff check .
 

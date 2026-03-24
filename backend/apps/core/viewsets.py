@@ -596,13 +596,13 @@ class UserViewSet(viewsets.ModelViewSet):
         is_backup = False
         backup_remaining = None
         if two_factor.verify_token(code):
-            log_2fa_verified(request)
+            log_2fa_verified(request, request.user, method='totp')
         elif two_factor.verify_backup_code(code):
             is_backup = True
             backup_remaining = two_factor.get_remaining_backup_codes_count()
-            log_backup_code_used(request)
+            log_backup_code_used(request, request.user)
         else:
-            log_2fa_failed(request)
+            log_2fa_failed(request, request.user.username, reason='invalid_code')
             log_impersonation_failed(
                 request, target_user.username, reason='2fa_verification_failed'
             )

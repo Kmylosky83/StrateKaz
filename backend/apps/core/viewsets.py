@@ -147,13 +147,14 @@ class UserViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(cargo__is_externo=True)
 
         # Filtro por origen
+        # NOTA: proveedor_id_ext y cliente_id_ext son IntegerField (NO FK)
         origen = self.request.query_params.get('origen', '')
         if origen == 'proveedor_portal':
-            queryset = queryset.filter(proveedor__isnull=False, cargo__code='PROVEEDOR_PORTAL')
+            queryset = queryset.filter(proveedor_id_ext__isnull=False, cargo__code='PROVEEDOR_PORTAL')
         elif origen == 'proveedor_profesional':
-            queryset = queryset.filter(proveedor__isnull=False).exclude(cargo__code='PROVEEDOR_PORTAL')
+            queryset = queryset.filter(proveedor_id_ext__isnull=False).exclude(cargo__code='PROVEEDOR_PORTAL')
         elif origen == 'cliente_portal':
-            queryset = queryset.filter(cliente__isnull=False)
+            queryset = queryset.filter(cliente_id_ext__isnull=False)
         elif origen == 'colaborador':
             try:
                 from django.apps import apps
@@ -168,11 +169,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 Colaborador = apps.get_model('colaboradores', 'Colaborador')
                 colab_user_ids = Colaborador.objects.values_list('usuario_id', flat=True)
                 queryset = queryset.filter(
-                    proveedor__isnull=True,
-                    cliente__isnull=True,
+                    proveedor_id_ext__isnull=True,
+                    cliente_id_ext__isnull=True,
                 ).exclude(id__in=colab_user_ids)
             except LookupError:
-                queryset = queryset.filter(proveedor__isnull=True, cliente__isnull=True)
+                queryset = queryset.filter(proveedor_id_ext__isnull=True, cliente_id_ext__isnull=True)
 
         # Annotate _has_colaborador para evitar N+1 en serializer
         try:

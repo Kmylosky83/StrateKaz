@@ -159,28 +159,24 @@ app.conf.beat_schedule = {
 
     # ═══════════════════════════════════════════════════
     # CONTROL DE TIEMPO - ASISTENCIA Y MARCAJES
+    # TODO: Descomentar cuando apps.talent_hub.control_tiempo esté en INSTALLED_APPS
     # ═══════════════════════════════════════════════════
 
-    # Detectar ausencias no registradas del día anterior - Diario a las 11 PM
-    'ct-detectar-ausencias-diarias': {
-        'task': 'control_tiempo.detectar_ausencias_diarias',
-        'schedule': crontab(hour=23, minute=0),
-        'options': {'queue': 'notifications'},
-    },
-
-    # Auto-generar consolidados del mes anterior - Día 1 de cada mes a las 2 AM
-    'ct-generar-consolidados-mensuales': {
-        'task': 'control_tiempo.generar_consolidados_mensuales',
-        'schedule': crontab(hour=2, minute=0, day_of_month=1),
-        'options': {'queue': 'reports'},
-    },
-
-    # Recordar marcaje de salida pendiente - Cada 30 min (7 AM - 7 PM)
-    'ct-recordar-marcaje-pendiente': {
-        'task': 'control_tiempo.recordar_marcaje_pendiente',
-        'schedule': crontab(minute='*/30'),
-        'options': {'queue': 'notifications'},
-    },
+    # 'ct-detectar-ausencias-diarias': {
+    #     'task': 'control_tiempo.detectar_ausencias_diarias',
+    #     'schedule': crontab(hour=23, minute=0),
+    #     'options': {'queue': 'notifications'},
+    # },
+    # 'ct-generar-consolidados-mensuales': {
+    #     'task': 'control_tiempo.generar_consolidados_mensuales',
+    #     'schedule': crontab(hour=2, minute=0, day_of_month=1),
+    #     'options': {'queue': 'reports'},
+    # },
+    # 'ct-recordar-marcaje-pendiente': {
+    #     'task': 'control_tiempo.recordar_marcaje_pendiente',
+    #     'schedule': crontab(minute='*/30'),
+    #     'options': {'queue': 'notifications'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # WORKFLOW ENGINE - EJECUCIÓN DE FLUJOS

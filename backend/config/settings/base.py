@@ -205,16 +205,16 @@ TENANT_APPS = [
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 60: TALENTO — Gestión continua del colaborador
-    # Descomentar cuando Level 53 (Cadena de Valor) esté estabilizado
+    # Habilitadas: modelos ya referenciados en producción (Mi Portal, select-lists)
     # ═══════════════════════════════════════════════════════════════════════════
-    # 'apps.talent_hub.novedades',              # Vacaciones/Permisos
-    # 'apps.talent_hub.formacion_reinduccion',
-    # 'apps.talent_hub.desempeno',
-    # 'apps.talent_hub.control_tiempo',
-    # 'apps.talent_hub.nomina',
-    # 'apps.talent_hub.proceso_disciplinario',
-    # 'apps.talent_hub.off_boarding',
-    # 'apps.talent_hub.consultores_externos',
+    'apps.talent_hub.novedades',              # Vacaciones/Permisos
+    'apps.talent_hub.formacion_reinduccion',
+    'apps.talent_hub.desempeno',
+    'apps.talent_hub.control_tiempo',
+    'apps.talent_hub.nomina',
+    'apps.talent_hub.proceso_disciplinario',
+    'apps.talent_hub.off_boarding',
+    'apps.talent_hub.consultores_externos',
 
     # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 45: FINANZAS + CONTABILIDAD

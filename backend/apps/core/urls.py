@@ -15,7 +15,7 @@ NOTA: Branding se maneja ahora en /api/tenant/public/branding/
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import health_check, health_check_deep, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView, ResendSetupPasswordView
+from .views import health_check, health_check_deep, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView, ResendSetupPasswordView, mi_equipo_jefe
 from .views.onboarding_views import OnboardingView, OnboardingDismissView, OnboardingMarkStepView, OnboardingReopenView, ProfileCompletenessView
 from .views.org_templates_views import org_templates_list, org_templates_apply
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
@@ -157,6 +157,9 @@ urlpatterns = [
 
     # Completitud de perfil (B2)
     path('profile-completeness/', ProfileCompletenessView.as_view(), name='profile-completeness'),
+
+    # Mi Equipo Jefe — equipo directo basado en jerarquía de Cargo (Fundación)
+    path('mi-equipo-jefe/', mi_equipo_jefe, name='mi-equipo-jefe'),
 
     # Endpoints Sincronización de Secciones (RBAC v4.1)
     path('sections/all/', get_all_sections, name='sections-all'),

@@ -12,6 +12,7 @@ from .core_views import (
     test_celery_task,
     task_status,
     revoke_task,
+    mi_equipo_jefe,
 )
 
 from .auth_views import (
@@ -79,4 +80,6 @@ __all__ = [
     'OnboardingMarkStepView',
     'OnboardingReopenView',
     'ProfileCompletenessView',
+    # Mi Equipo Jefe
+    'mi_equipo_jefe',
 ]

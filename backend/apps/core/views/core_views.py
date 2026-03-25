@@ -530,3 +530,64 @@ def revoke_task(request, task_id):
             {'error': str(e)},
             status=http_status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+# ═══════════════════════════════════════════════════
+# MI EQUIPO (JEFE) — Jerarquía de Cargo (Fundación)
+# ═══════════════════════════════════════════════════
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mi_equipo_jefe(request):
+    """
+    Devuelve el equipo directo del usuario basado en la jerarquía de Cargo.
+
+    GET /api/core/mi-equipo-jefe/
+
+    La relación se define en Fundación: Cargo.parent_cargo (FK a sí mismo).
+    Si el cargo del usuario tiene subordinados (otros cargos que le reportan),
+    se devuelven los usuarios asignados a esos cargos.
+
+    Returns:
+        Lista de miembros del equipo con datos básicos.
+        [] si el usuario no tiene cargo o no tiene subordinados.
+    """
+    from apps.core.utils.impersonation import get_effective_user
+
+    user = get_effective_user(request)
+    cargo = getattr(user, 'cargo', None)
+
+    if not cargo:
+        return Response([])
+
+    # Cargos que reportan directamente a mi cargo
+    cargos_subordinados = cargo.subordinados.filter(is_active=True)
+
+    if not cargos_subordinados.exists():
+        return Response([])
+
+    # Usuarios asignados a esos cargos
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    equipo = User.objects.filter(
+        cargo__in=cargos_subordinados,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).select_related('cargo', 'cargo__area').order_by('first_name', 'last_name')
+
+    miembros = []
+    for u in equipo:
+        miembros.append({
+            'id': u.id,
+            'nombre_completo': u.get_full_name() or u.username,
+            'email': u.email,
+            'cargo_nombre': u.cargo.name if u.cargo else None,
+            'area_nombre': u.cargo.area.name if u.cargo and u.cargo.area else None,
+            'foto_url': u.photo.url if u.photo else None,
+            'is_active': u.is_active,
+            'is_externo': u.cargo.is_externo if u.cargo else False,
+            'last_login': u.last_login,
+        })
+
+    return Response(miembros)

@@ -367,7 +367,7 @@ function StatCard({
 function UserPortalView() {
   const user = useAuthStore((s) => s.user);
   const { primaryColor } = useBrandingConfig();
-  const { isExterno } = useIsExterno();
+  const { isExterno, isJefatura } = useIsExterno();
   const isSuperAdmin = useIsSuperAdmin();
   const { text: greetingText, Icon: GreetingIcon } = getGreeting();
   const currentDate = getCurrentDateFormatted();
@@ -432,6 +432,9 @@ function UserPortalView() {
             </div>
           </div>
         </Card>
+
+        {/* Sección Jefe/Líder — funciona sin Colaborador, solo necesita Cargo */}
+        {isJefatura && <JefePortalSection />}
 
         {/* Info: perfil pendiente */}
         <Card padding="none" className="overflow-hidden">

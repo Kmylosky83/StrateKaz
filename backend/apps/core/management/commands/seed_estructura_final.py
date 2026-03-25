@@ -324,7 +324,7 @@ class Command(BaseCommand):
             self.stdout.write('  Extrayendo tabs de talent_hub → mi_equipo...')
             target_module, _ = SystemModule.objects.get_or_create(
                 code='mi_equipo',
-                defaults={'name': 'Mi Equipo', 'orden': 20, 'is_enabled': True}
+                defaults={'name': 'Gestión de Personas', 'orden': 20, 'is_enabled': True}
             )
             for tab in mi_equipo_tabs:
                 tab.module = target_module
@@ -634,10 +634,10 @@ class Command(BaseCommand):
                 ]
             },
 
-            # ─── Nivel 4: MI EQUIPO ──────────────────────────────────────
+            # ─── Nivel 4: GESTIÓN DE PERSONAS ──────────────────────────────
             {
                 'code': 'mi_equipo',
-                'name': 'Mi Equipo',
+                'name': 'Gestión de Personas',
                 'description': 'Ciclo de vinculación del colaborador: perfil de cargo hasta onboarding completado',
                 'category': 'SUPPORT',
                 'color': 'sky',

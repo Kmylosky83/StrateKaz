@@ -549,35 +549,9 @@ export const Sidebar = ({
           </div>
         )}
 
-        {/* Mi Equipo - Solo visible para jefes (cargo con is_jefatura) */}
-        {!isAdminGlobalMode && user?.cargo?.is_jefatura && (
-          <div className="px-2 mb-2">
-            <Link
-              to="/mi-equipo"
-              className={cn(
-                'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
-                location.pathname === '/mi-equipo' || location.pathname.startsWith('/mi-equipo/')
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
-              )}
-            >
-              <Users
-                className={cn(
-                  'h-5 w-5 flex-shrink-0',
-                  location.pathname === '/mi-equipo' || location.pathname.startsWith('/mi-equipo/')
-                    ? 'text-blue-600 dark:text-blue-400'
-                    : 'text-gray-500 dark:text-gray-400'
-                )}
-              />
-              {!effectiveCollapsed && <span className="ml-3 font-medium">Mi Equipo</span>}
-              {effectiveCollapsed && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                  Mi Equipo
-                </div>
-              )}
-            </Link>
-          </div>
-        )}
+        {/* Mi Equipo (jefe) ELIMINADO del sidebar — ahora es sección en Mi Portal.
+            JefePortalSection se muestra dentro de Mi Portal cuando cargo.is_jefatura=true.
+            El módulo RRHH "Gestión de Personas" sigue en el sidebar dinámico. */}
 
         {/* Portal Proveedor ELIMINADO del sidebar:
             - Portal-only users usan PortalLayout (sin sidebar)

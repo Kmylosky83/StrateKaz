@@ -20,9 +20,8 @@ const MiPortalPage = lazy(() =>
 // const SSTGamePage = lazy(() =>
 //   import('@/features/sst-game').then((m) => ({ default: m.SSTGamePage }))
 // );
-const MiEquipoPage = lazy(() =>
-  import('@/features/mi-equipo').then((m) => ({ default: m.MiEquipoPage }))
-);
+// MiEquipoPage (MSS jefe) ELIMINADO — ahora es JefePortalSection dentro de Mi Portal.
+// El módulo RRHH "Gestión de Personas" se sirve desde mi-equipo.routes.tsx.
 // Portales desactivados — se reactivan con su level
 // const ProveedorPortalPage = lazy(() =>
 //   import('@/features/proveedor-portal').then((m) => ({ default: m.ProveedorPortalPage }))
@@ -37,7 +36,7 @@ export const portalsRoutes = (
     <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
     {/* Juego SST desactivado — requiere refactor completo */}
     {/* <Route path="/mi-portal/juego-sst" element={withSuspense(SSTGamePage)} /> */}
-    <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
+    {/* MiEquipoPage MSS eliminado — equipo del jefe vive en Mi Portal */}
 
     {/* Portales externos — redirigen a mi-portal donde la detección interna
         muestra PortalProveedorView o PortalClienteView según user.proveedor/cliente */}

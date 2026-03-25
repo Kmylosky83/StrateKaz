@@ -75,7 +75,7 @@ SIDEBAR_LAYERS = [
     },
     {
         'code': 'NIVEL_EQUIPO',
-        'name': 'Mi Equipo',
+        'name': 'Gestión de Personas',
         'icon': 'UserPlus',
         'color': '#0EA5E9',
         'phase': 'PLANEAR',

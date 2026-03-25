@@ -94,8 +94,11 @@ export const UserDetailDrawer = ({
   const detail = userDetail || user;
   if (!detail) return null;
 
+  const isSuperuser = detail.is_superuser;
   const showImpersonate =
-    canImpersonate && detail.id !== currentUserId && !detail.is_superuser && onImpersonate;
+    canImpersonate && detail.id !== currentUserId && !isSuperuser && onImpersonate;
+  // Superadmin no se puede desactivar — es el admin de plataforma
+  const showToggleStatus = onToggleStatus && !isSuperuser;
 
   const origenRoute = detail.origen ? ORIGEN_ROUTES[detail.origen] : null;
   const nivelFirma = (detail.nivel_firma || 1) as NivelFirma;
@@ -111,7 +114,7 @@ export const UserDetailDrawer = ({
         <div className="flex flex-col gap-2 w-full">
           {/* Acciones de control */}
           <div className="flex gap-2">
-            {onToggleStatus && (
+            {showToggleStatus && (
               <Button
                 variant={detail.is_active ? 'outline' : 'primary'}
                 size="sm"
@@ -220,11 +223,14 @@ export const UserDetailDrawer = ({
           <div className="space-y-1">
             <InfoItem icon={Mail} label="Correo electrónico" value={detail.email} />
 
-            <InfoItem
-              icon={Fingerprint}
-              label="Nivel de firma"
-              value={NIVEL_FIRMA_LABELS[nivelFirma]}
-            />
+            {/* Superadmin no participa en workflows de firma digital */}
+            {!isSuperuser && (
+              <InfoItem
+                icon={Fingerprint}
+                label="Nivel de firma"
+                value={NIVEL_FIRMA_LABELS[nivelFirma]}
+              />
+            )}
 
             <InfoItem
               icon={ShieldCheck}

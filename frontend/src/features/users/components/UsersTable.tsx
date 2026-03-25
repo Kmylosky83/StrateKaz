@@ -165,17 +165,20 @@ export const UsersTable = ({
                 });
               }
 
-              menuItems.push({
-                label: user.is_active ? 'Desactivar cuenta' : 'Activar cuenta',
-                icon: user.is_active ? (
-                  <UserX className="h-4 w-4" />
-                ) : (
-                  <UserCheck className="h-4 w-4" />
-                ),
-                onClick: () => onToggleStatus(user),
-                variant: user.is_active ? 'danger' : 'default',
-                divider: !user.origen || !ORIGEN_ROUTES[user.origen],
-              });
+              // Superadmin no se puede desactivar
+              if (!user.is_superuser) {
+                menuItems.push({
+                  label: user.is_active ? 'Desactivar cuenta' : 'Activar cuenta',
+                  icon: user.is_active ? (
+                    <UserX className="h-4 w-4" />
+                  ) : (
+                    <UserCheck className="h-4 w-4" />
+                  ),
+                  onClick: () => onToggleStatus(user),
+                  variant: user.is_active ? 'danger' : 'default',
+                  divider: !user.origen || !ORIGEN_ROUTES[user.origen],
+                });
+              }
 
               return (
                 <tr
@@ -237,36 +240,46 @@ export const UsersTable = ({
                     )}
                   </td>
 
-                  {/* Estado — Switch inline */}
+                  {/* Estado — Switch inline (superadmin: solo badge, no toggle) */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Switch
-                      size="sm"
-                      checked={user.is_active}
-                      onCheckedChange={() => onToggleStatus(user)}
-                    />
+                    {user.is_superuser ? (
+                      <Badge variant="success" size="sm">
+                        Activo
+                      </Badge>
+                    ) : (
+                      <Switch
+                        size="sm"
+                        checked={user.is_active}
+                        onCheckedChange={() => onToggleStatus(user)}
+                      />
+                    )}
                   </td>
 
-                  {/* Nivel Firma */}
+                  {/* Nivel Firma — Superadmin no participa en workflows de firma */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {(() => {
-                      const nivel = (user.nivel_firma || 1) as NivelFirma;
-                      const variant = NIVEL_FIRMA_COLORS[nivel] as BadgeVariant;
-                      return (
-                        <Badge
-                          variant={variant}
-                          size="sm"
-                          title={
-                            nivel === 1
-                              ? 'Sin 2FA al firmar'
-                              : nivel === 2
-                                ? 'TOTP obligatorio al firmar'
-                                : 'TOTP + Email OTP al firmar'
-                          }
-                        >
-                          {nivel === 1 ? 'N1' : nivel === 2 ? 'N2 TOTP' : 'N3 2FA'}
-                        </Badge>
-                      );
-                    })()}
+                    {user.is_superuser ? (
+                      <span className="text-xs text-gray-400">—</span>
+                    ) : (
+                      (() => {
+                        const nivel = (user.nivel_firma || 1) as NivelFirma;
+                        const variant = NIVEL_FIRMA_COLORS[nivel] as BadgeVariant;
+                        return (
+                          <Badge
+                            variant={variant}
+                            size="sm"
+                            title={
+                              nivel === 1
+                                ? 'Sin 2FA al firmar'
+                                : nivel === 2
+                                  ? 'TOTP obligatorio al firmar'
+                                  : 'TOTP + Email OTP al firmar'
+                            }
+                          >
+                            {nivel === 1 ? 'N1' : nivel === 2 ? 'N2 TOTP' : 'N3 2FA'}
+                          </Badge>
+                        );
+                      })()
+                    )}
                   </td>
 
                   {/* Fecha Registro */}

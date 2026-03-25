@@ -56,6 +56,7 @@ import {
   MiFirmaDigital,
   PortalProveedorView,
   PortalClienteView,
+  JefePortalSection,
 } from '../components';
 import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
@@ -487,7 +488,7 @@ export default function MiPortalPage() {
 
   // Perfil del colaborador — no disparar para superadmins (nunca tienen Colaborador)
   const { data: perfil, isLoading: perfilLoading } = useMiPerfil(!isSuperAdmin);
-  const { isExterno } = useIsExterno();
+  const { isExterno, isJefatura } = useIsExterno();
   const _hasPerfil = !!perfil;
 
   // Greeting
@@ -652,6 +653,12 @@ export default function MiPortalPage() {
             Se auto-oculta cuando el perfil llega al 100%
             ================================================================ */}
         <ProfileProgressBar />
+
+        {/* ================================================================
+            SECCION JEFE/LIDER (solo si is_jefatura)
+            Stats, equipo directo, aprobaciones pendientes
+            ================================================================ */}
+        {isJefatura && <JefePortalSection />}
 
         {/* ================================================================
             TABS

@@ -11,3 +11,4 @@ export { MiHSEQ } from './MiHSEQ';
 export { MiFirmaDigital } from './MiFirmaDigital';
 export { PortalProveedorView } from './PortalProveedorView';
 export { PortalClienteView } from './PortalClienteView';
+export { JefePortalSection } from './JefePortalSection';

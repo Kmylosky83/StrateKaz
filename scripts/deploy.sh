@@ -273,8 +273,8 @@ fi
 
 log_step "PASO 5: Restart Servicios"
 
-run_cmd "sudo systemctl restart $GUNICORN_SERVICE"
-log_info "Gunicorn reiniciado"
+run_cmd "sudo systemctl reload $GUNICORN_SERVICE"
+log_info "Gunicorn recargado (graceful reload)"
 
 run_cmd "sudo systemctl restart $CELERY_SERVICE"
 log_info "Celery reiniciado"

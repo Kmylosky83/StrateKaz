@@ -794,12 +794,19 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instance = self.instance
         if instance and instance.is_system:
-            # Los cargos del sistema tienen restricciones
+            # Los cargos del sistema no pueden cambiar nivel_jerarquico ni area
+            # Solo rechazar si el VALOR realmente cambió (no solo presencia en payload)
             non_editable = {'nivel_jerarquico', 'area'}
-            changed = set(attrs.keys()) & non_editable
-            if changed:
+            actually_changed = set()
+            for field in non_editable:
+                if field in attrs:
+                    current = getattr(instance, f'{field}_id' if field == 'area' else field, None)
+                    new_val = attrs[field].id if hasattr(attrs[field], 'id') else attrs[field]
+                    if current != new_val:
+                        actually_changed.add(field)
+            if actually_changed:
                 raise serializers.ValidationError(
-                    f'Los cargos del sistema no pueden modificar: {", ".join(changed)}'
+                    f'Los cargos del sistema no pueden modificar: {", ".join(actually_changed)}'
                 )
         return attrs
 

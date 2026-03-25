@@ -404,7 +404,7 @@ class Command(BaseCommand):
                 'level': cargo_data['level'],
                 'is_jefatura': cargo_data.get('is_jefatura', False),
                 'objetivo_cargo': cargo_data.get('objetivo_cargo', ''),
-                'is_system': True,
+                'is_system': False,
             }
 
             # Campos opcionales
@@ -428,10 +428,13 @@ class Command(BaseCommand):
             Cargo.objects.create(**fields)
             created += 1
 
-        # Backfill: marcar seeds existentes como is_system=True
-        marked = Cargo.objects.filter(
-            code__in=seed_codes, is_system=False
-        ).update(is_system=True)
+        # Fix: desmarcar cargos de negocio que fueron marcados incorrectamente
+        # como is_system=True por el backfill anterior. is_system solo aplica
+        # en la creación inicial (línea 407) — cargos editados son de negocio.
+        unmarked = Cargo.objects.filter(
+            code__in=seed_codes, is_system=True
+        ).update(is_system=False)
+        marked = 0
 
         # Backfill: asignar área a cargos seed que no tengan una
         linked = 0
@@ -453,8 +456,8 @@ class Command(BaseCommand):
                         linked += 1
 
         parts = [f'Creados: {created}', f'Omitidos: {skipped}']
-        if marked:
-            parts.append(f'Marcados is_system: {marked}')
+        if unmarked:
+            parts.append(f'Desmarcados is_system: {unmarked}')
         if linked:
             parts.append(f'Vinculados a área: {linked}')
         self.stdout.write(f'    {" | ".join(parts)}')

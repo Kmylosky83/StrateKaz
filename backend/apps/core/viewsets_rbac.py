@@ -387,10 +387,11 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         if include_inactive.lower() != 'true':
             queryset = queryset.filter(is_active=True)
 
-        # Excluir cargos del sistema (ADMIN, USUARIO) de las vistas de negocio
-        # Estos son cargos técnicos, no posiciones reales de la empresa
-        include_system = self.request.query_params.get('include_system', 'false')
-        if include_system.lower() != 'true':
+        # is_system controla protección contra eliminación (perform_destroy),
+        # NO visibilidad — los cargos seed son puestos reales de negocio.
+        # Filtro opcional para excluir si se necesita en otro contexto.
+        include_system = self.request.query_params.get('include_system')
+        if include_system is not None and include_system.lower() == 'false':
             queryset = queryset.filter(is_system=False)
 
         return queryset.select_related('parent_cargo', 'area', 'rol_sistema').prefetch_related(

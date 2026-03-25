@@ -161,7 +161,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 Colaborador = apps.get_model('colaboradores', 'Colaborador')
                 colab_user_ids = Colaborador.objects.values_list('usuario_id', flat=True)
                 queryset = queryset.filter(id__in=colab_user_ids)
-            except LookupError:
+            except (LookupError, Exception):
                 pass
         elif origen == 'manual':
             try:
@@ -172,7 +172,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     proveedor_id_ext__isnull=True,
                     cliente_id_ext__isnull=True,
                 ).exclude(id__in=colab_user_ids)
-            except LookupError:
+            except (LookupError, Exception):
                 queryset = queryset.filter(proveedor_id_ext__isnull=True, cliente_id_ext__isnull=True)
 
         # Annotate _has_colaborador para evitar N+1 en serializer
@@ -185,7 +185,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     Colaborador.objects.filter(usuario=OuterRef('pk'))
                 )
             )
-        except LookupError:
+        except (LookupError, Exception):
             pass
 
         return queryset.select_related('cargo', 'created_by')

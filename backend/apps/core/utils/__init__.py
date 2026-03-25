@@ -12,6 +12,7 @@ from .sanitization import (
 from .image_processing import ImageProcessor, image_processor
 from .user_factory import UserSetupFactory
 from .validators import validate_email_domain
+from .password_sync import sync_password_to_tenant_user
 
 __all__ = [
     'sanitize_html',
@@ -30,4 +31,6 @@ __all__ = [
     'UserSetupFactory',
     # Validators
     'validate_email_domain',
+    # Password sync
+    'sync_password_to_tenant_user',
 ]

@@ -1,8 +1,9 @@
 """
-Utilidades del modulo Core.
+Sincronización de passwords User <-> TenantUser.
 
-Funciones auxiliares para sincronizacion User <-> TenantUser,
-manejo de passwords, etc.
+Cuando un User cambia su password en el schema del tenant,
+el TenantUser en el schema public debe actualizarse para que
+el login funcione (check_password se hace contra TenantUser).
 """
 import logging
 import time
@@ -19,11 +20,6 @@ def sync_password_to_tenant_user(user):
     """
     Sincroniza el password hasheado del User (tenant schema) al TenantUser (public schema).
 
-    Esto es necesario porque:
-    - El login se realiza via TenantUser.check_password() en el schema public
-    - Cuando un User cambia su password (setup-password, change-password),
-      el TenantUser debe actualizarse para que el login funcione
-
     Implementa retry con 3 intentos y delay de 0.5s entre cada uno.
     Si falla después de todos los intentos, loguea ERROR de seguridad y
     lanza tarea Celery para notificar al admin del tenant.
@@ -32,7 +28,7 @@ def sync_password_to_tenant_user(user):
         user: Instancia de User con password ya actualizado (set_password ya llamado)
 
     Returns:
-        bool: True si se sincronizo exitosamente, False en caso de error
+        bool: True si se sincronizó exitosamente, False en caso de error
     """
     if not user or not user.email:
         return False

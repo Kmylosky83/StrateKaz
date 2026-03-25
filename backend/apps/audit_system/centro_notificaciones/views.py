@@ -9,6 +9,7 @@ from drf_spectacular.types import OpenApiTypes
 from .models import TipoNotificacion, Notificacion, PreferenciaNotificacion, NotificacionMasiva
 from .serializers import TipoNotificacionSerializer, NotificacionSerializer, PreferenciaNotificacionSerializer, NotificacionMasivaSerializer
 from apps.core.permissions import GranularActionPermission
+from apps.core.utils.impersonation import get_effective_user
 
 
 class TipoNotificacionViewSet(viewsets.ModelViewSet):
@@ -126,8 +127,12 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['post'], url_path='marcar-todas-leidas')
     def marcar_todas_leidas(self, request):
-        usuario_id = request.data.get('usuario_id')
-        Notificacion.objects.filter(usuario_id=usuario_id, esta_leida=False).update(esta_leida=True)
+        effective_user = get_effective_user(request)
+        # Solo puede marcar sus propias notificaciones (o las del usuario impersonado)
+        Notificacion.objects.filter(
+            usuario_id=effective_user.id,
+            esta_leida=False
+        ).update(esta_leida=True)
         return Response({'status': 'all marked as read'})
 
     @extend_schema(
@@ -137,9 +142,12 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     )
     @action(detail=False, methods=['get'], url_path='no-leidas')
     def no_leidas(self, request):
-        # Usar el usuario actual si no se especifica usuario_id
-        usuario_id = request.query_params.get('usuario_id', request.user.id)
-        notifs = self.get_queryset().filter(usuario_id=usuario_id, esta_leida=False)
+        # Usar el usuario efectivo (respeta impersonación)
+        effective_user = get_effective_user(request)
+        notifs = self.get_queryset().filter(
+            usuario_id=effective_user.id,
+            esta_leida=False
+        )
         serializer = self.get_serializer(notifs, many=True)
         return Response(serializer.data)
 

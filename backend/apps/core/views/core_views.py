@@ -266,6 +266,8 @@ def current_user(request):
             'code': user.cargo.code,
             'name': user.cargo.name,
             'level': user.cargo.level,
+            'is_jefatura': user.cargo.is_jefatura,
+            'is_externo': user.cargo.is_externo,
         } if user.cargo else None,
         'cargo_code': user.cargo_code,
         'cargo_level': user.cargo_level,

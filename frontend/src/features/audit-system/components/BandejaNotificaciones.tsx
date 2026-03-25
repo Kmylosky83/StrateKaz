@@ -11,6 +11,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
 import { cn } from '@/utils/cn';
+import { useAuthStore } from '@/store/authStore';
 import {
   useNotificaciones,
   useNotificacionesNoLeidas,
@@ -23,7 +24,12 @@ import { getCategoriaIcon, getCategoriaColor } from './notificacion-helpers';
 import type { Notificacion } from '../types/notificaciones.types';
 
 export function BandejaNotificaciones() {
-  const { data: notificaciones, isLoading, error } = useNotificaciones();
+  const { user } = useAuthStore();
+  const {
+    data: notificaciones,
+    isLoading,
+    error,
+  } = useNotificaciones(user?.id ? { usuario: user.id } : undefined);
   const { data: noLeidas } = useNotificacionesNoLeidas();
   const marcarLeida = useMarcarLeida();
   const marcarTodasLeidas = useMarcarTodasLeidas();

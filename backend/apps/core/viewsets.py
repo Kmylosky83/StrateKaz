@@ -777,6 +777,8 @@ class UserViewSet(viewsets.ModelViewSet):
                 'code': target_user.cargo.code,
                 'name': target_user.cargo.name,
                 'level': target_user.cargo.level,
+                'is_jefatura': target_user.cargo.is_jefatura,
+                'is_externo': target_user.cargo.is_externo,
             } if target_user.cargo else None,
             'cargo_code': target_user.cargo_code,
             'cargo_level': target_user.cargo_level,

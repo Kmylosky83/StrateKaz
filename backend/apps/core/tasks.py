@@ -1029,8 +1029,13 @@ def check_pending_activations(self) -> Dict[str, Any]:
                 pending_users = User.objects.filter(
                     last_login__isnull=True,
                     is_active=True,
+                    password_setup_token__isnull=False,  # Solo con token real (excluye legacy sin token)
                     date_joined__lt=cutoff_created,
-                ).exclude(password_setup_token='')
+                ).exclude(
+                    password_setup_token=''
+                ).exclude(
+                    is_superuser=True  # Superadmins no pasan por setup-password
+                )
 
                 # Recopilar usuarios con token activo para notificación
                 # agregada al admin

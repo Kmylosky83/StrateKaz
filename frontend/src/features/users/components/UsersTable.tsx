@@ -9,10 +9,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
-  MoreVertical,
-  KeyRound,
   ExternalLink,
-  ClipboardList,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Dropdown } from '@/components/common/Dropdown';
@@ -157,24 +154,6 @@ export const UsersTable = ({
                 });
               }
 
-              menuItems.push({
-                label: 'Forzar cambio de contraseña',
-                icon: <KeyRound className="h-4 w-4" />,
-                onClick: () => {
-                  /* TODO: Implementar reset password */
-                },
-                disabled: true,
-              });
-
-              menuItems.push({
-                label: 'Ver actividad',
-                icon: <ClipboardList className="h-4 w-4" />,
-                onClick: () => {
-                  /* TODO: Link a audit log */
-                },
-                disabled: true,
-              });
-
               if (user.origen && ORIGEN_ROUTES[user.origen]) {
                 menuItems.push({
                   label: 'Ir al módulo origen',
@@ -182,7 +161,7 @@ export const UsersTable = ({
                   onClick: () => {
                     window.location.href = ORIGEN_ROUTES[user.origen!]!;
                   },
-                  divider: true,
+                  divider: canImpersonate,
                 });
               }
 

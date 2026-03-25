@@ -14,17 +14,10 @@ import {
 } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { UsersTable } from '../components/UsersTable';
-import { UserEditForm } from '../components/UserEditForm';
-import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
+import { UserDetailDrawer } from '../components/UserDetailDrawer';
 import { ImpersonateVerifyModal } from '../components/ImpersonateVerifyModal';
-import {
-  useUsers,
-  useCargos,
-  useUpdateUser,
-  useDeleteUser,
-  useToggleUserStatus,
-} from '../hooks/useUsers';
-import type { User, UpdateUserDTO, UserFilters, UserOrigen } from '@/types/users.types';
+import { useUsers, useCargos, useToggleUserStatus } from '../hooks/useUsers';
+import type { User, UserFilters, UserOrigen } from '@/types/users.types';
 import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
@@ -51,61 +44,22 @@ export default function UsersPage() {
     page_size: 10,
   });
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | undefined>();
-  const [userToDelete, setUserToDelete] = useState<User | undefined>();
+  // Estado del drawer de detalle
+  const [detailUser, setDetailUser] = useState<User | null>(null);
+
   const [impersonateTarget, setImpersonateTarget] = useState<User | null>(null);
 
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargosData } = useCargos();
   const cargos = cargosData?.results || [];
-  const updateUserMutation = useUpdateUser();
-  const deleteUserMutation = useDeleteUser();
   const toggleStatusMutation = useToggleUserStatus();
 
-  const handleOpenEditForm = (user: User) => {
-    setSelectedUser(user);
-    setIsFormOpen(true);
+  const handleViewDetail = (user: User) => {
+    setDetailUser(user);
   };
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setSelectedUser(undefined);
-  };
-
-  const handleSubmit = async (data: UpdateUserDTO) => {
-    if (!selectedUser) return;
-    try {
-      await updateUserMutation.mutateAsync({
-        id: selectedUser.id,
-        data,
-      });
-      handleCloseForm();
-    } catch (error: unknown) {
-      console.error('Error submitting form:', error);
-    }
-  };
-
-  const handleOpenDeleteModal = (user: User) => {
-    setUserToDelete(user);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setUserToDelete(undefined);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (userToDelete) {
-      try {
-        await deleteUserMutation.mutateAsync(userToDelete.id);
-        handleCloseDeleteModal();
-      } catch (error) {
-        console.error('Error deleting user:', error);
-      }
-    }
+  const handleCloseDetail = () => {
+    setDetailUser(null);
   };
 
   const handleToggleStatus = async (user: User) => {
@@ -220,7 +174,7 @@ export default function UsersPage() {
       {/* HEADER */}
       <PageHeader
         title="Gestión de Usuarios"
-        description="Vista centralizada de todos los usuarios del sistema"
+        description="Centro de control de identidad digital — la edición de datos se realiza en el módulo origen"
       />
 
       {/* ESTADÍSTICAS */}
@@ -292,32 +246,22 @@ export default function UsersPage() {
         <UsersTable
           users={users}
           isLoading={isLoadingUsers}
-          onEdit={handleOpenEditForm}
-          onDelete={handleOpenDeleteModal}
+          onViewDetail={handleViewDetail}
           onToggleStatus={handleToggleStatus}
           onImpersonate={canImpersonate ? handleImpersonate : undefined}
           currentUserId={currentUser?.id}
         />
       </DataTableCard>
 
-      {/* Modals */}
-      {selectedUser && (
-        <UserEditForm
-          isOpen={isFormOpen}
-          onClose={handleCloseForm}
-          onSubmit={handleSubmit}
-          user={selectedUser}
-          cargos={cargos}
-          isLoading={updateUserMutation.isPending}
-        />
-      )}
-
-      <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        userName={userToDelete?.full_name || ''}
-        isLoading={deleteUserMutation.isPending}
+      {/* Drawer de detalle */}
+      <UserDetailDrawer
+        user={detailUser}
+        isOpen={!!detailUser}
+        onClose={handleCloseDetail}
+        onToggleStatus={handleToggleStatus}
+        onImpersonate={canImpersonate ? handleImpersonate : undefined}
+        canImpersonate={canImpersonate}
+        currentUserId={currentUser?.id}
       />
 
       {/* Modal 2FA para impersonación */}

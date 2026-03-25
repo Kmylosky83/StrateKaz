@@ -59,6 +59,9 @@ export type { TooltipProps } from './Tooltip';
 export { Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownItem } from './Dropdown';
 
+export { Drawer } from './Drawer';
+export type { DrawerProps, DrawerSize } from './Drawer';
+
 export { Tabs } from './Tabs';
 export type { TabsProps, Tab } from './Tabs';
 

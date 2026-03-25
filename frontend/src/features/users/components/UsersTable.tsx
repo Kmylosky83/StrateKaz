@@ -9,35 +9,35 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  MoreVertical,
+  KeyRound,
+  ExternalLink,
+  ClipboardList,
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
-import { ActionButtons } from '@/components/common/ActionButtons';
-import { Modules, Sections } from '@/constants/permissions';
+import { Dropdown } from '@/components/common/Dropdown';
+import type { DropdownItem } from '@/components/common/Dropdown';
 import { Avatar } from '@/components/common/Avatar';
 import { Badge } from '@/components/common/Badge';
-import { UserStatusBadge } from '@/components/users/UserStatusBadge';
+import { Button } from '@/components/common/Button';
+import { Switch } from '@/components/forms/Switch';
 import { CargoLevelBadge } from '@/components/users/CargoLevelBadge';
-import type { User, NivelFirma } from '@/types/users.types';
+import type { User, NivelFirma, UserOrigen } from '@/types/users.types';
 import { ORIGEN_LABELS, ORIGEN_COLORS, NIVEL_FIRMA_COLORS } from '@/types/users.types';
 import type { BadgeVariant } from '@/components/common/Badge';
 
 interface UsersTableProps {
   users: User[];
   isLoading?: boolean;
-  onEdit: (user: User) => void;
-  onDelete: (user: User) => void;
+  onViewDetail: (user: User) => void;
   onToggleStatus: (user: User) => void;
   /** Callback para impersonar un usuario (solo superusers) */
   onImpersonate?: (user: User) => void;
   /** ID del usuario actual (para no permitir auto-impersonación) */
   currentUserId?: number;
-  /** Custom RBAC Module (optional, defaults to CORE) */
-  module?: string;
-  /** Custom RBAC Section (optional, defaults to USERS) */
-  section?: string;
 }
 
-type SortableField = 'full_name' | 'email' | 'date_joined';
+type SortableField = 'full_name' | 'date_joined';
 
 /** Indicador visual de dirección de sort */
 const SortIcon = ({
@@ -59,16 +59,18 @@ const SortIcon = ({
   );
 };
 
+/** Mapeo de origen a ruta del módulo */
+const ORIGEN_ROUTES: Partial<Record<UserOrigen, string>> = {
+  colaborador: '/mi-equipo/colaboradores',
+};
+
 export const UsersTable = ({
   users,
   isLoading,
-  onEdit,
-  onDelete,
+  onViewDetail,
   onToggleStatus,
   onImpersonate,
   currentUserId,
-  module = Modules.CORE,
-  section = Sections.USERS,
 }: UsersTableProps) => {
   const [sortField, setSortField] = useState<SortableField>('full_name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -132,9 +134,6 @@ export const UsersTable = ({
               <th className={thBase}>Origen</th>
               <th className={thBase}>Estado</th>
               <th className={thBase}>Firma</th>
-              <th className={thSortable} onClick={() => handleSort('email')}>
-                Correo <SortIcon field="email" activeField={sortField} direction={sortDirection} />
-              </th>
               <th className={thSortable} onClick={() => handleSort('date_joined')}>
                 Registro{' '}
                 <SortIcon field="date_joined" activeField={sortField} direction={sortDirection} />
@@ -146,6 +145,58 @@ export const UsersTable = ({
             {sortedUsers.map((user) => {
               const canImpersonate =
                 onImpersonate && user.id !== currentUserId && !user.is_superuser;
+
+              // Menú contextual
+              const menuItems: DropdownItem[] = [];
+
+              if (canImpersonate) {
+                menuItems.push({
+                  label: 'Impersonar',
+                  icon: <Eye className="h-4 w-4" />,
+                  onClick: () => onImpersonate(user),
+                });
+              }
+
+              menuItems.push({
+                label: 'Forzar cambio de contraseña',
+                icon: <KeyRound className="h-4 w-4" />,
+                onClick: () => {
+                  /* TODO: Implementar reset password */
+                },
+                disabled: true,
+              });
+
+              menuItems.push({
+                label: 'Ver actividad',
+                icon: <ClipboardList className="h-4 w-4" />,
+                onClick: () => {
+                  /* TODO: Link a audit log */
+                },
+                disabled: true,
+              });
+
+              if (user.origen && ORIGEN_ROUTES[user.origen]) {
+                menuItems.push({
+                  label: 'Ir al módulo origen',
+                  icon: <ExternalLink className="h-4 w-4" />,
+                  onClick: () => {
+                    window.location.href = ORIGEN_ROUTES[user.origen!]!;
+                  },
+                  divider: true,
+                });
+              }
+
+              menuItems.push({
+                label: user.is_active ? 'Desactivar cuenta' : 'Activar cuenta',
+                icon: user.is_active ? (
+                  <UserX className="h-4 w-4" />
+                ) : (
+                  <UserCheck className="h-4 w-4" />
+                ),
+                onClick: () => onToggleStatus(user),
+                variant: user.is_active ? 'danger' : 'default',
+                divider: !user.origen || !ORIGEN_ROUTES[user.origen],
+              });
 
               return (
                 <tr
@@ -185,9 +236,7 @@ export const UsersTable = ({
                             </Badge>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          @{user.username}
-                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                       </div>
                     </div>
                   </td>
@@ -209,9 +258,13 @@ export const UsersTable = ({
                     )}
                   </td>
 
-                  {/* Estado */}
+                  {/* Estado — Switch inline */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <UserStatusBadge isActive={user.is_active} />
+                    <Switch
+                      size="sm"
+                      checked={user.is_active}
+                      onCheckedChange={() => onToggleStatus(user)}
+                    />
                   </td>
 
                   {/* Nivel Firma */}
@@ -237,49 +290,25 @@ export const UsersTable = ({
                     })()}
                   </td>
 
-                  {/* Correo */}
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{user.email}</div>
-                  </td>
-
                   {/* Fecha Registro */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {format(new Date(user.date_joined), 'PP', { locale: es })}
                   </td>
 
-                  {/* Acciones */}
+                  {/* Acciones: Ver detalle + Menú contextual */}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <ActionButtons
-                        module={module}
-                        section={section}
-                        onEdit={() => onEdit(user)}
-                        onDelete={() => onDelete(user)}
+                    <div className="flex justify-end items-center gap-1">
+                      <Button
+                        variant="ghost"
                         size="sm"
-                        customActions={[
-                          ...(canImpersonate
-                            ? [
-                                {
-                                  key: 'impersonate',
-                                  label: 'Ver como este usuario',
-                                  icon: <Eye className="w-4 h-4" />,
-                                  onClick: () => onImpersonate(user),
-                                  variant: 'ghost' as const,
-                                },
-                              ]
-                            : []),
-                          {
-                            key: 'toggle-status',
-                            label: user.is_active ? 'Desactivar' : 'Activar',
-                            icon: user.is_active ? (
-                              <UserX className="w-4 h-4" />
-                            ) : (
-                              <UserCheck className="w-4 h-4" />
-                            ),
-                            onClick: () => onToggleStatus(user),
-                          },
-                        ]}
-                      />
+                        onClick={() => onViewDetail(user)}
+                        title="Ver detalle"
+                        className="p-2"
+                      >
+                        <Eye className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                      </Button>
+
+                      <Dropdown items={menuItems} align="right" />
                     </div>
                   </td>
                 </tr>

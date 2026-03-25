@@ -79,6 +79,26 @@ export interface User {
   nivel_firma_manual?: boolean;
 }
 
+/** Detalle extendido de usuario (viene de UserDetailSerializer) */
+export interface UserDetail extends User {
+  empresa_nombre?: string;
+  area_nombre?: string;
+  role_codes?: string[];
+  group_codes?: string[];
+  photo_url?: string | null;
+  proveedor?: number | null;
+  proveedor_nombre?: string;
+  cliente?: number | null;
+  cliente_nombre?: string;
+  tiene_firma_guardada?: boolean;
+  tiene_iniciales_guardadas?: boolean;
+  created_by_username?: string | null;
+  section_ids?: number[];
+  permission_codes?: string[];
+  is_deleted?: boolean;
+  deleted_at?: string | null;
+}
+
 export interface UpdateUserDTO {
   username?: string;
   email?: string;

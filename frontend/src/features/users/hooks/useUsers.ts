@@ -11,11 +11,11 @@ export const useUsers = (filters?: UserFilters) => {
   });
 };
 
-export const useUser = (id: number) => {
+export const useUser = (id: number, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['user', id],
     queryFn: () => usersAPI.getUser(id),
-    enabled: !!id,
+    enabled: !!id && (options?.enabled ?? true),
   });
 };
 

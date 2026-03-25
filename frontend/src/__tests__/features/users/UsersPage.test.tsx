@@ -77,15 +77,11 @@ const mockUsers: User[] = [
 
 const mockUseUsers = vi.fn();
 const mockUseCargos = vi.fn();
-const mockUseUpdateUser = vi.fn();
-const mockUseDeleteUser = vi.fn();
 const mockUseToggleUserStatus = vi.fn();
 
 vi.mock('@/features/users/hooks/useUsers', () => ({
   useUsers: (...args: unknown[]) => mockUseUsers(...args),
   useCargos: (...args: unknown[]) => mockUseCargos(...args),
-  useUpdateUser: (...args: unknown[]) => mockUseUpdateUser(...args),
-  useDeleteUser: (...args: unknown[]) => mockUseDeleteUser(...args),
   useToggleUserStatus: (...args: unknown[]) => mockUseToggleUserStatus(...args),
 }));
 
@@ -141,15 +137,10 @@ vi.mock('@/features/users/components/UsersTable', () => ({
   ),
 }));
 
-// Mock UserEditForm and DeleteConfirmModal
-vi.mock('@/features/users/components/UserEditForm', () => ({
-  UserEditForm: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid="user-edit-form-modal">Edit Form Modal</div> : null,
-}));
-
-vi.mock('@/components/users/DeleteConfirmModal', () => ({
-  DeleteConfirmModal: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid="delete-confirm-modal">Delete Modal</div> : null,
+// Mock UserDetailDrawer
+vi.mock('@/features/users/components/UserDetailDrawer', () => ({
+  UserDetailDrawer: ({ isOpen }: { isOpen: boolean }) =>
+    isOpen ? <div data-testid="user-detail-drawer">Detail Drawer</div> : null,
 }));
 
 // ============================================================================
@@ -173,8 +164,6 @@ describe('UsersPage', () => {
         ],
       },
     });
-    mockUseUpdateUser.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
-    mockUseDeleteUser.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
     mockUseToggleUserStatus.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
   });
 
@@ -187,9 +176,7 @@ describe('UsersPage', () => {
       renderWithProviders(<UsersPage />);
 
       expect(screen.getByText(/Gesti.n de Usuarios/i)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Vista centralizada de todos los usuarios del sistema/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Centro de control de identidad digital/i)).toBeInTheDocument();
     });
 
     it('debe renderizar la tabla de usuarios', () => {

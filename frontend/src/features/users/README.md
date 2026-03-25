@@ -1,23 +1,22 @@
 # Gestión de Usuarios — Centro de Control
 
-Vista centralizada de todos los usuarios del tenant. Solo lectura + edición + control de estado.
+Centro de control de identidad digital. Solo lectura + control de estado + impersonación.
 
-**La creación de usuarios se realiza desde el módulo origen:**
+**No se editan datos aquí.** La edición se hace en el módulo origen:
 - Colaboradores → Mi Equipo > Colaboradores
 - Proveedores → Supply Chain > Proveedores
 - Clientes → Sales CRM > Clientes
-- Admin → Admin Global (DB)
 
 ## Estructura
 
 ```
 features/users/
 ├── components/
-│   ├── UserEditForm.tsx          # Formulario de edición (sin creación)
-│   ├── UsersTable.tsx            # Tabla con lista de usuarios
+│   ├── UserDetailDrawer.tsx       # Panel lateral de detalle (solo lectura)
+│   ├── UsersTable.tsx             # Tabla con Switch + Dropdown contextual
 │   └── ImpersonateVerifyModal.tsx # 2FA para impersonación
 ├── hooks/
-│   └── useUsers.ts              # Hooks React Query (read/update/delete)
+│   └── useUsers.ts               # Hooks React Query
 └── pages/
     └── UsersPage.tsx            # Página principal
 ```

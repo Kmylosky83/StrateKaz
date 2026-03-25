@@ -44,7 +44,7 @@ export default function UsersPage() {
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
     cargo: '',
-    is_active: undefined,
+    is_active: true,
     tipo: 'todos',
     origen: '',
     page: 1,

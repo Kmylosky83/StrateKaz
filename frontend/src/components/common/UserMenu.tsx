@@ -31,9 +31,8 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Badge de completitud del perfil.
-  // Superadmins ahora tienen pesos simplificados (foto, firma, documento, nombre).
-  // TODO: usar hasCargo para lógica condicional de perfil cuando se implemente
-  const _hasCargo = !!user?.cargo;
+  // Superadmin: pesos simplificados (foto 25%, nombre 30%, documento 45%).
+  // Usuarios regulares: 9 campos con pesos completos (ver OnboardingService).
   const isSuperAdmin = user?.is_superuser;
   const shouldFetchProfile = !!user;
   const { data: profileData } = useProfileCompleteness(shouldFetchProfile);

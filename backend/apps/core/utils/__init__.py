@@ -11,6 +11,7 @@ from .sanitization import (
 )
 from .image_processing import ImageProcessor, image_processor
 from .user_factory import UserSetupFactory
+from .validators import validate_email_domain
 
 __all__ = [
     'sanitize_html',
@@ -27,4 +28,6 @@ __all__ = [
     'image_processor',
     # User factory
     'UserSetupFactory',
+    # Validators
+    'validate_email_domain',
 ]

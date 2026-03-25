@@ -4,15 +4,18 @@ Seed de Procesos Base — Catálogo estándar ISO 9001/14001/45001
 Carga procesos predefinidos clasificados por tipo (estratégico, misional,
 apoyo, evaluación) según la estructura típica de SGI colombiano.
 
-Los procesos son EDITABLES: el administrador puede renombrar, eliminar
-o agregar nuevos después del seed.
+Comportamiento idempotente:
+- Solo CREA procesos nuevos (si el code no existe en el tenant).
+- NUNCA sobrescribe ediciones del admin (nombre, objetivo, color, etc.).
+- Si un proceso fue eliminado (soft-delete), NO lo recrea.
+- Marca todos los procesos seed como is_system=True (protección contra eliminación).
 
 Uso:
     python manage.py seed_procesos_base
     python manage.py seed_procesos_base --industria manufactura
     python manage.py seed_procesos_base --industria servicios
     python manage.py seed_procesos_base --industria comercio
-    python manage.py seed_procesos_base --reset  # Elimina y recrea
+    python manage.py seed_procesos_base --reset  # Solo elimina procesos del seed
 """
 from django.core.management.base import BaseCommand
 from django_tenants.utils import schema_context
@@ -268,7 +271,7 @@ INDUSTRIAS = {
 
 
 class Command(BaseCommand):
-    help = 'Carga catálogo base de procesos organizacionales (editables)'
+    help = 'Carga catálogo base de procesos organizacionales (idempotente, no sobrescribe)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -281,7 +284,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--reset',
             action='store_true',
-            help='Elimina TODOS los procesos existentes y recrea desde cero',
+            help='Elimina solo procesos del seed (is_system) y recrea desde cero',
         )
         parser.add_argument(
             '--tenant',
@@ -314,31 +317,42 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('\n  Seed completado.\n'))
 
     def _seed_procesos(self, procesos, reset):
+        seed_codes = [p['code'] for p in procesos]
+
         if reset:
-            deleted, _ = Area.objects.all().delete()
-            self.stdout.write(self.style.WARNING(f'    Eliminados {deleted} procesos existentes'))
+            # Solo eliminar procesos del seed (hard delete para poder recrear)
+            qs = Area.objects.filter(code__in=seed_codes)
+            deleted = qs.count()
+            qs.hard_delete()
+            self.stdout.write(self.style.WARNING(f'    Reset: eliminados {deleted} procesos del seed'))
 
         created = 0
-        updated = 0
         skipped = 0
 
         for proc in procesos:
-            obj, was_created = Area.objects.update_or_create(
+            # Si el code ya existe (activo o soft-deleted) → skip
+            if Area.objects.filter(code=proc['code']).exists():
+                skipped += 1
+                continue
+
+            Area.objects.create(
                 code=proc['code'],
-                defaults={
-                    'name': proc['name'],
-                    'tipo': proc['tipo'],
-                    'objetivo': proc['objetivo'],
-                    'icon': proc['icon'],
-                    'color': proc['color'],
-                    'orden': proc['orden'],
-                }
+                name=proc['name'],
+                tipo=proc['tipo'],
+                objetivo=proc['objetivo'],
+                icon=proc['icon'],
+                color=proc['color'],
+                orden=proc['orden'],
+                is_system=True,
             )
-            if was_created:
-                created += 1
-            else:
-                updated += 1
+            created += 1
+
+        # Backfill: marcar procesos seed existentes como is_system=True
+        marked = Area.objects.filter(
+            code__in=seed_codes, is_system=False
+        ).update(is_system=True)
 
         self.stdout.write(
-            f'    Creados: {created} | Actualizados: {updated} | Omitidos: {skipped}'
+            f'    Creados: {created} | Omitidos: {skipped}'
+            + (f' | Marcados is_system: {marked}' if marked else '')
         )

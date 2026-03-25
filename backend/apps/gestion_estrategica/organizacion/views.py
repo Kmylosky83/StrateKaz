@@ -158,9 +158,15 @@ class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        Elimina un área solo si no tiene subáreas activas.
+        Elimina un área solo si no es del sistema y no tiene subáreas activas.
         """
         area = self.get_object()
+
+        if area.is_system:
+            return Response(
+                {'error': 'No se puede eliminar un proceso del sistema. Desactívelo en su lugar.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if area.children.filter(is_active=True).exists():
             return Response(

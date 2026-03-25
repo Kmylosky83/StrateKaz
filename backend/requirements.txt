@@ -17,6 +17,7 @@ cron_descriptor==2.0.6
 cryptography==46.0.5
 cssselect2==0.8.0
 Django==5.0.9
+dnspython>=2.6.1
 django-auditlog==2.3.0
 django-celery-beat==2.6.0
 django-celery-results==2.5.1

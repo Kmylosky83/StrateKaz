@@ -139,6 +139,11 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
         verbose_name='Color',
         help_text='Color del proceso (ej: purple, blue, green, red, amber, gray)'
     )
+    is_system = models.BooleanField(
+        default=False,
+        verbose_name='Es del sistema',
+        help_text='Los procesos del sistema no pueden eliminarse, solo desactivarse'
+    )
 
     class Meta:
         db_table = 'organizacion_area'

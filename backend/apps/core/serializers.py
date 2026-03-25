@@ -396,9 +396,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Proveedor no encontrado o inactivo')
 
     def validate_email(self, value):
-        """Validar email válido y único (excepto usuario actual)"""
+        """Validar email válido, dominio DNS/MX y unicidad (excepto usuario actual)"""
         if not value or '@' not in value:
             raise serializers.ValidationError('Proporcione un email válido')
+        # Verificar que el dominio pueda recibir correo
+        from apps.core.utils import validate_email_domain
+        try:
+            validate_email_domain(value)
+        except Exception as e:
+            raise serializers.ValidationError(
+                str(e.message if hasattr(e, 'message') else e)
+            )
         user_id = self.instance.id if self.instance else None
         if User.objects.filter(email=value).exclude(id=user_id).exists():
             raise serializers.ValidationError('Este email ya está registrado')

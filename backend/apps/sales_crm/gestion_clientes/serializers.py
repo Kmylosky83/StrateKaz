@@ -254,6 +254,19 @@ class ClienteSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by', 'updated_by'
         ]
 
+    def validate_email(self, value):
+        """Validar formato y dominio DNS/MX del email."""
+        if not value:
+            return value
+        from apps.core.utils import validate_email_domain
+        try:
+            validate_email_domain(value)
+        except Exception as e:
+            raise serializers.ValidationError(
+                str(e.message if hasattr(e, 'message') else e)
+            )
+        return value
+
 
 # ==============================================================================
 # SERIALIZERS DE SEGMENTACIÓN

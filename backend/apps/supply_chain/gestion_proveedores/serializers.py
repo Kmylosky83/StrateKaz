@@ -304,13 +304,21 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_email(self, value):
-        """Validar email con validación estándar Django."""
+        """Validar email con validación estándar Django + verificación DNS/MX."""
         if not value:
             return value
         try:
             django_validate_email(value)
         except DjangoValidationError:
             raise serializers.ValidationError('Proporcione un email válido')
+        # Verificar que el dominio pueda recibir correo
+        from apps.core.utils import validate_email_domain
+        try:
+            validate_email_domain(value)
+        except Exception as e:
+            raise serializers.ValidationError(
+                str(e.message if hasattr(e, 'message') else e)
+            )
         return value
 
     def validate_telefono(self, value):
@@ -453,13 +461,21 @@ class ProveedorUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value):
-        """Validar email con validación estándar Django."""
+        """Validar email con validación estándar Django + verificación DNS/MX."""
         if not value:
             return value
         try:
             django_validate_email(value)
         except DjangoValidationError:
             raise serializers.ValidationError('Proporcione un email válido')
+        # Verificar que el dominio pueda recibir correo
+        from apps.core.utils import validate_email_domain
+        try:
+            validate_email_domain(value)
+        except Exception as e:
+            raise serializers.ValidationError(
+                str(e.message if hasattr(e, 'message') else e)
+            )
         return value
 
     def validate_telefono(self, value):

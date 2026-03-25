@@ -5,8 +5,12 @@ Carga cargos predefinidos por nivel jerárquico como plantilla editable.
 El administrador puede renombrar, agregar funciones, asignar permisos
 y vincular a procesos después del seed.
 
-NO asigna área (proceso) porque el admin decide a qué proceso va cada cargo.
-NO asigna permisos RBAC — eso se configura después.
+Comportamiento idempotente:
+- Solo CREA cargos nuevos (si el code no existe en el tenant).
+- NUNCA sobrescribe ediciones del admin (nombre, nivel, objetivo, etc.).
+- Si un cargo fue desactivado (is_active=False), NO lo recrea ni reactiva.
+- Marca todos los cargos seed como is_system=True (protección contra eliminación).
+- Asigna área (proceso) por defecto según CARGO_AREA_MAPPING si no tiene una.
 
 Uso:
     python manage.py seed_cargos_base
@@ -18,6 +22,42 @@ from django_tenants.utils import schema_context
 
 from apps.core.models import Cargo
 from apps.tenant.models import Tenant
+
+
+# ══════════════════════════════════════════════════════════════════
+# MAPPING CARGO → PROCESO (código de Area)
+# Asigna área por defecto en la primera ejecución del seed.
+# Si el admin cambia el área después, el seed NO la sobrescribe.
+# ══════════════════════════════════════════════════════════════════
+CARGO_AREA_MAPPING = {
+    # Base
+    'GER_GENERAL': 'DIR',       # Gerente → Direccionamiento Estratégico
+    'DIR_CALIDAD': 'GCA',       # Director Calidad → Gestión de Calidad
+    'COORD_HSEQ': 'SST',       # HSEQ → Seguridad y Salud en el Trabajo
+    'COORD_RRHH': 'GTH',       # RRHH → Gestión del Talento Humano
+    'COORD_ADMIN': 'GFI',      # Administrativo → Gestión Financiera
+    'COORD_COMERCIAL': 'CML',  # Comercial → Gestión Comercial
+    'COORD_LOGISTICA': 'LOG',  # Logística → Logística
+    'CONTADOR': 'GFI',         # Contador → Gestión Financiera
+    'ASIST_ADMIN': 'DIR',      # Asistente Admin → Direccionamiento
+    'ASIST_CONTABLE': 'GFI',   # Aux Contable → Gestión Financiera
+    'RECEPCIONISTA': 'DIR',    # Recepcionista → Direccionamiento
+    'MENSAJERO': 'LOG',        # Mensajero → Logística
+    'SERV_GENERALES': 'DIR',   # Servicios Generales → Direccionamiento
+    # Manufactura
+    'JEFE_PRODUCCION': 'OPE',
+    'SUPERVISOR_PLANTA': 'OPE',
+    'OPERARIO': 'OPE',
+    'TECNICO_MANT': 'OPE',
+    'INSPECTOR_CALIDAD': 'GCA',
+    'ALMACENISTA': 'LOG',
+    # Servicios
+    'CONSULTOR': 'OPE',
+    'ANALISTA': 'OPE',
+    # Comercio
+    'VENDEDOR': 'CML',
+    'CAJERO': 'CML',
+}
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -280,8 +320,17 @@ INDUSTRIAS = {
 }
 
 
+def _get_area_model():
+    """Import lazy para evitar dependencias circulares."""
+    from django.apps import apps
+    try:
+        return apps.get_model('organizacion', 'Area')
+    except LookupError:
+        return None
+
+
 class Command(BaseCommand):
-    help = 'Carga catálogo base de cargos organizacionales (editables)'
+    help = 'Carga catálogo base de cargos organizacionales (idempotente, no sobrescribe)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -294,7 +343,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--reset',
             action='store_true',
-            help='Elimina TODOS los cargos existentes y recrea desde cero',
+            help='Elimina solo cargos del seed (is_system) y recrea desde cero',
         )
         parser.add_argument(
             '--tenant',
@@ -327,41 +376,85 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('\n  Seed completado.\n'))
 
     def _seed_cargos(self, cargos, reset):
+        seed_codes = [c['code'] for c in cargos]
+        Area = _get_area_model()
+
         if reset:
-            # Solo eliminar cargos del seed, no los creados por el usuario
-            seed_codes = [c['code'] for c in cargos]
-            deleted, _ = Cargo.objects.filter(code__in=seed_codes).delete()
-            self.stdout.write(self.style.WARNING(f'    Eliminados {deleted} cargos del seed'))
+            # Solo eliminar cargos del seed marcados como sistema
+            deleted, _ = Cargo.objects.filter(
+                code__in=seed_codes, is_system=True
+            ).delete()
+            self.stdout.write(self.style.WARNING(
+                f'    Reset: eliminados {deleted} cargos del seed'
+            ))
 
         created = 0
-        updated = 0
+        skipped = 0
 
         for cargo_data in cargos:
-            defaults = {
+            # Si el code ya existe (activo o inactivo) → skip
+            if Cargo.objects.filter(code=cargo_data['code']).exists():
+                skipped += 1
+                continue
+
+            fields = {
+                'code': cargo_data['code'],
                 'name': cargo_data['name'],
                 'nivel_jerarquico': cargo_data['nivel_jerarquico'],
                 'level': cargo_data['level'],
                 'is_jefatura': cargo_data.get('is_jefatura', False),
                 'objetivo_cargo': cargo_data.get('objetivo_cargo', ''),
+                'is_system': True,
             }
 
             # Campos opcionales
             if 'nivel_educativo' in cargo_data:
-                defaults['nivel_educativo'] = cargo_data['nivel_educativo']
+                fields['nivel_educativo'] = cargo_data['nivel_educativo']
             if 'experiencia_requerida' in cargo_data:
-                defaults['experiencia_requerida'] = cargo_data['experiencia_requerida']
+                fields['experiencia_requerida'] = cargo_data['experiencia_requerida']
             if cargo_data.get('requiere_tarjeta_contador'):
-                defaults['requiere_tarjeta_contador'] = True
+                fields['requiere_tarjeta_contador'] = True
 
-            obj, was_created = Cargo.objects.update_or_create(
-                code=cargo_data['code'],
-                defaults=defaults,
-            )
-            if was_created:
-                created += 1
-            else:
-                updated += 1
+            # Asignar área por mapping
+            if Area:
+                area_code = CARGO_AREA_MAPPING.get(cargo_data['code'])
+                if area_code:
+                    area = Area.objects.filter(
+                        code=area_code, is_active=True
+                    ).first()
+                    if area:
+                        fields['area'] = area
 
-        self.stdout.write(
-            f'    Creados: {created} | Actualizados: {updated}'
-        )
+            Cargo.objects.create(**fields)
+            created += 1
+
+        # Backfill: marcar seeds existentes como is_system=True
+        marked = Cargo.objects.filter(
+            code__in=seed_codes, is_system=False
+        ).update(is_system=True)
+
+        # Backfill: asignar área a cargos seed que no tengan una
+        linked = 0
+        if Area:
+            for cargo_data in cargos:
+                area_code = CARGO_AREA_MAPPING.get(cargo_data['code'])
+                if not area_code:
+                    continue
+                cargo = Cargo.objects.filter(
+                    code=cargo_data['code'], area__isnull=True
+                ).first()
+                if cargo:
+                    area = Area.objects.filter(
+                        code=area_code, is_active=True
+                    ).first()
+                    if area:
+                        cargo.area = area
+                        cargo.save(update_fields=['area'])
+                        linked += 1
+
+        parts = [f'Creados: {created}', f'Omitidos: {skipped}']
+        if marked:
+            parts.append(f'Marcados is_system: {marked}')
+        if linked:
+            parts.append(f'Vinculados a área: {linked}')
+        self.stdout.write(f'    {" | ".join(parts)}')

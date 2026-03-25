@@ -546,6 +546,15 @@ class ColaboradorCreateWithAccessSerializer(ColaboradorCreateUpdateSerializer):
                     'username': 'El nombre de usuario no puede contener espacios.'
                 })
 
+            # Validar dominio del email (DNS/MX)
+            from apps.core.utils import validate_email_domain
+            try:
+                validate_email_domain(email_corporativo)
+            except Exception as e:
+                raise serializers.ValidationError({
+                    'email_corporativo': str(e.message if hasattr(e, 'message') else e)
+                })
+
             # Validar unicidad en User
             if User.objects.filter(email=email_corporativo).exists():
                 raise serializers.ValidationError({

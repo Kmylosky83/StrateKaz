@@ -216,7 +216,6 @@ def _build_next_action(missing_fields: list) -> dict | None:
     }
 
     top = missing_fields[0]
-    user = getattr(missing_fields, '_user', None)
     # Detectar si es superadmin por los campos: admin solo tiene photo/nombre/documento
     is_admin_fields = all(
         f['field'] in ('photo', 'nombre_completo', 'documento')

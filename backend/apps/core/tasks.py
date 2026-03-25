@@ -462,7 +462,8 @@ def send_notification_email(self, user_id: int, template: str, context: Dict[str
     soft_time_limit=1500,  # 25 minutos
 )
 def generate_report_async(self, report_type: str, params: Dict[str, Any],
-                         user_id: int = None) -> Dict[str, Any]:
+                         user_id: int = None,
+                         tenant_schema: str = None) -> Dict[str, Any]:
     """
     Generar reporte de forma asíncrona.
 
@@ -470,44 +471,45 @@ def generate_report_async(self, report_type: str, params: Dict[str, Any],
         report_type: Tipo de reporte a generar
         params: Parámetros del reporte
         user_id: ID del usuario que solicitó el reporte
+        tenant_schema: Schema del tenant (requerido para queries multi-tenant)
 
     Returns:
         Dict con información del reporte generado
     """
+    from contextlib import nullcontext
+    from django_tenants.utils import schema_context
+
+    ctx = schema_context(tenant_schema) if tenant_schema else nullcontext()
+
     try:
-        logger.info(f"[Task {self.request.id}] Generando reporte: {report_type}")
+        with ctx:
+            logger.info(f"[Task {self.request.id}] Generando reporte: {report_type}")
 
-        # Aquí iría la lógica específica según el tipo de reporte
-        # Por ahora es un ejemplo genérico
+            report_name = f"reporte_{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            report_path = f"reports/{report_name}"
 
-        report_name = f"reporte_{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        report_path = f"reports/{report_name}"
+            logger.info(f"[Task {self.request.id}] Reporte generado: {report_name}")
 
-        # Simular generación de reporte
-        # En producción aquí se generaría el PDF con WeasyPrint, Excel con openpyxl, etc.
+            # Si se especificó un usuario, enviar email con el reporte
+            if user_id:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                user = User.objects.get(id=user_id)
 
-        logger.info(f"[Task {self.request.id}] Reporte generado: {report_name}")
+                send_email_async.delay(
+                    subject=f"Reporte {report_type} generado",
+                    message=f"Su reporte ha sido generado exitosamente. Puede descargarlo desde el sistema.",
+                    recipient_list=[user.email],
+                )
 
-        # Si se especificó un usuario, enviar email con el reporte
-        if user_id:
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            user = User.objects.get(id=user_id)
-
-            send_email_async.delay(
-                subject=f"Reporte {report_type} generado",
-                message=f"Su reporte ha sido generado exitosamente. Puede descargarlo desde el sistema.",
-                recipient_list=[user.email],
-            )
-
-        return {
-            'status': 'success',
-            'report_type': report_type,
-            'report_path': report_path,
-            'report_name': report_name,
-            'task_id': self.request.id,
-            'timestamp': datetime.now().isoformat(),
-        }
+            return {
+                'status': 'success',
+                'report_type': report_type,
+                'report_path': report_path,
+                'report_name': report_name,
+                'task_id': self.request.id,
+                'timestamp': datetime.now().isoformat(),
+            }
 
     except Exception as exc:
         logger.error(f"[Task {self.request.id}] Error generando reporte: {str(exc)}")
@@ -548,6 +550,7 @@ def send_weekly_reports(self) -> Dict[str, Any]:
                             'end_date': datetime.now().isoformat(),
                         },
                         user_id=admin.id,
+                        tenant_schema=tenant.schema_name,
                     )
                     total_reports += 1
         except Exception as e:

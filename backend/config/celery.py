@@ -410,10 +410,10 @@ app.conf.task_routes = {
     'apps.talent_hub.tasks.check_contratos_por_vencer': {'queue': 'notifications'},
     'apps.talent_hub.tasks.check_periodos_prueba': {'queue': 'notifications'},
 
-    # Control de Tiempo tasks
-    'control_tiempo.detectar_ausencias_diarias': {'queue': 'notifications'},
-    'control_tiempo.generar_consolidados_mensuales': {'queue': 'reports'},
-    'control_tiempo.recordar_marcaje_pendiente': {'queue': 'notifications'},
+    # Control de Tiempo tasks (deshabilitado — app no instalada)
+    # 'control_tiempo.detectar_ausencias_diarias': {'queue': 'notifications'},
+    # 'control_tiempo.generar_consolidados_mensuales': {'queue': 'reports'},
+    # 'control_tiempo.recordar_marcaje_pendiente': {'queue': 'notifications'},
 
     # Workflow Engine tasks
     'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas': {'queue': 'workflow'},

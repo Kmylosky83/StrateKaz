@@ -236,11 +236,12 @@ axiosInstance.interceptors.response.use(
           // llegando por URL directa y LoginPage se encargará del redirect si hay sesión.
           // forceLogout aquí destruiría tokens válidos que solo necesitan refresh.
           //
-          // Protección race condition: si isLoadingUser=true, el flujo de login()
-          // está en progreso (cargando perfil vía getProfile). Un 401 de un request
-          // concurrente (ej: DashboardLayout montándose) NO debe disparar forceLogout
-          // porque destruiría los tokens recién guardados por login().
-          const isLoginInProgress = useAuthStore.getState().isLoadingUser;
+          // Protección race condition: si isLoadingUser=true o _loginFlowComplete=false,
+          // el flujo de login() está en progreso. Un 401 de un request concurrente
+          // (ej: componentes que se montan durante la transición de ruta) NO debe
+          // disparar forceLogout porque destruiría los tokens recién guardados por login().
+          const { isLoadingUser, _loginFlowComplete } = useAuthStore.getState();
+          const isLoginInProgress = isLoadingUser || !_loginFlowComplete;
           if (!isPublicPage && !isLoginInProgress) {
             // forceLogout limpia localStorage + Zustand + RQ cache.
             // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.

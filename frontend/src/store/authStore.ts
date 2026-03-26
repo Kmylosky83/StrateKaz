@@ -80,6 +80,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoadingUser: false,
+      _loginFlowComplete: false,
       currentTenantId: getInitialTenantId(),
       currentTenant: null,
       accessibleTenants: [],
@@ -150,16 +151,16 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Actualizar estado — isLoadingUser: true previene que loadUserProfile()
-          // se dispare desde DashboardLayout antes de que login() termine.
-          // Sin esto hay una race condition: el set() dispara re-render,
-          // DashboardLayout ve isAuthenticated=true + user=null + isLoadingUser=false
-          // y lanza loadUserProfile() concurrente que compite con login().
+          // se dispare desde AdaptiveLayout antes de que login() termine.
+          // _loginFlowComplete: false previene que el useEffect de LoginPage
+          // navegue prematuramente antes de que getProfile() y handlePostLoginFlow() terminen.
           set({
             tenantUser: response.user,
             accessToken: response.access,
             refreshToken: response.refresh,
             isAuthenticated: true,
             isLoadingUser: true,
+            _loginFlowComplete: false,
             accessibleTenants: response.tenants,
             isSuperadmin: response.user.is_superadmin,
             currentTenantId: initialTenantId,
@@ -177,13 +178,13 @@ export const useAuthStore = create<AuthState>()(
             // Cargar perfil del User dentro del tenant (permission_codes, cargo, etc.)
             try {
               const userProfile = await authAPI.getProfile();
-              set({ user: userProfile, isLoadingUser: false });
+              set({ user: userProfile, isLoadingUser: false, _loginFlowComplete: true });
             } catch (error) {
               console.warn('Failed to load user profile after login:', error);
-              set({ isLoadingUser: false });
+              set({ isLoadingUser: false, _loginFlowComplete: true });
             }
           } else {
-            set({ isLoadingUser: false });
+            set({ isLoadingUser: false, _loginFlowComplete: true });
           }
         } catch (error) {
           // Limpiar estado en caso de error
@@ -193,6 +194,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
+            _loginFlowComplete: false,
             accessibleTenants: [],
             isSuperadmin: false,
             currentTenantId: null,
@@ -243,6 +245,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          _loginFlowComplete: false,
           accessibleTenants: [],
           isSuperadmin: false,
           isImpersonating: false,
@@ -551,10 +554,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      version: 5, // Bump: impersonación de usuario
+      version: 6, // Bump: _loginFlowComplete para race condition fix
       partialize: (state) => ({
         tenantUser: state.tenantUser,
         isAuthenticated: state.isAuthenticated,
+        _loginFlowComplete: state._loginFlowComplete,
         currentTenantId: state.currentTenantId,
         currentTenant: state.currentTenant,
         accessibleTenants: state.accessibleTenants,
@@ -565,11 +569,13 @@ export const useAuthStore = create<AuthState>()(
       // Migración: preserva estado existente, agrega campos nuevos
       migrate: (persistedState, version) => {
         const state = persistedState as Record<string, unknown>;
-        if (version < 5) {
-          // Solo agregar campo nuevo de impersonación de usuario
+        if (version < 6) {
           return {
             ...state,
-            impersonatedUserId: null,
+            impersonatedUserId: state.impersonatedUserId ?? null,
+            // Sesiones previas que ya tenían isAuthenticated=true deben
+            // considerarse como loginFlow completado para que useEffect funcione
+            _loginFlowComplete: !!state.isAuthenticated,
           };
         }
         return persistedState as Partial<AuthState>;

@@ -165,6 +165,9 @@ export interface AuthState {
   isAuthenticated: boolean;
   /** Indica si el perfil del User (core.User) está siendo cargado */
   isLoadingUser: boolean;
+  /** Indica que login() terminó completamente (selectTenant + getProfile).
+   *  Previene que useEffect de LoginPage navegue antes de handlePostLoginFlow(). */
+  _loginFlowComplete: boolean;
   /** ID del tenant actual (null = modo Admin Global o sin tenant) */
   currentTenantId: number | null;
   /** Información del tenant actual */

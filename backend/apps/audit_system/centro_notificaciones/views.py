@@ -92,8 +92,10 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         'destroy': 'can_delete',
     }
 
-    # Acciones personales: solo IsAuthenticated (C0 plataforma)
-    PERSONAL_ACTIONS = ('no_leidas', 'marcar_leida', 'marcar_todas_leidas')
+    # Acciones personales: solo IsAuthenticated (C0 plataforma).
+    # list/retrieve incluidos porque cualquier usuario necesita ver
+    # SUS notificaciones (Mi Bandeja, navbar bell icon).
+    PERSONAL_ACTIONS = ('list', 'retrieve', 'no_leidas', 'marcar_leida', 'marcar_todas_leidas')
 
     def get_permissions(self):
         if self.action in self.PERSONAL_ACTIONS:

@@ -531,15 +531,14 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     @action(
         detail=False, methods=['get', 'patch'], url_path='me',
         authentication_classes=[HybridJWTAuthentication],
-        permission_classes=[IsAdminTenant],
+        permission_classes=[IsAuthenticated],
     )
     def me(self, request):
         """
-        Endpoint para que el Admin Tenant consulte/edite datos de su empresa.
+        Endpoint para consultar/editar datos de la empresa del tenant actual.
 
-        GET: Retorna datos completos del tenant actual.
-        PATCH: Actualiza datos fiscales, branding, contacto, regional.
-               No permite modificar plan, tier, max_users ni estado.
+        GET: Cualquier usuario autenticado puede ver datos de su empresa.
+        PATCH: Solo IsAdminTenant puede modificar datos.
         """
         from django.db import connection
         tenant = connection.tenant
@@ -547,6 +546,13 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = TenantSerializer(tenant, context={'request': request})
             return Response(serializer.data)
+
+        # PATCH: Solo admin puede editar
+        if not IsAdminTenant().has_permission(request, self):
+            return Response(
+                {'detail': 'Solo los administradores de la empresa pueden modificar estos datos.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # PATCH
         serializer = TenantSelfEditSerializer(

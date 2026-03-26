@@ -158,19 +158,23 @@ class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        Elimina un área solo si no es del sistema y no tiene subáreas activas.
+        Elimina un área solo si no tiene subáreas activas ni cargos asignados.
         """
         area = self.get_object()
 
-        if area.is_system:
+        if area.children.filter(is_active=True).exists():
             return Response(
-                {'error': 'No se puede eliminar un proceso del sistema. Desactívelo en su lugar.'},
+                {'error': 'No se puede eliminar un área con subáreas activas. Elimine primero las subáreas.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if area.children.filter(is_active=True).exists():
+        # Verificar cargos asignados
+        from apps.core.models import Cargo
+        cargos_count = Cargo.objects.filter(area=area, is_active=True).count()
+        if cargos_count > 0:
             return Response(
-                {'error': 'No se puede eliminar un área con subáreas activas. Desactive o elimine primero las subáreas.'},
+                {'error': f'No se puede eliminar el área porque tiene {cargos_count} cargo(s) asignado(s). '
+                          'Reasigne los cargos primero.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

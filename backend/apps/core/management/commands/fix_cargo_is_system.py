@@ -1,13 +1,13 @@
 """
-Fix: Desmarcar is_system en cargos de negocio y desactivar ADMIN/USUARIO.
+Fix: Desmarcar is_system en datos de negocio (cargos y áreas/procesos).
 
-Problema: Todos los cargos seed quedaron con is_system=True, lo que impide
-que aparezcan en Perfiles de Cargo y otros listados filtrados.
+Problema: Seeds marcan datos como is_system=True, lo que impide editarlos
+y eliminarlos desde la UI.
 
 Solución:
-1. Desmarcar is_system=True en cargos de negocio (excluye ADMIN/USUARIO)
-2. Desactivar cargos ADMIN y USUARIO (anti-patrón arquitectónico eliminado)
-3. Limpiar cargo de usuarios que tenían ADMIN/USUARIO asignado
+1. Desmarcar is_system=True en cargos de negocio
+2. Desmarcar is_system=True en áreas/procesos de negocio
+3. Eliminar cargos ADMIN/USUARIO (anti-patrón eliminado)
 
 Uso:
     python manage.py fix_cargo_is_system
@@ -19,7 +19,7 @@ from django_tenants.utils import schema_context
 
 
 class Command(BaseCommand):
-    help = 'Desmarcar is_system en cargos de negocio y desactivar ADMIN/USUARIO (todos los tenants)'
+    help = 'Desmarcar is_system en cargos y áreas de negocio (todos los tenants)'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write('\n' + '=' * 50)
-        self.stdout.write('  FIX CARGO IS_SYSTEM — TODOS LOS TENANTS')
+        self.stdout.write('  FIX IS_SYSTEM — TODOS LOS TENANTS')
         self.stdout.write('=' * 50)
 
         for tenant in tenants:
@@ -57,38 +57,44 @@ class Command(BaseCommand):
             with transaction.atomic():
                 from apps.core.models import Cargo, User
 
-                # 1. Desmarcar is_system en cargos de negocio
-                business = Cargo.objects.exclude(
+                # =============================================
+                # 1. Cargos de negocio → is_system=False
+                # =============================================
+                business_cargos = Cargo.objects.exclude(
                     code__in=['ADMIN', 'USUARIO']
                 ).filter(is_system=True)
 
-                count = business.count()
+                count = business_cargos.count()
                 if count > 0:
                     if not dry_run:
-                        business.update(is_system=False)
+                        business_cargos.update(is_system=False)
                     self.stdout.write(
-                        f'  Cargos negocio desmarcados is_system: {count}'
+                        f'  Cargos desmarcados is_system: {count}'
                         + (' [DRY-RUN]' if dry_run else '')
                     )
 
-                # 2. Desactivar ADMIN y USUARIO
+                # =============================================
+                # 2. Eliminar ADMIN/USUARIO físicamente
+                # =============================================
                 system_cargos = Cargo.objects.filter(
                     code__in=['ADMIN', 'USUARIO'],
-                    is_active=True,
                 )
                 system_count = system_cargos.count()
                 if system_count > 0:
                     if not dry_run:
-                        system_cargos.update(is_active=False)
+                        system_cargos.delete()
                     self.stdout.write(
-                        f'  ADMIN/USUARIO desactivados: {system_count}'
+                        f'  ADMIN/USUARIO eliminados: {system_count}'
                         + (' [DRY-RUN]' if dry_run else '')
                     )
 
-                # 3. Limpiar cargo de usuarios que tenían ADMIN/USUARIO
+                # =============================================
+                # 3. Limpiar cargo de usuarios huérfanos
+                # =============================================
                 orphaned = User.objects.filter(
-                    cargo__code__in=['ADMIN', 'USUARIO'],
-                    is_active=True,
+                    cargo__isnull=False,
+                ).exclude(
+                    cargo__is_active=True,
                 )
                 orphaned_count = orphaned.count()
                 if orphaned_count > 0:
@@ -100,5 +106,22 @@ class Command(BaseCommand):
                         + (' [DRY-RUN]' if dry_run else '')
                     )
 
-                if count == 0 and system_count == 0 and orphaned_count == 0:
+                # =============================================
+                # 4. Áreas/Procesos → is_system=False
+                # =============================================
+                try:
+                    from apps.gestion_estrategica.organizacion.models import Area
+                    system_areas = Area.objects.filter(is_system=True)
+                    area_count = system_areas.count()
+                    if area_count > 0:
+                        if not dry_run:
+                            system_areas.update(is_system=False)
+                        self.stdout.write(
+                            f'  Áreas desmarcadas is_system: {area_count}'
+                            + (' [DRY-RUN]' if dry_run else '')
+                        )
+                except Exception:
+                    pass  # App no instalada
+
+                if count == 0 and system_count == 0 and orphaned_count == 0 and area_count == 0:
                     self.stdout.write('  Sin cambios necesarios')

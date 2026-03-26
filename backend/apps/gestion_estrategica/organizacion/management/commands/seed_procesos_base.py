@@ -8,7 +8,7 @@ Comportamiento idempotente:
 - Solo CREA procesos nuevos (si el code no existe en el tenant).
 - NUNCA sobrescribe ediciones del admin (nombre, objetivo, color, etc.).
 - Si un proceso fue eliminado (soft-delete), NO lo recrea.
-- Marca todos los procesos seed como is_system=True (protección contra eliminación).
+- Procesos de negocio se crean con is_system=False (editables y eliminables).
 
 Uso:
     python manage.py seed_procesos_base
@@ -343,16 +343,16 @@ class Command(BaseCommand):
                 icon=proc['icon'],
                 color=proc['color'],
                 orden=proc['orden'],
-                is_system=True,
+                is_system=False,
             )
             created += 1
 
-        # Backfill: marcar procesos seed existentes como is_system=True
-        marked = Area.objects.filter(
-            code__in=seed_codes, is_system=False
-        ).update(is_system=True)
+        # Fix: desmarcar is_system en procesos de negocio (editables por el admin)
+        unmarked = Area.objects.filter(
+            code__in=seed_codes, is_system=True
+        ).update(is_system=False)
 
         self.stdout.write(
             f'    Creados: {created} | Omitidos: {skipped}'
-            + (f' | Marcados is_system: {marked}' if marked else '')
+            + (f' | Desmarcados is_system: {unmarked}' if unmarked else '')
         )

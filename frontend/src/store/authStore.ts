@@ -352,6 +352,16 @@ export const useAuthStore = create<AuthState>()(
         // Solo cargar si hay tenant seleccionado y no hay user ni carga en curso
         if (!currentTenantId || user || isLoadingUser) return;
 
+        // Verificar que los tokens existen en localStorage.
+        // Zustand puede rehydratar isAuthenticated=true de una sesión anterior
+        // pero los tokens pudieron ser borrados (forceLogout, clear, etc.).
+        // Sin tokens, cualquier API call falla con 401 → cascade.
+        const hasTokens = !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        if (!hasTokens) {
+          get().forceLogout();
+          return;
+        }
+
         try {
           set({ isLoadingUser: true });
 

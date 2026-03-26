@@ -384,9 +384,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Toggle necesita ver inactivos para poder reactivarlos
+        # Toggle y destroy necesitan ver inactivos
         include_inactive = self.request.query_params.get('include_inactive', 'false')
-        if include_inactive.lower() != 'true' and self.action != 'toggle':
+        if include_inactive.lower() != 'true' and self.action not in ('toggle', 'destroy', 'retrieve'):
             queryset = queryset.filter(is_active=True)
 
         # is_system controla protección contra eliminación (perform_destroy),
@@ -402,10 +402,6 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Soft delete - valida que no tenga usuarios, desactiva vacantes vinculadas"""
-        if instance.is_system:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied('No se puede eliminar un cargo del sistema')
-
         # Verificar si tiene usuarios asignados
         users_count = instance.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
         if users_count > 0:

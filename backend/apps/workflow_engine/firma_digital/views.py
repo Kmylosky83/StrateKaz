@@ -305,8 +305,31 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             documento.effective_date = timezone.now().date()
             documento.save(update_fields=['status', 'effective_date'])
 
+            # Notificar al creador del documento que ya está vigente
+            self._notificar_documento_vigente(documento, firma)
+
+    def _notificar_documento_vigente(self, documento, ultima_firma):
+        """Notifica al creador/dueño que el documento recibió todas las firmas"""
+        from apps.audit_system.centro_notificaciones.services import NotificationService
+
+        creador = getattr(documento, 'created_by', None) or getattr(documento, 'usuario', None)
+        if not creador:
+            return
+
+        titulo_documento = getattr(documento, 'titulo', getattr(documento, 'nombre', str(documento)))
+
+        NotificationService.send_notification(
+            tipo_codigo='DOCUMENTO_TODAS_FIRMAS',
+            usuario=creador,
+            datos={'documento_titulo': titulo_documento},
+            url='/sistema-gestion/documentos',
+            prioridad='alta',
+        )
+
     def _notificar_siguiente_firmante(self, documento, configuracion_flujo, firma_actual):
-        """Notifica al siguiente firmante en el flujo"""
+        """Notifica al siguiente firmante en el flujo secuencial"""
+        from apps.audit_system.centro_notificaciones.services import NotificationService
+
         if configuracion_flujo.tipo_flujo != 'SECUENCIAL':
             return
 
@@ -314,8 +337,29 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
         if not siguiente_nodo_data:
             return
 
-        # TODO: Crear notificación para el siguiente firmante
-        # Integrar con sistema de notificaciones
+        # Buscar el registro FirmaDigital del siguiente turno para obtener el usuario
+        siguiente_firma = FirmaDigital.objects.filter(
+            content_type=firma_actual.content_type,
+            object_id=firma_actual.object_id,
+            orden=siguiente_nodo_data.get('orden'),
+            estado='PENDIENTE',
+        ).select_related('usuario').first()
+
+        if not siguiente_firma or not siguiente_firma.usuario:
+            return
+
+        titulo_documento = getattr(documento, 'titulo', getattr(documento, 'nombre', str(documento)))
+
+        NotificationService.send_notification(
+            tipo_codigo='FIRMA_PENDIENTE',
+            usuario=siguiente_firma.usuario,
+            datos={
+                'documento_titulo': titulo_documento,
+                'rol_firma': siguiente_firma.get_rol_firma_display(),
+            },
+            url='/sistema-gestion/documentos',
+            prioridad='alta',
+        )
 
     @action(detail=True, methods=['post'], url_path='validar-integridad')
     def validar_integridad(self, request, pk=None):

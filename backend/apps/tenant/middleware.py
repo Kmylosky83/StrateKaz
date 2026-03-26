@@ -80,8 +80,19 @@ class TenantAuthenticationMiddleware:
             request.path.startswith(path) for path in public_tenant_paths
         )
 
-        # Verificar si hay un X-Tenant-ID header
-        tenant_id = request.headers.get('X-Tenant-ID')
+        # Verificar si hay un X-Tenant-ID header.
+        # Validar que sea un entero — el frontend puede enviar "null" (string)
+        # si localStorage.getItem('current_tenant_id') retorna "null".
+        raw_tenant_id = request.headers.get('X-Tenant-ID')
+        tenant_id = None
+        if raw_tenant_id:
+            try:
+                tenant_id = int(raw_tenant_id)
+            except (ValueError, TypeError):
+                logger.warning(
+                    f"X-Tenant-ID inválido: '{raw_tenant_id}' "
+                    f"(path={request.path}, IP={request.META.get('REMOTE_ADDR')})"
+                )
 
         if tenant_id:
             try:
@@ -110,6 +121,10 @@ class TenantAuthenticationMiddleware:
                 )
             except Exception as e:
                 logger.error(f"Error al cambiar de tenant: {e}")
+                return JsonResponse(
+                    {'detail': 'Error al resolver la empresa. Intenta de nuevo.'},
+                    status=500
+                )
 
         response = self.get_response(request)
         return response

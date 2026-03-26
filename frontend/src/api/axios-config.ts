@@ -24,10 +24,14 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // En desarrollo, agregar X-Tenant-ID si hay un tenant seleccionado
-    const tenantId = localStorage.getItem('current_tenant_id');
-    if (tenantId && config.headers) {
-      config.headers['X-Tenant-ID'] = tenantId;
+    // Agregar X-Tenant-ID si hay un tenant seleccionado.
+    // Validar que sea un número válido — localStorage puede tener "null" (string)
+    // si String(null) se guardó accidentalmente, lo que causa
+    // "Field 'id' expected a number but got 'null'" en TenantAuthenticationMiddleware.
+    const rawTenantId = localStorage.getItem('current_tenant_id');
+    const tenantId = rawTenantId ? Number(rawTenantId) : null;
+    if (tenantId && !isNaN(tenantId) && config.headers) {
+      config.headers['X-Tenant-ID'] = String(tenantId);
     }
 
     // Impersonación: informar al backend cuál es el usuario efectivo

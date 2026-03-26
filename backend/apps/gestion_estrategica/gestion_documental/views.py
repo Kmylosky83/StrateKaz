@@ -1003,6 +1003,12 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
     section_code = 'documentos'
     http_method_names = ['get', 'post', 'patch']
 
+    def get_permissions(self):
+        """mis_pendientes es self-service (Mi Portal) — solo requiere autenticación."""
+        if self.action == 'mis_pendientes':
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         from .serializers import (
             AceptacionDocumentalListSerializer,

@@ -613,6 +613,12 @@ class HojaVidaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'colaboradores'
 
+    def get_permissions(self):
+        """por_colaborador es usado desde Mi Portal (self-service)."""
+        if self.action == 'por_colaborador':
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
         queryset = HojaVida.objects.filter(is_active=True)
 

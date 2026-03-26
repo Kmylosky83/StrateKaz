@@ -105,17 +105,25 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'colaboradores'
 
+    # Acciones self-service: el usuario gestiona SUS propios datos,
+    # no requieren permisos RBAC (solo IsAuthenticated).
+    SELF_SERVICE_ACTIONS = frozenset({
+        'me', 'update_profile', 'upload_photo', 'firma_guardada',
+    })
+
     granular_action_map = {
         'change_password': 'can_edit',
-        'restore': 'can_delete', # Restore is logical reverse of delete
+        'restore': 'can_delete',
         'comerciales': 'can_view',
         'stats': 'can_view',
-        'me': 'can_view', # Usually allowany or authenticated, but for now map to view
-        'update_profile': 'can_view', # Self-service action, user updates own profile
-        'upload_photo': 'can_view', # Self-service action, user uploads own photo
-        'firma_guardada': 'can_view', # Self-service action, user manages own signature
-        'impersonate_profile': 'can_view', # Custom superuser check inside action
+        'impersonate_profile': 'can_view',
     }
+
+    def get_permissions(self):
+        """Self-service actions bypass RBAC — solo requieren autenticación."""
+        if self.action in self.SELF_SERVICE_ACTIONS:
+            return [IsAuthenticated()]
+        return super().get_permissions()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['cargo', 'cargo__code', 'is_active', 'is_staff', 'document_type']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'document_number']

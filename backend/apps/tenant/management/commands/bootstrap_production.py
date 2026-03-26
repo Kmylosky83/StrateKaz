@@ -243,13 +243,6 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'   [!]seed_permisos_rbac: {e}'))
 
-            # 6c. Cargo Admin
-            try:
-                call_command('seed_admin_cargo', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   [OK]seed_admin_cargo'))
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   [!]seed_admin_cargo: {e}'))
-
         # ==============================================
         # FASE 7: User superadmin dentro del tenant
         # ==============================================

@@ -121,6 +121,22 @@ export function useAssignRolesToCargo() {
 }
 
 /**
+ * Hook para activar/desactivar un cargo
+ */
+export function useToggleCargo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive?: boolean }) =>
+      rbacAPI.toggleCargo(id, isActive),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+      queryClient.invalidateQueries({ queryKey: ['select-lists'] });
+    },
+  });
+}
+
+/**
  * Hook para obtener niveles de cargo
  */
 export function useCargoLevels() {

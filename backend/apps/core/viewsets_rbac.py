@@ -355,6 +355,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         'areas': 'can_view',
         'choices': 'can_view',
         'section_accesses': 'can_view',
+        'toggle': 'can_edit',
         'assign_permissions': 'can_edit',
         'assign_roles': 'can_edit',
         'assign_riesgos': 'can_edit',
@@ -431,6 +432,35 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                     vacante.save(update_fields=['estado', 'is_active', 'motivo_cierre'])
         except Exception:
             pass  # Si el modelo no existe aún, no bloquear
+
+    @action(detail=True, methods=['post'], url_path='toggle')
+    def toggle(self, request, pk=None):
+        """
+        POST /api/core/cargos-rbac/{id}/toggle/
+
+        Activa o desactiva un cargo. Desactivar un cargo NO afecta usuarios
+        asignados — solo lo oculta de dropdowns y listados filtrados.
+
+        Body (opcional): {"is_active": true/false}
+        Si no se envía body, alterna el estado actual.
+        """
+        cargo = self.get_object()
+
+        new_state = request.data.get('is_active')
+        if new_state is None:
+            new_state = not cargo.is_active
+        else:
+            new_state = bool(new_state)
+
+        cargo.is_active = new_state
+        cargo.save(update_fields=['is_active'])
+
+        return Response({
+            'id': cargo.id,
+            'name': cargo.name,
+            'is_active': cargo.is_active,
+            'message': f'Cargo {"activado" if new_state else "desactivado"} exitosamente',
+        })
 
     @action(detail=True, methods=['post'])
     def assign_permissions(self, request, pk=None):

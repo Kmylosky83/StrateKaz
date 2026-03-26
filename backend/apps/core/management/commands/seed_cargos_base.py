@@ -9,7 +9,7 @@ Comportamiento idempotente:
 - Solo CREA cargos nuevos (si el code no existe en el tenant).
 - NUNCA sobrescribe ediciones del admin (nombre, nivel, objetivo, etc.).
 - Si un cargo fue desactivado (is_active=False), NO lo recrea ni reactiva.
-- Marca todos los cargos seed como is_system=True (protección contra eliminación).
+- Cargos de negocio se crean con is_system=False (editables y eliminables).
 - Asigna área (proceso) por defecto según CARGO_AREA_MAPPING si no tiene una.
 
 Uso:

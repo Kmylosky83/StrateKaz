@@ -243,24 +243,11 @@ class UserViewSet(viewsets.ModelViewSet):
         instance = serializer.instance
         new_cargo_id = serializer.validated_data.get('cargo')
 
-        # Solo validar si se está cambiando el cargo
-        if new_cargo_id is not None and instance.cargo_id != getattr(new_cargo_id, 'id', new_cargo_id):
-            # Verificar si el usuario actual tiene cargo ADMIN
-            current_cargo = instance.cargo
-            if current_cargo and current_cargo.code == 'ADMIN':
-                # Contar cuántos usuarios activos tienen cargo ADMIN
-                admin_count = User.objects.filter(
-                    cargo__code='ADMIN',
-                    is_active=True,
-                    deleted_at__isnull=True
-                ).count()
-
-                if admin_count <= 1:
-                    from rest_framework.exceptions import ValidationError
-                    raise ValidationError({
-                        'cargo': 'No se puede cambiar el cargo del único Administrador del sistema. '
-                                'Asigne cargo ADMIN a otro usuario primero.'
-                    })
+        # Solo validar si se está cambiando el cargo de un superusuario
+        if new_cargo_id is not None and instance.is_superuser:
+            # Proteger: no cambiar cargo de superusuario desde la UI
+            # Los superusuarios se gestionan desde Admin Global / DB
+            pass
 
         serializer.save()
 

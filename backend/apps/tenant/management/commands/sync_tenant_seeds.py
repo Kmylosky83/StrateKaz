@@ -1,17 +1,16 @@
 """
 Sincronizar seeds en tenants existentes.
 
-Cuando se actualizan los seeds (modulos, sidebar, permisos RBAC, cargo admin),
+Cuando se actualizan los seeds (modulos, sidebar, permisos RBAC),
 los tenants existentes NO reciben los cambios automaticamente porque los seeds
 solo corren al momento de crear un tenant.
 
 Este comando re-ejecuta los seeds criticos en tenants existentes para que
-reciban la estructura actualizada de modulos, permisos y cargos del sistema.
+reciban la estructura actualizada de modulos y permisos.
 
-Los 3 seeds criticos son idempotentes (usan update_or_create):
+Los 2 seeds criticos son idempotentes (usan update_or_create):
 1. seed_estructura_final - Modulos, tabs, secciones del sidebar
 2. seed_permisos_rbac    - Permisos RBAC por modulo/seccion
-3. seed_admin_cargo      - Cargos ADMIN/USUARIO con acceso a todas las secciones
 
 Uso:
     # Sincronizar todos los tenants activos
@@ -39,7 +38,7 @@ logger = logging.getLogger('apps')
 
 
 class Command(BaseCommand):
-    help = 'Re-ejecutar seeds criticos en tenants existentes para sincronizar modulos, permisos y cargos'
+    help = 'Re-ejecutar seeds criticos en tenants existentes para sincronizar modulos y permisos'
 
     def add_arguments(self, parser):
         group = parser.add_mutually_exclusive_group(required=True)
@@ -64,11 +63,7 @@ class Command(BaseCommand):
             action='store_true',
             help='Solo ejecutar seed_estructura_final (modulos/sidebar)',
         )
-        parser.add_argument(
-            '--skip-admin-cargo',
-            action='store_true',
-            help='Omitir seed_admin_cargo (no actualizar cargos del sistema)',
-        )
+        # --skip-admin-cargo removed: seed_admin_cargo was eliminated
 
     def handle(self, *args, **options):
         from apps.tenant.models import Tenant
@@ -104,9 +99,6 @@ class Command(BaseCommand):
 
         if not options['only_estructura']:
             seeds.append(('seed_permisos_rbac', 'Permisos RBAC por modulo/seccion'))
-
-            if not options['skip_admin_cargo']:
-                seeds.append(('seed_admin_cargo', 'Cargos ADMIN/USUARIO del sistema'))
 
         # ==========================================
         # 3. Resumen pre-ejecucion

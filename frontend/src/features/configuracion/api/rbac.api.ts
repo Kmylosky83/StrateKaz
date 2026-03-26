@@ -86,6 +86,19 @@ export const rbacAPI = {
   },
 
   /**
+   * Toggle activar/desactivar cargo
+   */
+  toggleCargo: async (
+    id: number,
+    isActive?: boolean
+  ): Promise<{ id: number; name: string; is_active: boolean }> => {
+    const response = await axiosInstance.post(`/core/cargos-rbac/${id}/toggle/`, {
+      ...(isActive !== undefined ? { is_active: isActive } : {}),
+    });
+    return response.data;
+  },
+
+  /**
    * Asignar permisos a cargo
    */
   assignPermissionsToCargo: async (

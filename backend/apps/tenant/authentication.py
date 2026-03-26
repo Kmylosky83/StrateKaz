@@ -249,12 +249,12 @@ class HybridJWTAuthentication(JWTAuthentication):
         """
         Crea un User en el tenant actual basado en los datos del TenantUser.
 
-        Asignacion de cargo:
-        - Superadmin global -> cargo ADMIN (acceso total)
-        - Usuario normal -> cargo USUARIO (solo lectura, minimo privilegio)
+        El User se crea SIN cargo asignado. El cargo se asigna cuando:
+        - Se crea un Colaborador desde Gestión de Personas (signal sincroniza)
+        - Un admin asigna cargo manualmente
 
-        El admin del tenant puede cambiar el cargo desde
-        Configuracion > Usuarios > Editar.
+        Superadmins obtienen is_superuser=True, que les da acceso completo
+        via GranularActionPermission sin necesidad de cargo.
 
         Args:
             tenant_user: El TenantUser fuente
@@ -263,29 +263,10 @@ class HybridJWTAuthentication(JWTAuthentication):
         Returns:
             User creado o None si falla
         """
-        from apps.core.models import User, Cargo
+        from apps.core.models import User
         import uuid
 
         try:
-            # Superadmin -> cargo ADMIN (acceso total)
-            # Usuario normal -> cargo USUARIO (solo lectura, minimo privilegio)
-            cargo_code = 'ADMIN' if is_superadmin else 'USUARIO'
-            assigned_cargo = None
-            try:
-                assigned_cargo = Cargo.objects.get(code=cargo_code, is_active=True)
-            except Cargo.DoesNotExist:
-                logger.warning(
-                    "Cargo %s not found in tenant schema. "
-                    "Attempting fallback to USUARIO.",
-                    cargo_code
-                )
-                if cargo_code == 'ADMIN':
-                    # Fallback: si no existe ADMIN, intentar USUARIO
-                    try:
-                        assigned_cargo = Cargo.objects.get(code='USUARIO', is_active=True)
-                    except Cargo.DoesNotExist:
-                        logger.warning("Cargo USUARIO not found either. User will have no cargo.")
-
             base_username = tenant_user.email.split('@')[0]
             username = base_username
             counter = 1
@@ -310,7 +291,7 @@ class HybridJWTAuthentication(JWTAuthentication):
                 is_staff=grant_superuser,
                 document_type='CC',
                 document_number=temp_document,
-                cargo=assigned_cargo,  # ADMIN para superadmin, USUARIO para normales
+                cargo=None,  # Sin cargo — se asigna al crear Colaborador
             )
 
             # NO establecer password - el User no tiene password propio,

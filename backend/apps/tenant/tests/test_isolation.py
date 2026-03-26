@@ -395,8 +395,8 @@ class PermissionClassesTest(TestCase):
         request = self._make_request(user)
         self.assertFalse(perm.has_permission(request, None))
 
-    def test_is_admin_tenant_allows_cargo_admin(self):
-        """IsAdminTenant permite User con cargo.code='ADMIN'."""
+    def test_is_admin_tenant_denies_non_superuser(self):
+        """IsAdminTenant deniega User sin is_superuser."""
         from apps.tenant.views import IsAdminTenant
         perm = IsAdminTenant()
 
@@ -405,22 +405,7 @@ class PermissionClassesTest(TestCase):
         user.is_superuser = False
         user.is_superadmin = False
         user.cargo = MagicMock()
-        user.cargo.code = 'ADMIN'
-
-        request = self._make_request(user)
-        self.assertTrue(perm.has_permission(request, None))
-
-    def test_is_admin_tenant_denies_non_admin_cargo(self):
-        """IsAdminTenant deniega User con cargo que no es ADMIN."""
-        from apps.tenant.views import IsAdminTenant
-        perm = IsAdminTenant()
-
-        user = MagicMock(spec=['is_authenticated', 'is_superuser', 'is_superadmin', 'cargo'])
-        user.is_authenticated = True
-        user.is_superuser = False
-        user.is_superadmin = False
-        user.cargo = MagicMock()
-        user.cargo.code = 'USER'
+        user.cargo.code = 'GERENTE'
 
         request = self._make_request(user)
         self.assertFalse(perm.has_permission(request, None))

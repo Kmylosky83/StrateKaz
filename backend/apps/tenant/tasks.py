@@ -281,15 +281,7 @@ def create_tenant_schema_task(
                 logger.error(f"[Task {task_id}] {error_msg}")
                 seed_errors.append(error_msg)
 
-            # 3. Cargo Administrador con permisos completos
-            # No critico: el cargo se puede crear despues manualmente
-            try:
-                call_command('seed_admin_cargo', verbosity=0)
-                logger.info(f"[Task {task_id}] seed_admin_cargo completed")
-            except Exception as e:
-                logger.warning(f"[Task {task_id}] seed_admin_cargo failed (non-critical): {e}")
-
-            # 4. Configuracion de identidad corporativa
+            # 3. Configuracion de identidad corporativa
             # No critico: estados de politica, tipos, roles de firmante
             # Sin esto, el modulo de identidad no tiene tablas de config
             try:

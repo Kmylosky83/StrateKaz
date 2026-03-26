@@ -539,7 +539,7 @@ def send_weekly_reports(self) -> Dict[str, Any]:
                 User = get_user_model()
 
                 admins = User.objects.filter(
-                    Q(is_superuser=True) | Q(cargo__rol_sistema__code='ADMIN')
+                    is_superuser=True
                 ).distinct()
 
                 for admin in admins:

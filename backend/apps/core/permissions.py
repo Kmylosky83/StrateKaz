@@ -158,8 +158,7 @@ class IsSuperAdmin(permissions.BasePermission):
 
     Verifica por:
     1. TenantUser.is_superadmin (usuarios globales)
-    2. User.cargo.code == 'ADMIN' (usuarios locales creados via HybridJWT)
-    3. User.is_superuser (fallback legacy)
+    2. User.is_superuser (superusuario del tenant)
     """
 
     message = 'Solo SuperAdmin puede realizar esta operación.'
@@ -173,12 +172,7 @@ class IsSuperAdmin(permissions.BasePermission):
         if hasattr(request.user, 'is_superadmin'):
             return request.user.is_superadmin
 
-        # User local con cargo ADMIN (creado via HybridJWTAuthentication)
-        if hasattr(request.user, 'cargo') and request.user.cargo:
-            if request.user.cargo.code == 'ADMIN':
-                return True
-
-        # Fallback legacy
+        # User local con is_superuser (creado via HybridJWTAuthentication)
         return request.user.is_superuser
 
 

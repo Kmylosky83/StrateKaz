@@ -22,6 +22,8 @@ import {
   CheckCircle,
   Search,
   Upload,
+  Power,
+  PowerOff,
 } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -37,7 +39,7 @@ import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
-import { useCargos, useDeleteCargo, useCargoChoices } from '../hooks/useCargos';
+import { useCargos, useDeleteCargo, useToggleCargo, useCargoChoices } from '../hooks/useCargos';
 import { CargoLevelBadge } from './CargoLevelBadge';
 import { CargoFormModal } from './CargoFormModal';
 import { ImportCargosModal } from './ImportCargosModal';
@@ -57,12 +59,17 @@ const cargoColumns: ResponsiveTableColumn<CargoList & Record<string, unknown>>[]
     render: (item) => {
       const c = item as unknown as CargoList;
       return (
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${!c.is_active ? 'opacity-50' : ''}`}>
           {c.is_system && <Lock className="h-4 w-4 text-gray-400" />}
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{c.name}</span>
           {c.is_system && (
             <Badge variant="gray" size="sm">
               Sistema
+            </Badge>
+          )}
+          {!c.is_active && (
+            <Badge variant="warning" size="sm">
+              Inactivo
             </Badge>
           )}
         </div>
@@ -120,8 +127,13 @@ export const CargosTab = () => {
   const { color: moduleColor } = useModuleColor('fundacion');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
-  const { data, isLoading, error } = useCargos({ ...filters, page_size: 100 });
+  const { data, isLoading, error } = useCargos({
+    ...filters,
+    page_size: 100,
+    include_inactive: true,
+  });
   const deleteMutation = useDeleteCargo();
+  const toggleMutation = useToggleCargo();
   const { data: choicesData } = useCargoChoices();
 
   // Opciones de areas desde el backend
@@ -355,6 +367,22 @@ export const CargosTab = () => {
                         title="Editar"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                    </ProtectedAction>
+                    <ProtectedAction permission="fundacion.cargos.edit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          await toggleMutation.mutateAsync({ id: cargo.id });
+                        }}
+                        title={cargo.is_active ? 'Desactivar cargo' : 'Activar cargo'}
+                      >
+                        {cargo.is_active ? (
+                          <PowerOff className="h-4 w-4 text-amber-500" />
+                        ) : (
+                          <Power className="h-4 w-4 text-green-500" />
+                        )}
                       </Button>
                     </ProtectedAction>
                     <ProtectedAction permission="fundacion.cargos.delete">

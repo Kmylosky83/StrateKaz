@@ -132,7 +132,6 @@ class IsAdminTenant(BasePermission):
     Verifica (en orden):
     1. TenantUser.is_superadmin (Admin Global)
     2. core.User.is_superuser (superusuario del tenant)
-    3. core.User.cargo.code == 'ADMIN' (cargo admin asignado)
     """
     message = 'Solo los administradores de la empresa pueden realizar esta acción.'
 
@@ -147,11 +146,6 @@ class IsAdminTenant(BasePermission):
         # Si es core.User con is_superuser, tiene acceso
         if hasattr(request.user, 'is_superuser') and request.user.is_superuser:
             return True
-
-        # User local: verificar cargo ADMIN
-        if hasattr(request.user, 'cargo') and request.user.cargo:
-            if request.user.cargo.code == 'ADMIN':
-                return True
 
         return False
 

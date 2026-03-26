@@ -180,7 +180,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
       const updateData: UpdateCargoDTO = {
         name: formData.name,
         description: formData.description || undefined,
-        area: formData.area,
+        area: formData.area ?? null,
         parent_cargo: formData.parent_cargo || null,
         nivel_jerarquico: formData.nivel_jerarquico,
         cantidad_posiciones: formData.cantidad_posiciones,

@@ -549,7 +549,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         Si existing_tenant_user se pasa (TenantUser con password usable),
         copia el password hash y envía email de "nuevo acceso" en vez de "setup password".
         """
-        from apps.core.utils.user_factory import _resolve_tenant_for_user
+        from apps.core.utils.user_factory import _resolve_tenant_context
 
         # Generar document_number único por usuario (no por proveedor)
         base_doc = proveedor.numero_documento or f'PROV-{proveedor.id}'
@@ -585,7 +585,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             new_user.save()
 
         # Resolver tenant para branding del email
-        tenant_id, tenant_name_resolved, primary_color, secondary_color = _resolve_tenant_for_user(new_user)
+        tenant_id, tenant_name_resolved, primary_color, secondary_color = _resolve_tenant_context()
         frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
 
         try:
@@ -691,7 +691,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             # Si el usuario existente tiene proveedor eliminado → reasignar
             old_prov = existing_user.proveedor
             if old_prov and old_prov.is_deleted:
-                from apps.core.utils.user_factory import _resolve_tenant_for_user
+                from apps.core.utils.user_factory import _resolve_tenant_context
 
                 existing_user.proveedor = proveedor
                 existing_user.cargo = cargo
@@ -706,7 +706,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 try:
                     from apps.core.tasks import send_setup_password_email_task
                     frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-                    tenant_id, tenant_name_r, primary_color, secondary_color = _resolve_tenant_for_user(existing_user)
+                    tenant_id, tenant_name_r, primary_color, secondary_color = _resolve_tenant_context()
                     setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}&tenant_id={tenant_id}"
                     send_setup_password_email_task.delay(
                         user_email=email,

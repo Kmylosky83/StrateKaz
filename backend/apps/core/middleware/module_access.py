@@ -55,7 +55,9 @@ URL_TO_MODULE_CODE: dict[str, str | list[str]] = {
     'api/gestion-documental/': 'sistema_gestion',
 }
 
-# Prefijos que NUNCA se bloquean (infraestructura)
+# Prefijos que NUNCA se bloquean (infraestructura + portales transversales)
+# Los portales son vistas personales de cualquier usuario autenticado,
+# NO dependen de que un módulo específico esté habilitado.
 EXCLUDED_PREFIXES = (
     'api/core/',
     'api/tenant/',
@@ -64,6 +66,9 @@ EXCLUDED_PREFIXES = (
     'api/schema/',
     'api/docs/',
     'api/redoc/',
+    # Portales transversales (acceso personal, no dependen de módulo)
+    'api/talent-hub/mi-portal/',
+    'api/mi-equipo/',
     'admin/',
     'static/',
     'media/',

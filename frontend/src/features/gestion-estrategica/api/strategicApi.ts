@@ -337,73 +337,20 @@ export const brandingApi = {
   /**
    * Obtiene la configuración de branding activa.
    *
-   * FLUJO (v4.0 - aislamiento multi-tenant):
-   * 1. Si hay token Y tenant seleccionado → endpoint autenticado (branding completo)
-   * 2. Si NO hay token PERO sí tenant_id → endpoint público por ID (setup/reset password)
-   * 3. Fallback: endpoint público por dominio (login en subdominio)
-   * 4. Fallback final: null → valores por defecto
+   * FLUJO (v4.1 - público para todos los usuarios):
+   * 1. Si hay tenant_id → endpoint público por ID (funciona con o sin token)
+   * 2. Fallback: endpoint público por dominio (login en subdominio)
+   * 3. Fallback final: null → valores por defecto
+   *
+   * NOTA: Usamos siempre el endpoint público para evitar 403 en usuarios
+   * no-superadmin. El endpoint admin-only (/api/tenant/tenants/{id}/)
+   * requiere IsSuperAdmin y causaba borrado accidental de tokens.
    */
   getActive: async (): Promise<BrandingConfig | null> => {
-    // Verificar si hay token de autenticación válido
-    const accessToken = localStorage.getItem('access_token');
     const currentTenantId = localStorage.getItem('current_tenant_id');
 
-    // Paso 1: Endpoint autenticado si hay token Y tenant seleccionado
-    if (accessToken && currentTenantId) {
-      try {
-        // Usar el endpoint de tenant que incluye branding
-        const response = await apiClient.get(`${TENANT_URL}/tenants/${currentTenantId}/`);
-        const tenant = response.data;
-
-        // Mapear campos del tenant a formato BrandingConfig
-        return {
-          id: tenant.id,
-          company_name: tenant.name,
-          company_short_name: tenant.nombre_comercial || tenant.name,
-          company_slogan: tenant.company_slogan || '',
-          logo: tenant.logo,
-          logo_white: tenant.logo_white,
-          logo_dark: tenant.logo_dark,
-          favicon: tenant.favicon,
-          login_background: tenant.login_background,
-          primary_color: tenant.primary_color || '#ec268f',
-          secondary_color: tenant.secondary_color || '#000000',
-          accent_color: tenant.accent_color || '#f4ec25',
-          sidebar_color: tenant.sidebar_color || '#1E293B',
-          background_color: tenant.background_color || '#F5F5F5',
-          showcase_background: tenant.showcase_background || '#1F2937',
-          gradient_mission: tenant.gradient_mission || '',
-          gradient_vision: tenant.gradient_vision || '',
-          gradient_policy: tenant.gradient_policy || '',
-          gradient_values: tenant.gradient_values || [],
-          app_version: APP_VERSION,
-          pwa_name: tenant.pwa_name || tenant.name,
-          pwa_short_name: tenant.pwa_short_name || tenant.nombre_comercial || tenant.name,
-          pwa_description: tenant.pwa_description || '',
-          pwa_theme_color: tenant.pwa_theme_color || tenant.primary_color || '#ec268f',
-          pwa_background_color: tenant.pwa_background_color || '#FFFFFF',
-          pwa_icon_192: tenant.pwa_icon_192,
-          pwa_icon_512: tenant.pwa_icon_512,
-          pwa_icon_maskable: tenant.pwa_icon_maskable,
-          is_active: true,
-        };
-      } catch (error: unknown) {
-        // Si falla por auth (401/403), limpiar tokens viejos para no reintentar
-        if (error && typeof error === 'object' && 'response' in error) {
-          const axiosError = error as { response?: { status?: number } };
-          if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('current_tenant_id');
-          }
-        }
-        console.warn('[brandingApi] Failed to get tenant branding, falling back to public');
-      }
-    }
-
-    // Paso 2: Si hay tenant_id pero NO token (setup-password, reset-password)
-    // Usar endpoint público que resuelve branding por tenant ID sin autenticación
-    if (!accessToken && currentTenantId) {
+    // Paso 1: Endpoint público por tenant ID (funciona para cualquier usuario)
+    if (currentTenantId) {
       try {
         const response = await apiClient.get(`${TENANT_URL}/public/branding-by-id/`, {
           params: { tenant_id: currentTenantId },
@@ -414,7 +361,7 @@ export const brandingApi = {
       }
     }
 
-    // Paso 3: Endpoint público por dominio (login en subdominio del tenant)
+    // Paso 2: Endpoint público por dominio (login en subdominio del tenant)
     try {
       const currentDomain = window.location.host;
       const response = await apiClient.get(`${TENANT_URL}/public/branding/`, {
@@ -425,7 +372,6 @@ export const brandingApi = {
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 404) {
-          // Retornar null para usar valores por defecto
           return null;
         }
       }
@@ -435,12 +381,14 @@ export const brandingApi = {
 
   /**
    * Obtiene branding por tenant ID.
-   * Obtiene los datos del tenant y mapea a formato BrandingConfig.
+   * Usa endpoint público que no requiere IsSuperAdmin.
    *
    * @param tenantId - ID del tenant
    */
   getById: async (tenantId: number): Promise<BrandingConfig> => {
-    const response = await apiClient.get(`${TENANT_URL}/tenants/${tenantId}/`);
+    const response = await apiClient.get(`${TENANT_URL}/public/branding-by-id/`, {
+      params: { tenant_id: tenantId },
+    });
     const tenant = response.data;
 
     // Mapear campos del tenant a formato BrandingConfig

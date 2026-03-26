@@ -13,12 +13,27 @@ from .models import (
 )
 
 
+class AreaCargoSerializer(serializers.Serializer):
+    """Serializer ligero para cargos dentro de un área"""
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    nivel_jerarquico = serializers.CharField()
+    is_jefatura = serializers.BooleanField()
+    users_count = serializers.SerializerMethodField()
+
+    def get_users_count(self, obj):
+        return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
+
+
 class AreaSerializer(serializers.ModelSerializer):
     """Serializer para el modelo Area"""
     parent_name = serializers.CharField(source='parent.name', read_only=True)
     manager_name = serializers.CharField(source='manager.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     children_count = serializers.IntegerField(read_only=True)
+    cargos_count = serializers.SerializerMethodField()
+    cargos = serializers.SerializerMethodField()
     full_path = serializers.CharField(read_only=True)
     level = serializers.IntegerField(read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -41,8 +56,11 @@ class AreaSerializer(serializers.ModelSerializer):
             'icon',
             'color',
             'is_active',
+            'is_system',
             'orden',
             'children_count',
+            'cargos_count',
+            'cargos',
             'full_path',
             'level',
             'created_at',
@@ -51,6 +69,13 @@ class AreaSerializer(serializers.ModelSerializer):
             'created_by_name',
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by']
+
+    def get_cargos_count(self, obj):
+        return obj.cargos.filter(is_active=True).count()
+
+    def get_cargos(self, obj):
+        cargos = obj.cargos.filter(is_active=True).order_by('nivel_jerarquico', 'name')
+        return AreaCargoSerializer(cargos, many=True).data
 
     def create(self, validated_data):
         """Asigna el usuario que crea el área"""
@@ -95,10 +120,18 @@ class AreaListSerializer(serializers.ModelSerializer):
     parent_name = serializers.CharField(source='parent.name', read_only=True)
     manager_name = serializers.CharField(source='manager.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    cargos_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Area
-        fields = ['id', 'code', 'name', 'tipo', 'tipo_display', 'objetivo', 'parent', 'parent_name', 'manager', 'manager_name', 'icon', 'color', 'is_active']
+        fields = [
+            'id', 'code', 'name', 'tipo', 'tipo_display', 'objetivo',
+            'parent', 'parent_name', 'manager', 'manager_name',
+            'icon', 'color', 'is_active', 'is_system', 'cargos_count',
+        ]
+
+    def get_cargos_count(self, obj):
+        return obj.cargos.filter(is_active=True).count()
 
 
 class OrganigramaNodePositionSerializer(serializers.ModelSerializer):

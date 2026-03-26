@@ -39,6 +39,7 @@ export function useCreateCargo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       queryClient.invalidateQueries({ queryKey: ['rbac-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['areas'] });
     },
   });
 }
@@ -55,6 +56,7 @@ export function useUpdateCargo() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       queryClient.invalidateQueries({ queryKey: ['cargo-rbac', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['areas'] });
     },
   });
 }
@@ -70,6 +72,7 @@ export function useDeleteCargo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       queryClient.invalidateQueries({ queryKey: ['rbac-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['areas'] });
     },
   });
 }

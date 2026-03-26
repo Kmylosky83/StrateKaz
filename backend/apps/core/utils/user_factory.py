@@ -138,11 +138,12 @@ class UserSetupFactory:
             new_user._from_contratacion = True
 
         new_user.set_password(temp_password)
-        new_user.save()
 
-        # Setup token — hasheado SHA-256 en BD, raw va al email
-        # set_password_setup_token() guarda automáticamente
+        # Setup token ANTES del save: así el signal post_save ve el
+        # token y NO envía welcome email duplicado, y el token se
+        # persiste en BD en un solo INSERT.
         raw_token = new_user.set_password_setup_token()
+        new_user.save()
 
         logger.info(
             'User #%s creado con setup token (email=%s, cargo=%s)',
@@ -155,7 +156,12 @@ class UserSetupFactory:
 
     @staticmethod
     def send_setup_email(
-        user, *, entity_name=None, cargo_name='', empresa=None
+        user,
+        *,
+        raw_token=None,
+        entity_name=None,
+        cargo_name='',
+        empresa=None,
     ):
         """
         Envía email de configuración de contraseña vía Celery task.
@@ -168,6 +174,8 @@ class UserSetupFactory:
 
         Args:
             user: User instance (debe tener password_setup_token)
+            raw_token: Token sin hashear (para la URL del email).
+                Si no se pasa, se genera uno nuevo y se persiste.
             entity_name: Nombre explícito de la empresa/entidad
             cargo_name: Nombre del cargo asignado
             empresa: ConfiguracionGeneral (opcional, para razon_social)
@@ -181,6 +189,16 @@ class UserSetupFactory:
             resolved_name = _resolve_entity_name(
                 entity_name=entity_name, empresa=empresa
             )
+
+            # Si no se pasó raw_token, regenerar (y persistir)
+            if not raw_token:
+                raw_token = user.set_password_setup_token()
+                user.save(
+                    update_fields=[
+                        'password_setup_token',
+                        'password_setup_expires',
+                    ]
+                )
 
             frontend_url = getattr(
                 settings,
@@ -196,7 +214,7 @@ class UserSetupFactory:
 
             setup_url = (
                 f"{frontend_url}/setup-password"
-                f"?token={user.password_setup_token}"
+                f"?token={raw_token}"
                 f"&email={user.email}"
                 f"&tenant_id={tenant_id}"
             )

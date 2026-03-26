@@ -57,6 +57,11 @@ const getErrorMessage = (error: unknown): string => {
       return data;
     }
 
+    // Si tiene campo error (validaciones custom)
+    if (data.error) {
+      return data.error;
+    }
+
     // Si tiene campo detail (DRF)
     if (data.detail) {
       return data.detail;

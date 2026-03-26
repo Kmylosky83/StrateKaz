@@ -225,7 +225,7 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         from apps.core.utils.user_factory import UserSetupFactory
 
         # Crear User con setup token via factory centralizada
-        new_user, _token = UserSetupFactory.create_user_with_setup(
+        new_user, raw_token = UserSetupFactory.create_user_with_setup(
             email=email,
             username=username,
             first_name=colaborador.primer_nombre,
@@ -245,6 +245,7 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         # Enviar email de setup de contraseña (async)
         UserSetupFactory.send_setup_email(
             new_user,
+            raw_token=raw_token,
             empresa=empresa,
             cargo_name=(
                 colaborador.cargo.name if colaborador.cargo else ''

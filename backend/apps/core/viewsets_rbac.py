@@ -384,8 +384,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        # Toggle necesita ver inactivos para poder reactivarlos
         include_inactive = self.request.query_params.get('include_inactive', 'false')
-        if include_inactive.lower() != 'true':
+        if include_inactive.lower() != 'true' and self.action != 'toggle':
             queryset = queryset.filter(is_active=True)
 
         # is_system controla protección contra eliminación (perform_destroy),

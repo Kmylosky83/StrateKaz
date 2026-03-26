@@ -384,9 +384,10 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # Toggle y destroy necesitan ver inactivos
+        # Acciones que necesitan ver TODOS los cargos (activos e inactivos)
+        needs_all = self.action in ('toggle', 'destroy', 'retrieve', 'update', 'partial_update')
         include_inactive = self.request.query_params.get('include_inactive', 'false')
-        if include_inactive.lower() != 'true' and self.action not in ('toggle', 'destroy', 'retrieve'):
+        if include_inactive.lower() != 'true' and not needs_all:
             queryset = queryset.filter(is_active=True)
 
         # is_system controla protección contra eliminación (perform_destroy),
@@ -401,24 +402,24 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance):
-        """Soft delete - valida que no tenga usuarios, desactiva vacantes vinculadas"""
+        """
+        Soft delete (is_active=False) — el cargo desaparece de listados
+        pero permanece en BD para que el seed no lo recree.
+        """
         # Verificar si tiene usuarios asignados
         users_count = instance.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
         if users_count > 0:
             from rest_framework.exceptions import ValidationError
-            raise ValidationError(
-                f'No se puede eliminar el cargo porque tiene {users_count} usuario(s) asignado(s)'
-            )
+            raise ValidationError({
+                'error': f'No se puede eliminar el cargo porque tiene {users_count} usuario(s) asignado(s). '
+                         'Reasigne los usuarios primero.'
+            })
 
-        instance.is_active = False
-        instance.save()
-
-        # Cascade: desactivar vacantes vinculadas sin candidatos
+        # Cascade: cancelar vacantes vinculadas sin candidatos
         try:
             VacanteActiva = apps.get_model('seleccion_contratacion', 'VacanteActiva')
             vacantes = VacanteActiva.objects.filter(cargo=instance, is_active=True)
             for vacante in vacantes:
-                # Solo cerrar vacantes sin candidatos activos
                 candidatos_count = vacante.candidatos.filter(is_active=True).exclude(
                     estado__in=['rechazado', 'descartado']
                 ).count()
@@ -428,7 +429,11 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                     vacante.motivo_cierre = 'Cargo eliminado del sistema'
                     vacante.save(update_fields=['estado', 'is_active', 'motivo_cierre'])
         except Exception:
-            pass  # Si el modelo no existe aún, no bloquear
+            pass
+
+        # Soft delete — desaparece de listados, seed no lo recrea
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
 
     @action(detail=True, methods=['post'], url_path='toggle')
     def toggle(self, request, pk=None):

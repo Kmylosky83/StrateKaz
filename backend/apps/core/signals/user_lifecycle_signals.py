@@ -58,9 +58,9 @@ def auto_create_tenant_user(sender, instance, created, **kwargs):
     try:
         from apps.tenant.models import TenantUser, TenantUserAccess, Tenant
 
-        # Obtener el tenant actual
+        # Obtener el tenant actual (real, no FakeTenant de schema_context)
         current_tenant = getattr(connection, 'tenant', None)
-        if not current_tenant:
+        if not current_tenant or not isinstance(current_tenant, Tenant):
             try:
                 current_tenant = Tenant.objects.get(
                     schema_name=current_schema

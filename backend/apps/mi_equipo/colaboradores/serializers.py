@@ -503,6 +503,43 @@ class ColaboradorCreateUpdateSerializer(serializers.ModelSerializer):
             if salario > TOPE_AUXILIO:
                 attrs['auxilio_transporte'] = False
 
+        # Validar cantidad_posiciones del cargo (no exceder límite)
+        cargo = attrs.get('cargo', getattr(self.instance, 'cargo', None))
+        if cargo and hasattr(cargo, 'cantidad_posiciones'):
+            posiciones_disponibles = getattr(cargo, 'posiciones_disponibles', None)
+            if posiciones_disponibles is not None and posiciones_disponibles <= 0:
+                # En update, si el cargo no cambió, no bloquear
+                if not self.instance or (self.instance and self.instance.cargo_id != cargo.id):
+                    raise serializers.ValidationError({
+                        'cargo': (
+                            f'El cargo "{cargo.name}" ya tiene todas sus posiciones '
+                            f'ocupadas ({cargo.cantidad_posiciones}/{cargo.cantidad_posiciones}). '
+                            f'Aumente la cantidad de posiciones del cargo antes de asignar más colaboradores.'
+                        )
+                    })
+
+        # Validar unicidad de email_personal (warn: datos ambiguos en reportes)
+        email_personal = attrs.get('email_personal', '')
+        if email_personal:
+            qs = Colaborador.objects.filter(email_personal=email_personal)
+            if self.instance:
+                qs = qs.exclude(id=self.instance.id)
+            if qs.exists():
+                raise serializers.ValidationError({
+                    'email_personal': 'Ya existe un colaborador con este correo personal.'
+                })
+
+        # Validar unicidad de telefono_movil
+        telefono_movil = attrs.get('telefono_movil', '')
+        if telefono_movil:
+            qs = Colaborador.objects.filter(telefono_movil=telefono_movil)
+            if self.instance:
+                qs = qs.exclude(id=self.instance.id)
+            if qs.exists():
+                raise serializers.ValidationError({
+                    'telefono_movil': 'Ya existe un colaborador con este número de celular.'
+                })
+
         return attrs
 
 

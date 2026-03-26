@@ -83,6 +83,17 @@ class OnboardingService:
         UserOnboarding = apps.get_model('core', 'UserOnboarding')
         onboarding, _ = UserOnboarding.objects.get_or_create(user=user)
 
+        # ── 0. Recalcular onboarding_type (puede cambiar si el cargo cambia)
+        from apps.core.models.models_onboarding import _resolve_onboarding_type
+        current_type = _resolve_onboarding_type(user)
+        if onboarding.onboarding_type != current_type:
+            logger.info(
+                'Onboarding type actualizado para User %s: %s → %s',
+                user.pk, onboarding.onboarding_type, current_type
+            )
+            onboarding.onboarding_type = current_type
+            onboarding.save(update_fields=['onboarding_type', 'updated_at'])
+
         # ── 1. Foto ───────────────────────────────────────────────────
         has_photo = bool(getattr(user, 'photo', None))
 

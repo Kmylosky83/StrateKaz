@@ -51,6 +51,13 @@ def invalidate_cache_on_user_cargo_change(sender, instance, **kwargs):
             instance.id, e
         )
 
+    # Invalidar también cache de onboarding (el tipo puede cambiar con el cargo)
+    try:
+        from apps.core.services.onboarding_service import OnboardingService
+        OnboardingService.invalidate_cache(instance.id)
+    except Exception:
+        pass
+
 
 # =============================================================================
 # Signal 2: UserRolAdicional asignado/revocado → invalidar cache del user

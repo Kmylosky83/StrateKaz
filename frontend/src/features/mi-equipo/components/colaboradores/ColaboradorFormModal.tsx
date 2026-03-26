@@ -446,12 +446,14 @@ export const ColaboradorFormModal = ({
                 onChange={(e) => updateField('primer_nombre', e.target.value)}
                 placeholder="Juan"
                 required
+                autoComplete="given-name"
               />
               <Input
                 label="Segundo Nombre"
                 value={formData.segundo_nombre || ''}
                 onChange={(e) => updateField('segundo_nombre', e.target.value)}
                 placeholder="Carlos (opcional)"
+                autoComplete="additional-name"
               />
             </div>
 

@@ -14,7 +14,7 @@
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withFullGuard } from '../helpers';
+import { withFullGuard, withModuleGuard } from '../helpers';
 
 const MiEmpresaPage = lazy(() => import('@/features/gestion-estrategica/pages/MiEmpresaPage'));
 const ContextoIdentidadPage = lazy(
@@ -40,10 +40,11 @@ export const fundacionRoutes = (
       element={withFullGuard(ContextoIdentidadPage, 'fundacion', 'analisis_contexto')}
     />
 
-    {/* Tab 3: Mi Organización (áreas, cargos, organigrama, caracterizaciones, mapa) */}
+    {/* Tab 3: Mi Organización — página contenedora, solo verifica módulo.
+        Las sub-secciones (areas, cargos, organigrama) controlan su propio acceso. */}
     <Route
       path="/fundacion/organizacion"
-      element={withFullGuard(OrganizacionPage, 'fundacion', 'organizacion')}
+      element={withModuleGuard(OrganizacionPage, 'fundacion')}
     />
   </>
 );

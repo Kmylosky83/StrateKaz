@@ -71,7 +71,7 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPer
   return (
     <Card className="p-6">
       {/* Header: Avatar + Nombre + Badge */}
-      <div className="flex flex-col md:flex-row items-start gap-6">
+      <div className="flex flex-col sm:flex-row items-start gap-5">
         {/* Avatar clickeable para cambiar foto */}
         <Button
           variant="ghost"
@@ -99,77 +99,71 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPer
               {perfil.estado}
             </Badge>
           </div>
-
-          {/* ================================================================
-              INFORMACION LABORAL
-              ================================================================ */}
-          <div className="mt-5">
-            <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-              Informacion laboral
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <InfoItem icon={Briefcase} label="Cargo" value={perfil.cargo_nombre} />
-              <InfoItem icon={User} label="Area" value={perfil.area_nombre} />
-              <InfoItem icon={Calendar} label="Fecha de ingreso" value={perfil.fecha_ingreso} />
-            </div>
-          </div>
-
-          {/* ================================================================
-              INFORMACION DE CONTACTO
-              ================================================================ */}
-          <div className="mt-5">
-            <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-              Informacion de contacto
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <InfoItem
-                icon={Mail}
-                label="Email personal"
-                value={perfil.email_personal || 'Sin email personal'}
-              />
-              <InfoItem
-                icon={Phone}
-                label="Celular / Teléfono"
-                value={
-                  [perfil.celular, perfil.telefono].filter(Boolean).join(' · ') || 'Sin teléfono'
-                }
-              />
-              <InfoItem icon={MapPin} label="Ciudad" value={perfil.ciudad || 'Sin ciudad'} />
-              <InfoItem
-                icon={MapPin}
-                label="Dirección"
-                value={perfil.direccion || 'Sin dirección'}
-              />
-            </div>
-          </div>
-
-          {/* ================================================================
-              CONTACTO DE EMERGENCIA
-              ================================================================ */}
-          {perfil.contacto_emergencia_nombre && (
-            <div className="mt-5">
-              <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                Contacto de emergencia
-              </h4>
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
-                <Heart className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {perfil.contacto_emergencia_nombre}
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {perfil.contacto_emergencia_parentesco} &middot;{' '}
-                    {perfil.contacto_emergencia_telefono}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Boton editar con branding color */}
-      <div className="mt-5 flex justify-end">
+      {/* ================================================================
+          INFORMACION LABORAL — ancho completo debajo del header
+          ================================================================ */}
+      <div className="mt-6">
+        <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+          Información laboral
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <InfoItem icon={Briefcase} label="Cargo" value={perfil.cargo_nombre} />
+          <InfoItem icon={User} label="Área" value={perfil.area_nombre} />
+          <InfoItem icon={Calendar} label="Fecha de ingreso" value={perfil.fecha_ingreso} />
+        </div>
+      </div>
+
+      {/* ================================================================
+          INFORMACION DE CONTACTO — ancho completo
+          ================================================================ */}
+      <div className="mt-6">
+        <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+          Información de contacto
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <InfoItem
+            icon={Mail}
+            label="Email personal"
+            value={perfil.email_personal || 'Sin email personal'}
+          />
+          <InfoItem
+            icon={Phone}
+            label="Celular / Teléfono"
+            value={[perfil.celular, perfil.telefono].filter(Boolean).join(' · ') || 'Sin teléfono'}
+          />
+          <InfoItem icon={MapPin} label="Ciudad" value={perfil.ciudad || 'Sin ciudad'} />
+          <InfoItem icon={MapPin} label="Dirección" value={perfil.direccion || 'Sin dirección'} />
+        </div>
+      </div>
+
+      {/* ================================================================
+          CONTACTO DE EMERGENCIA — ancho completo
+          ================================================================ */}
+      {perfil.contacto_emergencia_nombre && (
+        <div className="mt-6">
+          <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+            Contacto de emergencia
+          </h4>
+          <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+            <Heart className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium text-gray-900 dark:text-white">
+                {perfil.contacto_emergencia_nombre}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400">
+                {perfil.contacto_emergencia_parentesco} &middot;{' '}
+                {perfil.contacto_emergencia_telefono}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Botón editar con branding color */}
+      <div className="mt-6 flex justify-end">
         <Button
           variant="ghost"
           onClick={onEdit}

@@ -10,45 +10,39 @@ const axiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Interceptor para agregar token JWT, tenant ID y manejar Content-Type
+// ── Request Interceptor ──────────────────────────────────────────────────────
+// Agrega Authorization, X-Tenant-ID y X-Impersonated-User-ID a cada request.
+// Lee SIEMPRE desde localStorage (fuente de verdad para tokens y tenant).
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Si el body es FormData, eliminar Content-Type default para que
-    // el browser auto-genere el boundary correcto de multipart/form-data
+    // FormData: eliminar Content-Type para que el browser genere el boundary
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
 
+    // JWT token
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Agregar X-Tenant-ID si hay un tenant seleccionado.
-    // Validar que sea un número válido — localStorage puede tener "null" (string)
-    // si String(null) se guardó accidentalmente, lo que causa
-    // "Field 'id' expected a number but got 'null'" en TenantAuthenticationMiddleware.
+    // Tenant ID — validar que sea un número (evita enviar "null" como string)
     const rawTenantId = localStorage.getItem('current_tenant_id');
     const tenantId = rawTenantId ? Number(rawTenantId) : null;
     if (tenantId && !isNaN(tenantId) && config.headers) {
       config.headers['X-Tenant-ID'] = String(tenantId);
     }
 
-    // Impersonación: informar al backend cuál es el usuario efectivo
-    // Los endpoints de portal (mi-empresa, mi-portal) usan esto para
-    // devolver datos del usuario impersonado en vez del superadmin
+    // Impersonación
     const impersonatedUserId = localStorage.getItem('impersonated_user_id');
     if (impersonatedUserId && config.headers) {
-      // Verificar que la impersonación no haya expirado (60 min)
       if (isImpersonationExpired()) {
-        // Expiró: limpiar localStorage y NO enviar el header
         localStorage.removeItem('impersonated_user_id');
         localStorage.removeItem('impersonation_started_at');
-        // Detener impersonación en el store (async-safe, no bloquea request)
         try {
           useAuthStore.getState().stopUserImpersonation();
         } catch {
-          // Store puede no estar inicializado aún — ignorar
+          /* Store puede no estar inicializado aún */
         }
       } else {
         config.headers['X-Impersonated-User-ID'] = impersonatedUserId;
@@ -57,48 +51,37 @@ axiosInstance.interceptors.request.use(
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // ── Refresh Token Queue ─────────────────────────────────────────────────────
-// Previene race conditions cuando múltiples requests obtienen 401 simultáneamente.
-// Solo el PRIMER 401 dispara el refresh; los demás esperan el resultado.
-// Cross-tab: escucha cambios en localStorage para sincronizar tokens entre pestañas.
+// Serializa refreshes: solo el PRIMER 401 dispara refresh, los demás esperan.
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
 // ── Cross-Tab Token Sync ────────────────────────────────────────────────────
-// Cuando otra pestaña refresca el token, actualiza el token en memoria sin logout.
-// Cuando otra pestaña hace logout, sincroniza el logout en todas las pestañas.
+// Cuando otra pestaña hace logout (access_token → null), sincronizar.
 window.addEventListener('storage', (event) => {
   if (event.key === 'access_token' && event.newValue === null) {
-    // Otra pestaña hizo logout → sincronizar
     useAuthStore.getState().forceLogout();
   }
 });
 
 // ── Proactive Token Refresh ──────────────────────────────────────────────────
-// Renueva el access token ANTES de que expire, evitando 401s por inactividad.
-// Se programa cada vez que se obtiene un nuevo token (login, refresh).
-// Refresca 5 minutos antes de la expiración (o a la mitad si es < 10 min).
+// Renueva el access token 5 min antes de expirar, evitando 401s por inactividad.
 let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getTokenExpirationMs(token: string): number | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
-    if (payload.exp) {
-      return payload.exp * 1000 - Date.now();
-    }
+    if (payload.exp) return payload.exp * 1000 - Date.now();
   } catch {
-    // Token malformado — no programar refresh
+    /* Token malformado */
   }
   return null;
 }
 
 function scheduleProactiveRefresh(): void {
-  // Limpiar timer anterior
   if (proactiveRefreshTimer) {
     clearTimeout(proactiveRefreshTimer);
     proactiveRefreshTimer = null;
@@ -110,26 +93,21 @@ function scheduleProactiveRefresh(): void {
   const msUntilExpiry = getTokenExpirationMs(token);
   if (!msUntilExpiry || msUntilExpiry <= 0) return;
 
-  // Refrescar 5 minutos antes de expirar, o a la mitad del tiempo restante si queda poco
   const refreshBeforeMs = Math.min(5 * 60 * 1000, msUntilExpiry / 2);
-  const refreshInMs = Math.max(msUntilExpiry - refreshBeforeMs, 10_000); // Mínimo 10 segundos
+  const refreshInMs = Math.max(msUntilExpiry - refreshBeforeMs, 10_000);
 
   proactiveRefreshTimer = setTimeout(async () => {
-    // Solo refrescar si aún hay token y no estamos en página pública
     const currentToken = localStorage.getItem('access_token');
     if (!currentToken) return;
 
     const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
-    const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
-    if (isPublicPage) return;
+    if (publicPaths.some((p) => window.location.pathname.startsWith(p))) return;
 
     try {
       await doRefreshToken();
-      // Programar siguiente refresh proactivo con el nuevo token
       scheduleProactiveRefresh();
     } catch {
-      // Si falla, no hacer logout — el interceptor de 401 se encargará cuando
-      // el usuario haga su próxima acción. Reintentar en 60 segundos.
+      // No logout — el interceptor de 401 se encargará. Reintentar en 60s.
       proactiveRefreshTimer = setTimeout(scheduleProactiveRefresh, 60_000);
     }
   }, refreshInMs);
@@ -140,7 +118,6 @@ scheduleProactiveRefresh();
 
 function doRefreshToken(): Promise<string> {
   const refreshToken = localStorage.getItem('refresh_token');
-
   if (!refreshToken) {
     return Promise.reject(new Error('No refresh token available'));
   }
@@ -150,33 +127,21 @@ function doRefreshToken(): Promise<string> {
     .then((response) => {
       const { access, refresh: newRefreshToken } = response.data;
       localStorage.setItem('access_token', access);
-
-      // Guardar nuevo refresh token (sliding expiration)
-      // Con ROTATE_REFRESH_TOKENS=True, el servidor envía un nuevo refresh token
-      // que extiende la sesión otros 7 días desde este momento
       if (newRefreshToken) {
         localStorage.setItem('refresh_token', newRefreshToken);
       }
-
-      // Reprogramar refresh proactivo con el nuevo token
       scheduleProactiveRefresh();
-
       return access;
     });
 }
 
-// Interceptor para refresh token automático con cola serializada
+// ── Response Interceptor ─────────────────────────────────────────────────────
+// En 401: intenta refresh UNA vez. Si falla, PROPAGA el error sin hacer logout.
+// El logout lo maneja AdaptiveLayout después de agotar reintentos (single gatekeeper).
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    const publicPaths = ['/login', '/setup-password', '/reset-password', '/forgot-password'];
-    const isPublicPage = publicPaths.some((p) => window.location.pathname.startsWith(p));
-
-    // Proteger contra 401 espúreos durante recarga de página (SW update, F5).
-    // Si no hay token en localStorage, es un request que salió antes de que
-    // Zustand rehidratara — no hacer refresh ni logout, dejar que ProtectedRoute maneje.
     const hasTokenInStorage = !!localStorage.getItem('access_token');
     const hasRefreshToken = !!localStorage.getItem('refresh_token');
 
@@ -189,7 +154,7 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Si ya hay un refresh en curso, esperar su resultado en vez de disparar otro
+        // Si ya hay un refresh en curso, esperar su resultado
         if (isRefreshing && refreshPromise) {
           const newToken = await refreshPromise;
           if (originalRequest.headers) {
@@ -198,65 +163,29 @@ axiosInstance.interceptors.response.use(
           return axiosInstance(originalRequest);
         }
 
-        // Cross-tab: verificar si otra pestaña ya refrescó el token
-        // Si el token en localStorage es diferente al que causó el 401,
-        // otra pestaña ya lo actualizó → usar ese token sin hacer refresh
+        // Cross-tab: si otra pestaña ya refrescó, usar ese token
         const currentStoredToken = localStorage.getItem('access_token');
         const failedToken = originalRequest.headers?.Authorization?.replace('Bearer ', '');
         if (currentStoredToken && failedToken && currentStoredToken !== failedToken) {
-          // Otra pestaña ya refrescó → reintentar con el token actualizado
           originalRequest.headers.Authorization = `Bearer ${currentStoredToken}`;
           return axiosInstance(originalRequest);
         }
 
-        // Primer request que detecta 401 → iniciar refresh
+        // Primer 401 → iniciar refresh
         isRefreshing = true;
         refreshPromise = doRefreshToken();
-
         const newToken = await refreshPromise;
 
-        // Reintentar la petición original con el nuevo token
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
         }
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Solo hacer logout si el refresh REALMENTE falló (no error de red transitorio)
-        const refreshStatus = (refreshError as { response?: { status?: number } })?.response
-          ?.status;
-
-        if (refreshStatus === 401 || refreshStatus === 400) {
-          // Antes de logout, verificar una vez más si otra pestaña ya refrescó
-          const latestToken = localStorage.getItem('access_token');
-          const failedToken = originalRequest.headers?.Authorization?.replace('Bearer ', '');
-          if (latestToken && failedToken && latestToken !== failedToken) {
-            // Otra pestaña refrescó durante nuestro intento → reintentar
-            originalRequest.headers.Authorization = `Bearer ${latestToken}`;
-            return axiosInstance(originalRequest);
-          }
-
-          // Token realmente inválido → logout
-          // En páginas públicas (/login), NO hacer forceLogout — el usuario está
-          // llegando por URL directa y LoginPage se encargará del redirect si hay sesión.
-          // forceLogout aquí destruiría tokens válidos que solo necesitan refresh.
-          //
-          // Protección race condition: si isLoadingUser=true o _loginFlowComplete=false,
-          // el flujo de login() está en progreso. Un 401 de un request concurrente
-          // (ej: componentes que se montan durante la transición de ruta) NO debe
-          // disparar forceLogout porque destruiría los tokens recién guardados por login().
-          const { isLoadingUser, _loginFlowComplete } = useAuthStore.getState();
-          const isLoginInProgress = isLoadingUser || !_loginFlowComplete;
-          if (!isPublicPage && !isLoginInProgress) {
-            // forceLogout limpia localStorage + Zustand + RQ cache.
-            // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
-            // NO usar window.location.href: causa hard reload que borra estado y hace loop.
-            useAuthStore.getState().forceLogout();
-          }
-        }
-        // Para otros errores (network, 5xx), no hacer logout — el usuario puede reintentar
+        // Refresh falló — NO hacer forceLogout aquí.
+        // Propagar el error para que el caller lo maneje.
+        // AdaptiveLayout es el único gatekeeper de logout automático.
         return Promise.reject(refreshError);
       } finally {
-        // Liberar la cola para que futuros 401 puedan reintentar
         isRefreshing = false;
         refreshPromise = null;
       }

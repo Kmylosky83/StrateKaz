@@ -44,7 +44,6 @@ export const LoginPage = () => {
   const login = useAuthStore((state) => state.login);
   const tenantUser = useAuthStore((state) => state.tenantUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const loginFlowComplete = useAuthStore((state) => state._loginFlowComplete);
   const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
   const selectTenant = useAuthStore((state) => state.selectTenant);
@@ -52,30 +51,22 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loginStep, setLoginStep] = useState<LoginStep>('credentials');
-  // Flag local para evitar que useEffect navegue durante onSubmit activo
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Si ya hay sesión activa (tokens válidos + Zustand rehidratado), redirigir al dashboard.
-  // Esto cubre el caso donde el usuario navega a /login manualmente o desde la barra de direcciones
-  // cuando ya tiene sesión. También aplica si la PWA abre en /login como última URL.
-  //
-  // IMPORTANTE: NO navegar si isSubmitting (onSubmit en progreso) porque handlePostLoginFlow()
-  // debe ejecutarse primero para determinar la landing page correcta.
-  // Tampoco navegar si _loginFlowComplete es false con isAuthenticated true, porque login()
-  // aún está procesando selectTenant/getProfile.
+  // Si ya hay sesión activa (tokens + Zustand + user cargado), redirigir.
+  // Esto cubre: navegación manual a /login, PWA abre en /login.
+  // NOTA: login() hace set() atómico al final, así que isAuthenticated=true
+  // SOLO se pone cuando user ya está cargado. No hay race condition.
+  // Pero este effect NO navega post-login — eso lo hace handlePostLoginFlow().
+  // Solo navega cuando la sesión ya existía ANTES de montar este componente.
+  const [loginHandled, setLoginHandled] = useState(false);
   useEffect(() => {
-    // Si estamos en medio de un submit, dejar que onSubmit controle la navegación
-    if (isSubmitting) return;
+    // Si el login acaba de completarse vía onSubmit, no competir con handlePostLoginFlow
+    if (loginHandled) return;
 
     const hasTokens =
       !!localStorage.getItem('access_token') && !!localStorage.getItem('refresh_token');
-
-    // Solo redirigir si hay sesión COMPLETA (no durante login en progreso)
-    // loginFlowComplete distingue "sesión previa rehidratada" de "login() en progreso"
-    if (hasTokens && isAuthenticated && loginFlowComplete) {
-      // Determinar landing page según tipo de usuario
+    if (hasTokens && isAuthenticated) {
       const { user: currentUser, isSuperadmin: isSA, currentTenantId } = useAuthStore.getState();
-
       if (isSA && !currentTenantId) {
         navigate('/admin-global', { replace: true });
       } else if (isClientePortalUser(currentUser)) {
@@ -86,7 +77,7 @@ export const LoginPage = () => {
         navigate('/mi-portal', { replace: true });
       }
     }
-  }, [isAuthenticated, loginFlowComplete, isSubmitting, navigate]);
+  }, [isAuthenticated, loginHandled, navigate]);
   const [email, setEmail] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
 
@@ -190,19 +181,16 @@ export const LoginPage = () => {
   // Handler: Login inicial
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    setIsSubmitting(true);
+    setLoginHandled(true); // Bloquear useEffect de sesión previa
     try {
-      // Login con el nuevo sistema multi-tenant.
-      // login() hace: API call → guardar tokens → selectTenant → getProfile.
-      // Al terminar, _loginFlowComplete=true, y handlePostLoginFlow() decide la navegación.
+      // login() es atómico: API call → selectTenant → getProfile → set() UNA vez.
+      // No hay re-render intermedio, no hay race conditions.
       await login(data);
 
-      // Login exitoso - procesar flujo de tenants
-      // IMPORTANTE: Esto DEBE ejecutarse antes de navegar.
-      // El useEffect de arriba está bloqueado por isSubmitting=true.
+      // Login exitoso — handlePostLoginFlow decide navegación
       await handlePostLoginFlow();
     } catch (error: unknown) {
-      // Verificar si requiere 2FA
+      setLoginHandled(false); // Permitir que useEffect funcione de nuevo
       if (error && typeof error === 'object' && 'requires_2fa' in error) {
         const twoFaError = error as { requires_2fa: boolean; email: string };
         setEmail(twoFaError.email);
@@ -212,7 +200,6 @@ export const LoginPage = () => {
       const apiError = error as { response?: { data?: { detail?: string } } };
       toast.error(apiError.response?.data?.detail || 'Error al iniciar sesión');
     } finally {
-      setIsSubmitting(false);
       setIsLoading(false);
     }
   };

@@ -359,11 +359,11 @@ export const useAuthStore = create<AuthState>()(
 
         // Verificar que los tokens existen en localStorage.
         // Zustand puede rehydratar isAuthenticated=true de una sesión anterior
-        // pero los tokens pudieron ser borrados (forceLogout, clear, etc.).
-        // Sin tokens, cualquier API call falla con 401 → cascade.
+        // pero los tokens pudieron ser borrados (clear manual, expiración, etc.).
+        // Sin tokens, limpiar estado — AdaptiveLayout/ProtectedRoute manejan el redirect.
         const hasTokens = !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
         if (!hasTokens) {
-          get().forceLogout();
+          set({ isAuthenticated: false, _loginFlowComplete: false });
           return;
         }
 

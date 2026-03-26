@@ -149,12 +149,17 @@ export const useAuthStore = create<AuthState>()(
             localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(initialTenantId));
           }
 
-          // Actualizar estado
+          // Actualizar estado — isLoadingUser: true previene que loadUserProfile()
+          // se dispare desde DashboardLayout antes de que login() termine.
+          // Sin esto hay una race condition: el set() dispara re-render,
+          // DashboardLayout ve isAuthenticated=true + user=null + isLoadingUser=false
+          // y lanza loadUserProfile() concurrente que compite con login().
           set({
             tenantUser: response.user,
             accessToken: response.access,
             refreshToken: response.refresh,
             isAuthenticated: true,
+            isLoadingUser: true,
             accessibleTenants: response.tenants,
             isSuperadmin: response.user.is_superadmin,
             currentTenantId: initialTenantId,
@@ -171,13 +176,14 @@ export const useAuthStore = create<AuthState>()(
 
             // Cargar perfil del User dentro del tenant (permission_codes, cargo, etc.)
             try {
-              set({ isLoadingUser: true });
               const userProfile = await authAPI.getProfile();
               set({ user: userProfile, isLoadingUser: false });
             } catch (error) {
               console.warn('Failed to load user profile after login:', error);
               set({ isLoadingUser: false });
             }
+          } else {
+            set({ isLoadingUser: false });
           }
         } catch (error) {
           // Limpiar estado en caso de error

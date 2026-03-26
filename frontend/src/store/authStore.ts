@@ -150,24 +150,14 @@ export const useAuthStore = create<AuthState>()(
             localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(initialTenantId));
           }
 
-          // Actualizar estado — isLoadingUser: true previene que loadUserProfile()
-          // se dispare desde AdaptiveLayout antes de que login() termine.
-          // _loginFlowComplete: false previene que el useEffect de LoginPage
-          // navegue prematuramente antes de que getProfile() y handlePostLoginFlow() terminen.
-          set({
-            tenantUser: response.user,
-            accessToken: response.access,
-            refreshToken: response.refresh,
-            isAuthenticated: true,
-            isLoadingUser: true,
-            _loginFlowComplete: false,
-            accessibleTenants: response.tenants,
-            isSuperadmin: response.user.is_superadmin,
-            currentTenantId: initialTenantId,
-            currentTenant: initialTenant,
-          });
+          // IMPORTANTE: NO poner isAuthenticated=true todavía.
+          // Si lo hacemos aquí, React re-renderiza y React Query hooks se disparan
+          // (getActive, branding, etc.) causando requests concurrentes que compiten
+          // con selectTenant/getProfile y pueden triggear refresh/forceLogout.
+          // Solo actualizamos datos internos; isAuthenticated se pone al final.
 
           // Si hay tenant seleccionado, notificar al backend y cargar perfil del User
+          let userProfile: User | null = null;
           if (initialTenantId) {
             try {
               await authAPI.selectTenant(initialTenantId);
@@ -177,15 +167,27 @@ export const useAuthStore = create<AuthState>()(
 
             // Cargar perfil del User dentro del tenant (permission_codes, cargo, etc.)
             try {
-              const userProfile = await authAPI.getProfile();
-              set({ user: userProfile, isLoadingUser: false, _loginFlowComplete: true });
+              userProfile = await authAPI.getProfile();
             } catch (error) {
               console.warn('Failed to load user profile after login:', error);
-              set({ isLoadingUser: false, _loginFlowComplete: true });
             }
-          } else {
-            set({ isLoadingUser: false, _loginFlowComplete: true });
           }
+
+          // AHORA sí: actualizar TODO el estado de una sola vez.
+          // Un solo set() = un solo re-render = sin race conditions.
+          set({
+            tenantUser: response.user,
+            accessToken: response.access,
+            refreshToken: response.refresh,
+            isAuthenticated: true,
+            isLoadingUser: false,
+            _loginFlowComplete: true,
+            accessibleTenants: response.tenants,
+            isSuperadmin: response.user.is_superadmin,
+            currentTenantId: initialTenantId,
+            currentTenant: initialTenant,
+            user: userProfile,
+          });
         } catch (error) {
           // Limpiar estado en caso de error
           set({

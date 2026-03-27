@@ -186,7 +186,9 @@ def select_cargos(request):
         is_system=False,
         is_active=True,
     ).values(
-        'id', 'name', 'code', 'rol_sistema__name', 'rol_sistema__code'
+        'id', 'name', 'code',
+        'area__id', 'area__name',
+        'rol_sistema__name', 'rol_sistema__code',
     ).order_by('name')[:200]
 
     # Contar usuarios activos por cargo (para preview en encuestas)
@@ -203,6 +205,8 @@ def select_cargos(request):
             'label': c['name'],
             'extra': {
                 'code': c.get('code', ''),
+                'area_id': c['area__id'] if c.get('area__id') else '',
+                'area_nombre': c.get('area__name', '') or '',
                 'rol': c.get('rol_sistema__name', ''),
                 'rol_code': c.get('rol_sistema__code', ''),
                 'usuarios_activos': usuarios_por_cargo.get(c['id'], 0),

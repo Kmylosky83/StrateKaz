@@ -30,6 +30,7 @@ import {
   Check,
   Plus,
   Info,
+  Wand2,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
@@ -121,6 +122,7 @@ export const ColaboradorFormModal = ({
   const [piId, setPiId] = useState<number | null>(null);
   const [piNombre, setPiNombre] = useState('');
   const [showCargoModal, setShowCargoModal] = useState(false);
+  const [areaAutoFilled, setAreaAutoFilled] = useState(false);
 
   // Dynamic steps: Step 4 (Acceso) only shown when creating
   const STEPS = useMemo(() => (isEditing ? BASE_STEPS : [...BASE_STEPS, ACCESS_STEP]), [isEditing]);
@@ -145,6 +147,28 @@ export const ColaboradorFormModal = ({
       setShowCargoModal(false);
     },
     [queryClient]
+  );
+
+  /**
+   * Handler de cambio de cargo: auto-rellena el área desde cargo.area (Fundación).
+   * El usuario puede sobrescribir el área manualmente después.
+   */
+  const handleCargoChange = useCallback(
+    (cargoId: string) => {
+      setFormData((prev) => ({ ...prev, cargo: cargoId }));
+      setAreaAutoFilled(false);
+
+      if (!cargoId || !cargosData) return;
+
+      const cargoSeleccionado = cargosData.find((c) => String(c.id) === cargoId);
+      const areaId = cargoSeleccionado?.extra?.area_id;
+
+      if (areaId) {
+        setFormData((prev) => ({ ...prev, cargo: cargoId, area: String(areaId) }));
+        setAreaAutoFilled(true);
+      }
+    },
+    [cargosData]
   );
 
   // Cargo options
@@ -202,6 +226,7 @@ export const ColaboradorFormModal = ({
       setPiNombre('');
     }
     setActiveStep(0);
+    setAreaAutoFilled(false);
   }, [colaborador, isOpen]);
 
   // Field updater
@@ -511,7 +536,7 @@ export const ColaboradorFormModal = ({
                   <Select
                     label="Cargo"
                     value={formData.cargo}
-                    onChange={(e) => updateField('cargo', e.target.value)}
+                    onChange={(e) => handleCargoChange(e.target.value)}
                     options={[{ value: '', label: 'Seleccionar cargo...' }, ...cargoOptions]}
                     required
                   />
@@ -526,13 +551,24 @@ export const ColaboradorFormModal = ({
                     Crear nuevo cargo
                   </Button>
                 </div>
-                <Select
-                  label="Proceso (Area)"
-                  value={formData.area}
-                  onChange={(e) => updateField('area', e.target.value)}
-                  options={[{ value: '', label: 'Seleccionar proceso...' }, ...areaOptions]}
-                  required
-                />
+                <div className="space-y-1">
+                  <Select
+                    label="Proceso (Área)"
+                    value={formData.area}
+                    onChange={(e) => {
+                      updateField('area', e.target.value);
+                      setAreaAutoFilled(false);
+                    }}
+                    options={[{ value: '', label: 'Seleccionar proceso...' }, ...areaOptions]}
+                    required
+                  />
+                  {areaAutoFilled && (
+                    <p className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400">
+                      <Wand2 size={11} />
+                      Auto-completado desde el cargo
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

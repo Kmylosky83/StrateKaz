@@ -1096,39 +1096,6 @@ class PublicTenantViewSet(viewsets.ViewSet):
             'available': not exists,
         })
 
-    @action(detail=False, methods=['get'], url_path='recursos/(?P<code>[a-z]+)/acceder')
-    def recursos_acceder(self, request, code=None):
-        """
-        Redirige a la carpeta de Google Drive de la categoría solicitada.
-
-        Las URLs de Drive viven solo en el backend — nunca se exponen en el JS del frontend.
-        Loguea el acceso para métricas básicas.
-
-        GET /api/tenant/public/recursos/{code}/acceder/
-        → 302 Redirect a la carpeta Drive correspondiente
-        → 404 si el código no existe
-        """
-        from django.http import HttpResponseRedirect
-
-        _DRIVE_URLS = {
-            'digital':     'https://drive.google.com/drive/folders/1YaZId9e5wWPX1M_-NKNj3e2QKttfo8em',
-            'sst':         'https://drive.google.com/drive/folders/1jhvr9ji_kzZEQA_HcP7AhXNuUzyMt2id',
-            'calidad':     'https://drive.google.com/drive/folders/1h_NbirXk8A-5zeWTPPGcbOhvdXczUudH',
-            'legal':       'https://drive.google.com/drive/folders/1OUAJNGf85_ua6RcQuTg9kQaGlbnH7FNo',
-            'ambiental':   'https://drive.google.com/drive/folders/1IUbyqTZs4no1AI9fBQPegtVssv-twleQ',
-            'talento':     'https://drive.google.com/drive/folders/1-6ODOZqRcmSoGNa3o4LqgccDdYZ3xXy-',
-            'estrategia':  'https://drive.google.com/drive/folders/13u8sif429zmGYrC9IX7HDrZeQv9lapBT',
-            'finanzas':    'https://drive.google.com/drive/folders/1_K0g_c_Uzkpm0E0mStX3ESmC4pfYOycy',
-            'operaciones': 'https://drive.google.com/drive/folders/10neGKQJjvhoD9OpcsPUzWEdKU2nXaf21',
-        }
-
-        drive_url = _DRIVE_URLS.get(code)
-        if not drive_url:
-            return Response({'error': 'Categoría no encontrada'}, status=status.HTTP_404_NOT_FOUND)
-
-        logger.info('resource_access category=%s ip=%s', code, request.META.get('REMOTE_ADDR', ''))
-        return HttpResponseRedirect(drive_url)
-
     @action(detail=False, methods=['post'], url_path='newsletter')
     def newsletter(self, request):
         """
@@ -1194,3 +1161,37 @@ class PublicTenantViewSet(viewsets.ViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+
+# =============================================================================
+# VIEW: Redirect público a carpetas Google Drive
+# =============================================================================
+
+_RESOURCE_DRIVE_URLS = {
+    'digital':     'https://drive.google.com/drive/folders/1YaZId9e5wWPX1M_-NKNj3e2QKttfo8em',
+    'sst':         'https://drive.google.com/drive/folders/1jhvr9ji_kzZEQA_HcP7AhXNuUzyMt2id',
+    'calidad':     'https://drive.google.com/drive/folders/1h_NbirXk8A-5zeWTPPGcbOhvdXczUudH',
+    'legal':       'https://drive.google.com/drive/folders/1OUAJNGf85_ua6RcQuTg9kQaGlbnH7FNo',
+    'ambiental':   'https://drive.google.com/drive/folders/1IUbyqTZs4no1AI9fBQPegtVssv-twleQ',
+    'talento':     'https://drive.google.com/drive/folders/1-6ODOZqRcmSoGNa3o4LqgccDdYZ3xXy-',
+    'estrategia':  'https://drive.google.com/drive/folders/13u8sif429zmGYrC9IX7HDrZeQv9lapBT',
+    'finanzas':    'https://drive.google.com/drive/folders/1_K0g_c_Uzkpm0E0mStX3ESmC4pfYOycy',
+    'operaciones': 'https://drive.google.com/drive/folders/10neGKQJjvhoD9OpcsPUzWEdKU2nXaf21',
+}
+
+
+def recursos_acceder_view(request, code):
+    """
+    GET /api/tenant/public/recursos/<code>/acceder/
+
+    Redirige a la carpeta de Google Drive de la categoría solicitada.
+    Las URLs de Drive viven solo en el backend — nunca se exponen en el JS.
+    Acceso público, sin autenticación.
+    """
+    from django.http import HttpResponseRedirect, HttpResponseNotFound
+
+    drive_url = _RESOURCE_DRIVE_URLS.get(code)
+    if not drive_url:
+        return HttpResponseNotFound('Categoría no encontrada')
+
+    logger.info('resource_access category=%s ip=%s', code, request.META.get('REMOTE_ADDR', ''))
+    return HttpResponseRedirect(drive_url)

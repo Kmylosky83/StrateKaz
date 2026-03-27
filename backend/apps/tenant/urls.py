@@ -14,6 +14,7 @@ from .views import (
     DomainViewSet,
     PlanViewSet,
     PublicTenantViewSet,
+    recursos_acceder_view,
 )
 from .auth_views import (
     TenantLoginView,
@@ -43,6 +44,9 @@ urlpatterns = [
     path('auth/2fa-verify/', TenantTwoFactorVerifyView.as_view(), name='tenant-2fa-verify'),
     path('auth/forgot-password/', ForgotPasswordView.as_view(), name='tenant-forgot-password'),
     path('auth/reset-password/', ResetPasswordView.as_view(), name='tenant-reset-password'),
+
+    # Redirect público a carpetas Google Drive (sin auth, sin router)
+    path('public/recursos/<str:code>/acceder/', recursos_acceder_view, name='recursos-acceder'),
 
     # ViewSets (CRUD)
     path('', include(router.urls)),

@@ -200,6 +200,29 @@ export const marketingSEO = {
     canonicalUrl: 'https://stratekaz.com/precios',
   },
 
+  recursos: {
+    title: 'Recursos Gratuitos | Matrices, Prompts IA, Guias ISO y SST | StrateKaz',
+    description:
+      'Descarga gratis matrices IPEVR, prompts de IA para gestion, procedimientos ISO 9001/45001, charlas de seguridad, guias Decreto 1072 y herramientas digitales para tu empresa.',
+    keywords: [
+      'matriz IPEVR gratis',
+      'prompts IA gestion',
+      'plantillas ISO 9001',
+      'charlas 5 minutos SST',
+      'Decreto 1072 guia',
+      'formatos SST gratis',
+      'herramientas IA empresas',
+      'plantillas talento humano',
+      'matriz requisitos legales',
+      'recursos gestion integral',
+      'prompts ChatGPT ISO',
+      'transformacion digital PYMES',
+    ],
+    canonicalUrl: 'https://stratekaz.com/recursos',
+    ogType: 'website' as const,
+    twitterCard: 'summary_large_image' as const,
+  },
+
   contact: {
     title: 'StrateKaz | Contacto | Solicita tu Demo',
     description:

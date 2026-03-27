@@ -1096,3 +1096,68 @@ class PublicTenantViewSet(viewsets.ViewSet):
             'available': not exists,
         })
 
+    @action(detail=False, methods=['post'], url_path='newsletter')
+    def newsletter(self, request):
+        """
+        Suscribir email al newsletter de StrateKaz (público, sin auth).
+
+        Usado desde el marketing site (stratekaz.com/recursos) para:
+        - Capturar leads de descargas premium
+        - Suscripciones al newsletter
+
+        Body: { email, nombre?, source?, categorias? }
+        Returns: 201 Created | 409 Conflict (ya suscrito) | 400 Bad Request
+        """
+        from django_tenants.utils import schema_context
+        from .models_newsletter import NewsletterSubscriber
+
+        email = request.data.get('email', '').strip().lower()
+        if not email:
+            return Response(
+                {'error': 'El campo email es requerido'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validacion basica de email
+        import re
+        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            return Response(
+                {'error': 'Email no valido'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        nombre = request.data.get('nombre', '').strip()[:150]
+        source = request.data.get('source', 'recursos')[:50]
+        categorias = request.data.get('categorias', [])
+
+        if not isinstance(categorias, list):
+            categorias = []
+
+        with schema_context('public'):
+            subscriber, created = NewsletterSubscriber.objects.get_or_create(
+                email=email,
+                defaults={
+                    'nombre': nombre,
+                    'source': source,
+                    'categorias': categorias,
+                },
+            )
+
+            if not created:
+                # Actualizar categorias si ya existe
+                existing_cats = set(subscriber.categorias or [])
+                new_cats = existing_cats | set(categorias)
+                if new_cats != existing_cats:
+                    subscriber.categorias = list(new_cats)
+                    subscriber.save(update_fields=['categorias', 'updated_at'])
+
+                return Response(
+                    {'message': 'Ya estas suscrito', 'is_new': False},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+        return Response(
+            {'message': 'Suscripcion exitosa', 'is_new': True},
+            status=status.HTTP_201_CREATED,
+        )
+

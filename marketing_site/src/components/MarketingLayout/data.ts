@@ -1,7 +1,12 @@
-import { DollarSign, MessageCircle } from 'lucide-react';
+import { DollarSign, MessageCircle, BookOpen } from 'lucide-react';
 import { NavigationItem, FooterLinks } from './types';
 
 export const navigationItems: NavigationItem[] = [
+  {
+    name: 'Recursos',
+    href: '/recursos',
+    icon: BookOpen,
+  },
   {
     name: 'Precios',
     href: '/precios',

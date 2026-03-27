@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django_tenants.admin import TenantAdminMixin
 from .models import Plan, Tenant, Domain, TenantUser, TenantUserAccess
+from .models_newsletter import NewsletterSubscriber
 
 
 @admin.register(Plan)
@@ -174,3 +175,12 @@ class TenantUserAccessAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'tenant']
     search_fields = ['tenant_user__email', 'tenant__name']
     autocomplete_fields = ['tenant_user', 'tenant', 'granted_by']
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ['email', 'nombre', 'source', 'is_active', 'created_at']
+    list_filter = ['is_active', 'source']
+    search_fields = ['email', 'nombre']
+    readonly_fields = ['created_at', 'updated_at']
+    list_editable = ['is_active']

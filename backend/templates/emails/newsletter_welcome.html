@@ -1,0 +1,59 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Bienvenido a StrateKaz | Newsletter{% endblock %}
+
+{% block content %}
+<h2>Bienvenido a la comunidad StrateKaz</h2>
+
+<p>Hola{{ nombre|default:"" }},</p>
+
+<p>
+    Gracias por suscribirte al newsletter de StrateKaz. A partir de ahora
+    recibiras directamente en tu correo:
+</p>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+    <tr>
+        <td style="padding: 12px 16px; background-color: #fdf2f8; border-radius: 8px; border-left: 4px solid #ec268f;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">Recursos exclusivos</p>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">Matrices, procedimientos, checklist y formatos descargables para tu sistema de gestion.</p>
+        </td>
+    </tr>
+    <tr><td style="height: 12px;"></td></tr>
+    <tr>
+        <td style="padding: 12px 16px; background-color: #fdf2f8; border-radius: 8px; border-left: 4px solid #ec268f;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">Guias de IA y Prompts</p>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">Aprende a usar inteligencia artificial para optimizar tu gestion empresarial.</p>
+        </td>
+    </tr>
+    <tr><td style="height: 12px;"></td></tr>
+    <tr>
+        <td style="padding: 12px 16px; background-color: #fdf2f8; border-radius: 8px; border-left: 4px solid #ec268f;">
+            <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">Herramientas digitales</p>
+            <p style="margin: 0; color: #6b7280; font-size: 14px;">Las mejores herramientas y tendencias en transformacion digital para empresas.</p>
+        </td>
+    </tr>
+</table>
+
+<p>
+    Mientras tanto, visita nuestra
+    <a href="https://stratekaz.com/recursos" style="color: #ec268f; text-decoration: none; font-weight: 600;">Biblioteca de Recursos</a>
+    y descarga todo lo que necesites para tu empresa.
+</p>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 24px auto;">
+    <tr>
+        <td style="border-radius: 8px; background-color: #ec268f;">
+            <a href="https://stratekaz.com/recursos"
+               style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px;">
+                Ver Recursos Gratuitos
+            </a>
+        </td>
+    </tr>
+</table>
+
+<p style="color: #9ca3af; font-size: 13px; margin-top: 32px;">
+    Recibiste este correo porque te suscribiste al newsletter de StrateKaz.
+    Si no deseas recibir mas correos, responde a este email con el asunto "Cancelar suscripcion".
+</p>
+{% endblock %}

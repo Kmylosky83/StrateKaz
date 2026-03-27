@@ -9,6 +9,7 @@ import { webVitalsMonitor } from '@/utils/webVitals';
 const LandingPage = React.lazy(() => import('@pages/LandingPage'));
 const PricingPage = React.lazy(() => import('@pages/PricingPage'));
 const ContactPage = React.lazy(() => import('@pages/ContactPage'));
+const ResourcesPage = React.lazy(() => import('@pages/ResourcesPage'));
 
 
 // Simple loading fallback - minimal to avoid duplicate loaders
@@ -28,6 +29,7 @@ const App: React.FC = () => {
           <Route path='/' element={<LandingPage />} />
           <Route path='/precios' element={<PricingPage />} />
           <Route path='/contacto' element={<ContactPage />} />
+          <Route path='/recursos' element={<ResourcesPage />} />
 
           {/* Redirects from old English routes */}
           <Route path='/pricing' element={<Navigate to='/precios' replace />} />

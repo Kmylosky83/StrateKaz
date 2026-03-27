@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, ExternalLink, CheckCircle, Mail } from 'lucide-react';
+import { X, Download, CheckCircle, Mail } from 'lucide-react';
 import { Button } from '@components/ui/button';
 import { cn } from '@utils/cn';
 import type { Resource } from '@/data/resources';

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useAuthStore } from '@/store/authStore';
 import { usePermissions, useIsSuperAdmin, useCurrentCargo } from '@/hooks/usePermissions';
+import type { User } from '@/types/auth.types';
 
 describe('usePermissions Hook', () => {
   beforeEach(() => {
@@ -52,7 +53,7 @@ describe('usePermissions Hook', () => {
 
     it('should return true for superadmin regardless of permission', () => {
       useAuthStore.setState({
-        user: { is_superuser: true } as unknown,
+        user: { is_superuser: true } as unknown as User,
         isSuperadmin: true,
       });
       const { result } = renderHook(() => usePermissions());
@@ -67,7 +68,7 @@ describe('usePermissions Hook', () => {
             'gestion_estrategica.empresa.view',
             'gestion_estrategica.empresa.edit',
           ],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -79,7 +80,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['gestion_estrategica.empresa.view'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -91,7 +92,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['*'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -105,7 +106,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['proteccion_cumplimiento.matriz.create'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -120,7 +121,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['hseq.calidad.view'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -134,7 +135,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['other.permission.view'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -150,7 +151,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['a.b.view', 'a.b.edit', 'a.b.delete'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -162,7 +163,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: ['a.b.view'],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -173,7 +174,7 @@ describe('usePermissions Hook', () => {
   describe('hasSectionAccess', () => {
     it('should return true for superadmin', () => {
       useAuthStore.setState({
-        user: { is_superuser: true } as unknown,
+        user: { is_superuser: true } as unknown as User,
         isSuperadmin: true,
       });
       const { result } = renderHook(() => usePermissions());
@@ -185,7 +186,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           section_ids: [1, 2, 5, 10],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -197,7 +198,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           section_ids: [1, 2, 5],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -211,7 +212,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           cargo_level: 3,
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -224,7 +225,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           cargo_level: 1,
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -235,7 +236,7 @@ describe('usePermissions Hook', () => {
   describe('canAccess', () => {
     it('should return true for superadmin with any options', () => {
       useAuthStore.setState({
-        user: { is_superuser: true } as unknown,
+        user: { is_superuser: true } as unknown as User,
         isSuperadmin: true,
       });
       const { result } = renderHook(() => usePermissions());
@@ -248,7 +249,7 @@ describe('usePermissions Hook', () => {
           is_superuser: false,
           permission_codes: ['*'],
           cargo_level: 3,
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -265,7 +266,7 @@ describe('usePermissions Hook', () => {
         user: {
           is_superuser: false,
           permission_codes: [],
-        } as unknown,
+        } as unknown as User,
         isSuperadmin: false,
       });
       const { result } = renderHook(() => usePermissions());
@@ -276,7 +277,7 @@ describe('usePermissions Hook', () => {
   describe('show (alias of canAccess)', () => {
     it('should work identically to canAccess', () => {
       useAuthStore.setState({
-        user: { is_superuser: true } as unknown,
+        user: { is_superuser: true } as unknown as User,
         isSuperadmin: true,
       });
       const { result } = renderHook(() => usePermissions());
@@ -287,7 +288,7 @@ describe('usePermissions Hook', () => {
   describe('Impersonation mode', () => {
     it('should use user.is_superuser when impersonating (not isSuperadminGlobal)', () => {
       useAuthStore.setState({
-        user: { is_superuser: false, permission_codes: [] } as unknown,
+        user: { is_superuser: false, permission_codes: [] } as unknown as User,
         isSuperadmin: true, // Global superadmin
         impersonatedUserId: 42, // But currently impersonating
       });
@@ -314,7 +315,7 @@ describe('useIsSuperAdmin Hook', () => {
 
   it('should return true when isSuperadmin global is true', () => {
     useAuthStore.setState({
-      user: { is_superuser: false } as unknown,
+      user: { is_superuser: false } as unknown as User,
       isSuperadmin: true,
     });
     const { result } = renderHook(() => useIsSuperAdmin());
@@ -323,7 +324,7 @@ describe('useIsSuperAdmin Hook', () => {
 
   it('should return true when user.is_superuser is true', () => {
     useAuthStore.setState({
-      user: { is_superuser: true } as unknown,
+      user: { is_superuser: true } as unknown as User,
       isSuperadmin: false,
     });
     const { result } = renderHook(() => useIsSuperAdmin());
@@ -349,7 +350,7 @@ describe('useCurrentCargo Hook', () => {
         cargo_code: 'GER_OPS',
         cargo_level: 3,
         cargo: 'Gerente de Operaciones',
-      } as unknown,
+      } as unknown as User,
     });
     const { result } = renderHook(() => useCurrentCargo());
     expect(result.current.code).toBe('GER_OPS');

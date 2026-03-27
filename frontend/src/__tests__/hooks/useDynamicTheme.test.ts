@@ -17,6 +17,7 @@ vi.mock('@/hooks/useBrandingConfig', () => ({
 
 import { useDynamicTheme } from '@/hooks/useDynamicTheme';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import type { UseBrandingConfigReturn } from '@/hooks/useBrandingConfig';
 
 const mockedUseBrandingConfig = vi.mocked(useBrandingConfig);
 
@@ -41,7 +42,7 @@ describe('useDynamicTheme Hook', () => {
       pwaIcon192: '',
       pwaIcon512: '',
       pwaThemeColor: '',
-    } as unknown);
+    } as unknown as UseBrandingConfigReturn);
   });
 
   afterEach(() => {
@@ -79,7 +80,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as unknown);
+      } as unknown as UseBrandingConfigReturn);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -112,7 +113,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as unknown);
+      } as unknown as UseBrandingConfigReturn);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -147,7 +148,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as unknown);
+      } as unknown as UseBrandingConfigReturn);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -180,7 +181,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as unknown);
+      } as unknown as UseBrandingConfigReturn);
 
       renderHook(() => useDynamicTheme());
       const root = document.documentElement;
@@ -217,7 +218,7 @@ describe('useDynamicTheme Hook', () => {
         pwaIcon192: '',
         pwaIcon512: '',
         pwaThemeColor: '',
-      } as unknown);
+      } as unknown as UseBrandingConfigReturn);
 
       renderHook(() => useDynamicTheme());
       expect(document.title).toBe('Mi Empresa SAS');

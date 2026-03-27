@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useAuthStore } from '@/store/authStore';
+import type { User } from '@/types/auth.types';
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -31,7 +32,7 @@ describe('useAuthStore', () => {
       first_name: 'Test',
       last_name: 'User',
       username: 'testuser',
-    } as unknown;
+    } as unknown as User;
 
     act(() => {
       result.current.setUser(mockUser);

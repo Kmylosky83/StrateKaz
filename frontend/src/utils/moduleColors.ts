@@ -93,6 +93,8 @@ export interface ModuleColorClasses {
   text: string;
   /** Icono del color del módulo */
   icon: string;
+  /** Barra de progreso */
+  progress?: string;
 }
 
 /**

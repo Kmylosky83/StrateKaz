@@ -1183,15 +1183,15 @@ def recursos_acceder_view(request, code):
     """
     GET /api/tenant/public/recursos/<code>/acceder/
 
-    Redirige a la carpeta de Google Drive de la categoría solicitada.
-    Las URLs de Drive viven solo en el backend — nunca se exponen en el JS.
+    Retorna JSON con la URL de la carpeta Google Drive.
+    El frontend hace window.open() directo a Drive — evita conflictos con Service Worker.
     Acceso público, sin autenticación.
     """
-    from django.http import HttpResponseRedirect, HttpResponseNotFound
+    from django.http import JsonResponse, HttpResponseNotFound
 
     drive_url = _RESOURCE_DRIVE_URLS.get(code)
     if not drive_url:
         return HttpResponseNotFound('Categoría no encontrada')
 
     logger.info('resource_access category=%s ip=%s', code, request.META.get('REMOTE_ADDR', ''))
-    return HttpResponseRedirect(drive_url)
+    return JsonResponse({'url': drive_url})

@@ -26,10 +26,20 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
 
   if (!isOpen || !category) return null;
 
-  const redirectUrl = `${apiBaseUrl || 'https://app.stratekaz.com'}/api/tenant/public/recursos/${category.code}/acceder/`;
+  const apiUrl = `${apiBaseUrl || 'https://app.stratekaz.com'}/api/tenant/public/recursos/${category.code}/acceder/`;
 
-  const openDrive = () => {
-    window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+  // Obtiene la URL de Drive desde el backend y abre directo — evita que el SW intercepte
+  const openDrive = async () => {
+    try {
+      const res = await fetch(apiUrl, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        window.open(data.url, '_blank', 'noopener,noreferrer');
+      }
+    } catch {
+      // Fallback: abrir la URL de la API directamente
+      window.open(apiUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleAcceder = async (e: React.FormEvent) => {

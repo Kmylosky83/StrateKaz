@@ -40,14 +40,14 @@ const ResourcesPage: React.FC = () => {
       {/* Hero */}
       <section className='py-section-lg px-4 text-center'>
         <div className='max-w-3xl mx-auto'>
-          <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm font-medium mb-6'>
+          <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-sm font-medium mb-6'>
             <BookOpen className='h-4 w-4' />
             Biblioteca de Recursos Gratuitos
           </div>
 
           <h1 className='font-title font-bold text-fluid-3xl lg:text-fluid-4xl text-white-text leading-tight mb-4'>
             Herramientas listas para usar
-            <span className='block text-brand-400'>en tu empresa</span>
+            <span className='block text-brand-500'>en tu empresa</span>
           </h1>
 
           <p className='text-white-muted text-base sm:text-lg leading-relaxed max-w-2xl mx-auto'>

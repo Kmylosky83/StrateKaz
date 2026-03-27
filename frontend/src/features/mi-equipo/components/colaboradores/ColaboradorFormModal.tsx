@@ -298,33 +298,27 @@ export const ColaboradorFormModal = ({
       if (!isStepValid(i)) return;
     }
 
-    const data: Record<string, unknown> = {
+    // Payload base tipado: limpiar campos vacíos opcionales
+    const base: ColaboradorFormData = {
       ...formData,
-      parte_interesada_id: piId,
-      parte_interesada_nombre: piNombre,
+      parte_interesada_id: piId ?? undefined,
+      parte_interesada_nombre: piNombre || undefined,
+      segundo_nombre: formData.segundo_nombre || undefined,
+      segundo_apellido: formData.segundo_apellido || undefined,
+      email_personal: formData.email_personal || undefined,
+      telefono_movil: formData.telefono_movil || undefined,
+      observaciones: formData.observaciones || undefined,
     };
-    // Clean optional fields
-    if (!data.segundo_nombre) delete data.segundo_nombre;
-    if (!data.segundo_apellido) delete data.segundo_apellido;
-    if (!data.email_personal) delete data.email_personal;
-    if (!data.telefono_movil) delete data.telefono_movil;
-    if (!data.observaciones) delete data.observaciones;
 
     try {
       if (isEditing && colaborador) {
-        // En edicion, no enviar campos de acceso
-        delete data.crear_acceso;
-        delete data.email_corporativo;
-        delete data.username;
-        await updateMutation.mutateAsync({ id: colaborador.id, data });
+        // En edicion: strip campos de acceso (write-only, solo aplican en creacion)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { crear_acceso, email_corporativo, username, ...updatePayload } = base;
+        await updateMutation.mutateAsync({ id: colaborador.id, data: updatePayload });
       } else {
-        // En creacion, limpiar campos de acceso si no se selecciono
-        if (!data.crear_acceso) {
-          delete data.crear_acceso;
-          delete data.email_corporativo;
-          delete data.username;
-        }
-        await createMutation.mutateAsync(data);
+        // En creacion: base ya tiene todos los campos tipados correctamente
+        await createMutation.mutateAsync(base);
       }
       onClose();
     } catch {

@@ -14,7 +14,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tenant', '0003_onboarding_tenant'),
+        ('tenant', '0004_newslettersubscriber'),
     ]
 
     operations = [

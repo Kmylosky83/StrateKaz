@@ -122,8 +122,14 @@ function doRefreshToken(): Promise<string> {
     return Promise.reject(new Error('No refresh token available'));
   }
 
+  // Usar axios crudo (NO axiosInstance) para evitar loop en interceptor de 401,
+  // pero incluir X-Tenant-ID manualmente para contexto de tenant
+  const tenantId = localStorage.getItem('current_tenant_id');
+  const headers: Record<string, string> = {};
+  if (tenantId) headers['X-Tenant-ID'] = tenantId;
+
   return axios
-    .post(`${API_URL}/tenant/auth/refresh/`, { refresh: refreshToken })
+    .post(`${API_URL}/tenant/auth/refresh/`, { refresh: refreshToken }, { headers })
     .then((response) => {
       const { access, refresh: newRefreshToken } = response.data;
       localStorage.setItem('access_token', access);

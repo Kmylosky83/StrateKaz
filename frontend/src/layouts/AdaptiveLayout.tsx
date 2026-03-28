@@ -17,13 +17,14 @@
  * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente
  * a su portal correspondiente si intentan acceder a cualquier otra ruta.
  */
-import { useCallback, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 
 const MAX_PROFILE_RETRIES = 5;
+const ABSOLUTE_TIMEOUT_MS = 15_000; // 15s máximo de espera antes de mostrar error
 
 /** Delay progresivo entre reintentos (ms): 0, 2s, 4s, 8s, 16s */
 function getRetryDelay(attempt: number): number {
@@ -34,6 +35,7 @@ function getRetryDelay(attempt: number): number {
 export const AdaptiveLayout = () => {
   const retryCount = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   // Auth state
   const currentTenantId = useAuthStore((s) => s.currentTenantId);
@@ -57,6 +59,17 @@ export const AdaptiveLayout = () => {
       }
     };
   }, []);
+
+  // Timeout absoluto: si después de 15s no hay user, mostrar error
+  useEffect(() => {
+    if (user) {
+      setTimedOut(false);
+      return;
+    }
+    if (!currentTenantId) return;
+    const timer = setTimeout(() => setTimedOut(true), ABSOLUTE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [currentTenantId, user]);
 
   // Retry con backoff progresivo
   const scheduleRetry = useCallback(() => {
@@ -95,8 +108,36 @@ export const AdaptiveLayout = () => {
     }
   }, [currentTenantId, user, isLoadingUser, scheduleRetry, forceLogout]);
 
-  // Mientras se carga el perfil, mostrar spinner
+  // Mientras se carga el perfil, mostrar spinner o error
   if (isLoadingUser || (currentTenantId && !user)) {
+    if (timedOut) {
+      return (
+        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
+          <p className="text-gray-600 dark:text-gray-400">
+            No se pudo cargar tu sesión. Tu sesión puede haber expirado.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setTimedOut(false);
+                retryCount.current = 0;
+                loadUserProfile();
+              }}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reintentar
+            </button>
+            <button
+              onClick={() => forceLogout()}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin text-primary-600" />

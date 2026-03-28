@@ -405,8 +405,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=480, cast=int)),
     'REFRESH_TOKEN_LIFETIME': timedelta(minutes=config('JWT_REFRESH_TOKEN_LIFETIME', default=10080, cast=int)),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,  # Desactivado: TenantUser no usa for_user() → blacklist no funciona correctamente + causa race condition multi-pestaña
+    'ROTATE_REFRESH_TOKENS': False,  # Desactivado: blacklist no funciona con TenantUser + ROTATE sin blacklist causa race condition multi-tab
+    'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,  # Desactivado para multi-tenant (TenantUser maneja su propio last_login)
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,

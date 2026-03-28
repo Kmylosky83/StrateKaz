@@ -7,9 +7,10 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, UserPlus, Mail, Shield, Building2 } from 'lucide-react';
-import { Button, Badge } from '@/components/common';
+import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { Checkbox } from '@/components/forms/Checkbox';
+import { cn } from '@/utils/cn';
 import { useCreateTenantUser, useUpdateTenantUser, useTenantsList } from '../hooks/useAdminGlobal';
 import type { TenantUser, CreateTenantUserDTO } from '../types';
 
@@ -48,10 +49,11 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
         last_name: user.last_name,
         is_active: user.is_active,
         is_superadmin: user.is_superadmin,
-        // Solo necesitamos el tenant_id, los permisos se manejan en el tenant
+        // tenant_id + is_admin desde los accesos existentes
         tenant_assignments:
           user.accesses?.map((a) => ({
             tenant_id: a.tenant.id,
+            is_admin: a.is_admin ?? false,
           })) || [],
       });
     } else {
@@ -94,11 +96,18 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
       }
       return {
         ...prev,
-        // Solo se guarda el tenant_id - los permisos granulares se configuran
-        // dentro del tenant via User.cargo (sistema RBAC)
-        tenant_assignments: [...assignments, { tenant_id: tenantId }],
+        tenant_assignments: [...assignments, { tenant_id: tenantId, is_admin: false }],
       };
     });
+  };
+
+  const handleAdminToggle = (tenantId: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      tenant_assignments: (prev.tenant_assignments ?? []).map((a) =>
+        a.tenant_id === tenantId ? { ...a, is_admin: !a.is_admin } : a
+      ),
+    }));
   };
 
   const validate = (): boolean => {
@@ -282,11 +291,30 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
                         </span>
                       </div>
 
-                      {isSelected && (
-                        <Badge variant="primary" size="sm">
-                          Acceso habilitado
-                        </Badge>
-                      )}
+                      {isSelected &&
+                        (() => {
+                          const assignment = (formData.tenant_assignments ?? []).find(
+                            (a) => a.tenant_id === tenant.id
+                          );
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdminToggle(tenant.id);
+                              }}
+                              className={cn(
+                                'flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors',
+                                assignment?.is_admin
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                  : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              )}
+                            >
+                              <Shield className="h-3 w-3" />
+                              {assignment?.is_admin ? 'Admin' : 'Usuario'}
+                            </button>
+                          );
+                        })()}
                     </div>
                   );
                 })}

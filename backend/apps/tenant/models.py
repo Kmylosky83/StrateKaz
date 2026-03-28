@@ -1077,6 +1077,15 @@ class TenantUserAccess(models.Model):
         help_text='Si False, el usuario no puede acceder a este tenant'
     )
 
+    is_admin = models.BooleanField(
+        default=False,
+        verbose_name='Admin del tenant',
+        help_text=(
+            'Si True, el usuario obtiene is_superuser=True dentro del tenant '
+            '(bypass total de RBAC). Se asigna desde Admin Global.'
+        )
+    )
+
     # Auditoría
     granted_at = models.DateTimeField(auto_now_add=True)
     granted_by = models.ForeignKey(

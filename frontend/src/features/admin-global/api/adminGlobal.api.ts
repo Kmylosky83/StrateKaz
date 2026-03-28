@@ -367,6 +367,21 @@ export const tenantUsersApi = {
   },
 
   /**
+   * Activa/desactiva el rol de admin de un usuario en un tenant
+   */
+  toggleAdmin: async (
+    userId: number,
+    tenantId: number,
+    isAdmin: boolean
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/users/${userId}/toggle-admin/`, {
+      tenant_id: tenantId,
+      is_admin: isAdmin,
+    });
+    return response.data;
+  },
+
+  /**
    * Remueve acceso de un usuario a un tenant
    */
   removeTenant: async (userId: number, tenantId: number): Promise<{ message: string }> => {

@@ -127,20 +127,27 @@ class HybridJWTAuthentication(JWTAuthentication):
                 # SECURITY FIX: validar TenantUserAccess aunque el User ya exista.
                 # Sin esta verificación, si el mismo email tiene un User en varios
                 # schemas, cualquier token válido puede acceder a todos ellos.
+                # _assert_tenant_access retorna is_admin (bool).
+                is_admin = False
                 if not is_superadmin and tenant_user_id:
-                    self._assert_tenant_access(tenant_user_id)
+                    is_admin = self._assert_tenant_access(tenant_user_id)
 
-                # Sincronizar nombres si el User los tiene vacíos (ej: fue creado
-                # antes de que el TenantUser tuviera first_name/last_name).
+                # Sincronizar is_superuser según is_superadmin OR is_admin.
+                # Esto permite que toggle de admin surta efecto inmediato sin re-login.
+                should_be_superuser = is_superadmin or is_admin
+                if user.is_superuser != should_be_superuser:
+                    user.is_superuser = should_be_superuser
+                    user.is_staff = should_be_superuser
+                    user.save(update_fields=['is_superuser', 'is_staff'])
+                    logger.info(
+                        "Synced is_superuser=%s for User %s (is_superadmin=%s, is_admin=%s)",
+                        should_be_superuser, email, is_superadmin, is_admin
+                    )
+
+                # Sincronizar nombres si el User los tiene vacíos
                 if tenant_user_id and (not user.first_name or not user.last_name):
                     self._sync_name_if_empty(user, tenant_user_id)
 
-                if is_superadmin:
-                    logger.info(
-                        "Superadmin access: TenantUser %s accessing tenant as local User "
-                        "(is_superuser=%s)",
-                        email, user.is_superuser
-                    )
                 return user
 
             except User.DoesNotExist:
@@ -150,11 +157,15 @@ class HybridJWTAuthentication(JWTAuthentication):
                         tenant_user = TenantUser.objects.get(id=tenant_user_id, is_active=True)
 
                         # Verificar acceso antes de auto-crear el User en el schema
+                        # _assert_tenant_access retorna is_admin (bool)
+                        is_admin = False
                         if not is_superadmin:
-                            self._assert_tenant_access(tenant_user_id)
+                            is_admin = self._assert_tenant_access(tenant_user_id)
 
                         # Crear User sincronizado con TenantUser
-                        user = self._create_user_from_tenant_user(tenant_user, is_superadmin)
+                        user = self._create_user_from_tenant_user(
+                            tenant_user, is_superadmin, is_admin
+                        )
                         if user:
                             logger.info(
                                 "Created User %s in current tenant from TenantUser", email
@@ -171,11 +182,15 @@ class HybridJWTAuthentication(JWTAuthentication):
         # Token tradicional - comportamiento default
         return super().get_user(validated_token)
 
-    def _assert_tenant_access(self, tenant_user_id: int):
+    def _assert_tenant_access(self, tenant_user_id: int) -> bool:
         """
         Verifica que el TenantUser está activo y tiene TenantUserAccess
         activo al tenant actual.
         Lanza AuthenticationFailed si no tiene acceso.
+
+        Returns:
+            bool: True si el acceso tiene is_admin=True, False en caso contrario.
+            Superadmins siempre retornan True.
         """
         from django.db import connection
         from django_tenants.utils import schema_context
@@ -200,21 +215,22 @@ class HybridJWTAuthentication(JWTAuthentication):
                     'Contacta al administrador.'
                 )
 
-            # Superadmins pueden acceder a cualquier tenant
+            # Superadmins pueden acceder a cualquier tenant con poderes admin
             if tenant_user.is_superadmin:
-                return
+                return True
 
         current_tenant = getattr(connection, 'tenant', None)
         if not current_tenant:
-            return  # Sin tenant activo, no se puede verificar
+            return False
 
         with schema_context('public'):
-            has_access = TenantUserAccess.objects.filter(
+            access = TenantUserAccess.objects.filter(
                 tenant_user_id=tenant_user_id,
                 tenant=current_tenant,
                 is_active=True
-            ).exists()
-            if not has_access:
+            ).values_list('is_admin', flat=True).first()
+
+            if access is None:
                 logger.warning(
                     "TenantUser id=%s intentó acceder a tenant '%s' sin TenantUserAccess activo",
                     tenant_user_id, current_tenant.schema_name
@@ -223,6 +239,7 @@ class HybridJWTAuthentication(JWTAuthentication):
                     'No tiene acceso autorizado a esta empresa. '
                     'Contacte al administrador.'
                 )
+            return access  # bool: is_admin value
 
     def _sync_name_if_empty(self, user, tenant_user_id: int):
         """
@@ -245,7 +262,12 @@ class HybridJWTAuthentication(JWTAuthentication):
         except Exception as e:
             logger.debug("No se pudieron sincronizar nombres desde TenantUser: %s", e)
 
-    def _create_user_from_tenant_user(self, tenant_user: TenantUser, is_superadmin: bool = False):
+    def _create_user_from_tenant_user(
+        self,
+        tenant_user: TenantUser,
+        is_superadmin: bool = False,
+        is_admin: bool = False,
+    ):
         """
         Crea un User en el tenant actual basado en los datos del TenantUser.
 
@@ -253,12 +275,13 @@ class HybridJWTAuthentication(JWTAuthentication):
         - Se crea un Colaborador desde Gestión de Personas (signal sincroniza)
         - Un admin asigna cargo manualmente
 
-        Superadmins obtienen is_superuser=True, que les da acceso completo
-        via GranularActionPermission sin necesidad de cargo.
+        Superadmins y admin tenants obtienen is_superuser=True, que les da
+        acceso completo via GranularActionPermission sin necesidad de cargo.
 
         Args:
             tenant_user: El TenantUser fuente
             is_superadmin: Si el TenantUser es superadmin global
+            is_admin: Si tiene is_admin=True en TenantUserAccess
 
         Returns:
             User creado o None si falla
@@ -277,9 +300,8 @@ class HybridJWTAuthentication(JWTAuthentication):
             # Generar un document_number temporal (requerido por el modelo)
             temp_document = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
 
-            # Superadmin global -> is_superuser=True para acceso total en el tenant
-            # Esto permite que GranularActionPermission y el sistema RBAC le den acceso completo
-            grant_superuser = is_superadmin
+            # Superadmin global o admin tenant -> is_superuser=True para acceso total
+            grant_superuser = is_superadmin or is_admin
 
             user = User.objects.create(
                 username=username,

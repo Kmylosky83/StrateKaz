@@ -749,7 +749,7 @@ class TenantUserAccessSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TenantUserAccess
-        fields = ['tenant', 'is_active', 'granted_at']
+        fields = ['tenant', 'is_active', 'is_admin', 'granted_at']
 
 
 class TenantUserSerializer(serializers.ModelSerializer):
@@ -826,7 +826,8 @@ class TenantUserCreateSerializer(serializers.ModelSerializer):
                 TenantUserAccess.objects.create(
                     tenant_user=user,
                     tenant=tenant,
-                    is_active=True
+                    is_active=True,
+                    is_admin=assignment.get('is_admin', False),
                 )
 
         return user
@@ -897,9 +898,12 @@ class TenantUserUpdateSerializer(serializers.ModelSerializer):
 
         # Sincronizar accesos a tenants (solo si se envió el campo)
         if tenant_assignments is not None:
-            desired_ids = {
-                a['tenant_id'] for a in tenant_assignments if a.get('tenant_id')
+            # Mapear tenant_id -> is_admin del estado deseado
+            desired_map = {
+                a['tenant_id']: a.get('is_admin', False)
+                for a in tenant_assignments if a.get('tenant_id')
             }
+            desired_ids = set(desired_map.keys())
             current_accesses = TenantUserAccess.objects.filter(tenant_user=instance)
             current_ids = set(current_accesses.values_list('tenant_id', flat=True))
 
@@ -916,12 +920,20 @@ class TenantUserUpdateSerializer(serializers.ModelSerializer):
                     tenant_id=tenant_id,
                     role='user',
                     is_active=True,
+                    is_admin=desired_map.get(tenant_id, False),
                 )
 
             # Reactivar accesos que existían pero estaban inactivos
             current_accesses.filter(
                 tenant_id__in=desired_ids, is_active=False
             ).update(is_active=True)
+
+            # Sincronizar is_admin en accesos existentes
+            for access in current_accesses.filter(tenant_id__in=(desired_ids & current_ids)):
+                desired_admin = desired_map.get(access.tenant_id, False)
+                if access.is_admin != desired_admin:
+                    access.is_admin = desired_admin
+                    access.save(update_fields=['is_admin'])
 
         return instance
 

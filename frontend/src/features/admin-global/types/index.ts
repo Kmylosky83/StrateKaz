@@ -347,6 +347,7 @@ export interface TenantUserAccess {
   tenant: TenantMinimal;
   /** @deprecated Los permisos se manejan via User.cargo dentro del tenant */
   role?: TenantRole;
+  is_admin: boolean;
   is_active: boolean;
   granted_at: string;
 }
@@ -386,7 +387,7 @@ export interface CreateTenantUserDTO {
   last_name: string;
   is_active?: boolean;
   is_superadmin?: boolean;
-  tenant_assignments?: Array<{ tenant_id: number }>;
+  tenant_assignments?: Array<{ tenant_id: number; is_admin?: boolean }>;
 }
 
 export interface UpdateTenantUserDTO {
@@ -395,7 +396,7 @@ export interface UpdateTenantUserDTO {
   password?: string;
   is_active?: boolean;
   is_superadmin?: boolean;
-  tenant_assignments?: Array<{ tenant_id: number }>;
+  tenant_assignments?: Array<{ tenant_id: number; is_admin?: boolean }>;
 }
 
 /**

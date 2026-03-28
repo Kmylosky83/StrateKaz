@@ -423,6 +423,29 @@ export const useToggleTenantUserActive = () => {
   });
 };
 
+export const useToggleTenantUserAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      userId,
+      tenantId,
+      isAdmin,
+    }: {
+      userId: number;
+      tenantId: number;
+      isAdmin: boolean;
+    }) => tenantUsersApi.toggleAdmin(userId, tenantId, isAdmin),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
+      toast.success(data.message || 'Rol de admin actualizado');
+    },
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al cambiar rol de admin');
+    },
+  });
+};
+
 export const useResendWelcomeEmail = () => {
   return useMutation({
     mutationFn: (id: number) => tenantUsersApi.resendWelcome(id),

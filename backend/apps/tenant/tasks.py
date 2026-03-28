@@ -661,14 +661,21 @@ def setup_tenant_admin_task(
         access, created_access = TenantUserAccess.objects.get_or_create(
             tenant_user=tenant_user,
             tenant=tenant,
-            defaults={'is_active': True},
+            defaults={'is_active': True, 'is_admin': True},
         )
-        if not created_access and not access.is_active:
-            access.is_active = True
-            access.save(update_fields=['is_active'])
-            logger.info(
-                f"[Task {task_id}] TenantUserAccess reactivado para {admin_email}"
-            )
+        if not created_access:
+            updates = []
+            if not access.is_active:
+                access.is_active = True
+                updates.append('is_active')
+            if not access.is_admin:
+                access.is_admin = True
+                updates.append('is_admin')
+            if updates:
+                access.save(update_fields=updates)
+                logger.info(
+                    f"[Task {task_id}] TenantUserAccess actualizado ({', '.join(updates)}) para {admin_email}"
+                )
 
         # ── 4. Crear core.User dentro del schema del tenant ───────────────
         raw_setup_token = None

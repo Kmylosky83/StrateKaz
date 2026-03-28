@@ -115,7 +115,12 @@ const UserRow = ({ user, onEdit, onToggleActive, onResendWelcome }: UserRowProps
         {!user.is_superadmin && user.accesses.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {user.accesses.slice(0, 3).map((access) => (
-              <Badge key={access.tenant.id} variant="gray" size="sm">
+              <Badge
+                key={access.tenant.id}
+                variant={access.is_admin ? 'warning' : 'gray'}
+                size="sm"
+              >
+                {access.is_admin && <Shield className="h-3 w-3 mr-1" />}
                 {access.tenant.name.length > 15
                   ? `${access.tenant.name.substring(0, 15)}...`
                   : access.tenant.name}

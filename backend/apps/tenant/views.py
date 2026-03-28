@@ -658,13 +658,14 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     def grant_access(self, request, pk=None):
         """
         Otorgar acceso a un tenant.
-        Espera: { "tenant_id": 1 }
+        Espera: { "tenant_id": 1, "is_admin": false }
 
         NOTA: El campo 'role' está DEPRECATED.
         Los permisos granulares se manejan via User.cargo dentro del tenant.
         """
         user = self.get_object()
         tenant_id = request.data.get('tenant_id')
+        is_admin = request.data.get('is_admin', False)
 
         try:
             tenant = Tenant.objects.get(id=tenant_id)
@@ -680,12 +681,14 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 tenant=tenant,
                 defaults={
                     'is_active': True,
+                    'is_admin': is_admin,
                 }
             )
 
         return Response({
             'status': 'acceso otorgado' if created else 'acceso actualizado',
             'tenant': tenant.name,
+            'is_admin': access.is_admin,
         })
 
     @action(detail=True, methods=['post'], url_path='revoke-access')
@@ -711,6 +714,40 @@ class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 {'detail': 'Acceso no encontrado'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+    @action(detail=True, methods=['post'], url_path='toggle-admin')
+    def toggle_admin(self, request, pk=None):
+        """Toggle is_admin para un TenantUserAccess."""
+        user = self.get_object()
+        tenant_id = request.data.get('tenant_id')
+        is_admin = request.data.get('is_admin', False)
+
+        if not tenant_id:
+            return Response(
+                {'error': 'tenant_id es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            access = TenantUserAccess.objects.get(
+                tenant_user=user, tenant_id=tenant_id, is_active=True
+            )
+        except TenantUserAccess.DoesNotExist:
+            return Response(
+                {'error': 'No existe acceso activo a este tenant'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        access.is_admin = is_admin
+        with schema_context('public'):
+            access.save(update_fields=['is_admin'])
+
+        return Response({
+            'id': access.id,
+            'tenant_id': tenant_id,
+            'is_admin': access.is_admin,
+            'message': f'Admin {"asignado" if is_admin else "revocado"} correctamente'
+        })
 
     def perform_destroy(self, instance):
         """

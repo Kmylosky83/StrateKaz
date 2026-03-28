@@ -73,7 +73,6 @@ export function MetricCard({
   label,
   delta,
   deltaType = 'neutral',
-  _trend,
   color = 'primary',
   sparkline,
   icon,

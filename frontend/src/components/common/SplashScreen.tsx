@@ -15,7 +15,7 @@
  * - Logo y slogan FIJOS de StrateKaz (identidad de marca)
  * - Versión desde package.json (Single Source of Truth)
  */
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
 import { BRAND, APP_VERSION } from '@/constants/brand';
 
@@ -169,9 +169,10 @@ export const SplashScreen = ({
   const logoV = reduceMotion ? reducedMotionVariants.logo : logoVariants;
 
   // Clases de fondo según variante
-  const backgroundClasses = variant === 'dark'
-    ? 'bg-neutral-950' // Fondo oscuro fijo para login (coincide con NetworkBackground)
-    : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900';
+  const backgroundClasses =
+    variant === 'dark'
+      ? 'bg-neutral-950' // Fondo oscuro fijo para login (coincide con NetworkBackground)
+      : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900';
 
   return (
     <AnimatePresence mode="wait" onExitComplete={onExitComplete}>
@@ -220,7 +221,7 @@ export const SplashScreen = ({
 
             {/* Logo con efecto pulse - FIJO StrateKaz */}
             <motion.div
-              variants={reduceMotion ? {} : pulseVariants}
+              variants={(reduceMotion ? {} : pulseVariants) as Variants}
               animate="animate"
               className="relative"
             >
@@ -260,7 +261,7 @@ export const SplashScreen = ({
 
           {/* Tagline - FIJO StrateKaz */}
           <motion.p
-            variants={reduceMotion ? {} : textVariants}
+            variants={(reduceMotion ? {} : textVariants) as Variants}
             initial="initial"
             animate="animate"
             exit="exit"
@@ -282,7 +283,7 @@ export const SplashScreen = ({
                 `}
               >
                 <motion.div
-                  variants={reduceMotion ? {} : progressBarVariants}
+                  variants={(reduceMotion ? {} : progressBarVariants) as Variants}
                   initial="initial"
                   animate="animate"
                   exit="exit"
@@ -296,7 +297,7 @@ export const SplashScreen = ({
 
               {/* Status Message */}
               <motion.p
-                variants={reduceMotion ? {} : statusVariants}
+                variants={(reduceMotion ? {} : statusVariants) as Variants}
                 initial="initial"
                 animate="animate"
                 className={`

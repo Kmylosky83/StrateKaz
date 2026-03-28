@@ -217,7 +217,7 @@ export const CatalogOrganizacionalTab = ({ moduleColor }: CatalogOrganizacionalT
         }}
         title="Eliminar norma"
         message="Esta acción eliminará la norma del catálogo."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

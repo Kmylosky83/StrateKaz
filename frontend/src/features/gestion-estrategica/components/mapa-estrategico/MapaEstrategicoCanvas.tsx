@@ -95,9 +95,7 @@ function generateBSCLayout(
 
   // Configuración de layout
   const nodeWidth = 280;
-  const _nodeHeight = 180;
   const horizontalGap = 40;
-  const _verticalGap = 80;
   const perspectiveStartY = [50, 280, 510, 740]; // Y inicial para cada perspectiva
 
   // Generar nodos para cada perspectiva
@@ -194,8 +192,8 @@ const MapaCanvasInner = ({
   const deleteRelacionMutation = useDeleteRelacion();
 
   // Estado del canvas
-  const [showGrid, _setShowGrid] = useState(DEFAULT_MAPA_CONFIG.showGrid);
-  const [showMinimap, _setShowMinimap] = useState(DEFAULT_MAPA_CONFIG.showMinimap);
+  const [showGrid] = useState(DEFAULT_MAPA_CONFIG.showGrid);
+  const [showMinimap] = useState(DEFAULT_MAPA_CONFIG.showMinimap);
 
   // Generar nodos y edges iniciales
   const initialNodes = useMemo(
@@ -435,15 +433,18 @@ const MapaCanvasInner = ({
         {showMinimap && (
           <MiniMap
             nodeColor={(node) => {
-              const data = node.data as unknown;
-              if (data?.perspectiveConfig?.color) {
+              const data = node.data as Record<string, unknown>;
+              const perspectiveConfig = data?.perspectiveConfig as
+                | Record<string, string>
+                | undefined;
+              if (perspectiveConfig?.color) {
                 const colorMap: Record<string, string> = {
                   green: '#22c55e',
                   blue: '#3b82f6',
                   amber: '#f59e0b',
                   purple: '#a855f7',
                 };
-                return colorMap[data.perspectiveConfig.color] || '#6b7280';
+                return colorMap[perspectiveConfig.color] || '#6b7280';
               }
               return '#6b7280';
             }}

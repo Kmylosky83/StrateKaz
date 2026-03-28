@@ -6,7 +6,6 @@
  * - Números de página con elipsis
  * - Personalización de siblings
  */
-import React from 'react';
 import { cn } from '@/utils/cn';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
@@ -34,7 +33,6 @@ export function Pagination({
   totalPages,
   onPageChange,
   siblingCount = 1,
-  _showFirstLast = true,
   className,
   size = 'md',
   disabled = false,

@@ -279,7 +279,7 @@ export function EvidenceGallery({
               ? 'danger'
               : confirmAction?.type === 'rechazar'
                 ? 'warning'
-                : 'default'
+                : 'info'
           }
           confirmText={
             confirmAction?.type === 'aprobar'
@@ -433,7 +433,7 @@ export function EvidenceGallery({
             ? 'danger'
             : confirmAction?.type === 'rechazar'
               ? 'warning'
-              : 'default'
+              : 'info'
         }
         confirmText={
           confirmAction?.type === 'aprobar'

@@ -221,7 +221,7 @@ export const HeaderTabs = ({
     // Tomamos las primeras (visibleCount - 1) secciones + la activa
     const visible = sections.slice(0, visibleCount - 1);
     const activeSection$ = sections[activeIndex];
-    const hidden = sections.filter((s, i) => i >= visibleCount - 1 && i !== activeIndex);
+    const hidden = sections.filter((_s, i) => i >= visibleCount - 1 && i !== activeIndex);
 
     return {
       visibleSections: [...visible, activeSection$],

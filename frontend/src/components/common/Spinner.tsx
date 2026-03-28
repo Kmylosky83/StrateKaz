@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
-interface SpinnerProps {
+export interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }

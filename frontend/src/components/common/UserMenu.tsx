@@ -84,9 +84,6 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
       ? `${user.first_name} ${user.last_name}`
       : user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
-  // Solo el primer nombre para el saludo compacto
-  const _firstName = user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
-
   // Cargo y contexto organizacional
   const cargoName = isSuperAdmin
     ? 'Administrador del Sistema'

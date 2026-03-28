@@ -81,5 +81,3 @@ export const ResponsiveModal = ({
     </BaseModal>
   );
 };
-
-export type { ResponsiveModalProps };

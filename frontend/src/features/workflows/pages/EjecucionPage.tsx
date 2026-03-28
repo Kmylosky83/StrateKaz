@@ -158,27 +158,27 @@ export default function EjecucionPage() {
       ) : (
         <KpiCardGrid columns={4}>
           <KpiCard
-            title="Instancias Activas"
+            label="Instancias Activas"
             value={statsInstancias?.activas ?? 0}
-            icon="Activity"
+            icon={<Play className="h-5 w-5" />}
             color="purple"
           />
           <KpiCard
-            title="Tareas Pendientes"
+            label="Tareas Pendientes"
             value={statsTareas?.pendientes ?? 0}
-            icon="Clock"
+            icon={<CheckCircle2 className="h-5 w-5" />}
             color="orange"
           />
           <KpiCard
-            title="Completadas Hoy"
+            label="Completadas Hoy"
             value={statsTareas?.completadas_hoy ?? 0}
-            icon="CheckCircle2"
+            icon={<CheckCircle2 className="h-5 w-5" />}
             color="green"
           />
           <KpiCard
-            title="Vencidas"
+            label="Vencidas"
             value={statsTareas?.vencidas ?? 0}
-            icon="AlertCircle"
+            icon={<XCircle className="h-5 w-5" />}
             color="red"
           />
         </KpiCardGrid>

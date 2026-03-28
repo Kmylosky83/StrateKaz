@@ -116,7 +116,7 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
               >
                 {tenant.logo || tenant.logo_url ? (
                   <img
-                    src={tenant.logo || tenant.logo_url}
+                    src={tenant.logo || tenant.logo_url || undefined}
                     alt={tenant.name}
                     className="w-8 h-8 object-contain"
                   />

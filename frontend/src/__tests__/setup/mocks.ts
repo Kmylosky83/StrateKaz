@@ -115,7 +115,7 @@ export const createMockFile = (name = 'test.pdf', _size = 1024, type = 'applicat
 // Mock FormData
 export const createMockFormData = () => {
   const formData = new FormData();
-  formData.append = vi.fn();
+  formData.append = vi.fn() as unknown as typeof formData.append;
   formData.delete = vi.fn();
   formData.get = vi.fn();
   formData.getAll = vi.fn();

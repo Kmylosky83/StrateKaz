@@ -134,7 +134,7 @@ const INTERES_VALUES: Record<string, number> = {
  * Determina el cuadrante de un stakeholder basado en influencia e interes
  */
 const getCuadrante = (stakeholder: ParteInteresada): CuadranteKey => {
-  const influenciaAlta = stakeholder.nivel_influencia === 'alta';
+  const influenciaAlta = stakeholder.nivel_influencia_pi === 'alta';
   const interesAlto = stakeholder.nivel_interes === 'alto';
 
   if (influenciaAlta && interesAlto) return 'gestionar_cerca';
@@ -156,7 +156,7 @@ const deterministicJitter = (id: number, maxJitter = 0.35): number => {
  */
 const stakeholderToScatterPoint = (stakeholder: ParteInteresada): ScatterDataPoint => {
   const baseX = INTERES_VALUES[stakeholder.nivel_interes] || 2;
-  const baseY = INFLUENCIA_VALUES[stakeholder.nivel_influencia] || 2;
+  const baseY = INFLUENCIA_VALUES[stakeholder.nivel_influencia_pi] || 2;
 
   // Jitter deterministico basado en el ID
   const jitterX = deterministicJitter(stakeholder.id);
@@ -207,7 +207,9 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
         <div className="grid grid-cols-2 gap-2 mt-1.5 text-xs text-gray-600 dark:text-gray-400">
           <span>
             Influencia:{' '}
-            <strong>{stakeholder.nivel_influencia_display || stakeholder.nivel_influencia}</strong>
+            <strong>
+              {stakeholder.nivel_influencia_pi_display || stakeholder.nivel_influencia_pi}
+            </strong>
           </span>
           <span>
             Interes:{' '}

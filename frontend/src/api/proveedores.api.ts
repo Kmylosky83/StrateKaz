@@ -6,7 +6,6 @@ import type {
   UpdateProveedorDTO,
   CambiarPrecioDTO,
   ProveedorFilters,
-  PaginatedResponse,
   HistorialPrecio,
   CondicionComercial,
   CreateCondicionComercialDTO,
@@ -18,6 +17,7 @@ import type {
   PruebaAcidezFilters,
   EstadisticasAcidez,
 } from '@/types/proveedores.types';
+import type { PaginatedResponse } from '@/types/api.types';
 
 /**
  * API Client para gestión de proveedores
@@ -34,7 +34,8 @@ export const proveedoresAPI = {
     if (filters?.search) params.append('search', filters.search);
     if (filters?.tipo_proveedor) params.append('tipo_proveedor', filters.tipo_proveedor);
     if (filters?.subtipo_materia) params.append('subtipo_materia', filters.subtipo_materia);
-    if (filters?.modalidad_logistica) params.append('modalidad_logistica', filters.modalidad_logistica);
+    if (filters?.modalidad_logistica)
+      params.append('modalidad_logistica', filters.modalidad_logistica);
     if (filters?.is_active !== undefined) {
       params.append('is_active', String(filters.is_active));
     }
@@ -45,7 +46,9 @@ export const proveedoresAPI = {
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
     const queryString = params.toString();
-    const url = queryString ? `/proveedores/proveedores/?${queryString}` : '/proveedores/proveedores/';
+    const url = queryString
+      ? `/proveedores/proveedores/?${queryString}`
+      : '/proveedores/proveedores/';
 
     const response = await axiosInstance.get<PaginatedResponse<Proveedor>>(url);
     return response.data;
@@ -95,7 +98,10 @@ export const proveedoresAPI = {
   /**
    * Cambiar precio de proveedor (Solo Gerente)
    */
-  cambiarPrecio: async (id: number, data: CambiarPrecioDTO): Promise<{ message: string; proveedor: Proveedor }> => {
+  cambiarPrecio: async (
+    id: number,
+    data: CambiarPrecioDTO
+  ): Promise<{ message: string; proveedor: Proveedor }> => {
     const response = await axiosInstance.post<{ message: string; proveedor: Proveedor }>(
       `/proveedores/proveedores/${id}/cambiar-precio/`,
       data
@@ -106,7 +112,9 @@ export const proveedoresAPI = {
   /**
    * Obtener historial de cambios de precio
    */
-  getHistorialPrecio: async (id: number): Promise<{
+  getHistorialPrecio: async (
+    id: number
+  ): Promise<{
     proveedor: string;
     precios_actuales: PrecioMateriaPrima[];
     historial: HistorialPrecio[];
@@ -124,7 +132,9 @@ export const proveedoresAPI = {
   /**
    * Obtener condiciones comerciales de un proveedor
    */
-  getCondicionesComerciales: async (proveedorId?: number): Promise<PaginatedResponse<CondicionComercial>> => {
+  getCondicionesComerciales: async (
+    proveedorId?: number
+  ): Promise<PaginatedResponse<CondicionComercial>> => {
     const url = proveedorId
       ? `/proveedores/condiciones-comerciales/?proveedor=${proveedorId}`
       : '/proveedores/condiciones-comerciales/';
@@ -136,7 +146,9 @@ export const proveedoresAPI = {
   /**
    * Crear condición comercial
    */
-  createCondicionComercial: async (data: CreateCondicionComercialDTO): Promise<CondicionComercial> => {
+  createCondicionComercial: async (
+    data: CreateCondicionComercialDTO
+  ): Promise<CondicionComercial> => {
     const response = await axiosInstance.post<CondicionComercial>(
       '/proveedores/condiciones-comerciales/',
       data
@@ -173,19 +185,24 @@ export const proveedoresAPI = {
   /**
    * Obtener lista de pruebas de acidez con paginación y filtros
    */
-  getPruebasAcidez: async (filters?: PruebaAcidezFilters): Promise<PaginatedResponse<PruebaAcidez>> => {
+  getPruebasAcidez: async (
+    filters?: PruebaAcidezFilters
+  ): Promise<PaginatedResponse<PruebaAcidez>> => {
     const params = new URLSearchParams();
 
     if (filters?.search) params.append('search', filters.search);
     if (filters?.proveedor) params.append('proveedor', String(filters.proveedor));
-    if (filters?.calidad_resultante) params.append('calidad_resultante', filters.calidad_resultante);
+    if (filters?.calidad_resultante)
+      params.append('calidad_resultante', filters.calidad_resultante);
     if (filters?.fecha_desde) params.append('fecha_desde', filters.fecha_desde);
     if (filters?.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta);
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
     const queryString = params.toString();
-    const url = queryString ? `/proveedores/pruebas-acidez/?${queryString}` : '/proveedores/pruebas-acidez/';
+    const url = queryString
+      ? `/proveedores/pruebas-acidez/?${queryString}`
+      : '/proveedores/pruebas-acidez/';
 
     const response = await axiosInstance.get<PaginatedResponse<PruebaAcidez>>(url);
     return response.data;
@@ -250,7 +267,9 @@ export const proveedoresAPI = {
   /**
    * Simular resultado de prueba de acidez (sin crear)
    */
-  simularPruebaAcidez: async (data: SimularPruebaAcidezDTO): Promise<SimularPruebaAcidezResponse> => {
+  simularPruebaAcidez: async (
+    data: SimularPruebaAcidezDTO
+  ): Promise<SimularPruebaAcidezResponse> => {
     const response = await axiosInstance.post<SimularPruebaAcidezResponse>(
       '/proveedores/pruebas-acidez/simular/',
       data
@@ -267,7 +286,8 @@ export const proveedoresAPI = {
   ): Promise<PaginatedResponse<PruebaAcidez>> => {
     const params = new URLSearchParams();
 
-    if (filters?.calidad_resultante) params.append('calidad_resultante', filters.calidad_resultante);
+    if (filters?.calidad_resultante)
+      params.append('calidad_resultante', filters.calidad_resultante);
     if (filters?.fecha_desde) params.append('fecha_desde', filters.fecha_desde);
     if (filters?.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta);
     if (filters?.page) params.append('page', String(filters.page));

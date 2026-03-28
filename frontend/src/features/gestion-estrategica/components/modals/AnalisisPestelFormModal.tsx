@@ -113,24 +113,23 @@ const defaultFactorForm: FactorForm = {
   fuentes: '',
 };
 
-const TIPO_FACTOR_OPTIONS: { value: TipoFactorPESTEL; _label: string; icon: React.ElementType }[] =
-  [
-    { value: 'politico', _label: 'Político', icon: Landmark },
-    { value: 'economico', _label: 'Económico', icon: DollarSign },
-    { value: 'social', _label: 'Social', icon: Users },
-    { value: 'tecnologico', _label: 'Tecnologico', icon: Cpu },
-    { value: 'ecologico', _label: 'Ecológico', icon: Leaf },
-    { value: 'legal', _label: 'Legal', icon: Scale },
-  ];
+const TIPO_FACTOR_OPTIONS: { value: TipoFactorPESTEL; label: string; icon: React.ElementType }[] = [
+  { value: 'politico', label: 'Político', icon: Landmark },
+  { value: 'economico', label: 'Económico', icon: DollarSign },
+  { value: 'social', label: 'Social', icon: Users },
+  { value: 'tecnologico', label: 'Tecnologico', icon: Cpu },
+  { value: 'ecologico', label: 'Ecológico', icon: Leaf },
+  { value: 'legal', label: 'Legal', icon: Scale },
+];
 
 const IMPACTO_OPTIONS = Object.entries(NIVEL_IMPACTO_CONFIG).map(([value, config]) => ({
   value,
-  _label: config._label,
+  label: config.label,
 }));
 
 const TENDENCIA_OPTIONS = Object.entries(TENDENCIA_FACTOR_CONFIG).map(([value, config]) => ({
   value,
-  _label: config._label,
+  label: config.label,
 }));
 
 const getTendenciaIcon = (tendencia: TendenciaFactor) => {
@@ -176,13 +175,13 @@ export const AnalisisPestelFormModal = ({
   const tipoAnalisisOptions =
     tiposAnalisisData?.results?.map((t) => ({
       value: t.id.toString(),
-      _label: t.nombre,
+      label: t.nombre,
     })) || [];
 
   const cargoOptions =
     cargosData?.map((c) => ({
       value: c.id.toString(),
-      _label: c._label,
+      label: c.label,
     })) || [];
 
   // Mutations
@@ -333,8 +332,8 @@ export const AnalisisPestelFormModal = ({
   const renderTabs = () => (
     <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
       {[
-        { key: 'datos', _label: 'Datos Básicos', disabled: false },
-        { key: 'factores', _label: `Factores (${factores.length})`, disabled: !isEditing },
+        { key: 'datos', label: 'Datos Básicos', disabled: false },
+        { key: 'factores', label: `Factores (${factores.length})`, disabled: !isEditing },
       ].map((tab) => (
         <Button
           key={tab.key}
@@ -371,7 +370,7 @@ export const AnalisisPestelFormModal = ({
           label="Tipo de Análisis"
           value={formData.tipo_analisis}
           onChange={(e) => setFormData({ ...formData, tipo_analisis: e.target.value })}
-          options={[{ value: '', _label: 'Seleccionar tipo...' }, ...tipoAnalisisOptions]}
+          options={[{ value: '', label: 'Seleccionar tipo...' }, ...tipoAnalisisOptions]}
         />
 
         <Input
@@ -403,7 +402,7 @@ export const AnalisisPestelFormModal = ({
           label="Cargo Responsable"
           value={formData.responsable}
           onChange={(e) => setFormData({ ...formData, responsable: e.target.value })}
-          options={[{ value: '', _label: 'Sin asignar' }, ...cargoOptions]}
+          options={[{ value: '', label: 'Sin asignar' }, ...cargoOptions]}
         />
       </div>
 
@@ -429,7 +428,7 @@ export const AnalisisPestelFormModal = ({
     <div className="space-y-6">
       {/* Estadisticas por tipo */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-        {TIPO_FACTOR_OPTIONS.map(({ value, _label, icon: Icon }) => {
+        {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
           const config = TIPO_FACTOR_PESTEL_CONFIG[value];
           const count = factoresPorTipo[value] || 0;
           const isActive = filterTipo === value;
@@ -564,7 +563,7 @@ export const AnalisisPestelFormModal = ({
 
           {/* Tipo de factor */}
           <div className="flex flex-wrap gap-2">
-            {TIPO_FACTOR_OPTIONS.map(({ value, _label, icon: Icon }) => {
+            {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FACTOR_PESTEL_CONFIG[value];
               return (
                 <Button

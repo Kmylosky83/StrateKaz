@@ -231,7 +231,7 @@ export const EntrevistasTab = () => {
           className={cn(
             '!px-4 !py-2 text-sm font-medium rounded-lg transition-all',
             subView === 'sincronas'
-              ? `${colorClasses.badgeBg} ${colorClasses.badgeText}`
+              ? `${colorClasses.badge} ${colorClasses.text}`
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
           )}
         >
@@ -248,7 +248,7 @@ export const EntrevistasTab = () => {
           className={cn(
             '!px-4 !py-2 text-sm font-medium rounded-lg transition-all',
             subView === 'asincronicas'
-              ? `${colorClasses.badgeBg} ${colorClasses.badgeText}`
+              ? `${colorClasses.badge} ${colorClasses.text}`
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
           )}
         >
@@ -408,8 +408,8 @@ const SyncEntrevistasView = ({
           <div className="p-8">
             <EmptyState
               icon={
-                <div className={cn('p-3 rounded-xl', colorClasses.statBg)}>
-                  <MessageSquare size={24} className={colorClasses.statIcon} />
+                <div className={cn('p-3 rounded-xl', colorClasses.badge)}>
+                  <MessageSquare size={24} className={colorClasses.icon} />
                 </div>
               }
               title="Sin entrevistas"
@@ -615,8 +615,8 @@ const AsyncEntrevistasView = ({
           <div className="p-8">
             <EmptyState
               icon={
-                <div className={cn('p-3 rounded-xl', colorClasses.statBg)}>
-                  <Mail size={24} className={colorClasses.statIcon} />
+                <div className={cn('p-3 rounded-xl', colorClasses.badge)}>
+                  <Mail size={24} className={colorClasses.icon} />
                 </div>
               }
               title="Sin entrevistas asincronicas"

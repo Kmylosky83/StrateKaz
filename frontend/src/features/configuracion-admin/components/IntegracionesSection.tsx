@@ -224,7 +224,7 @@ export const IntegracionesSection = () => {
         }}
         title="Eliminar integración"
         message="Esta acción eliminará la integración y sus credenciales asociadas. No se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

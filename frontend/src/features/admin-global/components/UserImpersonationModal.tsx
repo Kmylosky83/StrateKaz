@@ -28,6 +28,7 @@ import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/api/auth.api';
 import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
+import type { User } from '@/types/auth.types';
 import { usersAPI } from '@/api/users.api';
 import { cn } from '@/utils/cn';
 
@@ -124,8 +125,8 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     await startUserImpersonation(userId, impersonationToken);
     queryClient.removeQueries({ queryKey: ['modules'] });
 
-    const portalOnly = isPortalOnlyUser(userItem);
-    const isCliente = isClientePortalUser(userItem);
+    const portalOnly = isPortalOnlyUser(userItem as User | null | undefined);
+    const isCliente = isClientePortalUser(userItem as User | null | undefined);
 
     handleClose();
 

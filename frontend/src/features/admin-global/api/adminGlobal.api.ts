@@ -210,7 +210,7 @@ export const tenantsApi = {
     }
 
     // Si es objeto normal, procesar como antes
-     
+
     const { code, subdomain, ...rest } = data as CreateTenantDTO & {
       code?: string;
       subdomain?: string;
@@ -219,8 +219,8 @@ export const tenantsApi = {
     // Convertir valores vacíos a null para campos opcionales
     const updateData = {
       ...rest,
-      // plan debe ser null si está vacío o undefined, no string vacío
-      plan: rest.plan === '' || rest.plan === undefined ? null : rest.plan,
+      // plan debe ser null si está vacío o undefined
+      plan: rest.plan == null ? null : rest.plan,
       // fechas vacías deben ser null
       trial_ends_at: rest.trial_ends_at === '' ? null : rest.trial_ends_at,
       subscription_ends_at: rest.subscription_ends_at === '' ? null : rest.subscription_ends_at,

@@ -227,7 +227,8 @@ export function KPIGaugeAdvanced({
       ];
     }
 
-    const series: unknown[] = [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const series: any[] = [
       // Gauge principal
       {
         type: 'gauge',

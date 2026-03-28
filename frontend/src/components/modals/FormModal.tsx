@@ -9,12 +9,7 @@
  * - Reset automático al cerrar
  */
 import { ReactNode, useEffect, useCallback, useState } from 'react';
-import {
-  FieldValues,
-  UseFormReturn,
-  SubmitHandler,
-  DefaultValues,
-} from 'react-hook-form';
+import { FieldValues, UseFormReturn, SubmitHandler, DefaultValues } from 'react-hook-form';
 import { BaseModal, ModalSize } from './BaseModal';
 import { Button } from '@/components/common/Button';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -176,8 +171,8 @@ export function FormModal<T extends FieldValues>({
         onConfirm={handleConfirmClose}
         title="Cambios sin guardar"
         message="Tienes cambios sin guardar. ¿Estás seguro de que quieres cerrar sin guardar?"
-        confirmLabel="Descartar cambios"
-        cancelLabel="Continuar editando"
+        confirmText="Descartar cambios"
+        cancelText="Continuar editando"
         variant="warning"
       />
     </>

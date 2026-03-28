@@ -48,8 +48,11 @@ const backdropVariants = {
 
 const drawerVariants = {
   initial: { x: '100%' },
-  animate: { x: 0, transition: { type: 'spring', damping: 30, stiffness: 300 } },
-  exit: { x: '100%', transition: { duration: 0.2, ease: [0.4, 0, 1, 1] } },
+  animate: { x: 0, transition: { type: 'spring' as const, damping: 30, stiffness: 300 } },
+  exit: {
+    x: '100%',
+    transition: { duration: 0.2, ease: [0.4, 0, 1, 1] as [number, number, number, number] },
+  },
 };
 
 export const Drawer = ({

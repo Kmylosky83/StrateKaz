@@ -84,18 +84,19 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
 
   const handleTenantToggle = (tenantId: number) => {
     setFormData((prev) => {
-      const exists = prev.tenant_assignments.find((a) => a.tenant_id === tenantId);
+      const assignments = prev.tenant_assignments ?? [];
+      const exists = assignments.find((a) => a.tenant_id === tenantId);
       if (exists) {
         return {
           ...prev,
-          tenant_assignments: prev.tenant_assignments.filter((a) => a.tenant_id !== tenantId),
+          tenant_assignments: assignments.filter((a) => a.tenant_id !== tenantId),
         };
       }
       return {
         ...prev,
         // Solo se guarda el tenant_id - los permisos granulares se configuran
         // dentro del tenant via User.cargo (sistema RBAC)
-        tenant_assignments: [...prev.tenant_assignments, { tenant_id: tenantId }],
+        tenant_assignments: [...assignments, { tenant_id: tenantId }],
       };
     });
   };
@@ -258,7 +259,7 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
               </label>
               <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 {tenants?.map((tenant) => {
-                  const isSelected = formData.tenant_assignments.some(
+                  const isSelected = (formData.tenant_assignments ?? []).some(
                     (a) => a.tenant_id === tenant.id
                   );
 
@@ -295,9 +296,9 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
                   </p>
                 )}
               </div>
-              {formData.tenant_assignments.length > 0 && (
+              {(formData.tenant_assignments ?? []).length > 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  {formData.tenant_assignments.length} empresa(s) seleccionada(s)
+                  {(formData.tenant_assignments ?? []).length} empresa(s) seleccionada(s)
                 </p>
               )}
               <p className="text-xs text-primary-600 dark:text-primary-400 mt-2">

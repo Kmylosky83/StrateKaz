@@ -175,7 +175,7 @@ export const CatalogLogisticaTab = ({ moduleColor }: CatalogLogisticaTabProps) =
         }}
         title="Eliminar forma de pago"
         message="Esta acción eliminará la forma de pago de forma permanente."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

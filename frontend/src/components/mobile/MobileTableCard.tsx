@@ -91,10 +91,7 @@ export const MobileTableCard = <T,>({
       )}
     >
       {/* Header con campo principal y acciones */}
-      <div
-        className="flex items-start justify-between p-4"
-        onClick={handleCardClick}
-      >
+      <div className="flex items-start justify-between p-4" onClick={handleCardClick}>
         <div className="flex-1 min-w-0">
           {/* Campo principal */}
           {primaryField && (
@@ -149,10 +146,7 @@ export const MobileTableCard = <T,>({
 
           {/* Indicador de expansión */}
           {expandable && hiddenFields.length > 0 && !actions && (
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
               <ChevronDown className="w-5 h-5 text-gray-400" />
             </motion.div>
           )}
@@ -181,9 +175,7 @@ export const MobileTableCard = <T,>({
                   <dt className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {field.label}
                   </dt>
-                  <dd className="text-sm text-gray-900 dark:text-gray-100">
-                    {field.value}
-                  </dd>
+                  <dd className="text-sm text-gray-900 dark:text-gray-100">{field.value}</dd>
                 </div>
               ))}
             </div>
@@ -211,11 +203,7 @@ export const MobileTableCardList = <T,>({
   className,
 }: MobileTableCardListProps<T>) => {
   if (items.length === 0) {
-    return (
-      <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-        {emptyMessage}
-      </div>
-    );
+    return <div className="py-12 text-center text-gray-500 dark:text-gray-400">{emptyMessage}</div>;
   }
 
   return (
@@ -228,5 +216,3 @@ export const MobileTableCardList = <T,>({
     </div>
   );
 };
-
-export type { MobileCardField, MobileTableCardListProps };

@@ -182,7 +182,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
             {accessibleTenants
               .filter((access) => access.tenant.code !== 'public')
               .map((access) => {
-                const { tenant, role } = access;
+                const { tenant } = access;
                 const isSelected = tenant.id === currentTenantId && !isInAdminGlobal;
 
                 return (
@@ -208,7 +208,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
                     >
                       {tenant.logo || tenant.logo_effective || tenant.logo_url ? (
                         <img
-                          src={tenant.logo || tenant.logo_effective || tenant.logo_url}
+                          src={tenant.logo || tenant.logo_effective || tenant.logo_url || undefined}
                           alt={tenant.name}
                           className="w-full h-full object-contain rounded-lg"
                         />
@@ -224,13 +224,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {tenant.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {role === 'superadmin'
-                          ? 'Superadmin'
-                          : role === 'admin'
-                            ? 'Administrador'
-                            : 'Usuario'}
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Usuario</p>
                     </div>
 
                     {/* Check si está seleccionado */}

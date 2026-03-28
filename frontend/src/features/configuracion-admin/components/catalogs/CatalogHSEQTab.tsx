@@ -4,13 +4,7 @@
  * Contiene: Tipos EPP, Tipos Examen, Tipos Inspección, Tipos Residuo.
  */
 import { useState, useMemo } from 'react';
-import {
-  HardHat,
-  Stethoscope,
-  ClipboardCheck,
-  Trash2 as TrashIcon,
-  Pencil,
-} from 'lucide-react';
+import { HardHat, Stethoscope, ClipboardCheck, Trash2 as TrashIcon, Pencil } from 'lucide-react';
 import { PageTabs } from '@/components/layout/PageTabs';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
@@ -534,7 +528,7 @@ export const CatalogHSEQTab = ({ moduleColor }: CatalogHSEQTabProps) => {
         }}
         title="Eliminar registro"
         message="Esta acción eliminará el registro de forma permanente."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

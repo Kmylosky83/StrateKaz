@@ -192,7 +192,7 @@ export const ConsecutivosSection = () => {
         }}
         title="Eliminar consecutivo"
         message="Esta acción no se puede deshacer. El consecutivo dejará de generar números automáticos."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

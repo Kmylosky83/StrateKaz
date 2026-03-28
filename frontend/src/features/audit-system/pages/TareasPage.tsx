@@ -19,6 +19,7 @@ import {
   Play,
   MessageSquare,
   Bell,
+  AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -106,26 +107,26 @@ function MisTareasTab() {
       {resumen && (
         <KpiCardGrid>
           <KpiCard
-            title="Total Tareas"
+            label="Total Tareas"
             value={resumen.total}
             icon={<CheckSquare className="w-4 h-4" />}
           />
           <KpiCard
-            title="Pendientes"
+            label="Pendientes"
             value={resumen.pendientes}
-            variant="warning"
+            color="warning"
             icon={<Clock className="w-4 h-4" />}
           />
           <KpiCard
-            title="Vencidas"
+            label="Vencidas"
             value={resumen.vencidas}
-            variant="danger"
+            color="danger"
             icon={<AlertTriangle className="w-4 h-4" />}
           />
           <KpiCard
-            title="Completadas (mes)"
+            label="Completadas (mes)"
             value={resumen.completadas_mes}
-            variant="success"
+            color="success"
             icon={<CheckCircle className="w-4 h-4" />}
           />
         </KpiCardGrid>
@@ -250,7 +251,7 @@ function MisTareasTab() {
                         size="sm"
                         leftIcon={<CheckCircle className="w-4 h-4" />}
                         onClick={() => completarMutation.mutate({ id: tarea.id })}
-                        loading={completarMutation.isPending}
+                        isLoading={completarMutation.isPending}
                       >
                         Completar
                       </Button>

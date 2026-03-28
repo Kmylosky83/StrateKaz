@@ -90,7 +90,7 @@ export const useMapasList = (planId?: number) => {
  * Hook para crear un mapa estratégico
  */
 export const useCreateMapa = () => {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateMapaEstrategicoDTO) => mapasApi.create(data),
@@ -109,7 +109,7 @@ export const useCreateMapa = () => {
  * Hook para actualizar un mapa estratégico
  */
 export const useUpdateMapa = () => {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateMapaEstrategicoDTO }) =>
@@ -135,7 +135,7 @@ export const useSaveCanvasPositions = () => {
   return useMutation({
     mutationFn: ({ id, canvasData }: { id: number; canvasData: CanvasData }) =>
       mapasApi.updateCanvas(id, canvasData),
-    onSuccess: (_, _variables) => {
+    onSuccess: () => {
       // No invalidamos para evitar re-render, solo actualizamos el cache local
       toast.success('Posiciones guardadas');
     },

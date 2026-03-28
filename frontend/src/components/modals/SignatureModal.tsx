@@ -151,19 +151,6 @@ async function calculateSHA256(data: string): Promise<string> {
 }
 
 /**
- * Obtiene IP del cliente (aproximación)
- */
-async function _getClientIP(): Promise<string | undefined> {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * Obtiene geolocalización
  */
 async function getGeolocation(): Promise<{ latitude: number; longitude: number } | undefined> {
@@ -320,7 +307,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       await onSave(signatureData);
       onClose();
     } catch (error: unknown) {
-      setError(error.message || 'Error al guardar la firma');
+      setError((error as Error).message || 'Error al guardar la firma');
     } finally {
       setIsSaving(false);
     }
@@ -340,16 +327,11 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       await onSave(signatureDataWithTotp);
       onClose();
     } catch (error: unknown) {
-      setError(error.message || 'Error al guardar la firma');
+      setError((error as Error).message || 'Error al guardar la firma');
       setStep('sign');
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const _handleClear = () => {
-    signatureRef.current?.clear();
-    setError(null);
   };
 
   const handleModalClose = () => {
@@ -371,7 +353,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       onClose={handleModalClose}
       title={step === 'totp' ? 'Verificación de Seguridad' : title}
       size="lg"
-      closeOnOverlayClick={!isSaving}
+      closeOnBackdrop={!isSaving}
     >
       <div className="space-y-4">
         {/* Paso TOTP */}
@@ -389,9 +371,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
           <>
             {/* Descripción */}
             {description && (
-              <Alert variant="info" title="Documento a firmar">
-                {description}
-              </Alert>
+              <Alert variant="info" title="Documento a firmar" message={description} />
             )}
 
             {/* Información del firmante */}
@@ -441,9 +421,11 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
 
             {/* Advertencia de rotación en móvil */}
             {shouldRotate && (
-              <Alert variant="warning" title="Mejor experiencia">
-                Para una mejor experiencia, gire su dispositivo horizontalmente
-              </Alert>
+              <Alert
+                variant="warning"
+                title="Mejor experiencia"
+                message="Para una mejor experiencia, gire su dispositivo horizontalmente"
+              />
             )}
 
             {/* Usar firma guardada */}
@@ -463,7 +445,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
                     size="sm"
                     onClick={handleUseSavedSignature}
                     disabled={isSaving}
-                    loading={isSaving}
+                    isLoading={isSaving}
                   >
                     Usar firma guardada
                   </Button>
@@ -523,7 +505,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
                 variant="primary"
                 onClick={handleSave}
                 disabled={isSaving || isLoading}
-                loading={isSaving || isLoading}
+                isLoading={isSaving || isLoading}
                 className="order-1 sm:order-2"
               >
                 {isSaving

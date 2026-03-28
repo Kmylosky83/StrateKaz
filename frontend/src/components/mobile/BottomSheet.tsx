@@ -101,10 +101,7 @@ export const BottomSheet = ({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            style={{ opacity }}
-          />
+          <motion.div className="fixed inset-0 bg-black/60 backdrop-blur-sm" style={{ opacity }} />
         </Transition.Child>
 
         {/* Container */}
@@ -197,9 +194,7 @@ export const BottomSheet = ({
                 )}
 
                 {/* Contenido scrollable */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
-                  {children}
-                </div>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">{children}</div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
@@ -208,5 +203,3 @@ export const BottomSheet = ({
     </Transition>
   );
 };
-
-export type { BottomSheetProps };

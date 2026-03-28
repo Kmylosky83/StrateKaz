@@ -44,7 +44,6 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   onDelete,
   onView,
   customActions = [],
-  _layout = 'row',
   size = 'md',
 }) => {
   const { canDo } = usePermissions();

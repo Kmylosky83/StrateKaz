@@ -469,7 +469,7 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
         }}
         title="Eliminar registro"
         message="Esta acción eliminará el registro de forma permanente."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

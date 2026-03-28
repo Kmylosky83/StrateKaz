@@ -53,7 +53,7 @@ describe('useAuthStore', () => {
         first_name: 'Test',
         last_name: 'User',
         username: 'testuser',
-      } as unknown,
+      } as unknown as User,
       accessToken: 'test-access-token',
       refreshToken: 'test-refresh-token',
       isAuthenticated: true,

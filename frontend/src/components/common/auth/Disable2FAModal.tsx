@@ -88,7 +88,7 @@ export const Disable2FAModal = ({ isOpen, onClose }: Disable2FAModalProps) => {
           <Button type="button" variant="secondary" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button type="submit" variant="danger" loading={isDisabling}>
+          <Button type="submit" variant="danger" isLoading={isDisabling}>
             Deshabilitar 2FA
           </Button>
         </div>

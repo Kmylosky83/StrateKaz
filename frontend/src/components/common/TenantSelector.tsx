@@ -163,7 +163,8 @@ export const TenantSelector = ({
       {tenants.length > 0 && (
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {sortedTenants.map((access, index) => {
-            const { tenant, role } = access;
+            const { tenant } = access;
+            const role = 'user';
             const RoleIcon = roleIcons[role] || User;
             const roleLabel = roleLabels[role] || role;
             const roleColor = roleColors[role] || roleColors['user'];
@@ -201,7 +202,7 @@ export const TenantSelector = ({
                 >
                   {tenant.logo || tenant.logo_effective || tenant.logo_url ? (
                     <img
-                      src={tenant.logo || tenant.logo_effective || tenant.logo_url}
+                      src={tenant.logo || tenant.logo_effective || tenant.logo_url || undefined}
                       alt={tenant.name}
                       className="w-full h-full object-contain rounded-lg"
                     />

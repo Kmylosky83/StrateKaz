@@ -471,7 +471,7 @@ interface FileFieldProps {
   readOnly: boolean;
 }
 
-const FileField = ({ _field, value, onChange, readOnly }: FileFieldProps) => {
+const FileField = ({ value, onChange, readOnly }: FileFieldProps) => {
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (

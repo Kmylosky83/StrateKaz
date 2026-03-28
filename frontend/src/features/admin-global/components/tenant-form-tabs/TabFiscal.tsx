@@ -49,7 +49,7 @@ export const TabFiscal = ({ formData, handleChange, errors }: TenantTabProps) =>
         label="Tipo de Sociedad"
         value={formData.tipo_sociedad || 'SAS'}
         onChange={(e) => handleChange('tipo_sociedad', e.target.value)}
-        options={TIPO_SOCIEDAD_OPTIONS}
+        options={[...TIPO_SOCIEDAD_OPTIONS]}
         error={errors.tipo_sociedad}
       />
       <Input
@@ -63,7 +63,7 @@ export const TabFiscal = ({ formData, handleChange, errors }: TenantTabProps) =>
         label="Régimen Tributario"
         value={formData.regimen_tributario || 'COMUN'}
         onChange={(e) => handleChange('regimen_tributario', e.target.value)}
-        options={REGIMEN_OPTIONS}
+        options={[...REGIMEN_OPTIONS]}
         error={errors.regimen_tributario}
       />
       <div className="md:col-span-2">

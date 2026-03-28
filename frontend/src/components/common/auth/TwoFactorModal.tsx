@@ -125,14 +125,14 @@ export const TwoFactorModal = ({ isOpen, onClose }: TwoFactorModalProps) => {
               label="Contraseña"
               placeholder="Tu contraseña actual"
               error={passwordErrors.password?.message}
-              icon={<Lock className="w-4 h-4" />}
+              leftIcon={<Lock className="w-4 h-4" />}
             />
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="secondary" onClick={handleClose}>
                 Cancelar
               </Button>
-              <Button type="submit" loading={isSettingUp}>
+              <Button type="submit" isLoading={isSettingUp}>
                 Continuar
               </Button>
             </div>
@@ -186,7 +186,7 @@ export const TwoFactorModal = ({ isOpen, onClose }: TwoFactorModalProps) => {
               label="Código de verificación"
               placeholder="123456"
               error={tokenErrors.token?.message}
-              icon={<Key className="w-4 h-4" />}
+              leftIcon={<Key className="w-4 h-4" />}
               maxLength={6}
               autoFocus
             />
@@ -195,7 +195,7 @@ export const TwoFactorModal = ({ isOpen, onClose }: TwoFactorModalProps) => {
               <Button type="button" variant="secondary" onClick={() => setStep('scan')}>
                 Atrás
               </Button>
-              <Button type="submit" loading={isEnabling}>
+              <Button type="submit" isLoading={isEnabling}>
                 Verificar y habilitar
               </Button>
             </div>
@@ -231,7 +231,7 @@ export const TwoFactorModal = ({ isOpen, onClose }: TwoFactorModalProps) => {
               <Button
                 type="button"
                 variant="secondary"
-                icon={<Download className="w-4 h-4" />}
+                leftIcon={<Download className="w-4 h-4" />}
                 onClick={handleDownloadBackupCodes}
               >
                 Descargar códigos

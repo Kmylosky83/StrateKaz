@@ -13,7 +13,7 @@
  */
 
 import { jsPDF } from 'jspdf';
-import type { ActaRevision } from '../types/revisionDireccion';
+import type { ActaRevision } from '../types/revision-direccion.types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -161,61 +161,61 @@ export const exportActaToPDF = async (
 
     // Crear documento PDF
     const pdf = new jsPDF(PAGE_CONFIG);
-    let _currentY = MARGINS.top;
+    let currentY = MARGINS.top;
 
     // 1. Encabezado con logo y título
-    _currentY = addHeader(pdf, acta, _currentY);
-    _currentY += 5;
+    currentY = addHeader(pdf, acta, currentY);
+    currentY += 5;
 
     // 2. Información general del acta
-    _currentY = addGeneralInfo(pdf, acta, _currentY);
-    _currentY += 5;
+    currentY = addGeneralInfo(pdf, acta, currentY);
+    currentY += 5;
 
     // 3. Participantes (si se incluyen)
     if (includeParticipants && acta.participantes && acta.participantes.length > 0) {
-      _currentY = checkPageBreak(pdf, _currentY, 40);
-      _currentY = addParticipants(pdf, acta.participantes, _currentY);
-      _currentY += 5;
+      currentY = checkPageBreak(pdf, currentY, 40);
+      currentY = addParticipants(pdf, acta.participantes, currentY);
+      currentY += 5;
     }
 
     // 4. Introducción y Orden del Día
     if (acta.introduccion || acta.orden_del_dia) {
-      _currentY = checkPageBreak(pdf, _currentY, 30);
-      _currentY = addIntroduction(pdf, acta, _currentY);
-      _currentY += 5;
+      currentY = checkPageBreak(pdf, currentY, 30);
+      currentY = addIntroduction(pdf, acta, currentY);
+      currentY += 5;
     }
 
     // 5. Análisis de Temas (si se incluyen)
     if (includeAnalysis && acta.temas_analizados && acta.temas_analizados.length > 0) {
-      _currentY = checkPageBreak(pdf, _currentY, 40);
-      _currentY = addThemeAnalysis(pdf, acta.temas_analizados, _currentY);
-      _currentY += 5;
+      currentY = checkPageBreak(pdf, currentY, 40);
+      currentY = addThemeAnalysis(pdf, acta.temas_analizados, currentY);
+      currentY += 5;
     }
 
     // 6. Conclusiones y Decisiones
     if (acta.conclusiones_generales || acta.decisiones_mejora) {
-      _currentY = checkPageBreak(pdf, _currentY, 40);
-      _currentY = addConclusions(pdf, acta, _currentY);
-      _currentY += 5;
+      currentY = checkPageBreak(pdf, currentY, 40);
+      currentY = addConclusions(pdf, acta, currentY);
+      currentY += 5;
     }
 
     // 7. Evaluación del Sistema
-    _currentY = checkPageBreak(pdf, _currentY, 25);
-    _currentY = addSystemEvaluation(pdf, acta, _currentY);
-    _currentY += 5;
+    currentY = checkPageBreak(pdf, currentY, 25);
+    currentY = addSystemEvaluation(pdf, acta, currentY);
+    currentY += 5;
 
     // 8. Compromisos (si se incluyen)
     if (includeCommitments && acta.compromisos_lista && acta.compromisos_lista.length > 0) {
-      _currentY = checkPageBreak(pdf, _currentY, 60);
-      _currentY = addCommitments(pdf, acta.compromisos_lista, _currentY);
-      _currentY += 5;
+      currentY = checkPageBreak(pdf, currentY, 60);
+      currentY = addCommitments(pdf, acta.compromisos_lista, currentY);
+      currentY += 5;
     }
 
     // 9. Firmas (si se incluyen)
     if (includeSignatures) {
       // Asegurar que las firmas estén en una nueva página si no hay espacio
-      _currentY = checkPageBreak(pdf, _currentY, 80, true);
-      _currentY = addSignatures(pdf, acta, _currentY);
+      currentY = checkPageBreak(pdf, currentY, 80, true);
+      currentY = addSignatures(pdf, acta, currentY);
     }
 
     // Agregar pie de página a todas las páginas
@@ -261,7 +261,7 @@ function validateActaData(acta: ActaRevisionExpandida): void {
     throw new Error('El número de acta es requerido para la validación');
   }
 
-  if (!acta.fecha) {
+  if (!acta.fecha_revision) {
     throw new Error('La fecha del acta es requerida para la validación');
   }
 }
@@ -348,7 +348,7 @@ function addGeneralInfo(pdf: jsPDF, acta: ActaRevisionExpandida, yPos: number): 
   // Columna izquierda
   pdf.text('Fecha:', leftCol, y);
   pdf.setFont('helvetica', 'normal');
-  pdf.text(formatDate(acta.fecha), leftCol + 20, y);
+  pdf.text(formatDate(acta.fecha_revision), leftCol + 20, y);
   y += 5;
 
   pdf.setFont('helvetica', 'bold');
@@ -367,7 +367,7 @@ function addGeneralInfo(pdf: jsPDF, acta: ActaRevisionExpandida, yPos: number): 
   pdf.setFont('helvetica', 'bold');
   pdf.text('Lugar:', leftCol, y);
   pdf.setFont('helvetica', 'normal');
-  const lugarText = pdf.splitTextToSize(acta.lugar, 80);
+  const lugarText = pdf.splitTextToSize(acta.programa_data.lugar, 80);
   pdf.text(lugarText, leftCol + 20, y);
   y += lugarText.length * 5;
 
@@ -967,11 +967,11 @@ function addSignatures(pdf: jsPDF, acta: ActaRevisionExpandida, yPos: number): n
     {
       label: 'Revisado por',
       name: acta.revisado_por_nombre || '_____________________',
-      date: acta.fecha_revision ? formatDate(acta.fecha_revision) : '_____________',
+      date: acta.fecha_revision_acta ? formatDate(acta.fecha_revision_acta) : '_____________',
     },
     {
       label: 'Aprobado por',
-      name: acta.aprobado_por_nombre || '_____________________',
+      name: acta.aprobada_por_name || '_____________________',
       date: acta.fecha_aprobacion ? formatDate(acta.fecha_aprobacion) : '_____________',
     },
   ];
@@ -1055,19 +1055,19 @@ function addFooter(pdf: jsPDF, acta: ActaRevisionExpandida): void {
  */
 function checkPageBreak(
   pdf: jsPDF,
-  _currentY: number,
+  currentY: number,
   requiredSpace: number,
   forceNewPage: boolean = false
 ): number {
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const availableSpace = pageHeight - _currentY - MARGINS.bottom;
+  const availableSpace = pageHeight - currentY - MARGINS.bottom;
 
   if (forceNewPage || availableSpace < requiredSpace) {
     pdf.addPage();
     return MARGINS.top;
   }
 
-  return _currentY;
+  return currentY;
 }
 
 /**

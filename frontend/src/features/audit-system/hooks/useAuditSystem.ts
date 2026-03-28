@@ -6,8 +6,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 /** Normaliza respuesta paginada: {results:[]} → [] */
- 
-const asList = <T>(data: Record<string, unknown>): T[] => (Array.isArray(data) ? data : (data?.results ?? []));
+const asList = <T>(data: unknown): T[] => {
+  if (Array.isArray(data)) return data as T[];
+  const obj = data as Record<string, unknown> | undefined;
+  return (obj?.results ?? []) as T[];
+};
 
 import {
   configuracionAuditoriaApi,
@@ -28,6 +31,31 @@ import {
   comentariosTareaApi,
   auditSystemApi,
 } from '../api';
+import type {
+  AuditSystemStats,
+  ActividadReciente,
+  ConfiguracionAuditoria,
+  LogAcceso,
+  LogCambio,
+  LogConsulta,
+  TipoAlerta,
+  ConfiguracionAlerta,
+  AlertaGenerada,
+  EscalamientoAlerta,
+  Tarea,
+  Recordatorio,
+  EventoCalendario,
+  ComentarioTarea,
+  ResumenAlertas,
+  ResumenTareas,
+  ResumenNotificaciones,
+} from '../types';
+import type {
+  TipoNotificacion,
+  Notificacion,
+  PreferenciaNotificacion,
+  NotificacionMasiva,
+} from '../types/notificaciones.types';
 
 // ==================== AUDIT SYSTEM STATS ====================
 
@@ -36,7 +64,7 @@ export const useAuditSystemStats = () => {
     queryKey: ['audit-system', 'stats'],
     queryFn: async () => {
       const response = await auditSystemApi.getStats();
-      return response.data;
+      return response.data as AuditSystemStats;
     },
     refetchInterval: 60000, // Refetch every minute
   });
@@ -47,7 +75,7 @@ export const useActividadReciente = (limit = 10) => {
     queryKey: ['audit-system', 'actividad-reciente', limit],
     queryFn: async () => {
       const response = await auditSystemApi.getActividadReciente(limit);
-      return response.data;
+      return response.data as ActividadReciente[];
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -61,7 +89,7 @@ export const useConfiguracionesAuditoria = () => {
     queryKey: ['configuraciones-auditoria'],
     queryFn: async () => {
       const response = await configuracionAuditoriaApi.getAll();
-      return asList(response.data);
+      return asList<ConfiguracionAuditoria>(response.data);
     },
   });
 };
@@ -71,7 +99,7 @@ export const useConfiguracionAuditoria = (id: number) => {
     queryKey: ['configuracion-auditoria', id],
     queryFn: async () => {
       const response = await configuracionAuditoriaApi.getById(id);
-      return response.data;
+      return response.data as ConfiguracionAuditoria;
     },
     enabled: !!id,
   });
@@ -107,7 +135,7 @@ export const useLogsAcceso = (params?: Record<string, unknown>) => {
     queryKey: ['logs-acceso', params],
     queryFn: async () => {
       const response = await logsAccesoApi.getAll(params);
-      return asList(response.data);
+      return asList<LogAcceso>(response.data);
     },
   });
 };
@@ -117,7 +145,7 @@ export const useLogAcceso = (id: number) => {
     queryKey: ['log-acceso', id],
     queryFn: async () => {
       const response = await logsAccesoApi.getById(id);
-      return response.data;
+      return response.data as LogAcceso;
     },
     enabled: !!id,
   });
@@ -128,7 +156,7 @@ export const useLogsAccesoPorUsuario = (usuarioId: number, params?: Record<strin
     queryKey: ['logs-acceso', 'usuario', usuarioId, params],
     queryFn: async () => {
       const response = await logsAccesoApi.porUsuario(usuarioId, params);
-      return asList(response.data);
+      return asList<LogAcceso>(response.data);
     },
     enabled: !!usuarioId,
   });
@@ -140,7 +168,7 @@ export const useLogsCambio = (params?: Record<string, unknown>) => {
     queryKey: ['logs-cambio', params],
     queryFn: async () => {
       const response = await logsCambioApi.getAll(params);
-      return asList(response.data);
+      return asList<LogCambio>(response.data);
     },
   });
 };
@@ -150,7 +178,7 @@ export const useLogCambio = (id: number) => {
     queryKey: ['log-cambio', id],
     queryFn: async () => {
       const response = await logsCambioApi.getById(id);
-      return response.data;
+      return response.data as LogCambio;
     },
     enabled: !!id,
   });
@@ -161,7 +189,7 @@ export const useLogsCambioPorObjeto = (contentType: number, objectId: string) =>
     queryKey: ['logs-cambio', 'objeto', contentType, objectId],
     queryFn: async () => {
       const response = await logsCambioApi.porObjeto(contentType, objectId);
-      return asList(response.data);
+      return asList<LogCambio>(response.data);
     },
     enabled: !!contentType && !!objectId,
   });
@@ -173,7 +201,7 @@ export const useLogsConsulta = (params?: Record<string, unknown>) => {
     queryKey: ['logs-consulta', params],
     queryFn: async () => {
       const response = await logsConsultaApi.getAll(params);
-      return asList(response.data);
+      return asList<LogConsulta>(response.data);
     },
   });
 };
@@ -186,7 +214,7 @@ export const useTiposNotificacion = () => {
     queryKey: ['tipos-notificacion'],
     queryFn: async () => {
       const response = await tiposNotificacionApi.getAll();
-      return asList(response.data);
+      return asList<TipoNotificacion>(response.data);
     },
   });
 };
@@ -206,7 +234,8 @@ export const useUpdateTipoNotificacion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tiposNotificacionApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      tiposNotificacionApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-notificacion'] });
     },
@@ -219,7 +248,7 @@ export const useNotificaciones = (params?: Record<string, unknown>) => {
     queryKey: ['notificaciones', params],
     queryFn: async () => {
       const response = await notificacionesApi.getAll(params);
-      return asList(response.data);
+      return asList<Notificacion>(response.data);
     },
   });
 };
@@ -229,7 +258,7 @@ export const useNotificacion = (id: number) => {
     queryKey: ['notificacion', id],
     queryFn: async () => {
       const response = await notificacionesApi.getById(id);
-      return response.data;
+      return response.data as Notificacion;
     },
     enabled: !!id,
   });
@@ -241,7 +270,7 @@ export const useNotificacionesNoLeidas = () => {
     queryFn: async () => {
       try {
         const response = await notificacionesApi.noLeidas();
-        return asList(response.data);
+        return asList<Notificacion>(response.data);
       } catch (err: unknown) {
         // 404 = app no habilitada en este nivel de despliegue → silenciar
         if ((err as { response?: { status?: number } })?.response?.status === 404) {
@@ -260,7 +289,7 @@ export const useResumenNotificaciones = () => {
     queryKey: ['notificaciones', 'resumen'],
     queryFn: async () => {
       const response = await notificacionesApi.resumen();
-      return response.data;
+      return response.data as ResumenNotificaciones;
     },
     refetchInterval: 60000,
   });
@@ -307,7 +336,7 @@ export const usePreferenciasNotificacion = () => {
     queryKey: ['preferencias-notificacion'],
     queryFn: async () => {
       const response = await preferenciasNotificacionApi.getAll();
-      return asList(response.data);
+      return asList<PreferenciaNotificacion>(response.data);
     },
   });
 };
@@ -330,7 +359,7 @@ export const useNotificacionesMasivas = (params?: Record<string, unknown>) => {
     queryKey: ['notificaciones-masivas', params],
     queryFn: async () => {
       const response = await notificacionesMasivasApi.getAll(params);
-      return asList(response.data);
+      return asList<NotificacionMasiva>(response.data);
     },
   });
 };
@@ -365,7 +394,7 @@ export const useTiposAlerta = () => {
     queryKey: ['tipos-alerta'],
     queryFn: async () => {
       const response = await tiposAlertaApi.getAll();
-      return asList(response.data);
+      return asList<TipoAlerta>(response.data);
     },
   });
 };
@@ -385,7 +414,8 @@ export const useUpdateTipoAlerta = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tiposAlertaApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      tiposAlertaApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tipos-alerta'] });
     },
@@ -398,7 +428,7 @@ export const useConfiguracionesAlerta = () => {
     queryKey: ['configuraciones-alerta'],
     queryFn: async () => {
       const response = await configuracionesAlertaApi.getAll();
-      return asList(response.data);
+      return asList<ConfiguracionAlerta>(response.data);
     },
   });
 };
@@ -432,7 +462,7 @@ export const useAlertasGeneradas = (params?: Record<string, unknown>) => {
     queryKey: ['alertas-generadas', params],
     queryFn: async () => {
       const response = await alertasGeneradasApi.getAll(params);
-      return asList(response.data);
+      return asList<AlertaGenerada>(response.data);
     },
   });
 };
@@ -442,7 +472,7 @@ export const useAlertaGenerada = (id: number) => {
     queryKey: ['alerta-generada', id],
     queryFn: async () => {
       const response = await alertasGeneradasApi.getById(id);
-      return response.data;
+      return response.data as AlertaGenerada;
     },
     enabled: !!id,
   });
@@ -453,7 +483,7 @@ export const useAlertasPendientes = () => {
     queryKey: ['alertas-generadas', 'pendientes'],
     queryFn: async () => {
       const response = await alertasGeneradasApi.pendientes();
-      return asList(response.data);
+      return asList<AlertaGenerada>(response.data);
     },
     refetchInterval: 60000,
   });
@@ -464,7 +494,7 @@ export const useResumenAlertas = () => {
     queryKey: ['alertas-generadas', 'resumen'],
     queryFn: async () => {
       const response = await alertasGeneradasApi.resumen();
-      return response.data;
+      return response.data as ResumenAlertas;
     },
     refetchInterval: 60000,
   });
@@ -502,7 +532,7 @@ export const useEscalamientosAlerta = (alertaId?: number) => {
     queryKey: ['escalamientos-alerta', alertaId],
     queryFn: async () => {
       const response = await escalamientosAlertaApi.getAll(alertaId);
-      return asList(response.data);
+      return asList<EscalamientoAlerta>(response.data);
     },
   });
 };
@@ -515,7 +545,7 @@ export const useTareas = (params?: Record<string, unknown>) => {
     queryKey: ['tareas', params],
     queryFn: async () => {
       const response = await tareasApi.getAll(params);
-      return asList(response.data);
+      return asList<Tarea>(response.data);
     },
   });
 };
@@ -525,7 +555,7 @@ export const useTarea = (id: number) => {
     queryKey: ['tarea', id],
     queryFn: async () => {
       const response = await tareasApi.getById(id);
-      return response.data;
+      return response.data as Tarea;
     },
     enabled: !!id,
   });
@@ -536,7 +566,7 @@ export const useMisTareas = () => {
     queryKey: ['tareas', 'mis-tareas'],
     queryFn: async () => {
       const response = await tareasApi.misTareas();
-      return asList(response.data);
+      return asList<Tarea>(response.data);
     },
   });
 };
@@ -546,7 +576,7 @@ export const useTareasVencidas = () => {
     queryKey: ['tareas', 'vencidas'],
     queryFn: async () => {
       const response = await tareasApi.vencidas();
-      return asList(response.data);
+      return asList<Tarea>(response.data);
     },
     refetchInterval: 300000, // Every 5 minutes
   });
@@ -557,7 +587,7 @@ export const useResumenTareas = () => {
     queryKey: ['tareas', 'resumen'],
     queryFn: async () => {
       const response = await tareasApi.resumen();
-      return response.data;
+      return response.data as ResumenTareas;
     },
     refetchInterval: 60000,
   });
@@ -579,7 +609,8 @@ export const useUpdateTarea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => tareasApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      tareasApi.update(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tareas'] });
       queryClient.invalidateQueries({ queryKey: ['tarea', variables.id] });
@@ -636,7 +667,7 @@ export const useRecordatorios = () => {
     queryKey: ['recordatorios'],
     queryFn: async () => {
       const response = await recordatoriosApi.getAll();
-      return asList(response.data);
+      return asList<Recordatorio>(response.data);
     },
   });
 };
@@ -656,7 +687,8 @@ export const useUpdateRecordatorio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => recordatoriosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      recordatoriosApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recordatorios'] });
     },
@@ -669,7 +701,7 @@ export const useEventosCalendario = (params?: Record<string, unknown>) => {
     queryKey: ['eventos-calendario', params],
     queryFn: async () => {
       const response = await eventosCalendarioApi.getAll(params);
-      return asList(response.data);
+      return asList<EventoCalendario>(response.data);
     },
   });
 };
@@ -679,7 +711,7 @@ export const useEventosPorMes = (anio: number, mes: number) => {
     queryKey: ['eventos-calendario', 'mes', anio, mes],
     queryFn: async () => {
       const response = await eventosCalendarioApi.porMes(anio, mes);
-      return asList(response.data);
+      return asList<EventoCalendario>(response.data);
     },
     enabled: !!anio && !!mes,
   });
@@ -690,7 +722,7 @@ export const useMisEventos = () => {
     queryKey: ['eventos-calendario', 'mis-eventos'],
     queryFn: async () => {
       const response = await eventosCalendarioApi.misEventos();
-      return asList(response.data);
+      return asList<EventoCalendario>(response.data);
     },
   });
 };
@@ -710,7 +742,8 @@ export const useUpdateEvento = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => eventosCalendarioApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      eventosCalendarioApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eventos-calendario'] });
     },
@@ -734,7 +767,7 @@ export const useComentariosTarea = (tareaId: number) => {
     queryKey: ['comentarios-tarea', tareaId],
     queryFn: async () => {
       const response = await comentariosTareaApi.getAll(tareaId);
-      return asList(response.data);
+      return asList<ComentarioTarea>(response.data);
     },
     enabled: !!tareaId,
   });

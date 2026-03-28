@@ -60,9 +60,10 @@ export const use2FA = () => {
       toast.success('QR generado. Escanéalo con tu app de autenticación.');
     },
     onError: (error: unknown) => {
+      const err = error as { response?: { data?: Record<string, string[] | string> } };
       const errorMsg =
-        error?.response?.data?.password?.[0] ||
-        error?.response?.data?.error ||
+        (err.response?.data?.password as string[])?.[0] ||
+        (err.response?.data?.error as string) ||
         'Error al generar QR. Verifica tu contraseña.';
       toast.error(errorMsg);
     },
@@ -77,9 +78,10 @@ export const use2FA = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
     onError: (error: unknown) => {
+      const err = error as { response?: { data?: Record<string, string[] | string> } };
       const errorMsg =
-        error?.response?.data?.error ||
-        error?.response?.data?.token?.[0] ||
+        (err.response?.data?.error as string) ||
+        (err.response?.data?.token as string[])?.[0] ||
         'Error al habilitar 2FA. Verifica el código.';
       toast.error(errorMsg);
     },
@@ -95,9 +97,10 @@ export const use2FA = () => {
       setBackupCodes([]);
     },
     onError: (error: unknown) => {
+      const err = error as { response?: { data?: Record<string, string[] | string> } };
       const errorMsg =
-        error?.response?.data?.password?.[0] ||
-        error?.response?.data?.error ||
+        (err.response?.data?.password as string[])?.[0] ||
+        (err.response?.data?.error as string) ||
         'Error al deshabilitar 2FA. Verifica tu contraseña.';
       toast.error(errorMsg);
     },
@@ -112,9 +115,10 @@ export const use2FA = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
     onError: (error: unknown) => {
+      const err = error as { response?: { data?: Record<string, string[] | string> } };
       const errorMsg =
-        error?.response?.data?.password?.[0] ||
-        error?.response?.data?.error ||
+        (err.response?.data?.password as string[])?.[0] ||
+        (err.response?.data?.error as string) ||
         'Error al regenerar códigos. Verifica tu contraseña.';
       toast.error(errorMsg);
     },

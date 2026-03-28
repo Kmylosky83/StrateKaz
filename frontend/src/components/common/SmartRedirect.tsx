@@ -22,7 +22,7 @@ export const SmartRedirect = () => {
     }
 
     const lastRoute = getLastRoute();
-    const landingByRole = getLandingByRole(user?.cargo_code);
+    const landingByRole = getLandingByRole(user?.cargo_code ?? undefined);
 
     // Prioridad: última ruta > landing por rol
     const targetRoute = lastRoute || landingByRole;

@@ -132,7 +132,17 @@ export const ConfirmModal = ({
       </Button>
       <Button
         type="button"
-        variant={config.buttonVariant as unknown}
+        variant={
+          config.buttonVariant as
+            | 'primary'
+            | 'secondary'
+            | 'accent'
+            | 'danger'
+            | 'ghost'
+            | 'outline'
+            | 'outline-secondary'
+            | 'outline-accent'
+        }
         onClick={handleConfirm}
         disabled={!canConfirm || isLoading || isSubmitting}
         isLoading={isLoading || isSubmitting}

@@ -1,12 +1,12 @@
 import { SelectHTMLAttributes, forwardRef, useId } from 'react';
 import { cn } from '@/utils/cn';
 
-interface SelectOption {
+export interface SelectOption {
   value: string | number;
   label: string;
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   helperText?: string;

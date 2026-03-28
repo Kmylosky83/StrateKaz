@@ -104,7 +104,7 @@ export const AdminGlobalPage = () => {
       label: 'Multi-Tenant',
       value: usersStats?.multi_tenant ?? 0,
       icon: Globe,
-      iconColor: 'purple',
+      iconColor: 'primary',
       description: 'Usuarios en múltiples empresas',
     },
   ];
@@ -122,7 +122,7 @@ export const AdminGlobalPage = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Administración Global
             </h1>
-            <Badge variant="purple" className="flex items-center gap-1">
+            <Badge variant="accent" className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Superadmin
             </Badge>

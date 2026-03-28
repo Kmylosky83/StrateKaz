@@ -132,7 +132,7 @@ export function useToggleCargo() {
   return useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive?: boolean }) =>
       rbacAPI.toggleCargo(id, isActive),
-    onSuccess: (result) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       queryClient.invalidateQueries({ queryKey: ['select-lists'] });
     },

@@ -78,7 +78,7 @@ const UserRow = ({ user, onEdit, onToggleActive, onResendWelcome }: UserRowProps
                 {user.first_name} {user.last_name}
               </span>
               {user.is_superadmin && (
-                <Badge variant="purple" size="sm" className="flex items-center gap-1">
+                <Badge variant="accent" size="sm" className="flex items-center gap-1">
                   <Shield className="h-3 w-3" />
                   Super
                 </Badge>

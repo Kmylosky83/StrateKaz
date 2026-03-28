@@ -48,7 +48,7 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
     name: '',
     description: '',
     icon: '',
-    order: 0,
+    orden: 0,
   });
 
   const createMutation = useCreateValue();
@@ -60,14 +60,14 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
         name: value.name,
         description: value.description,
         icon: value.icon || '',
-        order: value.order,
+        orden: value.orden,
       });
     } else {
       setFormData({
         name: '',
         description: '',
         icon: '',
-        order: 0,
+        orden: 0,
       });
     }
   }, [value]);
@@ -80,7 +80,7 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
         name: formData.name,
         description: formData.description,
         icon: formData.icon || undefined,
-        order: formData.order,
+        orden: formData.orden,
       };
       await updateMutation.mutateAsync({ id: value.id, data: updateData });
     } else {
@@ -88,7 +88,7 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
         name: formData.name,
         description: formData.description,
         icon: formData.icon || undefined,
-        order: formData.order,
+        orden: formData.orden,
         identity: identityId,
       };
       await createMutation.mutateAsync(createData);
@@ -153,8 +153,8 @@ export const ValueFormModal = ({ value, identityId, isOpen, onClose }: ValueForm
           <Input
             label="Orden"
             type="number"
-            value={formData.order.toString()}
-            onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+            value={formData.orden.toString()}
+            onChange={(e) => setFormData({ ...formData, orden: parseInt(e.target.value) || 0 })}
             min={0}
           />
         </div>

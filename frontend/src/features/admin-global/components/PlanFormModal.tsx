@@ -32,8 +32,8 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
     description: '',
     max_users: 10,
     max_storage_gb: 5,
-    price_monthly: 0,
-    price_yearly: 0,
+    price_monthly: '0',
+    price_yearly: '0',
     features: [...DEFAULT_ENABLED_MODULES],
     is_active: true,
     is_default: false,
@@ -50,8 +50,8 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
         description: plan.description || '',
         max_users: plan.max_users,
         max_storage_gb: plan.max_storage_gb,
-        price_monthly: parseFloat(plan.price_monthly),
-        price_yearly: parseFloat(plan.price_yearly),
+        price_monthly: plan.price_monthly,
+        price_yearly: plan.price_yearly,
         features: plan.features || [],
         is_active: plan.is_active,
         is_default: plan.is_default,
@@ -64,8 +64,8 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
         description: '',
         max_users: 10,
         max_storage_gb: 5,
-        price_monthly: 0,
-        price_yearly: 0,
+        price_monthly: '0',
+        price_yearly: '0',
         features: [...DEFAULT_ENABLED_MODULES],
         is_active: true,
         is_default: false,
@@ -89,12 +89,15 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
   };
 
   const handleFeatureToggle = (featureCode: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      features: prev.features.includes(featureCode)
-        ? prev.features.filter((f) => f !== featureCode)
-        : [...prev.features, featureCode],
-    }));
+    setFormData((prev) => {
+      const currentFeatures = prev.features ?? [];
+      return {
+        ...prev,
+        features: currentFeatures.includes(featureCode)
+          ? currentFeatures.filter((f) => f !== featureCode)
+          : [...currentFeatures, featureCode],
+      };
+    });
   };
 
   const generateCode = () => {
@@ -121,11 +124,11 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
       newErrors.name = 'El nombre es requerido';
     }
 
-    if (formData.max_users < 0) {
+    if ((formData.max_users ?? 0) < 0) {
       newErrors.max_users = 'Debe ser 0 o mayor';
     }
 
-    if (formData.price_monthly < 0) {
+    if (parseFloat(formData.price_monthly ?? '0') < 0) {
       newErrors.price_monthly = 'El precio no puede ser negativo';
     }
 
@@ -291,7 +294,7 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
                     key={mod.code}
                     type="button"
                     size="sm"
-                    variant={formData.features.includes(mod.code) ? 'primary' : 'ghost'}
+                    variant={(formData.features ?? []).includes(mod.code) ? 'primary' : 'ghost'}
                     onClick={() => handleFeatureToggle(mod.code)}
                     className="rounded-full text-sm"
                   >

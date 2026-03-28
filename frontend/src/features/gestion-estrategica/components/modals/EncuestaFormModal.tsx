@@ -352,13 +352,13 @@ export const EncuestaFormModal = ({
 
   // Options
   const analisisOptions =
-    analisisData?.results?.map((a: unknown) => ({
+    analisisData?.results?.map((a: { id: number; nombre: string }) => ({
       value: a.id.toString(),
       label: a.nombre,
     })) || [];
 
   const pestelOptions =
-    pestelData?.results?.map((a: unknown) => ({
+    pestelData?.results?.map((a: { id: number; nombre?: string; titulo?: string }) => ({
       value: a.id.toString(),
       label: a.nombre || a.titulo || `PESTEL #${a.id}`,
     })) || [];
@@ -1078,7 +1078,8 @@ export const EncuestaFormModal = ({
                   ? (() => {
                       const cargo = cargosData?.find((c) => c.id === newParticipante.cargo);
                       const count = cargo?.extra?.usuarios_activos;
-                      if (count === undefined) return 'Todos los colaboradores con este cargo serán invitados';
+                      if (count === undefined)
+                        return 'Todos los colaboradores con este cargo serán invitados';
                       if (count === 0) return 'No hay colaboradores activos con este cargo';
                       return `${count} colaborador${Number(count) !== 1 ? 'es' : ''} activo${Number(count) !== 1 ? 's' : ''} serán invitados`;
                     })()

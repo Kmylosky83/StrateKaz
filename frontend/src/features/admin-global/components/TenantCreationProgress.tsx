@@ -51,7 +51,7 @@ export const TenantCreationProgress = ({
   onClose,
 }: TenantCreationProgressProps) => {
   const queryClient = useQueryClient();
-  const { data: status, _isLoading, _error } = useTenantCreationStatus(tenantId);
+  const { data: status } = useTenantCreationStatus(tenantId);
   const retryMutation = useRetryTenantCreation();
 
   // Detección de progreso estancado

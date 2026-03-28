@@ -127,7 +127,6 @@ export interface SignaturePadRef {
 // Altura del footer con botones
 const FOOTER_HEIGHT = 48;
 // Padding del contenedor
-const _CONTAINER_PADDING = 4;
 
 /**
  * Componente SignaturePad con ref forwarding
@@ -266,7 +265,8 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
         setIsEmpty(false);
       },
       getPoints: () => {
-        return signatureRef.current?.toData() ?? [];
+        const strokes = signatureRef.current?.toData() ?? [];
+        return strokes.flat().map((p) => ({ x: p.x, y: p.y, time: p.time }));
       },
     }));
 

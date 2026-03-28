@@ -112,20 +112,20 @@ function AlertasActivasTab() {
       {resumen && (
         <KpiCardGrid>
           <KpiCard
-            title="Total Alertas"
+            label="Total Alertas"
             value={resumen.total}
             icon={<AlertTriangle className="w-4 h-4" />}
           />
           <KpiCard
-            title="Pendientes"
+            label="Pendientes"
             value={resumen.pendientes}
-            variant="warning"
+            color="warning"
             icon={<Clock className="w-4 h-4" />}
           />
           <KpiCard
-            title="Críticas"
+            label="Críticas"
             value={resumen.por_severidad?.critical || 0}
-            variant="danger"
+            color="danger"
             icon={<AlertTriangle className="w-4 h-4" />}
           />
         </KpiCardGrid>
@@ -222,7 +222,7 @@ function AlertasActivasTab() {
                       size="sm"
                       leftIcon={<CheckCircle className="w-4 h-4" />}
                       onClick={() => handleAtender(alerta.id)}
-                      loading={atenderMutation.isPending}
+                      isLoading={atenderMutation.isPending}
                     >
                       Atender
                     </Button>
@@ -231,7 +231,7 @@ function AlertasActivasTab() {
                       size="sm"
                       leftIcon={<ArrowUp className="w-4 h-4" />}
                       onClick={() => handleEscalar(alerta.id)}
-                      loading={escalarMutation.isPending}
+                      isLoading={escalarMutation.isPending}
                     >
                       Escalar
                     </Button>
@@ -249,7 +249,7 @@ function AlertasActivasTab() {
         onConfirm={handleConfirmAtender}
         title="Atender Alerta"
         message="¿Estás seguro de que deseas marcar esta alerta como atendida?"
-        confirmLabel="Atender"
+        confirmText="Atender"
         variant="info"
       />
     </div>

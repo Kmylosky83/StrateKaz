@@ -18,7 +18,7 @@
  * - Unidades de capacidad dinámicas (kg, ton, m³, pallets, etc.)
  * - Sin hardcoding de unidades
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -115,9 +115,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
-  // Previene que un cambio tardío de `choices` o `sedeDetail` resetee
-  // el formulario después de que el usuario ya empezó a editar.
-  const hasInitialized = useRef(false);
 
   // Función para obtener ubicación GPS del dispositivo
   const handleGetGPS = useCallback(() => {
@@ -169,59 +166,57 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const createMutation = useCreateSede();
   const updateMutation = useUpdateSede();
 
-  // Reiniciar bandera al abrir/cerrar el modal
+  // EDICIÓN: cargar datos de la sede cuando sedeDetail llega del servidor.
+  // Dependencia: sedeDetail?.id (no el objeto completo) → el effect solo corre
+  // cuando se abre una sede distinta, no cuando choices o el objeto refetcha.
+  // Esto evita que un refetch posterior resetee cambios del usuario.
   useEffect(() => {
-    if (!isOpen) {
-      hasInitialized.current = false;
-    }
-  }, [isOpen]);
+    if (!isEditing || !sedeDetail) return;
+    setFormData({
+      codigo: sedeDetail.codigo,
+      nombre: sedeDetail.nombre,
+      tipo_sede: sedeDetail.tipo_sede?.toString() || '',
+      customTipoSede: '', // Al editar, siempre vacío (el tipo ya existe en BE)
+      descripcion: sedeDetail.descripcion || '',
+      direccion: sedeDetail.direccion,
+      ciudad: sedeDetail.ciudad,
+      departamento: sedeDetail.departamento,
+      codigo_postal: sedeDetail.codigo_postal || '',
+      latitud: sedeDetail.latitud?.toString() || '',
+      longitud: sedeDetail.longitud?.toString() || '',
+      responsable: sedeDetail.responsable?.toString() || '',
+      telefono: sedeDetail.telefono || '',
+      email: sedeDetail.email || '',
+      es_sede_principal: sedeDetail.es_sede_principal,
+      fecha_apertura: sedeDetail.fecha_apertura || '',
+      fecha_cierre: sedeDetail.fecha_cierre || '',
+      capacidad_almacenamiento: sedeDetail.capacidad_almacenamiento?.toString() || '',
+      unidad_capacidad: sedeDetail.unidad_capacidad?.toString() || '',
+      tipo_unidad: sedeDetail.tipo_unidad || 'SEDE',
+      es_unidad_negocio: sedeDetail.es_unidad_negocio ?? true,
+      es_centro_acopio: sedeDetail.es_centro_acopio ?? false,
+      es_proveedor_interno: sedeDetail.es_proveedor_interno ?? false,
+      is_active: sedeDetail.is_active,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sedeDetail?.id]); // ← ID de la sede, no el objeto completo ni choices
 
-  // Cargar datos al editar — solo una vez por apertura de modal.
-  // Se separa de choices para evitar el bug donde choices carga tarde
-  // y resetea los cambios que el usuario ya ingresó.
+  // CREACIÓN: resetear a defaults cuando el modal se abre en modo crear.
   useEffect(() => {
-    if (hasInitialized.current) return;
+    if (isEditing) return;
+    setFormData({ ...defaultFormData });
+  }, [isEditing]);
 
-    if (isEditing && sedeDetail) {
-      setFormData({
-        codigo: sedeDetail.codigo,
-        nombre: sedeDetail.nombre,
-        tipo_sede: sedeDetail.tipo_sede?.toString() || '',
-        customTipoSede: '', // Al editar, siempre vacío (el tipo ya existe)
-        descripcion: sedeDetail.descripcion || '',
-        direccion: sedeDetail.direccion,
-        ciudad: sedeDetail.ciudad,
-        departamento: sedeDetail.departamento,
-        codigo_postal: sedeDetail.codigo_postal || '',
-        latitud: sedeDetail.latitud?.toString() || '',
-        longitud: sedeDetail.longitud?.toString() || '',
-        responsable: sedeDetail.responsable?.toString() || '',
-        telefono: sedeDetail.telefono || '',
-        email: sedeDetail.email || '',
-        es_sede_principal: sedeDetail.es_sede_principal,
-        fecha_apertura: sedeDetail.fecha_apertura || '',
-        fecha_cierre: sedeDetail.fecha_cierre || '',
-        capacidad_almacenamiento: sedeDetail.capacidad_almacenamiento?.toString() || '',
-        unidad_capacidad: sedeDetail.unidad_capacidad?.toString() || '',
-        tipo_unidad: sedeDetail.tipo_unidad || 'SEDE',
-        es_unidad_negocio: sedeDetail.es_unidad_negocio ?? true,
-        es_centro_acopio: sedeDetail.es_centro_acopio ?? false,
-        es_proveedor_interno: sedeDetail.es_proveedor_interno ?? false,
-        is_active: sedeDetail.is_active,
-      });
-      hasInitialized.current = true;
-    } else if (!isEditing) {
-      // Para nuevo registro, usar unidad por defecto de la empresa si existe.
-      // Espera a que choices cargue antes de marcar como inicializado,
-      // pero una vez inicializado no vuelve a resetear aunque choices cambie.
-      const choicesRecord = choices as Record<string, { value?: number }> | undefined;
-      const defaultUnit = choicesRecord?.unidad_capacidad_default?.value?.toString() || '';
-      setFormData({ ...defaultFormData, unidad_capacidad: defaultUnit });
-      if (choices !== undefined) {
-        hasInitialized.current = true;
-      }
+  // CREACIÓN — unidad por defecto: actualizar SOLO ese campo cuando choices carga,
+  // sin resetear el resto del formulario que el usuario ya pudo haber tocado.
+  useEffect(() => {
+    if (isEditing || !choices) return;
+    const choicesRecord = choices as Record<string, { value?: number }> | undefined;
+    const defaultUnit = choicesRecord?.unidad_capacidad_default?.value?.toString() || '';
+    if (defaultUnit) {
+      setFormData((prev) => ({ ...prev, unidad_capacidad: defaultUnit }));
     }
-  }, [isEditing, sedeDetail, choices]);
+  }, [isEditing, choices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

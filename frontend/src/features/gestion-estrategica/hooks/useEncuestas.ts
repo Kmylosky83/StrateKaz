@@ -10,7 +10,6 @@ import {
   temasApi,
   participantesApi,
   respuestasApi,
-  encuestaPublicaApi,
 } from '../api/encuestasApi';
 import type {
   EncuestaFilters,
@@ -21,8 +20,6 @@ import type {
   CreateParticipanteDTO,
   RespuestaFilters,
   CreateRespuestaDTO,
-  RespuestasLoteDTO,
-  CompartirEmailDTO,
 } from '../types/encuestas.types';
 
 // Query keys
@@ -38,9 +35,7 @@ export const encuestasKeys = {
     [...encuestasKeys.all, 'participantes', _encuestaId] as const,
   respuestas: (filters?: RespuestaFilters) =>
     [...encuestasKeys.all, 'respuestas', filters] as const,
-  publica: (token: string) => [...encuestasKeys.all, 'publica', token] as const,
   preguntasContexto: () => [...encuestasKeys.all, 'preguntas-contexto'] as const,
-  qrCode: (id: number) => [...encuestasKeys.all, 'qr-code', id] as const,
 };
 
 // ==============================================================================
@@ -477,79 +472,3 @@ export function usePreguntasContexto(filters?: {
 }
 
 // ==============================================================================
-// COMPARTIR & QR
-// ==============================================================================
-
-/**
- * Hook para compartir encuesta por email
- */
-export function useCompartirEmail() {
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: CompartirEmailDTO }) =>
-      encuestasApi.compartirEmail(id, data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.warning(result.message);
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(`Error al compartir: ${error.message}`);
-    },
-  });
-}
-
-/**
- * Hook para obtener QR code de encuesta
- */
-export function useQrCode(id: number | undefined) {
-  return useQuery({
-    queryKey: encuestasKeys.qrCode(id!),
-    queryFn: () => encuestasApi.getQrCode(id!),
-    enabled: !!id,
-    staleTime: Infinity,
-  });
-}
-
-// ==============================================================================
-// ENCUESTA PÚBLICA
-// ==============================================================================
-
-/**
- * Hook para obtener encuesta pública por token.
- *
- * Flujo multi-tenant:
- * 1. Llama al endpoint lookup (cross-tenant) para resolver el tenant_id
- * 2. Guarda tenant_id en localStorage (encuesta_tenant_id)
- * 3. Llama al endpoint de la encuesta con X-Tenant-ID header
- */
-export function useEncuestaPublica(token: string | undefined) {
-  return useQuery({
-    queryKey: encuestasKeys.publica(token!),
-    queryFn: async () => {
-      // Paso 1: Lookup cross-tenant para resolver el tenant
-      await encuestaPublicaApi.lookup(token!);
-      // Paso 2: Obtener la encuesta (ahora con X-Tenant-ID en el header)
-      return encuestaPublicaApi.get(token!);
-    },
-    enabled: !!token,
-    retry: false,
-  });
-}
-
-/**
- * Hook para enviar respuestas a encuesta pública
- */
-export function useResponderEncuestaPublica() {
-  return useMutation({
-    mutationFn: ({ token, data }: { token: string; data: RespuestasLoteDTO }) =>
-      encuestaPublicaApi.responder(token, data),
-    onSuccess: (result) => {
-      toast.success(`¡Gracias por participar! ${result.respuestas_creadas} respuestas registradas`);
-    },
-    onError: (error: Error) => {
-      toast.error(`Error al enviar respuestas: ${error.message}`);
-    },
-  });
-}

@@ -5,14 +5,8 @@ Servicios para Encuestas de Contexto Organizacional
 Servicios de negocio para:
 - Envío de notificaciones a participantes
 - Consolidación de respuestas en DOFA y PESTEL
-- Compartir encuestas por email
-- Generación de QR codes
-- Generación de tokens anónimos
 - Cálculo de estadísticas
 """
-import io
-import uuid
-import hashlib
 from typing import List, Optional, Dict, Any
 from django.db import transaction
 from django.utils import timezone
@@ -33,12 +27,6 @@ from apps.gestion_estrategica.contexto.models import (
 
 class EncuestaService:
     """Servicio principal para gestión de encuestas de contexto."""
-
-    @staticmethod
-    def generar_token_anonimo(ip: str, user_agent: str) -> str:
-        """Genera un token único para respuestas anónimas."""
-        data = f"{ip}:{user_agent}:{uuid.uuid4()}"
-        return hashlib.sha256(data.encode()).hexdigest()[:64]
 
     @staticmethod
     def obtener_usuarios_por_participantes(encuesta: EncuestaDofa) -> List:
@@ -441,107 +429,6 @@ class EncuestaService:
         return ""
 
     # ==========================================================================
-    # COMPARTIR POR EMAIL
-    # ==========================================================================
-
-    @staticmethod
-    def compartir_por_email(
-        encuesta: EncuestaDofa,
-        emails: List[str],
-        mensaje_personalizado: str = '',
-        base_url: str = ''
-    ) -> Dict[str, Any]:
-        """Envía enlace de encuesta a emails externos usando template HTML."""
-        from apps.audit_system.centro_notificaciones.email_service import EmailService
-
-        if not encuesta.es_publica:
-            return {
-                'success': False,
-                'message': 'La encuesta debe ser pública para compartir por email'
-            }
-
-        # Usar el enlace_publico del modelo (ya incluye dominio del tenant)
-        enlace = encuesta.enlace_publico
-        if not enlace.startswith('http') and base_url:
-            enlace = f"{base_url}{enlace}"
-        tipo_label = 'PCI-POAM' if encuesta.tipo_encuesta == 'pci_poam' else 'Contexto Organizacional'
-
-        # Obtener nombre de la empresa
-        empresa_nombre = 'Organización'
-        try:
-            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-            config = EmpresaConfig.objects.first()
-            if config:
-                empresa_nombre = config.razon_social
-        except Exception:
-            pass
-
-        asunto = f"Encuesta {tipo_label}: {encuesta.titulo}"
-
-        context = {
-            'encuesta_titulo': encuesta.titulo,
-            'encuesta_descripcion': encuesta.descripcion or '',
-            'tipo_label': tipo_label,
-            'empresa_nombre': empresa_nombre,
-            'responsable_nombre': encuesta.responsable.get_full_name() if encuesta.responsable else '',
-            'fecha_cierre': encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M'),
-            'mensaje_personalizado': mensaje_personalizado,
-            'action_url': enlace,
-        }
-
-        enviados = 0
-        errores = []
-
-        for email in emails:
-            try:
-                EmailService.send_email(
-                    to_email=email,
-                    subject=asunto,
-                    template_name='encuesta_compartida',
-                    context=context,
-                )
-                enviados += 1
-            except Exception as e:
-                errores.append(f"{email}: {str(e)}")
-
-        return {
-            'success': enviados > 0,
-            'message': f'{enviados} email(s) enviado(s) exitosamente' + (f', {len(errores)} error(es)' if errores else ''),
-            'total_enviados': enviados,
-            'errores': errores,
-        }
-
-    # ==========================================================================
-    # QR CODE
-    # ==========================================================================
-
-    @staticmethod
-    def generar_qr_code(encuesta: EncuestaDofa, base_url: str = '') -> bytes:
-        """Genera QR code PNG con el enlace público de la encuesta."""
-        import qrcode
-
-        # Usar el enlace_publico del modelo (ya incluye dominio del tenant)
-        enlace = encuesta.enlace_publico
-        if not enlace.startswith('http') and base_url:
-            enlace = f"{base_url}{enlace}"
-
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_M,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(enlace)
-        qr.make(fit=True)
-
-        img = qr.make_image(fill_color="black", back_color="white")
-
-        buffer = io.BytesIO()
-        img.save(buffer, format='PNG')
-        buffer.seek(0)
-        return buffer.getvalue()
-
-    # ==========================================================================
     # ESTADÍSTICAS
     # ==========================================================================
 
@@ -602,62 +489,29 @@ class EncuestaService:
         }
 
     @staticmethod
-    def puede_responder(
-        encuesta: EncuestaDofa,
-        usuario=None,
-        token_anonimo: str = None
-    ) -> Dict[str, Any]:
-        """Verifica si un usuario o token puede responder la encuesta."""
+    def puede_responder(encuesta: EncuestaDofa, usuario=None) -> Dict[str, Any]:
+        """Verifica si un usuario autenticado puede responder la encuesta."""
         if not encuesta.esta_vigente:
-            return {
-                'puede': False,
-                'razon': 'La encuesta no está vigente'
-            }
+            return {'puede': False, 'razon': 'La encuesta no está vigente'}
 
-        if encuesta.es_publica and token_anonimo:
-            ya_respondio = RespuestaEncuesta.objects.filter(
-                tema__encuesta=encuesta,
-                token_anonimo=token_anonimo
-            ).exists()
+        if not usuario or not usuario.is_authenticated:
+            return {'puede': False, 'razon': 'Debes iniciar sesión para responder'}
 
-            if ya_respondio:
-                return {
-                    'puede': False,
-                    'razon': 'Ya has respondido esta encuesta'
-                }
-            return {'puede': True, 'razon': None}
+        ya_respondio = RespuestaEncuesta.objects.filter(
+            tema__encuesta=encuesta,
+            respondente=usuario
+        ).exists()
 
-        if usuario:
-            ya_respondio = RespuestaEncuesta.objects.filter(
-                tema__encuesta=encuesta,
-                respondente=usuario
-            ).exists()
+        if ya_respondio:
+            return {'puede': False, 'razon': 'Ya has respondido esta encuesta'}
 
-            if ya_respondio:
-                return {
-                    'puede': False,
-                    'razon': 'Ya has respondido esta encuesta'
-                }
+        esta_invitado = encuesta.participantes.filter(
+            Q(usuario=usuario) |
+            Q(area=usuario.cargo.area if hasattr(usuario, 'cargo') and usuario.cargo else None) |
+            Q(cargo=usuario.cargo if hasattr(usuario, 'cargo') else None)
+        ).exists()
 
-            if not encuesta.es_publica:
-                esta_invitado = encuesta.participantes.filter(
-                    Q(usuario=usuario) |
-                    Q(area=usuario.cargo.area if hasattr(usuario, 'cargo') and usuario.cargo else None) |
-                    Q(cargo=usuario.cargo if hasattr(usuario, 'cargo') else None)
-                ).exists()
+        if not esta_invitado:
+            return {'puede': False, 'razon': 'No estás invitado a esta encuesta'}
 
-                if not esta_invitado:
-                    return {
-                        'puede': False,
-                        'razon': 'No estás invitado a esta encuesta'
-                    }
-
-            return {'puede': True, 'razon': None}
-
-        if encuesta.es_publica:
-            return {'puede': True, 'razon': None}
-
-        return {
-            'puede': False,
-            'razon': 'Debes iniciar sesión para responder'
-        }
+        return {'puede': True, 'razon': None}

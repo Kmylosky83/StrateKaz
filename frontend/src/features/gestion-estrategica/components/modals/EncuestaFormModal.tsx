@@ -19,9 +19,6 @@ import {
   Users,
   Building2,
   Briefcase,
-  Link2,
-  Copy,
-  Check,
   FileText,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -45,6 +42,7 @@ import {
   usePreguntasContexto,
   useRegenerarTemas,
 } from '../../hooks/useEncuestas';
+
 import {
   useAnalisisDofa,
   useAnalisisPestel,
@@ -83,7 +81,6 @@ interface FormData {
   analisis_pestel: string;
   titulo: string;
   descripcion: string;
-  es_publica: boolean;
   requiere_justificacion: boolean;
   fecha_inicio: string;
   fecha_cierre: string;
@@ -99,7 +96,6 @@ const defaultFormData: FormData = {
   analisis_pestel: '',
   titulo: '',
   descripcion: '',
-  es_publica: false,
   requiere_justificacion: true,
   fecha_inicio: new Date().toISOString().split('T')[0],
   fecha_cierre: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -137,7 +133,6 @@ export const EncuestaFormModal = ({
     tipo_encuesta: defaultTipoEncuesta || 'libre',
   });
   const [activeTab, setActiveTab] = useState<'datos' | 'temas' | 'participantes'>('datos');
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const isPciPoam = formData.tipo_encuesta === 'pci_poam';
 
@@ -205,7 +200,6 @@ export const EncuestaFormModal = ({
         analisis_pestel: encuestaDetail.analisis_pestel?.toString() || '',
         titulo: encuestaDetail.titulo,
         descripcion: encuestaDetail.descripcion || '',
-        es_publica: encuestaDetail.es_publica,
         requiere_justificacion: encuestaDetail.requiere_justificacion,
         fecha_inicio: encuestaDetail.fecha_inicio.split('T')[0],
         fecha_cierre: encuestaDetail.fecha_cierre.split('T')[0],
@@ -228,24 +222,29 @@ export const EncuestaFormModal = ({
   }, [isOpen]);
 
   // Handlers
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitError(null);
 
-    // Prevent double submission
-    if (createMutation.isPending || updateMutation.isPending || createdEncuesta) return;
+    if (createMutation.isPending || updateMutation.isPending) return;
 
     if (isEditing && currentEncuesta) {
       const updateData: UpdateEncuestaDTO = {
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
-        es_publica: formData.es_publica,
         requiere_justificacion: formData.requiere_justificacion,
         fecha_inicio: formData.fecha_inicio,
         fecha_cierre: formData.fecha_cierre,
         analisis_pestel: formData.analisis_pestel ? parseInt(formData.analisis_pestel) : null,
       };
-      await updateMutation.mutateAsync({ id: currentEncuesta.id, data: updateData });
-      onClose();
+      try {
+        await updateMutation.mutateAsync({ id: currentEncuesta.id, data: updateData });
+        onClose();
+      } catch {
+        setSubmitError('Error al guardar los cambios. Verifica los datos e intenta de nuevo.');
+      }
     } else {
       const createData: CreateEncuestaDTO = {
         tipo_encuesta: formData.tipo_encuesta,
@@ -253,14 +252,12 @@ export const EncuestaFormModal = ({
         analisis_pestel: formData.analisis_pestel ? parseInt(formData.analisis_pestel) : null,
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
-        es_publica: formData.es_publica,
         requiere_justificacion: formData.requiere_justificacion,
         fecha_inicio: formData.fecha_inicio,
         fecha_cierre: formData.fecha_cierre,
       };
       const newEncuesta = await createMutation.mutateAsync(createData);
       setCreatedEncuesta(newEncuesta);
-      // PCI-POAM: temas auto-generados, ir a participantes. Libre: ir a temas
       setActiveTab(formData.tipo_encuesta === 'pci_poam' ? 'participantes' : 'temas');
     }
   };
@@ -336,18 +333,6 @@ export const EncuestaFormModal = ({
     setFormData((prev) => ({ ...prev, analisis_pestel: result.id.toString() }));
   };
 
-  const handleCopyLink = () => {
-    if (encuestaDetail?.enlace_publico) {
-      // Si el backend ya retorna URL absoluta (https://...), usarla directamente
-      const url = encuestaDetail.enlace_publico.startsWith('http')
-        ? encuestaDetail.enlace_publico
-        : window.location.origin + encuestaDetail.enlace_publico;
-      navigator.clipboard.writeText(url);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
-  };
-
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // Options
@@ -390,6 +375,7 @@ export const EncuestaFormModal = ({
   // Footer con botones - cambia según el estado
   const footer = (
     <>
+      {submitError && <Alert variant="danger" message={submitError} className="flex-1" />}
       <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
         {createdEncuesta ? 'Finalizar' : 'Cancelar'}
       </Button>
@@ -499,7 +485,6 @@ export const EncuestaFormModal = ({
                         opt.value === 'pci_poam' && !formData.titulo
                           ? 'Diagnostico PCI-POAM'
                           : formData.titulo,
-                      es_publica: opt.value === 'pci_poam' ? true : formData.es_publica,
                     })
                   }
                   className={`!flex !items-start !gap-3 !p-4 !min-h-0 rounded-lg border-2 !justify-start transition-all text-left ${
@@ -671,49 +656,6 @@ export const EncuestaFormModal = ({
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
           Configuracion
         </h4>
-
-        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Encuesta Publica</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Cualquiera con el enlace puede responder (anonimo)
-            </p>
-          </div>
-          <Switch
-            checked={formData.es_publica}
-            onChange={(e) => setFormData({ ...formData, es_publica: e.target.checked })}
-          />
-        </div>
-
-        {/* Enlace publico */}
-        {isEditing && encuestaDetail?.es_publica && encuestaDetail?.enlace_publico && (
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-2 mb-2">
-              <Link2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                Enlace Publico
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                value={
-                  encuestaDetail.enlace_publico.startsWith('http')
-                    ? encuestaDetail.enlace_publico
-                    : window.location.origin + encuestaDetail.enlace_publico
-                }
-                readOnly
-                className="flex-1 text-xs font-mono"
-              />
-              <Button type="button" variant="outline" size="sm" onClick={handleCopyLink}>
-                {copiedLink ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        )}
 
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div>
@@ -934,13 +876,6 @@ export const EncuestaFormModal = ({
   // Tab: Participantes
   const renderParticipantesTab = () => (
     <div className="space-y-6">
-      {formData.es_publica && (
-        <Alert
-          variant="info"
-          message="Esta encuesta es publica. Cualquier persona con el enlace puede responder de forma anonima. Los participantes agregados aqui recibiran notificacion pero no es obligatorio agregarlos."
-        />
-      )}
-
       {/* Lista de participantes */}
       <div className="space-y-2">
         {participantes.length === 0 ? (

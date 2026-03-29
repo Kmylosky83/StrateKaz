@@ -81,27 +81,6 @@ class TemaEncuestaCreateSerializer(serializers.ModelSerializer):
         }
 
 
-class TemaEncuestaPublicoSerializer(serializers.ModelSerializer):
-    """Serializer público para mostrar temas (sin datos sensibles)"""
-    area_name = serializers.CharField(source='area.name', read_only=True)
-    clasificacion_esperada = serializers.CharField(
-        source='pregunta_contexto.clasificacion_esperada', read_only=True
-    )
-    capacidad_pci = serializers.CharField(
-        source='pregunta_contexto.capacidad_pci', read_only=True
-    )
-    factor_poam = serializers.CharField(
-        source='pregunta_contexto.factor_poam', read_only=True
-    )
-
-    class Meta:
-        model = TemaEncuesta
-        fields = [
-            'id', 'titulo', 'descripcion', 'area_name', 'orden',
-            'clasificacion_esperada', 'capacidad_pci', 'factor_poam',
-        ]
-
-
 # ==============================================================================
 # SERIALIZERS PARA PARTICIPANTES
 # ==============================================================================
@@ -232,35 +211,12 @@ class RespuestaEncuestaCreateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             validated_data['respondente'] = request.user
-            validated_data['ip_address'] = self.get_client_ip(request)
-            validated_data['user_agent'] = request.META.get('HTTP_USER_AGENT', '')
         return super().create(validated_data)
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
-
-class RespuestaPublicaCreateSerializer(serializers.Serializer):
-    """Serializer para respuestas públicas/anónimas"""
-    tema_id = serializers.IntegerField()
-    clasificacion = serializers.ChoiceField(
-        choices=RespuestaEncuesta.Clasificacion.choices
-    )
-    justificacion = serializers.CharField(required=False, allow_blank=True)
-    impacto_percibido = serializers.ChoiceField(
-        choices=RespuestaEncuesta.NivelImpacto.choices,
-        default=RespuestaEncuesta.NivelImpacto.MEDIO
-    )
 
 
 class RespuestasLoteSerializer(serializers.Serializer):
     """Serializer para enviar múltiples respuestas en lote"""
-    respuestas = RespuestaPublicaCreateSerializer(many=True)
+    respuestas = RespuestaEncuestaCreateSerializer(many=True)
 
 
 # ==============================================================================
@@ -281,9 +237,6 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
     porcentaje_participacion = serializers.FloatField(read_only=True)
     esta_vigente = serializers.BooleanField(read_only=True)
 
-    enlace_publico = serializers.CharField(read_only=True)
-    token_publico = serializers.UUIDField(read_only=True)
-
     class Meta:
         model = EncuestaDofa
         fields = [
@@ -292,12 +245,11 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
             'analisis_dofa', 'analisis_dofa_nombre',
             'analisis_pestel',
             'estado', 'estado_display',
-            'es_publica', 'fecha_inicio', 'fecha_cierre',
+            'fecha_inicio', 'fecha_cierre',
             'responsable', 'responsable_nombre',
             'total_invitados', 'total_respondidos',
             'porcentaje_participacion', 'esta_vigente',
             'total_temas', 'notificacion_enviada',
-            'enlace_publico', 'token_publico',
             'created_at'
         ]
 
@@ -319,8 +271,6 @@ class EncuestaDofaDetailSerializer(serializers.ModelSerializer):
     participantes = ParticipanteEncuestaSerializer(many=True, read_only=True)
     porcentaje_participacion = serializers.FloatField(read_only=True)
     esta_vigente = serializers.BooleanField(read_only=True)
-    enlace_publico = serializers.CharField(read_only=True)
-
     class Meta:
         model = EncuestaDofa
         fields = [
@@ -328,7 +278,6 @@ class EncuestaDofaDetailSerializer(serializers.ModelSerializer):
             'tipo_encuesta', 'tipo_encuesta_display',
             'analisis_dofa', 'analisis_dofa_nombre',
             'analisis_pestel',
-            'token_publico', 'es_publica', 'enlace_publico',
             'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
             'estado', 'estado_display',
@@ -351,7 +300,7 @@ class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
         fields = [
             'tipo_encuesta', 'analisis_dofa', 'analisis_pestel',
             'titulo', 'descripcion',
-            'es_publica', 'requiere_justificacion',
+            'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
             'temas', 'participantes'
         ]
@@ -438,7 +387,7 @@ class EncuestaDofaUpdateSerializer(serializers.ModelSerializer):
         model = EncuestaDofa
         fields = [
             'titulo', 'descripcion',
-            'es_publica', 'requiere_justificacion',
+            'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
             'analisis_pestel',
         ]
@@ -456,77 +405,6 @@ class CompartirEmailSerializer(serializers.Serializer):
         max_length=50,
     )
     mensaje_personalizado = serializers.CharField(required=False, allow_blank=True)
-
-
-# ==============================================================================
-# SERIALIZERS PÚBLICOS (SIN AUTENTICACIÓN)
-# ==============================================================================
-
-class EncuestaPublicaSerializer(serializers.ModelSerializer):
-    """Serializer para mostrar encuesta pública (sin datos sensibles)"""
-    temas = TemaEncuestaPublicoSerializer(many=True, read_only=True)
-    esta_vigente = serializers.BooleanField(read_only=True)
-    tipo_encuesta = serializers.CharField(read_only=True)
-    empresa_nombre = serializers.SerializerMethodField()
-    responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
-    )
-    branding = serializers.SerializerMethodField()
-
-    class Meta:
-        model = EncuestaDofa
-        fields = [
-            'id', 'titulo', 'descripcion',
-            'tipo_encuesta',
-            'requiere_justificacion',
-            'fecha_inicio', 'fecha_cierre',
-            'esta_vigente', 'temas',
-            'empresa_nombre', 'responsable_nombre',
-            'branding',
-        ]
-
-    def get_empresa_nombre(self, obj):
-        """Obtiene el nombre de la empresa con cadena de fallback robusta."""
-        # 1. Intentar EmpresaConfig.razon_social (fuente primaria)
-        try:
-            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-            config = EmpresaConfig.objects.first()
-            if config and config.razon_social and config.razon_social not in (
-                'Empresa Sin Configurar', 'Sin Configurar', ''
-            ):
-                return config.razon_social
-        except Exception:
-            pass
-        # 2. Fallback: nombre del tenant (siempre disponible)
-        try:
-            from django.db import connection
-            tenant = connection.tenant
-            if hasattr(tenant, 'nombre_comercial') and tenant.nombre_comercial:
-                return tenant.nombre_comercial
-            if hasattr(tenant, 'name') and tenant.name:
-                return tenant.name
-        except Exception:
-            pass
-        return 'Organización'
-
-    def get_branding(self, obj):
-        """Retorna colores de branding del tenant para la página pública."""
-        try:
-            from django.db import connection
-            tenant = connection.tenant
-            if hasattr(tenant, 'get_branding_dict'):
-                bd = tenant.get_branding_dict()
-                return {
-                    'primary_color': bd.get('primary_color', '#3b82f6'),
-                    'secondary_color': bd.get('secondary_color', '#6366f1'),
-                    'accent_color': bd.get('accent_color', '#ec4899'),
-                    'logo_url': bd.get('logo') or '',
-                    'favicon_url': bd.get('favicon') or '',
-                    'empresa_nombre': bd.get('company_short_name') or bd.get('company_name', ''),
-                }
-        except Exception:
-            pass
-        return None
 
 
 class EstadisticasEncuestaSerializer(serializers.Serializer):

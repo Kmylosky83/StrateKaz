@@ -13,7 +13,6 @@ Modelos:
 - ParticipanteEncuesta: Control de participantes y acceso
 - RespuestaEncuesta: Respuestas individuales de colaboradores
 """
-import uuid
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -187,19 +186,6 @@ class EncuestaDofa(BaseCompanyModel):
         help_text='Instrucciones para los participantes'
     )
 
-    # Control de acceso público
-    token_publico = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        editable=False,
-        verbose_name='Token de Acceso Público',
-        help_text='Token único para acceso anónimo vía enlace público'
-    )
-    es_publica = models.BooleanField(
-        default=False,
-        verbose_name='¿Es Pública?',
-        help_text='Si es pública, cualquiera con el enlace puede responder'
-    )
     requiere_justificacion = models.BooleanField(
         default=True,
         verbose_name='¿Requiere Justificación?',
@@ -259,7 +245,6 @@ class EncuestaDofa(BaseCompanyModel):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['empresa', 'estado']),
-            models.Index(fields=['token_publico']),
             models.Index(fields=['fecha_inicio', 'fecha_cierre']),
         ]
 
@@ -282,15 +267,6 @@ class EncuestaDofa(BaseCompanyModel):
             return 0
         return round((self.total_respondidos / self.total_invitados) * 100, 1)
 
-    @property
-    def enlace_publico(self):
-        """Genera el enlace público para la encuesta (ruta relativa).
-
-        El frontend (app.stratekaz.com) construye la URL completa.
-        El tenant se resuelve vía endpoint lookup /api/encuestas-dofa/lookup/{token}/
-        """
-        return f"/encuestas/responder/{self.token_publico}/"
-
     def activar(self):
         """Activa la encuesta para recibir respuestas"""
         self.estado = self.EstadoEncuesta.ACTIVA
@@ -302,27 +278,14 @@ class EncuestaDofa(BaseCompanyModel):
         self.save(update_fields=['estado', 'updated_at'])
 
     def actualizar_estadisticas(self):
-        """Actualiza las estadísticas de participación.
-
-        Cuenta respondentes únicos (autenticados + anónimos) vía
-        EncuestaDofa → temas → respuestas (relación indirecta).
-        """
-        respondentes_autenticados = (
+        """Actualiza las estadísticas de participación."""
+        total = (
             RespuestaEncuesta.objects.filter(tema__encuesta=self)
-            .exclude(respondente__isnull=True)
             .values('respondente')
             .distinct()
             .count()
         )
-        respondentes_anonimos = (
-            RespuestaEncuesta.objects.filter(tema__encuesta=self)
-            .filter(respondente__isnull=True)
-            .exclude(token_anonimo='')
-            .values('token_anonimo')
-            .distinct()
-            .count()
-        )
-        self.total_respondidos = respondentes_autenticados + respondentes_anonimos
+        self.total_respondidos = total
         self.save(update_fields=['total_respondidos', 'updated_at'])
 
 
@@ -558,22 +521,11 @@ class RespuestaEncuesta(TimestampedModel):
         verbose_name='Tema'
     )
 
-    # Respondente (puede ser null para respuestas anónimas)
     respondente = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
         related_name='respuestas_encuesta_dofa',
         verbose_name='Respondente'
-    )
-
-    # Token para respuestas anónimas
-    token_anonimo = models.CharField(
-        max_length=64,
-        blank=True,
-        verbose_name='Token Anónimo',
-        help_text='Identificador para respuestas anónimas'
     )
 
     # Clasificación
@@ -599,17 +551,6 @@ class RespuestaEncuesta(TimestampedModel):
         verbose_name='Impacto Percibido'
     )
 
-    # Metadatos
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        verbose_name='Dirección IP'
-    )
-    user_agent = models.TextField(
-        blank=True,
-        verbose_name='User Agent'
-    )
-
     class Meta:
         db_table = 'encuestas_respuesta'
         verbose_name = 'Respuesta de Encuesta'
@@ -618,22 +559,13 @@ class RespuestaEncuesta(TimestampedModel):
         indexes = [
             models.Index(fields=['tema', 'clasificacion']),
             models.Index(fields=['respondente']),
-            models.Index(fields=['token_anonimo']),
         ]
-        # Un usuario solo puede responder una vez por tema
         constraints = [
             models.UniqueConstraint(
                 fields=['tema', 'respondente'],
-                condition=models.Q(respondente__isnull=False),
                 name='unique_respuesta_usuario_tema'
-            ),
-            models.UniqueConstraint(
-                fields=['tema', 'token_anonimo'],
-                condition=models.Q(token_anonimo__gt=''),
-                name='unique_respuesta_anonimo_tema'
             ),
         ]
 
     def __str__(self):
-        quien = self.respondente.get_full_name() if self.respondente else 'Anónimo'
-        return f"{self.tema.titulo} - {quien}: {self.get_clasificacion_display()}"
+        return f"{self.tema.titulo} - {self.respondente.get_full_name()}: {self.get_clasificacion_display()}"

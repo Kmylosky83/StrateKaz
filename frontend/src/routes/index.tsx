@@ -59,9 +59,6 @@ import { auditSystemRoutes } from './modules/audit-system.routes';
 import { configuracionAdminRoutes } from './modules/configuracion-admin.routes';
 
 // Paginas publicas (lazy)
-const EncuestaPublicaPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/EncuestaPublicaPage')
-);
 const ResponderPruebaPage = lazy(() => import('@/features/talent-hub/pages/ResponderPruebaPage'));
 const ResponderEntrevistaPage = lazy(
   () => import('@/features/talent-hub/pages/ResponderEntrevistaPage')
@@ -81,7 +78,7 @@ export const AppRoutes = () => {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/setup-password" element={<SetupPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
-      <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
+
       <Route path="/pruebas/responder/:token" element={withSuspense(ResponderPruebaPage)} />
       <Route path="/entrevistas/responder/:token" element={withSuspense(ResponderEntrevistaPage)} />
       <Route path="/contratos/firmar/:token" element={withSuspense(FirmarContratoPage)} />

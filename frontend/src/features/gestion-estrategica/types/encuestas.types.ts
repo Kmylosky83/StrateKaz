@@ -154,9 +154,6 @@ export interface EncuestaDofa {
   analisis_dofa: number;
   analisis_dofa_nombre?: string;
   analisis_pestel?: number | null;
-  token_publico?: string;
-  es_publica: boolean;
-  enlace_publico?: string;
   requiere_justificacion: boolean;
   fecha_inicio: string;
   fecha_cierre: string;
@@ -188,9 +185,6 @@ export interface EncuestaListItem {
   analisis_pestel?: number | null;
   estado: EstadoEncuesta;
   estado_display?: string;
-  es_publica: boolean;
-  enlace_publico?: string;
-  token_publico?: string;
   fecha_inicio: string;
   fecha_cierre: string;
   responsable?: number | null;
@@ -210,7 +204,6 @@ export interface CreateEncuestaDTO {
   analisis_pestel?: number | null;
   titulo: string;
   descripcion?: string;
-  es_publica?: boolean;
   requiere_justificacion?: boolean;
   fecha_inicio: string;
   fecha_cierre: string;
@@ -221,52 +214,10 @@ export interface CreateEncuestaDTO {
 export interface UpdateEncuestaDTO {
   titulo?: string;
   descripcion?: string;
-  es_publica?: boolean;
   requiere_justificacion?: boolean;
   fecha_inicio?: string;
   fecha_cierre?: string;
   analisis_pestel?: number | null;
-}
-
-// ==================== BRANDING ====================
-
-export interface EncuestaBranding {
-  primary_color: string;
-  secondary_color: string;
-  accent_color: string;
-  logo_url?: string;
-  favicon_url?: string;
-  empresa_nombre?: string;
-}
-
-// ==================== ENCUESTA PÚBLICA ====================
-
-export interface EncuestaPublica {
-  id: number;
-  titulo: string;
-  descripcion?: string | null;
-  tipo_encuesta: TipoEncuesta;
-  requiere_justificacion: boolean;
-  fecha_inicio: string;
-  fecha_cierre: string;
-  esta_vigente: boolean;
-  temas: TemaPublico[];
-  puede_responder?: boolean;
-  razon?: string;
-  empresa_nombre?: string;
-  responsable_nombre?: string;
-  branding?: EncuestaBranding | null;
-}
-
-export interface TemaPublico {
-  id: number;
-  titulo: string;
-  descripcion?: string;
-  area_name?: string | null;
-  orden: number;
-  clasificacion_esperada?: ClasificacionEsperada | null;
-  capacidad_pci?: CapacidadPCI | '';
-  factor_poam?: FactorPOAM | '';
 }
 
 // ==================== ESTADÍSTICAS ====================
@@ -303,7 +254,6 @@ export interface EstadisticasEncuesta {
 export interface EncuestaFilters {
   analisis_dofa?: number;
   estado?: EstadoEncuesta;
-  es_publica?: boolean;
   tipo_encuesta?: TipoEncuesta;
   search?: string;
 }

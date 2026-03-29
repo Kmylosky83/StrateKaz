@@ -9,14 +9,12 @@ banco de preguntas PCI-POAM, compartir y QR.
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from apps.core.permissions import GranularActionPermission
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.shortcuts import get_object_or_404
 from django.db import transaction
-from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
@@ -33,7 +31,6 @@ from .serializers import (
     EncuestaDofaDetailSerializer,
     EncuestaDofaCreateSerializer,
     EncuestaDofaUpdateSerializer,
-    EncuestaPublicaSerializer,
     TemaEncuestaSerializer,
     TemaEncuestaCreateSerializer,
     ParticipanteEncuestaSerializer,
@@ -42,7 +39,6 @@ from .serializers import (
     RespuestaEncuestaCreateSerializer,
     RespuestasLoteSerializer,
     EstadisticasEncuestaSerializer,
-    CompartirEmailSerializer
 )
 from .services import EncuestaService
 
@@ -94,7 +90,7 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['estado', 'es_publica', 'analisis_dofa', 'tipo_encuesta']
+    filterset_fields = ['estado', 'analisis_dofa', 'tipo_encuesta']
     search_fields = ['titulo', 'descripcion']
     ordering_fields = ['fecha_inicio', 'fecha_cierre', 'created_at']
     ordering = ['-created_at']
@@ -261,57 +257,6 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'temas_creados': temas_creados,
         })
 
-    @action(detail=True, methods=['post'], url_path='compartir-email')
-    def compartir_email(self, request, pk=None):
-        """Envía enlace de encuesta a emails externos"""
-        encuesta = self.get_object()
-
-        serializer = CompartirEmailSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Construir base_url del frontend desde el request
-        base_url = f"{request.scheme}://{request.get_host()}"
-
-        resultado = EncuestaService.compartir_por_email(
-            encuesta=encuesta,
-            emails=serializer.validated_data['emails'],
-            mensaje_personalizado=serializer.validated_data.get(
-                'mensaje_personalizado', ''
-            ),
-            base_url=base_url
-        )
-
-        if resultado['success']:
-            return Response(resultado)
-        return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['get'], url_path='qr-code')
-    def qr_code(self, request, pk=None):
-        """Genera QR code PNG con el enlace público de la encuesta"""
-        encuesta = self.get_object()
-
-        # Construir base_url del frontend desde el request
-        base_url = f"{request.scheme}://{request.get_host()}"
-
-        qr_buffer = EncuestaService.generar_qr_code(
-            encuesta=encuesta,
-            base_url=base_url
-        )
-
-        if qr_buffer is None:
-            return Response(
-                {'detail': 'No se pudo generar el QR code'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        response = HttpResponse(
-            qr_buffer,
-            content_type='image/png'
-        )
-        response['Content-Disposition'] = (
-            f'inline; filename="encuesta-{encuesta.pk}-qr.png"'
-        )
-        return response
 
 
 class TemaEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -393,181 +338,3 @@ class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
         return RespuestaEncuestaSerializer
 
 
-# ==============================================================================
-# ENDPOINTS PÚBLICOS (SIN AUTENTICACIÓN)
-# ==============================================================================
-
-
-class EncuestaLookupView(APIView):
-    """
-    Endpoint público cross-tenant para resolver el tenant de una encuesta.
-
-    GET /api/encuestas-dofa/lookup/{token}/
-    Busca en todos los schemas de tenants activos cuál tiene la encuesta
-    con ese token_publico y retorna el tenant_id para que el frontend
-    envíe X-Tenant-ID en las llamadas posteriores.
-    """
-    permission_classes = [AllowAny]
-    authentication_classes = []
-
-    def get(self, request, token):
-        from django_tenants.utils import get_tenant_model
-        from django.db import connection
-
-        Tenant = get_tenant_model()
-        tenants = Tenant.objects.filter(is_active=True).exclude(
-            schema_name='public'
-        )
-
-        for tenant in tenants:
-            connection.set_tenant(tenant)
-            try:
-                encuesta = EncuestaDofa.objects.filter(
-                    token_publico=token
-                ).only('id', 'titulo', 'estado', 'es_publica').first()
-
-                if encuesta:
-                    return Response({
-                        'tenant_id': tenant.id,
-                        'tenant_name': tenant.name,
-                        'encuesta_id': encuesta.id,
-                        'titulo': encuesta.titulo,
-                        'estado': encuesta.estado,
-                        'es_publica': encuesta.es_publica,
-                    })
-            except Exception:
-                continue
-
-        return Response(
-            {'detail': 'Encuesta no encontrada'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-
-class EncuestaPublicaView(APIView):
-    """
-    Vista pública para acceder a encuestas mediante token.
-
-    GET /encuestas/publica/{token}/
-    - Obtiene la encuesta y sus temas para diligenciamiento
-
-    POST /encuestas/publica/{token}/
-    - Envía las respuestas de la encuesta
-    """
-    # Autenticación opcional: si hay JWT válido identifica al usuario,
-    # si no hay JWT permite acceso anónimo (encuesta pública).
-    permission_classes = [AllowAny]
-
-    def get(self, request, token):
-        """Obtiene la encuesta pública por token"""
-        encuesta = get_object_or_404(
-            EncuestaDofa.objects.prefetch_related(
-                'temas',
-                'temas__pregunta_contexto',
-                'temas__area',
-            ),
-            token_publico=token
-        )
-
-        # Verificar si puede responder
-        token_anonimo = request.session.get(f'encuesta_token_{token}')
-        verificacion = EncuestaService.puede_responder(
-            encuesta,
-            usuario=request.user if request.user.is_authenticated else None,
-            token_anonimo=token_anonimo
-        )
-
-        if not verificacion['puede'] and verificacion['razon'] != 'Ya has respondido esta encuesta':
-            if not encuesta.es_publica and not request.user.is_authenticated:
-                return Response(
-                    {'detail': 'Esta encuesta requiere autenticación'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-
-        serializer = EncuestaPublicaSerializer(encuesta)
-        data = serializer.data
-        data['puede_responder'] = verificacion['puede']
-        data['razon'] = verificacion['razon']
-
-        return Response(data)
-
-    @transaction.atomic
-    def post(self, request, token):
-        """Envía respuestas a la encuesta pública"""
-        encuesta = get_object_or_404(EncuestaDofa, token_publico=token)
-
-        # Generar o recuperar token anónimo
-        session_key = f'encuesta_token_{token}'
-        token_anonimo = request.session.get(session_key)
-
-        if not token_anonimo and not request.user.is_authenticated:
-            token_anonimo = EncuestaService.generar_token_anonimo(
-                ip=self.get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-            request.session[session_key] = token_anonimo
-
-        # Verificar si puede responder
-        verificacion = EncuestaService.puede_responder(
-            encuesta,
-            usuario=request.user if request.user.is_authenticated else None,
-            token_anonimo=token_anonimo
-        )
-
-        if not verificacion['puede']:
-            return Response(
-                {'detail': verificacion['razon']},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Validar respuestas
-        serializer = RespuestasLoteSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        respuestas_data = serializer.validated_data['respuestas']
-        respuestas_creadas = []
-
-        for resp_data in respuestas_data:
-            tema = get_object_or_404(TemaEncuesta, id=resp_data['tema_id'], encuesta=encuesta)
-
-            # Crear respuesta
-            respuesta = RespuestaEncuesta.objects.create(
-                tema=tema,
-                respondente=request.user if request.user.is_authenticated else None,
-                token_anonimo=token_anonimo if not request.user.is_authenticated else '',
-                clasificacion=resp_data['clasificacion'],
-                justificacion=resp_data.get('justificacion', ''),
-                impacto_percibido=resp_data.get(
-                    'impacto_percibido',
-                    RespuestaEncuesta.NivelImpacto.MEDIO
-                ),
-                ip_address=self.get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', '')
-            )
-            respuestas_creadas.append(respuesta.id)
-
-        # Actualizar estadísticas
-        encuesta.actualizar_estadisticas()
-
-        # Actualizar participante si es usuario autenticado
-        if request.user.is_authenticated:
-            ParticipanteEncuesta.objects.filter(
-                encuesta=encuesta,
-                usuario=request.user
-            ).update(
-                estado=ParticipanteEncuesta.EstadoParticipacion.COMPLETADO,
-                fecha_completado=timezone.now()
-            )
-
-        return Response({
-            'detail': 'Respuestas guardadas exitosamente',
-            'respuestas_creadas': len(respuestas_creadas)
-        }, status=status.HTTP_201_CREATED)
-
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip

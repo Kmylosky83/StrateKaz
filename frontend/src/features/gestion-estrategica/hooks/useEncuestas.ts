@@ -379,14 +379,14 @@ export function useAddParticipante() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ _encuestaId, data }: { _encuestaId: number; data: CreateParticipanteDTO }) =>
-      participantesApi.create(_encuestaId, data),
-    onSuccess: (_, { _encuestaId }) => {
+    mutationFn: ({ encuestaId, data }: { encuestaId: number; data: CreateParticipanteDTO }) =>
+      participantesApi.create(encuestaId, data),
+    onSuccess: (_, { encuestaId }) => {
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.participantes(_encuestaId),
+        queryKey: encuestasKeys.participantes(encuestaId),
       });
       queryClient.invalidateQueries({
-        queryKey: encuestasKeys.detail(_encuestaId),
+        queryKey: encuestasKeys.detail(encuestaId),
       });
       toast.success('Participante agregado');
     },

@@ -310,7 +310,7 @@ function TarjetaPregunta({
                   value={respuesta?.impacto_percibido || ''}
                   onChange={handleImpacto}
                   options={IMPACTO_OPTIONS}
-                  layout="horizontal"
+                  orientation="horizontal"
                 />
               </div>
             )}

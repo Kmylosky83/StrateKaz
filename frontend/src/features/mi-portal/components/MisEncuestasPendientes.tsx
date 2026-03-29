@@ -219,7 +219,7 @@ export function MisEncuestasPendientes() {
   if (error) {
     return (
       <EmptyState
-        icon={AlertCircle}
+        icon={<AlertCircle className="h-8 w-8" />}
         title="Error al cargar encuestas"
         description="No se pudieron cargar las encuestas. Intenta de nuevo."
         action={{ label: 'Reintentar', onClick: () => refetch() }}
@@ -234,7 +234,7 @@ export function MisEncuestasPendientes() {
   if (lista.length === 0) {
     return (
       <EmptyState
-        icon={ClipboardList}
+        icon={<ClipboardList className="h-8 w-8" />}
         title="Sin encuestas pendientes"
         description="No tienes encuestas activas asignadas en este momento. Cuando el equipo de gestión activa una encuesta y te incluye como participante, aparecerá aquí."
       />

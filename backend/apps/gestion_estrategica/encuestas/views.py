@@ -265,9 +265,9 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='regenerar-temas')
     def regenerar_temas(self, request, pk=None):
         """
-        Regenera los temas PCI-POAM desde el banco de preguntas.
-        Útil si la encuesta se creó antes de cargar el seed o con error.
-        Solo funciona para encuestas PCI-POAM en borrador con 0 temas.
+        Completa los temas PCI-POAM desde el banco de preguntas.
+        Si la encuesta ya tiene algunos temas (ej. creada con seed incompleto),
+        agrega solo los temas faltantes sin duplicar los existentes.
         """
         encuesta = self.get_object()
 
@@ -277,24 +277,30 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        if encuesta.temas.exists():
-            return Response(
-                {'detail': 'Esta encuesta ya tiene temas. Elimínelos primero si desea regenerar.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         from .models import PreguntaContexto as PC
-        preguntas = PC.objects.filter(is_active=True).order_by('orden')
+        preguntas_all = PC.objects.filter(is_active=True).order_by('orden')
 
-        if not preguntas.exists():
+        if not preguntas_all.exists():
             return Response(
                 {'detail': 'No hay preguntas PCI-POAM en el sistema. Ejecute el seed primero.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Agregar solo preguntas que aún no tienen tema en esta encuesta
+        existing_pregunta_ids = set(
+            encuesta.temas.values_list('pregunta_contexto_id', flat=True)
+        )
+        preguntas_faltantes = preguntas_all.exclude(id__in=existing_pregunta_ids)
+
+        if not preguntas_faltantes.exists():
+            return Response({
+                'detail': 'La encuesta ya tiene todos los temas del banco PCI-POAM.',
+                'temas_creados': 0,
+            })
+
         with transaction.atomic():
             temas_creados = 0
-            for pregunta in preguntas:
+            for pregunta in preguntas_faltantes:
                 TemaEncuesta.objects.create(
                     encuesta=encuesta,
                     empresa=encuesta.empresa,
@@ -305,7 +311,7 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 temas_creados += 1
 
         return Response({
-            'detail': f'{temas_creados} temas generados desde banco PCI-POAM',
+            'detail': f'{temas_creados} temas agregados desde banco PCI-POAM',
             'temas_creados': temas_creados,
         })
 

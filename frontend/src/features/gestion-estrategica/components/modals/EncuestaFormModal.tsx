@@ -377,7 +377,7 @@ export const EncuestaFormModal = ({
     <>
       {submitError && <Alert variant="danger" message={submitError} className="flex-1" />}
       <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
-        {createdEncuesta ? 'Finalizar' : 'Cancelar'}
+        {createdEncuesta ? 'Finalizar' : isEditing ? 'Cerrar' : 'Cancelar'}
       </Button>
       {activeTab === 'datos' && (
         <Button
@@ -732,18 +732,21 @@ export const EncuestaFormModal = ({
                 message={`${temas.length} temas auto-generados desde el banco PCI-POAM. Estos temas no se pueden modificar.`}
               />
             )}
-            {temas.length === 0 && currentEncuesta?.id && (
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => regenerarTemasMutation.mutate(currentEncuesta.id)}
-                isLoading={regenerarTemasMutation.isPending}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Regenerar Temas PCI-POAM
-              </Button>
-            )}
+            {currentEncuesta?.id &&
+              (temas.length === 0 || (preguntasData && temas.length < preguntasData.length)) && (
+                <Button
+                  type="button"
+                  variant={temas.length === 0 ? 'primary' : 'outline'}
+                  size="sm"
+                  onClick={() => regenerarTemasMutation.mutate(currentEncuesta.id)}
+                  isLoading={regenerarTemasMutation.isPending}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {temas.length === 0
+                    ? 'Generar Temas PCI-POAM'
+                    : `Completar temas (${temas.length}/${preguntasData?.length ?? '?'})`}
+                </Button>
+              )}
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {temas.map((tema, index) => (
                 <div
@@ -876,6 +879,11 @@ export const EncuestaFormModal = ({
   // Tab: Participantes
   const renderParticipantesTab = () => (
     <div className="space-y-6">
+      {/* Aviso auto-guardado */}
+      <Alert
+        variant="info"
+        message="Los participantes se guardan automáticamente al agregarlos. Usa el botón Cerrar cuando termines."
+      />
       {/* Lista de participantes */}
       <div className="space-y-2">
         {participantes.length === 0 ? (

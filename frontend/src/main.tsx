@@ -44,17 +44,19 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 );
 
 // PWA: Notificar al usuario cuando hay una actualización disponible.
-// NUNCA forzar reload automático — interrumpe trabajo en curso y causa logouts inesperados.
-// El usuario decide cuándo recargar via toast persistente.
-// Usa colores del branding del tenant (CSS vars de useDynamicTheme).
+// Estrategia "Prompt to reload" (Gmail/Slack/VS Code Web):
+// - skipWaiting: false → SW viejo sigue activo, no interfiere con requests
+// - Detectamos SW nuevo en estado "waiting" y mostramos toast persistente
+// - El usuario recarga cuando quiera → nuevo SW toma control → bundle nuevo
+// - NUNCA se pierde sesión ni se corrompen headers durante deploys
 if ('serviceWorker' in navigator) {
   let hasNotified = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+
+  const showUpdateToast = () => {
     if (hasNotified) return;
     hasNotified = true;
 
     import('sonner').then(({ toast }) => {
-      // Leer color primario del tenant desde CSS custom properties (RGB)
       const primaryRgb =
         getComputedStyle(document.documentElement).getPropertyValue('--color-primary-600').trim() ||
         '59, 130, 246';
@@ -79,5 +81,34 @@ if ('serviceWorker' in navigator) {
         },
       });
     });
+  };
+
+  // Detectar nuevo SW en estado "waiting" (skipWaiting: false)
+  navigator.serviceWorker.getRegistration().then((reg) => {
+    if (!reg) return;
+
+    // Ya hay un SW esperando activación
+    if (reg.waiting) {
+      showUpdateToast();
+      return;
+    }
+
+    // Escuchar cuando un nuevo SW termine de instalarse
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      if (!newSW) return;
+
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          // Nuevo SW instalado pero el viejo sigue activo → mostrar toast
+          showUpdateToast();
+        }
+      });
+    });
+  });
+
+  // Fallback: si por alguna razón el controllerchange se dispara (edge case)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    showUpdateToast();
   });
 }

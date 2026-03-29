@@ -26,12 +26,14 @@ export default defineConfig({
         injectionPoint: undefined // No inyectar manifest
       },
       workbox: {
-        // Activar SW inmediatamente para que el usuario reciba el código nuevo.
-        // El handler de controllerchange en main.tsx muestra un TOAST (no reload forzado)
-        // pidiendo al usuario que recargue cuando esté listo.
-        // Patrón estándar de Gmail/Slack/VS Code Web.
-        skipWaiting: true,
-        clientsClaim: true,
+        // NUNCA activar SW inmediatamente en SaaS con sesiones activas.
+        // skipWaiting:true causa que el nuevo SW tome control mientras hay
+        // requests en vuelo (refresh JWT, API calls), corrompiendo headers
+        // y causando logouts inesperados tras deploys consecutivos.
+        // Patrón Gmail/Slack: SW viejo sigue activo hasta que el usuario
+        // recarga voluntariamente via toast "Actualización disponible".
+        skipWaiting: false,
+        clientsClaim: false,
         cleanupOutdatedCaches: true,
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],

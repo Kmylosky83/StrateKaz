@@ -28,6 +28,7 @@ import type {
   EstadisticasEncuesta,
   ConsolidarResultado,
   EnviarNotificacionesResultado,
+  MiEncuestaPendiente,
 } from '../types/encuestas.types';
 
 // BASE_URL sin prefijo /api porque apiClient.baseURL ya lo incluye
@@ -169,6 +170,16 @@ export const encuestasApi = {
       `${BASE_URL}/encuestas/${id}/regenerar-temas/`
     );
     return response.data;
+  },
+
+  /**
+   * Encuestas activas donde el usuario autenticado es participante (Mi Portal)
+   */
+  misEncuestas: async (): Promise<MiEncuestaPendiente[]> => {
+    const response = await apiClient.get<MiEncuestaPendiente[]>(
+      `${BASE_URL}/encuestas/mis-encuestas/`
+    );
+    return Array.isArray(response.data) ? response.data : [];
   },
 };
 
@@ -347,6 +358,17 @@ export const respuestasApi = {
    */
   create: async (data: CreateRespuestaDTO): Promise<RespuestaEncuesta> => {
     const response = await apiClient.post<RespuestaEncuesta>(`${BASE_URL}/respuestas/`, data);
+    return response.data;
+  },
+
+  /**
+   * Actualizar respuesta existente (solo el respondente puede hacerlo)
+   */
+  update: async (id: number, data: Partial<CreateRespuestaDTO>): Promise<RespuestaEncuesta> => {
+    const response = await apiClient.patch<RespuestaEncuesta>(
+      `${BASE_URL}/respuestas/${id}/`,
+      data
+    );
     return response.data;
   },
 };

@@ -113,6 +113,7 @@ export type MiPortalTab =
   | 'perfil'
   | 'firma'
   | 'lecturas'
+  | 'encuestas'
   | 'documentos'
   | 'hseq'
   | 'vacaciones'

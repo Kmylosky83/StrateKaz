@@ -12,3 +12,5 @@ export { MiFirmaDigital } from './MiFirmaDigital';
 export { PortalProveedorView } from './PortalProveedorView';
 export { PortalClienteView } from './PortalClienteView';
 export { JefePortalSection } from './JefePortalSection';
+export { MisEncuestasPendientes } from './MisEncuestasPendientes';
+export { ResponderEncuestaModal } from './ResponderEncuestaModal';

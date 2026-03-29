@@ -300,6 +300,25 @@ export interface ConsolidarResultado {
   analisis_pestel_auto_creado?: boolean;
 }
 
+// ==================== MI PORTAL — ENCUESTA PENDIENTE ====================
+
+export interface MiEncuestaPendiente extends EncuestaListItem {
+  mi_estado_participacion: EstadoParticipacion;
+  ya_respondio: boolean;
+  total_mis_respuestas: number;
+}
+
+export interface LocalRespuesta {
+  clasificacion: Clasificacion;
+  justificacion?: string;
+  impacto_percibido?: NivelImpacto;
+  existingId?: number;
+}
+
+export interface RespuestasLocalMap {
+  [temaId: number]: LocalRespuesta;
+}
+
 export interface CompartirEmailDTO {
   emails: string[];
   mensaje_personalizado?: string;

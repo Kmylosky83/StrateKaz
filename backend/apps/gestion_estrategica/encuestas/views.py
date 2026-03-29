@@ -210,6 +210,58 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return Response(resultado)
         return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], url_path='mis-encuestas')
+    def mis_encuestas(self, request):
+        """
+        Encuestas activas donde el usuario autenticado es participante.
+        Incluye el estado de participación y progreso de respuesta del usuario.
+        """
+        from django.db.models import Q
+
+        usuario = request.user
+        cargo_id = getattr(usuario, 'cargo_id', None)
+        area_id = getattr(usuario, 'area_id', None)
+
+        q = Q(usuario=usuario)
+        if cargo_id:
+            q |= Q(tipo=ParticipanteEncuesta.TipoParticipante.CARGO, cargo_id=cargo_id)
+        if area_id:
+            q |= Q(tipo=ParticipanteEncuesta.TipoParticipante.AREA, area_id=area_id)
+
+        encuesta_ids = ParticipanteEncuesta.objects.filter(
+            q, encuesta__estado=EncuestaDofa.EstadoEncuesta.ACTIVA
+        ).values_list('encuesta_id', flat=True).distinct()
+
+        encuestas = EncuestaDofa.objects.filter(
+            id__in=encuesta_ids
+        ).prefetch_related('temas').order_by('-created_at')
+
+        result = []
+        for encuesta in encuestas:
+            total_temas = encuesta.temas.count()
+            total_mis_respuestas = RespuestaEncuesta.objects.filter(
+                tema__encuesta=encuesta,
+                respondente=usuario
+            ).count()
+
+            participante = ParticipanteEncuesta.objects.filter(
+                q, encuesta=encuesta
+            ).first()
+
+            ya_respondio = total_temas > 0 and total_mis_respuestas >= total_temas
+
+            serializer_data = EncuestaDofaListSerializer(
+                encuesta, context={'request': request}
+            ).data
+            result.append({
+                **serializer_data,
+                'mi_estado_participacion': participante.estado if participante else 'pendiente',
+                'ya_respondio': ya_respondio,
+                'total_mis_respuestas': total_mis_respuestas,
+            })
+
+        return Response(result)
+
     @action(detail=True, methods=['post'], url_path='regenerar-temas')
     def regenerar_temas(self, request, pk=None):
         """
@@ -320,21 +372,38 @@ class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
     ViewSet para gestionar Respuestas de Encuesta.
     Nota: No usa StandardViewSetMixin porque RespuestaEncuesta
     hereda TimestampedModel (sin is_active).
+
+    Permisos especiales:
+    - create / partial_update: solo IsAuthenticated (empleados respondiendo su encuesta)
+    - list / retrieve: GranularActionPermission (admins)
     """
 
     queryset = RespuestaEncuesta.objects.select_related(
         'tema', 'tema__encuesta', 'respondente'
     ).all()
-    permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'encuestas'
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['tema', 'tema__encuesta', 'clasificacion', 'respondente']
     ordering_fields = ['created_at']
     ordering = ['-created_at']
 
+    def get_permissions(self):
+        if self.action in ['create', 'partial_update', 'update']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), GranularActionPermission()]
+
     def get_serializer_class(self):
-        if self.action in ['create']:
+        if self.action in ['create', 'partial_update', 'update']:
             return RespuestaEncuestaCreateSerializer
         return RespuestaEncuestaSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(respondente=self.request.user)
+
+    def perform_update(self, serializer):
+        if serializer.instance.respondente != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Solo puedes modificar tus propias respuestas.')
+        serializer.save()
 
 

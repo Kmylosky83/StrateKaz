@@ -453,6 +453,39 @@ export function useCreateRespuesta() {
   });
 }
 
+/**
+ * Hook para actualizar respuesta existente (Mi Portal — el respondente cambia su respuesta)
+ */
+export function useUpdateRespuesta() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<CreateRespuestaDTO> }) =>
+      respuestasApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.all });
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al actualizar respuesta: ${error.message}`);
+    },
+  });
+}
+
+// ==============================================================================
+// MI PORTAL — MIS ENCUESTAS PENDIENTES
+// ==============================================================================
+
+/**
+ * Hook para obtener las encuestas activas donde el usuario es participante
+ */
+export function useMisEncuestas() {
+  return useQuery({
+    queryKey: [...encuestasKeys.all, 'mis-encuestas'],
+    queryFn: () => encuestasApi.misEncuestas(),
+    staleTime: 60_000,
+  });
+}
+
 // ==============================================================================
 // PREGUNTAS CONTEXTO PCI-POAM
 // ==============================================================================

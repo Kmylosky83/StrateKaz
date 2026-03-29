@@ -214,8 +214,8 @@ export const exportActaToPDF = async (
     // 9. Firmas (si se incluyen)
     if (includeSignatures) {
       // Asegurar que las firmas estén en una nueva página si no hay espacio
-      currentY = checkPageBreak(pdf, currentY, 80, true);
-      currentY = addSignatures(pdf, acta, currentY);
+      checkPageBreak(pdf, currentY, 80, true);
+      addSignatures(pdf, acta, currentY);
     }
 
     // Agregar pie de página a todas las páginas

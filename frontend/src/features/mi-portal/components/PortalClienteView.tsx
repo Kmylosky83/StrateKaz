@@ -129,32 +129,35 @@ export function PortalClienteView() {
             Recursos disponibles
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {AVAILABLE_FEATURES.map((feature) => (
-              <Link key={feature.label} to={feature.to!} className="block group">
-                <Card
-                  padding="lg"
-                  className="h-full transition-all duration-200 group-hover:shadow-md group-hover:border-blue-200 dark:group-hover:border-blue-800"
-                >
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                      style={{ backgroundColor: `${BLUE}15` }}
-                    >
-                      <feature.icon className="w-6 h-6" style={{ color: BLUE }} />
+            {AVAILABLE_FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <Link key={feature.label} to={feature.to!} className="block group">
+                  <Card
+                    padding="lg"
+                    className="h-full transition-all duration-200 group-hover:shadow-md group-hover:border-blue-200 dark:group-hover:border-blue-800"
+                  >
+                    <div className="flex flex-col items-center text-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+                        style={{ backgroundColor: `${BLUE}15` }}
+                      >
+                        <Icon className="w-6 h-6" style={{ color: BLUE }} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {feature.label}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {feature.description}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {feature.label}
-                      </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -162,28 +165,31 @@ export function PortalClienteView() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Próximamente</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {UPCOMING_FEATURES.map((feature) => (
-              <Card key={feature.label} padding="lg" className="h-full opacity-50 cursor-default">
-                <div className="flex flex-col items-center text-center gap-3">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                    <feature.icon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {feature.label}
-                      </h3>
-                      <Badge variant="default" size="sm">
-                        Próximamente
-                      </Badge>
+            {UPCOMING_FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={feature.label} padding="lg" className="h-full opacity-50 cursor-default">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                      <Icon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {feature.description}
-                    </p>
+                    <div>
+                      <div className="flex items-center justify-center gap-2">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
+                          {feature.label}
+                        </h3>
+                        <Badge variant="default" size="sm">
+                          Próximamente
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {feature.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </div>
 

@@ -1,4 +1,8 @@
+import logging
+
 from django.apps import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class LogsSistemaConfig(AppConfig):
@@ -7,8 +11,6 @@ class LogsSistemaConfig(AppConfig):
     verbose_name = 'Logs del Sistema'
 
     def ready(self):
-        """Import signals when app is ready"""
-        try:
-            import apps.audit_system.logs_sistema.signals  # noqa
-        except ImportError:
-            pass
+        """Import signals when app is ready."""
+        import apps.audit_system.logs_sistema.signals  # noqa: F401
+        logger.debug("LogsSistema signals conectados")

@@ -190,12 +190,16 @@ class CombinedPermissionService:
         from apps.core.models import CargoSectionAccess, TabSection
 
         # Obtener section_id si solo tenemos code
+        # Nota: code es unique_together con tab, puede haber duplicados
+        # entre tabs distintos. Usamos .filter().first() para evitar
+        # MultipleObjectsReturned.
         if section_code and not section_id:
-            try:
-                section = TabSection.objects.get(code=section_code, is_enabled=True)
-                section_id = section.id
-            except TabSection.DoesNotExist:
+            section = TabSection.objects.filter(
+                code=section_code, is_enabled=True
+            ).first()
+            if not section:
                 return None
+            section_id = section.id
 
         # Inicializar acceso combinado
         combined = cls._no_access()

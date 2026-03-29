@@ -199,20 +199,20 @@ app.conf.beat_schedule = {
     # ═══════════════════════════════════════════════════
     # ANALYTICS - AUTO-KPI Y DASHBOARD CROSS-MODULE
     # ═══════════════════════════════════════════════════
+    # CASCADA LEVEL 50: Deshabilitadas hasta que apps.analytics.dashboard_gerencial
+    # e indicadores_area estén en INSTALLED_APPS (requiere C2 completo estabilizado)
 
-    # Calculo automatico de KPIs desde modulos operativos (diario 2 AM)
-    'analytics-auto-kpi-daily': {
-        'task': 'apps.analytics.tasks.calcular_kpis_automaticos',
-        'schedule': crontab(hour=2, minute=30),
-        'options': {'queue': 'reports'},
-    },
+    # 'analytics-auto-kpi-daily': {
+    #     'task': 'apps.analytics.tasks.calcular_kpis_automaticos',
+    #     'schedule': crontab(hour=2, minute=30),
+    #     'options': {'queue': 'reports'},
+    # },
 
-    # Snapshot del dashboard gerencial cross-module (cada hora)
-    'analytics-dashboard-snapshot-hourly': {
-        'task': 'apps.analytics.tasks.snapshot_dashboard_gerencial',
-        'schedule': crontab(minute=5),  # 5 min past each hour
-        'options': {'queue': 'reports'},
-    },
+    # 'analytics-dashboard-snapshot-hourly': {
+    #     'task': 'apps.analytics.tasks.snapshot_dashboard_gerencial',
+    #     'schedule': crontab(minute=5),
+    #     'options': {'queue': 'reports'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # PLANEACIÓN ESTRATÉGICA - OBJETIVOS, CAMBIOS Y KPIs
@@ -421,9 +421,9 @@ app.conf.task_routes = {
     'apps.workflow_engine.ejecucion.tasks.ejecutar_evento_temporizador': {'queue': 'workflow'},
     'apps.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo': {'queue': 'reports'},
 
-    # Analytics tasks
-    'apps.analytics.tasks.calcular_kpis_automaticos': {'queue': 'reports'},
-    'apps.analytics.tasks.snapshot_dashboard_gerencial': {'queue': 'reports'},
+    # Analytics tasks (CASCADA L50 — deshabilitadas)
+    # 'apps.analytics.tasks.calcular_kpis_automaticos': {'queue': 'reports'},
+    # 'apps.analytics.tasks.snapshot_dashboard_gerencial': {'queue': 'reports'},
 
     # Planeación Estratégica tasks
     'planeacion.check_objectives_overdue': {'queue': 'compliance'},

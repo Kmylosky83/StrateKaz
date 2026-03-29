@@ -19,6 +19,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.core.base_models import get_tenant_empresa
+from apps.audit_system.services import AuditSystemService
 from apps.gestion_estrategica.revision_direccion.services.resumen_mixin import ResumenRevisionMixin
 from .models import Colaborador, HojaVida, InfoPersonal, HistorialLaboral
 from .serializers import (
@@ -215,6 +216,13 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 colaborador, email_corporativo.strip(), username.strip(), empresa, user
             )
 
+        # 6. Registrar en LogCambio (Centro de Control)
+        AuditSystemService.log_cambio(
+            user, colaborador, 'crear',
+            {'creado': {'old': None, 'new': str(colaborador)}},
+            self.request,
+        )
+
     def _create_user_for_colaborador(
         self, colaborador, email, username, empresa, created_by
     ):
@@ -261,9 +269,20 @@ class ColaboradorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
+        old_repr = str(serializer.instance)
         serializer.save(updated_by=self.request.user)
+        AuditSystemService.log_cambio(
+            self.request.user, serializer.instance, 'modificar',
+            {'actualizado': {'old': old_repr, 'new': str(serializer.instance)}},
+            self.request,
+        )
 
     def perform_destroy(self, instance):
+        AuditSystemService.log_cambio(
+            self.request.user, instance, 'eliminar',
+            {'eliminado': {'old': str(instance), 'new': None}},
+            self.request,
+        )
         instance.soft_delete()
 
     @action(detail=False, methods=['get'])

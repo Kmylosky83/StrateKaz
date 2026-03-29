@@ -9,7 +9,6 @@ import logging
 from django.contrib.auth.backends import BaseBackend
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import TenantUser
 
@@ -328,20 +327,3 @@ class HybridJWTAuthentication(JWTAuthentication):
             return None
 
 
-def get_tokens_for_tenant_user(user: TenantUser) -> dict:
-    """
-    Genera tokens JWT para un TenantUser.
-
-    Incluye claims personalizados para identificar que es un usuario global.
-    """
-    refresh = RefreshToken.for_user(user)
-
-    # Agregar claims personalizados
-    refresh['tenant_user_id'] = user.id
-    refresh['email'] = user.email
-    refresh['is_superadmin'] = user.is_superadmin
-
-    return {
-        'access': str(refresh.access_token),
-        'refresh': str(refresh),
-    }

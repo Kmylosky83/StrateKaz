@@ -321,6 +321,85 @@ class StandardViewSetMixin(
         - ToggleActiveMixin: toggle_active action
         - FilterInactiveMixin: filtrado automático de inactivos
         - BulkActionsMixin: acciones masivas
-        - AuditMixin: auditoría automática
+        - AuditMixin: auditoría automática (created_by/updated_by)
+        - AuditLogMixin: registro de LogCambio en Centro de Control
     """
-    pass
+
+    # ── AuditLogMixin integration (delegated, no import needed at class level) ──
+    audit_enabled = True
+    audit_exclude_fields = []
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._audit_log_create(serializer)
+
+    def perform_update(self, serializer):
+        old_values = self._audit_snapshot(serializer.instance)
+        super().perform_update(serializer)
+        self._audit_log_update(serializer, old_values)
+
+    def perform_destroy(self, instance):
+        self._audit_log_destroy(instance)
+        super().perform_destroy(instance)
+
+    # ── audit helpers (lazy import, fail-safe) ──
+
+    def _audit_log_create(self, serializer):
+        if not self.audit_enabled:
+            return
+        try:
+            from apps.audit_system.logs_sistema.mixins import AuditLogMixin as _M
+            m = _M()
+            m.request = self.request
+            m.audit_exclude_fields = self.audit_exclude_fields
+            instance = serializer.instance
+            m._log_cambio(instance, 'crear', m._instance_to_dict(instance))
+        except Exception:
+            pass
+
+    def _audit_log_update(self, serializer, old_values):
+        if not self.audit_enabled or not old_values:
+            return
+        try:
+            from apps.audit_system.logs_sistema.mixins import AuditLogMixin as _M
+            m = _M()
+            m.request = self.request
+            m.audit_exclude_fields = self.audit_exclude_fields
+            instance = serializer.instance
+            instance.refresh_from_db()
+            new_values = m._instance_to_dict(instance)
+            cambios = m._compute_diff(old_values, new_values)
+            if cambios:
+                m._log_cambio(instance, 'modificar', cambios)
+        except Exception:
+            pass
+
+    def _audit_log_destroy(self, instance):
+        if not self.audit_enabled:
+            return
+        try:
+            from django.contrib.contenttypes.models import ContentType
+            from apps.audit_system.logs_sistema.mixins import AuditLogMixin as _M
+            m = _M()
+            m.request = self.request
+            ct = ContentType.objects.get_for_model(instance)
+            m._log_cambio_raw(
+                content_type=ct,
+                object_id=str(instance.pk),
+                object_repr=str(instance)[:500],
+                accion='eliminar',
+                cambios={'eliminado': {'old': str(instance), 'new': None}},
+            )
+        except Exception:
+            pass
+
+    def _audit_snapshot(self, instance):
+        if not self.audit_enabled:
+            return {}
+        try:
+            from apps.audit_system.logs_sistema.mixins import AuditLogMixin as _M
+            m = _M()
+            m.audit_exclude_fields = self.audit_exclude_fields
+            return m._instance_to_dict(instance)
+        except Exception:
+            return {}

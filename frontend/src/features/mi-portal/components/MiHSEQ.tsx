@@ -42,28 +42,33 @@ export function MiHSEQ() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {HSEQ_FEATURES.map((feature) => (
-        <Card key={feature.title} className="p-5 opacity-70">
-          <div className="flex items-start gap-4">
-            <div
-              className="p-2.5 rounded-xl flex-shrink-0"
-              style={{ backgroundColor: `${primaryColor}15` }}
-            >
-              <feature.icon className="w-5 h-5" style={{ color: primaryColor }} />
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {feature.title}
-              </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{feature.description}</p>
-              <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-400 dark:text-gray-500">
-                <Clock className="w-3 h-3" />
-                <span>Proximamente</span>
+      {HSEQ_FEATURES.map((feature) => {
+        const Icon = feature.icon;
+        return (
+          <Card key={feature.title} className="p-5 opacity-70">
+            <div className="flex items-start gap-4">
+              <div
+                className="p-2.5 rounded-xl flex-shrink-0"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <Icon className="w-5 h-5" style={{ color: primaryColor }} />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {feature.title}
+                </h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {feature.description}
+                </p>
+                <div className="flex items-center gap-1.5 mt-2.5 text-xs text-gray-400 dark:text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  <span>Proximamente</span>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }

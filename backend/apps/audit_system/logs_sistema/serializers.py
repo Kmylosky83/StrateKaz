@@ -42,6 +42,7 @@ class LogAccesoSerializer(serializers.ModelSerializer):
 
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
     usuario_email = serializers.EmailField(source='usuario.email', read_only=True)
+    fecha = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = LogAcceso
@@ -58,6 +59,7 @@ class LogAccesoSerializer(serializers.ModelSerializer):
             'navegador',
             'fue_exitoso',
             'mensaje_error',
+            'fecha',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']
@@ -69,6 +71,8 @@ class LogCambioSerializer(serializers.ModelSerializer):
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
     modelo = serializers.CharField(source='content_type.model', read_only=True)
     app = serializers.CharField(source='content_type.app_label', read_only=True)
+    content_type_nombre = serializers.SerializerMethodField()
+    fecha = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = LogCambio
@@ -77,6 +81,7 @@ class LogCambioSerializer(serializers.ModelSerializer):
             'usuario',
             'usuario_nombre',
             'content_type',
+            'content_type_nombre',
             'app',
             'modelo',
             'object_id',
@@ -84,15 +89,22 @@ class LogCambioSerializer(serializers.ModelSerializer):
             'accion',
             'cambios',
             'ip_address',
+            'fecha',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+
+    def get_content_type_nombre(self, obj):
+        if obj.content_type:
+            return obj.content_type.name
+        return None
 
 
 class LogConsultaSerializer(serializers.ModelSerializer):
     """Serializer para LogConsulta"""
 
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
+    fecha = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = LogConsulta
@@ -107,6 +119,7 @@ class LogConsultaSerializer(serializers.ModelSerializer):
             'fue_exportacion',
             'formato_exportacion',
             'ip_address',
+            'fecha',
             'created_at'
         ]
         read_only_fields = ['id', 'created_at']

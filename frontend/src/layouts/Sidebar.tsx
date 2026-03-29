@@ -21,7 +21,6 @@ import {
   LayoutDashboard,
   Shield,
   UserCircle,
-  Users,
   Building2,
   Check,
 } from 'lucide-react';

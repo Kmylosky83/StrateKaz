@@ -14,7 +14,6 @@ import {
   Filter,
   User,
   Flag,
-  Tag,
   CheckCircle,
   Play,
   MessageSquare,
@@ -180,9 +179,6 @@ function MisTareasTab() {
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         {tarea.titulo}
                       </h4>
-                      <Badge variant="gray" size="sm">
-                        {tarea.codigo}
-                      </Badge>
                     </div>
                     {tarea.descripcion && (
                       <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -232,15 +228,8 @@ function MisTareasTab() {
                       <CalendarIcon className="w-3 h-3" />
                       {format(new Date(tarea.fecha_limite), 'PP', { locale: es })}
                     </span>
-                    {tarea.tags && tarea.tags.length > 0 && (
-                      <>
-                        {tarea.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="gray" size="sm">
-                            <Tag className="w-3 h-3 mr-1" />
-                            {tag}
-                          </Badge>
-                        ))}
-                      </>
+                    {tarea.creado_por_nombre && (
+                      <span className="text-gray-500">Creado por: {tarea.creado_por_nombre}</span>
                     )}
                   </div>
 
@@ -376,7 +365,7 @@ function CalendarioTab() {
                     </p>
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                       <Badge variant="gray" size="sm">
-                        {formatStatusLabel(evento.tipo_evento)}
+                        {formatStatusLabel(evento.tipo)}
                       </Badge>
                       {evento.ubicacion && <span>{evento.ubicacion}</span>}
                     </div>
@@ -421,7 +410,7 @@ function RecordatoriosTab() {
     );
   }
 
-  const activos = recordatorios.filter((r) => r.activo);
+  const activos = recordatorios.filter((r) => r.esta_activo);
 
   return (
     <div className="space-y-4">
@@ -448,7 +437,9 @@ function RecordatoriosTab() {
               <div
                 className={cn(
                   'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                  recordatorio.activo ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                  recordatorio.esta_activo
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'bg-gray-100 text-gray-600'
                 )}
               >
                 <Bell className="w-5 h-5" />
@@ -460,24 +451,24 @@ function RecordatoriosTab() {
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                       {recordatorio.titulo}
                     </h4>
-                    {recordatorio.descripcion && (
+                    {recordatorio.mensaje && (
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        {recordatorio.descripcion}
+                        {recordatorio.mensaje}
                       </p>
                     )}
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {recordatorio.tipo_repeticion === 'semanal' &&
-                        `Cada semana a las ${recordatorio.hora_recordatorio}`}
-                      {recordatorio.tipo_repeticion === 'mensual' &&
-                        `Día ${recordatorio.dia_mes} de cada mes a las ${recordatorio.hora_recordatorio}`}
-                      {recordatorio.tipo_repeticion === 'diario' &&
-                        `Todos los días a las ${recordatorio.hora_recordatorio}`}
-                      {recordatorio.tipo_repeticion === 'una_vez' &&
-                        `Una sola vez a las ${recordatorio.hora_recordatorio}`}
+                      {recordatorio.repetir === 'semanal' &&
+                        `Cada semana a las ${recordatorio.hora_repeticion}`}
+                      {recordatorio.repetir === 'mensual' &&
+                        `Mensual a las ${recordatorio.hora_repeticion || ''}`}
+                      {recordatorio.repetir === 'diario' &&
+                        `Todos los días a las ${recordatorio.hora_repeticion}`}
+                      {recordatorio.repetir === 'una_vez' &&
+                        `Una sola vez a las ${recordatorio.hora_repeticion}`}
                     </p>
                   </div>
-                  <Badge variant={recordatorio.activo ? 'success' : 'gray'} size="sm">
-                    {recordatorio.activo ? 'Activo' : 'Inactivo'}
+                  <Badge variant={recordatorio.esta_activo ? 'success' : 'gray'} size="sm">
+                    {recordatorio.esta_activo ? 'Activo' : 'Inactivo'}
                   </Badge>
                 </div>
 
@@ -494,7 +485,7 @@ function RecordatoriosTab() {
 
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm">
-                      {recordatorio.activo ? 'Desactivar' : 'Activar'}
+                      {recordatorio.esta_activo ? 'Desactivar' : 'Activar'}
                     </Button>
                     <Button variant="ghost" size="sm">
                       Editar
@@ -560,7 +551,7 @@ function TodasTab() {
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700">
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Código
+                  Tipo
                 </th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400"></th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -586,7 +577,11 @@ function TodasTab() {
                   key={tarea.id}
                   className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
-                  <td className="py-3 px-4 text-sm">{tarea.codigo}</td>
+                  <td className="py-3 px-4 text-sm">
+                    <Badge variant="gray" size="sm">
+                      {formatStatusLabel(tarea.tipo)}
+                    </Badge>
+                  </td>
                   <td className="py-3 px-4">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {tarea.titulo}

@@ -63,13 +63,14 @@ export interface LogConsulta {
   usuario: number;
   usuario_nombre: string;
   modulo: string;
-  modelo: string;
-  tipo_consulta: 'lectura' | 'exportacion' | 'reporte' | 'api';
+  endpoint: string;
   parametros?: Record<string, unknown>;
-  registros_afectados: number;
-  duracion_ms?: number;
-  fecha: string;
+  registros_accedidos: number;
+  fue_exportacion: boolean;
+  formato_exportacion?: string;
   ip_address?: string;
+  fecha: string;
+  created_at: string;
 }
 
 // ==================== CENTRO NOTIFICACIONES ====================
@@ -89,9 +90,9 @@ export interface TipoAlerta {
   nombre: string;
   categoria: CategoriaAlerta;
   descripcion?: string;
-  severidad_base: SeveridadAlerta;
-  condicion_disparo: Record<string, unknown>;
-  dias_anticipacion?: number;
+  severidad_default: SeveridadAlerta;
+  modulo_origen: string;
+  modelo_origen?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -102,18 +103,13 @@ export interface ConfiguracionAlerta {
   empresa: number;
   tipo_alerta: number;
   tipo_alerta_nombre?: string;
-  modulo: string;
-  modelo: string;
-  campo_fecha?: string;
-  campo_umbral?: string;
-  valor_umbral?: number;
-  responsable_default?: number;
-  responsable_nombre?: string;
-  escalar_automaticamente: boolean;
-  dias_escalamiento?: number;
-  notificar_responsable: boolean;
-  notificar_supervisor: boolean;
-  notificar_admin: boolean;
+  nombre: string;
+  condicion: Record<string, unknown>;
+  dias_anticipacion?: number;
+  frecuencia_verificacion: 'cada_hora' | 'diario' | 'semanal';
+  notificar_a: string;
+  crear_tarea: boolean;
+  enviar_email: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -123,39 +119,30 @@ export interface AlertaGenerada {
   id: number;
   configuracion: number;
   configuracion_nombre?: string;
-  tipo_alerta: number;
-  tipo_alerta_nombre?: string;
-  severidad: SeveridadAlerta;
-  titulo: string;
-  descripcion: string;
+  content_type?: number;
   object_id?: string;
-  object_repr?: string;
-  responsable?: number;
-  responsable_nombre?: string;
-  fecha_alerta: string;
+  titulo: string;
+  mensaje: string;
+  severidad: SeveridadAlerta;
   fecha_vencimiento?: string;
-  atendida: boolean;
-  fecha_atencion?: string;
+  esta_atendida: boolean;
   atendida_por?: number;
-  atendida_por_nombre?: string;
-  observaciones_atencion?: string;
-  escalada: boolean;
-  fecha_escalamiento?: string;
+  fecha_atencion?: string;
+  accion_tomada?: string;
   created_at: string;
 }
 
 export interface EscalamientoAlerta {
   id: number;
-  alerta: number;
-  nivel_escalamiento: number;
-  escalado_a: number;
-  escalado_a_nombre?: string;
-  motivo_escalamiento: string;
-  fecha_escalamiento: string;
-  resuelto: boolean;
-  fecha_resolucion?: string;
-  observaciones?: string;
+  empresa: number;
+  configuracion_alerta: number;
+  nivel: number;
+  horas_espera: number;
+  notificar_a: string;
+  mensaje_escalamiento: string;
+  is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 // ==================== TAREAS RECORDATORIOS ====================
@@ -168,69 +155,60 @@ export type Repeticion = 'una_vez' | 'diario' | 'semanal' | 'mensual';
 
 export interface Tarea {
   id: number;
-  empresa: number;
-  codigo: string;
   titulo: string;
   descripcion?: string;
-  tipo_tarea: TipoTarea;
+  tipo: TipoTarea;
   estado: EstadoTarea;
   prioridad: PrioridadTarea;
   asignado_a: number;
   asignado_a_nombre?: string;
-  asignado_por?: number;
-  asignado_por_nombre?: string;
-  modulo_origen?: string;
+  creado_por?: number;
+  creado_por_nombre?: string;
+  content_type?: number;
   object_id?: string;
-  fecha_inicio?: string;
+  url_relacionada?: string;
   fecha_limite: string;
   fecha_completada?: string;
   porcentaje_avance: number;
-  tiempo_estimado_horas?: number;
-  tiempo_real_horas?: number;
-  tags?: string[];
-  adjuntos?: string[];
-  observaciones?: string;
+  notas?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface Recordatorio {
   id: number;
-  empresa: number;
+  tarea?: number;
   titulo: string;
-  descripcion?: string;
-  tipo_repeticion: Repeticion;
-  dias_semana?: number[];
-  dia_mes?: number;
-  hora_recordatorio: string;
-  activo: boolean;
-  ultima_ejecucion?: string;
-  proxima_ejecucion?: string;
+  mensaje: string;
   usuario: number;
   usuario_nombre?: string;
-  tarea_relacionada?: number;
+  fecha_recordatorio: string;
+  repetir: Repeticion;
+  dias_repeticion?: number[];
+  hora_repeticion?: string;
+  esta_activo: boolean;
+  ultima_ejecucion?: string;
+  proxima_ejecucion?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface EventoCalendario {
   id: number;
-  empresa: number;
   titulo: string;
   descripcion?: string;
-  tipo_evento: TipoEvento;
+  tipo: TipoEvento;
   fecha_inicio: string;
   fecha_fin: string;
   todo_el_dia: boolean;
   ubicacion?: string;
+  url_reunion?: string;
   participantes: number[];
   participantes_nombres?: string[];
-  organizador: number;
-  organizador_nombre?: string;
-  url_reunion?: string;
-  recordatorio_minutos?: number;
+  creado_por?: number;
+  creado_por_nombre?: string;
   color?: string;
-  tarea_relacionada?: number;
+  recordar_antes?: number;
   created_at: string;
   updated_at: string;
 }
@@ -240,8 +218,8 @@ export interface ComentarioTarea {
   tarea: number;
   usuario: number;
   usuario_nombre?: string;
-  comentario: string;
-  adjuntos?: string[];
+  mensaje: string;
+  archivo_adjunto?: string;
   created_at: string;
 }
 

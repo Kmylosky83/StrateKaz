@@ -3,8 +3,8 @@
  *
  * Dashboard principal del sistema de auditoría con:
  * - Estadísticas de logs, notificaciones, alertas y tareas
- * - Actividad reciente del sistema
- * - Alertas críticas activas
+ * - Actividad reciente (logs de acceso y cambio reales)
+ * - Alertas pendientes reales
  * - Accesos rápidos a módulos
  */
 import {
@@ -14,91 +14,25 @@ import {
   Activity,
   Settings,
   Clock,
-  Users,
   Database,
+  LogIn,
+  LogOut,
+  Edit3,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
+import { Card, Button, Badge, Spinner, EmptyState } from '@/components/common';
 import { cn } from '@/utils/cn';
+import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { useNavigate } from 'react-router-dom';
-
-// ==================== MOCK DATA ====================
-
-const mockStats = {
-  logs_hoy: 1247,
-  notificaciones_sin_leer: 18,
-  alertas_pendientes: 12,
-  alertas_criticas: 3,
-  tareas_vencidas: 5,
-  tareas_hoy: 8,
-  eventos_semana: 14,
-};
-
-const mockActividadReciente = [
-  {
-    id: 1,
-    tipo: 'alerta' as const,
-    titulo: 'Alerta de Vencimiento',
-    descripcion: 'Licencia de conducir del conductor Juan Pérez vence en 5 días',
-    usuario: 'Sistema',
-    fecha: '2024-12-30 14:30',
-    severidad: 'critical' as const,
-  },
-  {
-    id: 2,
-    tipo: 'log' as const,
-    titulo: 'Cambio en Registro',
-    descripcion: 'María García modificó el registro de vehículo ABC-123',
-    usuario: 'María García',
-    fecha: '2024-12-30 13:15',
-  },
-  {
-    id: 3,
-    tipo: 'tarea' as const,
-    titulo: 'Tarea Completada',
-    descripcion: 'Se completó la inspección de seguridad mensual',
-    usuario: 'Carlos López',
-    fecha: '2024-12-30 12:00',
-    prioridad: 'alta' as const,
-  },
-  {
-    id: 4,
-    tipo: 'notificacion' as const,
-    titulo: 'Nueva Notificación',
-    descripcion: 'Se generó nuevo reporte de accidentalidad mensual',
-    usuario: 'Sistema',
-    fecha: '2024-12-30 10:45',
-  },
-];
-
-const mockAlertasCriticas = [
-  {
-    id: 1,
-    titulo: 'Vencimiento SOAT Vehículo',
-    descripcion: 'El SOAT del vehículo XYZ-789 vence mañana',
-    severidad: 'critical' as const,
-    fecha: '2024-12-30',
-    responsable: 'Pedro Martínez',
-  },
-  {
-    id: 2,
-    titulo: 'Certificado ISO 9001 Próximo a Vencer',
-    descripcion: 'El certificado ISO 9001 vence en 15 días',
-    severidad: 'danger' as const,
-    fecha: '2024-12-29',
-    responsable: 'Ana Rodríguez',
-  },
-  {
-    id: 3,
-    titulo: 'Capacitación SST Pendiente',
-    descripcion: '12 trabajadores sin capacitación SST anual',
-    severidad: 'warning' as const,
-    fecha: '2024-12-28',
-    responsable: 'Luis Fernández',
-  },
-];
+import {
+  useLogsAcceso,
+  useLogsCambio,
+  useAlertasPendientes,
+  useNotificacionesNoLeidas,
+  useTareasVencidas,
+} from '../hooks/useAuditSystem';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -112,15 +46,11 @@ const getSeveridadColor = (severidad: string) => {
   return colors[severidad as keyof typeof colors] || 'bg-gray-100 text-gray-800';
 };
 
-const getTipoIcon = (tipo: string) => {
-  const icons = {
-    log: Database,
-    notificacion: Bell,
-    alerta: AlertTriangle,
-    tarea: CheckSquare,
-  };
-  const Icon = icons[tipo as keyof typeof icons] || Activity;
-  return <Icon className="w-4 h-4" />;
+const getTipoEventoIcon = (tipo: string) => {
+  if (tipo === 'login') return <LogIn className="w-4 h-4" />;
+  if (tipo === 'logout') return <LogOut className="w-4 h-4" />;
+  if (tipo === 'login_fallido') return <AlertTriangle className="w-4 h-4" />;
+  return <Activity className="w-4 h-4" />;
 };
 
 // ==================== MAIN COMPONENT ====================
@@ -128,10 +58,14 @@ const getTipoIcon = (tipo: string) => {
 export default function AuditSystemPage() {
   const navigate = useNavigate();
 
-  // Use mock data for now
-  const stats = mockStats;
-  const actividades = mockActividadReciente;
-  const alertasCriticas = mockAlertasCriticas;
+  const { data: logsAcceso, isLoading: loadingAcceso } = useLogsAcceso({ page_size: 5 });
+  const { data: logsCambio, isLoading: loadingCambio } = useLogsCambio({ page_size: 5 });
+  const { data: alertasPendientes, isLoading: loadingAlertas } = useAlertasPendientes();
+  const { data: notificacionesNoLeidas } = useNotificacionesNoLeidas();
+  const { data: tareasVencidas } = useTareasVencidas();
+
+  const logsHoy = (logsAcceso?.length || 0) + (logsCambio?.length || 0);
+  const isLoading = loadingAcceso || loadingCambio || loadingAlertas;
 
   return (
     <div className="space-y-8">
@@ -165,10 +99,8 @@ export default function AuditSystemPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Logs Hoy</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.logs_hoy.toLocaleString()}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Logs Recientes</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{logsHoy}</p>
               <p className="text-xs text-gray-500 mt-1">Eventos registrados</p>
             </div>
             <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -182,7 +114,7 @@ export default function AuditSystemPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Notificaciones</p>
               <p className="text-3xl font-bold text-primary-600 mt-1">
-                {stats.notificaciones_sin_leer}
+                {notificacionesNoLeidas?.length || 0}
               </p>
               <p className="text-xs text-gray-500 mt-1">Sin leer</p>
             </div>
@@ -196,8 +128,12 @@ export default function AuditSystemPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Alertas Pendientes</p>
-              <p className="text-3xl font-bold text-warning-600 mt-1">{stats.alertas_pendientes}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats.alertas_criticas} críticas</p>
+              <p className="text-3xl font-bold text-warning-600 mt-1">
+                {alertasPendientes?.length || 0}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {alertasPendientes?.filter((a) => a.severidad === 'critical').length || 0} críticas
+              </p>
             </div>
             <div className="w-14 h-14 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
               <AlertTriangle className="w-7 h-7 text-warning-600" />
@@ -209,8 +145,10 @@ export default function AuditSystemPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Tareas Vencidas</p>
-              <p className="text-3xl font-bold text-danger-600 mt-1">{stats.tareas_vencidas}</p>
-              <p className="text-xs text-gray-500 mt-1">{stats.tareas_hoy} programadas hoy</p>
+              <p className="text-3xl font-bold text-danger-600 mt-1">
+                {tareasVencidas?.length || 0}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Requieren atención</p>
             </div>
             <div className="w-14 h-14 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
               <CheckSquare className="w-7 h-7 text-danger-600" />
@@ -221,7 +159,7 @@ export default function AuditSystemPage() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Actividad Reciente */}
+        {/* Actividad Reciente — Logs reales */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -232,141 +170,168 @@ export default function AuditSystemPage() {
             </Button>
           </div>
 
-          <div className="space-y-3">
-            {actividades.map((actividad) => (
-              <Card key={actividad.id} variant="bordered" padding="sm">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                      actividad.tipo === 'alerta' && 'bg-orange-100 text-orange-600',
-                      actividad.tipo === 'log' && 'bg-blue-100 text-blue-600',
-                      actividad.tipo === 'notificacion' && 'bg-purple-100 text-purple-600',
-                      actividad.tipo === 'tarea' && 'bg-green-100 text-green-600'
-                    )}
-                  >
-                    {getTipoIcon(actividad.tipo)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          {actividad.titulo}
-                        </h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          {actividad.descripcion}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-xs text-gray-500">
-                            <Users className="w-3 h-3 inline mr-1" />
-                            {actividad.usuario}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            <Clock className="w-3 h-3 inline mr-1" />
-                            {actividad.fecha}
-                          </span>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Logs de Acceso */}
+              {logsAcceso && logsAcceso.length > 0
+                ? logsAcceso.slice(0, 3).map((log) => (
+                    <Card key={`acceso-${log.id}`} variant="bordered" padding="sm">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
+                            log.fue_exitoso
+                              ? 'bg-blue-100 text-blue-600'
+                              : 'bg-red-100 text-red-600'
+                          )}
+                        >
+                          {getTipoEventoIcon(log.tipo_evento)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                {formatStatusLabel(log.tipo_evento)}
+                              </h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {log.usuario_nombre || 'Usuario desconocido'} — {log.ip_address}
+                                {log.navegador ? ` (${log.navegador})` : ''}
+                              </p>
+                              <span className="text-xs text-gray-500">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {format(new Date(log.fecha), 'PPp', { locale: es })}
+                              </span>
+                            </div>
+                            <Badge variant={log.fue_exitoso ? 'success' : 'danger'} size="sm">
+                              {log.fue_exitoso ? 'Exitoso' : 'Fallido'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                    </Card>
+                  ))
+                : null}
 
-                      {actividad.severidad && (
-                        <Badge
-                          variant={
-                            actividad.severidad === 'critical'
-                              ? 'danger'
-                              : actividad.severidad === 'warning'
-                                ? 'warning'
-                                : 'info'
-                          }
-                          size="sm"
-                        >
-                          {actividad.severidad}
-                        </Badge>
-                      )}
+              {/* Logs de Cambio */}
+              {logsCambio && logsCambio.length > 0
+                ? logsCambio.slice(0, 3).map((log) => (
+                    <Card key={`cambio-${log.id}`} variant="bordered" padding="sm">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-100 text-purple-600">
+                          <Edit3 className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                                {formatStatusLabel(log.accion)}: {log.object_repr}
+                              </h4>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                {log.usuario_nombre || 'Sistema'}
+                                {log.content_type_nombre ? ` — ${log.content_type_nombre}` : ''}
+                              </p>
+                              <span className="text-xs text-gray-500">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {format(new Date(log.fecha), 'PPp', { locale: es })}
+                              </span>
+                            </div>
+                            <Badge variant="gray" size="sm">
+                              {formatStatusLabel(log.accion)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                : null}
 
-                      {actividad.prioridad && (
-                        <Badge
-                          variant={actividad.prioridad === 'alta' ? 'danger' : 'gray'}
-                          size="sm"
-                        >
-                          {actividad.prioridad}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+              {(!logsAcceso || logsAcceso.length === 0) &&
+                (!logsCambio || logsCambio.length === 0) && (
+                  <EmptyState
+                    title="Sin actividad reciente"
+                    description="No se han registrado eventos de auditoría aún. Los logs se generarán automáticamente con el uso del sistema."
+                    icon={<Activity size={40} />}
+                  />
+                )}
+            </div>
+          )}
         </div>
 
-        {/* Alertas Críticas */}
+        {/* Alertas Pendientes */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Alertas Críticas
+              Alertas Pendientes
             </h3>
             <Badge variant="danger" size="sm">
-              {alertasCriticas.length}
+              {alertasPendientes?.length || 0}
             </Badge>
           </div>
 
-          <div className="space-y-3">
-            {alertasCriticas.map((alerta) => (
-              <Card
-                key={alerta.id}
-                variant="bordered"
-                padding="sm"
-                className={cn('border-l-4', getSeveridadColor(alerta.severidad))}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle
-                      className={cn(
-                        'w-5 h-5 flex-shrink-0 mt-0.5',
-                        alerta.severidad === 'critical' && 'text-red-600',
-                        alerta.severidad === 'danger' && 'text-orange-600',
-                        alerta.severidad === 'warning' && 'text-yellow-600'
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                        {alerta.titulo}
-                      </h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        {alerta.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <Badge
-                          variant={
-                            alerta.severidad === 'critical'
-                              ? 'danger'
-                              : alerta.severidad === 'danger'
-                                ? 'warning'
-                                : 'info'
-                          }
-                          size="sm"
-                        >
-                          {alerta.severidad}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{alerta.responsable}</span>
-                        <span className="text-xs text-gray-500">{alerta.fecha}</span>
+          {loadingAlertas ? (
+            <div className="flex items-center justify-center py-6">
+              <Spinner size="md" />
+            </div>
+          ) : alertasPendientes && alertasPendientes.length > 0 ? (
+            <div className="space-y-3">
+              {alertasPendientes.slice(0, 5).map((alerta) => (
+                <Card
+                  key={alerta.id}
+                  variant="bordered"
+                  padding="sm"
+                  className={cn('border-l-4', getSeveridadColor(alerta.severidad))}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle
+                        className={cn(
+                          'w-5 h-5 flex-shrink-0 mt-0.5',
+                          alerta.severidad === 'critical' && 'text-red-600',
+                          alerta.severidad === 'danger' && 'text-orange-600',
+                          alerta.severidad === 'warning' && 'text-yellow-600'
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          {alerta.titulo}
+                        </h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {alerta.mensaje}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <Badge
+                            variant={
+                              alerta.severidad === 'critical'
+                                ? 'danger'
+                                : alerta.severidad === 'danger'
+                                  ? 'warning'
+                                  : 'info'
+                            }
+                            size="sm"
+                          >
+                            {formatStatusLabel(alerta.severidad)}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {format(new Date(alerta.created_at), 'PP', { locale: es })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Atender
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex-1">
-                      Escalar
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Sin alertas pendientes"
+              description="No hay alertas que requieran atención"
+              icon={<AlertTriangle size={40} />}
+            />
+          )}
 
           <Button
             variant="outline"
@@ -407,7 +372,9 @@ export default function AuditSystemPage() {
           >
             <div className="text-left">
               <div className="font-medium">Notificaciones</div>
-              <div className="text-xs text-gray-500">{stats.notificaciones_sin_leer} sin leer</div>
+              <div className="text-xs text-gray-500">
+                {notificacionesNoLeidas?.length || 0} sin leer
+              </div>
             </div>
           </Button>
 
@@ -420,7 +387,9 @@ export default function AuditSystemPage() {
           >
             <div className="text-left">
               <div className="font-medium">Alertas</div>
-              <div className="text-xs text-gray-500">{stats.alertas_criticas} críticas</div>
+              <div className="text-xs text-gray-500">
+                {alertasPendientes?.filter((a) => a.severidad === 'critical').length || 0} críticas
+              </div>
             </div>
           </Button>
 
@@ -433,7 +402,7 @@ export default function AuditSystemPage() {
           >
             <div className="text-left">
               <div className="font-medium">Tareas</div>
-              <div className="text-xs text-gray-500">{stats.tareas_hoy} programadas hoy</div>
+              <div className="text-xs text-gray-500">{tareasVencidas?.length || 0} vencidas</div>
             </div>
           </Button>
         </div>

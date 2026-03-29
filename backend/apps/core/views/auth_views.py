@@ -5,6 +5,7 @@ Estas vistas envuelven las vistas JWT de SimpleJWT para agregar:
 - Protección contra ataques de fuerza bruta (rate limiting)
 - Logging de intentos de login fallidos (P1-14)
 - MS-002-A: Registro de sesiones de usuario
+- Registro en LogAcceso para trazabilidad en Centro de Control
 """
 import logging
 from datetime import timedelta
@@ -20,6 +21,15 @@ from apps.core.models import UserSession, User, TwoFactorAuth
 
 # Logger de seguridad para auditoría
 security_logger = logging.getLogger('security')
+
+
+def _log_acceso(usuario, request, tipo_evento, fue_exitoso=True, mensaje_error=None):
+    """Registra evento de acceso en audit_system.LogAcceso (fail-safe)."""
+    try:
+        from apps.audit_system.logs_sistema.signals import _create_log_acceso
+        _create_log_acceso(usuario, request, tipo_evento, fue_exitoso, mensaje_error)
+    except Exception as e:
+        security_logger.error(f"Error registrando LogAcceso: {e}")
 
 
 @method_decorator(login_rate_limit, name='post')
@@ -67,6 +77,10 @@ class RateLimitedTokenObtainPairView(TokenObtainPairView):
                 # MS-002-A: Crear sesión de usuario
                 self._create_user_session(request, response, username)
 
+                # Registrar en LogAcceso
+                user = self._get_user_by_username(username)
+                _log_acceso(user, request, 'login', fue_exitoso=True)
+
             return response
 
         except Exception as e:
@@ -74,6 +88,15 @@ class RateLimitedTokenObtainPairView(TokenObtainPairView):
             security_logger.warning(
                 f"Login fallido - User: {username} - IP: {ip_address} - "
                 f"Error: {type(e).__name__}"
+            )
+
+            # Registrar intento fallido en LogAcceso
+            _log_acceso(
+                usuario=None,
+                request=request,
+                tipo_evento='login_fallido',
+                fue_exitoso=False,
+                mensaje_error=f"Credenciales inválidas: {username} ({type(e).__name__})",
             )
             raise
 

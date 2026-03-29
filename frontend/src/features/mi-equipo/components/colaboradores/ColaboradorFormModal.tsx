@@ -313,8 +313,7 @@ export const ColaboradorFormModal = ({
     try {
       if (isEditing && colaborador) {
         // En edicion: strip campos de acceso (write-only, solo aplican en creacion)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { crear_acceso, email_corporativo, username, ...updatePayload } = base;
+        const { crear_acceso: _, email_corporativo: _e, username: _u, ...updatePayload } = base;
         await updateMutation.mutateAsync({ id: colaborador.id, data: updatePayload });
       } else {
         // En creacion: base ya tiene todos los campos tipados correctamente

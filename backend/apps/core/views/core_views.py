@@ -358,6 +358,12 @@ def logout_view(request):
                 f"Logout exitoso - User: {request.user.username} (ID: {request.user.id}) "
                 f"- IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
             )
+            # Registrar en LogAcceso (Centro de Control)
+            try:
+                from apps.audit_system.logs_sistema.signals import _create_log_acceso
+                _create_log_acceso(request.user, request, 'logout', fue_exitoso=True)
+            except Exception:
+                pass  # Nunca bloquear logout por auditoría
             return Response(status=http_status.HTTP_204_NO_CONTENT)
         except Exception as e:
             logger.warning(

@@ -14,8 +14,6 @@ import {
   Plus,
   CheckCircle,
   ArrowUp,
-  Calendar,
-  User,
   FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -104,7 +102,7 @@ function AlertasActivasTab() {
     );
   }
 
-  const pendientes = alertas.filter((a) => !a.atendida);
+  const pendientes = alertas.filter((a) => !a.esta_atendida);
 
   return (
     <div className="space-y-4">
@@ -171,7 +169,7 @@ function AlertasActivasTab() {
                       {alerta.titulo}
                     </h4>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {alerta.descripcion}
+                      {alerta.mensaje}
                     </p>
                   </div>
                   <Badge
@@ -191,31 +189,20 @@ function AlertasActivasTab() {
                 <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400 mb-3">
                   <span className="flex items-center gap-1">
                     <FileText className="w-3 h-3" />
-                    {alerta.tipo_alerta_nombre || `Tipo #${alerta.tipo_alerta}`}
+                    {alerta.configuracion_nombre || `Config #${alerta.configuracion}`}
                   </span>
-                  {alerta.responsable_nombre && (
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {alerta.responsable_nombre}
-                    </span>
-                  )}
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {format(new Date(alerta.fecha_alerta), 'PPp', { locale: es })}
+                    {format(new Date(alerta.created_at), 'PPp', { locale: es })}
                   </span>
-                  {alerta.atendida && (
+                  {alerta.esta_atendida && (
                     <Badge variant="success" size="sm">
                       Atendida
                     </Badge>
                   )}
-                  {alerta.escalada && (
-                    <Badge variant="warning" size="sm">
-                      Escalada
-                    </Badge>
-                  )}
                 </div>
 
-                {!alerta.atendida && (
+                {!alerta.esta_atendida && (
                   <div className="flex gap-2">
                     <Button
                       variant="primary"
@@ -325,12 +312,12 @@ function TiposTab() {
                     {formatStatusLabel(tipo.categoria)}
                   </Badge>
                   <Badge variant="warning" size="sm">
-                    {formatStatusLabel(tipo.severidad_base)}
+                    {formatStatusLabel(tipo.severidad_default)}
                   </Badge>
-                  {tipo.dias_anticipacion && (
+                  {tipo.modulo_origen && (
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {tipo.dias_anticipacion} días anticipación
+                      {tipo.modulo_origen}
                     </span>
                   )}
                 </div>
@@ -399,7 +386,7 @@ function ConfiguracionTab() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-3">
                   <h4 className="text-base font-medium text-gray-900 dark:text-white">
-                    {config.tipo_alerta_nombre || `Tipo #${config.tipo_alerta}`}
+                    {config.nombre}
                   </h4>
                   <Badge variant={config.is_active ? 'success' : 'gray'} size="sm">
                     {config.is_active ? 'Activo' : 'Inactivo'}
@@ -408,39 +395,43 @@ function ConfiguracionTab() {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600 dark:text-gray-400">Módulo:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Tipo:</span>
                     <span className="ml-2 font-medium">
-                      {config.modulo} / {config.modelo}
+                      {config.tipo_alerta_nombre || `Tipo #${config.tipo_alerta}`}
                     </span>
                   </div>
-                  {config.responsable_nombre && (
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Frecuencia:</span>
+                    <span className="ml-2 font-medium">
+                      {formatStatusLabel(config.frecuencia_verificacion)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Notificar a:</span>
+                    <span className="ml-2 font-medium">
+                      {formatStatusLabel(config.notificar_a)}
+                    </span>
+                  </div>
+                  {config.dias_anticipacion && (
                     <div>
-                      <span className="text-gray-600 dark:text-gray-400">Responsable:</span>
-                      <span className="ml-2 font-medium">{config.responsable_nombre}</span>
-                    </div>
-                  )}
-                  {config.campo_fecha && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Campo Fecha:</span>
-                      <span className="ml-2 font-medium">{config.campo_fecha}</span>
-                    </div>
-                  )}
-                  {config.campo_umbral && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">Umbral:</span>
-                      <span className="ml-2 font-medium">
-                        {config.campo_umbral} = {config.valor_umbral}
-                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">Anticipación:</span>
+                      <span className="ml-2 font-medium">{config.dias_anticipacion} días</span>
                     </div>
                   )}
                 </div>
 
-                {config.escalar_automaticamente && config.dias_escalamiento && (
-                  <div className="mt-3 flex items-center gap-2 text-sm text-orange-600">
-                    <ArrowUp className="w-4 h-4" />
-                    <span>Escalamiento automático después de {config.dias_escalamiento} días</span>
-                  </div>
-                )}
+                <div className="mt-3 flex items-center gap-3 text-sm">
+                  {config.enviar_email && (
+                    <Badge variant="info" size="sm">
+                      Email
+                    </Badge>
+                  )}
+                  {config.crear_tarea && (
+                    <Badge variant="warning" size="sm">
+                      Crea tarea
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               {canEdit && (
@@ -522,11 +513,13 @@ function EscalamientoTab() {
                     className="text-xs text-gray-600 dark:text-gray-400 border-l-2 border-blue-500 pl-3 py-1"
                   >
                     <div>
-                      <strong>Nivel {esc.nivel_escalamiento}</strong> → {esc.escalado_a_nombre}
+                      <strong>Nivel {esc.nivel}</strong> → {formatStatusLabel(esc.notificar_a)}
                     </div>
-                    <div className="text-gray-500">{esc.motivo_escalamiento}</div>
+                    <div className="text-gray-500">
+                      {esc.mensaje_escalamiento} ({esc.horas_espera}h espera)
+                    </div>
                     <div className="text-gray-400">
-                      {format(new Date(esc.fecha_escalamiento), 'PPp', { locale: es })}
+                      {format(new Date(esc.created_at), 'PPp', { locale: es })}
                     </div>
                   </div>
                 ))}

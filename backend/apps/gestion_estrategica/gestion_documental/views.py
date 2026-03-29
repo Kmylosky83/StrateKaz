@@ -19,6 +19,7 @@ from django.db.models import Q, Count
 from django.contrib.contenttypes.models import ContentType
 from apps.core.mixins import ExportMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+from apps.audit_system.services import AuditSystemService
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
@@ -336,6 +337,13 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             empresa_id=empresa_id,
             elaborado_por=self.request.user,
             codigo=codigo,
+        )
+
+        # Registrar en LogCambio (Centro de Control)
+        AuditSystemService.log_cambio(
+            self.request.user, documento, 'crear',
+            {'creado': {'old': None, 'new': f'{documento.codigo} - {documento.titulo}'}},
+            self.request,
         )
 
         # Auto-asignar firmantes desde plantilla

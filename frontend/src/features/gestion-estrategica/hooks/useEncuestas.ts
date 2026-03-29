@@ -388,6 +388,7 @@ export function useAddParticipante() {
       queryClient.invalidateQueries({
         queryKey: encuestasKeys.detail(encuestaId),
       });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.lists() });
       toast.success('Participante agregado');
     },
     onError: (error: Error) => {
@@ -412,6 +413,7 @@ export function useDeleteParticipante() {
       queryClient.invalidateQueries({
         queryKey: encuestasKeys.detail(_encuestaId),
       });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.lists() });
       toast.success('Participante eliminado');
     },
     onError: (error: Error) => {

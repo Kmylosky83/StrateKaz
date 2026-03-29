@@ -278,6 +278,13 @@ app.conf.beat_schedule = {
         'options': {'queue': 'compliance'},
     },
 
+    # Recordar lecturas verificadas próximas a vencer (3 y 1 día) - Diario 7:30 AM
+    'documental-recordar-aceptaciones-por-vencer': {
+        'task': 'documental.recordar_aceptaciones_por_vencer',
+        'schedule': crontab(hour=7, minute=30),
+        'options': {'queue': 'notifications'},
+    },
+
     # ═══════════════════════════════════════════════════
     # REVISION POR LA DIRECCION (ISO 9.3)
     # ═══════════════════════════════════════════════════
@@ -446,6 +453,7 @@ app.conf.task_routes = {
     'documental.calcular_scores_batch': {'queue': 'compliance'},
     'documental.generar_documento_desde_workflow': {'queue': 'files'},
     'documental.exportar_drive_lote': {'queue': 'files'},
+    'documental.recordar_aceptaciones_por_vencer': {'queue': 'notifications'},
 
     # Audit System - Config Alertas tasks
     'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},

@@ -765,6 +765,102 @@ def verificar_aceptaciones_vencidas():
 
 
 # =============================================================================
+# LECTURA VERIFICADA — Recordatorios antes de vencer (Sprint 1)
+# =============================================================================
+
+@shared_task(
+    name='documental.recordar_aceptaciones_por_vencer',
+    queue='notifications',
+    max_retries=2,
+    soft_time_limit=300,
+)
+def recordar_aceptaciones_por_vencer():
+    """
+    Diario 7:30AM: Envía recordatorio a usuarios cuya lectura verificada
+    vence en 3 días o en 1 día. Complementa verificar_aceptaciones_vencidas
+    que solo marca VENCIDO cuando ya pasó la fecha.
+
+    Frecuencia recomendada: Diaria a las 7:30 AM
+    """
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    total_recordatorios = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                from .models import AceptacionDocumental
+                from django.utils import timezone
+
+                hoy = timezone.now().date()
+
+                # Aceptaciones pendientes que vencen en 1 o 3 días
+                pendientes = AceptacionDocumental.objects.filter(
+                    estado__in=['PENDIENTE', 'EN_PROGRESO'],
+                    fecha_limite__isnull=False,
+                ).select_related('documento')
+
+                for aceptacion in pendientes:
+                    dias_restantes = (aceptacion.fecha_limite - hoy).days
+
+                    # Solo notificar a 3 días y a 1 día
+                    if dias_restantes not in (3, 1):
+                        continue
+
+                    try:
+                        usuario = User.objects.get(id=aceptacion.usuario_id)
+                    except User.DoesNotExist:
+                        continue
+
+                    urgencia = 'alta' if dias_restantes == 1 else 'normal'
+                    tiempo_label = (
+                        'mañana' if dias_restantes == 1
+                        else f'en {dias_restantes} días'
+                    )
+
+                    _send_notification(
+                        tipo_codigo='DOCUMENTO_LECTURA_REQUERIDA',
+                        usuario=usuario,
+                        titulo=(
+                            f'Recordatorio: lectura pendiente de '
+                            f'{aceptacion.documento.codigo}'
+                        ),
+                        mensaje=(
+                            f'Tiene pendiente la lectura verificada del documento '
+                            f'"{aceptacion.documento.titulo}" '
+                            f'({aceptacion.documento.codigo}). '
+                            f'El plazo vence {tiempo_label} '
+                            f'({aceptacion.fecha_limite.strftime("%d/%m/%Y")}).'
+                        ),
+                        url='/mi-portal',
+                        datos_extra={
+                            'documento_id': aceptacion.documento_id,
+                            'aceptacion_id': aceptacion.id,
+                            'dias_restantes': dias_restantes,
+                            'fecha_limite': aceptacion.fecha_limite.isoformat(),
+                        },
+                        prioridad=urgencia,
+                    )
+                    total_recordatorios += 1
+
+        except Exception as e:
+            logger.error(
+                f'[LECTURA] Error recordando vencimientos en '
+                f'{tenant.schema_name}: {e}'
+            )
+
+    logger.info(
+        f'[LECTURA] recordar_aceptaciones_por_vencer: '
+        f'{total_recordatorios} recordatorios enviados'
+    )
+    return {
+        'status': 'ok',
+        'recordatorios_enviados': total_recordatorios,
+    }
+
+
+# =============================================================================
 # HELPER: Envío seguro de notificaciones
 # =============================================================================
 

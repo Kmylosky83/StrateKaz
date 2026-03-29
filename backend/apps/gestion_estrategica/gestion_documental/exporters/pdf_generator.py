@@ -1,12 +1,19 @@
 """
-Generador de PDF para Gestion Documental
+Generador de PDF para Gestión Documental
 =========================================
-Genera PDFs profesionales de documentos del sistema de gestion
+Genera PDFs profesionales de documentos del sistema de gestión
 usando WeasyPrint (HTML -> PDF).
 
-Patron: Identico a identidad/exporters/pdf_generator.py
+Incluye:
+- Firmas digitales manuscritas incrustadas (canvas → Base64)
+- Código QR verificable con hash SHA-256
+- Watermarks dinámicos según estado (BORRADOR, COPIA CONTROLADA, OBSOLETO)
+- Metadata grid ISO (código, versión, estado, clasificación)
+
+Patrón: Idéntico a identidad/exporters/pdf_generator.py
 """
 import base64
+import hashlib
 from io import BytesIO
 from datetime import datetime
 
@@ -15,6 +22,13 @@ try:
     WEASYPRINT_AVAILABLE = True
 except ImportError:
     WEASYPRINT_AVAILABLE = False
+
+try:
+    import qrcode
+    from qrcode.image.svg import SvgPathImage
+    QRCODE_AVAILABLE = True
+except ImportError:
+    QRCODE_AVAILABLE = False
 
 
 class DocumentoPDFGenerator:
@@ -71,6 +85,26 @@ class DocumentoPDFGenerator:
         .contenido-documento table { width: 100%; border-collapse: collapse; margin: 12px 0; }
         .contenido-documento table th, .contenido-documento table td { padding: 8px; border: 1px solid #e2e8f0; font-size: 10pt; }
         .contenido-documento table th { background: #f7fafc; font-weight: 600; }
+
+        /* --- Bloque de firmas digitales --- */
+        .firmas-section { margin-top: 40px; border-top: 2px solid #2d3748; padding-top: 20px; page-break-inside: avoid; }
+        .firmas-title { font-size: 12pt; font-weight: 700; color: #1a365d; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .firmas-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+        .firma-card { flex: 1 1 200px; max-width: 32%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; background: #fafafa; }
+        .firma-card-header { font-size: 9pt; font-weight: 700; color: #2c5282; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .firma-imagen { width: 160px; height: 60px; object-fit: contain; margin: 0 auto 8px; display: block; }
+        .firma-linea { border-bottom: 1px solid #2d3748; width: 80%; margin: 0 auto 8px; }
+        .firma-nombre { font-size: 10pt; font-weight: 600; color: #2d3748; }
+        .firma-cargo { font-size: 8pt; color: #718096; margin-top: 2px; }
+        .firma-fecha { font-size: 7pt; color: #a0aec0; margin-top: 4px; }
+        .firma-hash { font-size: 6pt; color: #cbd5e0; font-family: monospace; margin-top: 2px; word-break: break-all; }
+        .firma-pendiente { font-style: italic; color: #a0aec0; font-size: 9pt; padding: 20px 0; }
+
+        /* --- QR verificable --- */
+        .qr-section { margin-top: 24px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+        .qr-code { width: 80px; height: 80px; }
+        .qr-info { font-size: 7pt; color: #a0aec0; line-height: 1.4; }
+        .qr-hash { font-family: monospace; font-size: 6.5pt; color: #718096; word-break: break-all; }
     """
 
     def __init__(self, empresa=None):
@@ -152,18 +186,45 @@ class DocumentoPDFGenerator:
         estado_display = documento.get_estado_display()
         clasificacion_display = documento.get_clasificacion_display()
 
-        # Marca de agua para copias controladas (docs PUBLICADOS)
+        # Marca de agua dinámica según estado del documento
         watermark_html = ''
         watermark_css = ''
-        if documento.estado == 'PUBLICADO':
-            usuario_nombre = usuario.get_full_name() if usuario else 'N/A'
-            fecha_descarga = datetime.now().strftime('%d/%m/%Y %H:%M')
+        usuario_nombre = usuario.get_full_name() if usuario else 'N/A'
+        fecha_descarga = datetime.now().strftime('%d/%m/%Y %H:%M')
+
+        if documento.estado == 'BORRADOR':
+            watermark_css = self.WATERMARK_CSS
+            watermark_html = (
+                '<div class="watermark">'
+                'BORRADOR<br>'
+                '<span style="font-size: 14pt;">Documento no aprobado — Solo uso interno</span>'
+                '</div>'
+            )
+        elif documento.estado == 'EN_REVISION':
+            watermark_css = self.WATERMARK_CSS
+            watermark_html = (
+                '<div class="watermark">'
+                'EN REVISIÓN<br>'
+                '<span style="font-size: 14pt;">Pendiente de aprobación</span>'
+                '</div>'
+            )
+        elif documento.estado == 'PUBLICADO':
             watermark_css = self.WATERMARK_CSS
             watermark_html = (
                 f'<div class="watermark">'
                 f'COPIA CONTROLADA<br>'
                 f'<span style="font-size: 14pt;">{fecha_descarga} — {usuario_nombre}</span>'
                 f'</div>'
+            )
+        elif documento.estado == 'OBSOLETO':
+            watermark_css = self.WATERMARK_CSS.replace(
+                'rgba(200, 200, 200, 0.25)', 'rgba(220, 50, 50, 0.20)'
+            )
+            watermark_html = (
+                '<div class="watermark">'
+                'OBSOLETO<br>'
+                '<span style="font-size: 14pt;">Documento fuera de vigencia</span>'
+                '</div>'
             )
 
         html = f'''
@@ -248,11 +309,15 @@ class DocumentoPDFGenerator:
 
             {pie_pagina_html}
 
-            <div class="section" style="margin-top: 32px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+            {self._generar_bloque_firmas(documento)}
+
+            {self._generar_bloque_qr(documento, empresa_info)}
+
+            <div class="section" style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
                 <p style="font-size: 8pt; color: #a0aec0;">
                     Documento generado el {datetime.now().strftime('%d/%m/%Y %H:%M')} |
                     {empresa_info['razon_social']} |
-                    Gestion Documental StrateKaz
+                    Gestión Documental StrateKaz
                 </p>
             </div>
         </body>
@@ -304,3 +369,172 @@ class DocumentoPDFGenerator:
             contenido = contenido.replace(var, value)
 
         return contenido
+
+    # =========================================================================
+    # Bloque de firmas digitales manuscritas
+    # =========================================================================
+
+    def _generar_bloque_firmas(self, documento):
+        """
+        Genera HTML con las firmas digitales manuscritas del documento.
+        Muestra imagen de firma (canvas), nombre, cargo, fecha y hash truncado.
+        Si la firma está pendiente, muestra placeholder con línea.
+        """
+        try:
+            firmas = documento.get_firmas_digitales().select_related(
+                'usuario', 'cargo'
+            ).order_by('orden', 'created_at')
+        except Exception:
+            return ''
+
+        if not firmas.exists():
+            return ''
+
+        ROL_LABELS = {
+            'ELABORO': 'Elaboró',
+            'REVISO': 'Revisó',
+            'APROBO': 'Aprobó',
+            'VALIDO': 'Validó',
+            'AUTORIZO': 'Autorizó',
+        }
+
+        cards_html = ''
+        for firma in firmas:
+            rol_label = ROL_LABELS.get(firma.rol_firma, firma.rol_firma)
+            nombre = firma.usuario.get_full_name() if firma.usuario else 'N/A'
+            cargo_nombre = firma.cargo.nombre if firma.cargo else ''
+            fecha_str = (
+                firma.fecha_firma.strftime('%d/%m/%Y %H:%M')
+                if firma.fecha_firma else ''
+            )
+            hash_short = firma.firma_hash[:16] if firma.firma_hash else ''
+
+            if firma.estado == 'FIRMADO' and firma.firma_imagen:
+                # Firma completada — mostrar imagen del canvas
+                # firma_imagen puede ser data:image/png;base64,... o solo base64
+                img_src = firma.firma_imagen
+                if not img_src.startswith('data:'):
+                    img_src = f'data:image/png;base64,{img_src}'
+
+                cards_html += f'''
+                <div class="firma-card">
+                    <div class="firma-card-header">{rol_label}</div>
+                    <img src="{img_src}" class="firma-imagen" alt="Firma {rol_label}" />
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{nombre}</div>
+                    <div class="firma-cargo">{cargo_nombre}</div>
+                    <div class="firma-fecha">{fecha_str}</div>
+                    <div class="firma-hash">Hash: {hash_short}...</div>
+                </div>
+                '''
+            elif firma.estado == 'RECHAZADO':
+                cards_html += f'''
+                <div class="firma-card" style="border-color: #fc8181;">
+                    <div class="firma-card-header" style="color: #c53030;">
+                        {rol_label} — RECHAZADA
+                    </div>
+                    <div class="firma-pendiente">Firma rechazada</div>
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{nombre}</div>
+                    <div class="firma-cargo">{cargo_nombre}</div>
+                    <div class="firma-fecha" style="color: #c53030;">
+                        {firma.comentarios or 'Sin motivo especificado'}
+                    </div>
+                </div>
+                '''
+            else:
+                # Pendiente, delegada o expirada
+                estado_label = {
+                    'PENDIENTE': 'Pendiente de firma',
+                    'DELEGADO': 'Delegada',
+                    'EXPIRADO': 'Expirada',
+                }.get(firma.estado, 'Pendiente')
+
+                cards_html += f'''
+                <div class="firma-card">
+                    <div class="firma-card-header">{rol_label}</div>
+                    <div class="firma-pendiente">{estado_label}</div>
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{nombre}</div>
+                    <div class="firma-cargo">{cargo_nombre}</div>
+                </div>
+                '''
+
+        return f'''
+        <div class="firmas-section">
+            <div class="firmas-title">Control de Firmas</div>
+            <div class="firmas-grid">
+                {cards_html}
+            </div>
+        </div>
+        '''
+
+    # =========================================================================
+    # QR verificable con hash SHA-256
+    # =========================================================================
+
+    def _generar_bloque_qr(self, documento, empresa_info):
+        """
+        Genera código QR con URL de verificación + hash del contenido.
+        El QR contiene una URL que permite verificar la autenticidad del documento.
+        Incluye hash SHA-256 del contenido para detección de alteraciones.
+        """
+        if not QRCODE_AVAILABLE:
+            return ''
+
+        # Calcular hash del contenido actual
+        contenido_raw = (documento.contenido or '') + (documento.codigo or '')
+        doc_hash = hashlib.sha256(contenido_raw.encode('utf-8')).hexdigest()
+
+        # URL de verificación (apunta a la app)
+        base_url = 'https://app.stratekaz.com'
+        verificacion_url = (
+            f'{base_url}/verificar-documento'
+            f'?codigo={documento.codigo}'
+            f'&version={documento.version_actual}'
+            f'&hash={doc_hash[:16]}'
+        )
+
+        try:
+            # Generar QR como PNG Base64
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_M,
+                box_size=4,
+                border=1,
+            )
+            qr.add_data(verificacion_url)
+            qr.make(fit=True)
+
+            qr_buffer = BytesIO()
+            img = qr.make_image(fill_color='#2d3748', back_color='white')
+            img.save(qr_buffer, format='PNG')
+            qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
+
+            fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
+
+            return f'''
+            <div class="qr-section">
+                <img src="data:image/png;base64,{qr_base64}" class="qr-code"
+                     alt="QR Verificación" />
+                <div class="qr-info">
+                    <strong>Verificación de autenticidad</strong><br>
+                    Escanee el código QR para verificar este documento.<br>
+                    <span class="qr-hash">SHA-256: {doc_hash}</span><br>
+                    {documento.codigo} | v{documento.version_actual} |
+                    {empresa_info['razon_social']}<br>
+                    Generado: {fecha_gen}
+                </div>
+            </div>
+            '''
+        except Exception:
+            # Si falla la generación del QR, solo mostrar hash
+            return f'''
+            <div class="qr-section">
+                <div class="qr-info">
+                    <strong>Verificación de autenticidad</strong><br>
+                    <span class="qr-hash">SHA-256: {doc_hash}</span><br>
+                    {documento.codigo} | v{documento.version_actual}
+                </div>
+            </div>
+            '''

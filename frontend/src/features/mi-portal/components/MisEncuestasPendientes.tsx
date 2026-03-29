@@ -10,10 +10,7 @@
 
 import { useState } from 'react';
 import { ClipboardList, CheckCircle2, Clock, ChevronRight, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/common/Badge';
-import { Card } from '@/components/common/Card';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Skeleton } from '@/components/common/Skeleton';
+import { Badge, Card, EmptyState, Skeleton } from '@/components/common';
 import { useMisEncuestas } from '../../gestion-estrategica/hooks/useEncuestas';
 import { ResponderEncuestaModal } from './ResponderEncuestaModal';
 import type { MiEncuestaPendiente } from '../../gestion-estrategica/types/encuestas.types';

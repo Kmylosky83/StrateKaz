@@ -524,6 +524,116 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         return Response(listado)
 
     # =========================================================================
+    # ARCHIVOS ANEXOS — Upload, listado y eliminación de evidencias
+    # =========================================================================
+
+    ALLOWED_EXTENSIONS = {
+        '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+        '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp',
+        '.csv', '.txt', '.zip', '.rar', '.7z',
+    }
+    MAX_ANEXO_SIZE = 20 * 1024 * 1024  # 20 MB por archivo
+
+    @action(detail=True, methods=['post'], url_path='subir-anexo')
+    def subir_anexo(self, request, pk=None):
+        """
+        Sube un archivo anexo a un documento existente.
+        Acepta multipart/form-data con campo 'archivo'.
+        Almacena metadata en archivos_anexos (JSONField).
+        """
+        documento = self.get_object()
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'error': 'Se requiere un archivo'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validar extensión
+        import os
+        ext = os.path.splitext(archivo.name)[1].lower()
+        if ext not in self.ALLOWED_EXTENSIONS:
+            return Response(
+                {'error': f'Extensión {ext} no permitida. '
+                          f'Permitidas: {", ".join(sorted(self.ALLOWED_EXTENSIONS))}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validar tamaño
+        if archivo.size > self.MAX_ANEXO_SIZE:
+            return Response(
+                {'error': 'El archivo excede el tamaño máximo de 20 MB'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Guardar archivo en media/documentos/anexos/YYYY/MM/
+        from django.core.files.storage import default_storage
+        from django.utils import timezone
+        import uuid
+
+        ahora = timezone.now()
+        filename = f'{uuid.uuid4().hex[:8]}_{archivo.name}'
+        path = f'documentos/anexos/{ahora.year}/{ahora.month:02d}/{filename}'
+        saved_path = default_storage.save(path, archivo)
+
+        # Agregar metadata al JSONField
+        anexos = documento.archivos_anexos or []
+        anexo_meta = {
+            'id': uuid.uuid4().hex[:12],
+            'nombre': archivo.name,
+            'path': saved_path,
+            'url': default_storage.url(saved_path),
+            'tipo_mime': archivo.content_type or 'application/octet-stream',
+            'tamaño': archivo.size,
+            'extension': ext,
+            'subido_por': request.user.id,
+            'subido_por_nombre': request.user.get_full_name(),
+            'fecha_subida': ahora.isoformat(),
+            'descripcion': request.data.get('descripcion', ''),
+        }
+        anexos.append(anexo_meta)
+        documento.archivos_anexos = anexos
+        documento.save(update_fields=['archivos_anexos'])
+
+        return Response(
+            {'mensaje': 'Archivo anexo subido', 'anexo': anexo_meta},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=['delete'], url_path='eliminar-anexo/(?P<anexo_id>[\\w]+)')
+    def eliminar_anexo(self, request, pk=None, anexo_id=None):
+        """Elimina un archivo anexo por su ID interno."""
+        documento = self.get_object()
+        anexos = documento.archivos_anexos or []
+
+        anexo_encontrado = None
+        nuevos_anexos = []
+        for anexo in anexos:
+            if anexo.get('id') == anexo_id:
+                anexo_encontrado = anexo
+            else:
+                nuevos_anexos.append(anexo)
+
+        if not anexo_encontrado:
+            return Response(
+                {'error': 'Anexo no encontrado'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Eliminar archivo físico
+        from django.core.files.storage import default_storage
+        try:
+            if anexo_encontrado.get('path'):
+                default_storage.delete(anexo_encontrado['path'])
+        except Exception:
+            pass  # Si el archivo ya no existe, no es error
+
+        documento.archivos_anexos = nuevos_anexos
+        documento.save(update_fields=['archivos_anexos'])
+
+        return Response({'mensaje': 'Anexo eliminado'})
+
+    # =========================================================================
     # OCR — Fase 5: Ingesta, reprocesamiento y búsqueda full-text
     # =========================================================================
 
@@ -604,6 +714,84 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         serializer = DocumentoDetailSerializer(documento)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='ingestar-lote')
+    def ingestar_lote(self, request):
+        """
+        Ingesta masiva de PDFs: crea múltiples documentos + OCR para cada uno.
+        Acepta multipart/form-data con múltiples archivos en 'archivos'.
+        Comparte tipo_documento y clasificacion para todo el lote.
+        """
+        archivos = request.FILES.getlist('archivos')
+        if not archivos:
+            return Response(
+                {'error': 'Se requiere al menos un archivo PDF'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(archivos) > 20:
+            return Response(
+                {'error': 'Máximo 20 archivos por lote'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tipo_documento_id = request.data.get('tipo_documento')
+        clasificacion = request.data.get('clasificacion', 'INTERNO')
+        if not tipo_documento_id:
+            return Response(
+                {'error': 'Se requiere tipo_documento'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        empresa = get_tenant_empresa()
+        from .services import DocumentoService
+        tipo_doc = TipoDocumento.objects.get(id=tipo_documento_id)
+
+        from django.db import connection
+        from .tasks import procesar_ocr_documento
+
+        max_size = 50 * 1024 * 1024
+        creados = []
+        errores = []
+
+        for archivo in archivos:
+            if not archivo.name.lower().endswith('.pdf'):
+                errores.append({'archivo': archivo.name, 'error': 'No es PDF'})
+                continue
+            if archivo.size > max_size:
+                errores.append({'archivo': archivo.name, 'error': 'Excede 50 MB'})
+                continue
+
+            try:
+                codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id)
+                titulo = archivo.name.rsplit('.', 1)[0]
+                documento = Documento.objects.create(
+                    codigo=codigo,
+                    titulo=titulo,
+                    tipo_documento=tipo_doc,
+                    estado='BORRADOR',
+                    clasificacion=clasificacion,
+                    elaborado_por=request.user,
+                    archivo_original=archivo,
+                    es_externo=True,
+                    ocr_estado='PENDIENTE',
+                    empresa_id=empresa.id,
+                )
+                procesar_ocr_documento.delay(documento.id, connection.schema_name)
+                creados.append({
+                    'id': documento.id,
+                    'codigo': codigo,
+                    'titulo': titulo,
+                })
+            except Exception as e:
+                errores.append({'archivo': archivo.name, 'error': str(e)})
+
+        return Response({
+            'creados': len(creados),
+            'errores': len(errores),
+            'documentos': creados,
+            'detalle_errores': errores,
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='reprocesar-ocr')
     def reprocesar_ocr(self, request, pk=None):

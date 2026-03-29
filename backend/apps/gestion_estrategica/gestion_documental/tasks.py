@@ -765,6 +765,178 @@ def verificar_aceptaciones_vencidas():
 
 
 # =============================================================================
+# RETENCIÓN DOCUMENTAL — Alertar y archivar docs que exceden retención
+# =============================================================================
+
+@shared_task(
+    name='documental.procesar_retencion_documentos',
+    queue='compliance',
+    max_retries=2,
+    soft_time_limit=300,
+)
+def procesar_retencion_documentos():
+    """
+    Semanal (Lunes 6:00AM): Detecta documentos PUBLICADOS/OBSOLETOS cuya antigüedad
+    excede el tiempo_retencion_años de su TipoDocumento.
+
+    Política:
+    - 90 días antes: notificación de alerta (NORMAL)
+    - 30 días antes: notificación urgente (ALTA)
+    - Día 0 (vencido): marca como ARCHIVADO + notificación
+    - NUNCA destruye archivos — solo cambia estado para auditoría ISO
+
+    Cumple: ISO 9001 §7.5.3.2, ISO 27001 §A.8.10
+    """
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    total_alertados = 0
+    total_archivados = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                from .models import Documento
+                from django.utils import timezone
+                from datetime import timedelta
+
+                hoy = timezone.now().date()
+
+                # Documentos PUBLICADOS u OBSOLETOS (no ya archivados)
+                documentos = Documento.objects.filter(
+                    estado__in=['PUBLICADO', 'OBSOLETO'],
+                ).select_related('tipo_documento', 'elaborado_por')
+
+                for doc in documentos:
+                    retencion_anos = doc.tipo_documento.tiempo_retencion_años
+                    if not retencion_anos or retencion_anos <= 0:
+                        continue
+
+                    # Fecha base: publicación o creación
+                    fecha_base = doc.fecha_publicacion or doc.created_at
+                    if hasattr(fecha_base, 'date'):
+                        fecha_base = fecha_base.date()
+
+                    fecha_expiracion = fecha_base + timedelta(
+                        days=retencion_anos * 365
+                    )
+                    dias_restantes = (fecha_expiracion - hoy).days
+
+                    if dias_restantes <= 0:
+                        # Retención vencida → archivar automáticamente
+                        doc.estado = 'ARCHIVADO'
+                        doc.save(update_fields=['estado', 'updated_at'])
+                        total_archivados += 1
+
+                        if doc.elaborado_por_id:
+                            try:
+                                usuario = User.objects.get(
+                                    id=doc.elaborado_por_id
+                                )
+                                _send_notification(
+                                    tipo_codigo='DOCUMENTO_OBSOLETO',
+                                    usuario=usuario,
+                                    titulo=(
+                                        f'Documento archivado por retención: '
+                                        f'{doc.codigo}'
+                                    ),
+                                    mensaje=(
+                                        f'El documento "{doc.titulo}" ({doc.codigo}) '
+                                        f'ha sido archivado automáticamente al cumplir '
+                                        f'{retencion_anos} años de retención.'
+                                    ),
+                                    url='/gestion-documental/documentos',
+                                    datos_extra={
+                                        'documento_id': doc.id,
+                                        'codigo': doc.codigo,
+                                        'retencion_anos': retencion_anos,
+                                        'accion': 'archivado_retencion',
+                                    },
+                                    prioridad='alta',
+                                )
+                            except User.DoesNotExist:
+                                pass
+
+                    elif dias_restantes <= 30:
+                        # 30 días o menos → alerta urgente
+                        if doc.elaborado_por_id:
+                            try:
+                                usuario = User.objects.get(
+                                    id=doc.elaborado_por_id
+                                )
+                                _send_notification(
+                                    tipo_codigo='DOCUMENTO_PROXIMO_REVISION',
+                                    usuario=usuario,
+                                    titulo=(
+                                        f'Retención próxima a vencer: '
+                                        f'{doc.codigo}'
+                                    ),
+                                    mensaje=(
+                                        f'El documento "{doc.titulo}" ({doc.codigo}) '
+                                        f'alcanzará su periodo de retención de '
+                                        f'{retencion_anos} años en {dias_restantes} días. '
+                                        f'Será archivado automáticamente el '
+                                        f'{fecha_expiracion.strftime("%d/%m/%Y")}.'
+                                    ),
+                                    url='/gestion-documental/documentos',
+                                    datos_extra={
+                                        'documento_id': doc.id,
+                                        'dias_restantes': dias_restantes,
+                                        'fecha_expiracion': fecha_expiracion.isoformat(),
+                                    },
+                                    prioridad='alta',
+                                )
+                                total_alertados += 1
+                            except User.DoesNotExist:
+                                pass
+
+                    elif dias_restantes <= 90:
+                        # 90 días → alerta informativa (solo lunes para no spamear)
+                        if hoy.weekday() == 0 and doc.elaborado_por_id:
+                            try:
+                                usuario = User.objects.get(
+                                    id=doc.elaborado_por_id
+                                )
+                                _send_notification(
+                                    tipo_codigo='DOCUMENTO_PROXIMO_REVISION',
+                                    usuario=usuario,
+                                    titulo=(
+                                        f'Retención por vencer: {doc.codigo}'
+                                    ),
+                                    mensaje=(
+                                        f'El documento "{doc.titulo}" ({doc.codigo}) '
+                                        f'alcanzará su periodo de retención en '
+                                        f'{dias_restantes} días '
+                                        f'({fecha_expiracion.strftime("%d/%m/%Y")}).'
+                                    ),
+                                    url='/gestion-documental/documentos',
+                                    datos_extra={
+                                        'documento_id': doc.id,
+                                        'dias_restantes': dias_restantes,
+                                    },
+                                )
+                                total_alertados += 1
+                            except User.DoesNotExist:
+                                pass
+
+        except Exception as e:
+            logger.error(
+                f'[RETENCION] Error procesando retención en '
+                f'{tenant.schema_name}: {e}'
+            )
+
+    logger.info(
+        f'[RETENCION] procesar_retencion_documentos: '
+        f'{total_archivados} archivados, {total_alertados} alertados'
+    )
+    return {
+        'status': 'ok',
+        'archivados': total_archivados,
+        'alertados': total_alertados,
+    }
+
+
+# =============================================================================
 # LECTURA VERIFICADA — Recordatorios antes de vencer (Sprint 1)
 # =============================================================================
 

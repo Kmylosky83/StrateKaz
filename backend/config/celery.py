@@ -285,6 +285,13 @@ app.conf.beat_schedule = {
         'options': {'queue': 'notifications'},
     },
 
+    # Procesar retención documental (archivar/alertar) - Semanal Lunes 6:00 AM
+    'documental-procesar-retencion': {
+        'task': 'documental.procesar_retencion_documentos',
+        'schedule': crontab(hour=6, minute=0, day_of_week=1),
+        'options': {'queue': 'compliance'},
+    },
+
     # ═══════════════════════════════════════════════════
     # REVISION POR LA DIRECCION (ISO 9.3)
     # ═══════════════════════════════════════════════════
@@ -454,6 +461,7 @@ app.conf.task_routes = {
     'documental.generar_documento_desde_workflow': {'queue': 'files'},
     'documental.exportar_drive_lote': {'queue': 'files'},
     'documental.recordar_aceptaciones_por_vencer': {'queue': 'notifications'},
+    'documental.procesar_retencion_documentos': {'queue': 'compliance'},
 
     # Audit System - Config Alertas tasks
     'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},

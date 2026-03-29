@@ -18,7 +18,7 @@
  * - Unidades de capacidad dinámicas (kg, ton, m³, pallets, etc.)
  * - Sin hardcoding de unidades
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -218,8 +218,30 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     }
   }, [isEditing, choices]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
+
+    // Validación de campos requeridos con scroll al primer campo inválido
+    // El botón está en el footer (fuera del <form>), por eso se valida aquí
+    // en lugar de depender del disabled del botón.
+    const camposFaltantes: string[] = [];
+    if (!formData.codigo) camposFaltantes.push('Código');
+    if (!formData.nombre) camposFaltantes.push('Nombre');
+    if (!formData.direccion) camposFaltantes.push('Dirección');
+    if (!isTipoSedeValid) camposFaltantes.push('Tipo de Sede');
+
+    if (camposFaltantes.length > 0) {
+      // Scroll al inicio del formulario para que el usuario vea los campos vacíos
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      import('sonner').then(({ toast }) => {
+        toast.warning(`Complete los campos requeridos: ${camposFaltantes.join(', ')}`, {
+          duration: 5000,
+        });
+      });
+      return;
+    }
 
     // Determinar si se usa tipo existente o nuevo
     const isCustomTipo = formData.tipo_sede === OTHER_TIPO_SEDE_VALUE;
@@ -260,16 +282,20 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       is_active: formData.is_active,
     };
 
-    if (isEditing && sede) {
-      await updateMutation.mutateAsync({
-        id: sede.id,
-        data: baseData as UpdateSedeEmpresaDTO,
-      });
-    } else {
-      await createMutation.mutateAsync(baseData as CreateSedeEmpresaDTO);
+    try {
+      if (isEditing && sede) {
+        await updateMutation.mutateAsync({
+          id: sede.id,
+          data: baseData as UpdateSedeEmpresaDTO,
+        });
+      } else {
+        await createMutation.mutateAsync(baseData as CreateSedeEmpresaDTO);
+      }
+      onClose();
+    } catch {
+      // El hook de mutation ya muestra el toast de error vía onError.
+      // No cerrar el modal para que el usuario pueda corregir.
     }
-
-    onClose();
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -307,22 +333,32 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       label: cargo.extra?.rol ? `${cargo.label} — ${cargo.extra.rol}` : cargo.label,
     })) || [];
 
+  // Campos requeridos faltantes — para feedback en footer
+  const camposFaltantes = [
+    !formData.codigo && 'Código',
+    !formData.nombre && 'Nombre',
+    !formData.direccion && 'Dirección',
+    !isTipoSedeValid && 'Tipo de Sede',
+  ].filter(Boolean) as string[];
+
   const footer = (
     <>
+      {/* Alerta de campos requeridos — visible cuando hay campos vacíos */}
+      {camposFaltantes.length > 0 && !isLoading && (
+        <p className="flex-1 text-xs text-amber-600 dark:text-amber-400 self-center">
+          ⚠ Requeridos: {camposFaltantes.join(', ')}
+        </p>
+      )}
       <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
         Cancelar
       </Button>
+      {/* type="button" porque el botón está fuera del <form> (en el footer del BaseModal).
+          La lógica de submit se maneja en onClick → handleSubmit. */}
       <Button
-        type="submit"
+        type="button"
         variant="primary"
         onClick={handleSubmit}
-        disabled={
-          isLoading ||
-          !formData.codigo ||
-          !formData.nombre ||
-          !formData.direccion ||
-          !isTipoSedeValid
-        }
+        disabled={isLoading}
         isLoading={isLoading}
       >
         {isEditing ? 'Guardar Cambios' : 'Crear Sede'}
@@ -339,7 +375,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       size="4xl"
       footer={footer}
     >
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
         {/* Sección: Identificación */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">

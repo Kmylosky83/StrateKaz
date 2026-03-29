@@ -21,6 +21,7 @@ Actualizado: 2026-01-24 - Migrado a app independiente
 
 from django.db import models
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from apps.core.base_models import BaseCompanyModel, TimestampedModel, SoftDeleteModel, OrderedModel
 from apps.gestion_estrategica.organizacion.models import Area
 
@@ -1047,21 +1048,31 @@ class ParteInteresada(BaseCompanyModel):
             todos_canales.extend(self.canales_adicionales)
         todos_canales = list(dict.fromkeys(todos_canales))
 
-        resultados = []
-        for canal in todos_canales:
-            comunicacion, created = MatrizComunicacion.objects.get_or_create(
-                parte_interesada=self,
-                como_comunicar=canal,
-                defaults={
-                    'que_comunicar': self.temas_interes_pi or 'Información relevante',
-                    'cuando_comunicar': frecuencia,
-                    'responsable': self.cargo_responsable,
-                    'empresa': self.empresa,
-                }
-            )
-            resultados.append((comunicacion, created))
+        # ArrayField: consolidar todos los canales en un único registro por PI.
+        # Si ya existe un registro auto-generado, actualizar sus canales sin
+        # perder los configurados manualmente por el usuario.
+        existing = MatrizComunicacion.objects.filter(
+            parte_interesada=self,
+            empresa=self.empresa,
+        ).first()
 
-        return resultados
+        if existing:
+            # Añadir nuevos canales sin eliminar los ya configurados
+            canales_actuales = set(existing.como_comunicar or [])
+            canales_actuales.update(todos_canales)
+            existing.como_comunicar = list(canales_actuales)
+            existing.save(update_fields=['como_comunicar', 'updated_at'])
+            return [(existing, False)]
+        else:
+            comunicacion = MatrizComunicacion.objects.create(
+                parte_interesada=self,
+                que_comunicar=self.temas_interes_pi or 'Información relevante',
+                como_comunicar=todos_canales,
+                cuando_comunicar=frecuencia,
+                responsable=self.cargo_responsable,
+                empresa=self.empresa,
+            )
+            return [(comunicacion, True)]
 
 
 class RequisitoParteInteresada(BaseCompanyModel):
@@ -1168,10 +1179,12 @@ class MatrizComunicacion(BaseCompanyModel):
         choices=FrecuenciaComunicacion.choices,
         verbose_name="Frecuencia"
     )
-    como_comunicar = models.CharField(
-        max_length=20,
-        choices=MedioComunicacion.choices,
-        verbose_name="Medio de Comunicación"
+    como_comunicar = ArrayField(
+        models.CharField(max_length=20, choices=MedioComunicacion.choices),
+        verbose_name='Medios de Comunicación',
+        default=list,
+        blank=True,
+        help_text='Uno o más medios para esta comunicación (ej: email, reunión, teléfono)'
     )
     # Responsable por Cargo (más estable organizacionalmente)
     responsable = models.ForeignKey(
@@ -1217,11 +1230,20 @@ class MatrizComunicacion(BaseCompanyModel):
         indexes = [
             models.Index(fields=["empresa", "parte_interesada"]),
             models.Index(fields=["empresa", "cuando_comunicar"]),
-            models.Index(fields=["empresa", "como_comunicar"]),
+            # Nota: como_comunicar es ArrayField — filtrado via __contains en ORM
         ]
 
     def __str__(self):
-        return f"{self.parte_interesada.nombre} - {self.get_como_comunicar_display()} ({self.get_cuando_comunicar_display()})"
+        medios = self.get_como_comunicar_display()
+        return f"{self.parte_interesada.nombre} — {medios} ({self.get_cuando_comunicar_display()})"
+
+    def get_como_comunicar_display(self) -> str:
+        """
+        Retorna los medios de comunicación como string legible separado por coma.
+        Reemplaza el método de choices built-in (incompatible con ArrayField).
+        """
+        labels = dict(self.MedioComunicacion.choices)
+        return ', '.join(labels.get(m, m) for m in (self.como_comunicar or []))
 
     @property
     def normas_lista(self):

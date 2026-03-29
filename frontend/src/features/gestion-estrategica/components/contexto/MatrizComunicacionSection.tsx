@@ -97,7 +97,7 @@ interface FormData {
   parte_interesada: string;
   que_comunicar: string;
   cuando_comunicar: string;
-  como_comunicar: string;
+  como_comunicar: string[]; // ArrayField: uno o más medios seleccionados
   responsable: string;
   registro_evidencia: string;
   es_obligatoria: boolean;
@@ -108,7 +108,7 @@ const defaultFormData: FormData = {
   parte_interesada: '',
   que_comunicar: '',
   cuando_comunicar: 'mensual',
-  como_comunicar: 'email',
+  como_comunicar: ['email'], // Al menos un medio seleccionado por defecto
   responsable: '',
   registro_evidencia: '',
   es_obligatoria: false,
@@ -137,7 +137,11 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
         parte_interesada: item.parte_interesada.toString(),
         que_comunicar: item.que_comunicar || '',
         cuando_comunicar: item.cuando_comunicar || 'mensual',
-        como_comunicar: item.como_comunicar || 'email',
+        // como_comunicar es array; garantizar que sea array válido
+        como_comunicar:
+          Array.isArray(item.como_comunicar) && item.como_comunicar.length > 0
+            ? item.como_comunicar
+            : ['email'],
         responsable: item.responsable?.toString() || '',
         registro_evidencia: item.registro_evidencia || '',
         es_obligatoria: item.es_obligatoria || false,
@@ -202,13 +206,17 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
       setError('Debe indicar qué se comunica');
       return;
     }
+    if (formData.como_comunicar.length === 0) {
+      setError('Seleccione al menos un medio de comunicación');
+      return;
+    }
 
     try {
       const payload = {
         parte_interesada: parseInt(formData.parte_interesada),
         que_comunicar: formData.que_comunicar.trim(),
         cuando_comunicar: formData.cuando_comunicar as unknown,
-        como_comunicar: formData.como_comunicar as unknown,
+        como_comunicar: formData.como_comunicar, // array de medios
         responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
         registro_evidencia: formData.registro_evidencia.trim() || undefined,
         es_obligatoria: formData.es_obligatoria,
@@ -235,7 +243,12 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
         type="submit"
         variant="primary"
         onClick={handleSubmit}
-        disabled={isLoading || !formData.parte_interesada || !formData.que_comunicar}
+        disabled={
+          isLoading ||
+          !formData.parte_interesada ||
+          !formData.que_comunicar ||
+          formData.como_comunicar.length === 0
+        }
         isLoading={isLoading}
       >
         {isEditing ? 'Guardar Cambios' : 'Crear Registro'}
@@ -273,21 +286,62 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
           rows={2}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <Select
-            id="mc-cuando"
-            label="¿Cuándo? (Frecuencia) *"
-            value={formData.cuando_comunicar}
-            onChange={(e) => handleFieldChange('cuando_comunicar', e.target.value)}
-            options={FRECUENCIAS}
-          />
-          <Select
-            id="mc-como"
-            label="¿Cómo? (Medio) *"
-            value={formData.como_comunicar}
-            onChange={(e) => handleFieldChange('como_comunicar', e.target.value)}
-            options={MEDIOS.map((m) => ({ value: m.value, label: m.label }))}
-          />
+        <Select
+          id="mc-cuando"
+          label="¿Cuándo? (Frecuencia) *"
+          value={formData.cuando_comunicar}
+          onChange={(e) => handleFieldChange('cuando_comunicar', e.target.value)}
+          options={FRECUENCIAS}
+        />
+
+        {/* Multi-select de medios — checkboxes en grid */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            ¿Cómo? (Medios de comunicación) *
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-gray-700/40 rounded-lg border border-gray-200 dark:border-gray-600">
+            {MEDIOS.map((medio) => {
+              const IconComp = medio.icon;
+              const isChecked = formData.como_comunicar.includes(medio.value);
+              return (
+                <label
+                  key={medio.value}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
+                    isChecked
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-600/40 text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      const current = formData.como_comunicar;
+                      const updated = isChecked
+                        ? current.filter((v) => v !== medio.value)
+                        : [...current, medio.value];
+                      handleFieldChange('como_comunicar', updated);
+                    }}
+                    className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0"
+                  />
+                  <IconComp className="h-3.5 w-3.5 shrink-0" />
+                  <span className="text-xs leading-tight">{medio.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          {formData.como_comunicar.length === 0 && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Seleccione al menos un medio
+            </p>
+          )}
+          {formData.como_comunicar.length > 0 && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {formData.como_comunicar.length} medio
+              {formData.como_comunicar.length > 1 ? 's' : ''} seleccionado
+              {formData.como_comunicar.length > 1 ? 's' : ''}
+            </p>
+          )}
         </div>
 
         <Select
@@ -411,12 +465,6 @@ export const MatrizComunicacionSection = ({
     setSelectedItem(null);
   };
 
-  const getMedioIcon = (medio: string) => {
-    const found = MEDIOS.find((m) => m.value === medio);
-    if (!found) return MessageSquare;
-    return found.icon;
-  };
-
   if (error) {
     return <Alert variant="error" message="Error al cargar la matriz de comunicación." />;
   }
@@ -479,17 +527,22 @@ export const MatrizComunicacionSection = ({
             {
               key: 'como',
               header: 'Cómo',
-              render: (item: MatrizComunicacion) => {
-                const IconComp = getMedioIcon(item.como_comunicar);
-                return (
-                  <Tooltip content={item.como_display}>
-                    <div className="flex items-center gap-1.5">
-                      <IconComp className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">{item.como_display}</span>
-                    </div>
-                  </Tooltip>
-                );
-              },
+              render: (item: MatrizComunicacion) => (
+                <div className="flex flex-wrap gap-1">
+                  {(item.como_comunicar || []).map((medio) => {
+                    const found = MEDIOS.find((m) => m.value === medio);
+                    const IconComp = found?.icon || MessageSquare;
+                    return (
+                      <Tooltip key={medio} content={found?.label || medio}>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          <IconComp className="h-3 w-3 shrink-0" />
+                          <span>{found?.label || medio}</span>
+                        </span>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              ),
             },
             {
               key: 'responsable',

@@ -480,7 +480,9 @@ class MatrizComunicacionSerializer(serializers.ModelSerializer):
     # Display fields
     parte_interesada_nombre = serializers.CharField(source='parte_interesada.nombre', read_only=True)
     cuando_display = serializers.CharField(source='get_cuando_comunicar_display', read_only=True)
-    como_display = serializers.CharField(source='get_como_comunicar_display', read_only=True)
+    # como_display: SerializerMethodField porque como_comunicar es ArrayField
+    # (el método built-in get_X_display() no aplica a arrays)
+    como_display = serializers.SerializerMethodField()
     # Responsable ahora es FK a Cargo
     responsable_nombre = serializers.CharField(source='responsable.name', read_only=True)
 
@@ -505,6 +507,13 @@ class MatrizComunicacionSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_name'
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'empresa']
+
+    def get_como_display(self, obj) -> str:
+        """
+        Retorna los medios de comunicación como string legible separado por coma.
+        Usa el método del modelo que maneja el ArrayField correctamente.
+        """
+        return obj.get_como_comunicar_display()
 
     def get_normas_aplicables_lista(self, obj) -> list:
         """Retorna lista de normas aplicables con código y nombre."""

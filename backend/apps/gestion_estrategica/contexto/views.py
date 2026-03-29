@@ -1931,10 +1931,23 @@ class MatrizComunicacionViewSet(EmpresaAutoAssignMixin, StandardViewSetMixin, vi
     ).all()
     serializer_class = MatrizComunicacionSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # como_comunicar excluido de filterset_fields: es ArrayField.
+    # El filtrado se hace en get_queryset() con __contains.
     filterset_fields = [
-        'empresa', 'parte_interesada', 'cuando_comunicar', 'como_comunicar',
+        'empresa', 'parte_interesada', 'cuando_comunicar',
         'es_obligatoria', 'is_active'
     ]
     search_fields = ['que_comunicar', 'registro_evidencia']
     ordering_fields = ['parte_interesada', 'cuando_comunicar', 'created_at']
     ordering = ['parte_interesada', 'cuando_comunicar']
+
+    def get_queryset(self):
+        """
+        Extiende el queryset base para soportar filtrado por ArrayField.
+        ?como_comunicar=email → registros donde el array CONTIENE 'email'
+        """
+        qs = super().get_queryset()
+        medio = self.request.query_params.get('como_comunicar')
+        if medio:
+            qs = qs.filter(como_comunicar__contains=[medio])
+        return qs

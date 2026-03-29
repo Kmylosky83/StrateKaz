@@ -202,6 +202,20 @@ export interface GenerarMatrizResponse {
 /**
  * Matriz de Comunicación — ISO 9001:2015 Cláusula 7.4
  */
+// Valores válidos para medios de comunicación (espeja MedioComunicacion.choices del backend)
+export type MedioComunicacion =
+  | 'email'
+  | 'reunion'
+  | 'videoconferencia'
+  | 'informe'
+  | 'cartelera'
+  | 'intranet'
+  | 'telefono'
+  | 'whatsapp'
+  | 'redes'
+  | 'capacitacion'
+  | 'otro';
+
 export interface MatrizComunicacion {
   id: number;
   parte_interesada: number;
@@ -218,18 +232,9 @@ export interface MatrizComunicacion {
     | 'anual'
     | 'segun_necesidad';
   cuando_display: string;
-  como_comunicar:
-    | 'email'
-    | 'reunion'
-    | 'videoconferencia'
-    | 'informe'
-    | 'cartelera'
-    | 'intranet'
-    | 'telefono'
-    | 'whatsapp'
-    | 'redes'
-    | 'capacitacion'
-    | 'otro';
+  // ArrayField en backend: uno o más medios por registro
+  como_comunicar: MedioComunicacion[];
+  // Retorna los labels unidos por coma: "Correo Electrónico, Reunión Presencial"
   como_display: string;
   responsable: number | null;
   responsable_nombre: string;
@@ -256,6 +261,7 @@ export interface MatrizComunicacionFilters {
 
 export type CreateMatrizComunicacionDTO = Pick<
   MatrizComunicacion,
+  // como_comunicar es MedioComunicacion[] — se envía como array al backend
   'parte_interesada' | 'que_comunicar' | 'cuando_comunicar' | 'como_comunicar' | 'es_obligatoria'
 > &
   Partial<

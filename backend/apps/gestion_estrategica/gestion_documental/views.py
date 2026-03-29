@@ -523,6 +523,16 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         return Response(listado)
 
+    @action(detail=False, methods=['get'], url_path='cobertura-documental')
+    def cobertura_documental(self, request):
+        """
+        Dashboard de cobertura documental: qué tipos tienen documentos,
+        cuáles no, y qué workflows carecen de procedimiento documentado.
+        Útil para auditorías ISO y revisión por la dirección.
+        """
+        cobertura = DocumentoService.obtener_cobertura_documental()
+        return Response(cobertura)
+
     # =========================================================================
     # ARCHIVOS ANEXOS — Upload, listado y eliminación de evidencias
     # =========================================================================

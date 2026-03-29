@@ -437,6 +437,241 @@ class DocumentoService:
         return re.sub(r'\{\{(\s*\w+\s*)\}\}', reemplazar, contenido_plantilla)
 
 
+    # =========================================================================
+    # Auto-documentación: generar contenido de procedimiento desde workflow
+    # =========================================================================
+
+    @classmethod
+    def generar_contenido_desde_workflow(cls, instancia, config=None):
+        """
+        Convierte los nodos de un workflow completado en secciones de
+        procedimiento documentado. Cada nodo se traduce a una sección
+        con objetivo, responsable, entradas, salidas y descripción.
+
+        Args:
+            instancia: InstanciaFlujo completada con nodos ejecutados
+            config: dict opcional con personalización
+
+        Returns:
+            str: Contenido HTML estructurado como procedimiento ISO
+        """
+        from django.apps import apps as django_apps
+
+        config = config or {}
+
+        # Obtener nodos ejecutados del workflow
+        try:
+            NodoInstancia = django_apps.get_model('ejecucion', 'NodoInstancia')
+            nodos = NodoInstancia.objects.filter(
+                instancia=instancia,
+            ).select_related('nodo_plantilla').order_by('orden', 'created_at')
+        except Exception as e:
+            logger.warning(f'[Auto-doc] Error obteniendo nodos: {e}')
+            nodos = []
+
+        # Obtener info de la plantilla de flujo
+        try:
+            PlantillaFlujo = django_apps.get_model(
+                'disenador_flujos', 'PlantillaFlujo'
+            )
+            plantilla_flujo = PlantillaFlujo.objects.filter(
+                id=instancia.plantilla_id
+            ).first()
+        except Exception:
+            plantilla_flujo = None
+
+        # Header del procedimiento
+        fecha_fin = (
+            instancia.fecha_fin.strftime('%d/%m/%Y')
+            if hasattr(instancia, 'fecha_fin') and instancia.fecha_fin
+            else ''
+        )
+        titulo = instancia.titulo or 'Procedimiento'
+
+        secciones_html = []
+
+        # Sección 1: Objetivo
+        objetivo = config.get('objetivo', '')
+        if not objetivo and plantilla_flujo:
+            objetivo = getattr(plantilla_flujo, 'descripcion', '') or ''
+        secciones_html.append(f'''
+        <h2>1. Objetivo</h2>
+        <p>{objetivo or f"Establecer el procedimiento para {titulo}."}</p>
+        ''')
+
+        # Sección 2: Alcance
+        alcance = config.get('alcance', '')
+        secciones_html.append(f'''
+        <h2>2. Alcance</h2>
+        <p>{alcance or "Aplica a todas las áreas y procesos involucrados en este flujo."}</p>
+        ''')
+
+        # Sección 3: Definiciones (si las hay en config)
+        definiciones = config.get('definiciones', [])
+        if definiciones:
+            defs_html = ''.join(
+                f'<li><strong>{d["termino"]}</strong>: {d["definicion"]}</li>'
+                for d in definiciones
+            )
+            secciones_html.append(f'''
+            <h2>3. Definiciones</h2>
+            <ul>{defs_html}</ul>
+            ''')
+
+        # Sección 4: Desarrollo del procedimiento (nodos → pasos)
+        secciones_html.append('<h2>4. Desarrollo del Procedimiento</h2>')
+
+        TIPO_NODO_SKIP = {'INICIO', 'FIN', 'CONECTOR', 'NOTA'}
+        paso_num = 0
+
+        for nodo in nodos:
+            nodo_plantilla = nodo.nodo_plantilla if hasattr(nodo, 'nodo_plantilla') else None
+            tipo_nodo = getattr(nodo_plantilla, 'tipo_nodo', '') if nodo_plantilla else ''
+
+            if tipo_nodo in TIPO_NODO_SKIP:
+                continue
+
+            paso_num += 1
+            nombre = (
+                getattr(nodo_plantilla, 'nombre', '')
+                if nodo_plantilla else ''
+            ) or f'Paso {paso_num}'
+            descripcion = (
+                getattr(nodo_plantilla, 'descripcion', '')
+                if nodo_plantilla else ''
+            ) or ''
+            responsable = ''
+            if nodo_plantilla and hasattr(nodo_plantilla, 'config'):
+                nodo_config = nodo_plantilla.config or {}
+                responsable = nodo_config.get('responsable', '')
+
+            # Tipo de paso visual
+            tipo_label = {
+                'TAREA': 'Actividad',
+                'DECISION': 'Decisión',
+                'APROBACION': 'Aprobación',
+                'NOTIFICACION': 'Notificación',
+                'SUBPROCESO': 'Subproceso',
+                'TEMPORIZADOR': 'Espera',
+            }.get(tipo_nodo, 'Actividad')
+
+            secciones_html.append(f'''
+            <h3>4.{paso_num}. {nombre}</h3>
+            <table>
+                <tr>
+                    <th style="width: 25%;">Tipo</th>
+                    <td>{tipo_label}</td>
+                </tr>
+                {f'<tr><th>Responsable</th><td>{responsable}</td></tr>' if responsable else ''}
+                <tr>
+                    <th>Descripción</th>
+                    <td>{descripcion or "Ejecutar según instrucciones del proceso."}</td>
+                </tr>
+            </table>
+            ''')
+
+        if paso_num == 0:
+            secciones_html.append(
+                '<p><em>No se encontraron pasos en el flujo ejecutado.</em></p>'
+            )
+
+        # Sección 5: Registros y evidencias
+        secciones_html.append(f'''
+        <h2>5. Registros y Evidencias</h2>
+        <p>Los registros generados durante la ejecución de este procedimiento
+        se almacenan en el sistema de gestión documental de StrateKaz.</p>
+        <p><strong>Fecha de generación automática:</strong> {fecha_fin}</p>
+        <p><strong>Flujo origen:</strong> {titulo}</p>
+        ''')
+
+        return '\n'.join(secciones_html)
+
+    @classmethod
+    def obtener_cobertura_documental(cls):
+        """
+        Analiza qué procesos/módulos tienen procedimientos documentados
+        y cuáles no. Útil para auditorías ISO y dashboards.
+
+        Returns:
+            dict: {
+                'total_tipos': int,
+                'con_documentos': int,
+                'sin_documentos': int,
+                'cobertura_pct': float,
+                'detalle': [
+                    {'tipo': 'Procedimiento', 'total': 5, 'publicados': 3, ...}
+                ],
+                'workflows_sin_procedimiento': [...]
+            }
+        """
+        from django.apps import apps as django_apps
+
+        tipos = TipoDocumento.objects.filter(is_active=True)
+        detalle = []
+        total_docs = 0
+        total_publicados = 0
+
+        for tipo in tipos:
+            docs = Documento.objects.filter(tipo_documento=tipo)
+            publicados = docs.filter(estado='PUBLICADO').count()
+            total = docs.count()
+            total_docs += total
+            total_publicados += publicados
+
+            detalle.append({
+                'tipo_id': tipo.id,
+                'tipo_codigo': tipo.codigo,
+                'tipo_nombre': tipo.nombre,
+                'total': total,
+                'publicados': publicados,
+                'borradores': docs.filter(estado='BORRADOR').count(),
+                'en_revision': docs.filter(estado='EN_REVISION').count(),
+                'obsoletos': docs.filter(estado='OBSOLETO').count(),
+            })
+
+        # Workflows sin procedimiento documentado (si workflow_engine instalado)
+        workflows_sin_doc = []
+        try:
+            PlantillaFlujo = django_apps.get_model(
+                'disenador_flujos', 'PlantillaFlujo'
+            )
+            plantillas_flujo = PlantillaFlujo.objects.filter(
+                is_active=True
+            )
+            for pf in plantillas_flujo:
+                tiene_doc = Documento.objects.filter(
+                    workflow_asociado_id=pf.id,
+                    estado__in=['PUBLICADO', 'APROBADO', 'EN_REVISION'],
+                ).exists()
+                if not tiene_doc:
+                    workflows_sin_doc.append({
+                        'id': pf.id,
+                        'nombre': pf.nombre if hasattr(pf, 'nombre') else str(pf),
+                        'tiene_auto_gen': bool(
+                            getattr(pf, 'config_auto_generacion', {})
+                            .get('habilitado', False)
+                        ),
+                    })
+        except Exception:
+            pass  # workflow_engine no instalado
+
+        con_documentos = sum(1 for d in detalle if d['total'] > 0)
+        total_tipos = len(detalle)
+
+        return {
+            'total_tipos': total_tipos,
+            'con_documentos': con_documentos,
+            'sin_documentos': total_tipos - con_documentos,
+            'cobertura_pct': round(
+                (con_documentos / total_tipos * 100) if total_tipos > 0 else 0, 1
+            ),
+            'total_documentos': total_docs,
+            'total_publicados': total_publicados,
+            'detalle_por_tipo': detalle,
+            'workflows_sin_procedimiento': workflows_sin_doc,
+        }
+
+
 def auto_asignar_firmantes_desde_plantilla(documento, plantilla):
     """
     Resuelve firmantes_por_defecto de una plantilla y crea FirmaDigital

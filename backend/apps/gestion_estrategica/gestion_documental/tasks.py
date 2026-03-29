@@ -463,10 +463,12 @@ def generar_documento_desde_workflow(
         empresa_id = instancia.empresa_id if hasattr(instancia, 'empresa_id') else 1
         codigo = DocumentoService.generar_codigo(tipo_doc, empresa_id)
 
-        # Renderizar contenido desde plantilla (si configurada)
+        # Renderizar contenido: plantilla o auto-generación desde nodos
         contenido = ''
         plantilla_doc = None
         plantilla_doc_id = config.get('plantilla_documento_id')
+        auto_documentar = config.get('auto_documentar_pasos', False)
+
         if plantilla_doc_id:
             try:
                 plantilla_doc = PlantillaDocumento.objects.get(id=plantilla_doc_id)
@@ -483,8 +485,22 @@ def generar_documento_desde_workflow(
             except PlantillaDocumento.DoesNotExist:
                 logger.warning(
                     f'[BPM→Doc] PlantillaDocumento {plantilla_doc_id} no encontrada, '
-                    f'creando documento sin contenido de plantilla'
+                    f'usando auto-documentación desde nodos del workflow'
                 )
+                auto_documentar = True
+
+        if auto_documentar or (not contenido and not plantilla_doc_id):
+            # Sprint 3: Auto-generar contenido de procedimiento desde nodos
+            try:
+                contenido = DocumentoService.generar_contenido_desde_workflow(
+                    instancia, config
+                )
+                logger.info(
+                    f'[BPM→Doc] Contenido auto-generado desde nodos del workflow '
+                    f'{instancia.id}'
+                )
+            except Exception as e:
+                logger.warning(f'[BPM→Doc] Error en auto-documentación: {e}')
 
         # Crear documento
         estado_inicial = config.get('estado_inicial', 'BORRADOR')

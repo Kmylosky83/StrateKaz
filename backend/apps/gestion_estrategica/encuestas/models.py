@@ -288,6 +288,11 @@ class EncuestaDofa(BaseCompanyModel):
         self.total_respondidos = total
         self.save(update_fields=['total_respondidos', 'updated_at'])
 
+    def actualizar_total_invitados(self):
+        """Recalcula total_invitados desde la tabla de participantes."""
+        self.total_invitados = self.participantes.count()
+        self.save(update_fields=['total_invitados', 'updated_at'])
+
 
 class TemaEncuesta(BaseCompanyModel):
     """

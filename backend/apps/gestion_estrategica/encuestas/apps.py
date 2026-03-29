@@ -10,5 +10,4 @@ class EncuestasConfig(AppConfig):
     verbose_name = 'Encuestas Colaborativas DOFA'
 
     def ready(self):
-        # Importar signals si es necesario
-        pass
+        import apps.gestion_estrategica.encuestas.signals  # noqa: F401

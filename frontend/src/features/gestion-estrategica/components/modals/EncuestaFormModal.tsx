@@ -354,12 +354,15 @@ export const EncuestaFormModal = ({
       label: a.name,
     })) || [];
 
-  // Options para colaboradores (usuarios activos)
+  // Options para colaboradores — ParticipanteEncuesta.usuario es FK a User,
+  // no a Colaborador. Se mapea usuario_id del extra para enviar el ID correcto.
   const colaboradorOptions =
-    colaboradoresData?.map((c) => ({
-      value: c.id.toString(),
-      label: c.label,
-    })) || [];
+    colaboradoresData
+      ?.filter((c) => c.extra?.usuario_id)
+      .map((c) => ({
+        value: String(c.extra!.usuario_id),
+        label: c.label,
+      })) || [];
 
   // Options para cargos
   const cargoOptions =

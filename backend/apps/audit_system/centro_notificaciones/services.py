@@ -18,7 +18,7 @@ Ejemplo de uso desde otro módulo:
 """
 
 from django.utils import timezone
-from django.core.mail import send_mail
+
 from django.conf import settings
 from django.db import transaction
 from typing import List, Dict, Optional, Union
@@ -385,7 +385,10 @@ class NotificationService:
         url: Optional[str] = None
     ) -> bool:
         """
-        Envía notificación por email.
+        Envía notificación por email usando template HTML branded.
+
+        Usa EmailService con template 'notificacion_generica' que extiende
+        base_email.html (logo, colores tenant, footer).
 
         Args:
             usuario: Usuario destinatario
@@ -397,22 +400,45 @@ class NotificationService:
             True si se envió correctamente
         """
         try:
-            # Construir cuerpo del email
-            email_body = mensaje
-            if url:
-                base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
-                full_url = f"{base_url}{url}"
-                email_body += f"\n\nVer más: {full_url}"
+            from .email_service import EmailService
 
-            # Enviar email
-            send_mail(
-                subject=f"[StrateKaz] {titulo}",
-                message=email_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[usuario.email],
-                fail_silently=False,
+            base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+            action_url = f"{base_url}{url}" if url else None
+
+            user_name = usuario.get_full_name() or usuario.email
+
+            # Obtener branding del tenant
+            tenant_name = 'StrateKaz'
+            tenant_slogan = ''
+            logo_url = None
+            try:
+                from apps.gestion_estrategica.configuracion.models import Empresa
+                empresa = Empresa.objects.first()
+                if empresa:
+                    tenant_name = empresa.nombre or tenant_name
+                    tenant_slogan = getattr(empresa, 'slogan', '') or ''
+                    if hasattr(empresa, 'logo') and empresa.logo:
+                        logo_url = f"{base_url}/media/{empresa.logo}"
+            except Exception:
+                pass
+
+            EmailService.send_email(
+                to_email=usuario.email,
+                subject=titulo,
+                template_name='notificacion_generica',
+                context={
+                    'titulo': titulo,
+                    'mensaje': mensaje,
+                    'user_name': user_name,
+                    'action_url': action_url,
+                    'action_label': 'Ir a Mi Portal',
+                    'tenant_name': tenant_name,
+                    'tenant_slogan': tenant_slogan,
+                    'logo_url': logo_url,
+                    'platform_name': 'StrateKaz',
+                },
             )
-            logger.info(f"Email enviado a {usuario.email}")
+            logger.info(f"Email branded enviado a {usuario.email}")
             return True
 
         except Exception as e:

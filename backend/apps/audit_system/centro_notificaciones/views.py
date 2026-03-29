@@ -159,14 +159,15 @@ class PreferenciaNotificacionViewSet(viewsets.ModelViewSet):
 
     Permite a los usuarios configurar sus preferencias de notificación por categoría.
 
-    RBAC: Requiere acceso a sección 'centro_notificaciones'
+    Self-service: Cada usuario puede ver/editar SUS propias preferencias.
+    Admin: Acceso total via RBAC sección 'centro_notificaciones'.
     """
     queryset = PreferenciaNotificacion.objects.select_related('usuario', 'tipo_notificacion')
     serializer_class = PreferenciaNotificacionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['usuario', 'tipo_notificacion']
 
-    # RBAC Configuration
+    # RBAC Configuration (overridden for self-service below)
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'centro_notificaciones'
     granular_action_map = {
@@ -177,6 +178,21 @@ class PreferenciaNotificacionViewSet(viewsets.ModelViewSet):
         'partial_update': 'can_edit',
         'destroy': 'can_delete',
     }
+
+    # Self-service: cualquier usuario autenticado puede gestionar sus propias preferencias
+    PERSONAL_ACTIONS = ('list', 'retrieve', 'create', 'update', 'partial_update')
+
+    def get_permissions(self):
+        if self.action in self.PERSONAL_ACTIONS:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # Non-admin users only see their own preferences
+        if not self.request.user.is_superuser:
+            qs = qs.filter(usuario=self.request.user)
+        return qs
 
 
 class NotificacionMasivaViewSet(viewsets.ModelViewSet):

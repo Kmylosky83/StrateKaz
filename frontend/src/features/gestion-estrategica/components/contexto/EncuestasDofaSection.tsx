@@ -17,6 +17,7 @@ import {
   Trash2,
   ClipboardList,
   Send,
+  Bell,
   BarChart3,
   Users,
   CheckCircle,
@@ -45,6 +46,7 @@ import {
   useActivarEncuesta,
   useCerrarEncuesta,
   useEnviarNotificacionesEncuesta,
+  useEnviarRecordatorio,
   useConsolidarEncuesta,
 } from '../../hooks/useEncuestas';
 import type {
@@ -113,6 +115,7 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
   const activarMutation = useActivarEncuesta();
   const cerrarMutation = useCerrarEncuesta();
   const enviarNotificacionesMutation = useEnviarNotificacionesEncuesta();
+  const enviarRecordatorioMutation = useEnviarRecordatorio();
   const consolidarMutation = useConsolidarEncuesta();
 
   // Calcular estadisticas para StatsGrid
@@ -232,6 +235,14 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
       setAlertMessage({ type: 'success', message: 'Notificaciones enviadas a los participantes.' });
     } catch {
       setAlertMessage({ type: 'error', message: 'Error al enviar notificaciones.' });
+    }
+  };
+
+  const handleEnviarRecordatorio = async (encuesta: EncuestaDofa) => {
+    try {
+      await enviarRecordatorioMutation.mutateAsync(encuesta.id);
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al enviar recordatorio.' });
     }
   };
 
@@ -483,9 +494,9 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
                     </Tooltip>
                   )}
 
-                  {/* Enviar notificaciones */}
-                  {encuesta.estado === 'activa' && canEdit && (
-                    <Tooltip content="Enviar notificaciones">
+                  {/* Enviar notificaciones (primera vez) */}
+                  {encuesta.estado === 'activa' && !encuesta.notificacion_enviada && canEdit && (
+                    <Tooltip content="Enviar invitaciones">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -493,6 +504,20 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
                         disabled={enviarNotificacionesMutation.isPending}
                       >
                         <Send className="h-4 w-4" />
+                      </Button>
+                    </Tooltip>
+                  )}
+
+                  {/* Enviar recordatorio (ya notificados, reenvía a pendientes) */}
+                  {encuesta.estado === 'activa' && encuesta.notificacion_enviada && canEdit && (
+                    <Tooltip content="Enviar recordatorio a pendientes">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEnviarRecordatorio(encuesta)}
+                        disabled={enviarRecordatorioMutation.isPending}
+                      >
+                        <Bell className="h-4 w-4 text-amber-600" />
                       </Button>
                     </Tooltip>
                   )}

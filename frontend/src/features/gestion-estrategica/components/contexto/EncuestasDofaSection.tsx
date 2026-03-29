@@ -22,15 +22,11 @@ import {
   CheckCircle,
   Clock,
   Search,
-  Link2,
   Play,
   Square,
   FileText,
-  Mail,
-  QrCode,
   Merge,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -50,9 +46,7 @@ import {
   useCerrarEncuesta,
   useEnviarNotificacionesEncuesta,
   useConsolidarEncuesta,
-  useCompartirEmail,
 } from '../../hooks/useEncuestas';
-import { encuestasApi } from '../../api/encuestasApi';
 import type {
   EncuestaDofa,
   EncuestaFilters,
@@ -101,8 +95,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
     message: string;
   } | null>(null);
   const [consolidarConfirm, setConsolidarConfirm] = useState<EncuestaDofa | null>(null);
-  const [emailModalOpen, setEmailModalOpen] = useState<EncuestaDofa | null>(null);
-  const [emailInput, setEmailInput] = useState('');
   const [defaultTipoEncuesta, setDefaultTipoEncuesta] = useState<TipoEncuesta | undefined>();
 
   // RBAC: Verificar permisos del usuario
@@ -122,7 +114,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
   const cerrarMutation = useCerrarEncuesta();
   const enviarNotificacionesMutation = useEnviarNotificacionesEncuesta();
   const consolidarMutation = useConsolidarEncuesta();
-  const compartirEmailMutation = useCompartirEmail();
 
   // Calcular estadisticas para StatsGrid
   const encuestaStats: StatItem[] = useMemo(() => {
@@ -199,10 +190,10 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
   };
 
   const handleActivar = (encuesta: EncuestaDofa) => {
-    if (encuesta.total_invitados === 0 && !encuesta.es_publica) {
+    if (encuesta.total_invitados === 0) {
       setAlertMessage({
         type: 'warning',
-        message: 'Agregue participantes o habilite el acceso publico antes de activar.',
+        message: 'Agregue participantes antes de activar la encuesta.',
       });
       return;
     }
@@ -244,17 +235,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
     }
   };
 
-  const handleCopyLink = (encuesta: EncuestaDofa) => {
-    if (encuesta.enlace_publico) {
-      // Si el backend ya retorna URL absoluta (https://...), usarla directamente
-      const url = encuesta.enlace_publico.startsWith('http')
-        ? encuesta.enlace_publico
-        : window.location.origin + encuesta.enlace_publico;
-      navigator.clipboard.writeText(url);
-      toast.success('Enlace copiado al portapapeles');
-    }
-  };
-
   const handleConsolidar = (encuesta: EncuestaDofa) => {
     setConsolidarConfirm(encuesta);
   };
@@ -263,41 +243,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
     if (consolidarConfirm) {
       await consolidarMutation.mutateAsync({ id: consolidarConfirm.id });
       setConsolidarConfirm(null);
-    }
-  };
-
-  const handleCompartirEmail = (encuesta: EncuestaDofa) => {
-    setEmailModalOpen(encuesta);
-    setEmailInput('');
-  };
-
-  const handleEnviarEmails = async () => {
-    if (!emailModalOpen || !emailInput.trim()) return;
-    const emails = emailInput
-      .split(',')
-      .map((e) => e.trim())
-      .filter(Boolean);
-    if (emails.length === 0) return;
-
-    await compartirEmailMutation.mutateAsync({
-      id: emailModalOpen.id,
-      data: { emails },
-    });
-    setEmailModalOpen(null);
-    setEmailInput('');
-  };
-
-  const handleDescargarQr = async (encuesta: EncuestaDofa) => {
-    try {
-      const blobUrl = await encuestasApi.getQrCode(encuesta.id);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = `encuesta-${encuesta.id}-qr.png`;
-      a.click();
-      URL.revokeObjectURL(blobUrl);
-      toast.success('QR descargado');
-    } catch {
-      toast.error('Error al generar QR');
     }
   };
 
@@ -486,15 +431,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
               render: (encuesta: EncuestaDofa) => renderParticipacion(encuesta),
             },
             {
-              key: 'tipo_acceso',
-              header: 'Acceso',
-              render: (encuesta: EncuestaDofa) => (
-                <Badge variant={encuesta.es_publica ? 'info' : 'gray'} size="sm">
-                  {encuesta.es_publica ? 'Publica' : 'Privada'}
-                </Badge>
-              ),
-            },
-            {
               key: 'acciones',
               header: 'Acciones',
               align: 'right',
@@ -506,38 +442,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
                       <BarChart3 className="h-4 w-4" />
                     </Button>
                   </Tooltip>
-
-                  {/* Compartir: Copiar enlace */}
-                  {encuesta.es_publica &&
-                    (encuesta.estado === 'activa' || encuesta.estado === 'borrador') && (
-                      <Tooltip content="Copiar enlace">
-                        <Button variant="ghost" size="sm" onClick={() => handleCopyLink(encuesta)}>
-                          <Link2 className="h-4 w-4" />
-                        </Button>
-                      </Tooltip>
-                    )}
-
-                  {/* Compartir: Email */}
-                  {encuesta.es_publica && encuesta.estado === 'activa' && (
-                    <Tooltip content="Compartir por email">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCompartirEmail(encuesta)}
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                    </Tooltip>
-                  )}
-
-                  {/* Compartir: QR */}
-                  {encuesta.es_publica && encuesta.estado === 'activa' && (
-                    <Tooltip content="Descargar QR">
-                      <Button variant="ghost" size="sm" onClick={() => handleDescargarQr(encuesta)}>
-                        <QrCode className="h-4 w-4" />
-                      </Button>
-                    </Tooltip>
-                  )}
 
                   {/* Consolidar / Re-consolidar en DOFA/PESTEL */}
                   {(encuesta.estado === 'cerrada' || encuesta.estado === 'procesada') &&
@@ -580,7 +484,7 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
                   )}
 
                   {/* Enviar notificaciones */}
-                  {encuesta.estado === 'activa' && !encuesta.es_publica && canEdit && (
+                  {encuesta.estado === 'activa' && canEdit && (
                     <Tooltip content="Enviar notificaciones">
                       <Button
                         variant="ghost"
@@ -699,32 +603,6 @@ export const EncuestasDofaSection = ({ _triggerNewForm }: EncuestasDofaSectionPr
         onClose={() => setConsolidarConfirm(null)}
         isLoading={consolidarMutation.isPending}
       />
-
-      {/* Modal para compartir por email */}
-      {emailModalOpen && (
-        <ConfirmDialog
-          isOpen={!!emailModalOpen}
-          title="Compartir por Email"
-          message={
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Ingrese los emails separados por coma:
-              </p>
-              <Input
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                placeholder="email1@ejemplo.com, email2@ejemplo.com"
-              />
-            </div>
-          }
-          confirmText="Enviar"
-          cancelText="Cancelar"
-          variant="info"
-          onConfirm={handleEnviarEmails}
-          onClose={() => setEmailModalOpen(null)}
-          isLoading={compartirEmailMutation.isPending}
-        />
-      )}
 
       {/* Modal de formulario */}
       <EncuestaFormModal

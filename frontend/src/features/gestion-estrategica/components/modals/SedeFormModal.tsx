@@ -19,7 +19,7 @@
  * - Sin hardcoding de unidades
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2 } from 'lucide-react';
+import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2, Hash } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Alert } from '@/components/common/Alert';
@@ -226,8 +226,8 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     // Validación de campos requeridos con scroll al primer campo inválido
     // El botón está en el footer (fuera del <form>), por eso se valida aquí
     // en lugar de depender del disabled del botón.
+    // Nota: codigo NO se valida — el backend lo genera automáticamente.
     const camposFaltantes: string[] = [];
-    if (!formData.codigo) camposFaltantes.push('Código');
     if (!formData.nombre) camposFaltantes.push('Nombre');
     if (!formData.direccion) camposFaltantes.push('Dirección');
     if (!isTipoSedeValid) camposFaltantes.push('Tipo de Sede');
@@ -247,7 +247,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     const isCustomTipo = formData.tipo_sede === OTHER_TIPO_SEDE_VALUE;
 
     const baseData = {
-      codigo: formData.codigo,
+      // codigo: omitido — auto-generado por el backend (ConsecutivoConfig SEDE-XXXX)
       nombre: formData.nombre,
       // Si es tipo personalizado, no enviar tipo_sede (ID)
       tipo_sede: isCustomTipo
@@ -334,8 +334,8 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     })) || [];
 
   // Campos requeridos faltantes — para feedback en footer
+  // Nota: codigo NO figura — se genera automáticamente en el backend.
   const camposFaltantes = [
-    !formData.codigo && 'Código',
     !formData.nombre && 'Nombre',
     !formData.direccion && 'Dirección',
     !isTipoSedeValid && 'Tipo de Sede',
@@ -388,14 +388,29 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Código *"
-              value={formData.codigo}
-              onChange={(e) => setFormData({ ...formData, codigo: e.target.value.toUpperCase() })}
-              placeholder="SEDE-001"
-              required
-              helperText="Código único de la sede"
-            />
+            {/* Código — siempre read-only, auto-generado por el sistema de consecutivos */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Código
+              </label>
+              <div className="flex h-10 items-center gap-2 px-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                <Hash className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+                {isEditing && formData.codigo ? (
+                  <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400 tracking-wider">
+                    {formData.codigo}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                    Se asignará al crear &mdash; ej: SEDE-0001
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {isEditing
+                  ? 'El código es permanente y no puede modificarse'
+                  : 'Generado automáticamente por el sistema de consecutivos'}
+              </p>
+            </div>
             <Select
               label="Tipo de Sede *"
               value={formData.tipo_sede}

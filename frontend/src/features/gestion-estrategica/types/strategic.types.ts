@@ -705,7 +705,7 @@ export interface SedeEmpresaList {
 }
 
 export interface CreateSedeEmpresaDTO {
-  codigo: string;
+  codigo?: string; // Auto-generado por el backend vía ConsecutivoConfig (SEDE-0001...)
   nombre: string;
   tipo_sede: TipoSede;
   descripcion?: string;

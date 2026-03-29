@@ -219,8 +219,9 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Override para:
-        1. Registrar el usuario que crea
-        2. Crear nuevo TipoSede si se envía tipo_sede_nuevo
+        1. Auto-generar código usando el sistema de consecutivos (thread-safe)
+        2. Registrar el usuario que crea
+        3. Crear nuevo TipoSede si se envía tipo_sede_nuevo
         """
         # Extraer tipo_sede_nuevo antes de crear
         tipo_sede_nuevo = validated_data.pop('tipo_sede_nuevo', None)
@@ -228,18 +229,25 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
         # Si se envía un nuevo tipo de sede, crearlo o buscarlo
         if tipo_sede_nuevo and tipo_sede_nuevo.strip():
             tipo_nombre = tipo_sede_nuevo.strip()
-            # Generar código a partir del nombre
             tipo_code = tipo_nombre.upper().replace(' ', '_')[:30]
-
-            # Buscar o crear el tipo de sede
-            tipo_sede, created = TipoSede.objects.get_or_create(
+            tipo_sede, _ = TipoSede.objects.get_or_create(
                 code=tipo_code,
-                defaults={
-                    'name': tipo_nombre,
-                    'is_active': True
-                }
+                defaults={'name': tipo_nombre, 'is_active': True}
             )
             validated_data['tipo_sede'] = tipo_sede
+
+        # Auto-generar código con el consecutivo SEDE (select_for_update — sin duplicados)
+        from apps.gestion_estrategica.organizacion.models_consecutivos import ConsecutivoConfig
+        empresa = EmpresaConfig.objects.first()
+        if empresa:
+            try:
+                validated_data['codigo'] = ConsecutivoConfig.obtener_siguiente_consecutivo(
+                    'SEDE', empresa_id=empresa.id
+                )
+            except (ConsecutivoConfig.DoesNotExist, ValueError):
+                # Fallback: si el seed no se ha corrido todavía en este tenant
+                count = SedeEmpresa.objects.count() + 1
+                validated_data['codigo'] = f'SEDE-{count:04d}'
 
         request = self.context.get('request')
         if request and hasattr(request, 'user'):

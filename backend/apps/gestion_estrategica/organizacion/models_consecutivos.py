@@ -583,6 +583,18 @@ CONSECUTIVOS_SISTEMA = [
 
 # Consecutivos adicionales referenciados en módulos de negocio
 CONSECUTIVOS_ADICIONALES = [
+    # ── Fundación (C1) ─────────────────────────────────────
+    {
+        'codigo': 'SEDE',
+        'nombre': 'Sede de Empresa',
+        'categoria': 'GENERAL',
+        'prefix': 'SEDE',
+        'separator': '-',
+        'padding': 4,
+        'include_year': False,
+        'reset_yearly': False,
+        'es_sistema': True,
+    },
     # ── Compras / Inventario / Ventas ──────────────────────
     {
         'codigo': 'REQUISICION_COMPRA',

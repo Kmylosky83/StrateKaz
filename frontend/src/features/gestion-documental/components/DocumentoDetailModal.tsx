@@ -2,7 +2,7 @@
  * DocumentoDetailModal - Modal de detalle con tabs: Info, Contenido, Versiones, Evidencias.
  * Acciones contextuales según estado del documento.
  */
-import { useState, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, lazy, Suspense } from 'react';
 import DOMPurify from 'dompurify';
 import {
   FileText,
@@ -20,6 +20,9 @@ import {
   ShieldCheck,
   FileDown,
   BookOpen,
+  Upload,
+  Trash2,
+  File,
 } from 'lucide-react';
 import {
   Button,
@@ -44,7 +47,10 @@ import {
   useEstadoFirmasDocumento,
   useSellarDocumento,
   useVerificarSellado,
+  useSubirAnexo,
+  useEliminarAnexo,
 } from '../hooks/useGestionDocumental';
+import type { AnexoMeta } from '../types/gestion-documental.types';
 import TextoExtraidoPanel from './TextoExtraidoPanel';
 import SelladoBadge from './SelladoBadge';
 
@@ -87,6 +93,10 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const exportDocxMutation = useExportDocumentoDocx();
   const sellarMutation = useSellarDocumento();
   const verificarSelladoMutation = useVerificarSellado();
+  const subirAnexoMutation = useSubirAnexo();
+  const eliminarAnexoMutation = useEliminarAnexo();
+  const anexoInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteAnexo, setConfirmDeleteAnexo] = useState<AnexoMeta | null>(null);
 
   const [activeTab, setActiveTab] = useState('info');
   const [confirmAction, setConfirmAction] = useState<
@@ -128,7 +138,8 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
     { id: 'info', label: 'Información', icon: <FileText className="w-4 h-4" /> },
     { id: 'contenido', label: 'Contenido', icon: <Eye className="w-4 h-4" /> },
     { id: 'versiones', label: 'Versiones', icon: <GitBranch className="w-4 h-4" /> },
-    { id: 'evidencias', label: 'Evidencias', icon: <Paperclip className="w-4 h-4" /> },
+    { id: 'anexos', label: 'Anexos', icon: <Paperclip className="w-4 h-4" /> },
+    { id: 'evidencias', label: 'Evidencias', icon: <File className="w-4 h-4" /> },
   ];
 
   return (
@@ -494,6 +505,17 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 </div>
               )}
 
+              {activeTab === 'anexos' && (
+                <AnexosTab
+                  documentoId={documentoId!}
+                  anexos={(documento.archivos_anexos as unknown as AnexoMeta[]) || []}
+                  onUpload={(file) => subirAnexoMutation.mutate({ id: documentoId!, file })}
+                  onDelete={(anexo) => setConfirmDeleteAnexo(anexo)}
+                  isUploading={subirAnexoMutation.isPending}
+                  inputRef={anexoInputRef}
+                />
+              )}
+
               {activeTab === 'evidencias' && (
                 <div className="space-y-4">
                   <EvidenceGallery
@@ -588,6 +610,25 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         isLoading={sellarMutation.isPending}
       />
 
+      {/* Confirmar eliminación de anexo */}
+      <ConfirmDialog
+        isOpen={!!confirmDeleteAnexo}
+        onClose={() => setConfirmDeleteAnexo(null)}
+        onConfirm={() => {
+          if (confirmDeleteAnexo && documentoId) {
+            eliminarAnexoMutation.mutate(
+              { id: documentoId, anexoId: confirmDeleteAnexo.id },
+              { onSuccess: () => setConfirmDeleteAnexo(null) }
+            );
+          }
+        }}
+        title="Eliminar Anexo"
+        message={`¿Eliminar el anexo "${confirmDeleteAnexo?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={eliminarAnexoMutation.isPending}
+      />
+
       {/* Asignar Lectura Verificada */}
       {documento && showAsignarLectura && (
         <Suspense fallback={null}>
@@ -603,6 +644,155 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
     </>
   );
 }
+
+// ==================== Anexos Tab ====================
+
+const ALLOWED_EXTENSIONS = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.zip',
+  '.rar',
+  '.7z',
+  '.csv',
+  '.txt',
+];
+const MAX_ANEXO_SIZE = 20 * 1024 * 1024; // 20MB
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function AnexosTab({
+  documentoId,
+  anexos,
+  onUpload,
+  onDelete,
+  isUploading,
+  inputRef,
+}: {
+  documentoId: number;
+  anexos: AnexoMeta[];
+  onUpload: (file: File) => void;
+  onDelete: (anexo: AnexoMeta) => void;
+  isUploading: boolean;
+  inputRef: React.RefObject<HTMLInputElement>;
+}) {
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        return;
+      }
+      if (file.size > MAX_ANEXO_SIZE) {
+        return;
+      }
+      onUpload(file);
+      e.target.value = '';
+    },
+    [onUpload]
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Upload button */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {anexos.length} anexo{anexos.length !== 1 ? 's' : ''} adjunto
+          {anexos.length !== 1 ? 's' : ''}
+        </p>
+        <div>
+          <input
+            ref={inputRef}
+            type="file"
+            className="hidden"
+            accept={ALLOWED_EXTENSIONS.join(',')}
+            onChange={handleFileChange}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Upload className="w-4 h-4" />}
+            onClick={() => inputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? 'Subiendo...' : 'Subir Anexo'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Anexo list */}
+      {anexos.length === 0 ? (
+        <div className="text-center py-8 text-sm text-gray-400">
+          <Paperclip className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          No hay anexos adjuntos a este documento
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {anexos.map((anexo) => (
+            <div
+              key={anexo.id}
+              className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {anexo.nombre}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatFileSize(anexo.tamaño)} &middot;{' '}
+                  {new Date(anexo.fecha_subida).toLocaleDateString('es-CO')}
+                  {anexo.subido_por_nombre && ` &middot; ${anexo.subido_por_nombre}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {anexo.url && (
+                  <a
+                    href={anexo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                    title="Descargar"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onDelete(anexo)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
+                  title="Eliminar"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400">
+        Formatos permitidos: PDF, Word, Excel, imágenes, ZIP. Máximo 20 MB por archivo.
+      </p>
+    </div>
+  );
+}
+
+// ==================== Info Item ====================
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (

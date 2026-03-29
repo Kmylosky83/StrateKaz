@@ -319,6 +319,7 @@ export interface CampoFormulario {
   ancho_columna: number;
   clase_css: string;
   condicion_visible: CondicionVisibilidad;
+  formula_calculo?: FormulaCalculo;
   is_active: boolean;
   empresa_id: number;
   created_at: string;
@@ -447,6 +448,7 @@ export interface CreateCampoFormularioDTO {
   ancho_columna?: number;
   clase_css?: string;
   condicion_visible?: CondicionVisibilidad;
+  formula_calculo?: FormulaCalculo;
 }
 
 export interface CreateControlDocumentalDTO {
@@ -744,6 +746,63 @@ export const ACEPTACION_ESTADO_COLORS: Record<AceptacionEstado, string> = {
   RECHAZADO: 'danger',
   VENCIDO: 'warning',
 };
+
+// ==================== ANEXOS (Sprint 2 — Evidencias Adjuntas) ====================
+
+export interface AnexoMeta {
+  id: string;
+  nombre: string;
+  path: string;
+  url: string;
+  tipo_mime: string;
+  tamaño: number;
+  subido_por: number;
+  subido_por_nombre?: string;
+  fecha_subida: string;
+}
+
+// ==================== INGESTA EN LOTE (Sprint 2) ====================
+
+export interface IngestarLoteDTO {
+  archivos: File[];
+  tipo_documento: number;
+  clasificacion?: ClasificacionDocumento;
+}
+
+export interface IngestarLoteResult {
+  creados: number;
+  errores: Array<{ archivo: string; error: string }>;
+  documentos_ids: number[];
+}
+
+// ==================== COBERTURA DOCUMENTAL (Sprint 3) ====================
+
+export interface CoberturaDocumental {
+  total_tipos: number;
+  con_documentos: number;
+  sin_documentos: number;
+  cobertura_pct: number;
+  detalle_por_tipo: Array<{
+    tipo_codigo: string;
+    tipo_nombre: string;
+    total_documentos: number;
+    vigentes: number;
+    borradores: number;
+    obsoletos: number;
+  }>;
+  workflows_sin_procedimiento: Array<{
+    workflow_id: number;
+    workflow_nombre: string;
+  }>;
+}
+
+// ==================== FORMULA DE CÁLCULO (Sprint 4) ====================
+
+export interface FormulaCalculo {
+  expresion: string;
+  campos: string[];
+  auto?: boolean;
+}
 
 // ==================== GOOGLE DRIVE (Fase 7) ====================
 

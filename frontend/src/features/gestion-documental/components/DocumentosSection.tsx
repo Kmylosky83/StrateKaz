@@ -2,7 +2,7 @@
  * DocumentosSection - Constructor y Listado Maestro de Documentos
  * Extracted from GestionDocumentalTab for maintainability.
  */
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import {
   FileText,
   Plus,
@@ -15,6 +15,7 @@ import {
   Calendar,
   PenTool,
   Upload,
+  Files,
 } from 'lucide-react';
 import {
   Card,
@@ -41,6 +42,9 @@ import IngestarExternoModal from './IngestarExternoModal';
 import OcrStatusBadge from './OcrStatusBadge';
 import ScoreBadge from './ScoreBadge';
 
+const IngestarLoteModal = lazy(() => import('./IngestarLoteModal'));
+const CoberturaPanel = lazy(() => import('./CoberturaPanel'));
+
 interface DocumentosSectionProps {
   onCreateDocumento: () => void;
   onEditDocumento: (id: number) => void;
@@ -66,6 +70,7 @@ export function DocumentosSection({
     titulo: string;
   } | null>(null);
   const [showIngestarModal, setShowIngestarModal] = useState(false);
+  const [showIngestarLoteModal, setShowIngestarLoteModal] = useState(false);
 
   if (isLoading) {
     return (
@@ -141,6 +146,11 @@ export function DocumentosSection({
           </Card>
         </div>
 
+        {/* Cobertura documental */}
+        <Suspense fallback={null}>
+          <CoberturaPanel />
+        </Suspense>
+
         {/* Header + Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
@@ -159,6 +169,15 @@ export function DocumentosSection({
               onClick={() => setShowIngestarModal(true)}
             >
               Ingestar PDF
+            </Button>
+          </ProtectedAction>
+          <ProtectedAction permission="gestion_documental.documentos.create">
+            <Button
+              variant="outline"
+              leftIcon={<Files className="w-4 h-4" />}
+              onClick={() => setShowIngestarLoteModal(true)}
+            >
+              Ingesta Masiva
             </Button>
           </ProtectedAction>
           <ProtectedAction permission="gestion_documental.documentos.create">
@@ -334,6 +353,15 @@ export function DocumentosSection({
         isOpen={showIngestarModal}
         onClose={() => setShowIngestarModal(false)}
       />
+
+      {showIngestarLoteModal && (
+        <Suspense fallback={null}>
+          <IngestarLoteModal
+            isOpen={showIngestarLoteModal}
+            onClose={() => setShowIngestarLoteModal(false)}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -35,6 +35,9 @@ import type {
   AceptacionResumen,
   BibliotecaPlantilla,
   FirmanteResuelto,
+  AnexoMeta,
+  IngestarLoteResult,
+  CoberturaDocumental,
 } from '../types/gestion-documental.types';
 
 const BASE_URL = '/gestion-estrategica/gestion-documental';
@@ -190,6 +193,35 @@ export const documentoApi = {
   },
   verificarSellado: async (id: number): Promise<VerificacionSellado> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/${id}/verificar-sellado/`);
+    return response.data;
+  },
+
+  // Anexos — Sprint 2: Subir / eliminar archivos adjuntos
+  subirAnexo: async (
+    id: number,
+    file: File
+  ): Promise<{ anexo: AnexoMeta; total_anexos: number }> => {
+    const formData = new FormData();
+    formData.append('archivo', file);
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/subir-anexo/`, formData);
+    return response.data;
+  },
+  eliminarAnexo: async (id: number, anexoId: string): Promise<{ mensaje: string }> => {
+    const response = await apiClient.delete(
+      `${BASE_URL}/documentos/${id}/eliminar-anexo/${anexoId}/`
+    );
+    return response.data;
+  },
+
+  // Ingesta en lote — Sprint 2: Subir hasta 20 PDFs de una vez
+  ingestarLote: async (data: FormData): Promise<IngestarLoteResult> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/ingestar-lote/`, data);
+    return response.data;
+  },
+
+  // Cobertura documental — Sprint 3: Dashboard de cobertura por tipo
+  coberturaDocumental: async (): Promise<CoberturaDocumental> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/cobertura-documental/`);
     return response.data;
   },
 

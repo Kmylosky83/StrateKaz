@@ -517,6 +517,75 @@ export function useBusquedaTexto(query: string) {
 }
 
 // =============================================================================
+// ANEXOS — Sprint 2: Subir / eliminar archivos adjuntos al documento
+// =============================================================================
+
+export function useSubirAnexo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: number; file: File }) =>
+      documentoApi.subirAnexo(id, file),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      toast.success('Anexo subido exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al subir el anexo');
+    },
+  });
+}
+
+export function useEliminarAnexo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, anexoId }: { id: number; anexoId: string }) =>
+      documentoApi.eliminarAnexo(id, anexoId),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.detail(id) });
+      toast.success('Anexo eliminado');
+    },
+    onError: () => {
+      toast.error('Error al eliminar el anexo');
+    },
+  });
+}
+
+// =============================================================================
+// INGESTA EN LOTE — Sprint 2: Subir hasta 20 PDFs de una vez
+// =============================================================================
+
+export function useIngestarLote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: FormData) => documentoApi.ingestarLote(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });
+      const msg =
+        result.errores.length > 0
+          ? `${result.creados} documentos creados, ${result.errores.length} con error`
+          : `${result.creados} documentos ingresados exitosamente`;
+      toast.success(msg);
+    },
+    onError: () => {
+      toast.error('Error en la ingesta por lote');
+    },
+  });
+}
+
+// =============================================================================
+// COBERTURA DOCUMENTAL — Sprint 3: Dashboard de cobertura por tipo
+// =============================================================================
+
+export function useCoberturaDocumental() {
+  return useQuery({
+    queryKey: [...gestionDocumentalKeys.all, 'cobertura-documental'],
+    queryFn: () => documentoApi.coberturaDocumental(),
+    staleTime: 60_000,
+  });
+}
+
+// =============================================================================
 // SCORING — Fase 6: Score de cumplimiento heurístico
 // =============================================================================
 

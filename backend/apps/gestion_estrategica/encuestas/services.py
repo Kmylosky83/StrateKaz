@@ -164,20 +164,29 @@ class EncuestaService:
         from apps.audit_system.centro_notificaciones.services import NotificationService
         from apps.audit_system.centro_notificaciones.models import TipoNotificacion
 
-        usuarios_respondieron = RespuestaEncuesta.objects.filter(
-            tema__encuesta=encuesta
-        ).values_list(
-            'respondente_id', flat=True
-        ).distinct()
+        # Usuarios que completaron TODOS los temas (no parcial)
+        total_temas = encuesta.temas.count()
+        from django.db.models import Count
+        usuarios_completos = set(
+            RespuestaEncuesta.objects.filter(
+                tema__encuesta=encuesta
+            ).values('respondente_id').annotate(
+                total=Count('id')
+            ).filter(
+                total__gte=total_temas
+            ).values_list('respondente_id', flat=True)
+        )
 
+        # Enviar a todos los participantes que NO han completado al 100%
         usuarios_pendientes = []
         for participante in encuesta.participantes.filter(
             estado__in=[
                 ParticipanteEncuesta.EstadoParticipacion.NOTIFICADO,
-                ParticipanteEncuesta.EstadoParticipacion.EN_PROGRESO
+                ParticipanteEncuesta.EstadoParticipacion.EN_PROGRESO,
+                ParticipanteEncuesta.EstadoParticipacion.PENDIENTE,
             ]
         ):
-            if participante.usuario and participante.usuario.id not in usuarios_respondieron:
+            if participante.usuario and participante.usuario.id not in usuarios_completos:
                 usuarios_pendientes.append(participante.usuario)
 
         if not usuarios_pendientes:

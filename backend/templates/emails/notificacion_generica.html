@@ -13,18 +13,19 @@
 <div class="email-card">
     {% for key, value in detalles.items %}
     <p class="email-card-title">{{ key }}</p>
-    <p class="email-card-content">{{ value }}</p>
+    <p class="email-card-content" style="margin-bottom: 12px;">{{ value }}</p>
     {% endfor %}
 </div>
 {% endif %}
 
 {% if action_url %}
-<div class="text-center mt-4">
+<div class="text-center" style="margin: 28px 0;">
     <a href="{{ action_url }}" class="email-button">{{ action_label|default:"Ver en StrateKaz" }}</a>
 </div>
 {% endif %}
 
 {% if nota %}
-<p class="text-muted mt-4">{{ nota }}</p>
+<div class="divider"></div>
+<p class="text-muted" style="text-align: center;">{{ nota }}</p>
 {% endif %}
 {% endblock %}

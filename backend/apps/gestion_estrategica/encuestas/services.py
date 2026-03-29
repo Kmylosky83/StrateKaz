@@ -95,10 +95,25 @@ class EncuestaService:
             'enlace': enlace,
         }
 
+        # Filtrar: solo notificar usuarios que aún no han sido notificados
+        ya_notificados_ids = set(
+            encuesta.participantes.exclude(
+                estado=ParticipanteEncuesta.EstadoParticipacion.PENDIENTE
+            ).values_list('usuario_id', flat=True)
+        )
+        usuarios_nuevos = [u for u in usuarios if u.id not in ya_notificados_ids]
+
+        if not usuarios_nuevos:
+            return {
+                'success': True,
+                'mensaje': 'Todos los participantes ya fueron notificados. Use "Enviar recordatorio" para reenviar.',
+                'enviados': 0
+            }
+
         try:
             NotificationService.send_bulk_notification(
                 tipo=tipo,
-                usuarios=usuarios,
+                usuarios=usuarios_nuevos,
                 titulo=f"Nueva encuesta: {encuesta.titulo}",
                 mensaje=(
                     f"Se te ha invitado a participar en la encuesta "
@@ -111,7 +126,10 @@ class EncuestaService:
                 prioridad='normal'
             )
 
-            encuesta.participantes.update(
+            # Solo actualizar participantes PENDIENTES, no resetear los que ya avanzaron
+            encuesta.participantes.filter(
+                estado=ParticipanteEncuesta.EstadoParticipacion.PENDIENTE
+            ).update(
                 estado=ParticipanteEncuesta.EstadoParticipacion.NOTIFICADO,
                 fecha_notificacion=timezone.now()
             )
@@ -128,8 +146,9 @@ class EncuestaService:
 
             return {
                 'success': True,
-                'mensaje': f'Notificaciones enviadas a {len(usuarios)} usuarios',
-                'enviados': len(usuarios)
+                'mensaje': f'Notificaciones enviadas a {len(usuarios_nuevos)} participante(s)',
+                'enviados': len(usuarios_nuevos),
+                'ya_notificados': len(ya_notificados_ids),
             }
 
         except Exception as e:

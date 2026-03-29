@@ -6,12 +6,21 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import {
   getUserPreferences,
   updateUserPreferences,
   patchUserPreferences,
 } from '../api/preferences.api';
 import type { UpdatePreferencesDTO } from '../types/preferences.types';
+
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof AxiosError && error.response?.data) {
+    const data = error.response.data as Record<string, unknown>;
+    if (typeof data.detail === 'string') return data.detail;
+  }
+  return 'Error al actualizar preferencias';
+};
 
 /**
  * Hook to get user preferences
@@ -20,8 +29,8 @@ export const usePreferences = () => {
   return useQuery({
     queryKey: ['user-preferences'],
     queryFn: getUserPreferences,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes (formerly cacheTime)
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 };
 
@@ -38,8 +47,7 @@ export const useUpdatePreferences = () => {
       toast.success('Preferencias actualizadas correctamente');
     },
     onError: (error: unknown) => {
-      const message = error.response?.data?.detail || 'Error al actualizar preferencias';
-      toast.error(message);
+      toast.error(getErrorMessage(error));
     },
   });
 };
@@ -57,8 +65,7 @@ export const usePatchPreferences = () => {
       toast.success('Preferencias actualizadas correctamente');
     },
     onError: (error: unknown) => {
-      const message = error.response?.data?.detail || 'Error al actualizar preferencias';
-      toast.error(message);
+      toast.error(getErrorMessage(error));
     },
   });
 };

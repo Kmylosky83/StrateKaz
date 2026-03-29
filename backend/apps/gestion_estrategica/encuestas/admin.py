@@ -27,15 +27,15 @@ class ParticipanteEncuestaInline(admin.TabularInline):
 @admin.register(EncuestaDofa)
 class EncuestaDofaAdmin(admin.ModelAdmin):
     list_display = [
-        'titulo', 'analisis_dofa', 'estado', 'es_publica',
+        'titulo', 'analisis_dofa', 'estado',
         'fecha_inicio', 'fecha_cierre',
         'total_invitados', 'total_respondidos', 'porcentaje_participacion'
     ]
-    list_filter = ['estado', 'es_publica', 'empresa']
+    list_filter = ['estado', 'empresa']
     search_fields = ['titulo', 'descripcion']
     date_hierarchy = 'fecha_inicio'
     readonly_fields = [
-        'token_publico', 'total_invitados', 'total_respondidos',
+        'total_invitados', 'total_respondidos',
         'notificacion_enviada', 'fecha_notificacion',
         'created_at', 'updated_at'
     ]
@@ -46,7 +46,7 @@ class EncuestaDofaAdmin(admin.ModelAdmin):
             'fields': ('analisis_dofa', 'titulo', 'descripcion', 'responsable')
         }),
         ('Configuración', {
-            'fields': ('es_publica', 'requiere_justificacion', 'token_publico')
+            'fields': ('requiere_justificacion',)
         }),
         ('Vigencia', {
             'fields': ('fecha_inicio', 'fecha_cierre', 'estado')
@@ -89,4 +89,4 @@ class RespuestaEncuestaAdmin(admin.ModelAdmin):
     ]
     list_filter = ['clasificacion', 'impacto_percibido', 'tema__encuesta']
     search_fields = ['tema__titulo', 'justificacion']
-    readonly_fields = ['ip_address', 'user_agent', 'token_anonimo', 'created_at']
+    readonly_fields = ['created_at']

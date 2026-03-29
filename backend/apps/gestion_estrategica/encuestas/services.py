@@ -62,6 +62,7 @@ class EncuestaService:
     def enviar_notificaciones(encuesta: EncuestaDofa) -> Dict[str, Any]:
         """Envía notificaciones a todos los participantes de la encuesta."""
         from apps.audit_system.centro_notificaciones.services import NotificationService
+        from apps.audit_system.centro_notificaciones.models import TipoNotificacion
 
         usuarios = EncuestaService.obtener_usuarios_por_participantes(encuesta)
 
@@ -72,25 +73,40 @@ class EncuestaService:
                 'enviados': 0
             }
 
+        try:
+            tipo = TipoNotificacion.objects.get(codigo='ENCUESTA_DOFA')
+        except TipoNotificacion.DoesNotExist:
+            return {
+                'success': False,
+                'mensaje': 'Tipo de notificación ENCUESTA_DOFA no existe. Ejecute seed_notification_types.',
+                'enviados': 0
+            }
+
+        fecha_cierre_str = (
+            encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M')
+            if encuesta.fecha_cierre else 'Sin fecha límite'
+        )
+        enlace = f"/mi-portal/"
+
         datos_extra = {
             'encuesta_id': encuesta.id,
             'encuesta_titulo': encuesta.titulo,
-            'fecha_cierre': encuesta.fecha_cierre.isoformat(),
-            'enlace': f"/gestion-estrategica/encuestas/{encuesta.id}/responder/"
+            'fecha_cierre': encuesta.fecha_cierre.isoformat() if encuesta.fecha_cierre else None,
+            'enlace': enlace,
         }
 
         try:
             NotificationService.send_bulk_notification(
-                tipo_codigo='ENCUESTA_DOFA',
+                tipo=tipo,
                 usuarios=usuarios,
                 titulo=f"Nueva encuesta: {encuesta.titulo}",
                 mensaje=(
                     f"Se te ha invitado a participar en la encuesta "
                     f"'{encuesta.titulo}'. Tu opinión es importante para "
                     f"identificar el contexto organizacional. "
-                    f"Fecha límite: {encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M')}"
+                    f"Fecha límite: {fecha_cierre_str}"
                 ),
-                url=datos_extra['enlace'],
+                url=enlace,
                 datos_extra=datos_extra,
                 prioridad='normal'
             )
@@ -127,6 +143,7 @@ class EncuestaService:
     def enviar_recordatorio(encuesta: EncuestaDofa) -> Dict[str, Any]:
         """Envía recordatorio a participantes que no han respondido."""
         from apps.audit_system.centro_notificaciones.services import NotificationService
+        from apps.audit_system.centro_notificaciones.models import TipoNotificacion
 
         usuarios_respondieron = RespuestaEncuesta.objects.filter(
             tema__encuesta=encuesta
@@ -152,16 +169,26 @@ class EncuestaService:
             }
 
         try:
+            tipo = TipoNotificacion.objects.get(codigo='ENCUESTA_DOFA_RECORDATORIO')
+        except TipoNotificacion.DoesNotExist:
+            tipo = None
+
+        fecha_cierre_str = (
+            encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M')
+            if encuesta.fecha_cierre else 'Sin fecha límite'
+        )
+
+        try:
             NotificationService.send_bulk_notification(
-                tipo_codigo='ENCUESTA_DOFA_RECORDATORIO',
+                tipo=tipo,
                 usuarios=usuarios_pendientes,
                 titulo=f"Recordatorio: {encuesta.titulo}",
                 mensaje=(
                     f"Te recordamos que aún no has completado la encuesta "
                     f"'{encuesta.titulo}'. La fecha límite es "
-                    f"{encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M')}."
+                    f"{fecha_cierre_str}."
                 ),
-                url=f"/gestion-estrategica/encuestas/{encuesta.id}/responder/",
+                url='/mi-portal/',
                 prioridad='alta'
             )
 

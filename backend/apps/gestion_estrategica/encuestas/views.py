@@ -91,10 +91,12 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     section_code = 'encuestas'
 
     def get_permissions(self):
-        # Self-service: mis encuestas solo requiere autenticación (Mi Portal)
-        if self.action == 'mis_encuestas':
+        # Self-service: empleados pueden ver detalle de encuestas donde participan
+        # y listar sus encuestas pendientes desde Mi Portal
+        if self.action in ('mis_encuestas', 'retrieve'):
             return [IsAuthenticated()]
         return super().get_permissions()
+
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'analisis_dofa', 'tipo_encuesta']
     search_fields = ['titulo', 'descripcion']
@@ -400,7 +402,8 @@ class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_permissions(self):
-        if self.action in ['create', 'partial_update', 'update']:
+        # Self-service: empleados pueden listar sus respuestas y crear/editar
+        if self.action in ['create', 'partial_update', 'update', 'list']:
             return [IsAuthenticated()]
         return [IsAuthenticated(), GranularActionPermission()]
 

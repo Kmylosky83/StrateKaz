@@ -195,7 +195,7 @@ export function FirmaActaModal({ isOpen, onClose, acta }: FirmaActaModalProps) {
                 variant="outline"
                 className="w-full"
                 onClick={handleUseSavedSignature}
-                loading={loadingSaved}
+                isLoading={loadingSaved}
                 disabled={loadingSaved}
               >
                 <PenTool className="w-3.5 h-3.5 mr-1.5" />

@@ -242,6 +242,9 @@ export const useToggleArea = () => {
       areasApi.toggle(id, isActive),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: areaKeys.all });
+      // Invalidar también el canvas del organigrama para que refleje el cambio
+      // de inmediato sin esperar a que expire su staleTime (30s)
+      queryClient.invalidateQueries({ queryKey: ['organigrama'] });
       const estado = result.is_active ? 'activado' : 'desactivado';
       toast.success(`Proceso ${estado} exitosamente`);
     },

@@ -18,7 +18,7 @@
  * - Unidades de capacidad dinámicas (kg, ton, m³, pallets, etc.)
  * - Sin hardcoding de unidades
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapPin, Loader2, Building2, Navigation, UserCog, Settings2 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -115,6 +115,9 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  // Previene que un cambio tardío de `choices` o `sedeDetail` resetee
+  // el formulario después de que el usuario ya empezó a editar.
+  const hasInitialized = useRef(false);
 
   // Función para obtener ubicación GPS del dispositivo
   const handleGetGPS = useCallback(() => {
@@ -166,8 +169,19 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const createMutation = useCreateSede();
   const updateMutation = useUpdateSede();
 
-  // Cargar datos al editar
+  // Reiniciar bandera al abrir/cerrar el modal
   useEffect(() => {
+    if (!isOpen) {
+      hasInitialized.current = false;
+    }
+  }, [isOpen]);
+
+  // Cargar datos al editar — solo una vez por apertura de modal.
+  // Se separa de choices para evitar el bug donde choices carga tarde
+  // y resetea los cambios que el usuario ya ingresó.
+  useEffect(() => {
+    if (hasInitialized.current) return;
+
     if (isEditing && sedeDetail) {
       setFormData({
         codigo: sedeDetail.codigo,
@@ -195,13 +209,19 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
         es_proveedor_interno: sedeDetail.es_proveedor_interno ?? false,
         is_active: sedeDetail.is_active,
       });
+      hasInitialized.current = true;
     } else if (!isEditing) {
-      // Para nuevo registro, usar unidad por defecto de la empresa si existe
+      // Para nuevo registro, usar unidad por defecto de la empresa si existe.
+      // Espera a que choices cargue antes de marcar como inicializado,
+      // pero una vez inicializado no vuelve a resetear aunque choices cambie.
       const choicesRecord = choices as Record<string, { value?: number }> | undefined;
       const defaultUnit = choicesRecord?.unidad_capacidad_default?.value?.toString() || '';
       setFormData({ ...defaultFormData, unidad_capacidad: defaultUnit });
+      if (choices !== undefined) {
+        hasInitialized.current = true;
+      }
     }
-  }, [sedeDetail, isEditing, choices]);
+  }, [isEditing, sedeDetail, choices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

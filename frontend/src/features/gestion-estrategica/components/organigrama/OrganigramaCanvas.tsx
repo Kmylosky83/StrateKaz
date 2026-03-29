@@ -22,6 +22,7 @@ import {
   ReactFlowProvider,
   Panel,
   type NodeDragHandler,
+  type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -56,9 +57,9 @@ import {
   DEFAULT_EXPORT_OPTIONS,
 } from '../../types/organigrama.types';
 
-// Tipos de nodos personalizados
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nodeTypes: any = {
+// Tipos de nodos personalizados — definido fuera del componente para evitar
+// re-renders (React Flow requiere referencia estable en nodeTypes).
+const nodeTypes: NodeTypes = {
   areaNode: AreaNode,
   cargoNode: CargoNode,
   compactNode: CompactNode,
@@ -107,9 +108,9 @@ const OrganigramaCanvasInner = ({
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
   const [isExporting, setIsExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-   
+
   const [nodes, setNodes, onNodesChange] = useNodesState<unknown>([]);
-   
+
   const [edges, setEdges, onEdgesChange] = useEdgesState<unknown>([]);
 
   // RBAC

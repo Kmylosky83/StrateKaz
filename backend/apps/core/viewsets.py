@@ -281,7 +281,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         POST /api/core/users/{id}/change_password/
         {
-            "old_password": "contraseña_actual",
+            "current_password": "contraseña_actual",
             "new_password": "nueva_contraseña",
             "confirm_password": "nueva_contraseña"
         }

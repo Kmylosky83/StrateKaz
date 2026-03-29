@@ -64,16 +64,6 @@ export const authAPI = {
   },
 
   /**
-   * Cambiar contraseña
-   */
-  changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
-    await axios.post('/core/users/change_password/', {
-      old_password: oldPassword,
-      new_password: newPassword,
-    });
-  },
-
-  /**
    * Refrescar token de acceso
    */
   refreshToken: async (refreshToken: string): Promise<{ access: string; refresh?: string }> => {

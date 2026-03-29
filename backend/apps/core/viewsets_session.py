@@ -13,7 +13,6 @@ from django.utils import timezone
 from .models import UserSession
 from .serializers_session import (
     UserSessionSerializer,
-    UserSessionListSerializer,
     UpdateDeviceNameSerializer,
 )
 
@@ -56,7 +55,7 @@ class UserSessionViewSet(viewsets.ViewSet):
             for session in queryset:
                 session.is_current = (session.refresh_token_hash == current_hash)
 
-        serializer = UserSessionListSerializer(queryset, many=True)
+        serializer = UserSessionSerializer(queryset, many=True)
         return Response({
             'count': queryset.count(),
             'sessions': serializer.data
@@ -119,7 +118,7 @@ class UserSessionViewSet(viewsets.ViewSet):
         )
 
         return Response(
-            {'message': 'Sesión cerrada correctamente'},
+            {'detail': 'Sesión cerrada correctamente'},
             status=status.HTTP_200_OK
         )
 
@@ -154,8 +153,8 @@ class UserSessionViewSet(viewsets.ViewSet):
         )
 
         return Response({
-            'message': f'{count} sesiones cerradas',
-            'count': count
+            'detail': f'{count} sesiones cerradas',
+            'closed_count': count
         })
 
     @action(detail=False, methods=['get'])
@@ -205,10 +204,8 @@ class UserSessionViewSet(viewsets.ViewSet):
         session.device_name = serializer.validated_data['device_name']
         session.save(update_fields=['device_name'])
 
-        return Response({
-            'message': 'Nombre actualizado',
-            'device_name': session.device_name
-        })
+        result_serializer = UserSessionSerializer(session)
+        return Response(result_serializer.data)
 
     @action(detail=False, methods=['post'])
     def cleanup(self, request):
@@ -225,8 +222,8 @@ class UserSessionViewSet(viewsets.ViewSet):
 
         count = UserSession.cleanup_expired()
         return Response({
-            'message': f'{count} sesiones expiradas eliminadas',
-            'count': count
+            'detail': f'{count} sesiones expiradas eliminadas',
+            'closed_count': count
         })
 
     def _get_current_token(self, request) -> str | None:

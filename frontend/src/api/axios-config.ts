@@ -26,6 +26,12 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
+    // Refresh token — necesario para identificar sesión actual (MS-002-A)
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken && config.headers) {
+      config.headers['X-Refresh-Token'] = refreshToken;
+    }
+
     // Tenant ID — validar que sea un número (evita enviar "null" como string)
     const rawTenantId = localStorage.getItem('current_tenant_id');
     const tenantId = rawTenantId ? Number(rawTenantId) : null;

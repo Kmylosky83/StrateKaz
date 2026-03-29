@@ -448,7 +448,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
     """Serializer para cambio de contraseña"""
 
-    old_password = serializers.CharField(
+    current_password = serializers.CharField(
         required=True,
         write_only=True,
         style={'input_type': 'password'},
@@ -467,7 +467,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         help_text='Confirmación de nueva contraseña'
     )
 
-    def validate_old_password(self, value):
+    def validate_current_password(self, value):
         """Validar que la contraseña actual es correcta"""
         user = self.context.get('user')
         if not user or not user.check_password(value):
@@ -496,7 +496,7 @@ class ChangePasswordSerializer(serializers.Serializer):
             })
 
         # Validar que la nueva contraseña sea diferente a la actual
-        if attrs.get('old_password') == attrs.get('new_password'):
+        if attrs.get('current_password') == attrs.get('new_password'):
             raise serializers.ValidationError({
                 'new_password': 'La nueva contraseña debe ser diferente a la actual'
             })

@@ -67,10 +67,7 @@ export const usersAPI = {
    * Cambiar contraseña de un usuario
    */
   changePassword: async (id: number, data: ChangePasswordDTO): Promise<void> => {
-    await axiosInstance.post(`/core/users/${id}/change_password/`, {
-      old_password: data.current_password,
-      new_password: data.new_password,
-    });
+    await axiosInstance.post(`/core/users/${id}/change_password/`, data);
   },
 
   /**

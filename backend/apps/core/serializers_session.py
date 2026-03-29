@@ -58,12 +58,23 @@ class UserSessionSerializer(serializers.ModelSerializer):
             return obj.device_name
         return f"{obj.device_browser} en {obj.device_os}"
 
-    def get_time_remaining(self, obj) -> int | None:
-        """Segundos restantes hasta expiración."""
+    def get_time_remaining(self, obj) -> str | None:
+        """Tiempo restante hasta expiración en formato legible."""
         if obj.is_expired:
             return None
         delta = obj.expires_at - timezone.now()
-        return max(0, int(delta.total_seconds()))
+        seconds = max(0, int(delta.total_seconds()))
+
+        if seconds < 60:
+            return "menos de 1 min"
+        elif seconds < 3600:
+            return f"{seconds // 60} min"
+        elif seconds < 86400:
+            hours = seconds // 3600
+            return f"{hours}h"
+        else:
+            days = seconds // 86400
+            return f"{days} días"
 
     def get_time_elapsed(self, obj) -> str:
         """Tiempo transcurrido desde última actividad."""
@@ -83,42 +94,12 @@ class UserSessionSerializer(serializers.ModelSerializer):
             return f"Hace {days} días"
 
 
-class UserSessionListSerializer(serializers.ModelSerializer):
+class UserSessionListSerializer(UserSessionSerializer):
     """
-    Serializer optimizado para listados.
+    Serializer para listados — hereda del completo porque el FE
+    necesita device_os, device_browser, city, country, time_remaining, device_name.
     """
-    device_display = serializers.SerializerMethodField()
-    time_elapsed = serializers.SerializerMethodField()
-
-    class Meta:
-        model = UserSession
-        fields = [
-            'id',
-            'device_type',
-            'device_display',
-            'ip_address',
-            'last_activity',
-            'time_elapsed',
-            'is_current',
-        ]
-
-    def get_device_display(self, obj) -> str:
-        if obj.device_name:
-            return obj.device_name
-        return f"{obj.device_browser} en {obj.device_os}"
-
-    def get_time_elapsed(self, obj) -> str:
-        delta = timezone.now() - obj.last_activity
-        seconds = int(delta.total_seconds())
-
-        if seconds < 60:
-            return "Ahora"
-        elif seconds < 3600:
-            return f"{seconds // 60}m"
-        elif seconds < 86400:
-            return f"{seconds // 3600}h"
-        else:
-            return f"{seconds // 86400}d"
+    pass
 
 
 class UpdateDeviceNameSerializer(serializers.Serializer):

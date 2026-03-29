@@ -7,7 +7,6 @@
  */
 export interface UserSession {
   id: number;
-  user_agent: string;
   device_type: 'desktop' | 'mobile' | 'tablet';
   device_os: string;
   device_browser: string;
@@ -21,7 +20,7 @@ export interface UserSession {
   expires_at: string;
   is_active: boolean;
   is_current: boolean;
-  time_remaining: string;
+  time_remaining: string | null;
   time_elapsed: string;
 }
 
@@ -31,7 +30,6 @@ export interface UserSession {
 export interface SessionsListResponse {
   count: number;
   sessions: UserSession[];
-  current_session_id: number | null;
 }
 
 /**

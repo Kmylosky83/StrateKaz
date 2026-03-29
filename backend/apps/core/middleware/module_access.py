@@ -69,6 +69,8 @@ EXCLUDED_PREFIXES = (
     # Portales transversales (acceso personal, no dependen de módulo)
     'api/talent-hub/mi-portal/',
     'api/mi-equipo/',
+    'api/encuestas-dofa/encuestas/mis-encuestas/',
+    'api/encuestas-dofa/respuestas/',
     'admin/',
     'static/',
     'media/',

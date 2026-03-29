@@ -89,6 +89,12 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ).prefetch_related('temas', 'participantes').all()
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'encuestas'
+
+    def get_permissions(self):
+        # Self-service: mis encuestas solo requiere autenticación (Mi Portal)
+        if self.action == 'mis_encuestas':
+            return [IsAuthenticated()]
+        return super().get_permissions()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'analisis_dofa', 'tipo_encuesta']
     search_fields = ['titulo', 'descripcion']

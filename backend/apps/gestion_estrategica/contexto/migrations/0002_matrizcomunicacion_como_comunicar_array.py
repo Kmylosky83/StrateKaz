@@ -14,7 +14,7 @@ import django.contrib.postgres.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contexto', '0001_initial'),
+        ('gestion_estrategica_contexto', '0001_initial'),
     ]
 
     operations = [

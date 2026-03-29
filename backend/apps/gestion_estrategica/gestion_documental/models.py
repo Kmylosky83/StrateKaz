@@ -991,6 +991,18 @@ class CampoFormulario(models.Model):
         help_text='Regla JSON para mostrar/ocultar campo condicionalmente'
     )
 
+    # Fórmula de cálculo automático (Sprint 4)
+    formula_calculo = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Fórmula de Cálculo',
+        help_text=(
+            'Fórmula para campos calculados. Ejemplo: '
+            '{"expresion": "precio * cantidad", "campos": ["precio", "cantidad"], "auto": true}. '
+            'Funciones para tablas: SUM(tabla.columna), COUNT(tabla), MIN(...), MAX(...)'
+        )
+    )
+
     # Estado
     is_active = models.BooleanField(
         default=True,

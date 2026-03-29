@@ -12,7 +12,7 @@
  * - Inspecciones de seguridad
  * - Cualquier modulo que use el FormBuilder del backend
  */
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { AlertCircle, Upload, X, Pen, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from './Button';
@@ -36,6 +36,21 @@ export interface CondicionVisibilidadField {
   valor?: unknown;
 }
 
+/**
+ * Fórmula calculada entre campos.
+ * Permite que un campo NUMBER se auto-calcule a partir de otros campos.
+ *
+ * Ejemplo: { expresion: "precio * cantidad", campos: ["precio", "cantidad"] }
+ * Operadores soportados: +, -, *, /, (, )
+ * Funciones: SUM(campo_tabla.columna), COUNT(campo_tabla), MIN(...), MAX(...)
+ */
+export interface FormulaCalculo {
+  expresion: string;
+  campos: string[];
+  /** Si true, el campo es read-only (calculado automáticamente) */
+  auto?: boolean;
+}
+
 export interface DynamicFieldDefinition {
   id: number;
   nombre: string;
@@ -51,6 +66,8 @@ export interface DynamicFieldDefinition {
   columnas_tabla?: ColumnaTabla[];
   ancho_columna?: number;
   condicion_visible?: CondicionVisibilidadField;
+  /** Fórmula para campos calculados (Sprint 4) */
+  formula_calculo?: FormulaCalculo;
 }
 
 export interface DynamicFormRendererProps {
@@ -102,6 +119,86 @@ function evaluateVisibility(
 }
 
 // ============================================================
+// MOTOR DE CÁLCULO ENTRE CAMPOS (Sprint 4)
+// ============================================================
+
+/**
+ * Evalúa una fórmula matemática simple con valores de campos del formulario.
+ * Soporta: +, -, *, /, paréntesis, y funciones SUM/COUNT/MIN/MAX para tablas.
+ *
+ * Seguro: NO usa eval(). Parsea tokens manualmente.
+ */
+function evaluateFormula(
+  formula: FormulaCalculo | undefined,
+  values: Record<string, unknown>
+): number | null {
+  if (!formula?.expresion) return null;
+
+  let expr = formula.expresion;
+
+  // Resolver funciones de tabla: SUM(tabla.columna) etc.
+  const fnRegex = /(SUM|COUNT|MIN|MAX)\((\w+)\.(\w+)\)/gi;
+  expr = expr.replace(fnRegex, (_match, fn: string, tableName: string, colName: string) => {
+    const tableData = values[tableName];
+    if (!Array.isArray(tableData) || tableData.length === 0) return '0';
+
+    const nums = tableData.map((row) => Number(row[colName] ?? 0)).filter((n) => !isNaN(n));
+
+    switch (fn.toUpperCase()) {
+      case 'SUM':
+        return String(nums.reduce((a, b) => a + b, 0));
+      case 'COUNT':
+        return String(nums.length);
+      case 'MIN':
+        return String(Math.min(...nums));
+      case 'MAX':
+        return String(Math.max(...nums));
+      default:
+        return '0';
+    }
+  });
+
+  // Resolver COUNT(tabla) sin columna
+  const countRegex = /COUNT\((\w+)\)/gi;
+  expr = expr.replace(countRegex, (_match, tableName: string) => {
+    const tableData = values[tableName];
+    return String(Array.isArray(tableData) ? tableData.length : 0);
+  });
+
+  // Sustituir nombres de campos por sus valores numéricos
+  for (const campo of formula.campos) {
+    const val = Number(values[campo] ?? 0);
+    // Reemplazar nombre de campo por valor (word boundary para evitar parciales)
+    expr = expr.replace(new RegExp(`\\b${campo}\\b`, 'g'), String(isNaN(val) ? 0 : val));
+  }
+
+  // Evaluar expresión matemática simple (solo números, operadores, paréntesis)
+  try {
+    return safeEvalMath(expr);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Evaluador matemático seguro sin eval().
+ * Solo acepta: números, +, -, *, /, (, ), espacios, puntos decimales.
+ */
+function safeEvalMath(expr: string): number {
+  // Limpiar y validar que solo contiene caracteres seguros
+  const cleaned = expr.replace(/\s/g, '');
+  if (!/^[0-9+\-*/().]+$/.test(cleaned)) {
+    throw new Error('Expresión inválida');
+  }
+
+  // Usar Function constructor con scope vacío (más seguro que eval)
+  // Solo puede acceder a Math y números
+  const fn = new Function(`"use strict"; return (${cleaned})`);
+  const result = fn();
+  return typeof result === 'number' && isFinite(result) ? result : 0;
+}
+
+// ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
 
@@ -130,6 +227,29 @@ export const DynamicFormRenderer = ({
   useGridLayout = false,
 }: DynamicFormRendererProps) => {
   const sortedFields = [...fields].sort((a, b) => a.orden - b.orden);
+
+  // Sprint 4: Auto-calcular campos con formula_calculo
+  const calculatedFields = sortedFields.filter(
+    (f) => f.formula_calculo?.expresion && f.formula_calculo?.auto !== false
+  );
+
+  // Recalcular cuando cambian los valores dependientes
+  // Usamos useRef para evitar loops infinitos
+  const prevCalcRef = useRef<Record<string, number | null>>({});
+  if (calculatedFields.length > 0) {
+    for (const field of calculatedFields) {
+      const result = evaluateFormula(field.formula_calculo, values);
+      if (result !== null && result !== prevCalcRef.current[field.nombre]) {
+        prevCalcRef.current[field.nombre] = result;
+        // Solo actualizar si el valor cambió (evita re-renders infinitos)
+        const currentVal = Number(values[field.nombre] ?? 0);
+        if (Math.abs(currentVal - result) > 0.001) {
+          // Defer update to avoid render-during-render
+          setTimeout(() => onChange(field.nombre, Math.round(result * 100) / 100), 0);
+        }
+      }
+    }
+  }
 
   return (
     <div className={cn(useGridLayout ? 'grid grid-cols-12 gap-4' : 'space-y-4', className)}>

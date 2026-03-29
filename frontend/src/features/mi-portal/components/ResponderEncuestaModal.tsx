@@ -277,43 +277,47 @@ function TarjetaPregunta({
           })}
         </div>
 
-        {/* Detalle: justificación + impacto */}
+        {/* Nivel de impacto: visible siempre al clasificar */}
         {respondida && (
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => setMostrarDetalle((v) => !v)}
-              className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            >
-              {mostrarDetalle ? (
-                <ChevronUp className="h-3 w-3" />
-              ) : (
-                <ChevronDown className="h-3 w-3" />
-              )}
-              {requiereJustificacion
-                ? 'Justificación (requerida)'
-                : 'Agregar justificación (opcional)'}
-            </button>
+          <div className="mt-3 space-y-3">
+            <RadioGroup
+              label="Nivel de impacto"
+              name={`impacto-${tema.id}`}
+              value={respuesta?.impacto_percibido || ''}
+              onChange={handleImpacto}
+              options={IMPACTO_OPTIONS}
+              orientation="horizontal"
+            />
 
-            {mostrarDetalle && (
-              <div className="mt-3 space-y-3">
-                <Textarea
-                  label={requiereJustificacion ? 'Justificación *' : 'Justificación'}
-                  value={respuesta?.justificacion || ''}
-                  onChange={(e) => handleJustificacion(e.target.value)}
-                  placeholder="Explica brevemente tu clasificación..."
-                  rows={3}
-                />
-                <RadioGroup
-                  label="Nivel de impacto"
-                  name={`impacto-${tema.id}`}
-                  value={respuesta?.impacto_percibido || ''}
-                  onChange={handleImpacto}
-                  options={IMPACTO_OPTIONS}
-                  orientation="horizontal"
-                />
-              </div>
-            )}
+            {/* Justificación: toggle expandible */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setMostrarDetalle((v) => !v)}
+                className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                {mostrarDetalle ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+                {requiereJustificacion
+                  ? 'Justificación (requerida)'
+                  : 'Agregar justificación (opcional)'}
+              </button>
+
+              {mostrarDetalle && (
+                <div className="mt-2">
+                  <Textarea
+                    label={requiereJustificacion ? 'Justificación *' : 'Justificación'}
+                    value={respuesta?.justificacion || ''}
+                    onChange={(e) => handleJustificacion(e.target.value)}
+                    placeholder="Explica brevemente tu clasificación..."
+                    rows={2}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -417,6 +421,7 @@ export function ResponderEncuestaModal({
   const [respuestasLocal, setRespuestasLocal] = useState<Record<number, LocalRespuesta>>({});
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [esFinalizado, setEsFinalizado] = useState(false);
 
   const encuestaId = encuesta?.id;
 
@@ -460,11 +465,16 @@ export function ResponderEncuestaModal({
 
   const requiereJustificacion = encuesta?.requiere_justificacion ?? false;
 
-  const validarEnvio = (): string | null => {
-    if (totalRespondidas === 0) return 'Responde al menos una pregunta antes de enviar.';
+  const todasRespondidas = totalTemas > 0 && totalRespondidas === totalTemas;
+
+  const validarEnvio = (esFinalizar: boolean): string | null => {
+    if (totalRespondidas === 0) return 'Responde al menos una pregunta antes de guardar.';
+    if (esFinalizar && !todasRespondidas) {
+      return `Faltan ${totalTemas - totalRespondidas} pregunta(s) por responder para finalizar.`;
+    }
     if (requiereJustificacion) {
       const sinJustificacion = Object.values(respuestasLocal).filter(
-        (r) => !r.justificacion?.trim()
+        (r) => r.clasificacion && !r.justificacion?.trim()
       );
       if (sinJustificacion.length > 0) {
         return `${sinJustificacion.length} respuesta(s) requieren justificación.`;
@@ -473,8 +483,8 @@ export function ResponderEncuestaModal({
     return null;
   };
 
-  const handleEnviar = async () => {
-    const error = validarEnvio();
+  const handleEnviar = async (esFinalizar: boolean) => {
+    const error = validarEnvio(esFinalizar);
     if (error) return;
 
     setEnviando(true);
@@ -482,6 +492,7 @@ export function ResponderEncuestaModal({
       const promesas: Promise<unknown>[] = [];
 
       for (const [temaIdStr, resp] of Object.entries(respuestasLocal)) {
+        if (!resp.clasificacion) continue;
         const temaId = parseInt(temaIdStr, 10);
         const payload = {
           tema: temaId,
@@ -509,6 +520,7 @@ export function ResponderEncuestaModal({
 
       await Promise.all(promesas);
       setEnviado(true);
+      setEsFinalizado(esFinalizar);
       onCompletado?.();
     } catch {
       // El error lo maneja el hook con toast
@@ -519,11 +531,11 @@ export function ResponderEncuestaModal({
 
   const handleClose = () => {
     setEnviado(false);
+    setEsFinalizado(false);
     setRespuestasLocal({});
     onClose();
   };
 
-  const validationError = validarEnvio();
   const isLoading = loadingDetalle || loadingRespuestas;
 
   // Footer
@@ -540,14 +552,24 @@ export function ResponderEncuestaModal({
           {enviado ? 'Cerrar' : 'Cancelar'}
         </Button>
         {!enviado && (
-          <Button
-            variant="primary"
-            onClick={handleEnviar}
-            disabled={totalRespondidas === 0 || enviando}
-            isLoading={enviando}
-          >
-            Enviar respuestas
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => handleEnviar(false)}
+              disabled={totalRespondidas === 0 || enviando}
+              isLoading={enviando}
+            >
+              Guardar avance
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => handleEnviar(true)}
+              disabled={!todasRespondidas || enviando}
+              isLoading={enviando}
+            >
+              Finalizar encuesta
+            </Button>
+          </>
         )}
       </div>
     </div>
@@ -569,16 +591,25 @@ export function ResponderEncuestaModal({
       {/* Estado: Completado */}
       {enviado && (
         <div className="py-12 text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-            <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+          <div
+            className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center ${
+              esFinalizado ? 'bg-green-100 dark:bg-green-900/30' : 'bg-blue-100 dark:bg-blue-900/30'
+            }`}
+          >
+            {esFinalizado ? (
+              <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
+            ) : (
+              <ClipboardList className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            )}
           </div>
           <div className="space-y-1">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              ¡Respuestas enviadas!
+              {esFinalizado ? '¡Encuesta finalizada!' : 'Avance guardado'}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Registraste {totalRespondidas} respuesta{totalRespondidas !== 1 ? 's' : ''}. Gracias
-              por participar.
+              {esFinalizado
+                ? `Registraste ${totalRespondidas} respuesta${totalRespondidas !== 1 ? 's' : ''}. ¡Gracias por participar!`
+                : `Se guardaron ${totalRespondidas} de ${totalTemas} respuestas. Puedes volver a completar el resto cuando quieras.`}
             </p>
           </div>
         </div>
@@ -636,11 +667,6 @@ export function ResponderEncuestaModal({
               variant="warning"
               message="Esta encuesta requiere que justifiques cada respuesta. Haz clic en la opción seleccionada para expandir el campo de justificación."
             />
-          )}
-
-          {/* Error de validación */}
-          {totalRespondidas > 0 && validationError && (
-            <Alert variant="danger" message={validationError} />
           )}
 
           {/* Grupos de preguntas */}

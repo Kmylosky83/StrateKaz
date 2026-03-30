@@ -48,6 +48,7 @@ CORS_ALLOW_HEADERS = (
     'x-requested-with',
     'x-tenant-id',
     'x-impersonated-user-id',
+    'x-refresh-token',
 )
 
 # =============================================================================

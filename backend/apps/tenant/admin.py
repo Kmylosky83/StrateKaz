@@ -64,6 +64,13 @@ class TenantAdmin(TenantAdminMixin, admin.ModelAdmin):
     search_fields = ['name', 'code', 'nit', 'schema_name']
     ordering = ['-created_at']
     readonly_fields = ['schema_name', 'created_at', 'updated_at']
+
+    def get_readonly_fields(self, request, obj=None):
+        """El tenant de plataforma no permite desactivar is_active desde admin."""
+        readonly = list(super().get_readonly_fields(request, obj))
+        if obj and obj.schema_name == 'tenant_stratekaz':
+            readonly.append('is_active')
+        return readonly
     autocomplete_fields = ['plan']
     inlines = [DomainInline, TenantUserAccessInline]
 

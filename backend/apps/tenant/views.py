@@ -288,6 +288,10 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         El schema PostgreSQL se preserva para posible recuperacion.
         Para eliminacion permanente (schema + datos), usar el action 'hard-delete'.
         """
+        if instance.schema_name == 'tenant_stratekaz':
+            raise serializers.ValidationError(
+                'No se puede desactivar el tenant de plataforma.'
+            )
         instance.is_active = False
         with schema_context('public'):
             instance.save(update_fields=['is_active'])

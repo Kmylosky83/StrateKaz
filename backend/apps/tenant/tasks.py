@@ -929,6 +929,10 @@ def check_tenant_expirations() -> Dict[str, Any]:
 
     logger.info("Starting tenant expiration check...")
 
+    # Schema del tenant de plataforma — NUNCA se desactiva automáticamente.
+    # Si se desactiva, el superadmin pierde acceso al sistema completo.
+    PLATFORM_SCHEMA = 'tenant_stratekaz'
+
     with schema_context('public'):
         # 1. Trials vencidos: activos, en trial, con fecha de fin pasada
         expired_trial_tenants = Tenant.objects.filter(
@@ -936,7 +940,7 @@ def check_tenant_expirations() -> Dict[str, Any]:
             is_trial=True,
             trial_ends_at__isnull=False,
             trial_ends_at__lt=now,
-        )
+        ).exclude(schema_name=PLATFORM_SCHEMA)
 
         for tenant in expired_trial_tenants:
             tenant.is_active = False
@@ -953,7 +957,7 @@ def check_tenant_expirations() -> Dict[str, Any]:
             is_trial=False,
             subscription_ends_at__isnull=False,
             subscription_ends_at__lt=now,
-        )
+        ).exclude(schema_name=PLATFORM_SCHEMA)
 
         for tenant in expired_sub_tenants:
             tenant.is_active = False
@@ -963,6 +967,24 @@ def check_tenant_expirations() -> Dict[str, Any]:
                 f"Subscription expired: deactivated tenant '{tenant.name}' "
                 f"(subscription_ends_at={tenant.subscription_ends_at})"
             )
+
+        # Verificar si el tenant de plataforma tenía fechas vencidas (solo warning)
+        platform = Tenant.objects.filter(
+            schema_name=PLATFORM_SCHEMA, is_active=True
+        ).first()
+        if platform:
+            if platform.is_trial and platform.trial_ends_at and platform.trial_ends_at < now:
+                logger.warning(
+                    f"ALERTA: Tenant de plataforma '{platform.name}' tiene trial "
+                    f"vencido ({platform.trial_ends_at}) pero NO fue desactivado "
+                    f"(protección de plataforma). Actualice las fechas."
+                )
+            if not platform.is_trial and platform.subscription_ends_at and platform.subscription_ends_at < now:
+                logger.warning(
+                    f"ALERTA: Tenant de plataforma '{platform.name}' tiene suscripción "
+                    f"vencida ({platform.subscription_ends_at}) pero NO fue desactivado "
+                    f"(protección de plataforma). Actualice las fechas."
+                )
 
     total = len(expired_trials) + len(expired_subscriptions)
     summary = {

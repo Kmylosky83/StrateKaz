@@ -19,7 +19,6 @@ import {
   Users,
   Lock,
   Briefcase,
-  CheckCircle,
   Search,
   Upload,
   Power,
@@ -158,27 +157,20 @@ export const CargosTab = () => {
   // Opciones de areas desde el backend
   const areaOptions = choicesData?.areas || [];
 
-  // Calcular estadísticas para StatsGrid
+  // Calcular estadísticas solo sobre cargos activos (métricas reales de la empresa)
   const cargoStats: StatItem[] = useMemo(() => {
     const cargos = data?.results || [];
-    const totalUsuarios = cargos.reduce((sum, c) => sum + (c.users_count || 0), 0);
-    const cargosConUsuarios = cargos.filter((c) => (c.users_count || 0) > 0).length;
+    const activos = cargos.filter((c) => c.is_active);
+    const totalUsuarios = activos.reduce((sum, c) => sum + (c.users_count || 0), 0);
 
     return [
       {
-        label: 'Total Cargos',
-        value: data?.count || cargos.length,
+        label: 'Cargos Activos',
+        value: activos.length,
         icon: Briefcase,
         iconColor: 'info',
       },
       { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'primary' },
-      {
-        label: 'Con Usuarios',
-        value: cargosConUsuarios,
-        icon: CheckCircle,
-        iconColor: 'gray',
-        description: 'Cargos ocupados',
-      },
     ];
   }, [data]);
 
@@ -269,7 +261,7 @@ export const CargosTab = () => {
       {isLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={cargoStats} columns={4} moduleColor={moduleColor} />
+        <StatsGrid stats={cargoStats} columns={2} moduleColor={moduleColor} />
       )}
 
       {/* Section Header - Vista 2B: Filtros en línea */}

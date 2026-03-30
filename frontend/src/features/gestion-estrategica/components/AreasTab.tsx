@@ -260,27 +260,20 @@ export const AreasTab = () => {
 
   // Calcular estadísticas para StatsGrid
   const areaStats: StatItem[] = useMemo(() => {
-    const activas = areas.filter((a) => a.is_active).length;
-    // const inactivas = areas.filter((a) => !a.is_active).length;
-    // Buscar por manager (ID) en lugar de manager_name ya que el nombre puede estar vacío
-    const conManager = areas.filter((a) => a.manager !== null && a.manager !== undefined).length;
-    const areasRaiz = areas.filter((a) => !a.parent).length;
+    // Solo contar procesos activos para métricas reales de la empresa
+    const activas = areas.filter((a) => a.is_active);
+    const conManager = activas.filter((a) => a.manager !== null && a.manager !== undefined).length;
+    const areasRaiz = activas.filter((a) => !a.parent).length;
 
     return [
       {
-        label: 'Total Procesos',
-        value: areas.length,
+        label: 'Procesos Activos',
+        value: activas.length,
         icon: Building2,
         iconColor: 'info' as const,
       },
       {
-        label: 'Procesos Activos',
-        value: activas,
-        icon: CheckCircle,
-        iconColor: 'success' as const,
-      },
-      {
-        label: 'Procesos Raiz',
+        label: 'Procesos Raíz',
         value: areasRaiz,
         icon: GitBranch,
         iconColor: 'info' as const,
@@ -444,7 +437,7 @@ export const AreasTab = () => {
   return (
     <div className="space-y-6">
       {/* 1. StatsGrid de Áreas */}
-      <StatsGrid stats={areaStats} columns={4} moduleColor={moduleColor} />
+      <StatsGrid stats={areaStats} columns={3} moduleColor={moduleColor} />
 
       {/* 2. Section Header - FUERA de cualquier contenedor (Vista 7) */}
       <SectionHeader

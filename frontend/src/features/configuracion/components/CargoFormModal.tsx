@@ -82,6 +82,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
     requiere_tarjeta_contador: false,
     requiere_tarjeta_abogado: false,
 
+    orden: 0,
+
     // Tab 2: Manual de Funciones
     objetivo_cargo: '',
     funciones_responsabilidades: [] as FuncionCargo[],
@@ -120,6 +122,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: cargoCompleto.requiere_licencia_sst,
         requiere_tarjeta_contador: cargoCompleto.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: cargoCompleto.requiere_tarjeta_abogado,
+        orden: cargoCompleto.orden || 0,
 
         objetivo_cargo: cargoCompleto.objetivo_cargo || '',
         funciones_responsabilidades: normalizeFunciones(
@@ -162,6 +165,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: false,
         requiere_tarjeta_contador: false,
         requiere_tarjeta_abogado: false,
+        orden: 0,
         objetivo_cargo: '',
         funciones_responsabilidades: [],
         autoridad_autonomia: '',
@@ -191,6 +195,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: formData.requiere_licencia_sst,
         requiere_tarjeta_contador: formData.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: formData.requiere_tarjeta_abogado,
+        orden: formData.orden,
 
         objetivo_cargo: formData.objetivo_cargo || undefined,
         funciones_responsabilidades: formData.funciones_responsabilidades,
@@ -215,6 +220,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         requiere_licencia_sst: formData.requiere_licencia_sst,
         requiere_tarjeta_contador: formData.requiere_tarjeta_contador,
         requiere_tarjeta_abogado: formData.requiere_tarjeta_abogado,
+        orden: formData.orden,
 
         objetivo_cargo: formData.objetivo_cargo || undefined,
         funciones_responsabilidades: formData.funciones_responsabilidades,
@@ -390,6 +396,19 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
                       })
                     }
                     helperText="Cuántas personas pueden ocupar este cargo"
+                  />
+                  <Input
+                    label="Posición / Orden"
+                    type="number"
+                    min={0}
+                    value={formData.orden}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        orden: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    helperText="Orden de visualización (menor = primero)"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">

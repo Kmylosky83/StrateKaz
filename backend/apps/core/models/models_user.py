@@ -392,6 +392,12 @@ class Cargo(models.Model):
         related_name='cargos_creados',
         verbose_name='Creado por'
     )
+    orden = models.PositiveIntegerField(
+        default=0,
+        db_index=True,
+        verbose_name='Orden',
+        help_text='Orden de visualización (menor número = primero)'
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Fecha de creación'
@@ -405,7 +411,7 @@ class Cargo(models.Model):
         db_table = 'core_cargo'
         verbose_name = 'Cargo'
         verbose_name_plural = 'Cargos'
-        ordering = ['nivel_jerarquico', 'name']
+        ordering = ['orden', 'nivel_jerarquico', 'name']
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['is_active', 'nivel_jerarquico']),

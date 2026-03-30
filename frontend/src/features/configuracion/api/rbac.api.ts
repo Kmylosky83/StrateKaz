@@ -153,6 +153,16 @@ export const rbacAPI = {
     return response.data;
   },
 
+  /**
+   * Reordenar cargos (cambiar orden de visualización)
+   */
+  reorderCargos: async (
+    orders: { id: number; orden: number }[]
+  ): Promise<{ updated: number; success: boolean; message: string }> => {
+    const response = await axiosInstance.post('/core/cargos-rbac/reorder/', { orders });
+    return response.data;
+  },
+
   // ==================== ROLES ====================
 
   /**

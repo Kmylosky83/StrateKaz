@@ -29,6 +29,7 @@ class CatalogoPagination(PageNumberPagination):
 
 from django.apps import apps
 from django.db import transaction
+from django.db import transaction
 from django.db.models import Count, Q
 from collections import defaultdict
 
@@ -356,6 +357,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         'choices': 'can_view',
         'section_accesses': 'can_view',
         'toggle': 'can_edit',
+        'reorder': 'can_edit',
         'assign_permissions': 'can_edit',
         'assign_roles': 'can_edit',
         'assign_riesgos': 'can_edit',
@@ -368,7 +370,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['nivel_jerarquico', 'area', 'is_active', 'is_system', 'is_jefatura']
     search_fields = ['code', 'name', 'description', 'objetivo_cargo']
-    ordering = ['nivel_jerarquico', 'name']
+    ordering = ['orden', 'nivel_jerarquico', 'name']
     # Paginacion para catalogos: 100 por defecto, soporta page_size query param (max 200)
     pagination_class = CatalogoPagination
 
@@ -434,6 +436,36 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         # Soft delete — desaparece de listados, seed no lo recrea
         instance.is_active = False
         instance.save(update_fields=['is_active'])
+
+    @action(detail=False, methods=['post'])
+    @transaction.atomic
+    def reorder(self, request):
+        """
+        POST /api/core/cargos-rbac/reorder/
+        Body: {"orders": [{"id": 1, "orden": 0}, {"id": 2, "orden": 1}, ...]}
+
+        Actualiza el orden de múltiples cargos de forma atómica.
+        """
+        orders = request.data.get('orders', [])
+        if not orders:
+            return Response(
+                {'error': 'Debe proporcionar un array de órdenes'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        updated_count = 0
+        for item in orders:
+            item_id = item.get('id')
+            new_order = item.get('orden')
+            if item_id is not None and new_order is not None:
+                self.get_queryset().filter(id=item_id).update(orden=new_order)
+                updated_count += 1
+
+        return Response({
+            'updated': updated_count,
+            'success': True,
+            'message': f'{updated_count} cargos reordenados',
+        })
 
     @action(detail=True, methods=['post'], url_path='toggle')
     def toggle(self, request, pk=None):

@@ -311,7 +311,7 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
             'nivel_jerarquico', 'nivel_jerarquico_display',
             'area', 'area_nombre', 'area_code',
             'cantidad_posiciones', 'is_jefatura', 'is_externo',
-            'is_system', 'is_active', 'version',
+            'is_system', 'is_active', 'version', 'orden',
             'users_count', 'posiciones_disponibles',
             'default_roles_count',
             'created_at', 'updated_at',
@@ -388,7 +388,7 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
             'permissions_count',
 
             # Control
-            'is_system', 'is_active', 'version',
+            'is_system', 'is_active', 'version', 'orden',
             'fecha_aprobacion', 'aprobado_por',
             'users_count', 'usuarios_asignados_count', 'posiciones_disponibles', 'users',
             'created_at', 'updated_at',
@@ -641,7 +641,7 @@ class CargoCreateSerializer(serializers.ModelSerializer):
             # Acceso a secciones UI
             'section_ids',
             # Control
-            'is_active',
+            'is_active', 'orden',
         ]
 
     def validate_code(self, value):
@@ -776,7 +776,7 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             # Permisos
             'rol_sistema', 'permission_ids', 'default_role_ids',
             # Control
-            'is_active', 'fecha_aprobacion',
+            'is_active', 'orden', 'fecha_aprobacion',
         ]
 
     def validate_funciones_responsabilidades(self, value):

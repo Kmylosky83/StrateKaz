@@ -124,6 +124,20 @@ export function useAssignRolesToCargo() {
 }
 
 /**
+ * Hook para reordenar cargos
+ */
+export function useReorderCargos() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (orders: { id: number; orden: number }[]) => rbacAPI.reorderCargos(orders),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+    },
+  });
+}
+
+/**
  * Hook para activar/desactivar un cargo
  */
 export function useToggleCargo() {

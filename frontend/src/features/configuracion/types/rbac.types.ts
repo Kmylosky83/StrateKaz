@@ -344,6 +344,7 @@ export interface Cargo {
   is_system: boolean;
   is_active: boolean;
   version: number;
+  orden: number;
   fecha_aprobacion?: string;
   aprobado_por?: number;
   users_count?: number;
@@ -373,6 +374,7 @@ export interface CargoList {
   is_system: boolean;
   is_active: boolean;
   version: number;
+  orden: number;
   permissions_count: number;
   users_count: number;
   posiciones_disponibles: number;
@@ -439,6 +441,7 @@ export interface CreateCargoDTO {
 
   // Control
   is_active?: boolean;
+  orden?: number;
 }
 
 export interface UpdateCargoDTO {
@@ -453,6 +456,7 @@ export interface UpdateCargoDTO {
 
   // Configuracion
   cantidad_posiciones?: number;
+  orden?: number;
   is_jefatura?: boolean;
   is_externo?: boolean;
   requiere_licencia_conduccion?: boolean;

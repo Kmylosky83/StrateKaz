@@ -24,6 +24,8 @@ import {
   Upload,
   Power,
   PowerOff,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -39,7 +41,13 @@ import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
-import { useCargos, useDeleteCargo, useToggleCargo, useCargoChoices } from '../hooks/useCargos';
+import {
+  useCargos,
+  useDeleteCargo,
+  useToggleCargo,
+  useReorderCargos,
+  useCargoChoices,
+} from '../hooks/useCargos';
 import { CargoLevelBadge } from './CargoLevelBadge';
 import { CargoFormModal } from './CargoFormModal';
 import { ImportCargosModal } from './ImportCargosModal';
@@ -52,6 +60,16 @@ import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
 
 const cargoColumns: ResponsiveTableColumn<CargoList & Record<string, unknown>>[] = [
+  {
+    key: 'orden',
+    header: '#',
+    render: (item) => {
+      const c = item as unknown as CargoList;
+      return (
+        <span className="text-xs font-mono text-gray-400 dark:text-gray-500">{c.orden ?? '-'}</span>
+      );
+    },
+  },
   {
     key: 'name',
     header: 'Cargo',
@@ -134,6 +152,7 @@ export const CargosTab = () => {
   });
   const deleteMutation = useDeleteCargo();
   const toggleMutation = useToggleCargo();
+  const reorderMutation = useReorderCargos();
   const { data: choicesData } = useCargoChoices();
 
   // Opciones de areas desde el backend
@@ -200,6 +219,26 @@ export const CargosTab = () => {
     setIsModalOpen(false);
     setSelectedCargo(null);
     setIsCreating(false);
+  };
+
+  const handleMoveUp = async (index: number) => {
+    const results = data?.results;
+    if (!results || index <= 0) return;
+    const orders = results.map((c, i) => ({
+      id: c.id,
+      orden: i === index ? index - 1 : i === index - 1 ? index : i,
+    }));
+    await reorderMutation.mutateAsync(orders);
+  };
+
+  const handleMoveDown = async (index: number) => {
+    const results = data?.results;
+    if (!results || index >= results.length - 1) return;
+    const orders = results.map((c, i) => ({
+      id: c.id,
+      orden: i === index ? index + 1 : i === index + 1 ? index : i,
+    }));
+    await reorderMutation.mutateAsync(orders);
   };
 
   if (error) {
@@ -355,10 +394,40 @@ export const CargosTab = () => {
                 const c = item as unknown as CargoList;
                 return <span>{c.area_nombre || 'Sin proceso'}</span>;
               }}
-              renderActions={(item) => {
+              renderActions={(item, index) => {
                 const cargo = item as unknown as CargoList;
+                const itemIndex =
+                  typeof index === 'number'
+                    ? index
+                    : (data?.results || []).findIndex((c) => c.id === cargo.id);
                 return (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <ProtectedAction permission="fundacion.cargos.edit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMoveUp(itemIndex)}
+                        disabled={itemIndex <= 0 || reorderMutation.isPending}
+                        title="Subir"
+                        className="!p-1"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" />
+                      </Button>
+                    </ProtectedAction>
+                    <ProtectedAction permission="fundacion.cargos.edit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleMoveDown(itemIndex)}
+                        disabled={
+                          itemIndex >= (data?.results || []).length - 1 || reorderMutation.isPending
+                        }
+                        title="Bajar"
+                        className="!p-1"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" />
+                      </Button>
+                    </ProtectedAction>
                     <ProtectedAction permission="fundacion.cargos.edit">
                       <Button
                         variant="ghost"

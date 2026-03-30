@@ -112,7 +112,7 @@ def verificar_documentos_revision_programada():
 
 @shared_task(
     name='documental.notificar_documentos_por_vencer',
-    queue='compliance',
+    queue='notifications',
     max_retries=2,
     soft_time_limit=300,
 )

@@ -259,7 +259,7 @@ app.conf.beat_schedule = {
 
     # Notificar documentos próximos a vencer revisión (15 días) - Diario a las 8:15 AM
     'documental-notify-revision-por-vencer': {
-        'task': 'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer',
+        'task': 'documental.notificar_documentos_por_vencer',
         'schedule': crontab(hour=8, minute=15),
         'options': {'queue': 'notifications'},
     },
@@ -454,7 +454,7 @@ app.conf.task_routes = {
 
     # Gestion Documental tasks
     'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},
-    'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer': {'queue': 'notifications'},
+    'documental.notificar_documentos_por_vencer': {'queue': 'notifications'},
     'documental.procesar_ocr_documento': {'queue': 'files'},
     'documental.procesar_ocr_pendientes': {'queue': 'files'},
     'documental.calcular_scores_batch': {'queue': 'compliance'},

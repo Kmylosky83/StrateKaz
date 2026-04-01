@@ -120,6 +120,7 @@ SECCIONES_PERMISOS = {
             {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'ejecucion', 'name': 'Ejecución', 'acciones': ['view', 'update']},
             {'code': 'monitoreo', 'name': 'Monitoreo', 'acciones': ['view']},
+            {'code': 'firma_digital', 'name': 'Firma Digital', 'acciones': ['view', 'create', 'update', 'delete']},
         ]
     },
 

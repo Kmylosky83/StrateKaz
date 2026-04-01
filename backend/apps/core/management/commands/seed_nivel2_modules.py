@@ -278,6 +278,13 @@ class Command(BaseCommand):
                 'icon': 'Activity',
                 'order': 3,
             },
+            {
+                'code': 'firma_digital',
+                'name': 'Firma Digital',
+                'description': 'Gestión de firmas digitales - Asignación, firma con canvas SHA-256 y validación',
+                'icon': 'PenTool',
+                'order': 4,
+            },
         ]
 
         self.create_tabs(module, tabs_data)

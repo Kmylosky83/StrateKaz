@@ -7,12 +7,13 @@
  * - Guarda los valores en datos_formulario
  * - El título del documento ES el título del formulario
  */
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
+import type { RichTextEditorRef } from '@/components/forms';
 import { Button, Spinner } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, RichTextEditor } from '@/components/forms';
 import { DynamicFormRenderer, validateDynamicForm } from '@/components/common/DynamicFormRenderer';
 import {
   useCreateDocumento,
@@ -53,6 +54,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   const updateMutation = useUpdateDocumento();
   const user = useAuthStore((s) => s.user);
 
+  // Rich text editor ref
+  const editorRef = useRef<RichTextEditorRef>(null);
+
   // Form values for dynamic form
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
 
@@ -78,6 +82,17 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       elaborado_por: user?.id || 0,
     },
   });
+
+  // Register contenido with validation (managed by RichTextEditor, not register)
+  useEffect(() => {
+    register('contenido', {
+      validate: (v) => {
+        if (isFormulario) return true;
+        const text = (v || '').replace(/<[^>]*>/g, '').trim();
+        return text.length > 0 || 'Contenido es requerido';
+      },
+    });
+  }, [register, isFormulario]);
 
   useEffect(() => {
     if (isEdit && existing) {
@@ -333,14 +348,13 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               placeholder="Resumen ejecutivo del documento..."
             />
 
-            <Textarea
+            <RichTextEditor
+              ref={editorRef}
               label="Contenido *"
-              {...register('contenido', {
-                required: 'Contenido es requerido',
-              })}
-              rows={10}
-              className="font-mono"
-              placeholder="Contenido del documento en formato HTML o Markdown..."
+              value={watch('contenido')}
+              onChange={(value) => setValue('contenido', value, { shouldValidate: true })}
+              placeholder="Escriba el contenido del documento..."
+              minHeight="250px"
               error={errors.contenido?.message}
             />
 

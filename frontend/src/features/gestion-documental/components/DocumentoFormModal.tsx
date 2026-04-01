@@ -83,17 +83,6 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     },
   });
 
-  // Register contenido with validation (managed by RichTextEditor, not register)
-  useEffect(() => {
-    register('contenido', {
-      validate: (v) => {
-        if (isFormulario) return true;
-        const text = (v || '').replace(/<[^>]*>/g, '').trim();
-        return text.length > 0 || 'Contenido es requerido';
-      },
-    });
-  }, [register, isFormulario]);
-
   useEffect(() => {
     if (isEdit && existing) {
       reset({
@@ -147,6 +136,17 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
 
   // Detect FORMULARIO plantilla
   const isFormulario = plantillaDetail?.tipo_plantilla === 'FORMULARIO';
+
+  // Register contenido with validation (managed by RichTextEditor, not register)
+  useEffect(() => {
+    register('contenido', {
+      validate: (v) => {
+        if (isFormulario) return true;
+        const text = (v || '').replace(/<[^>]*>/g, '').trim();
+        return text.length > 0 || 'Contenido es requerido';
+      },
+    });
+  }, [register, isFormulario]);
 
   // Load campos for FORMULARIO plantilla
   const { data: camposRaw } = useCamposFormulario(

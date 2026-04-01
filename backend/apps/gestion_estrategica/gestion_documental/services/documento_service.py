@@ -39,14 +39,14 @@ def _send_notification(tipo_codigo, usuario, titulo, mensaje, url, datos_extra=N
     except Exception as e:
         logger.warning(f'[documental] No se pudo enviar notificación: {e}')
 
-# Mapping: TipoDocumento.codigo -> ConsecutivoConfig.codigo
-TIPO_DOC_TO_CONSECUTIVO = {
+# Mapping legacy: TipoDocumento.codigo -> ConsecutivoConfig.codigo
+# Para tipos no mapeados, se busca ConsecutivoConfig con el mismo código del tipo.
+# Si no existe, se usa generación artesanal con el prefijo del tipo.
+_TIPO_DOC_TO_CONSECUTIVO = {
     'PR': 'PROCEDIMIENTO',
     'IN': 'INSTRUCTIVO',
     'FT': 'FORMATO',
 }
-# Cualquier otro tipo → fallback 'DOCUMENTO'
-CONSECUTIVO_FALLBACK = 'DOCUMENTO'
 
 
 class DocumentoService:
@@ -55,29 +55,53 @@ class DocumentoService:
     @classmethod
     def generar_codigo(cls, tipo_documento, empresa_id):
         """
-        Genera código único usando ConsecutivoConfig (thread-safe, select_for_update).
-        Fallback a generación artesanal si no existe ConsecutivoConfig.
+        Genera código único: TIPO-AÑO-NNNN (ej: POL-2026-0001).
+
+        Estrategia de resolución:
+        1. Buscar en mapping legacy (PR→PROCEDIMIENTO, etc.)
+        2. Buscar ConsecutivoConfig con codigo = TipoDocumento.codigo
+        3. Fallback: generación artesanal con prefijo del tipo
         """
-        consecutivo_codigo = TIPO_DOC_TO_CONSECUTIVO.get(
-            tipo_documento.codigo, CONSECUTIVO_FALLBACK
-        )
+        tipo_code = tipo_documento.codigo
+        consecutivo_codigo = _TIPO_DOC_TO_CONSECUTIVO.get(tipo_code)
+
         try:
             ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
-            return ConsecutivoConfig.obtener_siguiente_consecutivo(
-                consecutivo_codigo, empresa_id=empresa_id
-            )
+
+            # 1. Si hay mapping legacy, usar ese
+            if consecutivo_codigo:
+                return ConsecutivoConfig.obtener_siguiente_consecutivo(
+                    consecutivo_codigo, empresa_id=empresa_id
+                )
+
+            # 2. Buscar ConsecutivoConfig con el mismo código del tipo
+            if ConsecutivoConfig.objects.filter(
+                codigo=tipo_code, empresa_id=empresa_id
+            ).exists():
+                return ConsecutivoConfig.obtener_siguiente_consecutivo(
+                    tipo_code, empresa_id=empresa_id
+                )
+
         except Exception as e:
             logger.warning(
                 'ConsecutivoConfig no disponible para %s (empresa=%s): %s. '
                 'Usando generación artesanal.',
-                consecutivo_codigo, empresa_id, e
+                tipo_code, empresa_id, e
             )
-            return cls._generar_codigo_artesanal(tipo_documento, empresa_id)
+
+        # 3. Fallback: generación artesanal con prefijo del tipo
+        return cls._generar_codigo_artesanal(tipo_documento, empresa_id)
 
     @classmethod
     def _generar_codigo_artesanal(cls, tipo_documento, empresa_id):
-        """Fallback: genera código con contador simple (NO thread-safe)."""
-        prefijo = tipo_documento.prefijo_codigo or f'{tipo_documento.codigo}-'
+        """
+        Fallback: genera código TIPO-AÑO-NNNN (ej: POL-2026-0001).
+        Reinicio anual automático. NO thread-safe (usar ConsecutivoConfig para alto volumen).
+        """
+        from datetime import date
+        year = date.today().year
+        prefijo = f'{tipo_documento.codigo}-{year}-'
+
         ultimo = Documento.objects.filter(
             empresa_id=empresa_id,
             codigo__startswith=prefijo
@@ -85,7 +109,7 @@ class DocumentoService:
 
         if ultimo:
             try:
-                ultimo_num = int(ultimo.codigo.replace(prefijo, ''))
+                ultimo_num = int(ultimo.codigo.split('-')[-1])
                 nuevo_num = ultimo_num + 1
             except (ValueError, IndexError):
                 nuevo_num = 1

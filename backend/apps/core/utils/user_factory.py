@@ -200,11 +200,7 @@ class UserSetupFactory:
                     ]
                 )
 
-            frontend_url = getattr(
-                settings,
-                'FRONTEND_URL',
-                'https://app.stratekaz.com',
-            )
+            tenant_frontend_url = _resolve_tenant_frontend_url()
             (
                 tenant_id,
                 _name,
@@ -213,7 +209,7 @@ class UserSetupFactory:
             ) = _resolve_tenant_context()
 
             setup_url = (
-                f"{frontend_url}/setup-password"
+                f"{tenant_frontend_url}/setup-password"
                 f"?token={raw_token}"
                 f"&email={user.email}"
                 f"&tenant_id={tenant_id}"
@@ -326,6 +322,58 @@ def _resolve_tenant_context():
         primary_color,
         secondary_color,
     )
+
+
+def _resolve_tenant_frontend_url():
+    """
+    Resuelve la URL del frontend para el tenant actual.
+
+    En producción, usa el dominio primario del tenant (ej: empresa.stratekaz.com).
+    En desarrollo, usa FRONTEND_URL (localhost:3010).
+
+    Returns:
+        str: URL base del frontend (sin trailing slash)
+    """
+    frontend_url = getattr(
+        settings, 'FRONTEND_URL', 'http://localhost:3010'
+    )
+
+    # En desarrollo (localhost), no intentar resolver dominios
+    if 'localhost' in frontend_url or '127.0.0.1' in frontend_url:
+        return frontend_url.rstrip('/')
+
+    # En producción, intentar resolver el dominio del tenant
+    try:
+        current_tenant = getattr(connection, 'tenant', None)
+        tenant_domain = None
+
+        if current_tenant and hasattr(current_tenant, 'primary_domain'):
+            tenant_domain = current_tenant.primary_domain
+
+        # Fallback: buscar en BD
+        if not tenant_domain:
+            from apps.tenant.models import Tenant
+
+            current_schema = getattr(
+                connection, 'schema_name', 'public'
+            )
+            if current_schema != 'public':
+                t = Tenant.objects.filter(
+                    schema_name=current_schema
+                ).first()
+                if t:
+                    tenant_domain = t.primary_domain
+
+        if tenant_domain:
+            # Determinar protocolo: HTTPS en producción, HTTP si contiene localhost
+            protocol = 'https'
+            return f"{protocol}://{tenant_domain}"
+
+    except Exception:
+        pass
+
+    # Fallback: usar FRONTEND_URL como último recurso
+    return frontend_url.rstrip('/')
 
 
 # ═══════════════════════════════════════════════════

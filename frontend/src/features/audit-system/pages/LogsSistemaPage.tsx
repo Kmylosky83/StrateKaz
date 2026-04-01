@@ -343,24 +343,27 @@ function CambiosTab() {
                 {/* Cambios Diff */}
                 {log.cambios && Object.keys(log.cambios).length > 0 && (
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                    {Object.entries(log.cambios).map(([campo, valores]) => (
-                      <div key={campo} className="text-xs">
-                        <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          {campo}:
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {valores.old !== null && (
-                            <div className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-1 rounded">
-                              <span className="font-mono">{JSON.stringify(valores.old)}</span>
+                    {Object.entries(log.cambios).map(([campo, valores]) => {
+                      if (!valores || typeof valores !== 'object') return null;
+                      return (
+                        <div key={campo} className="text-xs">
+                          <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            {campo}:
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {valores.old != null && (
+                              <div className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-1 rounded">
+                                <span className="font-mono">{JSON.stringify(valores.old)}</span>
+                              </div>
+                            )}
+                            <span className="text-gray-400">&rarr;</span>
+                            <div className="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+                              <span className="font-mono">{JSON.stringify(valores.new)}</span>
                             </div>
-                          )}
-                          <span className="text-gray-400">→</span>
-                          <div className="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded">
-                            <span className="font-mono">{JSON.stringify(valores.new)}</span>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 

@@ -520,13 +520,12 @@ class ForgotPasswordView(APIView):
         try:
             from apps.audit_system.centro_notificaciones.email_service import EmailService
 
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
-
             # MB-TENANT: Resolver tenant específico si se proporcionó tenant_id
             tenant_name = 'StrateKaz'
             primary_color = '#ec268f'
             secondary_color = '#000000'
             resolved_tenant_id = ''
+            tenant_domain = ''
             try:
                 if requested_tenant_id:
                     # Preferir el tenant solicitado si el usuario tiene acceso
@@ -544,8 +543,14 @@ class ForgotPasswordView(APIView):
                     tenant_name = tenant.company_name or tenant.name or 'StrateKaz'
                     primary_color = tenant.primary_color or '#ec268f'
                     secondary_color = tenant.secondary_color or '#000000'
+                    tenant_domain = tenant.primary_domain
             except Exception:
                 pass
+
+            # Resolver URL del frontend por dominio del tenant
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+            if tenant_domain and 'localhost' not in frontend_url:
+                frontend_url = f"https://{tenant_domain}"
 
             # Incluir tenant_id en la URL para que la página muestre branding correcto
             reset_url = (
@@ -572,9 +577,11 @@ class ForgotPasswordView(APIView):
             # Fallback: enviar email simple con Django
             try:
                 from django.core.mail import send_mail
-                frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+                fallback_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+                if tenant_domain and 'localhost' not in fallback_url:
+                    fallback_url = f"https://{tenant_domain}"
                 reset_url = (
-                    f"{frontend_url}/reset-password?token={token}"
+                    f"{fallback_url}/reset-password?token={token}"
                     f"&email={user.email}"
                 )
                 send_mail(

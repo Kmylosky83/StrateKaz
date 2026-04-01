@@ -730,9 +730,14 @@ def setup_tenant_admin_task(
 
             # ── 5. Enviar email según modo ────────────────────────────────
             from django.conf import settings as django_settings
+
+            # Resolver URL del frontend por dominio del tenant
             frontend_url = getattr(
-                django_settings, 'FRONTEND_URL', 'https://app.stratekaz.com'
+                django_settings, 'FRONTEND_URL', 'http://localhost:3010'
             )
+            tenant_domain = tenant.primary_domain if hasattr(tenant, 'primary_domain') else ''
+            if tenant_domain and 'localhost' not in frontend_url:
+                frontend_url = f"https://{tenant_domain}"
 
             if admin_mode == 'new':
                 # Generar token de setup de contraseña

@@ -55,9 +55,14 @@ DATABASES = {
 }
 
 # =============================================================================
-# EMAIL BACKEND (Console for development)
+# EMAIL BACKEND — Mailpit para desarrollo (UI en http://localhost:8025)
 # =============================================================================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='localhost')
+EMAIL_PORT = config('EMAIL_PORT', default=1025, cast=int)
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+DEFAULT_FROM_EMAIL = 'StrateKaz Dev <noreply@stratekaz.local>'
 
 # =============================================================================
 # CORS - Restringido a orígenes conocidos

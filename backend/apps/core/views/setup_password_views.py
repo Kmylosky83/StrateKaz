@@ -226,11 +226,14 @@ class ResendSetupPasswordView(APIView):
         # Enviar email de setup
         try:
             from apps.core.tasks import send_setup_password_email_task
-            from apps.core.utils.user_factory import _resolve_tenant_context
+            from apps.core.utils.user_factory import (
+                _resolve_tenant_context,
+                _resolve_tenant_frontend_url,
+            )
 
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+            tenant_frontend_url = _resolve_tenant_frontend_url()
             tenant_id, tenant_name, primary_color, secondary_color = _resolve_tenant_context()
-            setup_url = f"{frontend_url}/setup-password?token={new_token}&email={email}&tenant_id={tenant_id}"
+            setup_url = f"{tenant_frontend_url}/setup-password?token={new_token}&email={email}&tenant_id={tenant_id}"
 
             send_setup_password_email_task.delay(
                 user_email=email,

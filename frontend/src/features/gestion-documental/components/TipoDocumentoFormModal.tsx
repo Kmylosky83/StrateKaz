@@ -164,19 +164,17 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-          <div className="flex items-center gap-3">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Color
-            </label>
-            <input
-              type="color"
-              {...register('color_identificacion')}
-              className="w-8 h-8 rounded cursor-pointer border-0"
-            />
-            <span className="text-xs text-gray-500">{colorValue}</span>
-          </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Color</label>
+          <input
+            type="color"
+            {...register('color_identificacion')}
+            className="w-8 h-8 rounded cursor-pointer border-0"
+          />
+          <span className="text-xs text-gray-500">{colorValue}</span>
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Controller
             name="requiere_aprobacion"
             control={control}

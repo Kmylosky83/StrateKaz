@@ -24,7 +24,7 @@ class ContratoDocumentoService:
     """
 
     # Código del TipoDocumento para contratos laborales
-    TIPO_DOC_CODIGO = 'CONTRATO_LABORAL'
+    TIPO_DOC_CODIGO = 'CTR'
 
     @classmethod
     def generar_documento_contrato(

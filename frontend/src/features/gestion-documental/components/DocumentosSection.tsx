@@ -463,15 +463,55 @@ function DocumentActions({
   onSolicitarFirmas: (d: Documento) => void;
   compact?: boolean;
 }) {
+  const iconBtn =
+    'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors';
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1 justify-end">
+        <button className={iconBtn} onClick={() => onView(documento.id)} title="Ver">
+          <Eye className="w-4 h-4" />
+        </button>
+        {documento.estado === 'BORRADOR' && (
+          <>
+            <ProtectedAction permission="gestion_documental.documentos.edit">
+              <button
+                className="p-1.5 rounded-md text-primary-500 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:text-primary-400 transition-colors"
+                onClick={() => onSolicitarFirmas(documento)}
+                title="Solicitar Firmas"
+              >
+                <PenTool className="w-4 h-4" />
+              </button>
+            </ProtectedAction>
+            <ProtectedAction permission="gestion_documental.documentos.edit">
+              <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
+                <Edit className="w-4 h-4" />
+              </button>
+            </ProtectedAction>
+            <ProtectedAction permission="gestion_documental.documentos.delete">
+              <button
+                className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                onClick={() => onDelete(documento)}
+                title="Eliminar"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </ProtectedAction>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-1 justify-end">
+    <div className="flex items-center gap-2">
       <Button
         variant="ghost"
         size="sm"
         leftIcon={<Eye className="w-4 h-4" />}
         onClick={() => onView(documento.id)}
       >
-        {!compact && 'Ver'}
+        Ver
       </Button>
       {documento.estado === 'BORRADOR' && (
         <>
@@ -482,15 +522,11 @@ function DocumentActions({
               leftIcon={<PenTool className="w-4 h-4" />}
               onClick={() => onSolicitarFirmas(documento)}
             >
-              {!compact && 'Solicitar Firmas'}
+              Solicitar Firmas
             </Button>
           </ProtectedAction>
           <ProtectedAction permission="gestion_documental.documentos.edit">
-            <button
-              className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
-              onClick={() => onEdit(documento.id)}
-              title="Editar"
-            >
+            <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
               <Edit className="w-4 h-4" />
             </button>
           </ProtectedAction>

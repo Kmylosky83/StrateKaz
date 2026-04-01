@@ -272,10 +272,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         </>
       }
     >
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* === METADATOS MÍNIMOS (siempre visibles) === */}
         <Input
           label="Título *"

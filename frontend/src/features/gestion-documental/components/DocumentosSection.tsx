@@ -333,11 +333,11 @@ export function DocumentosSection({
           /* List View */
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             {/* Header row */}
-            <div className="hidden md:grid md:grid-cols-[1fr_100px_100px_80px_auto] gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-900/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+            <div className="hidden lg:grid lg:grid-cols-[1fr_110px_100px_60px_180px] gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-900/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
               <div>Documento</div>
               <div>Estado</div>
               <div>Fecha</div>
-              <div>Versión</div>
+              <div>Ver.</div>
               <div className="text-right">Acciones</div>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -346,7 +346,7 @@ export function DocumentosSection({
                 return (
                   <div
                     key={documento.id}
-                    className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_80px_auto] gap-4 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="grid grid-cols-1 lg:grid-cols-[1fr_110px_100px_60px_180px] gap-3 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
                     {/* Title + code */}
                     <div className="min-w-0">
@@ -354,7 +354,7 @@ export function DocumentosSection({
                         <p className="font-medium text-gray-900 dark:text-white truncate">
                           {documento.titulo}
                         </p>
-                        <Badge variant="secondary" size="sm">
+                        <Badge variant="secondary" size="sm" className="shrink-0">
                           {documento.codigo}
                         </Badge>
                       </div>
@@ -373,12 +373,12 @@ export function DocumentosSection({
                     </div>
 
                     {/* Fecha */}
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       {formatFecha(documento.fecha_creacion)}
                     </div>
 
                     {/* Version */}
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       v{documento.version_actual}
                     </div>
 

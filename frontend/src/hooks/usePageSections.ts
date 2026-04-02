@@ -53,6 +53,9 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
   const { moduleCode, tabCode, initialSection } = options;
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Extraer el valor STRING del param (no el objeto URLSearchParams que cambia referencia cada render)
+  const sectionParam = searchParams.get('section');
+
   // Cargar secciones desde API
   const { sections, isLoading } = useTabSections(moduleCode, tabCode);
 
@@ -68,14 +71,20 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
   useEffect(() => {
     if (isLoading || sections.length === 0) return;
 
-    const sectionParam = searchParams.get('section');
     const validParam = sectionParam && sections.some((s) => s.code === sectionParam);
 
     // Si hay ?section= válido, SIEMPRE navegar a esa sección (incluso si ya hay una activa)
     if (validParam) {
       setActiveSectionState(sectionParam);
-      searchParams.delete('section');
-      setSearchParams(searchParams, { replace: true });
+      // Usar forma funcional para no necesitar searchParams en deps
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('section');
+          return next;
+        },
+        { replace: true }
+      );
       return;
     }
 
@@ -83,7 +92,7 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
     if (!activeSection) {
       setActiveSectionState(initialSection || sections[0]?.code || '');
     }
-  }, [isLoading, sections, activeSection, initialSection, searchParams, setSearchParams]);
+  }, [isLoading, sections, activeSection, initialSection, sectionParam, setSearchParams]);
 
   // Handler para cambiar seccion
   const setActiveSection = useCallback((code: string) => {

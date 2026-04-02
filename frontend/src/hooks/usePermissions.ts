@@ -31,6 +31,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { CargoLevels } from '@/constants/permissions';
 import type { CargoCode, CargoLevel, RoleCode, GroupCode } from '@/constants/permissions';
 
@@ -333,11 +334,21 @@ export function usePermissions(): PermissionsContext {
 /**
  * Hook simplificado para verificar si es superadmin
  * Considera tanto TenantUser.is_superadmin (global) como User.is_superuser (local)
+ *
+ * Usa 1 suscripción consolidada (en vez de 3) para reducir useSyncExternalStore subscribers.
  */
 export function useIsSuperAdmin(): boolean {
-  const user = useAuthStore((state) => state.user);
-  const isSuperadminGlobal = useAuthStore((state) => state.isSuperadmin);
-  const impersonatedUserId = useAuthStore((state) => state.impersonatedUserId);
+  const {
+    user,
+    isSuperadmin: isSuperadminGlobal,
+    impersonatedUserId,
+  } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      isSuperadmin: state.isSuperadmin,
+      impersonatedUserId: state.impersonatedUserId,
+    }))
+  );
   // Cuando impersonando, usar solo permisos del target user
   if (impersonatedUserId) return user?.is_superuser ?? false;
   return isSuperadminGlobal || (user?.is_superuser ?? false);

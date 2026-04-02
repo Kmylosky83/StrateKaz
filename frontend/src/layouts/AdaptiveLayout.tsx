@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 
@@ -37,12 +38,16 @@ export const AdaptiveLayout = () => {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [timedOut, setTimedOut] = useState(false);
 
-  // Auth state
-  const currentTenantId = useAuthStore((s) => s.currentTenantId);
-  const user = useAuthStore((s) => s.user);
-  const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
-  const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
-  const forceLogout = useAuthStore((s) => s.forceLogout);
+  // Auth state — consolidado en 1 suscripción (en vez de 5) para reducir useSyncExternalStore
+  const { currentTenantId, user, isLoadingUser, loadUserProfile, forceLogout } = useAuthStore(
+    useShallow((s) => ({
+      currentTenantId: s.currentTenantId,
+      user: s.user,
+      isLoadingUser: s.isLoadingUser,
+      loadUserProfile: s.loadUserProfile,
+      forceLogout: s.forceLogout,
+    }))
+  );
 
   // Reset retry counter when user is loaded successfully
   useEffect(() => {

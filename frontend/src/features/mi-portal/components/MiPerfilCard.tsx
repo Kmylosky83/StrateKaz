@@ -17,7 +17,6 @@ import {
   Camera,
 } from 'lucide-react';
 import { Card, Badge, Avatar, Skeleton, Button } from '@/components/common';
-import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { ColaboradorESS } from '../types';
 
 interface MiPerfilCardProps {
@@ -25,11 +24,17 @@ interface MiPerfilCardProps {
   isLoading: boolean;
   onEdit: () => void;
   onAvatarClick: () => void;
+  /** Color primario del branding del tenant. Lo provee el padre para evitar un observer React Query extra. */
+  primaryColor: string;
 }
 
-export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPerfilCardProps) {
-  const { primaryColor } = useBrandingConfig();
-
+export function MiPerfilCard({
+  perfil,
+  isLoading,
+  onEdit,
+  onAvatarClick,
+  primaryColor,
+}: MiPerfilCardProps) {
   if (isLoading) {
     return (
       <Card className="p-6">

@@ -20,6 +20,7 @@ import { useRouteTracker } from '@/hooks/useLastRoute';
 import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { BottomNavigation } from '@/components/mobile';
 import { useAuthStore } from '@/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
 import { LecturasObligatoriasGuard } from '@/components/common/LecturasObligatoriasGuard';
 import { UserImpersonationModal } from '@/features/admin-global/components/UserImpersonationModal';
@@ -27,9 +28,14 @@ import { UserImpersonationModal } from '@/features/admin-global/components/UserI
 export const DashboardLayout = () => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const isImpersonating = useAuthStore((state) => state.isImpersonating);
-  const pendingUserSelection = useAuthStore((state) => state.pendingUserSelection);
-  const setPendingUserSelection = useAuthStore((state) => state.setPendingUserSelection);
+  // Consolidado en 1 suscripción (en vez de 3) para reducir useSyncExternalStore subscribers
+  const { isImpersonating, pendingUserSelection, setPendingUserSelection } = useAuthStore(
+    useShallow((state) => ({
+      isImpersonating: state.isImpersonating,
+      pendingUserSelection: state.pendingUserSelection,
+      setPendingUserSelection: state.setPendingUserSelection,
+    }))
+  );
 
   // Estado del sidebar
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

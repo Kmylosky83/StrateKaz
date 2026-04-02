@@ -11,6 +11,7 @@
 
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import {
@@ -437,7 +438,7 @@ function UserPortalView() {
         </Card>
 
         {/* Sección Jefe/Líder — funciona sin Colaborador, solo necesita Cargo */}
-        {isJefatura && <JefePortalSection />}
+        {isJefatura && <JefePortalSection primaryColor={primaryColor} />}
 
         {/* Info: perfil pendiente */}
         <Card padding="none" className="overflow-hidden">
@@ -485,9 +486,10 @@ export default function MiPortalPage() {
   const [showEditPerfil, setShowEditPerfil] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
-  // Auth store for quick name access (already loaded, no API call)
-  const user = useAuthStore((s) => s.user);
-  const isLoadingUser = useAuthStore((s) => s.isLoadingUser);
+  // Auth store — consolidado en 1 suscripción (en vez de 2) para reducir useSyncExternalStore
+  const { user, isLoadingUser } = useAuthStore(
+    useShallow((s) => ({ user: s.user, isLoadingUser: s.isLoadingUser }))
+  );
   const isSuperAdmin = useIsSuperAdmin();
 
   // Branding
@@ -680,7 +682,7 @@ export default function MiPortalPage() {
             SECCION JEFE/LIDER (solo si is_jefatura)
             Stats, equipo directo, aprobaciones pendientes
             ================================================================ */}
-        {isJefatura && <JefePortalSection />}
+        {isJefatura && <JefePortalSection primaryColor={primaryColor} />}
 
         {/* ================================================================
             TABS
@@ -707,6 +709,7 @@ export default function MiPortalPage() {
               isLoading={perfilLoading}
               onEdit={() => setShowEditPerfil(true)}
               onAvatarClick={() => setShowAvatarModal(true)}
+              primaryColor={primaryColor}
             />
           )}
 

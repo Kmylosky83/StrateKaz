@@ -28,6 +28,7 @@ import {
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
 import { useAuthStore } from '@/store/authStore';
+import { useShallow } from 'zustand/react/shallow';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -245,15 +246,23 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
-
-  const currentTenantId = useAuthStore((state) => state.currentTenantId);
-  const currentTenant = useAuthStore((state) => state.currentTenant);
-  const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
-  const selectTenant = useAuthStore((state) => state.selectTenant);
-  const startImpersonation = useAuthStore((state) => state.startImpersonation);
-  const clearTenantContext = useAuthStore((state) => state.clearTenantContext);
-  const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
+  // Consolidado en 2 suscripciones (en vez de 8) para reducir useSyncExternalStore subscribers
+  const { user, currentTenantId, currentTenant, accessibleTenants, isSuperadmin } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      currentTenantId: state.currentTenantId,
+      currentTenant: state.currentTenant,
+      accessibleTenants: state.accessibleTenants,
+      isSuperadmin: state.isSuperadmin,
+    }))
+  );
+  const { selectTenant, startImpersonation, clearTenantContext } = useAuthStore(
+    useShallow((state) => ({
+      selectTenant: state.selectTenant,
+      startImpersonation: state.startImpersonation,
+      clearTenantContext: state.clearTenantContext,
+    }))
+  );
   // is_superuser viene del User (tenant), isSuperadmin viene del TenantUser (global)
   const isSuperuser = user?.is_superuser ?? isSuperadmin ?? false;
 

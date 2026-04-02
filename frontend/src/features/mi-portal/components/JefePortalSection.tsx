@@ -13,7 +13,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Users, Briefcase } from 'lucide-react';
 import { Card, Badge, Skeleton, Avatar } from '@/components/common';
-import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { api } from '@/lib/api-client';
 
 // ============================================================================
@@ -53,8 +52,12 @@ function useMiEquipoJefe() {
 
 const MAX_FICHAS = 6;
 
-export function JefePortalSection() {
-  const { primaryColor } = useBrandingConfig();
+interface JefePortalSectionProps {
+  /** Color primario del branding del tenant. Lo provee el padre para evitar un observer React Query extra. */
+  primaryColor: string;
+}
+
+export function JefePortalSection({ primaryColor }: JefePortalSectionProps) {
   const { data: equipo, isLoading } = useMiEquipoJefe();
 
   const totalEquipo = equipo?.length ?? 0;

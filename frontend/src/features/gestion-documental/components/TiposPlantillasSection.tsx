@@ -183,12 +183,13 @@ export function TiposPlantillasSection({
 
       {/* ── Sección: Plantillas ─────────────────────────────── */}
       <div className="mt-8">
-        <button
-          className="flex items-center justify-between w-full mb-4 group"
-          onClick={() => setPlantillasExpanded((v) => !v)}
-          type="button"
-        >
-          <div className="flex items-center gap-3">
+        {/* Separar área colapsable del Button para evitar <button> anidado en <button> */}
+        <div className="flex items-center justify-between w-full mb-4">
+          <button
+            className="flex items-center gap-3 group min-w-0 flex-1 text-left"
+            onClick={() => setPlantillasExpanded((v) => !v)}
+            type="button"
+          >
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-indigo-500" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
@@ -196,28 +197,27 @@ export function TiposPlantillasSection({
             <Badge variant="secondary" size="sm">
               {plantillasList.length}
             </Badge>
-          </div>
-          <div className="flex items-center gap-3">
+            <span className="ml-1">
+              {plantillasExpanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              )}
+            </span>
+          </button>
+          <div className="shrink-0 ml-3">
             <ProtectedAction permission="gestion_documental.tipos_documento.create">
               <Button
                 variant="outline"
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCreatePlantilla();
-                }}
+                onClick={onCreatePlantilla}
               >
                 Nueva Plantilla
               </Button>
             </ProtectedAction>
-            {plantillasExpanded ? (
-              <ChevronUp className="w-4 h-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            )}
           </div>
-        </button>
+        </div>
 
         {plantillasExpanded && (
           <>

@@ -138,13 +138,8 @@ export default function AsignarLecturaModal({
 
   const selectAllColabs = () => setSelectedColabIds(new Set(filteredColabs.map((c) => c.id)));
   const deselectAllColabs = () => setSelectedColabIds(new Set());
-  const selectAllCargos = () => setSelectedCargos(new Set(filteredCargos.map((c) => c.id)));
+  const selectAllCargos = () => setSelectedCargoIds(new Set(filteredCargos.map((c) => c.id)));
   const deselectAllCargos = () => setSelectedCargoIds(new Set());
-
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  function setSelectedCargos(ids: Set<number>) {
-    setSelectedCargoIds(ids);
-  }
 
   // ── Has selection ────────────────────────────────────────────────────────
   const hasSelection = selectedColabIds.size > 0 || selectedCargoIds.size > 0 || aplicarATodos;

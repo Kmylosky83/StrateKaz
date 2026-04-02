@@ -2,6 +2,7 @@
  * Componente modal de detalle de notificación.
  */
 import { Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
@@ -106,15 +107,16 @@ export function NotificacionDetailModal({
           )}
         </div>
 
-        {/* URL link */}
+        {/* URL link — usa Link de React Router para navegación SPA sin recarga */}
         {notificacion.url && (
-          <a
-            href={notificacion.url}
+          <Link
+            to={notificacion.url}
+            onClick={onClose}
             className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
           >
             <Eye className="w-4 h-4" />
             Ver recurso relacionado
-          </a>
+          </Link>
         )}
       </div>
     </BaseModal>

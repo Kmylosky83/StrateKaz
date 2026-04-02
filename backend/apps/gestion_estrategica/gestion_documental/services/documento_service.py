@@ -881,7 +881,7 @@ def interpolar_variables_empresa(contenido):
     if not contenido or '{{' not in contenido:
         return contenido
 
-    # Obtener datos de EmpresaConfig
+    # Obtener datos de EmpresaConfig (con fallback a Tenant)
     variables = {}
     try:
         EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
@@ -897,7 +897,19 @@ def interpolar_variables_empresa(contenido):
                 'empresa_representante_legal': getattr(empresa, 'representante_legal', '') or '',
             }
     except Exception as e:
-        logger.warning('[documental] No se pudo obtener EmpresaConfig: %s', e)
+        logger.warning('[documental] EmpresaConfig no disponible: %s. Usando Tenant.', e)
+
+    # Fallback: si no hay datos de EmpresaConfig, usar Tenant
+    if not variables.get('empresa_nombre'):
+        try:
+            from django.db import connection
+            tenant = getattr(connection, 'tenant', None)
+            if tenant:
+                variables['empresa_nombre'] = getattr(tenant, 'name', '') or ''
+                variables['empresa_nit'] = getattr(tenant, 'nit', '') or ''
+                variables['empresa_email'] = getattr(tenant, 'email', '') or ''
+        except Exception:
+            pass
 
     # Agregar fecha actual
     variables['fecha_actual'] = timezone.now().strftime('%d de %B de %Y')

@@ -782,7 +782,22 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # 3. Crear FirmaDigital records en batch
+        # 3. Eliminar firmas PENDIENTES existentes antes de crear nuevas
+        #    (evita duplicados si el usuario abre el modal varias veces)
+        firmas_existentes = FirmaDigital.objects.filter(
+            content_type=content_type,
+            object_id=object_id,
+            estado='PENDIENTE',
+        )
+        if firmas_existentes.exists():
+            count_deleted = firmas_existentes.count()
+            firmas_existentes.delete()
+            logger.info(
+                '%d firmas PENDIENTES eliminadas antes de re-asignar (doc %s)',
+                count_deleted, object_id,
+            )
+
+        # 4. Crear FirmaDigital records en batch
         firmas_creadas = []
         with transaction.atomic():
             for f_data in firmantes_data:

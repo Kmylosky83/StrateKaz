@@ -20,6 +20,7 @@
  * ```
  */
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTabSections } from '@/hooks/useModules';
 import type { TabSection } from '@/hooks/useModules';
 
@@ -50,6 +51,7 @@ export interface UsePageSectionsReturn {
 
 export const usePageSections = (options: UsePageSectionsOptions): UsePageSectionsReturn => {
   const { moduleCode, tabCode, initialSection } = options;
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Cargar secciones desde API
   const { sections, isLoading } = useTabSections(moduleCode, tabCode);
@@ -62,13 +64,26 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
     setActiveSectionState('');
   }, [moduleCode, tabCode]);
 
-  // Inicializar seccion activa cuando se cargan las secciones
+  // Inicializar seccion activa: ?section= query param > initialSection > primera
   useEffect(() => {
-    if (!isLoading && sections.length > 0 && !activeSection) {
-      const initial = initialSection || sections[0]?.code || '';
-      setActiveSectionState(initial);
+    if (isLoading || sections.length === 0) return;
+
+    const sectionParam = searchParams.get('section');
+    const validParam = sectionParam && sections.some((s) => s.code === sectionParam);
+
+    // Si hay ?section= válido, SIEMPRE navegar a esa sección (incluso si ya hay una activa)
+    if (validParam) {
+      setActiveSectionState(sectionParam);
+      searchParams.delete('section');
+      setSearchParams(searchParams, { replace: true });
+      return;
     }
-  }, [isLoading, sections, activeSection, initialSection]);
+
+    // Solo inicializar si no hay sección activa aún
+    if (!activeSection) {
+      setActiveSectionState(initialSection || sections[0]?.code || '');
+    }
+  }, [isLoading, sections, activeSection, initialSection, searchParams, setSearchParams]);
 
   // Handler para cambiar seccion
   const setActiveSection = useCallback((code: string) => {

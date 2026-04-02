@@ -217,7 +217,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       const firmaBase64 = response.data.firma_guardada;
 
       if (!firmaBase64) {
-        setError('No se encontr\u00f3 firma guardada');
+        setError('No se encontró firma guardada');
         setIsSaving(false);
         return;
       }
@@ -479,14 +479,14 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               <SignaturePad
                 ref={signatureRef}
                 label="Firma Manuscrita"
-                helpText="Firme en el recuadro usando su dedo (m\u00f3vil) o mouse (computadora)"
+                helpText="Firme en el recuadro usando su dedo (móvil) o mouse (computadora)"
                 required
                 height={isMobile ? 180 : 220}
                 defaultValue={existingSignature}
                 error={error || undefined}
                 disabled={isSaving}
                 showGrid
-                placeholder="Firme aqu\u00ed con su dedo o mouse"
+                placeholder="Firme aquí con su dedo o mouse"
               />
             )}
 

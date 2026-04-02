@@ -274,7 +274,6 @@ export function useWorkflowFirmas() {
       const dto: FirmarDocumentoDTO = {
         firma_base64: signatureData.signatureDataUrl,
         firma_hash: signatureData.signatureHash,
-        observaciones: signatureData.metadata?.userAgent,
         ip_address: signatureData.metadata?.ipAddress,
         user_agent: signatureData.metadata?.userAgent,
         totp_code: signatureData.totpCode,
@@ -298,6 +297,9 @@ export function useWorkflowFirmas() {
       queryClient.invalidateQueries({ queryKey: ['firmas-pendientes'] });
       // Invalidar estadísticas
       queryClient.invalidateQueries({ queryKey: ['estadisticas-firmas'] });
+      // Invalidar documentos (el backend puede transicionar a APROBADO)
+      queryClient.invalidateQueries({ queryKey: ['documentos'] });
+      queryClient.invalidateQueries({ queryKey: ['gestion-documental'] });
     },
   });
 
@@ -362,7 +364,7 @@ export function useWorkflowFirmas() {
         mensaje: string;
         firmas_creadas: FirmaDigital[];
         documento_nuevo_estado: string;
-      }>('/workflows/firma-digital/firmas/asignar_firmantes/', data);
+      }>('/workflows/firma-digital/firmas/asignar-firmantes/', data);
       return response.data;
     },
     onSuccess: (_, variables) => {

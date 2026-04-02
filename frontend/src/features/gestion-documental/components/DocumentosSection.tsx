@@ -31,14 +31,10 @@ import {
   ViewToggle,
 } from '@/components/common';
 import { Input } from '@/components/forms';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
-import {
-  useDocumentos,
-  useListadoMaestro,
-  useDeleteDocumento,
-} from '../hooks/useGestionDocumental';
+import { useDocumentos, useDeleteDocumento } from '../hooks/useGestionDocumental';
 import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
 import IngestarExternoModal from './IngestarExternoModal';
@@ -87,9 +83,9 @@ export function DocumentosSection({
 }: DocumentosSectionProps) {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
+  const isSuperAdmin = useIsSuperAdmin();
 
   const { data: documentos, isLoading } = useDocumentos();
-  const { data: listadoMaestro } = useListadoMaestro();
   const deleteDocumentoMutation = useDeleteDocumento();
   const { data: contentTypeData } = useDocumentoContentType();
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; titulo: string } | null>(null);
@@ -124,12 +120,9 @@ export function DocumentosSection({
     );
   }
 
-  const listadoItems = listadoMaestro ? Object.values(listadoMaestro) : [];
-  const totalDocumentos = listadoItems.reduce((acc, tipo) => acc + tipo.documentos.length, 0);
-  const vigentes = listadoItems.reduce(
-    (acc, tipo) => acc + tipo.documentos.filter((d) => d.estado === 'PUBLICADO').length,
-    0
-  );
+  const totalDocumentos = documentos?.length ?? 0;
+  const vigentes =
+    documentos?.filter((d) => d.estado === 'PUBLICADO' || d.estado === 'VIGENTE').length ?? 0;
   const borradores = documentos?.filter((d) => d.estado === 'BORRADOR').length ?? 0;
   const enRevision = documentos?.filter((d) => d.estado === 'EN_REVISION').length ?? 0;
 
@@ -212,36 +205,40 @@ export function DocumentosSection({
             options={VIEW_OPTIONS}
             moduleColor="blue"
           />
-          <ProtectedAction permission="gestion_documental.documentos.create">
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Upload className="w-4 h-4" />}
-              onClick={() => setShowIngestarModal(true)}
-            >
-              Ingestar PDF
-            </Button>
-          </ProtectedAction>
-          <ProtectedAction permission="gestion_documental.documentos.create">
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Files className="w-4 h-4" />}
-              onClick={() => setShowIngestarLoteModal(true)}
-            >
-              Ingesta Masiva
-            </Button>
-          </ProtectedAction>
-          <ProtectedAction permission="gestion_documental.documentos.create">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onCreateDocumento}
-            >
-              Crear Documento
-            </Button>
-          </ProtectedAction>
+          {!isSuperAdmin && (
+            <>
+              <ProtectedAction permission="gestion_documental.documentos.create">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Upload className="w-4 h-4" />}
+                  onClick={() => setShowIngestarModal(true)}
+                >
+                  Ingestar PDF
+                </Button>
+              </ProtectedAction>
+              <ProtectedAction permission="gestion_documental.documentos.create">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Files className="w-4 h-4" />}
+                  onClick={() => setShowIngestarLoteModal(true)}
+                >
+                  Ingesta Masiva
+                </Button>
+              </ProtectedAction>
+              <ProtectedAction permission="gestion_documental.documentos.create">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={onCreateDocumento}
+                >
+                  Crear Documento
+                </Button>
+              </ProtectedAction>
+            </>
+          )}
           <ExportButton
             endpoint="/api/gestion-estrategica/gestion-documental/documentos/export/"
             filename="documentos"
@@ -260,7 +257,7 @@ export function DocumentosSection({
                 : 'Comienza creando tu primer documento usando una plantilla o desde cero.'
             }
             action={
-              !searchTerm && canCreate
+              !searchTerm && canCreate && !isSuperAdmin
                 ? {
                     label: 'Crear Documento',
                     onClick: onCreateDocumento,

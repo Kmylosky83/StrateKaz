@@ -23,6 +23,7 @@ import {
   Upload,
   Trash2,
   File,
+  Undo2,
 } from 'lucide-react';
 import {
   Button,
@@ -45,6 +46,7 @@ import {
   useExportDocumentoPdf,
   useExportDocumentoDocx,
   useEstadoFirmasDocumento,
+  useDevolverBorrador,
   useSellarDocumento,
   useVerificarSellado,
   useSubirAnexo,
@@ -88,6 +90,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const aprobarMutation = useAprobarDocumento();
   const publicarMutation = usePublicarDocumento();
   const enviarRevisionMutation = useEnviarRevision();
+  const devolverBorradorMutation = useDevolverBorrador();
   const marcarObsoletoMutation = useMarcarObsoleto();
   const exportPdfMutation = useExportDocumentoPdf();
   const exportDocxMutation = useExportDocumentoDocx();
@@ -100,9 +103,16 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
   const [activeTab, setActiveTab] = useState('info');
   const [confirmAction, setConfirmAction] = useState<
-    'aprobar' | 'publicar' | 'enviar_revision' | 'marcar_obsoleto' | 'sellar_pdf' | null
+    | 'aprobar'
+    | 'publicar'
+    | 'enviar_revision'
+    | 'devolver_borrador'
+    | 'marcar_obsoleto'
+    | 'sellar_pdf'
+    | null
   >(null);
   const [motivoObsoleto, setMotivoObsoleto] = useState('');
+  const [lecturaObligatoria, setLecturaObligatoria] = useState(false);
   const [showAsignarLectura, setShowAsignarLectura] = useState(false);
 
   if (!documentoId) return null;
@@ -114,11 +124,18 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
       case 'enviar_revision':
         await enviarRevisionMutation.mutateAsync({ id: documentoId, revisores: [], mensaje: '' });
         break;
+      case 'devolver_borrador':
+        await devolverBorradorMutation.mutateAsync({ id: documentoId });
+        break;
       case 'aprobar':
         await aprobarMutation.mutateAsync({ id: documentoId });
         break;
       case 'publicar':
-        await publicarMutation.mutateAsync({ id: documentoId });
+        await publicarMutation.mutateAsync({
+          id: documentoId,
+          lectura_obligatoria: lecturaObligatoria,
+        });
+        setLecturaObligatoria(false);
         break;
       case 'marcar_obsoleto':
         await marcarObsoletoMutation.mutateAsync({
@@ -227,14 +244,24 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                   </Button>
                 )}
                 {documento.estado === 'EN_REVISION' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<CheckCircle className="w-4 h-4" />}
-                    onClick={() => setConfirmAction('aprobar')}
-                  >
-                    Aprobar
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Undo2 className="w-4 h-4" />}
+                      onClick={() => setConfirmAction('devolver_borrador')}
+                    >
+                      Devolver a Borrador
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<CheckCircle className="w-4 h-4" />}
+                      onClick={() => setConfirmAction('aprobar')}
+                    >
+                      Aprobar
+                    </Button>
+                  </>
                 )}
                 {documento.estado === 'APROBADO' && (
                   <Button
@@ -557,6 +584,16 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
       />
 
       <ConfirmDialog
+        isOpen={confirmAction === 'devolver_borrador'}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleAction}
+        title="Devolver a Borrador"
+        message={`¿Devolver "${documento?.titulo}" a borrador? Podrá asignar firmantes y volver a enviarlo.`}
+        confirmText="Devolver"
+        isLoading={devolverBorradorMutation.isPending}
+      />
+
+      <ConfirmDialog
         isOpen={confirmAction === 'aprobar'}
         onClose={() => setConfirmAction(null)}
         onConfirm={handleAction}
@@ -568,10 +605,32 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
       <ConfirmDialog
         isOpen={confirmAction === 'publicar'}
-        onClose={() => setConfirmAction(null)}
+        onClose={() => {
+          setConfirmAction(null);
+          setLecturaObligatoria(false);
+        }}
         onConfirm={handleAction}
         title="Publicar Documento"
-        message={`¿Publicar "${documento?.titulo}"? Se creará una versión snapshot y un registro de distribución.`}
+        message={
+          <div className="space-y-3">
+            <p>
+              ¿Publicar &quot;{documento?.titulo}&quot;? Se creará una versión snapshot y un
+              registro de distribución.
+            </p>
+            <label className="flex items-start gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={lecturaObligatoria}
+                onChange={(e) => setLecturaObligatoria(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                <strong>Distribución obligatoria</strong> — Notificar a todos los colaboradores
+                activos para lectura y aceptación del documento.
+              </span>
+            </label>
+          </div>
+        }
         confirmText="Publicar"
         isLoading={publicarMutation.isPending}
       />

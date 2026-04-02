@@ -432,9 +432,10 @@ class AsignarFirmantesSerializer(serializers.Serializer):
         required=True,
         help_text='ContentType ID del modelo Documento'
     )
-    object_id = serializers.UUIDField(
+    object_id = serializers.CharField(
+        max_length=50,
         required=True,
-        help_text='UUID del documento'
+        help_text='PK del documento (integer o UUID)',
     )
     firmantes = serializers.ListField(
         child=serializers.DictField(),

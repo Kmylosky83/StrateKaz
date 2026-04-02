@@ -13,6 +13,9 @@ class GestionDocumentalConfig(AppConfig):
     verbose_name = 'Gestión Documental'
 
     def ready(self):
-        """Registrar signal handlers (BPM auto-generación Fase 4)."""
+        """Registrar signal handlers."""
         from .signal_handlers import _register_workflow_signal
         _register_workflow_signal()
+
+        # Auto-distribución lectura obligatoria (se conecta via @receiver decorator)
+        from . import signal_handlers  # noqa: F401

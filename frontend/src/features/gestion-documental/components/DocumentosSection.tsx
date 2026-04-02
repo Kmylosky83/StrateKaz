@@ -466,23 +466,27 @@ function DocumentActions({
   const iconBtn =
     'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors';
 
+  const canAssignFirmas = documento.estado === 'BORRADOR' || documento.estado === 'EN_REVISION';
+
   if (compact) {
     return (
       <div className="flex items-center gap-1 justify-end">
         <button className={iconBtn} onClick={() => onView(documento.id)} title="Ver">
           <Eye className="w-4 h-4" />
         </button>
+        {canAssignFirmas && (
+          <ProtectedAction permission="gestion_documental.documentos.edit">
+            <button
+              className="p-1.5 rounded-md text-primary-500 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:text-primary-400 transition-colors"
+              onClick={() => onSolicitarFirmas(documento)}
+              title="Solicitar Firmas"
+            >
+              <PenTool className="w-4 h-4" />
+            </button>
+          </ProtectedAction>
+        )}
         {documento.estado === 'BORRADOR' && (
           <>
-            <ProtectedAction permission="gestion_documental.documentos.edit">
-              <button
-                className="p-1.5 rounded-md text-primary-500 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:text-primary-400 transition-colors"
-                onClick={() => onSolicitarFirmas(documento)}
-                title="Solicitar Firmas"
-              >
-                <PenTool className="w-4 h-4" />
-              </button>
-            </ProtectedAction>
             <ProtectedAction permission="gestion_documental.documentos.edit">
               <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
                 <Edit className="w-4 h-4" />
@@ -513,18 +517,20 @@ function DocumentActions({
       >
         Ver
       </Button>
+      {canAssignFirmas && (
+        <ProtectedAction permission="gestion_documental.documentos.edit">
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<PenTool className="w-4 h-4" />}
+            onClick={() => onSolicitarFirmas(documento)}
+          >
+            Solicitar Firmas
+          </Button>
+        </ProtectedAction>
+      )}
       {documento.estado === 'BORRADOR' && (
         <>
-          <ProtectedAction permission="gestion_documental.documentos.edit">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<PenTool className="w-4 h-4" />}
-              onClick={() => onSolicitarFirmas(documento)}
-            >
-              Solicitar Firmas
-            </Button>
-          </ProtectedAction>
           <ProtectedAction permission="gestion_documental.documentos.edit">
             <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
               <Edit className="w-4 h-4" />

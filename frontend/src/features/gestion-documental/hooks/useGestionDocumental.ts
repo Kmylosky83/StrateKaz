@@ -163,8 +163,15 @@ export function useAprobarDocumento() {
 export function usePublicarDocumento() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, fecha_vigencia }: { id: number; fecha_vigencia?: string }) =>
-      documentoApi.publicar(id, fecha_vigencia),
+    mutationFn: ({
+      id,
+      fecha_vigencia,
+      lectura_obligatoria,
+    }: {
+      id: number;
+      fecha_vigencia?: string;
+      lectura_obligatoria?: boolean;
+    }) => documentoApi.publicar(id, fecha_vigencia, lectura_obligatoria),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });
@@ -194,6 +201,21 @@ export function useEnviarRevision() {
     },
     onError: () => {
       toast.error('Error al enviar documento a revision');
+    },
+  });
+}
+
+export function useDevolverBorrador() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, motivo }: { id: number; motivo?: string }) =>
+      documentoApi.devolverBorrador(id, motivo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      toast.success('Documento devuelto a borrador');
+    },
+    onError: () => {
+      toast.error('Error al devolver documento a borrador');
     },
   });
 }

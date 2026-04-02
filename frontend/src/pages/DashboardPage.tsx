@@ -26,6 +26,7 @@ import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import { TwoFactorSuggestionBanner } from '@/components/common/TwoFactorSuggestionBanner';
 const SmartOnboardingChecklist = lazy(() => import('@/components/common/SmartOnboardingChecklist'));
 import { useOnboarding, useReopenOnboarding } from '@/hooks/useOnboarding';
+import { useHabeasDataStatus } from '@/features/gestion-documental/hooks/useAceptacionDocumental';
 
 import {
   moduleCardHoverVariants,
@@ -397,6 +398,7 @@ export const DashboardPage = () => {
 
   const { data: onboardingData } = useOnboarding();
   const reopenMutation = useReopenOnboarding();
+  const { data: habeasData } = useHabeasDataStatus();
 
   const [showWelcome, setShowWelcome] = useState(
     !localStorage.getItem('stratekaz_welcome_dismissed')
@@ -524,6 +526,21 @@ export const DashboardPage = () => {
           >
             {reopenMutation.isPending ? 'Reabriendo...' : 'Reabrir checklist de configuración'}
           </button>
+        </motion.div>
+      )}
+
+      {/* Banner Habeas Data — solo para admins si la política no está publicada */}
+      {isSuperAdmin && habeasData && habeasData.estado !== 'PUBLICADO' && (
+        <motion.div variants={headerVariants}>
+          <Alert
+            variant="warning"
+            title="Política de Datos Personales pendiente"
+            message={
+              habeasData.mensaje ||
+              'Su empresa no tiene Política de Tratamiento de Datos Personales publicada. Publíquela desde Gestión Documental para cumplir con la Ley 1581/2012.'
+            }
+            closable
+          />
         </motion.div>
       )}
 

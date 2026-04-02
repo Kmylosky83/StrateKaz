@@ -79,3 +79,28 @@ export function useRechazarLectura() {
     onError: () => toast.error('Error al rechazar documento'),
   });
 }
+
+// ==================== HABEAS DATA & LECTURAS COUNT ====================
+
+import { documentoApi } from '../api/gestionDocumentalApi';
+
+const documentoKeys = createQueryKeys('gestion-documental');
+
+/** Estado de la Política de Habeas Data del tenant (para banner dashboard) */
+export function useHabeasDataStatus() {
+  return useQuery({
+    queryKey: [...documentoKeys.all, 'habeas-data-status'],
+    queryFn: () => documentoApi.habeasDataStatus(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** Cuenta lecturas obligatorias pendientes del usuario (para badge + modal) */
+export function useLecturasPendientesCount() {
+  return useQuery({
+    queryKey: [...aceptacionKeys.all, 'mis-lecturas-count'],
+    queryFn: () => documentoApi.misLecturasCount(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+}

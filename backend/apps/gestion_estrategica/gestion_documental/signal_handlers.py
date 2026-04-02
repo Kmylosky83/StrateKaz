@@ -1,14 +1,97 @@
 """
-Signal handlers para Gestión Documental (Fase 4: BPM auto-generación).
-Escucha la señal workflow_completado y genera documentos automáticamente
-cuando un flujo BPM tiene config_auto_generacion habilitada.
+Signal handlers para Gestión Documental.
+
+1. BPM auto-generación (Fase 4): workflow_completado → genera documentos.
+2. Auto-distribución lectura obligatoria: nuevo User con cargo → asigna
+   lectura de documentos PUBLICADOS que tengan lectura_obligatoria=True.
 """
 
 import logging
 
+from django.conf import settings
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 logger = logging.getLogger('gestion_documental')
+
+
+# ─── Auto-distribución lectura obligatoria ────────────────────────
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def auto_asignar_lecturas_obligatorias(sender, instance, created, **kwargs):
+    """
+    Cuando se crea un User nuevo con cargo, asigna automáticamente la lectura
+    de todos los documentos PUBLICADOS que tengan lectura_obligatoria=True.
+
+    Esto garantiza que la Política de Habeas Data (y cualquier otra política
+    de lectura obligatoria) se distribuya a cada nuevo usuario sin intervención
+    manual.
+
+    Evidencia legal: crea AceptacionDocumental con estado PENDIENTE,
+    registrando fecha de asignación y documento versionado.
+    """
+    if not created:
+        return
+
+    user = instance
+
+    # Solo usuarios con cargo (empleados, no admin puro sin cargo)
+    if not user.cargo:
+        return
+
+    try:
+        from django.apps import apps as django_apps
+
+        if not django_apps.is_installed('apps.gestion_estrategica.gestion_documental'):
+            return
+
+        Documento = django_apps.get_model('gestion_documental', 'Documento')
+        AceptacionDocumental = django_apps.get_model('gestion_documental', 'AceptacionDocumental')
+
+        # Documentos publicados con lectura obligatoria
+        documentos_obligatorios = Documento.objects.filter(
+            estado='PUBLICADO',
+            lectura_obligatoria=True,
+        )
+
+        if not documentos_obligatorios.exists():
+            return
+
+        creados = 0
+        for doc in documentos_obligatorios:
+            _, was_created = AceptacionDocumental.objects.get_or_create(
+                documento=doc,
+                version_documento=doc.version_actual,
+                usuario=user,
+                empresa_id=doc.empresa_id,
+                defaults={
+                    'estado': 'PENDIENTE',
+                    'asignado_por': None,  # Sistema automático
+                },
+            )
+            if was_created:
+                creados += 1
+
+        if creados > 0:
+            logger.info(
+                'Auto-distribución: %d lectura(s) obligatoria(s) asignadas a User %s (%s)',
+                creados, user.id, user.email,
+            )
+
+            # Notificar al usuario
+            try:
+                _send_notification = django_apps.get_model(
+                    'centro_notificaciones', 'Notificacion'
+                )
+                # Usar helper si existe, sino skip silenciosamente
+            except LookupError:
+                pass
+
+    except Exception as e:
+        logger.error(
+            'Error en auto-distribución lecturas para User %s: %s',
+            instance.id, e, exc_info=True,
+        )
 
 
 def _register_workflow_signal():

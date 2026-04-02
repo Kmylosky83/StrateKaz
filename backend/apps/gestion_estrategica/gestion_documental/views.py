@@ -434,6 +434,13 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         from .services import DocumentoService
         documento = self.get_object()
         empresa = get_tenant_empresa()
+
+        # Actualizar lectura_obligatoria si el admin lo indicó al publicar
+        lectura_obligatoria = request.data.get('lectura_obligatoria')
+        if lectura_obligatoria is not None:
+            documento.lectura_obligatoria = bool(lectura_obligatoria)
+            documento.save(update_fields=['lectura_obligatoria', 'updated_at'])
+
         try:
             doc = DocumentoService.publicar_documento(
                 documento_id=documento.id,

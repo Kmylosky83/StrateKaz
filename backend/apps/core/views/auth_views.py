@@ -81,6 +81,12 @@ class RateLimitedTokenObtainPairView(TokenObtainPairView):
                 user = self._get_user_by_username(username)
                 _log_acceso(user, request, 'login', fue_exitoso=True)
 
+                # Inyectar flag de lecturas obligatorias pendientes
+                if user:
+                    response.data['lecturas_pendientes'] = (
+                        self._contar_lecturas_pendientes(user)
+                    )
+
             return response
 
         except Exception as e:
@@ -162,6 +168,21 @@ class RateLimitedTokenObtainPairView(TokenObtainPairView):
             return two_factor.is_enabled
         except TwoFactorAuth.DoesNotExist:
             return False
+
+    def _contar_lecturas_pendientes(self, user):
+        """Cuenta lecturas obligatorias pendientes (fail-safe)."""
+        try:
+            from django.apps import apps as django_apps
+            if not django_apps.is_installed(
+                'apps.gestion_estrategica.gestion_documental'
+            ):
+                return 0
+            from apps.gestion_estrategica.gestion_documental.services import (
+                DocumentoService,
+            )
+            return DocumentoService.contar_lecturas_pendientes_obligatorias(user)
+        except Exception:
+            return 0
 
     def _get_client_ip(self, request):
         """Obtiene la IP real del cliente, considerando proxies."""

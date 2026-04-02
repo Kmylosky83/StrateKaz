@@ -93,9 +93,14 @@ export const documentoApi = {
     });
     return response.data;
   },
-  publicar: async (id: number, fecha_vigencia?: string): Promise<Documento> => {
+  publicar: async (
+    id: number,
+    fecha_vigencia?: string,
+    lectura_obligatoria?: boolean
+  ): Promise<Documento> => {
     const response = await apiClient.post(`${BASE_URL}/documentos/${id}/publicar/`, {
       fecha_vigencia,
+      ...(lectura_obligatoria !== undefined && { lectura_obligatoria }),
     });
     return response.data;
   },
@@ -111,6 +116,12 @@ export const documentoApi = {
     data: { revisores: number[]; mensaje?: string }
   ): Promise<Documento> => {
     const response = await apiClient.post(`${BASE_URL}/documentos/${id}/enviar-revision/`, data);
+    return response.data;
+  },
+  devolverBorrador: async (id: number, motivo?: string): Promise<Documento> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/devolver-borrador/`, {
+      motivo,
+    });
     return response.data;
   },
   pendientesRevision: async (): Promise<Documento[]> => {
@@ -222,6 +233,25 @@ export const documentoApi = {
   // Cobertura documental — Sprint 3: Dashboard de cobertura por tipo
   coberturaDocumental: async (): Promise<CoberturaDocumental> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/cobertura-documental/`);
+    return response.data;
+  },
+
+  // Habeas Data — Estado de la política del tenant
+  habeasDataStatus: async (): Promise<{
+    tiene_politica: boolean;
+    estado: string | null;
+    documento_id?: number;
+    codigo?: string;
+    mensaje?: string;
+    fecha_publicacion?: string | null;
+  }> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/habeas-data-status/`);
+    return response.data;
+  },
+
+  // Lecturas obligatorias pendientes del usuario
+  misLecturasCount: async (): Promise<{ count: number }> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/mis-lecturas-count/`);
     return response.data;
   },
 

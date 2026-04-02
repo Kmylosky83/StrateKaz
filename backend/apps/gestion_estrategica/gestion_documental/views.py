@@ -626,13 +626,31 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Guardar archivo en media/documentos/anexos/YYYY/MM/
+        # Verificar cuota de almacenamiento del tenant
+        from utils.storage import check_storage_quota
+        puede_subir, usado_gb, limite_gb = check_storage_quota(archivo.size)
+        if not puede_subir:
+            return Response(
+                {
+                    'error': (
+                        f'Cuota de almacenamiento excedida: '
+                        f'{usado_gb:.2f} GB de {limite_gb:.2f} GB usados.'
+                    ),
+                    'usado_gb': usado_gb,
+                    'limite_gb': limite_gb,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Guardar archivo — TenantFileStorage añade el prefix del schema automáticamente
         from django.core.files.storage import default_storage
         from django.utils import timezone
+        from utils.storage import _safe_extension
         import uuid
 
         ahora = timezone.now()
-        filename = f'{uuid.uuid4().hex[:8]}_{archivo.name}'
+        ext = _safe_extension(archivo.name)
+        filename = f'{uuid.uuid4().hex}.{ext}'
         path = f'documentos/anexos/{ahora.year}/{ahora.month:02d}/{filename}'
         saved_path = default_storage.save(path, archivo)
 
@@ -725,6 +743,22 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Verificar cuota de almacenamiento del tenant
+        from utils.storage import check_storage_quota
+        puede_subir, usado_gb, limite_gb = check_storage_quota(archivo.size)
+        if not puede_subir:
+            return Response(
+                {
+                    'error': (
+                        f'Cuota de almacenamiento excedida: '
+                        f'{usado_gb:.2f} GB de {limite_gb:.2f} GB usados.'
+                    ),
+                    'usado_gb': usado_gb,
+                    'limite_gb': limite_gb,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         titulo = request.data.get('titulo', archivo.name.rsplit('.', 1)[0])
         tipo_documento_id = request.data.get('tipo_documento')
         clasificacion = request.data.get('clasificacion', 'INTERNO')
@@ -813,6 +847,23 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         max_size = 50 * 1024 * 1024
         creados = []
         errores = []
+
+        # Verificar cuota considerando el tamaño total del lote
+        from utils.storage import check_storage_quota
+        total_lote = sum(a.size for a in archivos)
+        puede_subir, usado_gb, limite_gb = check_storage_quota(total_lote)
+        if not puede_subir:
+            return Response(
+                {
+                    'error': (
+                        f'Cuota de almacenamiento excedida para este lote: '
+                        f'{usado_gb:.2f} GB de {limite_gb:.2f} GB usados.'
+                    ),
+                    'usado_gb': usado_gb,
+                    'limite_gb': limite_gb,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         for archivo in archivos:
             if not archivo.name.lower().endswith('.pdf'):

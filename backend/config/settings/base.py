@@ -351,8 +351,12 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STORAGES = {
+    # TenantFileStorage segrega archivos por schema de tenant en disco:
+    #   MEDIA_ROOT/{schema_name}/{upload_to_path}
+    # Compatible con los upload_to existentes — sin cambios en modelos.
+    # Ver: backend/utils/storage.py
     'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        'BACKEND': 'utils.storage.TenantFileStorage',
     },
     'staticfiles': {
         'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',

@@ -13,6 +13,8 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
+from utils.storage import tenant_media_path
+
 
 class TipoDocumento(models.Model):
     """
@@ -469,7 +471,7 @@ class Documento(models.Model):
 
     # Archivos adjuntos
     archivo_pdf = models.FileField(
-        upload_to='documentos/pdf/%Y/%m/',
+        upload_to=tenant_media_path('documentos', 'pdf'),
         blank=True,
         null=True,
         verbose_name='Archivo PDF',
@@ -647,7 +649,7 @@ class Documento(models.Model):
         help_text='True si fue ingresado por upload de PDF externo'
     )
     archivo_original = models.FileField(
-        upload_to='documentos/originales/%Y/%m/',
+        upload_to=tenant_media_path('documentos', 'originales'),
         blank=True,
         null=True,
         verbose_name='Archivo Original',
@@ -656,7 +658,7 @@ class Documento(models.Model):
 
     # Sellado PDF (Mejora 2 — ISO 27001)
     pdf_sellado = models.FileField(
-        upload_to='documentos/sellados/%Y/%m/',
+        upload_to=tenant_media_path('documentos', 'sellados'),
         blank=True,
         null=True,
         verbose_name='PDF Sellado',
@@ -817,7 +819,7 @@ class VersionDocumento(models.Model):
 
     # Archivos
     archivo_pdf_version = models.FileField(
-        upload_to='documentos/versiones/pdf/%Y/%m/',
+        upload_to=tenant_media_path('documentos', 'versiones'),
         blank=True,
         null=True,
         verbose_name='Archivo PDF de la Versión'
@@ -1193,7 +1195,7 @@ class ControlDocumental(models.Model):
         verbose_name='Responsable de Destrucción'
     )
     acta_destruccion = models.FileField(
-        upload_to='documentos/actas_destruccion/%Y/%m/',
+        upload_to=tenant_media_path('documentos', 'actas_destruccion'),
         blank=True,
         null=True,
         verbose_name='Acta de Destrucción'

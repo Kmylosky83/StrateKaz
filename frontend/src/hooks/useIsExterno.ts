@@ -12,7 +12,7 @@
 import { useAuthStore } from '@/store/authStore';
 
 export function useIsExterno() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const isExterno = user?.cargo?.is_externo ?? false;
   const isInterno = !isExterno;

@@ -26,7 +26,8 @@ export interface UserMenuProps {
 
 export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 

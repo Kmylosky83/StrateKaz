@@ -9,8 +9,8 @@
  * BRANDING: Usa primaryColor del tenant (NO moduleColor hardcoded)
  */
 
-import { useState, useMemo, lazy, Suspense } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import {
@@ -480,6 +480,7 @@ function UserPortalView() {
 // ============================================================================
 
 export default function MiPortalPage() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<MiPortalTab>('perfil');
   const [showEditPerfil, setShowEditPerfil] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -519,6 +520,21 @@ export default function MiPortalPage() {
 
   // Si el tab activo fue filtrado, volver a 'perfil'
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
+
+  // Leer ?tab= de la URL para navegación desde notificaciones/guardias.
+  // Usa useLocation (sin setSearchParams) para evitar actualizaciones del router
+  // durante la fase de montaje de efectos (causa de "Maximum update depth exceeded").
+  const tabFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') as MiPortalTab | null;
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!tabFromUrl) return;
+    const isValid = visibleTabs.some((t) => t.id === tabFromUrl);
+    if (isValid) setActiveTab(tabFromUrl);
+    // NO llamar setSearchParams aquí — dispara forceStoreRerender durante commitHookEffectListMount
+  }, [tabFromUrl, visibleTabs]);
 
   // ── Sin Colaborador vinculado ─────────────────────────────────────────────
   // Orden de prioridad de vista:

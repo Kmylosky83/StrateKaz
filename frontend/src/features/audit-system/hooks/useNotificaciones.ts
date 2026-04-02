@@ -43,13 +43,13 @@ export const useNotificaciones = (filters?: NotificacionFilters) => {
  * Hook para obtener notificaciones no leídas del usuario actual
  */
 export const useNotificacionesNoLeidas = () => {
-  const { user } = useAuthStore();
+  const userId = useAuthStore((s) => s.user?.id);
 
   return useQuery({
-    queryKey: notificacionesKeys.noLeidas(user?.id),
+    queryKey: notificacionesKeys.noLeidas(userId),
     queryFn: async () => {
       try {
-        return await notificacionesAPI.getNoLeidas(user?.id);
+        return await notificacionesAPI.getNoLeidas(userId);
       } catch (err: unknown) {
         // 404 = app no habilitada en este nivel de despliegue → silenciar
         if ((err as { response?: { status?: number } })?.response?.status === 404) {
@@ -58,7 +58,7 @@ export const useNotificacionesNoLeidas = () => {
         throw err;
       }
     },
-    enabled: !!user?.id,
+    enabled: !!userId,
     refetchInterval: 60000,
     staleTime: 30000,
     retry: 0,
@@ -87,12 +87,12 @@ export const useMarcarLeida = () => {
  */
 export const useMarcarTodasLeidas = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const userId = useAuthStore((s) => s.user?.id);
 
   return useMutation({
     mutationFn: () => {
-      if (!user?.id) throw new Error('Usuario no autenticado');
-      return notificacionesAPI.marcarTodasLeidas(user.id);
+      if (!userId) throw new Error('Usuario no autenticado');
+      return notificacionesAPI.marcarTodasLeidas(userId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificacionesKeys.all });
@@ -195,12 +195,12 @@ export const useDeleteTipoNotificacion = () => {
  * Hook para obtener preferencias del usuario
  */
 export const usePreferenciasNotificacion = () => {
-  const { user } = useAuthStore();
+  const userId = useAuthStore((s) => s.user?.id);
 
   return useQuery({
-    queryKey: notificacionesKeys.preferencias(user?.id),
-    queryFn: () => notificacionesAPI.getPreferencias(user?.id),
-    enabled: !!user?.id,
+    queryKey: notificacionesKeys.preferencias(userId),
+    queryFn: () => notificacionesAPI.getPreferencias(userId),
+    enabled: !!userId,
   });
 };
 

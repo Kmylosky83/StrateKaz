@@ -21,6 +21,7 @@ import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { BottomNavigation } from '@/components/mobile';
 import { useAuthStore } from '@/store/authStore';
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
+import { LecturasObligatoriasGuard } from '@/components/common/LecturasObligatoriasGuard';
 import { UserImpersonationModal } from '@/features/admin-global/components/UserImpersonationModal';
 
 export const DashboardLayout = () => {
@@ -154,6 +155,9 @@ export const DashboardLayout = () => {
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
           }}
         />
+
+        {/* Guard: lecturas obligatorias pendientes (Habeas Data, etc.) */}
+        <LecturasObligatoriasGuard />
 
         {/* Modal de selección de usuario para impersonación */}
         <UserImpersonationModal

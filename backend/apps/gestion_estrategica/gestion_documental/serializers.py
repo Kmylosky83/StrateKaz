@@ -31,6 +31,7 @@ class TipoDocumentoListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'codigo', 'nombre', 'nivel_documento', 'nivel_display',
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
+            'nivel_seguridad_firma',
             'color_identificacion', 'is_active', 'orden', 'total_documentos'
         ]
         extra_kwargs = {
@@ -52,6 +53,7 @@ class TipoDocumentoDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'codigo', 'nombre', 'descripcion', 'nivel_documento', 'nivel_display',
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
+            'nivel_seguridad_firma',
             'tiempo_retencion_años', 'plantilla_por_defecto', 'campos_obligatorios',
             'color_identificacion', 'is_active', 'orden', 'total_plantillas',
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
@@ -207,7 +209,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'fecha_revision_programada', 'elaborado_por', 'elaborado_por_nombre',
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
-            'es_politica_integral',
+            'es_politica_integral', 'lectura_obligatoria',
             'ocr_estado', 'es_externo',
             'score_cumplimiento',
             'drive_file_id',
@@ -258,7 +260,7 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'observaciones', 'motivo_cambio_version',
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
-            'fecha_expiracion', 'motivo_cambio', 'es_politica_integral',
+            'fecha_expiracion', 'motivo_cambio', 'es_politica_integral', 'lectura_obligatoria',
             'texto_extraido', 'ocr_estado', 'ocr_metadatos',
             'es_externo', 'archivo_original',
             'score_cumplimiento', 'score_detalle', 'score_actualizado_at',

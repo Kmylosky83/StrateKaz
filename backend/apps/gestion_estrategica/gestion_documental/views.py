@@ -283,6 +283,14 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     export_fields = [('codigo', 'Código'), ('titulo', 'Título'), ('tipo_documento__nombre', 'Tipo'), ('estado', 'Estado'), ('version_actual', 'Versión'), ('clasificacion', 'Clasificación'), ('fecha_publicacion', 'Fecha Publicación'), ('fecha_vigencia', 'Fecha Vigencia')]
     export_filename = 'documentos'
 
+    # Self-service: endpoints accesibles sin RBAC (Mi Portal, Dashboard)
+    SELF_SERVICE_ACTIONS = {'habeas_data_status', 'mis_lecturas_count'}
+
+    def get_permissions(self):
+        if self.action in self.SELF_SERVICE_ACTIONS:
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action == 'list':
             return DocumentoListSerializer
@@ -347,28 +355,11 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             self.request,
         )
 
-        # Auto-asignar firmantes desde plantilla
-        plantilla = documento.plantilla
-        if plantilla and plantilla.firmantes_por_defecto:
-            from .services.documento_service import auto_asignar_firmantes_desde_plantilla
-            result = auto_asignar_firmantes_desde_plantilla(documento, plantilla)
-
-            # Transición a EN_REVISION si al menos 1 firmante fue asignado
-            if result['firmantes_creados']:
-                documento.estado = 'EN_REVISION'
-                documento.save(update_fields=['estado', 'updated_at'])
-
-            # Guardar resultado para incluirlo en la response
-            self._firma_auto_result = result
-
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        if hasattr(self, '_firma_auto_result'):
-            result = self._firma_auto_result
-            response.data['firmantes_auto_asignados'] = len(result['firmantes_creados'])
-            response.data['firmantes_warnings'] = result['warnings']
-            delattr(self, '_firma_auto_result')
-        return response
+        # Auto-interpolar variables de empresa en contenido de plantilla
+        if documento.plantilla and documento.contenido:
+            from .services.documento_service import interpolar_variables_empresa
+            documento.contenido = interpolar_variables_empresa(documento.contenido)
+            documento.save(update_fields=['contenido', 'updated_at'])
 
     @action(detail=True, methods=['get'])
     def firmas(self, request, pk=None):
@@ -390,6 +381,27 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             'app_label': ct.app_label,
             'model': ct.model,
         })
+
+    @action(detail=False, methods=['get'], url_path='habeas-data-status')
+    def habeas_data_status(self, request):
+        """
+        Estado de la Política de Habeas Data del tenant.
+        Usado por dashboard para mostrar banner si no está publicada.
+        """
+        empresa = get_tenant_empresa()
+        if not empresa:
+            return Response({'tiene_politica': False, 'estado': None})
+        resultado = DocumentoService.verificar_habeas_data_publicada(empresa.id)
+        return Response(resultado)
+
+    @action(detail=False, methods=['get'], url_path='mis-lecturas-count')
+    def mis_lecturas_count(self, request):
+        """
+        Cuenta lecturas obligatorias pendientes del usuario autenticado.
+        Self-service: solo requiere IsAuthenticated.
+        """
+        count = DocumentoService.contar_lecturas_pendientes_obligatorias(request.user)
+        return Response({'count': count})
 
     @action(detail=True, methods=['get'], url_path='estado-firmas')
     def estado_firmas(self, request, pk=None):
@@ -463,6 +475,23 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 usuario=request.user,
                 empresa_id=empresa.id if empresa else documento.empresa_id,
                 revisor_id=request.data.get('revisor_id'),
+            )
+            return Response(DocumentoDetailSerializer(doc).data)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='devolver-borrador')
+    def devolver_borrador(self, request, pk=None):
+        """Devuelve documento de EN_REVISION a BORRADOR."""
+        from .services import DocumentoService
+        documento = self.get_object()
+        empresa = get_tenant_empresa()
+        try:
+            doc = DocumentoService.devolver_a_borrador(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa.id if empresa else documento.empresa_id,
+                motivo=request.data.get('motivo', ''),
             )
             return Response(DocumentoDetailSerializer(doc).data)
         except ValueError as e:

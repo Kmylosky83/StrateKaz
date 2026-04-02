@@ -26,6 +26,12 @@ const NIVEL_OPTIONS: { value: NivelDocumento; label: string }[] = [
   { value: 'SOPORTE', label: 'Soporte' },
 ];
 
+const NIVEL_SEGURIDAD_FIRMA_OPTIONS = [
+  { value: '1', label: 'Estándar — Solo firma manuscrita' },
+  { value: '2', label: 'Reforzado — Firma + código TOTP' },
+  { value: '3', label: 'Máximo — Firma + TOTP + OTP email' },
+];
+
 export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocumentoFormModalProps) {
   const isEdit = !!tipoId;
   const { data: existing, isLoading: isLoadingExisting } = useTipoDocumento(tipoId!);
@@ -48,6 +54,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
       prefijo_codigo: '',
       requiere_aprobacion: true,
       requiere_firma: true,
+      nivel_seguridad_firma: 1,
       tiempo_retencion_anos: 5,
       color_identificacion: '#3498db',
     },
@@ -63,6 +70,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
         prefijo_codigo: existing.prefijo_codigo,
         requiere_aprobacion: existing.requiere_aprobacion,
         requiere_firma: existing.requiere_firma,
+        nivel_seguridad_firma: existing.nivel_seguridad_firma || 1,
         tiempo_retencion_anos: existing.tiempo_retencion_años,
         color_identificacion: existing.color_identificacion,
       });
@@ -75,6 +83,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
         prefijo_codigo: '',
         requiere_aprobacion: true,
         requiere_firma: true,
+        nivel_seguridad_firma: 1,
         tiempo_retencion_anos: 5,
         color_identificacion: '#3498db',
       });
@@ -199,6 +208,14 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
             )}
           />
         </div>
+
+        {watch('requiere_firma') && (
+          <Select
+            label="Nivel de Seguridad para Firma"
+            {...register('nivel_seguridad_firma', { valueAsNumber: true })}
+            options={NIVEL_SEGURIDAD_FIRMA_OPTIONS}
+          />
+        )}
       </form>
     </BaseModal>
   );

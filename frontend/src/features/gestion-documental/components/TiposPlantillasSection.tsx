@@ -240,9 +240,15 @@ function TiposCardView({
                   </span>
                 )}
                 {tipo.requiere_firma && (
-                  <span className="flex items-center gap-1" title="Requiere firma digital">
+                  <span
+                    className="flex items-center gap-1"
+                    title={`Requiere firma digital (Nivel ${tipo.nivel_seguridad_firma || 1})`}
+                  >
                     <PenTool className="w-3.5 h-3.5 text-indigo-500" />
                     Firma
+                    {(tipo.nivel_seguridad_firma || 1) >= 2 && (
+                      <Shield className="w-3 h-3 text-amber-500" />
+                    )}
                   </span>
                 )}
                 {tipo.tiempo_retencion_anos && (

@@ -322,7 +322,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             tipo_codigo='DOCUMENTO_TODAS_FIRMAS',
             usuario=creador,
             datos={'documento_titulo': titulo_documento},
-            url='/sistema-gestion/documentos',
+            url='/gestion-documental/documentos?section=control_cambios',
             prioridad='alta',
         )
 
@@ -357,7 +357,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
                 'documento_titulo': titulo_documento,
                 'rol_firma': siguiente_firma.get_rol_firma_display(),
             },
-            url='/sistema-gestion/documentos',
+            url='/gestion-documental/documentos?section=control_cambios',
             prioridad='alta',
         )
 
@@ -434,12 +434,23 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
         # ================================================================
         # VERIFICACIÓN 2FA AL FIRMAR (ISO 27001)
-        # nivel_firma >= 2: requiere código TOTP
-        # nivel_firma >= 3: acepta TOTP o OTP por email
+        # El nivel de seguridad se define en TipoDocumento, NO en el usuario.
+        # nivel 1: Solo firma manuscrita
+        # nivel 2: Firma + código TOTP
+        # nivel 3: Firma + TOTP + OTP por email
         # ================================================================
         user = request.user
-        nivel_firma = getattr(user, 'nivel_firma', 1)
         otp_usado = ''
+
+        # Obtener nivel de seguridad desde el tipo de documento
+        nivel_firma = 1  # Default: solo firma manuscrita
+        try:
+            documento = firma.content_type.get_object_for_this_type(pk=firma.object_id)
+            tipo_doc = getattr(documento, 'tipo_documento', None)
+            if tipo_doc:
+                nivel_firma = getattr(tipo_doc, 'nivel_seguridad_firma', 1)
+        except Exception:
+            pass  # Si no se puede resolver, nivel 1 (más permisivo)
 
         if nivel_firma >= 2:
             totp_code = data.get('totp_code')

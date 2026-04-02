@@ -92,6 +92,7 @@ export interface TipoDocumento {
   tiempo_retencion_anos: number;
   plantilla_por_defecto: string;
   campos_obligatorios: string[];
+  nivel_seguridad_firma: 1 | 2 | 3;
   color_identificacion: string;
   is_active: boolean;
   orden: number;
@@ -379,6 +380,7 @@ export interface CreateTipoDocumentoDTO {
   prefijo_codigo: string;
   requiere_aprobacion?: boolean;
   requiere_firma?: boolean;
+  nivel_seguridad_firma?: 1 | 2 | 3;
   tiempo_retencion_anos?: number;
   plantilla_por_defecto?: string;
   campos_obligatorios?: string[];

@@ -93,7 +93,7 @@ def _notificar_firma_pendiente(firma):
         usuario=firma.usuario,
         titulo=f'Firma pendiente: {doc_titulo}',
         mensaje=f'Tienes una firma ({rol_display}) pendiente para el documento "{doc_titulo}".',
-        url='/sistema-gestion/documentos',
+        url='/gestion-documental/documentos?section=control_cambios',
         prioridad='alta',
         datos_extra={
             'documento_titulo': doc_titulo,
@@ -122,7 +122,7 @@ def _notificar_firma_completada(firma):
         usuario=creador,
         titulo=f'Firma completada: {doc_titulo}',
         mensaje=f'{firmante_nombre} ha firmado ({rol_display}) el documento "{doc_titulo}".',
-        url='/sistema-gestion/documentos',
+        url='/gestion-documental/documentos?section=control_cambios',
         prioridad='normal',
         datos_extra={
             'documento_titulo': doc_titulo,
@@ -172,7 +172,7 @@ def _verificar_todas_completas(firma):
         usuario=creador,
         titulo=f'Documento aprobado: {doc_titulo}',
         mensaje=f'El documento "{doc_titulo}" ha sido aprobado con todas las firmas completadas.',
-        url='/sistema-gestion/documentos',
+        url='/gestion-documental/documentos?section=control_cambios',
         prioridad='alta',
         datos_extra={
             'documento_titulo': doc_titulo,
@@ -198,7 +198,7 @@ def _notificar_firma_rechazada(firma):
         usuario=creador,
         titulo=f'Firma rechazada: {doc_titulo}',
         mensaje=f'{firmante_nombre} ha rechazado la firma del documento "{doc_titulo}". Motivo: {motivo}',
-        url='/sistema-gestion/documentos',
+        url='/gestion-documental/documentos?section=control_cambios',
         prioridad='urgente',
         datos_extra={
             'documento_titulo': doc_titulo,

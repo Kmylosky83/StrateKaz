@@ -282,8 +282,10 @@ class FirmaDigital(TenantModel):
         on_delete=models.CASCADE,
         verbose_name='Tipo de Documento'
     )
-    object_id = models.UUIDField(
-        verbose_name='ID del Documento'
+    object_id = models.CharField(
+        max_length=50,
+        verbose_name='ID del Documento',
+        help_text='PK del documento (soporta integer y UUID)',
     )
     documento = GenericForeignKey('content_type', 'object_id')
 
@@ -442,7 +444,7 @@ class FirmaDigital(TenantModel):
         firma_data = {
             'usuario_id': str(self.usuario.id),
             'rol': self.rol_firma,
-            'fecha': self.fecha_firma.isoformat() if hasattr(self, 'fecha_firma') else timezone.now().isoformat(),
+            'fecha': (self.fecha_firma or timezone.now()).isoformat(),
             'documento_hash': self.documento_hash,
             'firma_imagen': self.firma_imagen[:100],  # Solo primeros 100 chars para performance
         }
@@ -852,8 +854,10 @@ class AlertaRevision(TenantModel):
         on_delete=models.CASCADE,
         verbose_name='Tipo de Documento'
     )
-    object_id = models.UUIDField(
-        verbose_name='ID del Documento'
+    object_id = models.CharField(
+        max_length=50,
+        verbose_name='ID del Documento',
+        help_text='PK del documento (soporta integer y UUID)',
     )
     documento = GenericForeignKey('content_type', 'object_id')
 
@@ -995,7 +999,7 @@ class AlertaRevision(TenantModel):
                 usuario=destinatario,
                 titulo=f'Revision requerida: {doc_titulo}',
                 mensaje=f'El documento "{doc_titulo}" requiere revision. Vence el {self.fecha_vencimiento}. Alerta: {self.tipo_alerta}.',
-                url='/sistema-gestion/documentos',
+                url='/gestion-documental/documentos?section=control_cambios',
                 prioridad=prioridad,
                 datos_extra={
                     'tipo_alerta': self.tipo_alerta,
@@ -1042,8 +1046,10 @@ class HistorialVersion(TenantModel):
         on_delete=models.CASCADE,
         verbose_name='Tipo de Documento'
     )
-    object_id = models.UUIDField(
-        verbose_name='ID del Documento'
+    object_id = models.CharField(
+        max_length=50,
+        verbose_name='ID del Documento',
+        help_text='PK del documento (soporta integer y UUID)',
     )
     documento = GenericForeignKey('content_type', 'object_id')
 

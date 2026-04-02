@@ -25,6 +25,12 @@ class TipoDocumento(models.Model):
         ('SOPORTE', 'Soporte'),
     ]
 
+    NIVEL_SEGURIDAD_FIRMA_CHOICES = [
+        (1, 'Estándar — Solo firma manuscrita'),
+        (2, 'Reforzado — Firma + código TOTP'),
+        (3, 'Máximo — Firma + TOTP + OTP email'),
+    ]
+
     codigo = models.CharField(
         max_length=20,
         blank=True,
@@ -80,6 +86,15 @@ class TipoDocumento(models.Model):
         default='#3498db',
         verbose_name='Color de Identificación',
         help_text='Color HEX para identificar visualmente el tipo'
+    )
+    nivel_seguridad_firma = models.IntegerField(
+        choices=NIVEL_SEGURIDAD_FIRMA_CHOICES,
+        default=1,
+        verbose_name='Nivel de Seguridad para Firma',
+        help_text=(
+            'Define qué verificación se pide al firmar documentos de este tipo. '
+            'Nivel 1: firma manuscrita. Nivel 2: firma + TOTP. Nivel 3: firma + TOTP + OTP email.'
+        ),
     )
     is_active = models.BooleanField(
         default=True,
@@ -533,6 +548,11 @@ class Documento(models.Model):
         default=False,
         verbose_name='Es Política Integral',
         help_text='Indica si es una política integral del sistema de gestión'
+    )
+    lectura_obligatoria = models.BooleanField(
+        default=False,
+        verbose_name='Lectura Obligatoria',
+        help_text='Si True, se asigna automáticamente a cada nuevo usuario del tenant',
     )
 
     # Integración BPM (preparación para auto-generación — Fase 4 spec)

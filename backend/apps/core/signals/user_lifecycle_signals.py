@@ -5,11 +5,13 @@ Cuando se crea un User dentro de un tenant schema:
 1. Auto-crea TenantUser en schema public (para login global)
 2. Auto-crea TenantUserAccess (vincula TenantUser con el tenant actual)
 3. Auto-llena VacanteActiva del cargo asignado (solo flujo manual)
-4. Envia email de bienvenida via Celery
-5. Auto-asigna nivel_firma basado en cargo.nivel_jerarquico
+4. Envía email de bienvenida vía Celery
 
 Los signals respetan el flag _from_contratacion para evitar duplicados
 cuando ContratacionService ya maneja la vacante y el Colaborador.
+
+NOTA: nivel_firma YA NO se auto-asigna por cargo. El nivel de seguridad
+de firma se define en TipoDocumento.nivel_seguridad_firma, no en el User.
 """
 import logging
 
@@ -19,15 +21,6 @@ from django.dispatch import receiver
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
-
-# Mapeo: nivel_jerarquico del Cargo → nivel_firma del User
-NIVEL_JERARQUICO_TO_NIVEL_FIRMA = {
-    'ESTRATEGICO': 3,  # TOTP + Email OTP
-    'TACTICO': 2,      # TOTP obligatorio
-    'OPERATIVO': 1,    # Solo firma manuscrita
-    'APOYO': 1,        # Solo firma manuscrita
-    'EXTERNO': 1,      # Solo firma manuscrita
-}
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -325,207 +318,3 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
         )
 
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def auto_assign_nivel_firma(sender, instance, **kwargs):
-    """
-    Auto-asigna nivel_firma basado en cargo.nivel_jerarquico.
-
-    Se ejecuta en creación Y actualización del usuario para cubrir:
-    - Creación de usuario con cargo asignado
-    - Cambio de cargo en usuario existente
-
-    Si nivel_firma_manual=True, NO se sobreescribe (override del admin).
-    Usa update() directo para evitar loop infinito de post_save.
-    """
-    user = instance
-
-    # Respetar override manual
-    if user.nivel_firma_manual:
-        return
-
-    # Calcular nivel esperado
-    if user.cargo and hasattr(user.cargo, 'nivel_jerarquico'):
-        expected = NIVEL_JERARQUICO_TO_NIVEL_FIRMA.get(
-            user.cargo.nivel_jerarquico, 1
-        )
-    else:
-        expected = 1
-
-    # Solo actualizar si cambió (evitar queries innecesarios)
-    if user.nivel_firma != expected:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        User.objects.filter(pk=user.pk).update(nivel_firma=expected)
-        logger.info(
-            'nivel_firma auto-asignado: User %s (%s) → nivel %d '
-            '(cargo: %s, nivel_jerarquico: %s)',
-            user.pk, user.email, expected,
-            getattr(user.cargo, 'code', 'N/A'),
-            getattr(user.cargo, 'nivel_jerarquico', 'N/A'),
-        )
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def retro_asignar_firmas_pendientes(sender, instance, **kwargs):
-    """
-    Cuando un usuario se asigna a un cargo, busca documentos que necesitan
-    firmante de ese cargo (configurados en firmantes_por_defecto de la plantilla)
-    y crea FirmaDigital records automáticamente + envía notificación.
-
-    Esto cubre el caso: se creó un documento ANTES de que existiera un usuario
-    con el cargo requerido. Cuando el usuario se crea/actualiza y tiene cargo,
-    las firmas pendientes se retro-asignan inmediatamente.
-    """
-    user = instance
-
-    # Solo procesar si el usuario tiene cargo activo
-    if not user.cargo or not user.is_active:
-        return
-
-    cargo_code = getattr(user.cargo, 'code', None)
-    if not cargo_code:
-        return
-
-    try:
-        from django.apps import apps
-        from django.contrib.contenttypes.models import ContentType
-
-        PlantillaDocumento = apps.get_model('gestion_documental', 'PlantillaDocumento')
-        Documento = apps.get_model('gestion_documental', 'Documento')
-        FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
-        HistorialFirma = apps.get_model('firma_digital', 'HistorialFirma')
-
-        # Buscar plantillas que requieren este cargo en firmantes_por_defecto
-        plantillas_con_cargo = PlantillaDocumento.objects.filter(
-            firmantes_por_defecto__contains=[{'cargo_code': cargo_code}],
-        ).values_list('id', flat=True)
-
-        if not plantillas_con_cargo:
-            # Búsqueda alternativa: filtrar en Python (JSON contains puede fallar)
-            all_plantillas = PlantillaDocumento.objects.exclude(
-                firmantes_por_defecto=[]
-            ).exclude(firmantes_por_defecto__isnull=True)
-
-            plantillas_ids = []
-            for p in all_plantillas:
-                for f in (p.firmantes_por_defecto or []):
-                    if f.get('cargo_code') == cargo_code:
-                        plantillas_ids.append(p.id)
-                        break
-            plantillas_con_cargo = plantillas_ids
-
-        if not plantillas_con_cargo:
-            return
-
-        # Buscar documentos activos de esas plantillas (BORRADOR o EN_REVISION)
-        documentos = Documento.objects.filter(
-            plantilla_id__in=plantillas_con_cargo,
-            estado__in=['BORRADOR', 'EN_REVISION'],
-        )
-
-        if not documentos.exists():
-            return
-
-        doc_ct = ContentType.objects.get_for_model(Documento)
-        firmas_creadas = 0
-
-        for doc in documentos:
-            plantilla = doc.plantilla
-            if not plantilla or not plantilla.firmantes_por_defecto:
-                continue
-
-            for config in plantilla.firmantes_por_defecto:
-                if config.get('cargo_code') != cargo_code:
-                    continue
-
-                rol_firma = config.get('rol_firma', 'ELABORO')
-
-                # Verificar que no exista ya una firma para este doc+cargo+rol
-                ya_existe = FirmaDigital.objects.filter(
-                    content_type=doc_ct,
-                    object_id=doc.pk,
-                    cargo=user.cargo,
-                    rol_firma=rol_firma,
-                ).exists()
-
-                if ya_existe:
-                    continue
-
-                # Crear FirmaDigital
-                firma = FirmaDigital.objects.create(
-                    content_type=doc_ct,
-                    object_id=doc.pk,
-                    configuracion_flujo=None,
-                    nodo_flujo=None,
-                    usuario=user,
-                    cargo=user.cargo,
-                    rol_firma=rol_firma,
-                    orden=config.get('orden', 0),
-                    estado='PENDIENTE',
-                    firma_imagen='',
-                    documento_hash='pending',
-                    ip_address='0.0.0.0',
-                    user_agent='retro-assigned-on-user-cargo',
-                )
-
-                HistorialFirma.objects.create(
-                    firma=firma,
-                    accion='FIRMA_CREADA',
-                    usuario=user,
-                    descripcion=(
-                        f'Retro-asignado al crear/actualizar usuario con cargo '
-                        f'"{user.cargo.name}": {rol_firma} → {user.get_full_name()}'
-                    ),
-                    metadatos={
-                        'plantilla_codigo': plantilla.codigo,
-                        'cargo_code': cargo_code,
-                        'retro_asignado': True,
-                        'documento_codigo': doc.codigo,
-                    },
-                    ip_address='0.0.0.0',
-                )
-                firmas_creadas += 1
-
-                # Si el doc estaba en BORRADOR, pasarlo a EN_REVISION
-                if doc.estado == 'BORRADOR':
-                    doc.estado = 'EN_REVISION'
-                    doc.save(update_fields=['estado', 'updated_at'])
-
-                # Notificar al usuario
-                try:
-                    from apps.audit_system.centro_notificaciones.services import (
-                        NotificationService,
-                    )
-                    NotificationService.send_notification(
-                        tipo_codigo='FIRMA_PENDIENTE',
-                        usuario=user,
-                        titulo='Firma pendiente',
-                        mensaje=(
-                            f'Tiene una firma pendiente como {rol_firma} '
-                            f'en el documento "{doc.titulo}" ({doc.codigo}).'
-                        ),
-                        url=f'/gestion-documental?doc={doc.pk}',
-                        datos_extra={
-                            'documento_id': str(doc.pk),
-                            'documento_codigo': doc.codigo,
-                            'rol_firma': rol_firma,
-                        },
-                        prioridad='alta',
-                    )
-                except Exception as notif_err:
-                    logger.warning(
-                        'No se pudo notificar firma pendiente a %s: %s',
-                        user.email, notif_err,
-                    )
-
-        if firmas_creadas:
-            logger.info(
-                '[firma-retro] %d firma(s) retro-asignadas a %s (%s) cargo=%s',
-                firmas_creadas, user.get_full_name(), user.email, cargo_code,
-            )
-
-    except Exception as e:
-        logger.warning(
-            'Error en retro_asignar_firmas_pendientes para User %s: %s',
-            getattr(user, 'pk', '?'), e,
-        )

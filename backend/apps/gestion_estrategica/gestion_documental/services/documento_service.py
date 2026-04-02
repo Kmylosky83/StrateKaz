@@ -125,6 +125,15 @@ class DocumentoService:
         if doc.estado != 'BORRADOR':
             raise ValueError('Solo se pueden enviar borradores a revisión')
 
+        # Bloquear si el tipo requiere firma pero no hay firmantes asignados
+        if doc.tipo_documento.requiere_firma:
+            estado_firmas = cls.obtener_estado_firmas(doc)
+            if estado_firmas['total'] == 0:
+                raise ValueError(
+                    'Este tipo de documento requiere firma digital. '
+                    'Use "Solicitar Firmas" para asignar firmantes antes de enviar a revisión.'
+                )
+
         doc.estado = 'EN_REVISION'
         if revisor_id:
             doc.revisado_por_id = revisor_id
@@ -169,6 +178,38 @@ class DocumentoService:
             'rechazadas': rechazadas,
             'puede_publicar': pendientes == 0 and rechazadas == 0,
         }
+
+    @classmethod
+    def devolver_a_borrador(cls, documento_id, usuario, empresa_id, motivo=''):
+        """EN_REVISION -> BORRADOR. Permite desbloquear documentos enviados sin firmantes."""
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        if doc.estado != 'EN_REVISION':
+            raise ValueError('Solo se pueden devolver documentos en revisión')
+
+        doc.estado = 'BORRADOR'
+        doc.revisado_por = None
+        doc.save(update_fields=['estado', 'revisado_por_id', 'updated_at'])
+
+        # Notificar al elaborador
+        if doc.elaborado_por and doc.elaborado_por != usuario:
+            _send_notification(
+                tipo_codigo='DOCUMENTO_DEVUELTO',
+                usuario=doc.elaborado_por,
+                titulo=f'Documento devuelto a borrador: {doc.codigo}',
+                mensaje=(
+                    f'El documento "{doc.titulo}" ({doc.codigo}) fue devuelto '
+                    f'a borrador por {usuario.get_full_name()}.'
+                    f'{f" Motivo: {motivo}" if motivo else ""}'
+                ),
+                url='/gestion-documental/documentos',
+                datos_extra={
+                    'documento_id': doc.id,
+                    'codigo': doc.codigo,
+                    'titulo': doc.titulo,
+                },
+            )
+
+        return doc
 
     @classmethod
     def aprobar_documento(cls, documento_id, usuario, empresa_id, observaciones=''):
@@ -300,6 +341,10 @@ class DocumentoService:
                         'version': doc.version_actual,
                     },
                 )
+
+        # Distribuir lectura obligatoria a TODOS los usuarios activos
+        if doc.lectura_obligatoria:
+            cls._distribuir_lectura_obligatoria(doc, usuario)
 
         return doc
 
@@ -610,6 +655,123 @@ class DocumentoService:
 
         return '\n'.join(secciones_html)
 
+    # =========================================================================
+    # Distribución de lecturas obligatorias
+    # =========================================================================
+
+    @classmethod
+    def _distribuir_lectura_obligatoria(cls, documento, publicado_por):
+        """
+        Al publicar un documento con lectura_obligatoria=True, crea
+        AceptacionDocumental PENDIENTE para TODOS los usuarios activos
+        con cargo (empleados). Notifica a cada uno.
+
+        Idempotente: usa get_or_create para no duplicar si ya existe.
+        """
+        from ..models import AceptacionDocumental
+
+        User = apps.get_model('core', 'User')
+        usuarios = User.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True,
+            cargo__isnull=False,
+        ).exclude(id=publicado_por.id if publicado_por else 0)
+
+        creados = 0
+        for user in usuarios.iterator():
+            _, was_created = AceptacionDocumental.objects.get_or_create(
+                documento=documento,
+                version_documento=documento.version_actual,
+                usuario=user,
+                empresa_id=documento.empresa_id,
+                defaults={
+                    'estado': 'PENDIENTE',
+                    'asignado_por': publicado_por,
+                },
+            )
+            if was_created:
+                creados += 1
+                _send_notification(
+                    tipo_codigo='LECTURA_OBLIGATORIA',
+                    usuario=user,
+                    titulo=f'Lectura obligatoria: {documento.titulo}',
+                    mensaje=(
+                        f'Se le ha asignado la lectura obligatoria del documento '
+                        f'"{documento.titulo}" ({documento.codigo}). '
+                        f'Debe leerlo y aceptarlo desde Mi Portal > Lecturas Pendientes.'
+                    ),
+                    url='/mi-portal?tab=lecturas',
+                    datos_extra={
+                        'documento_id': documento.id,
+                        'codigo': documento.codigo,
+                        'titulo': documento.titulo,
+                        'version': documento.version_actual,
+                        'lectura_obligatoria': True,
+                    },
+                    prioridad='alta',
+                )
+
+        logger.info(
+            '[lectura_obligatoria] Documento %s publicado → %d lecturas asignadas de %d usuarios',
+            documento.codigo, creados, usuarios.count(),
+        )
+
+    @classmethod
+    def verificar_habeas_data_publicada(cls, empresa_id):
+        """
+        Verifica si el tenant tiene una Política de Datos Personales publicada.
+        Retorna dict con estado y datos para banner de dashboard.
+        """
+        doc = Documento.objects.filter(
+            empresa_id=empresa_id,
+            tipo_documento__codigo='POL',
+            titulo__icontains='datos personales',
+        ).order_by('-updated_at').first()
+
+        if not doc:
+            return {
+                'tiene_politica': False,
+                'estado': None,
+                'mensaje': 'No existe Política de Tratamiento de Datos Personales. '
+                           'Créela desde Gestión Documental para cumplir con la Ley 1581/2012.',
+            }
+
+        if doc.estado != 'PUBLICADO':
+            return {
+                'tiene_politica': True,
+                'estado': doc.estado,
+                'documento_id': doc.id,
+                'codigo': doc.codigo,
+                'mensaje': (
+                    f'La Política de Datos Personales ({doc.codigo}) está en estado '
+                    f'{doc.get_estado_display()}. Debe ser aprobada y publicada para '
+                    f'cumplir con la Ley 1581/2012.'
+                ),
+            }
+
+        return {
+            'tiene_politica': True,
+            'estado': 'PUBLICADO',
+            'documento_id': doc.id,
+            'codigo': doc.codigo,
+            'fecha_publicacion': str(doc.fecha_publicacion) if doc.fecha_publicacion else None,
+        }
+
+    @classmethod
+    def contar_lecturas_pendientes_obligatorias(cls, usuario):
+        """
+        Cuenta lecturas pendientes de documentos con lectura_obligatoria=True
+        para un usuario específico. Usado en login response y badge de campana.
+        """
+        from ..models import AceptacionDocumental
+
+        return AceptacionDocumental.objects.filter(
+            usuario=usuario,
+            estado__in=['PENDIENTE', 'EN_PROGRESO'],
+            documento__lectura_obligatoria=True,
+            documento__estado='PUBLICADO',
+        ).count()
+
     @classmethod
     def obtener_cobertura_documental(cls):
         """
@@ -696,106 +858,52 @@ class DocumentoService:
         }
 
 
-def auto_asignar_firmantes_desde_plantilla(documento, plantilla):
+def interpolar_variables_empresa(contenido):
     """
-    Resuelve firmantes_por_defecto de una plantilla y crea FirmaDigital
-    records para un Documento recién creado.
+    Reemplaza variables {{empresa_*}} en el contenido HTML de un documento
+    con los datos reales del tenant (EmpresaConfig).
 
-    Regla C2→C2: usa apps.get_model() en vez de import directo
-    de workflow_engine.
+    Variables soportadas:
+    - {{empresa_nombre}} → Razón social
+    - {{empresa_nit}} → NIT
+    - {{empresa_direccion}} → Dirección
+    - {{empresa_telefono}} → Teléfono
+    - {{empresa_email}} → Email de contacto
+    - {{empresa_ciudad}} → Ciudad
+    - {{empresa_representante_legal}} → Representante legal
+    - {{fecha_actual}} → Fecha actual formateada
 
-    Returns:
-        dict: {
-            'firmantes_creados': [FirmaDigital, ...],
-            'warnings': ['Cargo X no tiene usuario asignado', ...],
-        }
+    Se ejecuta al crear un documento desde una plantilla, para que el
+    contenido ya venga con los datos reales de la empresa (BPM, no Word).
     """
-    from django.contrib.contenttypes.models import ContentType
+    import re
 
-    firmantes_config = plantilla.firmantes_por_defecto
-    if not firmantes_config:
-        return {'firmantes_creados': [], 'warnings': []}
+    if not contenido or '{{' not in contenido:
+        return contenido
 
-    FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
-    HistorialFirma = apps.get_model('firma_digital', 'HistorialFirma')
-    Cargo = apps.get_model('core', 'Cargo')
-    User = apps.get_model('core', 'User')
+    # Obtener datos de EmpresaConfig
+    variables = {}
+    try:
+        EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
+        empresa = EmpresaConfig.objects.first()
+        if empresa:
+            variables = {
+                'empresa_nombre': getattr(empresa, 'razon_social', '') or getattr(empresa, 'nombre', '') or '',
+                'empresa_nit': getattr(empresa, 'nit', '') or '',
+                'empresa_direccion': getattr(empresa, 'direccion', '') or '',
+                'empresa_telefono': getattr(empresa, 'telefono', '') or '',
+                'empresa_email': getattr(empresa, 'email', '') or getattr(empresa, 'email_contacto', '') or '',
+                'empresa_ciudad': getattr(empresa, 'ciudad', '') or '',
+                'empresa_representante_legal': getattr(empresa, 'representante_legal', '') or '',
+            }
+    except Exception as e:
+        logger.warning('[documental] No se pudo obtener EmpresaConfig: %s', e)
 
-    content_type = ContentType.objects.get_for_model(documento)
-    firmantes_creados = []
-    warnings = []
+    # Agregar fecha actual
+    variables['fecha_actual'] = timezone.now().strftime('%d de %B de %Y')
 
-    for config in firmantes_config:
-        cargo_code = config.get('cargo_code', '')
-        rol_firma = config.get('rol_firma', 'ELABORO')
-        orden = config.get('orden', 0)
+    # Reemplazar variables en el contenido
+    for key, value in variables.items():
+        contenido = contenido.replace(f'{{{{{key}}}}}', str(value))
 
-        # Resolver cargo por code
-        try:
-            cargo = Cargo.objects.get(code=cargo_code, is_active=True)
-        except Cargo.DoesNotExist:
-            warnings.append(
-                f'Cargo "{cargo_code}" no encontrado o inactivo. '
-                f'Firmante {rol_firma} debe asignarse manualmente.'
-            )
-            continue
-
-        # Resolver usuario activo con ese cargo
-        usuario = User.objects.filter(
-            cargo=cargo, is_active=True, deleted_at__isnull=True
-        ).first()
-
-        if not usuario:
-            warnings.append(
-                f'No hay usuario activo con cargo "{cargo.name}" '
-                f'({cargo_code}). Firmante {rol_firma} debe asignarse manualmente.'
-            )
-            continue
-
-        # Crear FirmaDigital en PENDIENTE
-        try:
-            firma = FirmaDigital.objects.create(
-                content_type=content_type,
-                object_id=documento.pk,
-                configuracion_flujo=None,
-                nodo_flujo=None,
-                usuario=usuario,
-                cargo=cargo,
-                rol_firma=rol_firma,
-                orden=orden,
-                estado='PENDIENTE',
-                firma_imagen='',
-                documento_hash='pending',
-                ip_address='0.0.0.0',
-                user_agent='auto-assigned-from-plantilla',
-            )
-            firmantes_creados.append(firma)
-
-            # Historial de auditoría
-            HistorialFirma.objects.create(
-                firma=firma,
-                accion='FIRMA_CREADA',
-                usuario=usuario,
-                descripcion=(
-                    f'Auto-asignado desde plantilla "{plantilla.codigo}": '
-                    f'{rol_firma} → {usuario.get_full_name()}'
-                ),
-                metadatos={
-                    'plantilla_codigo': plantilla.codigo,
-                    'cargo_code': cargo_code,
-                    'auto_asignado': True,
-                },
-                ip_address='0.0.0.0',
-            )
-            logger.info(
-                '[documental] Auto-asignado firmante: %s (%s) como %s para doc %s',
-                usuario.get_full_name(), cargo_code, rol_firma, documento.pk,
-            )
-        except Exception as e:
-            logger.error(
-                '[documental] Error creando FirmaDigital para %s/%s: %s',
-                cargo_code, rol_firma, e,
-            )
-            warnings.append(f'Error al crear firma para {rol_firma}: {str(e)}')
-
-    return {'firmantes_creados': firmantes_creados, 'warnings': warnings}
+    return contenido

@@ -1,8 +1,8 @@
 /**
- * TiposPlantillasSection - Tipos de Documento
+ * TiposPlantillasSection - Tipos de Documento y Plantillas
  *
- * Vista dual: tarjetas (visual) o lista (compacta).
- * Las plantillas se gestionan desde el detalle de cada tipo.
+ * Vista dual: tarjetas (visual) o lista (compacta) para tipos.
+ * Plantillas: sección expandible al pie, listado con acciones.
  */
 import { useState } from 'react';
 import {
@@ -14,10 +14,13 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  Tag,
-  MoreVertical,
   Clock,
   Shield,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  Tag,
 } from 'lucide-react';
 import {
   Card,
@@ -32,7 +35,12 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
-import { useTiposDocumento, useDeleteTipoDocumento } from '../hooks/useGestionDocumental';
+import {
+  useTiposDocumento,
+  useDeleteTipoDocumento,
+  usePlantillasDocumento,
+  useDeletePlantillaDocumento,
+} from '../hooks/useGestionDocumental';
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
 // ─── Constantes ─────────────────────────────────────────────────
@@ -70,25 +78,36 @@ interface TiposPlantillasSectionProps {
   onEditPlantilla: (plantilla: PlantillaDocumento) => void;
 }
 
-export function TiposPlantillasSection({ onCreateTipo, onEditTipo }: TiposPlantillasSectionProps) {
+export function TiposPlantillasSection({
+  onCreateTipo,
+  onEditTipo,
+  onCreatePlantilla,
+  onEditPlantilla,
+}: TiposPlantillasSectionProps) {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'create');
+  const canCreateTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'create');
 
-  const { data: tipos, isLoading } = useTiposDocumento();
-  const deleteMutation = useDeleteTipoDocumento();
+  const { data: tipos, isLoading: tiposLoading } = useTiposDocumento();
+  const { data: plantillas, isLoading: plantillasLoading } = usePlantillasDocumento();
+  const deleteTipoMutation = useDeleteTipoDocumento();
+  const deletePlantillaMutation = useDeletePlantillaDocumento();
 
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('gd_tipos_view') as ViewMode) || 'list'
   );
-  const [confirmDelete, setConfirmDelete] = useState<TipoDocumento | null>(null);
+  const [confirmDeleteTipo, setConfirmDeleteTipo] = useState<TipoDocumento | null>(null);
+  const [confirmDeletePlantilla, setConfirmDeletePlantilla] = useState<PlantillaDocumento | null>(
+    null
+  );
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
+  const [plantillasExpanded, setPlantillasExpanded] = useState(true);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
     localStorage.setItem('gd_tipos_view', mode);
   };
 
-  if (isLoading) {
+  if (tiposLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner size="lg" />
@@ -97,21 +116,23 @@ export function TiposPlantillasSection({ onCreateTipo, onEditTipo }: TiposPlanti
   }
 
   const tiposList = tipos || [];
+  const plantillasList = plantillas || [];
+
+  // Mapa tipo_id → nombre para mostrar en la lista de plantillas
+  const tiposMap = Object.fromEntries(tiposList.map((t) => [t.id, t]));
 
   return (
     <>
-      {/* Header */}
+      {/* ── Sección: Tipos de Documento ─────────────────────── */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Tipos de Documento
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {tiposList.length} tipo{tiposList.length !== 1 ? 's' : ''} registrado
-              {tiposList.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Tipos de Documento
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {tiposList.length} tipo{tiposList.length !== 1 ? 's' : ''} registrado
+            {tiposList.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <ViewToggle
@@ -133,14 +154,13 @@ export function TiposPlantillasSection({ onCreateTipo, onEditTipo }: TiposPlanti
         </div>
       </div>
 
-      {/* Content */}
       {tiposList.length === 0 ? (
         <EmptyState
           icon={<Files className="w-12 h-12" />}
           title="No hay tipos de documento"
           description="Crea tipos de documento para organizar tu sistema documental."
           action={
-            canCreate
+            canCreateTipo
               ? {
                   label: 'Crear Tipo',
                   onClick: onCreateTipo,
@@ -155,27 +175,109 @@ export function TiposPlantillasSection({ onCreateTipo, onEditTipo }: TiposPlanti
           menuOpen={menuOpen}
           onMenuToggle={setMenuOpen}
           onEdit={onEditTipo}
-          onDelete={setConfirmDelete}
+          onDelete={setConfirmDeleteTipo}
         />
       ) : (
-        <TiposListView tipos={tiposList} onEdit={onEditTipo} onDelete={setConfirmDelete} />
+        <TiposListView tipos={tiposList} onEdit={onEditTipo} onDelete={setConfirmDeleteTipo} />
       )}
 
-      {/* Confirm Delete */}
+      {/* ── Sección: Plantillas ─────────────────────────────── */}
+      <div className="mt-8">
+        <button
+          className="flex items-center justify-between w-full mb-4 group"
+          onClick={() => setPlantillasExpanded((v) => !v)}
+          type="button"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-500" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
+            </div>
+            <Badge variant="secondary" size="sm">
+              {plantillasList.length}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            <ProtectedAction permission="gestion_documental.tipos_documento.create">
+              <Button
+                variant="outline"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreatePlantilla();
+                }}
+              >
+                Nueva Plantilla
+              </Button>
+            </ProtectedAction>
+            {plantillasExpanded ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            )}
+          </div>
+        </button>
+
+        {plantillasExpanded && (
+          <>
+            {plantillasLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="md" />
+              </div>
+            ) : plantillasList.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="w-10 h-10" />}
+                title="Sin plantillas"
+                description="Las plantillas permiten pre-cargar contenido, variables y campos al crear un documento."
+                action={{
+                  label: 'Nueva Plantilla',
+                  onClick: onCreatePlantilla,
+                  icon: <Plus className="w-4 h-4" />,
+                }}
+              />
+            ) : (
+              <PlantillasListView
+                plantillas={plantillasList}
+                tiposMap={tiposMap}
+                onEdit={onEditPlantilla}
+                onDelete={setConfirmDeletePlantilla}
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* ── Confirm Dialogs ─────────────────────────────────── */}
       <ConfirmDialog
-        isOpen={!!confirmDelete}
-        onClose={() => setConfirmDelete(null)}
+        isOpen={!!confirmDeleteTipo}
+        onClose={() => setConfirmDeleteTipo(null)}
         onConfirm={() => {
-          if (confirmDelete)
-            deleteMutation.mutate(confirmDelete.id, {
-              onSuccess: () => setConfirmDelete(null),
+          if (confirmDeleteTipo)
+            deleteTipoMutation.mutate(confirmDeleteTipo.id, {
+              onSuccess: () => setConfirmDeleteTipo(null),
             });
         }}
         title="Eliminar Tipo de Documento"
-        message={`¿Eliminar el tipo "${confirmDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        message={`¿Eliminar el tipo "${confirmDeleteTipo?.nombre}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         variant="danger"
-        isLoading={deleteMutation.isPending}
+        isLoading={deleteTipoMutation.isPending}
+      />
+      <ConfirmDialog
+        isOpen={!!confirmDeletePlantilla}
+        onClose={() => setConfirmDeletePlantilla(null)}
+        onConfirm={() => {
+          if (confirmDeletePlantilla)
+            deletePlantillaMutation.mutate(confirmDeletePlantilla.id, {
+              onSuccess: () => setConfirmDeletePlantilla(null),
+            });
+        }}
+        title="Eliminar Plantilla"
+        message={`¿Eliminar la plantilla "${confirmDeletePlantilla?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deletePlantillaMutation.isPending}
       />
     </>
   );
@@ -281,7 +383,6 @@ function TiposListView({
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      {/* Header */}
       <div className="hidden md:grid md:grid-cols-[auto_1fr_120px_120px_100px_80px_60px] gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-900/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
         <div className="w-3" />
         <div>Nombre</div>
@@ -292,7 +393,6 @@ function TiposListView({
         <div />
       </div>
 
-      {/* Rows */}
       <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {tipos.map((tipo) => {
           const nivel = NIVEL_LABELS[tipo.nivel_documento] || NIVEL_LABELS.SOPORTE;
@@ -301,13 +401,10 @@ function TiposListView({
               key={tipo.id}
               className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_120px_100px_80px_60px] gap-4 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
-              {/* Color dot */}
               <div
                 className="w-3 h-3 rounded-full shrink-0 hidden md:block"
                 style={{ backgroundColor: tipo.color_identificacion }}
               />
-
-              {/* Name + description */}
               <div className="min-w-0">
                 <div className="flex items-center gap-2 md:hidden mb-1">
                   <div
@@ -325,20 +422,14 @@ function TiposListView({
                   </p>
                 )}
               </div>
-
-              {/* Code */}
               <div className="hidden md:block">
                 <Badge variant="secondary">{tipo.codigo}</Badge>
               </div>
-
-              {/* Level */}
               <div className="hidden md:block">
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${nivel.color}`}>
                   {nivel.label}
                 </span>
               </div>
-
-              {/* Requirements */}
               <div className="hidden md:flex items-center gap-1.5">
                 {tipo.requiere_aprobacion && (
                   <CheckCircle className="w-4 h-4 text-blue-500" title="Requiere aprobación" />
@@ -347,7 +438,7 @@ function TiposListView({
                   <PenTool className="w-4 h-4 text-indigo-500" title="Requiere firma" />
                 )}
                 {tipo.tiempo_retencion_anos && (
-                  <span className="text-xs text-gray-400" title="Retención">
+                  <span className="text-xs text-gray-400">
                     <Clock className="w-3.5 h-3.5 inline mr-0.5" />
                     {tipo.tiempo_retencion_anos}a
                   </span>
@@ -356,15 +447,11 @@ function TiposListView({
                   <span className="text-xs text-gray-400">—</span>
                 )}
               </div>
-
-              {/* Status */}
               <div className="hidden md:block">
                 <Badge variant={tipo.is_active ? 'success' : 'secondary'} size="sm">
                   {tipo.is_active ? 'Activo' : 'Inactivo'}
                 </Badge>
               </div>
-
-              {/* Actions */}
               <div className="flex items-center gap-1 justify-end">
                 <ProtectedAction permission="gestion_documental.tipos_documento.edit">
                   <button
@@ -385,8 +472,6 @@ function TiposListView({
                   </button>
                 </ProtectedAction>
               </div>
-
-              {/* Mobile: extra info */}
               <div className="flex items-center justify-between md:hidden col-span-full">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${nivel.color}`}>
@@ -410,7 +495,106 @@ function TiposListView({
   );
 }
 
-// ─── Shared: Context Menu ───────────────────────────────────────
+// ─── Plantillas List View ────────────────────────────────────────
+function PlantillasListView({
+  plantillas,
+  tiposMap,
+  onEdit,
+  onDelete,
+}: {
+  plantillas: PlantillaDocumento[];
+  tiposMap: Record<number, TipoDocumento>;
+  onEdit: (p: PlantillaDocumento) => void;
+  onDelete: (p: PlantillaDocumento) => void;
+}) {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="hidden md:grid md:grid-cols-[1fr_160px_120px_80px_60px] gap-4 px-4 py-3 bg-gray-50 dark:bg-gray-900/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700">
+        <div>Nombre</div>
+        <div>Tipo de Documento</div>
+        <div>Versión</div>
+        <div>Estado</div>
+        <div />
+      </div>
+      <div className="divide-y divide-gray-100 dark:divide-gray-700">
+        {plantillas.map((p) => {
+          const tipoNombre =
+            tiposMap[p.tipo_documento]?.nombre ??
+            p.tipo_documento_detail?.nombre ??
+            `Tipo #${p.tipo_documento}`;
+          const tipoColor = tiposMap[p.tipo_documento]?.color_identificacion;
+          return (
+            <div
+              key={p.id}
+              className="grid grid-cols-1 md:grid-cols-[1fr_160px_120px_80px_60px] gap-4 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  {p.es_por_defecto && (
+                    <Tag className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Por defecto" />
+                  )}
+                  <p className="font-medium text-gray-900 dark:text-white truncate">{p.nombre}</p>
+                </div>
+                {p.descripcion && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                    {p.descripcion}
+                  </p>
+                )}
+              </div>
+              <div className="hidden md:flex items-center gap-2">
+                {tipoColor && (
+                  <div
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: tipoColor }}
+                  />
+                )}
+                <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                  {tipoNombre}
+                </span>
+              </div>
+              <div className="hidden md:block">
+                <Badge variant="secondary" size="sm">
+                  v{p.version}
+                </Badge>
+              </div>
+              <div className="hidden md:block">
+                <Badge variant={p.estado === 'ACTIVA' ? 'success' : 'secondary'} size="sm">
+                  {p.estado === 'ACTIVA'
+                    ? 'Activa'
+                    : p.estado === 'BORRADOR'
+                      ? 'Borrador'
+                      : p.estado}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1 justify-end">
+                <ProtectedAction permission="gestion_documental.tipos_documento.edit">
+                  <button
+                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
+                    onClick={() => onEdit(p)}
+                    title="Editar plantilla"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </ProtectedAction>
+                <ProtectedAction permission="gestion_documental.tipos_documento.delete">
+                  <button
+                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                    onClick={() => onDelete(p)}
+                    title="Eliminar plantilla"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </ProtectedAction>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tipo Context Menu ───────────────────────────────────────────
 function TipoMenu({
   tipo,
   isOpen,

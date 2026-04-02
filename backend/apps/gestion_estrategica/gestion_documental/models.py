@@ -11,6 +11,7 @@ usando GenericForeignKey para vincular firmas a cualquier modelo.
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 
 
 class TipoDocumento(models.Model):
@@ -385,8 +386,13 @@ class Documento(models.Model):
     )
 
     # Fechas importantes
+    # NOTA: Se usa default=timezone.localdate (no auto_now_add) para respetar
+    # TIME_ZONE='America/Bogota'. auto_now_add usa datetime.date.today() que
+    # toma el timezone del OS (UTC en VPS), causando desfase de ±1 día entre
+    # las 19:00-23:59 hora colombiana.
     fecha_creacion = models.DateField(
-        auto_now_add=True,
+        default=timezone.localdate,
+        editable=False,
         verbose_name='Fecha de Creación'
     )
     fecha_aprobacion = models.DateField(

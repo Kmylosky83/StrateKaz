@@ -331,6 +331,19 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         return queryset.order_by('-fecha_publicacion', 'codigo')
 
     def perform_create(self, serializer):
+        from rest_framework.exceptions import PermissionDenied
+        user = self.request.user
+
+        # Solo usuarios con cargo asignado pueden crear documentos SGI.
+        # El superadmin administra la plataforma pero no opera como funcionario
+        # dentro del sistema de gestión. Los documentos deben tener un responsable
+        # con cargo real (estructura organizacional).
+        if not getattr(user, 'cargo', None):
+            raise PermissionDenied(
+                'Debes tener un cargo asignado para crear documentos. '
+                'Los documentos SGI requieren un responsable con cargo en la organización.'
+            )
+
         empresa = get_tenant_empresa()
         empresa_id = empresa.id if empresa else None
 

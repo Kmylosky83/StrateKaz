@@ -25,7 +25,7 @@ import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 
 const MAX_PROFILE_RETRIES = 5;
-const ABSOLUTE_TIMEOUT_MS = 15_000; // 15s máximo de espera antes de mostrar error
+const ABSOLUTE_TIMEOUT_MS = 35_000; // 35s — cubre los ~30s totales del backoff (0+2+4+8+16)
 
 /** Delay progresivo entre reintentos (ms): 0, 2s, 4s, 8s, 16s */
 function getRetryDelay(attempt: number): number {
@@ -104,11 +104,14 @@ export const AdaptiveLayout = () => {
       if (retryCount.current < MAX_PROFILE_RETRIES) {
         scheduleRetry();
       } else {
-        // Reintentos agotados: la sesión no puede recuperarse → forzar logout
+        // Reintentos agotados: mostrar error UI — el usuario decide si reintentar o cerrar sesión.
+        // NO llamar forceLogout() aquí: en producción los fallos de red son transitorios y
+        // expulsar al usuario automáticamente genera sesiones "constantemente cerradas".
+        // timedOut=true activa el UI con botones "Reintentar" y "Cerrar sesión".
         console.error(
-          `AdaptiveLayout: profile load failed after ${MAX_PROFILE_RETRIES} attempts. Forcing logout.`
+          `AdaptiveLayout: profile load failed after ${MAX_PROFILE_RETRIES} attempts. Showing retry UI.`
         );
-        forceLogout();
+        setTimedOut(true);
       }
     }
   }, [currentTenantId, user, isLoadingUser, scheduleRetry, forceLogout]);

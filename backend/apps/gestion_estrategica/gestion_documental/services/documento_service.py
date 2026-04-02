@@ -881,35 +881,29 @@ def interpolar_variables_empresa(contenido):
     if not contenido or '{{' not in contenido:
         return contenido
 
-    # Obtener datos de EmpresaConfig (con fallback a Tenant)
+    # Los datos de empresa viven en el Tenant (schema público).
+    # EmpresaConfig solo tiene nit y razon_social como placeholder.
+    # Leer siempre del Tenant para obtener datos completos y reales.
     variables = {}
     try:
-        EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
-        empresa = EmpresaConfig.objects.first()
-        if empresa:
+        from django.db import connection
+        tenant = getattr(connection, 'tenant', None)
+        if tenant and hasattr(tenant, 'nit'):
             variables = {
-                'empresa_nombre': getattr(empresa, 'razon_social', '') or getattr(empresa, 'nombre', '') or '',
-                'empresa_nit': getattr(empresa, 'nit', '') or '',
-                'empresa_direccion': getattr(empresa, 'direccion', '') or '',
-                'empresa_telefono': getattr(empresa, 'telefono', '') or '',
-                'empresa_email': getattr(empresa, 'email', '') or getattr(empresa, 'email_contacto', '') or '',
-                'empresa_ciudad': getattr(empresa, 'ciudad', '') or '',
-                'empresa_representante_legal': getattr(empresa, 'representante_legal', '') or '',
+                'empresa_nombre': getattr(tenant, 'razon_social', '') or getattr(tenant, 'nombre_comercial', '') or getattr(tenant, 'name', '') or '',
+                'empresa_nit': getattr(tenant, 'nit', '') or '',
+                'empresa_razon_social': getattr(tenant, 'razon_social', '') or '',
+                'empresa_nombre_comercial': getattr(tenant, 'nombre_comercial', '') or '',
+                'empresa_representante_legal': getattr(tenant, 'representante_legal', '') or '',
+                'empresa_cedula_representante': getattr(tenant, 'cedula_representante', '') or '',
+                'empresa_ciudad': getattr(tenant, 'ciudad', '') or getattr(tenant, 'camara_comercio', '') or '',
+                'empresa_pais': getattr(tenant, 'pais', 'Colombia') or 'Colombia',
+                'empresa_email': getattr(tenant, 'email', '') or '',
+                'empresa_telefono': getattr(tenant, 'telefono', '') or '',
+                'empresa_direccion': getattr(tenant, 'direccion', '') or '',
             }
     except Exception as e:
-        logger.warning('[documental] EmpresaConfig no disponible: %s. Usando Tenant.', e)
-
-    # Fallback: si no hay datos de EmpresaConfig, usar Tenant
-    if not variables.get('empresa_nombre'):
-        try:
-            from django.db import connection
-            tenant = getattr(connection, 'tenant', None)
-            if tenant:
-                variables['empresa_nombre'] = getattr(tenant, 'name', '') or ''
-                variables['empresa_nit'] = getattr(tenant, 'nit', '') or ''
-                variables['empresa_email'] = getattr(tenant, 'email', '') or ''
-        except Exception:
-            pass
+        logger.warning('[documental] No se pudo obtener datos del Tenant: %s', e)
 
     # Agregar fecha actual
     variables['fecha_actual'] = timezone.now().strftime('%d de %B de %Y')

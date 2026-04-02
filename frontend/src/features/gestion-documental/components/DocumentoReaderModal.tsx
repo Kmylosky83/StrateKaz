@@ -51,6 +51,17 @@ export default function DocumentoReaderModal({
   const saveRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isVisibleRef = useRef(true);
 
+  // Refs para guardarProgreso — evita incluir valores volátiles en deps
+  // y previene el loop: tiempoSeg↑ → guardarProgreso recreado → saveEffect re-runs → mutate → Zustand forceStoreRerender → loop
+  const aceptacionRef = useRef(aceptacion);
+  const tiempoSegRef = useRef(tiempoSeg);
+  const seccionesVistasRef = useRef(seccionesVistas);
+  const registrarMutateRef = useRef(registrarMutation.mutate);
+  aceptacionRef.current = aceptacion;
+  tiempoSegRef.current = tiempoSeg;
+  seccionesVistasRef.current = seccionesVistas;
+  registrarMutateRef.current = registrarMutation.mutate;
+
   const porcentaje = Math.round((seccionesVistas.size / TOTAL_SECCIONES) * 100);
   const puedeAceptar = porcentaje >= PORCENTAJE_MINIMO && aceptado;
 
@@ -122,22 +133,23 @@ export default function DocumentoReaderModal({
     };
   }, [isOpen, aceptacion?.documento_contenido]);
 
-  // Guardado periódico de progreso
+  // Guardado periódico de progreso — usa refs para deps volátiles → identidad estable
   const guardarProgreso = useCallback(() => {
-    if (!aceptacion || aceptacion.estado === 'ACEPTADO') return;
+    const ac = aceptacionRef.current;
+    if (!ac || ac.estado === 'ACEPTADO') return;
 
-    registrarMutation.mutate({
-      id: aceptacion.id,
+    registrarMutateRef.current({
+      id: ac.id,
       data: {
-        porcentaje_lectura: porcentaje,
-        tiempo_lectura_seg: tiempoSeg,
+        porcentaje_lectura: Math.round((seccionesVistasRef.current.size / TOTAL_SECCIONES) * 100),
+        tiempo_lectura_seg: tiempoSegRef.current,
         scroll_data: {
-          secciones_vistas: Array.from(seccionesVistas),
+          secciones_vistas: Array.from(seccionesVistasRef.current),
           total_secciones: TOTAL_SECCIONES,
         },
       },
     });
-  }, [aceptacion, porcentaje, tiempoSeg, seccionesVistas, registrarMutation]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!isOpen || !aceptacion) return;
@@ -146,10 +158,10 @@ export default function DocumentoReaderModal({
 
     return () => {
       if (saveRef.current) clearInterval(saveRef.current);
-      // Guardar al cerrar
       guardarProgreso();
     };
-  }, [isOpen, aceptacion, guardarProgreso]);
+    // guardarProgreso es estable (deps vacías) — este effect solo corre cuando abre/cierra
+  }, [isOpen, aceptacion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAceptar = async () => {
     if (!aceptacion) return;

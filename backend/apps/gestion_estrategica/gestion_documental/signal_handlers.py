@@ -9,6 +9,7 @@ Signal handlers para Gestión Documental.
 import logging
 
 from django.conf import settings
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -48,11 +49,17 @@ def auto_asignar_lecturas_obligatorias(sender, instance, created, **kwargs):
         Documento = django_apps.get_model('gestion_documental', 'Documento')
         AceptacionDocumental = django_apps.get_model('gestion_documental', 'AceptacionDocumental')
 
-        # Documentos publicados con lectura obligatoria
+        # Documentos publicados que aplican al nuevo usuario:
+        #   1. lectura_obligatoria=True — aplica a cualquier nuevo usuario
+        #   2. aplica_a_todos=True      — aplica a cualquier nuevo usuario
+        #   3. cargos_distribucion contiene el cargo del usuario
         documentos_obligatorios = Documento.objects.filter(
             estado='PUBLICADO',
-            lectura_obligatoria=True,
-        )
+        ).filter(
+            Q(lectura_obligatoria=True)
+            | Q(aplica_a_todos=True)
+            | Q(cargos_distribucion=user.cargo)
+        ).distinct()
 
         if not documentos_obligatorios.exists():
             return

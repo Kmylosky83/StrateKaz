@@ -45,6 +45,57 @@ from .serializers import (
 from .services import DocumentoService
 
 
+# =============================================================================
+# HELPERS — Distribución RBAC
+# =============================================================================
+
+def _auto_distribuir_documento(documento, asignado_por, empresa, fecha_limite=None):
+    """
+    Crea AceptacionDocumental para todos los usuarios que correspondan según
+    la configuración RBAC del documento (aplica_a_todos / cargos_distribucion).
+
+    Solo actúa si el documento tiene al menos uno de esos flags activo.
+    Omite silenciosamente duplicados (get_or_create).
+
+    Returns:
+        int — número de nuevas AceptacionDocumental creadas.
+    """
+    from .models import AceptacionDocumental
+    from django.contrib.auth import get_user_model
+
+    if not documento.aplica_a_todos and not documento.cargos_distribucion.exists():
+        return 0
+
+    User = get_user_model()
+    base_qs = User.objects.filter(is_active=True, deleted_at__isnull=True)
+
+    if documento.aplica_a_todos:
+        usuarios = base_qs
+    else:
+        cargo_ids = documento.cargos_distribucion.values_list('id', flat=True)
+        usuarios = base_qs.filter(cargo_id__in=cargo_ids)
+
+    empresa_id = empresa.id if empresa else (documento.empresa_id or 0)
+    creados = 0
+
+    for usuario in usuarios.iterator(chunk_size=200):
+        _, was_created = AceptacionDocumental.objects.get_or_create(
+            documento=documento,
+            version_documento=documento.version_actual,
+            usuario=usuario,
+            empresa_id=empresa_id,
+            defaults={
+                'estado': 'PENDIENTE',
+                'asignado_por': asignado_por,
+                'fecha_limite': fecha_limite,
+            },
+        )
+        if was_created:
+            creados += 1
+
+    return creados
+
+
 class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     """ViewSet para Tipos de Documento"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
@@ -443,16 +494,47 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def publicar(self, request, pk=None):
-        """Publica un documento aprobado (valida firmas si requiere_firma)."""
+        """
+        Publica un documento aprobado y aplica distribución RBAC.
+
+        Campos opcionales en request.data:
+          lectura_obligatoria (bool)  — auto-asignar a futuros usuarios
+          aplica_a_todos (bool)       — distribuir a TODOS los usuarios activos ahora
+          cargo_ids (list[int])       — distribuir a usuarios con esos cargos ahora
+          fecha_vigencia (str)        — fecha ISO de vigencia
+          fecha_limite_lectura (str)  — fecha límite para lecturas auto-distribuidas
+        """
         from .services import DocumentoService
         documento = self.get_object()
         empresa = get_tenant_empresa()
 
-        # Actualizar lectura_obligatoria si el admin lo indicó al publicar
+        # ── Actualizar flags de distribución antes de publicar ────────────────
+        update_fields = ['updated_at']
+
         lectura_obligatoria = request.data.get('lectura_obligatoria')
         if lectura_obligatoria is not None:
             documento.lectura_obligatoria = bool(lectura_obligatoria)
-            documento.save(update_fields=['lectura_obligatoria', 'updated_at'])
+            update_fields.append('lectura_obligatoria')
+
+        aplica_a_todos = request.data.get('aplica_a_todos')
+        if aplica_a_todos is not None:
+            documento.aplica_a_todos = bool(aplica_a_todos)
+            update_fields.append('aplica_a_todos')
+
+        cargo_ids = request.data.get('cargo_ids') or []
+
+        if update_fields != ['updated_at']:
+            documento.save(update_fields=update_fields)
+
+        # Persistir cargos_distribucion si se pasaron
+        if cargo_ids:
+            from django.apps import apps as dj_apps
+            try:
+                Cargo = dj_apps.get_model('core', 'Cargo')
+                cargos = Cargo.objects.filter(id__in=cargo_ids, is_active=True)
+                documento.cargos_distribucion.set(cargos)
+            except LookupError:
+                pass
 
         try:
             doc = DocumentoService.publicar_documento(
@@ -461,9 +543,20 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 empresa_id=empresa.id if empresa else documento.empresa_id,
                 fecha_vigencia=request.data.get('fecha_vigencia'),
             )
-            return Response(DocumentoDetailSerializer(doc).data)
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ── Auto-distribución RBAC post-publicación ───────────────────────────
+        fecha_limite_lectura = request.data.get('fecha_limite_lectura')
+        distribuidos = _auto_distribuir_documento(doc, request.user, empresa, fecha_limite_lectura)
+        if distribuidos:
+            import logging
+            logging.getLogger('gestion_documental').info(
+                'Auto-distribución: %d lectura(s) asignadas para Documento %s',
+                distribuidos, doc.id,
+            )
+
+        return Response(DocumentoDetailSerializer(doc).data)
 
     @action(detail=True, methods=['post'], url_path='marcar-obsoleto')
     def marcar_obsoleto(self, request, pk=None):
@@ -1355,15 +1448,25 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='asignar')
     def asignar(self, request):
-        """Asigna lectura verificada de un documento a una lista de usuarios."""
+        """
+        Asigna lectura verificada soportando distribución RBAC.
+
+        Modos (combinables):
+          usuario_ids  — usuarios individuales
+          cargo_ids    — todos los usuarios con esos cargos
+          aplica_a_todos — todos los usuarios activos del tenant
+        """
         from .serializers import AsignarLecturaSerializer
         from .models import AceptacionDocumental, Documento
+        from django.contrib.auth import get_user_model
 
         serializer = AsignarLecturaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         documento_id = serializer.validated_data['documento_id']
-        usuario_ids = serializer.validated_data['usuario_ids']
+        usuario_ids = serializer.validated_data.get('usuario_ids') or []
+        cargo_ids = serializer.validated_data.get('cargo_ids') or []
+        aplica_a_todos = serializer.validated_data.get('aplica_a_todos', False)
         fecha_limite = serializer.validated_data.get('fecha_limite')
 
         try:
@@ -1375,12 +1478,33 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
             )
 
         empresa = get_tenant_empresa(request)
-        from django.contrib.auth import get_user_model
+        empresa_id = empresa.id if empresa else 0
         User = get_user_model()
+        base_qs = User.objects.filter(is_active=True, deleted_at__isnull=True)
+
+        # ── Resolver conjunto final de usuarios ───────────────────────────────
+        user_pk_set: set[int] = set()
+
+        # Modo 1: usuarios individuales (legado)
+        if usuario_ids:
+            user_pk_set.update(
+                base_qs.filter(id__in=usuario_ids).values_list('id', flat=True)
+            )
+
+        # Modo 2: por cargo RBAC
+        if cargo_ids:
+            user_pk_set.update(
+                base_qs.filter(cargo_id__in=cargo_ids).values_list('id', flat=True)
+            )
+
+        # Modo 3: todos los usuarios del tenant
+        if aplica_a_todos:
+            user_pk_set.update(base_qs.values_list('id', flat=True))
 
         creados = 0
         omitidos = 0
-        for uid in usuario_ids:
+
+        for uid in user_pk_set:
             try:
                 usuario = User.objects.get(id=uid)
             except User.DoesNotExist:
@@ -1391,7 +1515,7 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
                 documento=documento,
                 version_documento=documento.version_actual,
                 usuario=usuario,
-                empresa_id=empresa.id if empresa else 0,
+                empresa_id=empresa_id,
                 defaults={
                     'asignado_por': request.user,
                     'fecha_limite': fecha_limite,

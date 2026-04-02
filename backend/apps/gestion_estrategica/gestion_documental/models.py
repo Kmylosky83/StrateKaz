@@ -563,6 +563,32 @@ class Documento(models.Model):
         help_text='Si True, se asigna automáticamente a cada nuevo usuario del tenant',
     )
 
+    # ── Distribución RBAC (S2 — el control es por RBAC) ──────────────────────
+    # Estos campos definen el AUDIENCIA del documento al publicar:
+    #   aplica_a_todos=True         → distribuir a TODOS los usuarios activos
+    #   cargos_distribucion=[...]   → distribuir a usuarios con esos cargos
+    # Si ninguno está activo, la distribución es solo manual vía AsignarLecturaModal.
+    # La auto-distribución también aplica a nuevos usuarios que se unan al tenant
+    # si su cargo está en cargos_distribucion o si aplica_a_todos es True.
+    aplica_a_todos = models.BooleanField(
+        default=False,
+        verbose_name='Aplica a Todos',
+        help_text=(
+            'Si True, al publicar se distribuye automáticamente a todos los '
+            'usuarios activos del tenant. También aplica a nuevos usuarios.'
+        ),
+    )
+    cargos_distribucion = models.ManyToManyField(
+        'core.Cargo',
+        blank=True,
+        related_name='documentos_distribucion',
+        verbose_name='Cargos Objetivo',
+        help_text=(
+            'Al publicar, se distribuye a usuarios que tengan alguno de estos cargos. '
+            'También aplica a nuevos usuarios que se vinculen con estos cargos.'
+        ),
+    )
+
     # Integración BPM (preparación para auto-generación — Fase 4 spec)
     # C2→C2: IntegerField (no FK directo a workflow_engine)
     workflow_asociado_id = models.PositiveBigIntegerField(

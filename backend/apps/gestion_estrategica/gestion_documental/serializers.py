@@ -452,7 +452,38 @@ class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
 
 
 class AsignarLecturaSerializer(serializers.Serializer):
-    """Serializer para asignar lectura verificada a usuarios"""
+    """
+    Serializer para asignar lectura verificada con soporte RBAC.
+
+    Modos de selección (se pueden combinar):
+      - usuario_ids:   IDs individuales (legado + casos especiales)
+      - cargo_ids:     IDs de cargos → se resuelven todos los usuarios con ese cargo
+      - aplica_a_todos: True → todos los usuarios activos del tenant
+
+    Al menos uno de los tres modos debe estar activo.
+    """
     documento_id = serializers.IntegerField()
-    usuario_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+    usuario_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list,
+    )
+    cargo_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list,
+    )
+    aplica_a_todos = serializers.BooleanField(required=False, default=False)
     fecha_limite = serializers.DateField(required=False, allow_null=True)
+
+    def validate(self, data):
+        if (
+            not data.get('usuario_ids')
+            and not data.get('cargo_ids')
+            and not data.get('aplica_a_todos')
+        ):
+            raise serializers.ValidationError(
+                'Debe especificar al menos un modo: usuario_ids, cargo_ids '
+                'o aplica_a_todos=true.'
+            )
+        return data

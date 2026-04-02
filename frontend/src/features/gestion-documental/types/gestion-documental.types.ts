@@ -712,7 +712,12 @@ export interface AceptacionDocumental {
 
 export interface AsignarLecturaDTO {
   documento_id: number;
-  usuario_ids: number[];
+  /** Modo 1: usuarios individuales */
+  usuario_ids?: number[];
+  /** Modo 2: todos los usuarios con estos cargos */
+  cargo_ids?: number[];
+  /** Modo 3: todos los usuarios activos del tenant */
+  aplica_a_todos?: boolean;
   fecha_limite?: string | null;
 }
 

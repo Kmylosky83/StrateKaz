@@ -75,7 +75,7 @@ export function DashboardDocumentalSection({
           bgColor="bg-green-100 dark:bg-green-900/30"
           label="Score Global"
           value={`${scoreGlobal}/100`}
-          subtitle="% de documentos publicados vs. total"
+          subtitle="Publicados ÷ total documentos × 100. Meta: >80%"
           onClick={() => onNavigateToSection?.('repositorio')}
         />
       </div>

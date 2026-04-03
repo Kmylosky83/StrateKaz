@@ -11,7 +11,7 @@
  * Nota: "Mis Lecturas" viven en Mi Portal — esta vista es para administradores
  * del sistema que necesitan ver QUIÉN leyó qué y cuándo.
  */
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import {
   Archive,
   BookOpen,
@@ -27,12 +27,14 @@ import {
   AlertCircle,
   Users,
   FileCheck,
+  Layers,
 } from 'lucide-react';
-import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
+import { Card, Button, EmptyState, Badge, Spinner, ProtectedAction } from '@/components/common';
 import { Input } from '@/components/forms';
-import { PageTabs } from '@/components/layout';
+import { PageTabs, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
 import { useModuleColor } from '@/hooks/useModuleColor';
+import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 
@@ -42,6 +44,8 @@ import {
   useEstadisticasDocumentales,
 } from '../hooks/useGestionDocumental';
 import type { Documento } from '../types/gestion-documental.types';
+
+const IngestarLoteModal = lazy(() => import('./IngestarLoteModal'));
 
 type SubTab = 'vigentes' | 'versiones' | 'distribucion' | 'archivados';
 
@@ -58,10 +62,63 @@ interface ArchivoSectionProps {
 
 export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>('vigentes');
+  const [showLoteModal, setShowLoteModal] = useState(false);
   const { color: moduleColor } = useModuleColor('gestion_documental');
+  const isSuperAdmin = useIsSuperAdmin();
+  const { data: estadisticas, isLoading: isLoadingStats } = useEstadisticasDocumentales();
+
+  const totalArchivo =
+    (estadisticas?.publicados ?? 0) +
+    (estadisticas?.obsoletos ?? 0) +
+    (estadisticas?.archivados ?? 0);
+
+  const archivoStats = [
+    { label: 'Total Archivo', value: totalArchivo, icon: BookOpen, iconColor: 'info' as const },
+    {
+      label: 'Publicados',
+      value: estadisticas?.publicados ?? 0,
+      icon: CheckCircle,
+      iconColor: 'success' as const,
+    },
+    {
+      label: 'Obsoletos',
+      value: estadisticas?.obsoletos ?? 0,
+      icon: XCircle,
+      iconColor: 'danger' as const,
+    },
+    {
+      label: 'Archivados',
+      value: estadisticas?.archivados ?? 0,
+      icon: Archive,
+      iconColor: 'gray' as const,
+    },
+  ];
 
   return (
     <div className="space-y-4">
+      {/* Stats: conteo de documentos procesados (PUBLICADO + OBSOLETO + ARCHIVADO) */}
+      {isLoadingStats ? (
+        <StatsGridSkeleton count={4} />
+      ) : (
+        <StatsGrid stats={archivoStats} columns={4} moduleColor="indigo" variant="compact" />
+      )}
+
+      {/* Acción: Ingesta Masiva */}
+      {!isSuperAdmin && (
+        <div className="flex justify-end">
+          <ProtectedAction permission="gestion_documental.repositorio.create">
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Layers className="w-4 h-4" />}
+              onClick={() => setShowLoteModal(true)}
+            >
+              Ingesta Masiva
+            </Button>
+          </ProtectedAction>
+        </div>
+      )}
+
       <PageTabs
         tabs={ARCHIVO_TABS}
         activeTab={activeTab}
@@ -74,6 +131,12 @@ export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
       {activeTab === 'versiones' && <VersionesTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'distribucion' && <DistribucionTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'archivados' && <ArchivadosTab onViewDocumento={onViewDocumento} />}
+
+      <Suspense fallback={null}>
+        {showLoteModal && (
+          <IngestarLoteModal isOpen={showLoteModal} onClose={() => setShowLoteModal(false)} />
+        )}
+      </Suspense>
     </div>
   );
 }

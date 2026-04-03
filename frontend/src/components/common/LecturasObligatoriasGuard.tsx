@@ -12,7 +12,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, AlertTriangle, ArrowRight, X } from 'lucide-react';
+import { BookOpen, AlertTriangle, ArrowRight } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { useLecturasPendientesCount } from '@/features/gestion-documental/hooks/useAceptacionDocumental';

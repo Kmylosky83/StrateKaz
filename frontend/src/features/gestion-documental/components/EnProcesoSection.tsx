@@ -53,8 +53,6 @@ export function EnProcesoSection({
     estado: 'EN_REVISION',
   });
 
-  const isLoading = firmasLoading || isLoadingBorradores || isLoadingRevision;
-
   return (
     <div className="space-y-8">
       {/* ── Firmas pendientes ── */}

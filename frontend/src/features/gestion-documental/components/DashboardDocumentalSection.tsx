@@ -8,19 +8,8 @@
  * - Score de cumplimiento global
  */
 import { lazy, Suspense } from 'react';
-import {
-  LayoutDashboard,
-  FileText,
-  PenTool,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  Calendar,
-  TrendingUp,
-  GitPullRequest,
-  Archive,
-} from 'lucide-react';
-import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
+import { FileText, PenTool, CheckCircle, TrendingUp, GitPullRequest, Archive } from 'lucide-react';
+import { Card, Button, Badge, Spinner } from '@/components/common';
 
 import { useDocumentos, useEstadisticasDocumentales } from '../hooks/useGestionDocumental';
 import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
@@ -35,7 +24,6 @@ interface DashboardDocumentalSectionProps {
 }
 
 export function DashboardDocumentalSection({
-  onViewDocumento,
   onFirmar,
   onNavigateToSection,
 }: DashboardDocumentalSectionProps) {

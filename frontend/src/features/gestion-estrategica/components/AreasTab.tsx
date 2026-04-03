@@ -28,7 +28,6 @@ import {
   Power,
   PowerOff,
   Search,
-  CheckCircle,
   GitBranch,
 } from 'lucide-react';
 import {

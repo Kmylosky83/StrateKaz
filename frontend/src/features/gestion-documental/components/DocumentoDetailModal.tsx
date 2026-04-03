@@ -386,17 +386,17 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Elaborado por"
-                      value={documento.elaborado_por_nombre || '-'}
+                      value={documento.elaborado_por_detail?.full_name || '-'}
                     />
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Revisado por"
-                      value={documento.revisado_por_nombre || '-'}
+                      value={documento.revisado_por_detail?.full_name || '-'}
                     />
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Aprobado por"
-                      value={documento.aprobado_por_nombre || '-'}
+                      value={documento.aprobado_por_detail?.full_name || '-'}
                     />
                   </div>
 
@@ -734,7 +734,7 @@ function formatFileSize(bytes: number) {
 }
 
 function AnexosTab({
-  documentoId,
+  documentoId: _documentoId,
   anexos,
   onUpload,
   onDelete,

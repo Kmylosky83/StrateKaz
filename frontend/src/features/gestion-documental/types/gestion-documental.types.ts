@@ -574,6 +574,11 @@ export interface EstadisticasDocumentales {
   pendientes_revision: number;
   total_versiones: number;
   total_firmas_pendientes: number;
+  distribucion?: {
+    total: number;
+    confirmadas: number;
+    pendientes: number;
+  };
 }
 
 // ==================== OCR (Fase 5) ====================

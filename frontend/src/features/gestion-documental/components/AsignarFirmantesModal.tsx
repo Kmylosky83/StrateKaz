@@ -87,7 +87,7 @@ export function AsignarFirmantesModal({
     if (colab) {
       setValue(`firmantes.${index}.colaborador_id`, colaboradorId);
       setValue(`firmantes.${index}.usuario_id`, Number(colab.extra?.usuario_id ?? 0));
-      setValue(`firmantes.${index}.cargo_id`, colab.extra?.cargo_id ?? '');
+      setValue(`firmantes.${index}.cargo_id`, String(colab.extra?.cargo_id ?? ''));
     } else {
       setValue(`firmantes.${index}.colaborador_id`, '');
       setValue(`firmantes.${index}.usuario_id`, 0);
@@ -98,13 +98,7 @@ export function AsignarFirmantesModal({
   const handleAddFirmante = () => {
     const nextOrden = fields.length + 1;
     // Suggest next role in typical flow
-    const suggestedRoles: RolFirma[] = [
-      'ELABORO',
-      'REVISO',
-      'APROBO',
-      'VALIDO',
-      'AUTORIZO',
-    ];
+    const suggestedRoles: RolFirma[] = ['ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'];
     const nextRol = suggestedRoles[Math.min(fields.length, suggestedRoles.length - 1)];
     append({
       colaborador_id: '',

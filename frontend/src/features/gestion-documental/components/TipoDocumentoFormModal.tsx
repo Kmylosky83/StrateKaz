@@ -71,7 +71,7 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
         requiere_aprobacion: existing.requiere_aprobacion,
         requiere_firma: existing.requiere_firma,
         nivel_seguridad_firma: existing.nivel_seguridad_firma || 1,
-        tiempo_retencion_anos: existing.tiempo_retencion_años,
+        tiempo_retencion_anos: existing.tiempo_retencion_anos,
         color_identificacion: existing.color_identificacion,
       });
     } else if (!isEdit) {

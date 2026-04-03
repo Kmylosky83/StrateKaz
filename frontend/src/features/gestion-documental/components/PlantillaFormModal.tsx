@@ -25,6 +25,8 @@ import {
 } from '../hooks/useGestionDocumental';
 import type {
   CreatePlantillaDocumentoDTO,
+  CreateCampoFormularioDTO,
+  UpdateCampoFormularioDTO,
   TipoPlantilla,
   FirmantePorDefecto,
 } from '../types/gestion-documental.types';
@@ -91,10 +93,7 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         codigo: existing.codigo,
         nombre: existing.nombre,
         descripcion: existing.descripcion || '',
-        tipo_documento:
-          existing.tipo_documento?.id ||
-          (existing as { tipo_documento_id?: number }).tipo_documento_id ||
-          0,
+        tipo_documento: existing.tipo_documento_detail?.id ?? existing.tipo_documento ?? 0,
         tipo_plantilla: existing.tipo_plantilla,
         contenido_plantilla: existing.contenido_plantilla,
         variables_disponibles: existing.variables_disponibles || [],
@@ -151,7 +150,10 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
             empresa_id: _eid,
             ...data
           } = campo as CampoFormulario;
-          await updateCampo.mutateAsync({ id: campoUpdateId!, data });
+          await updateCampo.mutateAsync({
+            id: campoUpdateId!,
+            data: data as UpdateCampoFormularioDTO,
+          });
         } else {
           // Create new — excluir id y metadatos
           const {
@@ -163,7 +165,7 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
             empresa_id: _eid2,
             ...data
           } = campo as CampoFormulario;
-          await createCampo.mutateAsync(data);
+          await createCampo.mutateAsync(data as CreateCampoFormularioDTO);
         }
       }
 

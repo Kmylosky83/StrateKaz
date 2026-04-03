@@ -239,7 +239,7 @@ export default function DocumentoReaderModal({
           onClose();
         }}
         title=""
-        size="5xl"
+        size="4xl"
       >
         <div className="space-y-4">
           {/* Header */}

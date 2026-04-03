@@ -87,11 +87,8 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     if (isEdit && existing) {
       reset({
         titulo: existing.titulo,
-        tipo_documento:
-          existing.tipo_documento?.id ||
-          (existing as { tipo_documento_id?: number }).tipo_documento_id ||
-          0,
-        plantilla: existing.plantilla?.id || undefined,
+        tipo_documento: (existing.tipo_documento_detail?.id ?? existing.tipo_documento) || 0,
+        plantilla: existing.plantilla_detail?.id ?? existing.plantilla ?? undefined,
         contenido: existing.contenido || '',
         resumen: existing.resumen || '',
         clasificacion: existing.clasificacion,
@@ -100,7 +97,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         fecha_revision_programada: existing.fecha_revision_programada || '',
         areas_aplicacion: existing.areas_aplicacion || [],
         observaciones: existing.observaciones || '',
-        elaborado_por: existing.elaborado_por?.id || user?.id || 0,
+        elaborado_por: existing.elaborado_por_detail?.id ?? existing.elaborado_por ?? user?.id ?? 0,
       });
       // Load existing form data
       if (existing.datos_formulario) {
@@ -213,12 +210,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       const response = await createMutation.mutateAsync(payload);
 
       // Mostrar info de firmantes auto-asignados desde plantilla
-      const autoAsignados = (response as Record<string, unknown>)?.firmantes_auto_asignados as
-        | number
-        | undefined;
-      const warnings = (response as Record<string, unknown>)?.firmantes_warnings as
-        | string[]
-        | undefined;
+      const responseData = response as unknown as Record<string, unknown>;
+      const autoAsignados = responseData?.firmantes_auto_asignados as number | undefined;
+      const warnings = responseData?.firmantes_warnings as string[] | undefined;
 
       if (autoAsignados && autoAsignados > 0) {
         toast.success(

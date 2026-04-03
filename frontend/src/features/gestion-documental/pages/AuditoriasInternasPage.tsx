@@ -215,7 +215,7 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
     null
   );
 
-  const programas = useMemo(() => data?.results ?? [], [data]);
+  const programas = useMemo<ProgramaAuditoriaList[]>(() => data?.results ?? [], [data]);
 
   const stats = useMemo(
     () => ({
@@ -231,9 +231,9 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
     if (!transitionConfirm) return;
     const { id, action } = transitionConfirm;
     const mutations: Record<string, { mutate: (id: number, opts?: unknown) => void }> = {
-      aprobar: aprobarMutation,
-      iniciar: iniciarMutation,
-      completar: completarMutation,
+      aprobar: aprobarMutation as { mutate: (id: number, opts?: unknown) => void },
+      iniciar: iniciarMutation as { mutate: (id: number, opts?: unknown) => void },
+      completar: completarMutation as { mutate: (id: number, opts?: unknown) => void },
     };
     mutations[action]?.mutate(id, { onSettled: () => setTransitionConfirm(null) });
   };

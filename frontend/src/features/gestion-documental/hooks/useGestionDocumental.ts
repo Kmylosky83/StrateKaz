@@ -723,7 +723,8 @@ export function useImportarPlantilla() {
       toast.success('Plantilla importada exitosamente desde la biblioteca');
     },
     onError: (error: unknown) => {
-      const msg = error?.response?.data?.error || 'Error al importar plantilla';
+      const axiosError = error as { response?: { data?: { error?: string } } };
+      const msg = axiosError?.response?.data?.error || 'Error al importar plantilla';
       toast.error(msg);
     },
   });

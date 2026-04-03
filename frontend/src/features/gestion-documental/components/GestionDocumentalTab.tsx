@@ -82,6 +82,6 @@ export const GestionDocumentalTab = ({
     case SECTION_KEYS.BIBLIOTECA:
       return <BibliotecaSection />;
     default:
-      return <GenericSectionFallback sectionCode={activeSection} moduleName="Gestion Documental" />;
+      return <GenericSectionFallback sectionCode={activeSection} parentName="Gestión Documental" />;
   }
 };

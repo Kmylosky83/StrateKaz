@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Button, Badge, Spinner } from '@/components/common';
+import { Button, Spinner } from '@/components/common';
 import { Select } from '@/components/forms';
 import { Upload, FileText, X, AlertTriangle } from 'lucide-react';
 import { useTiposDocumento, useIngestarLote } from '../hooks/useGestionDocumental';

@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
 import { Input } from '@/components/forms';
+import { PageTabs } from '@/components/layout';
+import type { TabItem } from '@/components/layout';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 
@@ -42,6 +44,13 @@ import type { Documento } from '../types/gestion-documental.types';
 
 type SubTab = 'vigentes' | 'versiones' | 'distribucion' | 'archivados';
 
+const ARCHIVO_TABS: TabItem[] = [
+  { id: 'vigentes', label: 'Vigentes', icon: BookOpen },
+  { id: 'versiones', label: 'Versiones', icon: GitBranch },
+  { id: 'distribucion', label: 'Distribución', icon: Share2 },
+  { id: 'archivados', label: 'Archivados', icon: Archive },
+];
+
 interface ArchivoSectionProps {
   onViewDocumento: (id: number) => void;
 }
@@ -49,35 +58,15 @@ interface ArchivoSectionProps {
 export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>('vigentes');
 
-  const SUB_TABS: { key: SubTab; label: string; icon: React.ReactNode }[] = [
-    { key: 'vigentes', label: 'Vigentes', icon: <BookOpen className="w-4 h-4" /> },
-    { key: 'versiones', label: 'Versiones', icon: <GitBranch className="w-4 h-4" /> },
-    { key: 'distribucion', label: 'Distribución', icon: <Share2 className="w-4 h-4" /> },
-    { key: 'archivados', label: 'Archivados', icon: <Archive className="w-4 h-4" /> },
-  ];
-
   return (
     <div className="space-y-4">
-      {/* Sub-tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {SUB_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.key
-                ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={ARCHIVO_TABS}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as SubTab)}
+        variant="underline"
+      />
 
-      {/* Sub-contenido */}
       {activeTab === 'vigentes' && <VigentesTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'versiones' && <VersionesTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'distribucion' && <DistribucionTab onViewDocumento={onViewDocumento} />}

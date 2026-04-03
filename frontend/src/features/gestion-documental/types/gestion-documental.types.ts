@@ -566,19 +566,37 @@ export interface ConfirmarRecepcionDTO {
 // ==================== ESTADISTICAS ====================
 
 export interface EstadisticasDocumentales {
-  total_documentos: number;
-  por_estado: Record<EstadoDocumento, number>;
-  por_tipo: Array<{ tipo: string; cantidad: number }>;
-  proximos_vencer: number;
-  pendientes_aprobacion: number;
-  pendientes_revision: number;
-  total_versiones: number;
-  total_firmas_pendientes: number;
-  distribucion?: {
-    total: number;
-    confirmadas: number;
-    pendientes: number;
+  total: number;
+  // Shortcuts (acceso directo sin ir a por_estado)
+  publicados: number;
+  obsoletos: number;
+  archivados: number;
+  score_promedio: number;
+  // Desglose por estado
+  por_estado: {
+    borrador: number;
+    en_revision: number;
+    aprobado: number;
+    publicado: number;
+    obsoleto: number;
+    archivado: number;
   };
+  // Desglose por tipo y nivel (para gráficas BI)
+  por_tipo: Array<{ nombre: string; total: number }>;
+  por_nivel: Array<{ nivel: string; total: number }>;
+  // Revisiones
+  revision_vencida: number;
+  proximas_revision_30d: number;
+  // Distribución
+  distribucion: {
+    total_distribuciones: number;
+    total_confirmaciones: number;
+  };
+  // Lecturas obligatorias
+  lecturas_total: number;
+  lecturas_pendientes: number;
+  lecturas_completadas: number;
+  lecturas_vencidas: number;
 }
 
 // ==================== OCR (Fase 5) ====================

@@ -390,36 +390,73 @@ class DocumentoService:
 
     @classmethod
     def obtener_estadisticas(cls, empresa_id):
-        """Dashboard stats: totales por estado, por tipo, revisiones pendientes."""
+        """
+        Dashboard stats completas para Gestión Documental.
+        Incluye: totales por estado, por tipo, por nivel, revisiones,
+        distribución y lecturas (AceptacionDocumental).
+        Diseñado para consumo por BI y dashboard interno.
+        """
+        from apps.gestion_estrategica.gestion_documental.models import AceptacionDocumental
+
         hoy = timezone.now().date()
         docs = Documento.objects.filter(empresa_id=empresa_id)
 
-        por_estado = dict(
+        # ── Totales por estado ────────────────────────────────────────────
+        por_estado_raw = dict(
             docs.values_list('estado').annotate(total=Count('id')).values_list('estado', 'total')
         )
+        por_estado = {
+            'borrador': por_estado_raw.get('BORRADOR', 0),
+            'en_revision': por_estado_raw.get('EN_REVISION', 0),
+            'aprobado': por_estado_raw.get('APROBADO', 0),
+            'publicado': por_estado_raw.get('PUBLICADO', 0),
+            'obsoleto': por_estado_raw.get('OBSOLETO', 0),
+            'archivado': por_estado_raw.get('ARCHIVADO', 0),
+        }
 
-        por_tipo = list(
-            docs.values('tipo_documento__nombre')
-            .annotate(total=Count('id'))
-            .order_by('-total')[:10]
-        )
+        # ── Por tipo de documento (normalizado: clave 'nombre') ───────────
+        por_tipo = [
+            {'nombre': row['tipo_documento__nombre'], 'total': row['total']}
+            for row in (
+                docs.values('tipo_documento__nombre')
+                .annotate(total=Count('id'))
+                .order_by('-total')[:20]
+            )
+            if row['tipo_documento__nombre']
+        ]
 
+        # ── Por nivel de documento (ESTRATEGICO/TACTICO/OPERATIVO/SOPORTE) ─
+        por_nivel = [
+            {'nivel': row['tipo_documento__nivel_documento'], 'total': row['total']}
+            for row in (
+                docs.values('tipo_documento__nivel_documento')
+                .annotate(total=Count('id'))
+                .order_by('-total')
+            )
+            if row['tipo_documento__nivel_documento']
+        ]
+
+        # ── Score de cobertura (publicados vs total) ──────────────────────
+        total = docs.count()
+        publicados = por_estado['publicado']
+        score_promedio = round((publicados / total) * 100) if total > 0 else 0
+
+        # ── Revisiones programadas ────────────────────────────────────────
         revision_vencida = docs.filter(
             estado='PUBLICADO',
-            fecha_revision_programada__lte=hoy
+            fecha_revision_programada__lte=hoy,
         ).count()
-
         proximas_revision = docs.filter(
             estado='PUBLICADO',
             fecha_revision_programada__gt=hoy,
-            fecha_revision_programada__lte=hoy + timezone.timedelta(days=30)
+            fecha_revision_programada__lte=hoy + timezone.timedelta(days=30),
         ).count()
 
-        # Stats de distribución
+        # ── Distribución (ControlDocumental) ─────────────────────────────
         distribuciones = ControlDocumental.objects.filter(
             empresa_id=empresa_id,
             tipo_control='DISTRIBUCION',
-            documento__estado='PUBLICADO'
+            documento__estado='PUBLICADO',
         )
         total_distribuciones = distribuciones.count()
         total_confirmaciones = sum(
@@ -427,23 +464,38 @@ class DocumentoService:
             for d in distribuciones.only('confirmaciones_recepcion')
         )
 
+        # ── Lecturas (AceptacionDocumental) ───────────────────────────────
+        lecturas = AceptacionDocumental.objects.filter(empresa_id=empresa_id)
+        lecturas_pendientes = lecturas.filter(estado__in=['PENDIENTE', 'EN_PROGRESO']).count()
+        lecturas_completadas = lecturas.filter(estado='ACEPTADO').count()
+        lecturas_vencidas = lecturas.filter(estado='VENCIDO').count()
+        lecturas_total = lecturas.count()
+
         return {
-            'total': docs.count(),
-            'por_estado': {
-                'borrador': por_estado.get('BORRADOR', 0),
-                'en_revision': por_estado.get('EN_REVISION', 0),
-                'aprobado': por_estado.get('APROBADO', 0),
-                'publicado': por_estado.get('PUBLICADO', 0),
-                'obsoleto': por_estado.get('OBSOLETO', 0),
-                'archivado': por_estado.get('ARCHIVADO', 0),
-            },
+            'total': total,
+            # Shortcuts directos (más convenientes que .por_estado.publicado)
+            'publicados': publicados,
+            'obsoletos': por_estado['obsoleto'],
+            'archivados': por_estado['archivado'],
+            'score_promedio': score_promedio,
+            # Desglose por estado
+            'por_estado': por_estado,
+            # Desglose por tipo y nivel (para gráficas BI)
             'por_tipo': por_tipo,
+            'por_nivel': por_nivel,
+            # Revisiones
             'revision_vencida': revision_vencida,
             'proximas_revision_30d': proximas_revision,
+            # Distribución
             'distribucion': {
                 'total_distribuciones': total_distribuciones,
                 'total_confirmaciones': total_confirmaciones,
             },
+            # Lecturas obligatorias
+            'lecturas_total': lecturas_total,
+            'lecturas_pendientes': lecturas_pendientes,
+            'lecturas_completadas': lecturas_completadas,
+            'lecturas_vencidas': lecturas_vencidas,
         }
 
     @classmethod

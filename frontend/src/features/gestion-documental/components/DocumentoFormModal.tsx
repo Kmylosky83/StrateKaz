@@ -14,6 +14,7 @@ import type { RichTextEditorRef } from '@/components/forms';
 import { Button, Spinner } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input, Select, Textarea, RichTextEditor } from '@/components/forms';
+import { FileSearch } from 'lucide-react';
 import { DynamicFormRenderer, validateDynamicForm } from '@/components/common/DynamicFormRenderer';
 import {
   useCreateDocumento,
@@ -24,6 +25,7 @@ import {
   usePlantillaDocumento,
   useCamposFormulario,
 } from '../hooks/useGestionDocumental';
+import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { camposToDynamicFields } from '../utils/campoMapper';
 import { useAuthStore } from '@/store/authStore';
 import type {
@@ -52,6 +54,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   const { data: plantillas } = usePlantillasDocumento({ estado: 'ACTIVA' });
   const createMutation = useCreateDocumento();
   const updateMutation = useUpdateDocumento();
+  const { data: procesosData } = useAreas({ is_active: true });
   const user = useAuthStore((s) => s.user);
 
   // Rich text editor ref
@@ -135,15 +138,17 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   const isFormulario = plantillaDetail?.tipo_plantilla === 'FORMULARIO';
 
   // Register contenido with validation (managed by RichTextEditor, not register)
+  const isExterno = isEdit && !!existing?.es_externo;
   useEffect(() => {
     register('contenido', {
       validate: (v) => {
-        if (isFormulario) return true;
+        // Formularios y docs externos (tienen PDF original) no requieren contenido
+        if (isFormulario || isExterno) return true;
         const text = (v || '').replace(/<[^>]*>/g, '').trim();
         return text.length > 0 || 'Contenido es requerido';
       },
     });
-  }, [register, isFormulario]);
+  }, [register, isFormulario, isExterno]);
 
   // Load campos for FORMULARIO plantilla
   const { data: camposRaw } = useCamposFormulario(
@@ -204,26 +209,30 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       }
     }
 
-    if (isEdit && documentoId) {
-      await updateMutation.mutateAsync({ id: documentoId, data: payload });
-    } else {
-      const response = await createMutation.mutateAsync(payload);
+    try {
+      if (isEdit && documentoId) {
+        await updateMutation.mutateAsync({ id: documentoId, data: payload });
+      } else {
+        const response = await createMutation.mutateAsync(payload);
 
-      // Mostrar info de firmantes auto-asignados desde plantilla
-      const responseData = response as unknown as Record<string, unknown>;
-      const autoAsignados = responseData?.firmantes_auto_asignados as number | undefined;
-      const warnings = responseData?.firmantes_warnings as string[] | undefined;
+        // Mostrar info de firmantes auto-asignados desde plantilla
+        const responseData = response as unknown as Record<string, unknown>;
+        const autoAsignados = responseData?.firmantes_auto_asignados as number | undefined;
+        const warnings = responseData?.firmantes_warnings as string[] | undefined;
 
-      if (autoAsignados && autoAsignados > 0) {
-        toast.success(
-          `${autoAsignados} firmante${autoAsignados > 1 ? 's' : ''} asignado${autoAsignados > 1 ? 's' : ''} automáticamente`
-        );
+        if (autoAsignados && autoAsignados > 0) {
+          toast.success(
+            `${autoAsignados} firmante${autoAsignados > 1 ? 's' : ''} asignado${autoAsignados > 1 ? 's' : ''} automáticamente`
+          );
+        }
+        if (warnings && warnings.length > 0) {
+          warnings.forEach((w) => toast.warning(w));
+        }
       }
-      if (warnings && warnings.length > 0) {
-        warnings.forEach((w) => toast.warning(w));
-      }
+      onClose();
+    } catch {
+      // Error toast handled by mutation's onError callback
     }
-    onClose();
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
@@ -342,6 +351,35 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               placeholder="Resumen ejecutivo del documento..."
             />
 
+            {/* Banner OCR: si el documento es externo y tiene texto extraído */}
+            {isEdit && existing?.es_externo && existing?.texto_extraido && (
+              <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <FileSearch className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    Texto extraído por OCR disponible (
+                    {existing.texto_extraido.length.toLocaleString()} caracteres)
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const texto = existing.texto_extraido || '';
+                    const htmlContent = texto
+                      .split('\n\n')
+                      .map((p) => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+                      .join('');
+                    setValue('contenido', htmlContent, { shouldValidate: true });
+                    toast.success('Texto OCR cargado en el editor');
+                  }}
+                >
+                  Usar texto OCR
+                </Button>
+              </div>
+            )}
+
             <RichTextEditor
               ref={editorRef}
               label="Contenido *"
@@ -360,6 +398,21 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
                 {...register('fecha_revision_programada')}
               />
             </div>
+
+            <Select
+              label="Proceso"
+              value={(watch('areas_aplicacion') as string[])?.[0] || ''}
+              onChange={(e) => {
+                setValue('areas_aplicacion', e.target.value ? [e.target.value] : []);
+              }}
+            >
+              <option value="">Sin proceso asignado</option>
+              {(procesosData?.results || []).map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name} ({p.tipo_display})
+                </option>
+              ))}
+            </Select>
 
             <Textarea label="Observaciones" {...register('observaciones')} rows={2} />
           </>

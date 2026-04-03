@@ -14,7 +14,6 @@ import {
   Calendar,
   PenTool,
   Upload,
-  Files,
   LayoutGrid,
   List,
   GitPullRequest,
@@ -24,18 +23,22 @@ import {
   Button,
   EmptyState,
   Badge,
-  Spinner,
   ConfirmDialog,
   ExportButton,
   ProtectedAction,
   ViewToggle,
 } from '@/components/common';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import { Input } from '@/components/forms';
+import { Input, Select } from '@/components/forms';
 import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
-import { useDocumentos, useDeleteDocumento } from '../hooks/useGestionDocumental';
+import {
+  useDocumentos,
+  useDeleteDocumento,
+  useTiposDocumento,
+} from '../hooks/useGestionDocumental';
+import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
 import IngestarExternoModal from './IngestarExternoModal';
@@ -43,7 +46,6 @@ import OcrStatusBadge from './OcrStatusBadge';
 import ScoreBadge from './ScoreBadge';
 import type { Documento } from '../types/gestion-documental.types';
 
-const IngestarLoteModal = lazy(() => import('./IngestarLoteModal'));
 const CoberturaPanel = lazy(() => import('./CoberturaPanel'));
 
 type ViewMode = 'cards' | 'list';
@@ -89,8 +91,12 @@ export function DocumentosSection({
   const { data: documentos, isLoading } = useDocumentos();
   const deleteDocumentoMutation = useDeleteDocumento();
   const { data: contentTypeData } = useDocumentoContentType();
+  const { data: tipos = [] } = useTiposDocumento({ is_active: true });
+  const { data: procesosData } = useAreas({ is_active: true });
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; titulo: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTipo, setFilterTipo] = useState<string>('');
+  const [filterProceso, setFilterProceso] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('gd_docs_view') as ViewMode) || 'cards'
   );
@@ -99,19 +105,22 @@ export function DocumentosSection({
     titulo: string;
   } | null>(null);
   const [showIngestarModal, setShowIngestarModal] = useState(false);
-  const [showIngestarLoteModal, setShowIngestarLoteModal] = useState(false);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
     localStorage.setItem('gd_docs_view', mode);
   };
 
-  const filteredDocs = (documentos || []).filter((doc) =>
-    searchTerm
-      ? doc.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.codigo.toLowerCase().includes(searchTerm.toLowerCase())
-      : true
-  );
+  const filteredDocs = (documentos || []).filter((doc) => {
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      if (!doc.titulo.toLowerCase().includes(term) && !doc.codigo.toLowerCase().includes(term))
+        return false;
+    }
+    if (filterTipo && doc.tipo_documento !== Number(filterTipo)) return false;
+    if (filterProceso && !(doc.areas_aplicacion || []).includes(filterProceso)) return false;
+    return true;
+  });
 
   const totalDocumentos = documentos?.length ?? 0;
   const vigentes =
@@ -146,17 +155,36 @@ export function DocumentosSection({
           <CoberturaPanel />
         </Suspense>
 
-        {/* Header + Actions */}
+        {/* Filtros */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Input
+            type="text"
+            placeholder="Buscar por código o título..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            leftIcon={<Search className="w-5 h-5" />}
+          />
+          <Select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
+            <option value="">Todos los tipos</option>
+            {(tipos as { id: number; codigo: string; nombre: string }[]).map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.codigo} - {t.nombre}
+              </option>
+            ))}
+          </Select>
+          <Select value={filterProceso} onChange={(e) => setFilterProceso(e.target.value)}>
+            <option value="">Todos los procesos</option>
+            {(procesosData?.results || []).map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Buscar documentos por código o título..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<Search className="w-5 h-5" />}
-            />
-          </div>
+          <div className="flex-1" />
           <ViewToggle
             value={viewMode}
             onChange={handleViewChange}
@@ -175,16 +203,7 @@ export function DocumentosSection({
                   Ingestar PDF
                 </Button>
               </ProtectedAction>
-              <ProtectedAction permission="gestion_documental.repositorio.create">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Files className="w-4 h-4" />}
-                  onClick={() => setShowIngestarLoteModal(true)}
-                >
-                  Ingesta Masiva
-                </Button>
-              </ProtectedAction>
+              {/* Ingesta Masiva vive en el tab Archivo — no en creación */}
               <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
                   variant="primary"
@@ -389,15 +408,6 @@ export function DocumentosSection({
         isOpen={showIngestarModal}
         onClose={() => setShowIngestarModal(false)}
       />
-
-      {showIngestarLoteModal && (
-        <Suspense fallback={null}>
-          <IngestarLoteModal
-            isOpen={showIngestarLoteModal}
-            onClose={() => setShowIngestarLoteModal(false)}
-          />
-        </Suspense>
-      )}
     </>
   );
 }
@@ -421,7 +431,7 @@ function DocumentActions({
   const iconBtn =
     'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors';
 
-  const canAssignFirmas = documento.estado === 'BORRADOR' || documento.estado === 'EN_REVISION';
+  const canAssignFirmas = documento.estado === 'BORRADOR';
 
   if (compact) {
     return (
@@ -429,6 +439,13 @@ function DocumentActions({
         <button className={iconBtn} onClick={() => onView(documento.id)} title="Ver">
           <Eye className="w-4 h-4" />
         </button>
+        {documento.estado === 'BORRADOR' && (
+          <ProtectedAction permission="gestion_documental.repositorio.edit">
+            <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
+              <Edit className="w-4 h-4" />
+            </button>
+          </ProtectedAction>
+        )}
         {canAssignFirmas && (
           <ProtectedAction permission="gestion_documental.repositorio.edit">
             <button
@@ -441,22 +458,15 @@ function DocumentActions({
           </ProtectedAction>
         )}
         {documento.estado === 'BORRADOR' && (
-          <>
-            <ProtectedAction permission="gestion_documental.repositorio.edit">
-              <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
-                <Edit className="w-4 h-4" />
-              </button>
-            </ProtectedAction>
-            <ProtectedAction permission="gestion_documental.repositorio.delete">
-              <button
-                className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-                onClick={() => onDelete(documento)}
-                title="Eliminar"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </ProtectedAction>
-          </>
+          <ProtectedAction permission="gestion_documental.repositorio.delete">
+            <button
+              className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+              onClick={() => onDelete(documento)}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </ProtectedAction>
         )}
       </div>
     );
@@ -472,6 +482,13 @@ function DocumentActions({
       >
         Ver
       </Button>
+      {documento.estado === 'BORRADOR' && (
+        <ProtectedAction permission="gestion_documental.repositorio.edit">
+          <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
+            <Edit className="w-4 h-4" />
+          </button>
+        </ProtectedAction>
+      )}
       {canAssignFirmas && (
         <ProtectedAction permission="gestion_documental.repositorio.edit">
           <Button
@@ -485,22 +502,15 @@ function DocumentActions({
         </ProtectedAction>
       )}
       {documento.estado === 'BORRADOR' && (
-        <>
-          <ProtectedAction permission="gestion_documental.repositorio.edit">
-            <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
-              <Edit className="w-4 h-4" />
-            </button>
-          </ProtectedAction>
-          <ProtectedAction permission="gestion_documental.repositorio.delete">
-            <button
-              className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
-              onClick={() => onDelete(documento)}
-              title="Eliminar"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </ProtectedAction>
-        </>
+        <ProtectedAction permission="gestion_documental.repositorio.delete">
+          <button
+            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+            onClick={() => onDelete(documento)}
+            title="Eliminar"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </ProtectedAction>
       )}
     </div>
   );

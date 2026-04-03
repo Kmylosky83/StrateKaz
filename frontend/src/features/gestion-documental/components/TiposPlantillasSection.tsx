@@ -48,7 +48,7 @@ import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documen
 type ConfigTab = 'tipos' | 'plantillas';
 type ViewMode = 'cards' | 'list';
 
-const CONFIG_TABS: TabItem[] = [
+const _CONFIG_TABS: TabItem[] = [
   { id: 'tipos', label: 'Tipos de Documento', icon: Files },
   { id: 'plantillas', label: 'Plantillas', icon: FileText },
 ];

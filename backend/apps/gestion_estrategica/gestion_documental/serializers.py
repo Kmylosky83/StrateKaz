@@ -123,7 +123,7 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
             return value
 
         Cargo = apps.get_model('core', 'Cargo')
-        roles_validos = {'ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'}
+        roles_validos = {'ELABORO', 'REVISO', 'APROBO'}
 
         for config in value:
             rol = config.get('rol_firma', '')
@@ -279,6 +279,9 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'sellado_estado', 'sellado_metadatos',
             'empresa_id', 'created_at', 'updated_at'
         ]
+        extra_kwargs = {
+            'contenido': {'required': False, 'allow_blank': True},
+        }
 
     def get_firmas_digitales(self, obj):
         """Obtiene firmas usando FirmaDigital de workflow_engine"""

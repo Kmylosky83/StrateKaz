@@ -323,7 +323,7 @@ class FirmarDocumentoSerializer(serializers.Serializer):
     """Serializer para firmar documento"""
 
     firma_imagen = serializers.CharField(required=True)
-    rol_firma = serializers.ChoiceField(choices=['ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'])
+    rol_firma = serializers.ChoiceField(choices=['ELABORO', 'REVISO', 'APROBO'])
     comentarios = serializers.CharField(required=False, allow_blank=True)
     geolocalizacion = serializers.JSONField(required=False, allow_null=True)
 

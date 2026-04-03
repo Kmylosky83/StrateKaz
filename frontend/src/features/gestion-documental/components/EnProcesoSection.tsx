@@ -32,7 +32,7 @@ import type { Documento } from '../types/gestion-documental.types';
 
 type ProcesoTab = 'firmas' | 'borradores' | 'revision';
 
-const PROCESO_TABS: TabItem[] = [
+const _PROCESO_TABS: TabItem[] = [
   { id: 'firmas', label: 'Firmas Pendientes', icon: PenTool },
   { id: 'borradores', label: 'Borradores', icon: FileText },
   { id: 'revision', label: 'En Revisión', icon: GitPullRequest },

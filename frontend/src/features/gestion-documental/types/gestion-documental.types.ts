@@ -105,7 +105,7 @@ export interface TipoDocumento {
 
 // ==================== FIRMANTES POR DEFECTO ====================
 
-export type RolFirma = 'ELABORO' | 'REVISO' | 'APROBO' | 'VALIDO' | 'AUTORIZO';
+export type RolFirma = 'ELABORO' | 'REVISO' | 'APROBO';
 
 export interface FirmantePorDefecto {
   rol_firma: RolFirma;
@@ -116,11 +116,9 @@ export interface FirmantePorDefecto {
 
 /** Opciones centralizadas de rol de firma — reutilizar en FirmantesEditor y AsignarFirmantesModal */
 export const ROL_FIRMA_OPTIONS: ReadonlyArray<{ value: RolFirma; label: string }> = [
-  { value: 'ELABORO', label: 'Elaboro' },
-  { value: 'REVISO', label: 'Reviso' },
-  { value: 'APROBO', label: 'Aprobo' },
-  { value: 'VALIDO', label: 'Valido' },
-  { value: 'AUTORIZO', label: 'Autorizo' },
+  { value: 'ELABORO', label: 'Elaboró' },
+  { value: 'REVISO', label: 'Revisó' },
+  { value: 'APROBO', label: 'Aprobó' },
 ] as const;
 
 /** Resultado del endpoint resolver-firmantes */

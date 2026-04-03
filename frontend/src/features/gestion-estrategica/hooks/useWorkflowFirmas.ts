@@ -154,7 +154,7 @@ export interface AsignarFirmantesDTO {
   firmantes: Array<{
     usuario_id: number;
     cargo_id: string;
-    rol_firma: 'ELABORO' | 'REVISO' | 'APROBO' | 'VALIDO' | 'AUTORIZO';
+    rol_firma: 'ELABORO' | 'REVISO' | 'APROBO';
     orden: number;
   }>;
 }

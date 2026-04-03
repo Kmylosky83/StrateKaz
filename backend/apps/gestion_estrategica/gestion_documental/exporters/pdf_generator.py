@@ -453,8 +453,6 @@ class DocumentoPDFGenerator:
             'ELABORO': 'Elaboró',
             'REVISO': 'Revisó',
             'APROBO': 'Aprobó',
-            'VALIDO': 'Validó',
-            'AUTORIZO': 'Autorizó',
         }
 
         cards_html = ''

@@ -344,6 +344,8 @@ class Documento(models.Model):
         help_text='Resumen ejecutivo del documento'
     )
     contenido = models.TextField(
+        blank=True,
+        default='',
         verbose_name='Contenido del Documento',
         help_text='Contenido completo en HTML o Markdown'
     )

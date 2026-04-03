@@ -75,6 +75,7 @@ export function DashboardDocumentalSection({
           bgColor="bg-green-100 dark:bg-green-900/30"
           label="Score Global"
           value={`${scoreGlobal}/100`}
+          subtitle="% de documentos publicados vs. total"
           onClick={() => onNavigateToSection?.('repositorio')}
         />
       </div>
@@ -246,6 +247,7 @@ function MetricCard({
   label,
   value,
   badge,
+  subtitle,
   onClick,
 }: {
   icon: React.ReactNode;
@@ -253,12 +255,14 @@ function MetricCard({
   label: string;
   value: number | string;
   badge?: string;
+  subtitle?: string;
   onClick?: () => void;
 }) {
   return (
     <Card
       className={`p-4 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
       onClick={onClick}
+      title={subtitle}
     >
       <div className="flex items-center gap-3">
         <div
@@ -276,6 +280,11 @@ function MetricCard({
               </Badge>
             )}
           </div>
+          {subtitle && (
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+              {subtitle}
+            </p>
+          )}
         </div>
       </div>
     </Card>

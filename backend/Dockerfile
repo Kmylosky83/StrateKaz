@@ -53,7 +53,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Instalar dependencias de runtime incluyendo WeasyPrint (PDFs)
+# Instalar dependencias de runtime: WeasyPrint (PDFs) + Tesseract OCR + Poppler
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
@@ -65,6 +65,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libglib2.0-0 \
     fonts-liberation \
+    tesseract-ocr \
+    tesseract-ocr-spa \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

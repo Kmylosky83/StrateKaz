@@ -22,8 +22,6 @@ FIRMA_ROL_CHOICES = [
     ('ELABORO', 'Elaboró'),
     ('REVISO', 'Revisó'),
     ('APROBO', 'Aprobó'),
-    ('VALIDO', 'Validó'),
-    ('AUTORIZO', 'Autorizó'),
 ]
 from apps.core.models import Cargo
 

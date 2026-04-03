@@ -54,7 +54,7 @@ export function FirmantesEditor({ firmantes, onChange, plantillaId }: FirmantesE
   // ==================== HANDLERS ====================
 
   const handleAdd = () => {
-    const suggestedRoles: RolFirma[] = ['ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'];
+    const suggestedRoles: RolFirma[] = ['ELABORO', 'REVISO', 'APROBO'];
 
     // Buscar siguiente rol que no esté duplicado
     const usedRoles = new Set(firmantes.map((f) => f.rol_firma));
@@ -72,9 +72,7 @@ export function FirmantesEditor({ firmantes, onChange, plantillaId }: FirmantesE
   };
 
   const handleRemove = (index: number) => {
-    const updated = firmantes
-      .filter((_, i) => i !== index)
-      .map((f, i) => ({ ...f, orden: i + 1 }));
+    const updated = firmantes.filter((_, i) => i !== index).map((f, i) => ({ ...f, orden: i + 1 }));
     onChange(updated);
   };
 
@@ -115,9 +113,7 @@ export function FirmantesEditor({ firmantes, onChange, plantillaId }: FirmantesE
   // Find resolved info for a specific firmante
   const getResolucion = (cargoCode: string, rolFirma: string) => {
     if (!resolucion?.firmantes) return null;
-    return resolucion.firmantes.find(
-      (r) => r.cargo_code === cargoCode && r.rol_firma === rolFirma
-    );
+    return resolucion.firmantes.find((r) => r.cargo_code === cargoCode && r.rol_firma === rolFirma);
   };
 
   // ==================== RENDER ====================

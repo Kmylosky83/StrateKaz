@@ -1,15 +1,13 @@
 /**
- * DocumentoDetailModal - Modal de detalle con tabs: Info, Contenido, Versiones, Evidencias.
- * Acciones contextuales según estado del documento.
+ * DocumentoDetailModal - Modal de detalle SOLO LECTURA.
+ * Tabs: Info, Contenido, Versiones, Anexos, Evidencias.
+ * Las acciones de workflow (aprobar, publicar, sellar, etc.) viven en EnProcesoSection.
  */
-import { useState, useRef, useCallback, lazy, Suspense, Fragment } from 'react';
+import { useState, useRef, useCallback, Fragment } from 'react';
 import DOMPurify from 'dompurify';
 import {
   FileText,
   Clock,
-  CheckCircle,
-  Send,
-  Archive,
   GitBranch,
   Eye,
   Download,
@@ -17,13 +15,9 @@ import {
   Calendar,
   User,
   Shield,
-  ShieldCheck,
-  FileDown,
-  BookOpen,
   Upload,
   Trash2,
   File,
-  Undo2,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -37,28 +31,17 @@ import {
   EvidenceUploader,
 } from '@/components/common';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Textarea } from '@/components/forms';
 import {
   useDocumento,
-  useAprobarDocumento,
-  usePublicarDocumento,
-  useEnviarRevision,
-  useMarcarObsoleto,
   useVersionesDocumento,
-  useExportDocumentoPdf,
-  useExportDocumentoDocx,
   useEstadoFirmasDocumento,
-  useDevolverBorrador,
-  useSellarDocumento,
-  useVerificarSellado,
   useSubirAnexo,
   useEliminarAnexo,
 } from '../hooks/useGestionDocumental';
 import type { AnexoMeta } from '../types/gestion-documental.types';
 import TextoExtraidoPanel from './TextoExtraidoPanel';
 import SelladoBadge from './SelladoBadge';
-
-const AsignarLecturaModal = lazy(() => import('./AsignarLecturaModal'));
+import OcrStatusBadge from './OcrStatusBadge';
 
 interface DocumentoDetailModalProps {
   isOpen: boolean;
@@ -89,77 +72,30 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const { data: documento, isLoading } = useDocumento(documentoId!);
   const { data: versiones } = useVersionesDocumento(documentoId!);
   const { data: estadoFirmas } = useEstadoFirmasDocumento(documentoId);
-  const aprobarMutation = useAprobarDocumento();
-  const publicarMutation = usePublicarDocumento();
-  const enviarRevisionMutation = useEnviarRevision();
-  const devolverBorradorMutation = useDevolverBorrador();
-  const marcarObsoletoMutation = useMarcarObsoleto();
-  const exportPdfMutation = useExportDocumentoPdf();
-  const exportDocxMutation = useExportDocumentoDocx();
-  const sellarMutation = useSellarDocumento();
-  const verificarSelladoMutation = useVerificarSellado();
   const subirAnexoMutation = useSubirAnexo();
   const eliminarAnexoMutation = useEliminarAnexo();
   const anexoInputRef = useRef<HTMLInputElement>(null);
   const [confirmDeleteAnexo, setConfirmDeleteAnexo] = useState<AnexoMeta | null>(null);
-
   const [activeTab, setActiveTab] = useState('info');
-  const [confirmAction, setConfirmAction] = useState<
-    | 'aprobar'
-    | 'publicar'
-    | 'enviar_revision'
-    | 'devolver_borrador'
-    | 'marcar_obsoleto'
-    | 'sellar_pdf'
-    | null
-  >(null);
-  const [motivoObsoleto, setMotivoObsoleto] = useState('');
-  const [lecturaObligatoria, setLecturaObligatoria] = useState(false);
-  const [showAsignarLectura, setShowAsignarLectura] = useState(false);
 
   if (!documentoId) return null;
 
-  const handleAction = async () => {
-    if (!confirmAction || !documentoId) return;
-
-    switch (confirmAction) {
-      case 'enviar_revision':
-        await enviarRevisionMutation.mutateAsync({ id: documentoId, revisores: [], mensaje: '' });
-        break;
-      case 'devolver_borrador':
-        await devolverBorradorMutation.mutateAsync({ id: documentoId });
-        break;
-      case 'aprobar':
-        await aprobarMutation.mutateAsync({ id: documentoId });
-        break;
-      case 'publicar':
-        await publicarMutation.mutateAsync({
-          id: documentoId,
-          lectura_obligatoria: lecturaObligatoria,
-          aplica_a_todos: lecturaObligatoria,
-        });
-        setLecturaObligatoria(false);
-        break;
-      case 'marcar_obsoleto':
-        await marcarObsoletoMutation.mutateAsync({
-          id: documentoId,
-          motivo: motivoObsoleto,
-        });
-        setMotivoObsoleto('');
-        break;
-      case 'sellar_pdf':
-        await sellarMutation.mutateAsync(documentoId);
-        break;
-    }
-    setConfirmAction(null);
-  };
+  const isBorrador = documento?.estado === 'BORRADOR';
+  const isPostPublicado =
+    documento?.estado === 'PUBLICADO' ||
+    documento?.estado === 'OBSOLETO' ||
+    documento?.estado === 'ARCHIVADO';
 
   const tabs = [
     { id: 'info', label: 'Información', icon: <FileText className="w-4 h-4" /> },
     { id: 'contenido', label: 'Contenido', icon: <Eye className="w-4 h-4" /> },
-    { id: 'versiones', label: 'Versiones', icon: <GitBranch className="w-4 h-4" /> },
-    { id: 'anexos', label: 'Anexos', icon: <Paperclip className="w-4 h-4" /> },
-    { id: 'evidencias', label: 'Evidencias', icon: <File className="w-4 h-4" /> },
+    ...(!isBorrador
+      ? [
+          { id: 'versiones', label: 'Versiones', icon: <GitBranch className="w-4 h-4" /> },
+          { id: 'anexos', label: 'Anexos', icon: <Paperclip className="w-4 h-4" /> },
+          { id: 'evidencias', label: 'Evidencias', icon: <File className="w-4 h-4" /> },
+        ]
+      : []),
   ];
 
   return (
@@ -173,172 +109,68 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
           <p className="text-gray-500 text-center py-8">Documento no encontrado</p>
         ) : (
           <div className="space-y-4">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {documento.titulo}
-                  </h3>
-                  <Badge variant="secondary">{documento.codigo}</Badge>
-                  {documento.es_auto_generado && <Badge variant="info">Auto-generado BPM</Badge>}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-500">
-                  <span>v{documento.version_actual}</span>
-                  <span>&middot;</span>
-                  <Badge variant={ESTADO_VARIANT[documento.estado] || 'secondary'}>
-                    {documento.estado}
-                  </Badge>
-                  <Badge
-                    variant={CLASIFICACION_VARIANT[documento.clasificacion] || 'info'}
-                    size="sm"
-                  >
-                    <Shield className="w-3 h-3 mr-1 inline" />
-                    {documento.clasificacion}
-                  </Badge>
-                  <SelladoBadge
-                    estado={documento.sellado_estado}
-                    metadatos={documento.sellado_metadatos}
-                  />
-                </div>
-              </div>
-
-              {/* Contextual Actions */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {/* Export buttons */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<FileDown className="w-4 h-4" />}
-                  onClick={() =>
-                    exportPdfMutation.mutate({
-                      id: documentoId!,
-                      codigo: documento.codigo,
-                      version: documento.version_actual,
-                    })
-                  }
-                  disabled={exportPdfMutation.isPending}
-                >
-                  {exportPdfMutation.isPending ? '...' : 'PDF'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<FileDown className="w-4 h-4" />}
-                  onClick={() =>
-                    exportDocxMutation.mutate({
-                      id: documentoId!,
-                      codigo: documento.codigo,
-                      version: documento.version_actual,
-                    })
-                  }
-                  disabled={exportDocxMutation.isPending}
-                >
-                  {exportDocxMutation.isPending ? '...' : 'DOCX'}
-                </Button>
-                {documento.estado === 'BORRADOR' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<Send className="w-4 h-4" />}
-                    onClick={() => setConfirmAction('enviar_revision')}
-                  >
-                    Enviar a Revisión
-                  </Button>
-                )}
-                {documento.estado === 'EN_REVISION' && (
+            {/* Header profesional */}
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                {documento.titulo}
+              </h3>
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+                  {documento.codigo}
+                </span>
+                <MetaSep />
+                <span className="text-gray-500 dark:text-gray-400">
+                  v{documento.version_actual}
+                </span>
+                <MetaSep />
+                <Badge variant={ESTADO_VARIANT[documento.estado] || 'secondary'} size="sm">
+                  {documento.estado}
+                </Badge>
+                <MetaSep />
+                <Badge variant={CLASIFICACION_VARIANT[documento.clasificacion] || 'info'} size="sm">
+                  <Shield className="w-3 h-3 mr-1 inline" />
+                  {documento.clasificacion}
+                </Badge>
+                {documento.tipo_documento_detail && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      leftIcon={<Undo2 className="w-4 h-4" />}
-                      onClick={() => setConfirmAction('devolver_borrador')}
-                    >
-                      Devolver a Borrador
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      leftIcon={<CheckCircle className="w-4 h-4" />}
-                      onClick={() => setConfirmAction('aprobar')}
-                    >
-                      Aprobar
-                    </Button>
+                    <MetaSep />
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {(documento.tipo_documento_detail as { codigo: string }).codigo}
+                    </span>
                   </>
                 )}
-                {documento.estado === 'APROBADO' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<CheckCircle className="w-4 h-4" />}
-                    onClick={() => setConfirmAction('publicar')}
-                  >
-                    Publicar
-                  </Button>
-                )}
-                {documento.estado === 'PUBLICADO' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    leftIcon={<Archive className="w-4 h-4" />}
-                    onClick={() => setConfirmAction('marcar_obsoleto')}
-                  >
-                    Marcar Obsoleto
-                  </Button>
-                )}
-                {documento.estado === 'PUBLICADO' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    leftIcon={<BookOpen className="w-4 h-4" />}
-                    onClick={() => setShowAsignarLectura(true)}
-                  >
-                    Asignar Lectura
-                  </Button>
-                )}
-                {documento.estado === 'PUBLICADO' &&
-                  (!documento.sellado_estado ||
-                    documento.sellado_estado === 'NO_APLICA' ||
-                    documento.sellado_estado === 'ERROR') && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      leftIcon={<ShieldCheck className="w-4 h-4" />}
-                      onClick={() => setConfirmAction('sellar_pdf')}
-                      disabled={sellarMutation.isPending}
-                    >
-                      {sellarMutation.isPending ? '...' : 'Sellar PDF'}
-                    </Button>
-                  )}
-                {(documento.sellado_estado === 'PENDIENTE' ||
-                  documento.sellado_estado === 'PROCESANDO') && (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-                    <Spinner size="sm" />
-                    Sellando PDF...
-                  </span>
-                )}
-                {documento.sellado_estado === 'COMPLETADO' && (
+                {(documento.areas_aplicacion as string[])?.length > 0 && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      leftIcon={<ShieldCheck className="w-4 h-4" />}
-                      onClick={() => verificarSelladoMutation.mutate(documentoId!)}
-                      disabled={verificarSelladoMutation.isPending}
-                    >
-                      {verificarSelladoMutation.isPending ? '...' : 'Verificar'}
-                    </Button>
-                    {documento.pdf_sellado && (
-                      <a
-                        href={documento.pdf_sellado}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                      >
-                        <Download className="w-4 h-4" />
-                        Sellado
-                      </a>
-                    )}
+                    <MetaSep />
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {(documento.areas_aplicacion as string[])[0]}
+                    </span>
+                  </>
+                )}
+                {documento.es_externo && documento.ocr_estado !== 'NO_APLICA' && (
+                  <>
+                    <MetaSep />
+                    <OcrStatusBadge
+                      estado={documento.ocr_estado}
+                      metadatos={documento.ocr_metadatos}
+                    />
+                  </>
+                )}
+                {isPostPublicado && (
+                  <>
+                    <MetaSep />
+                    <SelladoBadge
+                      estado={documento.sellado_estado}
+                      metadatos={documento.sellado_metadatos}
+                    />
+                  </>
+                )}
+                {documento.es_auto_generado && (
+                  <>
+                    <MetaSep />
+                    <Badge variant="info" size="sm">
+                      BPM
+                    </Badge>
                   </>
                 )}
               </div>
@@ -427,6 +259,30 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     </div>
                   )}
 
+                  {/* PDF Original Ingestado */}
+                  {documento.es_externo && documento.archivo_original && (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                          PDF Original Ingestado
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Documento fuente — no modificable
+                        </p>
+                      </div>
+                      <a
+                        href={documento.archivo_original}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 dark:border-blue-700 px-3 py-1.5 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        Ver PDF
+                      </a>
+                    </div>
+                  )}
+
                   {/* Estado de Firmas Digitales */}
                   {estadoFirmas && estadoFirmas.total > 0 && (
                     <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -464,34 +320,53 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                       )}
                     </div>
                   )}
+                </div>
+              )}
 
-                  {documento.archivo_pdf && (
-                    <div>
-                      <a
-                        href={documento.archivo_pdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        <Download className="w-4 h-4" />
-                        Descargar PDF
-                      </a>
+              {activeTab === 'contenido' &&
+                (() => {
+                  const pdfUrl = documento.archivo_pdf || documento.archivo_original;
+                  const tieneContenido = documento.contenido?.replace(/<[^>]*>/g, '').trim();
+                  return (
+                    <div className="space-y-4">
+                      {/* Visor PDF embebido (original ingestado o generado) */}
+                      {pdfUrl && (
+                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+                          <iframe
+                            src={pdfUrl}
+                            title={`PDF: ${documento.titulo}`}
+                            className="w-full border-0"
+                            style={{ height: '60vh' }}
+                          />
+                        </div>
+                      )}
+                      {/* Contenido HTML editado */}
+                      {tieneContenido && (
+                        <>
+                          {pdfUrl && (
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Contenido digitalizado
+                            </h4>
+                          )}
+                          <div className="prose dark:prose-invert max-w-none p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: DOMPurify.sanitize(documento.contenido || ''),
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      {/* Sin PDF ni contenido */}
+                      {!pdfUrl && !tieneContenido && (
+                        <div className="text-center py-8 text-sm text-gray-400">
+                          <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                          Sin contenido — edite el documento para agregar contenido
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === 'contenido' && (
-                <div className="prose dark:prose-invert max-w-none p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(
-                        documento.contenido || '<p><em>Sin contenido</em></p>'
-                      ),
-                    }}
-                  />
-                </div>
-              )}
+                  );
+                })()}
 
               {activeTab === 'versiones' && (
                 <div className="space-y-3">
@@ -572,7 +447,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 </div>
               )}
             </div>
-            {/* Panel de texto extraído (OCR) */}
+            {/* Panel de texto extraído (OCR) — visible para docs ingestados en cualquier estado */}
             {documento && documento.ocr_estado !== 'NO_APLICA' && (
               <TextoExtraidoPanel
                 documentoId={documento.id}
@@ -584,103 +459,6 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
           </div>
         )}
       </BaseModal>
-
-      {/* Confirm Dialogs */}
-      <ConfirmDialog
-        isOpen={confirmAction === 'enviar_revision'}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleAction}
-        title="Enviar a Revisión"
-        message={`¿Enviar "${documento?.titulo}" a revisión?`}
-        confirmText="Enviar"
-        isLoading={enviarRevisionMutation.isPending}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmAction === 'devolver_borrador'}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleAction}
-        title="Devolver a Borrador"
-        message={`¿Devolver "${documento?.titulo}" a borrador? Podrá asignar firmantes y volver a enviarlo.`}
-        confirmText="Devolver"
-        isLoading={devolverBorradorMutation.isPending}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmAction === 'aprobar'}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleAction}
-        title="Aprobar Documento"
-        message={`¿Aprobar "${documento?.titulo}"?`}
-        confirmText="Aprobar"
-        isLoading={aprobarMutation.isPending}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmAction === 'publicar'}
-        onClose={() => {
-          setConfirmAction(null);
-          setLecturaObligatoria(false);
-        }}
-        onConfirm={handleAction}
-        title="Publicar Documento"
-        message={
-          <div className="space-y-3">
-            <p>
-              ¿Publicar &quot;{documento?.titulo}&quot;? Se creará una versión snapshot y un
-              registro de distribución.
-            </p>
-            <label className="flex items-start gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={lecturaObligatoria}
-                onChange={(e) => setLecturaObligatoria(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                <strong>Distribución obligatoria</strong> — Notificar a todos los colaboradores
-                activos para lectura y aceptación del documento.
-              </span>
-            </label>
-          </div>
-        }
-        confirmText="Publicar"
-        isLoading={publicarMutation.isPending}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmAction === 'marcar_obsoleto'}
-        onClose={() => {
-          setConfirmAction(null);
-          setMotivoObsoleto('');
-        }}
-        onConfirm={handleAction}
-        title="Marcar como Obsoleto"
-        message={
-          <div className="space-y-3">
-            <p>¿Marcar &quot;{documento?.titulo}&quot; como obsoleto?</p>
-            <Textarea
-              value={motivoObsoleto}
-              onChange={(e) => setMotivoObsoleto(e.target.value)}
-              placeholder="Motivo de obsolescencia..."
-              rows={3}
-            />
-          </div>
-        }
-        confirmText="Marcar Obsoleto"
-        variant="danger"
-        isLoading={marcarObsoletoMutation.isPending}
-      />
-
-      <ConfirmDialog
-        isOpen={confirmAction === 'sellar_pdf'}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={handleAction}
-        title="Sellar PDF con Firma Digital"
-        message={`¿Sellar "${documento?.titulo}" con firma digital X.509? El PDF sellado será inmutable y verificable.`}
-        confirmText="Sellar PDF"
-        isLoading={sellarMutation.isPending}
-      />
 
       {/* Confirmar eliminación de anexo */}
       <ConfirmDialog
@@ -700,20 +478,27 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         variant="danger"
         isLoading={eliminarAnexoMutation.isPending}
       />
-
-      {/* Asignar Lectura Verificada */}
-      {documento && showAsignarLectura && (
-        <Suspense fallback={null}>
-          <AsignarLecturaModal
-            isOpen={showAsignarLectura}
-            onClose={() => setShowAsignarLectura(false)}
-            documentoId={documento.id}
-            documentoTitulo={documento.titulo}
-            documentoCodigo={documento.codigo}
-          />
-        </Suspense>
-      )}
     </>
+  );
+}
+
+// ==================== Header Separator ====================
+
+function MetaSep() {
+  return <span className="text-gray-300 dark:text-gray-600">&middot;</span>;
+}
+
+// ==================== Info Item ====================
+
+function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="mt-0.5 text-gray-400">{icon}</span>
+      <div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-sm text-gray-900 dark:text-white">{value}</p>
+      </div>
+    </div>
   );
 }
 
@@ -915,42 +700,25 @@ function WorkflowStepper({ estado }: { estado: string }) {
             {i > 0 && (
               <ChevronRight
                 className={cn(
-                  'w-3 h-3 flex-shrink-0',
-                  stepOrder <= currentOrder
-                    ? 'text-indigo-300 dark:text-indigo-700'
-                    : 'text-gray-200 dark:text-gray-700'
+                  'w-3.5 h-3.5 flex-shrink-0',
+                  isDone || isCurrent ? 'text-blue-400' : 'text-gray-300 dark:text-gray-600'
                 )}
               />
             )}
             <span
               className={cn(
-                'px-2 py-0.5 rounded-full font-medium whitespace-nowrap',
-                isDone && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                'px-2 py-0.5 rounded-full whitespace-nowrap',
+                isDone && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                 isCurrent &&
-                  'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 ring-1 ring-indigo-300 dark:ring-indigo-700',
-                !isDone && !isCurrent && 'text-gray-300 dark:text-gray-600'
+                  'bg-blue-600 text-white dark:bg-blue-500 font-medium ring-2 ring-blue-200 dark:ring-blue-800',
+                !isDone && !isCurrent && 'text-gray-400 dark:text-gray-500'
               )}
             >
-              {isDone ? '✓ ' : ''}
               {step.label}
             </span>
           </Fragment>
         );
       })}
-    </div>
-  );
-}
-
-// ==================== Info Item ====================
-
-function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className="text-gray-400 mt-0.5">{icon}</span>
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="text-sm text-gray-900 dark:text-white">{value}</p>
-      </div>
     </div>
   );
 }

@@ -41,8 +41,6 @@ ROL_FIRMA_CHOICES = [
     ('ELABORO', 'Elaboró'),
     ('REVISO', 'Revisó'),
     ('APROBO', 'Aprobó'),
-    ('VALIDO', 'Validó'),
-    ('AUTORIZO', 'Autorizó'),
 ]
 
 ESTADO_FIRMA_CHOICES = [

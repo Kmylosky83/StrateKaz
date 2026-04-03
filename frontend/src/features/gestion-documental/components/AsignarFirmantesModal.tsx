@@ -98,7 +98,7 @@ export function AsignarFirmantesModal({
   const handleAddFirmante = () => {
     const nextOrden = fields.length + 1;
     // Suggest next role in typical flow
-    const suggestedRoles: RolFirma[] = ['ELABORO', 'REVISO', 'APROBO', 'VALIDO', 'AUTORIZO'];
+    const suggestedRoles: RolFirma[] = ['ELABORO', 'REVISO', 'APROBO'];
     const nextRol = suggestedRoles[Math.min(fields.length, suggestedRoles.length - 1)];
     append({
       colaborador_id: '',

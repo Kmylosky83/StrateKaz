@@ -15,6 +15,7 @@ import {
   usePlantillasDocumento,
   useIngestarExterno,
 } from '../hooks/useGestionDocumental';
+import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import type { ClasificacionDocumento } from '../types/gestion-documental.types';
 
 interface IngestarExternoModalProps {
@@ -37,12 +38,14 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
   const [tipoDocumento, setTipoDocumento] = useState<string>('');
   const [plantillaId, setPlantillaId] = useState<string>('');
   const [clasificacion, setClasificacion] = useState<ClasificacionDocumento>('INTERNO');
+  const [areasAplicacion, setAreasAplicacion] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [fileError, setFileError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: tipos = [] } = useTiposDocumento();
   const { data: plantillas = [] } = usePlantillasDocumento({ estado: 'ACTIVA' });
+  const { data: procesosData } = useAreas({ is_active: true });
   const ingestarMutation = useIngestarExterno();
 
   const tipoOptions = tipos.map((t) => ({
@@ -112,6 +115,9 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
     formData.append('titulo', titulo.trim());
     formData.append('tipo_documento', tipoDocumento);
     formData.append('clasificacion', clasificacion);
+    if (areasAplicacion.length > 0) {
+      formData.append('areas_aplicacion', JSON.stringify(areasAplicacion));
+    }
     if (plantillaId) {
       formData.append('plantilla', plantillaId);
     }
@@ -126,6 +132,7 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
     setTipoDocumento('');
     setPlantillaId('');
     setClasificacion('INTERNO');
+    setAreasAplicacion([]);
     setFileError('');
     setDragOver(false);
     onClose();
@@ -252,6 +259,22 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
             onChange={(e) => setClasificacion(e.target.value as ClasificacionDocumento)}
             options={CLASIFICACION_OPTIONS}
           />
+          <div className="sm:col-span-2">
+            <Select
+              label="Proceso"
+              value={areasAplicacion[0] || ''}
+              onChange={(e) => {
+                setAreasAplicacion(e.target.value ? [e.target.value] : []);
+              }}
+            >
+              <option value="">Sin proceso asignado</option>
+              {(procesosData?.results || []).map((p) => (
+                <option key={p.id} value={p.name}>
+                  {p.name} ({p.tipo_display})
+                </option>
+              ))}
+            </Select>
+          </div>
           {filteredPlantillas.length > 0 && (
             <div className="sm:col-span-2">
               <Select

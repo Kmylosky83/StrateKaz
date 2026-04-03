@@ -32,6 +32,7 @@ import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
 import { Input } from '@/components/forms';
 import { PageTabs } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 
@@ -57,6 +58,7 @@ interface ArchivoSectionProps {
 
 export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>('vigentes');
+  const { color: moduleColor } = useModuleColor('gestion_documental');
 
   return (
     <div className="space-y-4">
@@ -65,6 +67,7 @@ export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as SubTab)}
         variant="underline"
+        moduleColor={moduleColor}
       />
 
       {activeTab === 'vigentes' && <VigentesTab onViewDocumento={onViewDocumento} />}

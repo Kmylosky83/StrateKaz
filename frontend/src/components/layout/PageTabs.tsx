@@ -48,7 +48,7 @@ export interface PageTabsProps {
   variant?: PageTabsVariant;
   /** Tamaño */
   size?: PageTabsSize;
-  /** Color del módulo (para variante pills) */
+  /** Color del módulo */
   moduleColor?: ModuleColor;
   /** Clases adicionales */
   className?: string;
@@ -289,16 +289,83 @@ function PillsVariant({
 // VARIANTE: UNDERLINE (Clásico mejorado)
 // ============================================================================
 
+const underlineColorConfig: Record<
+  ModuleColor,
+  { border: string; text: string; badgeBg: string; badgeText: string }
+> = {
+  purple: {
+    border: 'border-purple-500',
+    text: 'text-purple-600 dark:text-purple-400',
+    badgeBg: 'bg-purple-100 dark:bg-purple-900/30',
+    badgeText: 'text-purple-800 dark:text-purple-400',
+  },
+  blue: {
+    border: 'border-blue-500',
+    text: 'text-blue-600 dark:text-blue-400',
+    badgeBg: 'bg-blue-100 dark:bg-blue-900/30',
+    badgeText: 'text-blue-800 dark:text-blue-400',
+  },
+  green: {
+    border: 'border-emerald-500',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    badgeBg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    badgeText: 'text-emerald-800 dark:text-emerald-400',
+  },
+  orange: {
+    border: 'border-orange-500',
+    text: 'text-orange-600 dark:text-orange-400',
+    badgeBg: 'bg-orange-100 dark:bg-orange-900/30',
+    badgeText: 'text-orange-800 dark:text-orange-400',
+  },
+  teal: {
+    border: 'border-teal-500',
+    text: 'text-teal-600 dark:text-teal-400',
+    badgeBg: 'bg-teal-100 dark:bg-teal-900/30',
+    badgeText: 'text-teal-800 dark:text-teal-400',
+  },
+  red: {
+    border: 'border-red-500',
+    text: 'text-red-600 dark:text-red-400',
+    badgeBg: 'bg-red-100 dark:bg-red-900/30',
+    badgeText: 'text-red-800 dark:text-red-400',
+  },
+  yellow: {
+    border: 'border-yellow-500',
+    text: 'text-yellow-600 dark:text-yellow-400',
+    badgeBg: 'bg-yellow-100 dark:bg-yellow-900/30',
+    badgeText: 'text-yellow-800 dark:text-yellow-400',
+  },
+  pink: {
+    border: 'border-pink-500',
+    text: 'text-pink-600 dark:text-pink-400',
+    badgeBg: 'bg-pink-100 dark:bg-pink-900/30',
+    badgeText: 'text-pink-800 dark:text-pink-400',
+  },
+  indigo: {
+    border: 'border-indigo-500',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    badgeBg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    badgeText: 'text-indigo-800 dark:text-indigo-400',
+  },
+  gray: {
+    border: 'border-gray-500',
+    text: 'text-gray-600 dark:text-gray-400',
+    badgeBg: 'bg-gray-100 dark:bg-gray-700',
+    badgeText: 'text-gray-800 dark:text-gray-300',
+  },
+};
+
 function UnderlineVariant({
   tabs,
   activeTab,
   onTabChange,
-  moduleColor: _moduleColor = 'blue',
+  moduleColor = 'blue',
   size = 'md',
   centered = false,
   className,
 }: PageTabsProps) {
   const sizes = sizeConfig[size];
+  const colors = underlineColorConfig[moduleColor];
 
   return (
     <nav
@@ -331,7 +398,7 @@ function UnderlineVariant({
               'py-4',
               tab.disabled && 'opacity-50 cursor-not-allowed',
               isActive
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                ? `${colors.border} ${colors.text}`
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
             )}
           >
@@ -343,7 +410,7 @@ function UnderlineVariant({
                   'ml-1 inline-flex items-center rounded-full font-medium',
                   sizes.badge,
                   isActive
-                    ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
+                    ? `${colors.badgeBg} ${colors.badgeText}`
                     : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
                 )}
               >

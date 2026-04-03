@@ -17,8 +17,6 @@ import {
   Clock,
   Shield,
   FileText,
-  ChevronDown,
-  ChevronUp,
   MoreVertical,
   Tag,
 } from 'lucide-react';
@@ -32,6 +30,9 @@ import {
   ProtectedAction,
   ViewToggle,
 } from '@/components/common';
+import { PageTabs } from '@/components/layout';
+import type { TabItem } from '@/components/layout';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
@@ -44,7 +45,13 @@ import {
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
 // ─── Constantes ─────────────────────────────────────────────────
+type ConfigTab = 'tipos' | 'plantillas';
 type ViewMode = 'cards' | 'list';
+
+const CONFIG_TABS: TabItem[] = [
+  { id: 'tipos', label: 'Tipos de Documento', icon: Files },
+  { id: 'plantillas', label: 'Plantillas', icon: FileText },
+];
 
 const NIVEL_LABELS: Record<string, { label: string; color: string }> = {
   ESTRATEGICO: {
@@ -96,6 +103,8 @@ export function TiposPlantillasSection({
   const deleteTipoMutation = useDeleteTipoDocumento();
   const deletePlantillaMutation = useDeletePlantillaDocumento();
 
+  const [activeTab, setActiveTab] = useState<ConfigTab>('tipos');
+  const { color: moduleColor } = useModuleColor('gestion_documental');
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('gd_tipos_view') as ViewMode) || 'list'
   );
@@ -104,127 +113,127 @@ export function TiposPlantillasSection({
     null
   );
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
-  const [plantillasExpanded, setPlantillasExpanded] = useState(true);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
     localStorage.setItem('gd_tipos_view', mode);
   };
 
-  if (tiposLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   const tiposList = tipos || [];
   const plantillasList = plantillas || [];
-
-  // Mapa tipo_id → nombre para mostrar en la lista de plantillas
   const tiposMap = Object.fromEntries(tiposList.map((t) => [t.id, t]));
+
+  const tabsWithBadges: TabItem[] = [
+    {
+      id: 'tipos',
+      label: 'Tipos de Documento',
+      icon: Files,
+      badge: tiposList.length > 0 ? tiposList.length : undefined,
+    },
+    {
+      id: 'plantillas',
+      label: 'Plantillas',
+      icon: FileText,
+      badge: plantillasList.length > 0 ? plantillasList.length : undefined,
+    },
+  ];
 
   return (
     <>
-      {/* ── Sección: Tipos de Documento ─────────────────────── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Tipos de Documento
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {tiposList.length} tipo{tiposList.length !== 1 ? 's' : ''} registrado
-            {tiposList.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ViewToggle
-            value={viewMode}
-            onChange={handleViewChange}
-            options={VIEW_OPTIONS}
-            moduleColor="blue"
-          />
-          <ProtectedAction permission="gestion_documental.configuracion.create">
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus className="w-4 h-4" />}
-              onClick={onCreateTipo}
-            >
-              Nuevo Tipo
-            </Button>
-          </ProtectedAction>
-        </div>
-      </div>
-
-      {tiposList.length === 0 ? (
-        <EmptyState
-          icon={<Files className="w-12 h-12" />}
-          title="No hay tipos de documento"
-          description="Crea tipos de documento para organizar tu sistema documental."
-          action={
-            canCreateTipo
-              ? {
-                  label: 'Crear Tipo',
-                  onClick: onCreateTipo,
-                  icon: <Plus className="w-4 h-4" />,
-                }
-              : undefined
-          }
+      <div className="space-y-4">
+        <PageTabs
+          tabs={tabsWithBadges}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as ConfigTab)}
+          variant="underline"
+          moduleColor={moduleColor}
         />
-      ) : viewMode === 'cards' ? (
-        <TiposCardView
-          tipos={tiposList}
-          menuOpen={menuOpen}
-          onMenuToggle={setMenuOpen}
-          onEdit={onEditTipo}
-          onDelete={setConfirmDeleteTipo}
-        />
-      ) : (
-        <TiposListView tipos={tiposList} onEdit={onEditTipo} onDelete={setConfirmDeleteTipo} />
-      )}
 
-      {/* ── Sección: Plantillas ─────────────────────────────── */}
-      <div className="mt-8">
-        {/* Separar área colapsable del Button para evitar <button> anidado en <button> */}
-        <div className="flex items-center justify-between w-full mb-4">
-          <button
-            className="flex items-center gap-3 group min-w-0 flex-1 text-left"
-            onClick={() => setPlantillasExpanded((v) => !v)}
-            type="button"
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-indigo-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
-            </div>
-            <Badge variant="secondary" size="sm">
-              {plantillasList.length}
-            </Badge>
-            <span className="ml-1">
-              {plantillasExpanded ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              )}
-            </span>
-          </button>
-          <div className="shrink-0 ml-3">
-            <ProtectedAction permission="gestion_documental.configuracion.create">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<Plus className="w-4 h-4" />}
-                onClick={onCreatePlantilla}
-              >
-                Nueva Plantilla
-              </Button>
-            </ProtectedAction>
-          </div>
-        </div>
-
-        {plantillasExpanded && (
+        {/* ── Tab: Tipos de Documento ───────────────────────── */}
+        {activeTab === 'tipos' && (
           <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {tiposList.length} tipo{tiposList.length !== 1 ? 's' : ''} registrado
+                {tiposList.length !== 1 ? 's' : ''}
+              </p>
+              <div className="flex items-center gap-3">
+                <ViewToggle
+                  value={viewMode}
+                  onChange={handleViewChange}
+                  options={VIEW_OPTIONS}
+                  moduleColor={moduleColor}
+                />
+                <ProtectedAction permission="gestion_documental.configuracion.create">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Plus className="w-4 h-4" />}
+                    onClick={onCreateTipo}
+                  >
+                    Nuevo Tipo
+                  </Button>
+                </ProtectedAction>
+              </div>
+            </div>
+
+            {tiposLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner size="lg" />
+              </div>
+            ) : tiposList.length === 0 ? (
+              <EmptyState
+                icon={<Files className="w-12 h-12" />}
+                title="No hay tipos de documento"
+                description="Crea tipos de documento para organizar tu sistema documental."
+                action={
+                  canCreateTipo
+                    ? {
+                        label: 'Crear Tipo',
+                        onClick: onCreateTipo,
+                        icon: <Plus className="w-4 h-4" />,
+                      }
+                    : undefined
+                }
+              />
+            ) : viewMode === 'cards' ? (
+              <TiposCardView
+                tipos={tiposList}
+                menuOpen={menuOpen}
+                onMenuToggle={setMenuOpen}
+                onEdit={onEditTipo}
+                onDelete={setConfirmDeleteTipo}
+              />
+            ) : (
+              <TiposListView
+                tipos={tiposList}
+                onEdit={onEditTipo}
+                onDelete={setConfirmDeleteTipo}
+              />
+            )}
+          </>
+        )}
+
+        {/* ── Tab: Plantillas ──────────────────────────────── */}
+        {activeTab === 'plantillas' && (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {plantillasList.length} plantilla{plantillasList.length !== 1 ? 's' : ''} registrada
+                {plantillasList.length !== 1 ? 's' : ''}
+              </p>
+              <ProtectedAction permission="gestion_documental.configuracion.create">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus className="w-4 h-4" />}
+                  onClick={onCreatePlantilla}
+                >
+                  Nueva Plantilla
+                </Button>
+              </ProtectedAction>
+            </div>
+
             {plantillasLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Spinner size="md" />

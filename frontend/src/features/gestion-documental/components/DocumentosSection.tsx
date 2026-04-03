@@ -10,7 +10,6 @@ import {
   Eye,
   Edit,
   Trash2,
-  Clock,
   CheckCircle,
   Calendar,
   PenTool,
@@ -18,6 +17,7 @@ import {
   Files,
   LayoutGrid,
   List,
+  GitPullRequest,
 } from 'lucide-react';
 import {
   Card,
@@ -30,6 +30,7 @@ import {
   ProtectedAction,
   ViewToggle,
 } from '@/components/common';
+import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import { Input } from '@/components/forms';
 import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
@@ -112,76 +113,33 @@ export function DocumentosSection({
       : true
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   const totalDocumentos = documentos?.length ?? 0;
   const vigentes =
     documentos?.filter((d) => d.estado === 'PUBLICADO' || d.estado === 'VIGENTE').length ?? 0;
   const borradores = documentos?.filter((d) => d.estado === 'BORRADOR').length ?? 0;
   const enRevision = documentos?.filter((d) => d.estado === 'EN_REVISION').length ?? 0;
 
+  const statsItems = [
+    { label: 'Total', value: totalDocumentos, icon: FileText, iconColor: 'info' as const },
+    { label: 'Vigentes', value: vigentes, icon: CheckCircle, iconColor: 'success' as const },
+    { label: 'Borradores', value: borradores, icon: Edit, iconColor: 'warning' as const },
+    {
+      label: 'En Revisión',
+      value: enRevision,
+      icon: GitPullRequest,
+      iconColor: 'warning' as const,
+    },
+  ];
+
   return (
     <>
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {totalDocumentos}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
-                <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Vigentes</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{vigentes}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Borradores</p>
-                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {borradores}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-                <Edit className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">En Revisión</p>
-                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {enRevision}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
-          </Card>
-        </div>
+        {isLoading ? (
+          <StatsGridSkeleton count={4} />
+        ) : (
+          <StatsGrid stats={statsItems} columns={4} moduleColor="indigo" variant="compact" />
+        )}
 
         {/* Cobertura documental */}
         <Suspense fallback={null}>

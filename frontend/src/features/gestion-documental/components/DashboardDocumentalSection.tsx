@@ -8,6 +8,7 @@
  * - Score de cumplimiento global
  */
 import { lazy, Suspense } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, PenTool, CheckCircle, TrendingUp, GitPullRequest, Archive } from 'lucide-react';
 import { Card, Button, Badge, Spinner } from '@/components/common';
 
@@ -27,6 +28,7 @@ export function DashboardDocumentalSection({
   onFirmar,
   onNavigateToSection,
 }: DashboardDocumentalSectionProps) {
+  const navigate = useNavigate();
   const { data: documentos, isLoading: isLoadingDocs } = useDocumentos();
   const { data: estadisticas } = useEstadisticasDocumentales();
   const {
@@ -120,9 +122,7 @@ export function DashboardDocumentalSection({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    window.location.href = '/mi-portal?tab=lecturas';
-                  }}
+                  onClick={() => navigate('/mi-portal?tab=lecturas')}
                 >
                   Ver en Mi Portal
                 </Button>

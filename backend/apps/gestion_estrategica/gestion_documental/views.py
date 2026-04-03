@@ -664,7 +664,8 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         cuáles no, y qué workflows carecen de procedimiento documentado.
         Útil para auditorías ISO y revisión por la dirección.
         """
-        cobertura = DocumentoService.obtener_cobertura_documental()
+        from .services import DocumentoService as _DocumentoService
+        cobertura = _DocumentoService.obtener_cobertura_documental()
         return Response(cobertura)
 
     # =========================================================================

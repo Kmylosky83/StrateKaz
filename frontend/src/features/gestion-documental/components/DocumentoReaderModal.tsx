@@ -149,7 +149,7 @@ export default function DocumentoReaderModal({
         },
       },
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !aceptacion) return;

@@ -431,12 +431,8 @@ function TiposListView({
                 </span>
               </div>
               <div className="hidden md:flex items-center gap-1.5">
-                {tipo.requiere_aprobacion && (
-                  <CheckCircle className="w-4 h-4 text-blue-500" title="Requiere aprobación" />
-                )}
-                {tipo.requiere_firma && (
-                  <PenTool className="w-4 h-4 text-indigo-500" title="Requiere firma" />
-                )}
+                {tipo.requiere_aprobacion && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                {tipo.requiere_firma && <PenTool className="w-4 h-4 text-indigo-500" />}
                 {tipo.tiempo_retencion_anos && (
                   <span className="text-xs text-gray-400">
                     <Clock className="w-3.5 h-3.5 inline mr-0.5" />
@@ -530,9 +526,7 @@ function PlantillasListView({
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  {p.es_por_defecto && (
-                    <Tag className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Por defecto" />
-                  )}
+                  {p.es_por_defecto && <Tag className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                   <p className="font-medium text-gray-900 dark:text-white truncate">{p.nombre}</p>
                 </div>
                 {p.descripcion && (

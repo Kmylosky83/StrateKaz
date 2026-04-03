@@ -2,7 +2,7 @@
  * DocumentoDetailModal - Modal de detalle con tabs: Info, Contenido, Versiones, Evidencias.
  * Acciones contextuales según estado del documento.
  */
-import { useState, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, lazy, Suspense, Fragment } from 'react';
 import DOMPurify from 'dompurify';
 import {
   FileText,
@@ -24,7 +24,9 @@ import {
   Trash2,
   File,
   Undo2,
+  ChevronRight,
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import {
   Button,
   Badge,
@@ -308,6 +310,13 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                       {sellarMutation.isPending ? '...' : 'Sellar PDF'}
                     </Button>
                   )}
+                {(documento.sellado_estado === 'PENDIENTE' ||
+                  documento.sellado_estado === 'PROCESANDO') && (
+                  <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+                    <Spinner size="sm" />
+                    Sellando PDF...
+                  </span>
+                )}
                 {documento.sellado_estado === 'COMPLETADO' && (
                   <>
                     <Button
@@ -334,6 +343,9 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 )}
               </div>
             </div>
+
+            {/* Stepper de flujo documental */}
+            <WorkflowStepper estado={documento.estado} />
 
             {/* Tabs */}
             <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
@@ -848,6 +860,83 @@ function AnexosTab({
       <p className="text-xs text-gray-400">
         Formatos permitidos: PDF, Word, Excel, imágenes, ZIP. Máximo 20 MB por archivo.
       </p>
+    </div>
+  );
+}
+
+// ==================== Workflow Stepper ====================
+
+const WORKFLOW_STEPS = [
+  { key: 'BORRADOR', label: 'Borrador' },
+  { key: 'EN_REVISION', label: 'En Revisión' },
+  { key: 'APROBADO', label: 'Aprobado' },
+  { key: 'PUBLICADO', label: 'Publicado' },
+];
+
+const WORKFLOW_ORDER: Record<string, number> = {
+  BORRADOR: 0,
+  EN_REVISION: 1,
+  APROBADO: 2,
+  PUBLICADO: 3,
+  OBSOLETO: 4,
+  ARCHIVADO: 4,
+};
+
+function WorkflowStepper({ estado }: { estado: string }) {
+  const currentOrder = WORKFLOW_ORDER[estado] ?? 0;
+  const isTerminal = estado === 'OBSOLETO' || estado === 'ARCHIVADO';
+
+  if (isTerminal) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 py-1">
+        <span
+          className={cn(
+            'px-2.5 py-0.5 rounded-full font-medium',
+            estado === 'OBSOLETO' && 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+            estado === 'ARCHIVADO' &&
+              'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+          )}
+        >
+          {estado === 'OBSOLETO' ? 'Obsoleto — fuera de vigencia' : 'Archivado'}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-0.5 text-xs py-1 flex-wrap">
+      {WORKFLOW_STEPS.map((step, i) => {
+        const stepOrder = i;
+        const isDone = stepOrder < currentOrder;
+        const isCurrent = stepOrder === currentOrder;
+
+        return (
+          <Fragment key={step.key}>
+            {i > 0 && (
+              <ChevronRight
+                className={cn(
+                  'w-3 h-3 flex-shrink-0',
+                  stepOrder <= currentOrder
+                    ? 'text-indigo-300 dark:text-indigo-700'
+                    : 'text-gray-200 dark:text-gray-700'
+                )}
+              />
+            )}
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full font-medium whitespace-nowrap',
+                isDone && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                isCurrent &&
+                  'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 ring-1 ring-indigo-300 dark:ring-indigo-700',
+                !isDone && !isCurrent && 'text-gray-300 dark:text-gray-600'
+              )}
+            >
+              {isDone ? '✓ ' : ''}
+              {step.label}
+            </span>
+          </Fragment>
+        );
+      })}
     </div>
   );
 }

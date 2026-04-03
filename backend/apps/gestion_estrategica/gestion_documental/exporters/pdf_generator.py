@@ -37,74 +37,131 @@ class DocumentoPDFGenerator:
     BASE_CSS = """
         @page {
             size: A4;
-            margin: 2cm 1.5cm;
-            @top-center {
-                content: element(header);
-            }
-            @bottom-center {
-                content: element(footer);
-            }
+            margin: 2.5cm 1.8cm 2cm 1.8cm;
+            @top-center { content: element(header); }
+            @bottom-center { content: element(footer); }
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 11pt;
             line-height: 1.5;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
 
-        h1 { color: #1a365d; font-size: 18pt; font-weight: 700; margin-bottom: 16px; border-bottom: 2px solid #3182ce; padding-bottom: 8px; }
-        h2 { color: #2c5282; font-size: 14pt; font-weight: 600; margin-top: 20px; margin-bottom: 10px; }
-        h3 { color: #2d3748; font-size: 12pt; font-weight: 600; margin-top: 16px; margin-bottom: 8px; }
+        h1 { color: #1a365d; font-size: 16pt; font-weight: 700; margin: 0 0 12px 0; border-bottom: 2px solid #3182ce; padding-bottom: 8px; }
+        h2 { color: #2c5282; font-size: 13pt; font-weight: 600; margin: 16px 0 8px 0; }
+        h3 { color: #2d3748; font-size: 11pt; font-weight: 600; margin: 12px 0 6px 0; }
+        p { margin: 0 0 8px 0; }
 
-        .header { position: running(header); padding: 10px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .header-logo { max-height: 40px; }
-        .header-text { font-size: 9pt; color: #718096; text-align: right; }
+        /* ── Header (running) — float-based para WeasyPrint ── */
+        .header {
+            position: running(header);
+            padding: 8px 0;
+            border-bottom: 2px solid #3182ce;
+            overflow: hidden;
+        }
+        .header::after { content: ''; display: table; clear: both; }
+        .header-logo { float: left; max-height: 38px; max-width: 110px; }
+        .header-text { float: right; font-size: 8.5pt; color: #555; text-align: right; line-height: 1.4; }
+        .header-text strong { color: #1a365d; font-size: 9pt; display: block; }
 
-        .footer { position: running(footer); padding: 10px 0; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #718096; display: flex; justify-content: space-between; }
-        .page-number::after { content: "Pagina " counter(page) " de " counter(pages); }
+        /* ── Footer (running) — float-based ── */
+        .footer {
+            position: running(footer);
+            padding: 6px 0;
+            border-top: 1px solid #cbd5e0;
+            font-size: 8pt;
+            color: #718096;
+            overflow: hidden;
+        }
+        .footer::after { content: ''; display: table; clear: both; }
+        .footer-left { float: left; }
+        .footer-right { float: right; }
+        .page-number::after { content: "Pag. " counter(page) " / " counter(pages); }
 
-        .document-metadata { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
-        .metadata-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .metadata-item { display: flex; flex-direction: column; }
-        .metadata-label { font-size: 9pt; color: #718096; font-weight: 500; }
-        .metadata-value { font-size: 10pt; color: #2d3748; font-weight: 600; }
+        /* ── Metadata — inline-block para WeasyPrint (sin grid/flex) ── */
+        .document-metadata {
+            background: #f7fafc;
+            border: 1px solid #cbd5e0;
+            border-left: 4px solid #3182ce;
+            border-radius: 4px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+        .metadata-item {
+            display: inline-block;
+            width: 48%;
+            margin-bottom: 8px;
+            vertical-align: top;
+            padding-right: 6px;
+            box-sizing: border-box;
+        }
+        .metadata-label { font-size: 7.5pt; color: #718096; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+        .metadata-value { font-size: 10pt; color: #1a365d; font-weight: 600; display: block; margin-top: 1px; }
 
-        .estado-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 9pt; font-weight: 600; }
-        .estado-BORRADOR { background: #e2e8f0; color: #4a5568; }
-        .estado-EN_REVISION { background: #fefcbf; color: #975a16; }
-        .estado-APROBADO { background: #c6f6d5; color: #276749; }
-        .estado-PUBLICADO { background: #c6f6d5; color: #276749; }
-        .estado-OBSOLETO { background: #fed7d7; color: #9b2c2c; }
+        /* ── Estado badges ── */
+        .estado-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 8.5pt; font-weight: 700; }
+        .estado-BORRADOR { background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0; }
+        .estado-EN_REVISION { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .estado-APROBADO { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .estado-PUBLICADO { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .estado-OBSOLETO { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-        .section { margin-bottom: 24px; }
-        .section-content { text-align: justify; margin-bottom: 16px; }
+        .section { margin-bottom: 20px; }
 
-        .contenido-documento { margin-top: 24px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        /* ── Contenido del documento ── */
+        .contenido-documento {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
         .contenido-documento img { max-width: 100%; height: auto; }
-        .contenido-documento table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-        .contenido-documento table th, .contenido-documento table td { padding: 8px; border: 1px solid #e2e8f0; font-size: 10pt; }
-        .contenido-documento table th { background: #f7fafc; font-weight: 600; }
+        .contenido-documento table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .contenido-documento th, .contenido-documento td { padding: 7px 10px; border: 1px solid #cbd5e0; font-size: 10pt; }
+        .contenido-documento th { background: #edf2f7; font-weight: 700; color: #2d3748; }
+        .contenido-documento ul, .contenido-documento ol { padding-left: 20px; margin: 8px 0; }
+        .contenido-documento li { margin-bottom: 4px; }
 
-        /* --- Bloque de firmas digitales --- */
-        .firmas-section { margin-top: 40px; border-top: 2px solid #2d3748; padding-top: 20px; page-break-inside: avoid; }
-        .firmas-title { font-size: 12pt; font-weight: 700; color: #1a365d; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        .firmas-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
-        .firma-card { flex: 1 1 200px; max-width: 32%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; text-align: center; background: #fafafa; }
-        .firma-card-header { font-size: 9pt; font-weight: 700; color: #2c5282; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
-        .firma-imagen { width: 160px; height: 60px; object-fit: contain; margin: 0 auto 8px; display: block; }
-        .firma-linea { border-bottom: 1px solid #2d3748; width: 80%; margin: 0 auto 8px; }
-        .firma-nombre { font-size: 10pt; font-weight: 600; color: #2d3748; }
+        /* ── Firmas digitales — inline-block para WeasyPrint ── */
+        .firmas-section { margin-top: 32px; padding-top: 16px; border-top: 2px solid #2d3748; page-break-inside: avoid; }
+        .firmas-title { font-size: 11pt; font-weight: 700; color: #1a365d; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .firmas-grid { width: 100%; font-size: 0; }
+        .firma-card {
+            display: inline-block;
+            width: 30%;
+            margin: 0 1.5% 8px 1.5%;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 10px 8px;
+            text-align: center;
+            background: #fafafa;
+            vertical-align: top;
+            font-size: 10pt;
+            box-sizing: border-box;
+        }
+        .firma-card-header { font-size: 8.5pt; font-weight: 700; color: #2c5282; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .firma-imagen { width: 140px; height: 55px; margin: 0 auto 6px; display: block; }
+        .firma-linea { border-bottom: 1px solid #2d3748; width: 80%; margin: 0 auto 6px; }
+        .firma-nombre { font-size: 9.5pt; font-weight: 600; color: #2d3748; }
         .firma-cargo { font-size: 8pt; color: #718096; margin-top: 2px; }
-        .firma-fecha { font-size: 7pt; color: #a0aec0; margin-top: 4px; }
-        .firma-hash { font-size: 6pt; color: #cbd5e0; font-family: monospace; margin-top: 2px; word-break: break-all; }
-        .firma-pendiente { font-style: italic; color: #a0aec0; font-size: 9pt; padding: 20px 0; }
+        .firma-fecha { font-size: 7pt; color: #a0aec0; margin-top: 3px; }
+        .firma-hash { font-size: 5.5pt; color: #cbd5e0; font-family: monospace; margin-top: 2px; }
+        .firma-pendiente { font-style: italic; color: #a0aec0; font-size: 9pt; padding: 16px 0; }
 
-        /* --- QR verificable --- */
-        .qr-section { margin-top: 24px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-        .qr-code { width: 80px; height: 80px; }
-        .qr-info { font-size: 7pt; color: #a0aec0; line-height: 1.4; }
-        .qr-hash { font-family: monospace; font-size: 6.5pt; color: #718096; word-break: break-all; }
+        /* ── QR — float-based ── */
+        .qr-section { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px; overflow: hidden; }
+        .qr-section::after { content: ''; display: table; clear: both; }
+        .qr-code { float: left; width: 72px; height: 72px; margin-right: 12px; }
+        .qr-info { overflow: hidden; font-size: 7pt; color: #a0aec0; line-height: 1.5; }
+        .qr-hash { font-family: monospace; font-size: 6.5pt; color: #718096; }
+
+        /* ── Pie de generación ── */
+        .gen-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #a0aec0; }
     """
 
     def __init__(self, empresa=None):
@@ -227,6 +284,13 @@ class DocumentoPDFGenerator:
                 '</div>'
             )
 
+        nit_line = f'NIT: {empresa_info["nit"]}<br>' if empresa_info.get('nit') else ''
+        elaborado_nombre = documento.elaborado_por.get_full_name() if documento.elaborado_por else 'N/A'
+        revisado_nombre = documento.revisado_por.get_full_name() if documento.revisado_por else '—'
+        aprobado_nombre = documento.aprobado_por.get_full_name() if documento.aprobado_por else '—'
+        fecha_pub = documento.fecha_publicacion.strftime('%d/%m/%Y') if documento.fecha_publicacion else '—'
+        fecha_vig = documento.fecha_vigencia.strftime('%d/%m/%Y') if documento.fecha_vigencia else '—'
+
         html = f'''
         <!DOCTYPE html>
         <html>
@@ -238,18 +302,20 @@ class DocumentoPDFGenerator:
         </head>
         <body>
             {watermark_html}
+
+            <!-- Running header -->
             <div class="header">
                 {logo_img}
                 <div class="header-text">
-                    <strong>{empresa_info['razon_social']}</strong><br>
-                    NIT: {empresa_info['nit']}<br>
-                    {documento.codigo}
+                    <strong>{empresa_info['razon_social']}</strong>
+                    {nit_line}{documento.codigo}
                 </div>
             </div>
 
+            <!-- Running footer -->
             <div class="footer">
-                <span>{documento.codigo} | v{documento.version_actual}</span>
-                <span class="page-number"></span>
+                <span class="footer-left">{documento.codigo} | v{documento.version_actual} | {estado_display}</span>
+                <span class="footer-right page-number"></span>
             </div>
 
             {encabezado_html}
@@ -257,49 +323,47 @@ class DocumentoPDFGenerator:
             <h1>{documento.titulo}</h1>
 
             <div class="document-metadata">
-                <div class="metadata-grid">
-                    <div class="metadata-item">
-                        <span class="metadata-label">Codigo</span>
-                        <span class="metadata-value">{documento.codigo}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Version</span>
-                        <span class="metadata-value">{documento.version_actual}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Estado</span>
-                        <span class="metadata-value">
-                            <span class="estado-badge estado-{documento.estado}">{estado_display}</span>
-                        </span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Clasificacion</span>
-                        <span class="metadata-value">{clasificacion_display}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Tipo</span>
-                        <span class="metadata-value">{documento.tipo_documento.nombre}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Elaborado por</span>
-                        <span class="metadata-value">{documento.elaborado_por.get_full_name()}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Revisado por</span>
-                        <span class="metadata-value">{documento.revisado_por.get_full_name() if documento.revisado_por else 'N/A'}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Aprobado por</span>
-                        <span class="metadata-value">{documento.aprobado_por.get_full_name() if documento.aprobado_por else 'N/A'}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Fecha Publicacion</span>
-                        <span class="metadata-value">{documento.fecha_publicacion.strftime('%d/%m/%Y') if documento.fecha_publicacion else 'N/A'}</span>
-                    </div>
-                    <div class="metadata-item">
-                        <span class="metadata-label">Fecha Vigencia</span>
-                        <span class="metadata-value">{documento.fecha_vigencia.strftime('%d/%m/%Y') if documento.fecha_vigencia else 'N/A'}</span>
-                    </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Código</span>
+                    <span class="metadata-value">{documento.codigo}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Versión</span>
+                    <span class="metadata-value">{documento.version_actual}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Estado</span>
+                    <span class="metadata-value">
+                        <span class="estado-badge estado-{documento.estado}">{estado_display}</span>
+                    </span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Clasificación</span>
+                    <span class="metadata-value">{clasificacion_display}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Tipo de Documento</span>
+                    <span class="metadata-value">{documento.tipo_documento.nombre}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Elaborado por</span>
+                    <span class="metadata-value">{elaborado_nombre}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Revisado por</span>
+                    <span class="metadata-value">{revisado_nombre}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Aprobado por</span>
+                    <span class="metadata-value">{aprobado_nombre}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Fecha Publicación</span>
+                    <span class="metadata-value">{fecha_pub}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Fecha Vigencia</span>
+                    <span class="metadata-value">{fecha_vig}</span>
                 </div>
             </div>
 
@@ -313,21 +377,16 @@ class DocumentoPDFGenerator:
 
             {self._generar_bloque_qr(documento, empresa_info)}
 
-            <div class="section" style="margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-                <p style="font-size: 8pt; color: #a0aec0;">
-                    Documento generado el {datetime.now().strftime('%d/%m/%Y %H:%M')} |
-                    {empresa_info['razon_social']} |
-                    Gestión Documental StrateKaz
-                </p>
+            <div class="gen-footer">
+                Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')} &nbsp;|&nbsp;
+                {empresa_info['razon_social']} &nbsp;|&nbsp; StrateKaz SGI — Gestión Documental
             </div>
         </body>
         </html>
         '''
 
         pdf_buffer = BytesIO()
-        html_doc = HTML(string=html)
-        css = CSS(string=self.BASE_CSS + custom_css)
-        html_doc.write_pdf(pdf_buffer, stylesheets=[css])
+        HTML(string=html).write_pdf(pdf_buffer)
         pdf_buffer.seek(0)
         return pdf_buffer
 

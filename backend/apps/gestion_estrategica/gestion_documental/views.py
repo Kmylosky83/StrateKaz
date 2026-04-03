@@ -99,7 +99,7 @@ def _auto_distribuir_documento(documento, asignado_por, empresa, fecha_limite=No
 class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     """ViewSet para Tipos de Documento"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'configuracion'
     export_fields = [('codigo', 'Código'), ('nombre', 'Nombre'), ('nivel_documento', 'Nivel'), ('prefijo_codigo', 'Prefijo'), ('requiere_aprobacion', 'Req. Aprobación'), ('requiere_firma', 'Req. Firma')]
     export_filename = 'tipos_documento'
 
@@ -137,7 +137,7 @@ class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
     """ViewSet para Plantillas de Documento"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'configuracion'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -267,7 +267,7 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
 class CampoFormularioViewSet(viewsets.ModelViewSet):
     """ViewSet para Campos de Formulario"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'configuracion'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -321,7 +321,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     Use el método get_firmas_digitales() del documento o el endpoint /firmas/ para acceder a ellas.
     """
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'repositorio'
     export_fields = [('codigo', 'Código'), ('titulo', 'Título'), ('tipo_documento__nombre', 'Tipo'), ('estado', 'Estado'), ('version_actual', 'Versión'), ('clasificacion', 'Clasificación'), ('fecha_publicacion', 'Fecha Publicación'), ('fecha_vigencia', 'Fecha Vigencia')]
     export_filename = 'documentos'
 
@@ -1238,7 +1238,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 class VersionDocumentoViewSet(viewsets.ModelViewSet):
     """ViewSet para Versiones de Documento"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'archivo'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -1308,7 +1308,7 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
 class ControlDocumentalViewSet(viewsets.ModelViewSet):
     """ViewSet para Control Documental"""
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'archivo'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -1391,7 +1391,7 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
     ISO 7.3 Toma de Conciencia + Decreto 1072 Art. 2.2.4.6.10/12.
     """
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'documentos'
+    section_code = 'repositorio'
     http_method_names = ['get', 'post', 'patch']
 
     def get_permissions(self):

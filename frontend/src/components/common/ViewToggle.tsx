@@ -34,7 +34,7 @@ export interface ViewToggleProps<T extends string = string> {
   /** Tamaño del toggle */
   size?: 'sm' | 'md';
   /** Color del módulo para el estado activo */
-  moduleColor?: 'purple' | 'blue' | 'green' | 'orange' | 'gray';
+  moduleColor?: 'purple' | 'blue' | 'indigo' | 'green' | 'orange' | 'teal' | 'gray';
   /** Clases adicionales */
   className?: string;
 }
@@ -47,6 +47,14 @@ const colorStyles = {
   blue: {
     active: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
     hover: 'hover:bg-blue-50 dark:hover:bg-blue-900/20',
+  },
+  indigo: {
+    active: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+    hover: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
+  },
+  teal: {
+    active: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+    hover: 'hover:bg-teal-50 dark:hover:bg-teal-900/20',
   },
   green: {
     active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',

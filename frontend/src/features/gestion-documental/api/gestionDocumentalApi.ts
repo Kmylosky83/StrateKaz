@@ -96,11 +96,13 @@ export const documentoApi = {
   publicar: async (
     id: number,
     fecha_vigencia?: string,
-    lectura_obligatoria?: boolean
+    lectura_obligatoria?: boolean,
+    aplica_a_todos?: boolean
   ): Promise<Documento> => {
     const response = await apiClient.post(`${BASE_URL}/documentos/${id}/publicar/`, {
       fecha_vigencia,
       ...(lectura_obligatoria !== undefined && { lectura_obligatoria }),
+      ...(aplica_a_todos !== undefined && { aplica_a_todos }),
     });
     return response.data;
   },

@@ -194,6 +194,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       ...data,
       tipo_documento: Number(data.tipo_documento),
       elaborado_por: user?.id || 0,
+      // Convertir fechas vacías a undefined para que el backend no las valide
+      fecha_vigencia: data.fecha_vigencia || undefined,
+      fecha_revision_programada: data.fecha_revision_programada || undefined,
     };
 
     // For FORMULARIO, save form data and clear contenido

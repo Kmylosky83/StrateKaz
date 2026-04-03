@@ -134,6 +134,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         await publicarMutation.mutateAsync({
           id: documentoId,
           lectura_obligatoria: lecturaObligatoria,
+          aplica_a_todos: lecturaObligatoria,
         });
         setLecturaObligatoria(false);
         break;

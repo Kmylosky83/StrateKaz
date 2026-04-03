@@ -167,11 +167,13 @@ export function usePublicarDocumento() {
       id,
       fecha_vigencia,
       lectura_obligatoria,
+      aplica_a_todos,
     }: {
       id: number;
       fecha_vigencia?: string;
       lectura_obligatoria?: boolean;
-    }) => documentoApi.publicar(id, fecha_vigencia, lectura_obligatoria),
+      aplica_a_todos?: boolean;
+    }) => documentoApi.publicar(id, fecha_vigencia, lectura_obligatoria, aplica_a_todos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });

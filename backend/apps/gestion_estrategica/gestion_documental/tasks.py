@@ -77,7 +77,7 @@ def verificar_documentos_revision_programada():
                                         f'revisión programada vencida. Por favor programe '
                                         f'la revisión correspondiente.'
                                     ),
-                                    url='/gestion-documental/documentos',
+                                    url='/gestion-documental/documentos?section=repositorio',
                                     datos_extra={
                                         'documento_id': doc_id,
                                         'codigo': codigo,
@@ -167,7 +167,7 @@ def notificar_documentos_por_vencer():
                                         f'({dias_restantes} días restantes). '
                                         f'Planifique la revisión con anticipación.'
                                     ),
-                                    url='/gestion-documental/documentos',
+                                    url='/gestion-documental/documentos?section=repositorio',
                                     datos_extra={
                                         'documento_id': doc_id,
                                         'codigo': codigo,
@@ -299,7 +299,7 @@ def procesar_ocr_documento(self, documento_id: int, tenant_schema: str):
                             f'Método: {resultado["metodo"]}, '
                             f'Confianza: {resultado["confianza"]:.0%}.'
                         ),
-                        url='/gestion-documental/documentos',
+                        url='/gestion-documental/documentos?section=repositorio',
                         datos_extra={
                             'documento_id': documento.id,
                             'codigo': documento.codigo,
@@ -538,7 +538,7 @@ def generar_documento_desde_workflow(
                         f'el documento "{documento.titulo}" ({codigo}). '
                         f'Estado: {estado_inicial}.'
                     ),
-                    url='/gestion-documental/documentos',
+                    url='/gestion-documental/documentos?section=en_proceso',
                     datos_extra={
                         'documento_id': documento.id,
                         'codigo': codigo,
@@ -607,7 +607,7 @@ def exportar_drive_lote(
                         f'a Google Drive. '
                         f'{len(resultado["errores"])} errores.'
                     ),
-                    url='/gestion-documental/documentos',
+                    url='/gestion-documental/documentos?section=repositorio',
                     datos_extra=resultado,
                 )
 
@@ -674,7 +674,7 @@ def sellar_pdf_pyhanko(self, documento_id: int, tenant_schema: str,
                             f'El documento "{documento.titulo}" ({documento.codigo}) '
                             f'fue sellado exitosamente con firma digital X.509.'
                         ),
-                        url='/gestion-documental/documentos',
+                        url='/gestion-documental/documentos?section=repositorio',
                         datos_extra={
                             'documento_id': documento.id,
                             'codigo': documento.codigo,
@@ -754,7 +754,7 @@ def verificar_aceptaciones_vencidas():
                                 f'El plazo para leer "{aceptacion.documento.titulo}" '
                                 f'({aceptacion.documento.codigo}) ha vencido.'
                             ),
-                            url='/mi-portal',
+                            url='/mi-portal?tab=lecturas',
                             datos_extra={
                                 'documento_id': aceptacion.documento_id,
                                 'aceptacion_id': aceptacion.id,
@@ -861,7 +861,7 @@ def procesar_retencion_documentos():
                                         f'ha sido archivado automáticamente al cumplir '
                                         f'{retencion_anos} años de retención.'
                                     ),
-                                    url='/gestion-documental/documentos',
+                                    url='/gestion-documental/documentos?section=archivo',
                                     datos_extra={
                                         'documento_id': doc.id,
                                         'codigo': doc.codigo,
@@ -894,7 +894,7 @@ def procesar_retencion_documentos():
                                         f'Será archivado automáticamente el '
                                         f'{fecha_expiracion.strftime("%d/%m/%Y")}.'
                                     ),
-                                    url='/gestion-documental/documentos',
+                                    url='/gestion-documental/documentos?section=archivo',
                                     datos_extra={
                                         'documento_id': doc.id,
                                         'dias_restantes': dias_restantes,
@@ -925,7 +925,7 @@ def procesar_retencion_documentos():
                                         f'{dias_restantes} días '
                                         f'({fecha_expiracion.strftime("%d/%m/%Y")}).'
                                     ),
-                                    url='/gestion-documental/documentos',
+                                    url='/gestion-documental/documentos?section=archivo',
                                     datos_extra={
                                         'documento_id': doc.id,
                                         'dias_restantes': dias_restantes,
@@ -1021,7 +1021,7 @@ def recordar_aceptaciones_por_vencer():
                             f'El plazo vence {tiempo_label} '
                             f'({aceptacion.fecha_limite.strftime("%d/%m/%Y")}).'
                         ),
-                        url='/mi-portal',
+                        url='/mi-portal?tab=lecturas',
                         datos_extra={
                             'documento_id': aceptacion.documento_id,
                             'aceptacion_id': aceptacion.id,

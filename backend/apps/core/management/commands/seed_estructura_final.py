@@ -597,10 +597,11 @@ class Command(BaseCommand):
                         'route': 'documentos',
                         'orden': 1,
                         'sections': [
-                            {'code': 'tipos_documento', 'name': 'Tipos de Documento', 'icon': 'FileType', 'orden': 1, 'description': 'Clasificación: procedimiento, instructivo, formato, registro, manual, guía, protocolo'},
-                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'Files', 'orden': 2, 'description': 'Crear o cargar documentos. Flujo: Borrador → Revisión → Aprobado → Vigente → Obsoleto'},
-                            {'code': 'control_cambios', 'name': 'Control de Cambios', 'icon': 'History', 'orden': 3, 'description': 'Historial de versiones, quién cambió qué y cuándo'},
-                            {'code': 'distribucion', 'name': 'Distribución', 'icon': 'Share2', 'orden': 4, 'description': 'Control de copias y distribución. Registro de lectura y firma por colaborador'},
+                            {'code': 'dashboard', 'name': 'Dashboard', 'icon': 'LayoutDashboard', 'orden': 1, 'description': 'Centro de control documental: mis borradores, firmas pendientes, próximas revisiones y cobertura'},
+                            {'code': 'repositorio', 'name': 'Repositorio', 'icon': 'Files', 'orden': 2, 'description': 'Todos los documentos del sistema. Búsqueda full-text OCR, filtros por estado, tipo y área'},
+                            {'code': 'en_proceso', 'name': 'En Proceso', 'icon': 'GitPullRequest', 'orden': 3, 'description': 'Documentos activos en flujo: borradores, en revisión y pendientes de firma'},
+                            {'code': 'archivo', 'name': 'Archivo', 'icon': 'Archive', 'orden': 4, 'description': 'Documentos vigentes, historial de versiones, control de retención y documentos archivados'},
+                            {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings2', 'orden': 5, 'description': 'Tipos de documento, plantillas SGI y biblioteca maestra'},
                         ]
                     },
                     # NOTA: Auditorías Internas removido de gestion_documental.

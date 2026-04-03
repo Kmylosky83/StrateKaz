@@ -547,3 +547,6 @@ function DocumentActions({
     </div>
   );
 }
+
+/** Alias para la nueva arquitectura de tabs — sección 'repositorio' */
+export { DocumentosSection as RepositorioSection };

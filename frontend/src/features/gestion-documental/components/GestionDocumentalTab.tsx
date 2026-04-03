@@ -1,28 +1,37 @@
 /**
- * Tab de Gestión Documental - Sistema de Gestión
+ * GestionDocumentalTab — Router principal por sección activa.
  *
- * Secciones desde BD (TabSection.code):
- * - tipos_documento: Tipos de Documento y Plantillas
- * - documentos: Constructor y Listado Maestro
- * - control_cambios: Control de Versiones y Firmas
- * - distribucion: Distribución y Control Documental
+ * Nueva arquitectura de 5 tabs con narrativa de ciclo de vida:
  *
- * Reutiliza hooks de gestion-estrategica/gestion-documental
+ *  dashboard     → Centro de control personal (métricas, urgentes, cobertura)
+ *  repositorio   → Todos los documentos — buscar, crear, ingestar
+ *  en_proceso    → Flujo activo: borradores, firmas pendientes, en revisión
+ *  archivo       → Vigentes, historial de versiones, distribución, archivados
+ *  configuracion → Tipos de documento, plantillas, biblioteca maestra
+ *
+ * Nota: "Mis Lecturas" viven exclusivamente en Mi Portal (/mi-portal?tab=lecturas).
+ * Las notificaciones de firmas ya apuntan a section=en_proceso.
  */
 import { GenericSectionFallback } from '@/components/common';
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
+import { DashboardDocumentalSection } from './DashboardDocumentalSection';
+import { RepositorioSection } from './DocumentosSection';
+import { EnProcesoSection } from './EnProcesoSection';
+import { ArchivoSection } from './ArchivoSection';
 import { TiposPlantillasSection } from './TiposPlantillasSection';
-import { DocumentosSection } from './DocumentosSection';
-import { ControlCambiosSection } from './ControlCambiosSection';
-import { DistribucionSection } from './DistribucionSection';
-import { BibliotecaSection } from './BibliotecaSection';
 
 const SECTION_KEYS = {
-  TIPOS_DOCUMENTO: 'tipos_documento',
+  DASHBOARD: 'dashboard',
+  REPOSITORIO: 'repositorio',
+  EN_PROCESO: 'en_proceso',
+  ARCHIVO: 'archivo',
+  CONFIGURACION: 'configuracion',
+  // Compatibilidad con secciones antiguas (redirigen a la nueva correcta)
   DOCUMENTOS: 'documentos',
   CONTROL_CAMBIOS: 'control_cambios',
   DISTRIBUCION: 'distribucion',
+  TIPOS_DOCUMENTO: 'tipos_documento',
   BIBLIOTECA: 'biblioteca',
 } as const;
 
@@ -37,6 +46,7 @@ interface GestionDocumentalTabProps {
   onViewDocumento: (id: number) => void;
   onFirmar?: (firmaId: number, rolDisplay?: string) => void;
   onRechazar?: (firmaId: number) => void;
+  onNavigateToSection?: (section: string) => void;
 }
 
 export const GestionDocumentalTab = ({
@@ -50,9 +60,45 @@ export const GestionDocumentalTab = ({
   onViewDocumento,
   onFirmar,
   onRechazar,
+  onNavigateToSection,
 }: GestionDocumentalTabProps) => {
-  switch (activeSection) {
-    case SECTION_KEYS.TIPOS_DOCUMENTO:
+  // Normalizar secciones antiguas a las nuevas para retrocompatibilidad
+  // con notificaciones o bookmarks que todavía usen los códigos viejos
+  const normalizedSection = normalizeSection(activeSection);
+
+  switch (normalizedSection) {
+    case SECTION_KEYS.DASHBOARD:
+      return (
+        <DashboardDocumentalSection
+          onViewDocumento={onViewDocumento}
+          onFirmar={onFirmar}
+          onNavigateToSection={onNavigateToSection}
+        />
+      );
+
+    case SECTION_KEYS.REPOSITORIO:
+      return (
+        <RepositorioSection
+          onCreateDocumento={onCreateDocumento}
+          onEditDocumento={onEditDocumento}
+          onViewDocumento={onViewDocumento}
+        />
+      );
+
+    case SECTION_KEYS.EN_PROCESO:
+      return (
+        <EnProcesoSection
+          onViewDocumento={onViewDocumento}
+          onEditDocumento={onEditDocumento}
+          onFirmar={onFirmar}
+          onRechazar={onRechazar}
+        />
+      );
+
+    case SECTION_KEYS.ARCHIVO:
+      return <ArchivoSection onViewDocumento={onViewDocumento} />;
+
+    case SECTION_KEYS.CONFIGURACION:
       return (
         <TiposPlantillasSection
           onCreateTipo={onCreateTipo}
@@ -61,27 +107,23 @@ export const GestionDocumentalTab = ({
           onEditPlantilla={onEditPlantilla}
         />
       );
-    case SECTION_KEYS.DOCUMENTOS:
-      return (
-        <DocumentosSection
-          onCreateDocumento={onCreateDocumento}
-          onEditDocumento={onEditDocumento}
-          onViewDocumento={onViewDocumento}
-        />
-      );
-    case SECTION_KEYS.CONTROL_CAMBIOS:
-      return (
-        <ControlCambiosSection
-          onViewDocumento={onViewDocumento}
-          onFirmar={onFirmar}
-          onRechazar={onRechazar}
-        />
-      );
-    case SECTION_KEYS.DISTRIBUCION:
-      return <DistribucionSection onViewDocumento={onViewDocumento} />;
-    case SECTION_KEYS.BIBLIOTECA:
-      return <BibliotecaSection />;
+
     default:
       return <GenericSectionFallback sectionCode={activeSection} parentName="Gestión Documental" />;
   }
 };
+
+/**
+ * Mapea secciones antiguas a las nuevas para no romper notificaciones
+ * ni links externos que todavía usen los códigos anteriores.
+ */
+function normalizeSection(section: string): string {
+  const LEGACY_MAP: Record<string, string> = {
+    documentos: 'repositorio',
+    control_cambios: 'en_proceso',
+    distribucion: 'archivo',
+    tipos_documento: 'configuracion',
+    biblioteca: 'configuracion',
+  };
+  return LEGACY_MAP[section] ?? section;
+}

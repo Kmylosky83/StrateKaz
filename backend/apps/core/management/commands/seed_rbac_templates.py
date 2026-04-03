@@ -37,13 +37,13 @@ SENSITIVE_SECTIONS = {
 OPERATIONAL_DELETE_SECTIONS = {
     'vacantes', 'candidatos', 'contratacion', 'directorio',
     'hoja_vida', 'contratos', 'programas_induccion', 'afiliaciones',
-    'entrega_dotacion', 'documentos', 'tipos_documento',
+    'entrega_dotacion', 'documentos', 'repositorio', 'tipos_documento', 'configuracion',
     'instancias', 'flujos',
 }
 
 # Secciones donde un analista puede editar (formularios y registros directos)
 ANALYST_EDIT_SECTIONS = {
-    'documentos', 'control_cambios', 'distribucion',
+    'documentos', 'repositorio', 'en_proceso', 'archivo', 'configuracion',
     'vacantes', 'candidatos', 'contratacion',
     'directorio', 'hoja_vida', 'contratos',
     'programas_induccion', 'afiliaciones', 'entrega_dotacion',

@@ -167,6 +167,7 @@ export const GestionDocumentalPage = () => {
           onViewDocumento={(id) => setDocumentoDetailModal({ isOpen: true, documentoId: id })}
           onFirmar={handleFirmar}
           onRechazar={handleRechazar}
+          onNavigateToSection={setActiveSection}
         />
       )}
 

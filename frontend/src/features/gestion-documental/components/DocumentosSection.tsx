@@ -82,7 +82,7 @@ export function DocumentosSection({
   onViewDocumento,
 }: DocumentosSectionProps) {
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.DOCUMENTOS, 'create');
+  const canCreate = canDo(Modules.GESTION_DOCUMENTAL, Sections.REPOSITORIO, 'create');
   const isSuperAdmin = useIsSuperAdmin();
 
   const { data: documentos, isLoading } = useDocumentos();
@@ -207,7 +207,7 @@ export function DocumentosSection({
           />
           {!isSuperAdmin && (
             <>
-              <ProtectedAction permission="gestion_documental.documentos.create">
+              <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
                   variant="outline"
                   size="sm"
@@ -217,7 +217,7 @@ export function DocumentosSection({
                   Ingestar PDF
                 </Button>
               </ProtectedAction>
-              <ProtectedAction permission="gestion_documental.documentos.create">
+              <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
                   variant="outline"
                   size="sm"
@@ -227,7 +227,7 @@ export function DocumentosSection({
                   Ingesta Masiva
                 </Button>
               </ProtectedAction>
-              <ProtectedAction permission="gestion_documental.documentos.create">
+              <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
                   variant="primary"
                   size="sm"
@@ -472,7 +472,7 @@ function DocumentActions({
           <Eye className="w-4 h-4" />
         </button>
         {canAssignFirmas && (
-          <ProtectedAction permission="gestion_documental.documentos.edit">
+          <ProtectedAction permission="gestion_documental.repositorio.edit">
             <button
               className="p-1.5 rounded-md text-primary-500 hover:text-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:text-primary-400 transition-colors"
               onClick={() => onSolicitarFirmas(documento)}
@@ -484,12 +484,12 @@ function DocumentActions({
         )}
         {documento.estado === 'BORRADOR' && (
           <>
-            <ProtectedAction permission="gestion_documental.documentos.edit">
+            <ProtectedAction permission="gestion_documental.repositorio.edit">
               <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
                 <Edit className="w-4 h-4" />
               </button>
             </ProtectedAction>
-            <ProtectedAction permission="gestion_documental.documentos.delete">
+            <ProtectedAction permission="gestion_documental.repositorio.delete">
               <button
                 className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
                 onClick={() => onDelete(documento)}
@@ -515,7 +515,7 @@ function DocumentActions({
         Ver
       </Button>
       {canAssignFirmas && (
-        <ProtectedAction permission="gestion_documental.documentos.edit">
+        <ProtectedAction permission="gestion_documental.repositorio.edit">
           <Button
             variant="primary"
             size="sm"
@@ -528,12 +528,12 @@ function DocumentActions({
       )}
       {documento.estado === 'BORRADOR' && (
         <>
-          <ProtectedAction permission="gestion_documental.documentos.edit">
+          <ProtectedAction permission="gestion_documental.repositorio.edit">
             <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
               <Edit className="w-4 h-4" />
             </button>
           </ProtectedAction>
-          <ProtectedAction permission="gestion_documental.documentos.delete">
+          <ProtectedAction permission="gestion_documental.repositorio.delete">
             <button
               className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
               onClick={() => onDelete(documento)}

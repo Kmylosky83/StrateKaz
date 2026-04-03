@@ -100,7 +100,13 @@ export const Sections = {
   BRANDING: 'branding',
   ESTRATEGIA: 'estrategia',
 
-  // ── GESTIÓN DOCUMENTAL ──
+  // ── GESTIÓN DOCUMENTAL (sección codes actuales) ──
+  DASHBOARD_DOCUMENTAL: 'dashboard',
+  REPOSITORIO: 'repositorio',
+  EN_PROCESO: 'en_proceso',
+  ARCHIVO: 'archivo',
+  CONFIGURACION_DOCUMENTAL: 'configuracion',
+  // @deprecated — usar los códigos de arriba
   TIPOS_DOCUMENTO: 'tipos_documento',
   DOCUMENTOS: 'documentos',
   CONTROL_CAMBIOS: 'control_cambios',

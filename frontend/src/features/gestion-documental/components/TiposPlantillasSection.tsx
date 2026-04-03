@@ -85,7 +85,11 @@ export function TiposPlantillasSection({
   onEditPlantilla,
 }: TiposPlantillasSectionProps) {
   const { canDo } = usePermissions();
-  const canCreateTipo = canDo(Modules.GESTION_DOCUMENTAL, Sections.TIPOS_DOCUMENTO, 'create');
+  const canCreateTipo = canDo(
+    Modules.GESTION_DOCUMENTAL,
+    Sections.CONFIGURACION_DOCUMENTAL,
+    'create'
+  );
 
   const { data: tipos, isLoading: tiposLoading } = useTiposDocumento();
   const { data: plantillas, isLoading: plantillasLoading } = usePlantillasDocumento();
@@ -141,7 +145,7 @@ export function TiposPlantillasSection({
             options={VIEW_OPTIONS}
             moduleColor="blue"
           />
-          <ProtectedAction permission="gestion_documental.tipos_documento.create">
+          <ProtectedAction permission="gestion_documental.configuracion.create">
             <Button
               variant="primary"
               size="sm"
@@ -206,7 +210,7 @@ export function TiposPlantillasSection({
             </span>
           </button>
           <div className="shrink-0 ml-3">
-            <ProtectedAction permission="gestion_documental.tipos_documento.create">
+            <ProtectedAction permission="gestion_documental.configuracion.create">
               <Button
                 variant="outline"
                 size="sm"
@@ -449,7 +453,7 @@ function TiposListView({
                 </Badge>
               </div>
               <div className="flex items-center gap-1 justify-end">
-                <ProtectedAction permission="gestion_documental.tipos_documento.edit">
+                <ProtectedAction permission="gestion_documental.configuracion.edit">
                   <button
                     className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
                     onClick={() => onEdit(tipo)}
@@ -458,7 +462,7 @@ function TiposListView({
                     <Edit className="w-4 h-4" />
                   </button>
                 </ProtectedAction>
-                <ProtectedAction permission="gestion_documental.tipos_documento.delete">
+                <ProtectedAction permission="gestion_documental.configuracion.delete">
                   <button
                     className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
                     onClick={() => onDelete(tipo)}
@@ -561,7 +565,7 @@ function PlantillasListView({
                 </Badge>
               </div>
               <div className="flex items-center gap-1 justify-end">
-                <ProtectedAction permission="gestion_documental.tipos_documento.edit">
+                <ProtectedAction permission="gestion_documental.configuracion.edit">
                   <button
                     className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
                     onClick={() => onEdit(p)}
@@ -570,7 +574,7 @@ function PlantillasListView({
                     <Edit className="w-4 h-4" />
                   </button>
                 </ProtectedAction>
-                <ProtectedAction permission="gestion_documental.tipos_documento.delete">
+                <ProtectedAction permission="gestion_documental.configuracion.delete">
                   <button
                     className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
                     onClick={() => onDelete(p)}
@@ -619,7 +623,7 @@ function TipoMenu({
           className="absolute right-0 top-8 z-50 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
           onClick={(e) => e.stopPropagation()}
         >
-          <ProtectedAction permission="gestion_documental.tipos_documento.edit">
+          <ProtectedAction permission="gestion_documental.configuracion.edit">
             <Button
               variant="ghost"
               size="sm"
@@ -632,7 +636,7 @@ function TipoMenu({
               <Edit className="w-3 h-3" /> Editar
             </Button>
           </ProtectedAction>
-          <ProtectedAction permission="gestion_documental.tipos_documento.delete">
+          <ProtectedAction permission="gestion_documental.configuracion.delete">
             <Button
               variant="ghost"
               size="sm"

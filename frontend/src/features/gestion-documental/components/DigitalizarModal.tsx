@@ -113,8 +113,7 @@ interface DigitalizarModalProps {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function DigitalizarModal({ isOpen, documento, onClose }: DigitalizarModalProps) {
-  const tipoCodigo = (documento as Documento & { tipo_documento_codigo?: string })
-    .tipo_documento_codigo;
+  const tipoCodigo = documento.tipo_documento_codigo;
 
   const plantillaSecciones = getSecciones(tipoCodigo);
 
@@ -128,7 +127,13 @@ export default function DigitalizarModal({ isOpen, documento, onClose }: Digital
   const { data: cargos = [], isLoading: loadingCargos } = useSelectCargos();
   const digitalizarMutation = useDigitalizar();
 
-  const pdfUrl = documento.archivo_original || documento.archivo_pdf || null;
+  // Normalizar URL: extraer /media/... para que el proxy Vite resuelva same-origin
+  const toProxied = (url: string | null | undefined) => {
+    if (!url) return null;
+    const m = url.match(/\/media\/.+/);
+    return m ? m[0] : url;
+  };
+  const pdfUrl = toProxied(documento.archivo_original) || toProxied(documento.archivo_pdf);
 
   const handleSeccionChange = useCallback(
     (idx: number, field: 'label' | 'contenido', value: string) => {

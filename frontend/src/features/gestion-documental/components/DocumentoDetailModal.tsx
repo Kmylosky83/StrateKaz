@@ -325,7 +325,15 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
               {activeTab === 'contenido' &&
                 (() => {
-                  const pdfUrl = documento.archivo_pdf || documento.archivo_original;
+                  // Normalizar URL: extraer solo el path /media/... para que el proxy Vite
+                  // lo resuelva en la misma origin (localhost:3010) evitando X-Frame-Options
+                  const toProxied = (url: string | null | undefined) => {
+                    if (!url) return null;
+                    const m = url.match(/\/media\/.+/);
+                    return m ? m[0] : url;
+                  };
+                  const pdfUrl =
+                    toProxied(documento.archivo_pdf) || toProxied(documento.archivo_original);
                   const tieneContenido = documento.contenido?.replace(/<[^>]*>/g, '').trim();
                   return (
                     <div className="space-y-4">

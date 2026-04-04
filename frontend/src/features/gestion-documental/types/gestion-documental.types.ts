@@ -176,6 +176,8 @@ export interface Documento {
   codigo: string;
   titulo: string;
   tipo_documento: number;
+  tipo_documento_nombre?: string;
+  tipo_documento_codigo?: string;
   tipo_documento_detail?: TipoDocumento;
   plantilla: number | null;
   plantilla_detail?: PlantillaDocumento;

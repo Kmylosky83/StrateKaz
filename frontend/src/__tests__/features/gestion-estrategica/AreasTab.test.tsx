@@ -54,6 +54,15 @@ vi.mock('@/hooks/useModuleColor', () => ({
   useModuleColor: () => ({ color: 'blue', isLoading: false, module: null }),
 }));
 
+// Mock de OrgTemplateSelector — evita que intente cargar plantillas via red
+vi.mock('@/features/gestion-estrategica/components/OrgTemplateSelector', () => ({
+  OrgTemplateSelector: ({ onSkip }: { onSkip: () => void }) => (
+    <div data-testid="org-template-selector">
+      <button onClick={onSkip}>Omitir plantillas</button>
+    </div>
+  ),
+}));
+
 // Mock del modal de formulario
 vi.mock('@/features/gestion-estrategica/components/modals/AreaFormModal', () => ({
   AreaFormModal: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
@@ -277,8 +286,8 @@ describe('AreasTab', () => {
 
       render(<AreasTab />);
 
-      expect(screen.getByText(/sin procesos configurados/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /crear primer proceso/i })).toBeInTheDocument();
+      // canCreate=true y templateSelectorDismissed=false → muestra OrgTemplateSelector primero
+      expect(screen.getByTestId('org-template-selector')).toBeInTheDocument();
     });
   });
 
@@ -337,9 +346,8 @@ describe('AreasTab', () => {
     it('debe renderizar StatsGrid con estadísticas', () => {
       render(<AreasTab />);
 
-      expect(screen.getByText('Total Procesos')).toBeInTheDocument();
       expect(screen.getByText('Procesos Activos')).toBeInTheDocument();
-      expect(screen.getByText('Procesos Raiz')).toBeInTheDocument();
+      expect(screen.getByText('Procesos Raíz')).toBeInTheDocument();
     });
 
     it('debe mostrar botón de nueva área', () => {

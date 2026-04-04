@@ -55,6 +55,7 @@ let mockIsLoadingUser = false;
 
 vi.mock('@/features/mi-portal/api/miPortalApi', () => ({
   useMiPerfil: (...args: unknown[]) => mockUseMiPerfil(...args),
+  useAdminStats: () => ({ data: null, isLoading: false }),
 }));
 
 vi.mock('@/hooks/usePermissions', () => ({

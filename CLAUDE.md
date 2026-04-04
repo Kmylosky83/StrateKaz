@@ -88,7 +88,7 @@ StrateKaz/
 
 ---
 
-## Arquitectura: 5 Capas + Portales
+## Arquitectura: 6 Capas + Portales
 
 El sistema se organiza en capas con independencia estricta entre modulos:
 
@@ -104,14 +104,17 @@ C1 — FUNDACION (se configura 1 vez, afecta a todos)
   ├── Identidad Corporativa (mision, vision, valores)     → gestion_estrategica/identidad
   └── Contexto Organizacional (partes interesadas, DOFA)  → gestion_estrategica/contexto
 
-C2 — MODULOS DE NEGOCIO (14 independientes)
-  Planeacion Estrategica  │ Sistema de Gestion    │ Cumplimiento Legal
-  Gestion de Riesgos      │ Workflows             │ Gestion HSEQ
-  Auditoria Interna       │ Talent Hub (11 sub)   │ Supply Chain
-  Production Ops          │ Logistics & Fleet     │ Sales CRM
-  Admin Finance           │ Accounting
+CT — INFRAESTRUCTURA TRANSVERSAL (todos los C2 consumen, nunca importan entre si)
+  ├── Gestion Documental (8 fases, 7 modelos)      → gestion_estrategica/gestion_documental
+  └── Workflow Engine (flujos, ejecucion, firmas)   → workflow_engine/*
 
-C3 — INTELIGENCIA (lee de C2, NO modifica)
+C2 — MODULOS DE NEGOCIO (12 independientes, consumen CT)
+  Planeacion Estrategica  │ Cumplimiento Legal     │ Gestion de Riesgos
+  Gestion HSEQ            │ Auditoria Interna      │ Supply Chain
+  Production Ops          │ Logistics & Fleet      │ Sales CRM
+  Talent Hub (12 sub)     │ Admin Finance          │ Accounting
+
+C3 — INTELIGENCIA (lee de C2 y CT, NO modifica)
   ├── Analytics (KPIs, dashboards, informes, tendencias)
   └── Revision por la Direccion
 
@@ -120,22 +123,30 @@ PORTALES (solo UI, sin logica propia)
 ```
 
 ### Reglas de independencia
+- **CT sirve a C2** — cualquier C2 puede consumir endpoints de CT (documentos, firmas, workflows).
+- **CT NUNCA importa de C2** — gestion_documental y workflow_engine no importan de talent_hub, supply_chain, etc.
 - **C2 NUNCA importa de otro C2** — Backend: `apps.get_model()` + IntegerField. Frontend: `useSelect*` hooks.
-- **C3 SOLO LEE de C2** — via API endpoints, nunca escribe en tablas de C2.
+- **C3 lee de C2 y CT** — via API endpoints, nunca escribe en tablas de C2 ni CT.
 - **audit_system ≠ Auditoria Interna** — audit_system (C0) = logs/alertas. Auditoria Interna (C2) = auditorias ISO.
 
-### 6 Grupos Visuales (Sidebar + Dashboard)
+### 12 Grupos Visuales — Sidebar PHVA (Planear-Hacer-Verificar-Actuar)
 
-Las 5 capas arquitectónicas NO cambian. C2 se sub-agrupa en 4 para navegación:
+Las 6 capas arquitectónicas se mapean a 12 grupos de sidebar bajo modelo PHVA:
 
-| Grupo | Code | Módulos | Color |
-|-------|------|---------|-------|
-| Fundación | NIVEL_C1 | fundacion | `#3B82F6` |
-| Planeación Estratégica | NIVEL_PE | planeacion_estrategica | `#6366F1` |
-| Sistema de Gestión | NIVEL_SGI | sistema_gestion, motor_cumplimiento, motor_riesgos | `#0EA5E9` |
-| Operaciones | NIVEL_OPS | hseq_management, supply_chain, production_ops, logistics_fleet, sales_crm, workflow_engine | `#10B981` |
-| Organización | NIVEL_ORG | talent_hub, admin_finance, accounting | `#F59E0B` |
-| Inteligencia | NIVEL_C3 | analytics, revision_direccion, audit_system | `#8B5CF6` |
+| Grupo | Code | Módulos | Color | Capa |
+|-------|------|---------|-------|------|
+| Fundación | NIVEL_FUNDACION | fundacion | `#3B82F6` | C1 |
+| Infraestructura | NIVEL_INFRAESTRUCTURA | gestion_documental | `#6366F1` | CT |
+| Gestión de Personas | NIVEL_EQUIPO | mi_equipo | `#0EA5E9` | C2 |
+| Planificación | NIVEL_PLANIFICACION | planificacion_operativa, planeacion_estrategica | `#6366F1` | C2 |
+| Protección y Cumplimiento | NIVEL_PROTECCION | proteccion_cumplimiento | `#F59E0B` | C2 |
+| Gestión Integral | NIVEL_HSEQ | gestion_integral | `#10B981` | C2 |
+| Cadena de Valor | NIVEL_CADENA | supply_chain, production_ops, logistics_fleet, sales_crm | `#10B981` | C2 |
+| Gestión del Talento | NIVEL_TALENTO | talent_hub | `#8B5CF6` | C2 |
+| Soporte | NIVEL_SOPORTE | administracion, tesoreria, accounting | `#F59E0B` | C2 |
+| Inteligencia | NIVEL_INTELIGENCIA | analytics, revision_direccion, acciones_mejora, audit_system | `#8B5CF6` | C3 |
+| Flujos de Trabajo | NIVEL_WORKFLOWS | workflow_engine | `#0891B2` | CT |
+| Configuración | NIVEL_CONFIG | configuracion_plataforma | `#64748B` | C0 |
 
 - Sidebar: 1-módulo layers → render directo (sin wrapper). 2+ módulos → `is_category: True`.
 - Dashboard: `/tree/` endpoint incluye `layers` → DashboardPage agrupa con headers.
@@ -149,11 +160,12 @@ Las 5 capas arquitectónicas NO cambian. C2 se sub-agrupa en 4 para navegación:
 | C0 | tenant | schemas, domains, plans |
 | C0 | audit_system | logs_sistema, config_alertas, centro_notificaciones, tareas_recordatorios |
 | C1 | gestion_estrategica | configuracion, organizacion, identidad, contexto |
-| C2 | gestion_estrategica | planeacion, encuestas, gestion_proyectos, gestion_documental, planificacion_sistema |
+| CT | gestion_estrategica | gestion_documental (7 modelos, 8 fases) |
+| CT | workflow_engine | disenador_flujos, ejecucion, monitoreo, firma_digital |
+| C2 | gestion_estrategica | planeacion, encuestas, gestion_proyectos, planificacion_sistema |
 | C2 | gestion_estrategica | revision_direccion (UI en C3) |
 | C2 | motor_cumplimiento | matriz_legal, requisitos_legales, reglamentos_internos, evidencias |
 | C2 | motor_riesgos | riesgos_procesos, ipevr, aspectos_ambientales, riesgos_viales, seguridad_informacion, sagrilaft_ptee |
-| C2 | workflow_engine | disenador_flujos, ejecucion, monitoreo, firma_digital |
 | C2 | hseq_management | accidentalidad, seguridad_industrial, higiene_industrial, medicina_laboral, emergencias, gestion_ambiental, gestion_comites |
 | C2 | supply_chain | catalogos, gestion_proveedores, compras, almacenamiento, programacion_abastecimiento |
 | C2 | production_ops | recepcion, procesamiento, producto_terminado, mantenimiento |

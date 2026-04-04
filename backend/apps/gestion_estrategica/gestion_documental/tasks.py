@@ -111,6 +111,57 @@ def verificar_documentos_revision_programada():
 
 
 @shared_task(
+    name='documental.crear_borradores_revision_automatica',
+    queue='compliance',
+    max_retries=2,
+    soft_time_limit=600,
+)
+def crear_borradores_revision_automatica():
+    """
+    Diario 7:00AM: Para cada documento PUBLICADO con revisión vencida,
+    inicia automáticamente un nuevo ciclo BORRADOR (vX+1.0).
+
+    Solo actúa si el documento sigue en PUBLICADO (idempotente).
+    El task verificar_revisiones_programadas (7:15AM) notifica sin cambiar estado.
+    """
+    total_iniciados = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                from .services import DocumentoService
+
+                docs_vencidos = DocumentoService.verificar_revisiones_programadas()
+                for doc_id, codigo, titulo, empresa_id, _elaborado_por_id in docs_vencidos:
+                    try:
+                        _doc, creado = DocumentoService.iniciar_revision_automatica(
+                            documento_id=doc_id,
+                            empresa_id=empresa_id,
+                        )
+                        if creado:
+                            total_iniciados += 1
+                            logger.info(
+                                '[%s] Revisión automática iniciada: %s "%s"',
+                                tenant.schema_name, codigo, titulo,
+                            )
+                    except Exception as e:
+                        logger.error(
+                            '[%s] Error iniciando revisión de %s: %s',
+                            tenant.schema_name, codigo, e,
+                        )
+        except Exception as e:
+            logger.error(
+                '[documental] Error en crear_borradores_revision en tenant %s: %s',
+                tenant.schema_name, e,
+            )
+
+    logger.info(
+        '[documental] crear_borradores_revision_automatica: %d iniciados', total_iniciados
+    )
+    return {'status': 'ok', 'revisiones_iniciadas': total_iniciados}
+
+
+@shared_task(
     name='documental.notificar_documentos_por_vencer',
     queue='notifications',
     max_retries=2,

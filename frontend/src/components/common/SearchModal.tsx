@@ -11,9 +11,12 @@
  * - Debounce en la busqueda
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Search, X, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { SEARCH_MODAL_LABELS } from '@/constants';
+import apiClient from '@/api/axios-config';
 
 export interface SearchModalProps {
   /** Si el modal esta abierto */
@@ -30,6 +33,32 @@ export interface SearchModalProps {
   anchorRef?: React.RefObject<HTMLElement>;
 }
 
+interface DocumentoResult {
+  id: number;
+  codigo: string;
+  titulo: string;
+  estado: string;
+  tipo_documento_nombre: string;
+}
+
+const ESTADO_LABELS: Record<string, string> = {
+  PUBLICADO: 'Publicado',
+  BORRADOR: 'Borrador',
+  EN_REVISION: 'En Revisión',
+  APROBADO: 'Aprobado',
+  OBSOLETO: 'Obsoleto',
+  ARCHIVADO: 'Archivado',
+};
+
+const ESTADO_COLORS: Record<string, string> = {
+  PUBLICADO: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+  BORRADOR: 'text-gray-500 bg-gray-100 dark:bg-gray-700 dark:text-gray-400',
+  EN_REVISION: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400',
+  APROBADO: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400',
+  OBSOLETO: 'text-red-500 bg-red-50 dark:bg-red-900/20 dark:text-red-400',
+  ARCHIVADO: 'text-gray-400 bg-gray-50 dark:bg-gray-800 dark:text-gray-500',
+};
+
 export const SearchModal = ({
   isOpen,
   onClose,
@@ -37,8 +66,39 @@ export const SearchModal = ({
   value,
   onChange,
 }: SearchModalProps) => {
+  const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Debounce 350ms
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(value), 350);
+    return () => clearTimeout(t);
+  }, [value]);
+
+  // Búsqueda de documentos via tsvector (≥3 chars)
+  const { data: docResults, isFetching } = useQuery({
+    queryKey: ['global-search-docs', debouncedQuery],
+    queryFn: async () => {
+      const res = await apiClient.get('/gestion-estrategica/documentos/', {
+        params: { buscar: debouncedQuery, page_size: 6 },
+      });
+      const items = Array.isArray(res.data) ? res.data : (res.data?.results ?? []);
+      return items as DocumentoResult[];
+    },
+    enabled: debouncedQuery.length >= 3,
+    staleTime: 30_000,
+  });
+
+  const handleSelect = useCallback(
+    (id: number) => {
+      navigate(`/gestion-documental/documentos?documento_id=${id}`);
+      onClose();
+      onChange('');
+    },
+    [navigate, onClose, onChange]
+  );
 
   // Focus en el input cuando se abre
   useEffect(() => {
@@ -80,6 +140,7 @@ export const SearchModal = ({
 
   const handleClear = useCallback(() => {
     onChange('');
+    setDebouncedQuery('');
     inputRef.current?.focus();
   }, [onChange]);
 
@@ -143,25 +204,86 @@ export const SearchModal = ({
         </div>
 
         {/* Contenido - Resultados o sugerencias */}
-        <div className="p-4 max-h-[300px] overflow-y-auto">
-          {value ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {/* TODO: Mostrar resultados de busqueda */}
-              <p>{SEARCH_MODAL_LABELS.SEARCHING(value)}</p>
+        <div className="max-h-[360px] overflow-y-auto">
+          {/* Resultados de documentos */}
+          {debouncedQuery.length >= 3 && (
+            <div className="p-2">
+              {isFetching ? (
+                <div className="flex items-center justify-center py-6 gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Buscando...
+                </div>
+              ) : !docResults || docResults.length === 0 ? (
+                <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Sin resultados para &ldquo;{debouncedQuery}&rdquo;
+                </div>
+              ) : (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide px-2 py-1.5">
+                    Documentos ({docResults.length})
+                  </p>
+                  {docResults.map((doc) => (
+                    <button
+                      key={doc.id}
+                      onClick={() => handleSelect(doc.id)}
+                      className={cn(
+                        'w-full flex items-start gap-3 px-3 py-2.5 rounded-lg text-left',
+                        'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors'
+                      )}
+                    >
+                      <FileText className="w-4 h-4 text-indigo-500 dark:text-indigo-400 mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
+                            {doc.codigo}
+                          </span>
+                          <span
+                            className={cn(
+                              'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                              ESTADO_COLORS[doc.estado] ?? 'text-gray-500 bg-gray-100'
+                            )}
+                          >
+                            {ESTADO_LABELS[doc.estado] ?? doc.estado}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                          {doc.titulo}
+                        </p>
+                        {doc.tipo_documento_nombre && (
+                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                            {doc.tipo_documento_nombre}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {SEARCH_MODAL_LABELS.QUICK_ACCESS}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <kbd className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                  Ctrl + K
-                </kbd>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {SEARCH_MODAL_LABELS.SHORTCUT_DESCRIPTION}
-                </span>
-              </div>
+          )}
+
+          {/* Estado vacío inicial */}
+          {debouncedQuery.length < 3 && (
+            <div className="p-4 space-y-3">
+              {value.length > 0 && value.length < 3 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-2">
+                  Escribe al menos 3 caracteres para buscar
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    {SEARCH_MODAL_LABELS.QUICK_ACCESS}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <kbd className="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                      Ctrl + K
+                    </kbd>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {SEARCH_MODAL_LABELS.SHORTCUT_DESCRIPTION}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -250,6 +250,13 @@ app.conf.beat_schedule = {
     # GESTION DOCUMENTAL - REVISIONES PROGRAMADAS
     # ═══════════════════════════════════════════════════
 
+    # Iniciar revisión automática PUBLICADO→BORRADOR vX+1 - Diario 7:00 AM (antes de notificación)
+    'documental-crear-borradores-revision': {
+        'task': 'documental.crear_borradores_revision_automatica',
+        'schedule': crontab(hour=7, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
     # Verificar documentos con revisión programada vencida - Diario a las 7:15 AM
     'documental-check-revision-programada': {
         'task': 'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada',
@@ -462,6 +469,7 @@ app.conf.task_routes = {
     'documental.exportar_drive_lote': {'queue': 'files'},
     'documental.recordar_aceptaciones_por_vencer': {'queue': 'notifications'},
     'documental.procesar_retencion_documentos': {'queue': 'compliance'},
+    'documental.crear_borradores_revision_automatica': {'queue': 'compliance'},
 
     # Audit System - Config Alertas tasks
     'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},

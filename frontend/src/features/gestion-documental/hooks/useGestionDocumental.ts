@@ -129,7 +129,8 @@ export function useDocumentos(filters?: {
   tipo_documento?: number;
   tipo_documento_codigo?: string;
   estado?: string;
-  search?: string;
+  /** Búsqueda full-text — pasa como ?buscar= al backend (≥3 chars usa tsvector) */
+  buscar?: string;
 }) {
   return useQuery({
     queryKey: gdDocumentosKeys.list(filters),

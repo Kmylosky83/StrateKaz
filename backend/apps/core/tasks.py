@@ -381,7 +381,7 @@ def notify_admin_password_sync_failure(
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[alert_email],
-            fail_silently=False,
+            fail_silently=True,  # No propagar excepción si SMTP no está configurado
         )
 
         logger.info(

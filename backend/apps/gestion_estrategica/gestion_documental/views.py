@@ -362,14 +362,35 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         if clasificacion:
             queryset = queryset.filter(clasificacion=clasificacion)
 
-        # Búsqueda
+        # Búsqueda full-text (Sprint 6.2 — PostgreSQL tsvector)
         buscar = self.request.query_params.get('buscar')
         if buscar:
-            queryset = queryset.filter(
-                Q(codigo__icontains=buscar) |
-                Q(titulo__icontains=buscar) |
-                Q(resumen__icontains=buscar)
-            )
+            if len(buscar) >= 3:
+                from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+                vector = (
+                    SearchVector('codigo', weight='A', config='spanish') +
+                    SearchVector('titulo', weight='A', config='spanish') +
+                    SearchVector('resumen', weight='B', config='spanish') +
+                    SearchVector('proceso__name', weight='C', config='spanish') +
+                    SearchVector('tipo_documento__nombre', weight='C', config='spanish')
+                )
+                query = SearchQuery(buscar, config='spanish')
+                queryset = (
+                    queryset
+                    .annotate(rank=SearchRank(vector, query))
+                    .filter(
+                        Q(rank__gt=0.01) |
+                        Q(codigo__icontains=buscar) |
+                        Q(titulo__icontains=buscar)
+                    )
+                    .order_by('-rank', '-fecha_publicacion', 'codigo')
+                )
+                return queryset
+            else:
+                queryset = queryset.filter(
+                    Q(codigo__icontains=buscar) |
+                    Q(titulo__icontains=buscar)
+                )
 
         return queryset.order_by('-fecha_publicacion', 'codigo')
 

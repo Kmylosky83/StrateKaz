@@ -672,6 +672,90 @@ class DocumentoService:
         )
 
     @classmethod
+    def iniciar_revision_automatica(cls, documento_id, empresa_id):
+        """
+        Inicia un ciclo de revisión automático para un documento PUBLICADO vencido.
+        PUBLICADO → BORRADOR (nueva versión mayor).
+
+        Crea un VersionDocumento snapshot del estado publicado antes de
+        iniciar el borrador, para preservar la trazabilidad ISO 7.5.
+
+        Guarda: no modifica estado si ya está en BORRADOR (idempotente).
+        Retorna: (doc, creado) donde creado=True si se inició la revisión.
+        """
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+
+        if doc.estado != 'PUBLICADO':
+            return doc, False
+
+        # Snapshot de la versión publicada actual
+        VersionDocumento.objects.filter(
+            documento=doc, is_version_actual=True
+        ).update(is_version_actual=False)
+
+        VersionDocumento.objects.create(
+            documento=doc,
+            numero_version=doc.version_actual,
+            tipo_cambio='REVISION_MAYOR',
+            contenido_snapshot=doc.contenido,
+            datos_formulario_snapshot=doc.datos_formulario,
+            descripcion_cambios='Snapshot automático — inicio revisión programada',
+            creado_por=doc.elaborado_por,
+            aprobado_por=doc.aprobado_por,
+            fecha_aprobacion=doc.fecha_aprobacion,
+            is_version_actual=False,
+            empresa_id=empresa_id,
+        )
+
+        # Incrementar versión mayor (1.0 → 2.0, 2.3 → 3.0)
+        try:
+            major = int(doc.version_actual.split('.')[0])
+            nueva_version = f'{major + 1}.0'
+        except (ValueError, IndexError):
+            nueva_version = '2.0'
+
+        doc.estado = 'BORRADOR'
+        doc.version_actual = nueva_version
+        doc.numero_revision = (doc.numero_revision or 0) + 1
+        doc.motivo_cambio_version = 'Revisión programada automática por vencimiento'
+        doc.aprobado_por = None
+        doc.revisado_por = None
+        doc.fecha_aprobacion = None
+        doc.save(update_fields=[
+            'estado', 'version_actual', 'numero_revision',
+            'motivo_cambio_version', 'aprobado_por_id',
+            'revisado_por_id', 'fecha_aprobacion', 'updated_at',
+        ])
+
+        # Notificar al elaborador
+        if doc.elaborado_por:
+            _send_notification(
+                tipo_codigo='DOCUMENTO_REVISION_INICIADA',
+                usuario=doc.elaborado_por,
+                titulo=f'Revisión programada iniciada: {doc.codigo}',
+                mensaje=(
+                    f'El documento "{doc.titulo}" ({doc.codigo}) inició su ciclo '
+                    f'de revisión programada automáticamente. '
+                    f'Nueva versión: {nueva_version}. Por favor actualice el contenido.'
+                ),
+                url='/gestion-documental/documentos?section=en_proceso',
+                datos_extra={
+                    'documento_id': doc.id,
+                    'codigo': doc.codigo,
+                    'titulo': doc.titulo,
+                    'version_anterior': doc.version_actual,
+                    'nueva_version': nueva_version,
+                },
+                prioridad='alta',
+            )
+
+        logger.info(
+            '[iniciar_revision_automatica] %s (%s) → BORRADOR v%s',
+            doc.codigo, doc.titulo, nueva_version,
+        )
+        return doc, True
+
+    @classmethod
     def renderizar_plantilla(cls, contenido_plantilla: str, variables: dict) -> str:
         """
         Renderiza una plantilla reemplazando {{variable}} con valores del dict.

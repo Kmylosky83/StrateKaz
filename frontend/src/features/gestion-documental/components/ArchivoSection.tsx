@@ -11,7 +11,7 @@
  * Nota: "Mis Lecturas" viven en Mi Portal — esta vista es para administradores
  * del sistema que necesitan ver QUIÉN leyó qué y cuándo.
  */
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Archive,
   BookOpen,
@@ -156,15 +156,29 @@ export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
 
 function VigentesTab({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [exportingPdf, setExportingPdf] = useState(false);
-  const { data: documentos, isLoading } = useDocumentos({ estado: 'PUBLICADO' });
 
-  const filtered = (documentos ?? []).filter(
-    (d) =>
-      !search ||
-      d.titulo.toLowerCase().includes(search.toLowerCase()) ||
-      d.codigo.toLowerCase().includes(search.toLowerCase())
-  );
+  // Debounce 350ms — evita request por cada tecla
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data: documentos, isLoading } = useDocumentos({
+    estado: 'PUBLICADO',
+    ...(debouncedSearch.length >= 3 ? { buscar: debouncedSearch } : {}),
+  });
+
+  // Fallback client-side para búsquedas cortas (< 3 chars)
+  const filtered =
+    debouncedSearch.length > 0 && debouncedSearch.length < 3
+      ? (documentos ?? []).filter(
+          (d) =>
+            d.titulo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            d.codigo.toLowerCase().includes(debouncedSearch.toLowerCase())
+        )
+      : (documentos ?? []);
 
   async function handleExportListadoPdf() {
     setExportingPdf(true);
@@ -185,7 +199,7 @@ function VigentesTab({ onViewDocumento }: { onViewDocumento: (id: number) => voi
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div className="flex-1">
           <Input
             placeholder="Buscar por título o código..."
@@ -201,6 +215,7 @@ function VigentesTab({ onViewDocumento }: { onViewDocumento: (id: number) => voi
             leftIcon={<FileDown className="w-4 h-4" />}
             onClick={handleExportListadoPdf}
             isLoading={exportingPdf}
+            className="w-full sm:w-auto"
           >
             Listado Maestro PDF
           </Button>

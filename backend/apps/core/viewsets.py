@@ -183,16 +183,20 @@ class UserViewSet(viewsets.ModelViewSet):
             except (LookupError, Exception):
                 queryset = queryset.filter(proveedor_id_ext__isnull=True, cliente_id_ext__isnull=True)
 
-        # Annotate _has_colaborador para evitar N+1 en serializer
+        # Annotate _has_colaborador para evitar N+1 en serializer.
+        # Solo si la app colaboradores está instalada Y la tabla existe en este schema.
         try:
             from django.apps import apps
-            Colaborador = apps.get_model('colaboradores', 'Colaborador')
-            from django.db.models import Exists, OuterRef
-            queryset = queryset.annotate(
-                _has_colaborador=Exists(
-                    Colaborador.objects.filter(usuario=OuterRef('pk'))
-                )
-            )
+            if apps.is_installed('apps.mi_equipo.colaboradores'):
+                from django.db import connection
+                if 'mi_equipo_colaborador' in connection.introspection.table_names():
+                    Colaborador = apps.get_model('colaboradores', 'Colaborador')
+                    from django.db.models import Exists, OuterRef
+                    queryset = queryset.annotate(
+                        _has_colaborador=Exists(
+                            Colaborador.objects.filter(usuario=OuterRef('pk'))
+                        )
+                    )
         except (LookupError, Exception):
             pass
 

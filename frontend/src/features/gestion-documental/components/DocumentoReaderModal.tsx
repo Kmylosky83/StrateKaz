@@ -293,7 +293,7 @@ export default function DocumentoReaderModal({
           {/* Contenido scrollable */}
           <div
             ref={contentRef}
-            className="max-h-[50vh] overflow-y-auto prose dark:prose-invert max-w-none p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+            className="max-h-[40vh] sm:max-h-[55vh] overflow-y-auto prose dark:prose-invert max-w-none p-4 sm:p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
             dangerouslySetInnerHTML={{ __html: renderContenidoConSecciones() }}
           />
 
@@ -319,7 +319,7 @@ export default function DocumentoReaderModal({
                 </span>
               </label>
 
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => setShowRechazar(true)}>
                   Rechazar
                 </Button>

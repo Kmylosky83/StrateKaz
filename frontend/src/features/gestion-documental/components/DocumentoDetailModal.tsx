@@ -196,7 +196,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
             <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
             {/* Tab Content */}
-            <div className="max-h-[50vh] overflow-y-auto">
+            <div className="max-h-[40vh] sm:max-h-[55vh] overflow-y-auto">
               {activeTab === 'info' && (
                 <div className="space-y-4">
                   {documento.resumen && (
@@ -356,8 +356,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                           <iframe
                             src={pdfUrl}
                             title={`PDF: ${documento.titulo}`}
-                            className="w-full border-0"
-                            style={{ height: '60vh' }}
+                            className="w-full h-[40vh] sm:h-[60vh] border-0"
                           />
                         </div>
                       )}

@@ -785,9 +785,8 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 |---|-------|------|-----------|----------------------|
 | 7.1 | Integración BPM → auto-generación de procedimientos desde flujos BPMN | Ambos | Integration | BPM genera PR-XXX-NNN en BORRADOR |
 | 7.2 | Campos `es_reemplazo_automatizado` + `funcionalidad_reemplazo` en Documento | Backend | Migration | Marcar procedimientos reemplazados por sistema |
-| 7.3 | Integración RFC 3161 / Certicámara para estampado cronológico | Backend | Integration | Firma con timestamp server certificado |
-| 7.4 | OCR avanzado: clasificación automática de tipo documental por contenido | Backend | ML service | OCR sugiere tipo al ingestar |
-| 7.5 | Dashboard BI avanzado (activar app analytics L80) | Ambos | Analytics module | Dashboard con KPIs cross-módulo |
+| 7.3 | OCR avanzado: clasificación automática de tipo documental por contenido | Backend | ML service | OCR sugiere tipo al ingestar |
+| 7.4 | Dashboard BI avanzado (activar app analytics L80) | Ambos | Analytics module | Dashboard con KPIs cross-módulo |
 
 ---
 

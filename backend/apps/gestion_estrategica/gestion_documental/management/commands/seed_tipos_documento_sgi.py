@@ -21,7 +21,7 @@ from django.apps import apps
 # ============================================================================
 
 TIPOS_DOCUMENTO_SGI = [
-    # ── NIVEL ESTRATÉGICO ─────────────────────────────────────
+    # ── NIVEL ESTRATÉGICO — DOCUMENTO NORMATIVO ───────────────
     {
         'codigo': 'POL',
         'nombre': 'Política',
@@ -32,6 +32,7 @@ TIPOS_DOCUMENTO_SGI = [
             'Requisito ISO 9001 §5.2, ISO 14001 §5.2, ISO 45001 §5.2.'
         ),
         'nivel_documento': 'ESTRATEGICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'POL-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -48,6 +49,7 @@ TIPOS_DOCUMENTO_SGI = [
             'manual de procesos. Referencia ISO 9001 §7.5, ISO 27001 §7.5.'
         ),
         'nivel_documento': 'ESTRATEGICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'MA-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -65,6 +67,7 @@ TIPOS_DOCUMENTO_SGI = [
             'capacitación, plan ambiental. Requisito ISO 45001 §6.2, Res. 0312.'
         ),
         'nivel_documento': 'ESTRATEGICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'PL-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -82,6 +85,7 @@ TIPOS_DOCUMENTO_SGI = [
             'reglamentos disciplinarios. Aprobación obligatoria por dirección.'
         ),
         'nivel_documento': 'ESTRATEGICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'RE-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -89,7 +93,7 @@ TIPOS_DOCUMENTO_SGI = [
         'color_identificacion': '#B91C1C',
         'orden': 4,
     },
-    # ── NIVEL TÁCTICO ─────────────────────────────────────────
+    # ── NIVEL TÁCTICO — DOCUMENTO NORMATIVO ───────────────────
     {
         'codigo': 'PR',
         'nombre': 'Procedimiento',
@@ -100,6 +104,7 @@ TIPOS_DOCUMENTO_SGI = [
             'objetivo, alcance, responsables, descripción, registros asociados.'
         ),
         'nivel_documento': 'TACTICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'PR-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -116,6 +121,7 @@ TIPOS_DOCUMENTO_SGI = [
             'obligatorio. Útil para estandarizar criterios sin rigidez normativa.'
         ),
         'nivel_documento': 'TACTICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'GU-',
         'requiere_aprobacion': True,
         'requiere_firma': False,
@@ -134,6 +140,7 @@ TIPOS_DOCUMENTO_SGI = [
             'Requisito ISO 45001 §8.1, Res. 0312 §2.'
         ),
         'nivel_documento': 'TACTICO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'PG-',
         'requiere_aprobacion': True,
         'requiere_firma': True,
@@ -141,7 +148,7 @@ TIPOS_DOCUMENTO_SGI = [
         'color_identificacion': '#7C3AED',
         'orden': 7,
     },
-    # ── NIVEL OPERATIVO ───────────────────────────────────────
+    # ── NIVEL OPERATIVO — DOCUMENTO NORMATIVO ─────────────────
     {
         'codigo': 'IN',
         'nombre': 'Instructivo',
@@ -152,6 +159,7 @@ TIPOS_DOCUMENTO_SGI = [
             'requerido y criterios de aceptación.'
         ),
         'nivel_documento': 'OPERATIVO',
+        'categoria': 'DOCUMENTO',
         'prefijo_codigo': 'IN-',
         'requiere_aprobacion': True,
         'requiere_firma': False,
@@ -159,6 +167,7 @@ TIPOS_DOCUMENTO_SGI = [
         'color_identificacion': '#059669',
         'orden': 8,
     },
+    # ── NIVEL OPERATIVO / SOPORTE — FORMULARIO / REGISTRO ─────
     {
         'codigo': 'FT',
         'nombre': 'Formato',
@@ -169,6 +178,7 @@ TIPOS_DOCUMENTO_SGI = [
             'de verificación, formularios de inspección, check-lists.'
         ),
         'nivel_documento': 'OPERATIVO',
+        'categoria': 'FORMULARIO',
         'prefijo_codigo': 'FT-',
         'requiere_aprobacion': False,
         'requiere_firma': False,
@@ -176,7 +186,6 @@ TIPOS_DOCUMENTO_SGI = [
         'color_identificacion': '#D97706',
         'orden': 9,
     },
-    # ── NIVEL SOPORTE ─────────────────────────────────────────
     {
         'codigo': 'AC',
         'nombre': 'Acta',
@@ -187,6 +196,7 @@ TIPOS_DOCUMENTO_SGI = [
             'actas de capacitación y actas de entrega. Requisito ISO 9001 §9.3.'
         ),
         'nivel_documento': 'SOPORTE',
+        'categoria': 'FORMULARIO',
         'prefijo_codigo': 'AC-',
         'requiere_aprobacion': False,
         'requiere_firma': True,
@@ -204,6 +214,7 @@ TIPOS_DOCUMENTO_SGI = [
             'modificarse una vez aprobados. Requisito ISO 9001 §7.5.3.'
         ),
         'nivel_documento': 'SOPORTE',
+        'categoria': 'FORMULARIO',
         'prefijo_codigo': 'RG-',
         'requiere_aprobacion': False,
         'requiere_firma': False,
@@ -221,6 +232,7 @@ TIPOS_DOCUMENTO_SGI = [
             'sistema con derechos de autor StrateKaz.'
         ),
         'nivel_documento': 'SOPORTE',
+        'categoria': 'FORMULARIO',
         'prefijo_codigo': 'KB-',
         'requiere_aprobacion': False,
         'requiere_firma': False,

@@ -30,6 +30,7 @@ class TipoDocumentoListSerializer(serializers.ModelSerializer):
         model = TipoDocumento
         fields = [
             'id', 'codigo', 'nombre', 'nivel_documento', 'nivel_display',
+            'categoria',
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
             'nivel_seguridad_firma',
             'color_identificacion', 'is_active', 'orden', 'total_documentos'
@@ -52,6 +53,7 @@ class TipoDocumentoDetailSerializer(serializers.ModelSerializer):
         model = TipoDocumento
         fields = [
             'id', 'codigo', 'nombre', 'descripcion', 'nivel_documento', 'nivel_display',
+            'categoria',
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
             'nivel_seguridad_firma',
             'tiempo_retencion_años', 'plantilla_por_defecto', 'campos_obligatorios',

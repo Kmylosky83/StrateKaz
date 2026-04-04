@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   List,
   GitPullRequest,
+  Wand2,
 } from 'lucide-react';
 import {
   Card,
@@ -45,6 +46,8 @@ import IngestarExternoModal from './IngestarExternoModal';
 import OcrStatusBadge from './OcrStatusBadge';
 import ScoreBadge from './ScoreBadge';
 import type { Documento } from '../types/gestion-documental.types';
+
+const DigitalizarModal = lazy(() => import('./DigitalizarModal'));
 
 const CoberturaPanel = lazy(() => import('./CoberturaPanel'));
 
@@ -105,6 +108,7 @@ export function DocumentosSection({
     titulo: string;
   } | null>(null);
   const [showIngestarModal, setShowIngestarModal] = useState(false);
+  const [digitalizarDocumento, setDigitalizarDocumento] = useState<Documento | null>(null);
 
   const handleViewChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -297,6 +301,7 @@ export function DocumentosSection({
                           titulo: d.titulo,
                         })
                       }
+                      onDigitalizar={(d) => setDigitalizarDocumento(d)}
                     />
                   </div>
                 </Card>
@@ -368,6 +373,7 @@ export function DocumentosSection({
                           titulo: d.titulo,
                         })
                       }
+                      onDigitalizar={(d) => setDigitalizarDocumento(d)}
                       compact
                     />
                   </div>
@@ -408,6 +414,16 @@ export function DocumentosSection({
         isOpen={showIngestarModal}
         onClose={() => setShowIngestarModal(false)}
       />
+
+      {digitalizarDocumento && (
+        <Suspense fallback={null}>
+          <DigitalizarModal
+            isOpen={!!digitalizarDocumento}
+            documento={digitalizarDocumento}
+            onClose={() => setDigitalizarDocumento(null)}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
@@ -419,6 +435,7 @@ function DocumentActions({
   onEdit,
   onDelete,
   onSolicitarFirmas,
+  onDigitalizar,
   compact,
 }: {
   documento: Documento;
@@ -426,12 +443,14 @@ function DocumentActions({
   onEdit: (id: number) => void;
   onDelete: (d: Documento) => void;
   onSolicitarFirmas: (d: Documento) => void;
+  onDigitalizar: (d: Documento) => void;
   compact?: boolean;
 }) {
   const iconBtn =
     'p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors';
 
-  const canAssignFirmas = documento.estado === 'BORRADOR';
+  const canAssignFirmas = documento.estado === 'BORRADOR' && !documento.es_externo;
+  const canDigitalizar = documento.estado === 'BORRADOR' && documento.es_externo;
 
   if (compact) {
     return (
@@ -439,10 +458,21 @@ function DocumentActions({
         <button className={iconBtn} onClick={() => onView(documento.id)} title="Ver">
           <Eye className="w-4 h-4" />
         </button>
-        {documento.estado === 'BORRADOR' && (
+        {documento.estado === 'BORRADOR' && !canDigitalizar && (
           <ProtectedAction permission="gestion_documental.repositorio.edit">
             <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
               <Edit className="w-4 h-4" />
+            </button>
+          </ProtectedAction>
+        )}
+        {canDigitalizar && (
+          <ProtectedAction permission="gestion_documental.repositorio.edit">
+            <button
+              className="p-1.5 rounded-md text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 dark:text-violet-400 transition-colors"
+              onClick={() => onDigitalizar(documento)}
+              title="Digitalizar"
+            >
+              <Wand2 className="w-4 h-4" />
             </button>
           </ProtectedAction>
         )}
@@ -482,11 +512,24 @@ function DocumentActions({
       >
         Ver
       </Button>
-      {documento.estado === 'BORRADOR' && (
+      {documento.estado === 'BORRADOR' && !canDigitalizar && (
         <ProtectedAction permission="gestion_documental.repositorio.edit">
           <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
             <Edit className="w-4 h-4" />
           </button>
+        </ProtectedAction>
+      )}
+      {canDigitalizar && (
+        <ProtectedAction permission="gestion_documental.repositorio.edit">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Wand2 className="w-4 h-4" />}
+            onClick={() => onDigitalizar(documento)}
+            className="text-violet-600 border-violet-300 hover:bg-violet-50 dark:text-violet-400 dark:border-violet-700 dark:hover:bg-violet-900/20"
+          >
+            Digitalizar
+          </Button>
         </ProtectedAction>
       )}
       {canAssignFirmas && (

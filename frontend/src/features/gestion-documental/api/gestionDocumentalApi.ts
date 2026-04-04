@@ -171,6 +171,19 @@ export const documentoApi = {
     return response.data;
   },
 
+  // Digitalizar — documento externo ingestado
+  digitalizar: async (
+    id: number,
+    data: {
+      titulo: string;
+      secciones: { id: string; label: string; contenido: string }[];
+      responsables_cargo_ids: number[];
+    }
+  ): Promise<Documento> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/${id}/digitalizar/`, data);
+    return response.data;
+  },
+
   // OCR — Fase 5
   ingestarExterno: async (data: FormData): Promise<Documento> => {
     const response = await apiClient.post(`${BASE_URL}/documentos/ingestar-externo/`, data);

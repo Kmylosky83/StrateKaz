@@ -567,6 +567,111 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='digitalizar')
+    def digitalizar(self, request, pk=None):
+        """
+        Digitaliza un documento externo ingestado.
+
+        Flujo:
+        1. Valida que el documento sea externo (es_externo=True) y esté en BORRADOR.
+        2. Marca el documento original como OBSOLETO (queda en Archivo como trazabilidad).
+        3. Crea un nuevo BORRADOR con el contenido estructurado HTML generado desde
+           las secciones recibidas, vinculado al original via documento_padre.
+
+        Body:
+        {
+            "titulo": "Procedimiento de Compras",
+            "secciones": [
+                {"id": "objetivo", "label": "Objetivo", "contenido": "<p>...</p>"},
+                ...
+            ],
+            "responsables_cargo_ids": [1, 2]   // IDs de Cargo
+        }
+        """
+        from .services import DocumentoService
+        documento = self.get_object()
+        empresa = get_tenant_empresa()
+        empresa_id = empresa.id if empresa else documento.empresa_id
+
+        # Validaciones
+        if not documento.es_externo:
+            return Response(
+                {'error': 'Solo se pueden digitalizar documentos ingestados externamente.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if documento.estado != 'BORRADOR':
+            return Response(
+                {'error': 'Solo se pueden digitalizar documentos en estado BORRADOR.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        titulo = request.data.get('titulo', '').strip()
+        secciones = request.data.get('secciones', [])
+        responsables_cargo_ids = request.data.get('responsables_cargo_ids', [])
+
+        if not titulo:
+            return Response({'error': 'El campo "titulo" es obligatorio.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not secciones:
+            return Response({'error': 'Debe incluir al menos una sección de contenido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Construir contenido HTML desde secciones
+        contenido_html = ''
+        for seccion in secciones:
+            label = seccion.get('label', '')
+            contenido_seccion = seccion.get('contenido', '')
+            if label or contenido_seccion:
+                contenido_html += f'<h2>{label}</h2>\n{contenido_seccion}\n'
+
+        # Generar código para el nuevo documento
+        from .services import DocumentoService as DS
+        codigo = DS.generar_codigo(documento.tipo_documento, empresa_id)
+
+        # 1. Marcar original como OBSOLETO
+        try:
+            DS.marcar_obsoleto(
+                documento_id=documento.id,
+                usuario=request.user,
+                empresa_id=empresa_id,
+                motivo='Documento digitalizado — versión original archivada como referencia.',
+                sustituto_id=None,
+            )
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Crear nuevo BORRADOR digitalizado
+        nuevo = Documento.objects.create(
+            titulo=titulo,
+            tipo_documento=documento.tipo_documento,
+            plantilla=documento.plantilla,
+            clasificacion=documento.clasificacion,
+            areas_aplicacion=documento.areas_aplicacion,
+            contenido=contenido_html,
+            estado='BORRADOR',
+            es_externo=False,
+            elaborado_por=request.user,
+            documento_padre=documento,
+            empresa_id=empresa_id,
+            codigo=codigo,
+        )
+
+        # Asignar responsable_cargo si viene un solo cargo, o guardar lista en areas_aplicacion
+        if responsables_cargo_ids:
+            try:
+                from apps.gestion_estrategica.organizacion.models import Cargo
+                primer_cargo = Cargo.objects.get(pk=responsables_cargo_ids[0])
+                nuevo.responsable_cargo = primer_cargo
+                nuevo.save(update_fields=['responsable_cargo', 'updated_at'])
+            except Exception:
+                pass
+
+        AuditSystemService.log_cambio(
+            request.user, nuevo, 'crear',
+            {'creado': {'old': None, 'new': f'{nuevo.codigo} - {nuevo.titulo} (digitalizado desde {documento.codigo})'}},
+            request,
+        )
+
+        return Response(DocumentoDetailSerializer(nuevo).data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=['post'], url_path='enviar-revision')
     def enviar_revision(self, request, pk=None):
         """Envía documento a revisión."""

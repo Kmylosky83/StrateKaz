@@ -496,6 +496,31 @@ export function useExportDocumentoDocx() {
 // OCR — Fase 5: Ingesta, reprocesamiento y búsqueda full-text
 // =============================================================================
 
+export function useDigitalizar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: {
+        titulo: string;
+        secciones: { id: string; label: string; contenido: string }[];
+        responsables_cargo_ids: number[];
+      };
+    }) => documentoApi.digitalizar(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });
+      toast.success('Documento digitalizado. El original quedó archivado como referencia.');
+    },
+    onError: () => {
+      toast.error('Error al digitalizar el documento');
+    },
+  });
+}
+
 export function useIngestarExterno() {
   const queryClient = useQueryClient();
   return useMutation({

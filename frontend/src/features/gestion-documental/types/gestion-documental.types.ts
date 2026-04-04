@@ -57,6 +57,8 @@ export type OcrEstado = 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR' | 'N
 
 export type SelladoEstado = 'NO_APLICA' | 'PENDIENTE' | 'PROCESANDO' | 'COMPLETADO' | 'ERROR';
 
+export type CategoriaTipoDocumento = 'DOCUMENTO' | 'FORMULARIO';
+
 export interface SelladoMetadatos {
   certificado_serial?: string;
   algoritmo?: string;
@@ -86,6 +88,7 @@ export interface TipoDocumento {
   nombre: string;
   descripcion: string;
   nivel_documento: NivelDocumento;
+  categoria: CategoriaTipoDocumento;
   prefijo_codigo: string;
   requiere_aprobacion: boolean;
   requiere_firma: boolean;
@@ -101,6 +104,7 @@ export interface TipoDocumento {
   updated_at: string;
   created_by: number | null;
   created_by_detail?: UserDetail;
+  total_documentos?: number;
 }
 
 // ==================== FIRMANTES POR DEFECTO ====================

@@ -34,6 +34,11 @@ class TipoDocumento(models.Model):
         (3, 'Máximo — Firma + TOTP + OTP email'),
     ]
 
+    CATEGORIA_CHOICES = [
+        ('DOCUMENTO', 'Documento Normativo'),
+        ('FORMULARIO', 'Formulario / Registro'),
+    ]
+
     codigo = models.CharField(
         max_length=20,
         blank=True,
@@ -98,6 +103,13 @@ class TipoDocumento(models.Model):
             'Define qué verificación se pide al firmar documentos de este tipo. '
             'Nivel 1: firma manuscrita. Nivel 2: firma + TOTP. Nivel 3: firma + TOTP + OTP email.'
         ),
+    )
+    categoria = models.CharField(
+        max_length=20,
+        choices=CATEGORIA_CHOICES,
+        default='DOCUMENTO',
+        verbose_name='Categoría',
+        help_text='DOCUMENTO: flujo de firma normativo. FORMULARIO: constructor de formularios operacionales.'
     )
     is_active = models.BooleanField(
         default=True,

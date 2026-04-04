@@ -48,10 +48,12 @@ export default function IngestarExternoModal({ isOpen, onClose }: IngestarExtern
   const { data: procesosData } = useAreas({ is_active: true });
   const ingestarMutation = useIngestarExterno();
 
-  const tipoOptions = tipos.map((t) => ({
-    value: String(t.id),
-    label: `${t.codigo} - ${t.nombre}`,
-  }));
+  const tipoOptions = tipos
+    .filter((t) => t.categoria === 'DOCUMENTO')
+    .map((t) => ({
+      value: String(t.id),
+      label: `${t.codigo} - ${t.nombre}`,
+    }));
 
   // Filtrar plantillas por tipo de documento seleccionado
   const filteredPlantillas = useMemo(() => {

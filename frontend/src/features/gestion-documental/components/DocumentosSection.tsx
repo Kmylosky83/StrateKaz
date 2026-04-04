@@ -19,6 +19,8 @@ import {
   GitPullRequest,
   Wand2,
   AlertTriangle,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import {
   Card,
@@ -117,6 +119,7 @@ export function DocumentosSection({
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('gd_docs_view') as ViewMode) || 'cards'
   );
+  const [showFilters, setShowFilters] = useState(false);
   const [asignarFirmantesModal, setAsignarFirmantesModal] = useState<{
     documentoId: string;
     titulo: string;
@@ -173,32 +176,94 @@ export function DocumentosSection({
           <CoberturaPanel />
         </Suspense>
 
-        {/* Filtros */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Input
-            type="text"
-            placeholder="Buscar por código o título..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            leftIcon={<Search className="w-5 h-5" />}
-          />
-          <Select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
-            <option value="">Todos los tipos</option>
-            {(tipos as { id: number; codigo: string; nombre: string }[]).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.codigo} - {t.nombre}
-              </option>
-            ))}
-          </Select>
-          <Select value={filterProceso} onChange={(e) => setFilterProceso(e.target.value)}>
-            <option value="">Todos los procesos</option>
-            {(procesosData?.results || []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.code} — {p.name}
-              </option>
-            ))}
-          </Select>
+        {/* Buscador prominente + botón filtros */}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Buscar por código o título..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              leftIcon={<Search className="w-5 h-5" />}
+            />
+          </div>
+          <Button
+            variant={showFilters || filterTipo || filterProceso ? 'primary' : 'outline'}
+            size="sm"
+            leftIcon={<SlidersHorizontal className="w-4 h-4" />}
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            Filtros
+            {(filterTipo || filterProceso) && (
+              <span className="ml-1 bg-white/20 rounded-full px-1.5 py-0.5 text-xs">
+                {[filterTipo, filterProceso].filter(Boolean).length}
+              </span>
+            )}
+          </Button>
         </div>
+
+        {/* Filtros avanzados colapsables */}
+        {showFilters && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+            <Select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
+              <option value="">Todos los tipos</option>
+              {(tipos as { id: number; codigo: string; nombre: string }[]).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.codigo} - {t.nombre}
+                </option>
+              ))}
+            </Select>
+            <Select value={filterProceso} onChange={(e) => setFilterProceso(e.target.value)}>
+              <option value="">Todos los procesos</option>
+              {(procesosData?.results || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code} — {p.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+
+        {/* Chips de filtros activos */}
+        {(filterTipo || filterProceso) && (
+          <div className="flex flex-wrap gap-2">
+            {filterTipo &&
+              (() => {
+                const t = (tipos as { id: number; codigo: string; nombre: string }[]).find(
+                  (x) => String(x.id) === filterTipo
+                );
+                return t ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    Tipo: {t.codigo}
+                    <button onClick={() => setFilterTipo('')} className="hover:text-indigo-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ) : null;
+              })()}
+            {filterProceso &&
+              (() => {
+                const p = (procesosData?.results || []).find((x) => String(x.id) === filterProceso);
+                return p ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
+                    Proceso: {p.code}
+                    <button onClick={() => setFilterProceso('')} className="hover:text-teal-600">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ) : null;
+              })()}
+            <button
+              onClick={() => {
+                setFilterTipo('');
+                setFilterProceso('');
+              }}
+              className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">

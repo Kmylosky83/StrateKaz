@@ -37,6 +37,7 @@ import {
   useEstadoFirmasDocumento,
   useSubirAnexo,
   useEliminarAnexo,
+  useVerificarSellado,
 } from '../hooks/useGestionDocumental';
 import type { AnexoMeta } from '../types/gestion-documental.types';
 import TextoExtraidoPanel from './TextoExtraidoPanel';
@@ -74,6 +75,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const { data: estadoFirmas } = useEstadoFirmasDocumento(documentoId);
   const subirAnexoMutation = useSubirAnexo();
   const eliminarAnexoMutation = useEliminarAnexo();
+  const verificarSelladoMutation = useVerificarSellado();
   const anexoInputRef = useRef<HTMLInputElement>(null);
   const [confirmDeleteAnexo, setConfirmDeleteAnexo] = useState<AnexoMeta | null>(null);
   const [activeTab, setActiveTab] = useState('info');
@@ -163,6 +165,17 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                       estado={documento.sellado_estado}
                       metadatos={documento.sellado_metadatos}
                     />
+                    {documento.sellado_estado === 'COMPLETADO' && (
+                      <button
+                        onClick={() => verificarSelladoMutation.mutate(documento.id)}
+                        disabled={verificarSelladoMutation.isPending}
+                        className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50"
+                        title="Verificar integridad del sellado X.509"
+                      >
+                        <Shield className="w-3 h-3" />
+                        {verificarSelladoMutation.isPending ? 'Verificando…' : 'Verificar'}
+                      </button>
+                    )}
                   </>
                 )}
                 {documento.es_auto_generado && (

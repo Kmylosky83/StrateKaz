@@ -2,9 +2,10 @@
 /**
  * DynamicFormRenderer - Renderiza formularios dinamicos desde CampoFormulario del backend
  *
- * Soporta los 16 tipos de campo del backend:
+ * Soporta los 17 tipos de campo del backend:
  * TEXT, TEXTAREA, NUMBER, EMAIL, PHONE, URL, DATE, DATETIME,
- * SELECT, MULTISELECT, RADIO, CHECKBOX, FILE, SIGNATURE, TABLA, SECCION
+ * SELECT, MULTISELECT, RADIO, CHECKBOX, FILE, SIGNATURE, TABLA, SECCION,
+ * FIRMA_WORKFLOW
  *
  * Usado por:
  * - Workflow Engine (tareas con formulario)
@@ -13,7 +14,18 @@
  * - Cualquier modulo que use el FormBuilder del backend
  */
 import { useRef, useState, useCallback } from 'react';
-import { AlertCircle, Upload, X, Pen, Plus, Trash2 } from 'lucide-react';
+import {
+  AlertCircle,
+  Upload,
+  X,
+  Pen,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  GitMerge,
+} from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from './Button';
 
@@ -51,6 +63,20 @@ export interface FormulaCalculo {
   auto?: boolean;
 }
 
+export interface FirmaSlotConfig {
+  orden: number;
+  etiqueta: string;
+  cargo_id?: number;
+}
+
+export interface FirmaSlotValue {
+  orden: number;
+  etiqueta: string;
+  estado: 'PENDIENTE' | 'FIRMADO' | 'RECHAZADO';
+  firma_data: string | null;
+  fecha?: string;
+}
+
 export interface DynamicFieldDefinition {
   id: number;
   nombre: string;
@@ -68,6 +94,12 @@ export interface DynamicFieldDefinition {
   condicion_visible?: CondicionVisibilidadField;
   /** Fórmula para campos calculados (Sprint 4) */
   formula_calculo?: FormulaCalculo;
+  /** FIRMA_WORKFLOW: configuración de firmantes */
+  config_firmantes?: FirmaSlotConfig[];
+  /** FIRMA_WORKFLOW: modo de firma */
+  modo_firma?: 'SECUENCIAL' | 'PARALELO' | 'MIXTO';
+  /** FIRMA_WORKFLOW: nivel de seguridad (1-3) */
+  nivel_seguridad_firma?: number | null;
 }
 
 export interface DynamicFormRendererProps {
@@ -525,6 +557,16 @@ const FieldRenderer = ({ field, value, onChange, readOnly }: FieldRendererProps)
     case 'SECCION':
       return null; // Handled in DynamicField
 
+    case 'FIRMA_WORKFLOW':
+      return (
+        <FirmaWorkflowField
+          field={field}
+          value={value as FirmaSlotValue[] | null}
+          onChange={onChange}
+          readOnly={readOnly}
+        />
+      );
+
     default:
       return (
         <input
@@ -754,6 +796,319 @@ const SignatureField = ({ value, onChange, readOnly }: SignatureFieldProps) => {
           Limpiar firma
         </Button>
       )}
+    </div>
+  );
+};
+
+// ============================================================
+// FIRMA WORKFLOW FIELD
+// ============================================================
+
+interface FirmaWorkflowFieldProps {
+  field: DynamicFieldDefinition;
+  value: FirmaSlotValue[] | null;
+  onChange: (value: FirmaSlotValue[]) => void;
+  readOnly: boolean;
+}
+
+const MODO_LABEL: Record<string, string> = {
+  SECUENCIAL: 'Secuencial',
+  PARALELO: 'Paralelo',
+  MIXTO: 'Mixto',
+};
+
+const NIVEL_LABEL: Record<number, string> = {
+  1: 'Manuscrita',
+  2: 'TOTP',
+  3: 'TOTP + Email',
+};
+
+const FirmaWorkflowField = ({ field, value, onChange, readOnly }: FirmaWorkflowFieldProps) => {
+  const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const configFirmantes = field.config_firmantes ?? [];
+  const modoFirma = field.modo_firma ?? 'SECUENCIAL';
+  const nivelSeguridad = field.nivel_seguridad_firma;
+
+  // Inicializar slots desde config si value está vacío
+  const slots: FirmaSlotValue[] =
+    value && value.length > 0
+      ? value
+      : configFirmantes.map((c) => ({
+          orden: c.orden,
+          etiqueta: c.etiqueta,
+          estado: 'PENDIENTE' as const,
+          firma_data: null,
+        }));
+
+  if (configFirmantes.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3">
+        <GitMerge className="w-4 h-4 shrink-0" />
+        <span>Sin firmantes configurados</span>
+      </div>
+    );
+  }
+
+  // En modo SECUENCIAL, solo el primer PENDIENTE es interactivo
+  const firstPendienteOrden =
+    modoFirma === 'PARALELO' ? null : (slots.find((s) => s.estado === 'PENDIENTE')?.orden ?? null);
+
+  const canSign = (slot: FirmaSlotValue) => {
+    if (readOnly) return false;
+    if (modoFirma === 'PARALELO') return slot.estado === 'PENDIENTE';
+    return slot.orden === firstPendienteOrden;
+  };
+
+  const handleSign = (orden: number, firmaData: string) => {
+    const updated = slots.map((s) =>
+      s.orden === orden
+        ? {
+            ...s,
+            estado: 'FIRMADO' as const,
+            firma_data: firmaData,
+            fecha: new Date().toISOString().slice(0, 10),
+          }
+        : s
+    );
+    onChange(updated);
+    setActiveSlot(null);
+  };
+
+  const allSigned = slots.every((s) => s.estado === 'FIRMADO');
+
+  return (
+    <div className="space-y-3">
+      {/* Header info */}
+      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+        <span className="flex items-center gap-1">
+          <GitMerge className="w-3.5 h-3.5" />
+          {MODO_LABEL[modoFirma] ?? modoFirma}
+        </span>
+        {nivelSeguridad && (
+          <span className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+            Nivel {nivelSeguridad} — {NIVEL_LABEL[nivelSeguridad] ?? nivelSeguridad}
+          </span>
+        )}
+        {allSigned && (
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Completado
+          </span>
+        )}
+      </div>
+
+      {/* Firmantes */}
+      <div className="space-y-2">
+        {slots.map((slot, idx) => {
+          const isActive = activeSlot === slot.orden;
+          const signable = canSign(slot);
+
+          return (
+            <div key={slot.orden} className="relative">
+              {/* Línea conectora */}
+              {idx < slots.length - 1 && modoFirma === 'SECUENCIAL' && (
+                <div className="absolute left-4 top-full h-2 w-px bg-gray-300 dark:bg-gray-600 z-0" />
+              )}
+
+              <div
+                className={cn(
+                  'flex items-start gap-3 p-3 rounded-lg border transition-colors',
+                  slot.estado === 'FIRMADO'
+                    ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20'
+                    : slot.estado === 'RECHAZADO'
+                      ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                      : signable
+                        ? 'border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/10'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/30'
+                )}
+              >
+                {/* Icono de estado */}
+                <div className="shrink-0 mt-0.5">
+                  {slot.estado === 'FIRMADO' ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  ) : slot.estado === 'RECHAZADO' ? (
+                    <XCircle className="w-5 h-5 text-red-500" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+
+                {/* Contenido */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        #{slot.orden}
+                      </span>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {slot.etiqueta}
+                      </p>
+                    </div>
+
+                    {/* Estado badge */}
+                    <span
+                      className={cn(
+                        'text-xs px-2 py-0.5 rounded-full font-medium shrink-0',
+                        slot.estado === 'FIRMADO'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'
+                          : slot.estado === 'RECHAZADO'
+                            ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      )}
+                    >
+                      {slot.estado === 'FIRMADO'
+                        ? `Firmado${slot.fecha ? ` ${slot.fecha}` : ''}`
+                        : slot.estado === 'RECHAZADO'
+                          ? 'Rechazado'
+                          : 'Pendiente'}
+                    </span>
+                  </div>
+
+                  {/* Firma previa (imagen) */}
+                  {slot.estado === 'FIRMADO' && slot.firma_data && (
+                    <div className="mt-2 border border-emerald-200 dark:border-emerald-700 rounded p-1 bg-white dark:bg-gray-900 inline-block">
+                      <img src={slot.firma_data} alt="Firma" className="max-h-[60px]" />
+                    </div>
+                  )}
+
+                  {/* Canvas inline para firmar */}
+                  {signable && !isActive && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveSlot(slot.orden)}
+                      className="mt-2 flex items-center gap-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+                    >
+                      <Pen className="w-3.5 h-3.5" />
+                      Firmar
+                    </button>
+                  )}
+
+                  {isActive && (
+                    <InlineSignatureCanvas
+                      onSave={(data) => handleSign(slot.orden, data)}
+                      onCancel={() => setActiveSlot(null)}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Canvas inline para FIRMA_WORKFLOW
+interface InlineSignatureCanvasProps {
+  onSave: (dataUrl: string) => void;
+  onCancel: () => void;
+}
+
+const InlineSignatureCanvas = ({ onSave, onCancel }: InlineSignatureCanvasProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasStrokes, setHasStrokes] = useState(false);
+
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) {
+      const t = e.touches[0] || e.changedTouches[0];
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+    return {
+      x: (e as React.MouseEvent).clientX - rect.left,
+      y: (e as React.MouseEvent).clientY - rect.top,
+    };
+  };
+
+  const start = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    setIsDrawing(true);
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    setHasStrokes(true);
+  };
+
+  const stop = () => setIsDrawing(false);
+
+  const clear = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasStrokes(false);
+  };
+
+  const save = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !hasStrokes) return;
+    onSave(canvas.toDataURL('image/png'));
+  };
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="relative border-2 border-dashed border-indigo-300 dark:border-indigo-600 rounded-lg bg-white dark:bg-gray-900">
+        <canvas
+          ref={canvasRef}
+          width={320}
+          height={100}
+          onMouseDown={start}
+          onMouseMove={draw}
+          onMouseUp={stop}
+          onMouseLeave={stop}
+          onTouchStart={start}
+          onTouchMove={draw}
+          onTouchEnd={stop}
+          onTouchCancel={stop}
+          className="w-full cursor-crosshair rounded-lg"
+          style={{ touchAction: 'none' }}
+        />
+        {!hasStrokes && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1">
+              <Pen className="h-3 w-3" />
+              Trace su firma aquí
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="primary" size="sm" onClick={save} disabled={!hasStrokes} type="button">
+          Confirmar firma
+        </Button>
+        <Button variant="outline" size="sm" onClick={clear} type="button">
+          Limpiar
+        </Button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 };

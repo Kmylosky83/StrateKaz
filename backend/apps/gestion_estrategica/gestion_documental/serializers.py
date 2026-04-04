@@ -181,7 +181,9 @@ class CampoFormularioDetailSerializer(serializers.ModelSerializer):
             'es_obligatorio', 'validacion_regex', 'mensaje_validacion',
             'valor_minimo', 'valor_maximo', 'longitud_minima', 'longitud_maxima',
             'columnas_tabla', 'orden', 'ancho_columna', 'clase_css',
-            'condicion_visible', 'is_active',
+            'condicion_visible', 'formula_calculo',
+            'config_firmantes', 'modo_firma', 'nivel_seguridad_firma',
+            'is_active',
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']

@@ -47,7 +47,24 @@ export type TipoCampoFormulario =
   | 'URL'
   | 'SIGNATURE'
   | 'TABLA'
-  | 'SECCION';
+  | 'SECCION'
+  | 'FIRMA_WORKFLOW';
+
+export type ModoFirma = 'SECUENCIAL' | 'PARALELO' | 'MIXTO';
+
+export interface FirmaSlotConfig {
+  orden: number;
+  etiqueta: string;
+  cargo_id?: number;
+}
+
+export interface FirmaSlotValue {
+  orden: number;
+  etiqueta: string;
+  estado: 'PENDIENTE' | 'FIRMADO' | 'RECHAZADO';
+  firma_data: string | null;
+  fecha?: string;
+}
 
 export type TipoControl = 'DISTRIBUCION' | 'ACTUALIZACION' | 'RETIRO' | 'DESTRUCCION' | 'ARCHIVO';
 
@@ -332,6 +349,9 @@ export interface CampoFormulario {
   clase_css: string;
   condicion_visible: CondicionVisibilidad;
   formula_calculo?: FormulaCalculo;
+  config_firmantes: FirmaSlotConfig[];
+  modo_firma: ModoFirma;
+  nivel_seguridad_firma: number | null;
   is_active: boolean;
   empresa_id: number;
   created_at: string;

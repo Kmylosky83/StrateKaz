@@ -28,6 +28,7 @@ import {
   PenTool,
   Table2,
   SeparatorHorizontal,
+  GitMerge,
 } from 'lucide-react';
 
 // Re-exports
@@ -60,6 +61,7 @@ export const FIELD_TYPE_METADATA: Record<TipoCampoFormulario, FieldTypeMeta> = {
   SIGNATURE: { label: 'Firma', icon: PenTool, group: 'Especial' },
   TABLA: { label: 'Tabla', icon: Table2, group: 'Especial' },
   SECCION: { label: 'Separador / Seccion', icon: SeparatorHorizontal, group: 'Especial' },
+  FIRMA_WORKFLOW: { label: 'Flujo de Firmas', icon: GitMerge, group: 'Especial' },
 };
 
 export const FIELD_GROUPS: FieldGroup[] = ['Texto', 'Datos', 'Seleccion', 'Especial'];
@@ -126,6 +128,16 @@ export function createEmptyCampo(
     ancho_columna: tipo === 'SECCION' ? 12 : 12,
     clase_css: '',
     condicion_visible: {} as CondicionVisibilidad,
+    config_firmantes:
+      tipo === 'FIRMA_WORKFLOW'
+        ? [
+            { orden: 1, etiqueta: 'Elaborador' },
+            { orden: 2, etiqueta: 'Revisor' },
+            { orden: 3, etiqueta: 'Aprobador' },
+          ]
+        : [],
+    modo_firma: 'SECUENCIAL',
+    nivel_seguridad_firma: tipo === 'FIRMA_WORKFLOW' ? 1 : null,
     is_active: true,
   };
 }

@@ -964,6 +964,13 @@ class CampoFormulario(models.Model):
         ('SIGNATURE', 'Firma'),
         ('TABLA', 'Tabla Dinámica'),
         ('SECCION', 'Sección/Separador'),
+        ('FIRMA_WORKFLOW', 'Firma con Workflow'),
+    ]
+
+    MODO_FIRMA_CHOICES = [
+        ('SECUENCIAL', 'Secuencial'),
+        ('PARALELO', 'Paralelo'),
+        ('MIXTO', 'Mixto'),
     ]
 
     plantilla = models.ForeignKey(
@@ -1074,6 +1081,34 @@ class CampoFormulario(models.Model):
         blank=True,
         verbose_name='Columnas de Tabla',
         help_text='Definición de columnas si tipo_campo es TABLA'
+    )
+
+    # Configuración FIRMA_WORKFLOW (tipo #17)
+    config_firmantes = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Configuración de Firmantes',
+        help_text=(
+            'Lista ordenada de firmantes para FIRMA_WORKFLOW. '
+            'Ejemplo: [{"orden": 1, "cargo_id": 5, "etiqueta": "Solicitante"}, ...]'
+        )
+    )
+    modo_firma = models.CharField(
+        max_length=20,
+        choices=MODO_FIRMA_CHOICES,
+        default='SECUENCIAL',
+        blank=True,
+        verbose_name='Modo de Firma',
+        help_text='Aplica solo cuando tipo_campo=FIRMA_WORKFLOW'
+    )
+    nivel_seguridad_firma = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Nivel de Seguridad de Firma',
+        help_text=(
+            '1=Manuscrita, 2=TOTP, 3=TOTP+Email. '
+            'Si null hereda del TipoDocumento. Aplica solo a FIRMA_WORKFLOW.'
+        )
     )
 
     # Diseño

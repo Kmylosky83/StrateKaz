@@ -14,7 +14,7 @@
  *
  * Reutiliza hooks y modales de gestion-estrategica/gestion-documental
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout';
 import { DynamicSections, ConfirmDialog } from '@/components/common';
@@ -33,6 +33,7 @@ import { SignatureModal } from '@/components/modals/SignatureModal';
 import { Textarea } from '@/components/forms';
 
 import { GestionDocumentalTab } from '../components/GestionDocumentalTab';
+import { GDSearchModal } from '../components/GDSearchModal';
 
 const MODULE_CODE = 'gestion_documental';
 const TAB_CODE = 'gestion_documental';
@@ -82,6 +83,19 @@ export const GestionDocumentalPage = () => {
     firmaId: number | null;
   }>({ isOpen: false, firmaId: null });
   const [motivoRechazo, setMotivoRechazo] = useState('');
+  const [gdSearchOpen, setGdSearchOpen] = useState(false);
+
+  // Ctrl+K → abrir búsqueda rápida
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setGdSearchOpen(true);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Handlers de firma
   const handleFirmar = useCallback((firmaId: number, rolDisplay?: string) => {
@@ -233,6 +247,16 @@ export const GestionDocumentalPage = () => {
         confirmText={isRechazando ? 'Rechazando...' : 'Rechazar'}
         variant="danger"
         isLoading={isRechazando}
+      />
+
+      {/* Búsqueda rápida Ctrl+K */}
+      <GDSearchModal
+        isOpen={gdSearchOpen}
+        onClose={() => setGdSearchOpen(false)}
+        onSelectDocumento={(id) => {
+          setGdSearchOpen(false);
+          setDocumentoDetailModal({ isOpen: true, documentoId: id });
+        }}
       />
     </div>
   );

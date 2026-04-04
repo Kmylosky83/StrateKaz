@@ -98,9 +98,9 @@ Tres fallbacks conviven, generando **dos formatos distintos:**
 
 | # | Brecha | Severidad | Sprint |
 |---|--------|-----------|--------|
-| 1 | Acceso a docs CONFIDENCIAL/RESTRINGIDO sin enforcement | **Seguridad** | Sprint 1 |
-| 2 | AceptacionDocumental no se invalida al publicar nueva versión | **Funcional** | Sprint 1 |
-| 3 | Sin notificaciones de vencimiento de documentos | Funcional | Sprint 1 |
+| 1 | ~~Acceso a docs CONFIDENCIAL/RESTRINGIDO sin enforcement~~ | ~~Seguridad~~ | **RESUELTO** (2b8261cc) |
+| 2 | ~~AceptacionDocumental no se invalida al publicar nueva versión~~ | ~~Funcional~~ | **RESUELTO** (2b8261cc) |
+| 3 | ~~Sin notificaciones de vencimiento de documentos~~ | ~~Funcional~~ | **YA EXISTÍA** (tasks.py) |
 | 4 | 2 formatos de código incompatibles (sin proceso en el código) | Certificación | Sprint 2 |
 | 5 | `puestos_aplicacion` campo muerto sin uso | Deuda | Sprint 2 |
 | 6 | Form Builder no genera PDF (datos_formulario → PDF vacío) | Funcional | Sprint 3.5 |
@@ -668,17 +668,17 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 
 ## 17. Roadmap Detallado
 
-### Sprint 1 — Seguridad + Funcional Crítico
+### Sprint 1 — Seguridad + Funcional Crítico `[COMPLETADO 2026-04-04]`
 
-**Objetivo:** Cerrar brechas de seguridad y funcionalidad básica que afectan integridad del SGI.
+**Commit:** `2b8261cc`
 
-| # | Tarea | Capa | Entregable | Criterio de Aceptación |
-|---|-------|------|-----------|----------------------|
-| 1.1 | `DocumentoAccessMixin`: validar `clasificacion` + `usuarios_autorizados` (lógica sección 8.5) | Backend | Permission mixin | 403 si usuario no autorizado accede a doc CONFIDENCIAL/RESTRINGIDO |
-| 1.2 | Campos `version_documento` (FK) e `invalidada` (Bool) en AceptacionDocumental | Backend | Migration | Campo FK funcional, `mis-pendientes` excluye invalidadas |
-| 1.3 | Resetear AceptacionDocumental al publicar nueva versión: invalidar anteriores, crear nuevas, notificar | Backend | Service update | Al publicar v2, acuses de v1 quedan invalidados; nuevos creados |
-| 1.4 | Celery beat task semanal: notificar docs próximos a vencer (30 días) | Backend | Task + seed TipoNotificacion | Notificación creada sin duplicados |
-| 1.5 | Badge 'Próximo a vencer' en cards del Repositorio y Dashboard | Frontend | Badge warning | Docs con `fecha_revision_programada` < 30 días muestran badge |
+| # | Tarea | Estado | Detalle |
+|---|-------|--------|---------|
+| 1.1 | `DocumentoAccessMixin` | DONE | `mixins.py` — aplicado en retrieve, export PDF/DOCX, verificar-sellado, subir/eliminar-anexo |
+| 1.2 | Campo `invalidada` en AceptacionDocumental | DONE | Migración `0014_add_invalidada_aceptacion` — `version_documento` CharField ya existía |
+| 1.3 | Invalidar aceptaciones al publicar nueva versión | DONE | `DocumentoService.publicar_documento()` + filtro `invalidada=False` en `mis-pendientes` |
+| 1.4 | Celery tasks de vencimiento | YA EXISTÍA | Tasks `verificar_documentos_revision_programada` y `notificar_documentos_por_vencer` ya implementadas |
+| 1.5 | Badge "Próximo a vencer" en Repositorio | DONE | Cards + list view: "Vence en Xd" (warning) / "Vencido" (danger) para PUBLICADOS |
 
 ### Sprint 2 — Codificación + TRD + FK Proceso
 
@@ -793,9 +793,9 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 
 | # | Deuda | Severidad | Sprint | Estado |
 |---|-------|-----------|--------|--------|
-| DT-01 | Acceso CONFIDENCIAL sin enforcement (cualquier usuario del tenant ve todo) | **Crítica** | Sprint 1 | Pendiente |
-| DT-02 | AceptacionDocumental no se invalida al publicar nueva versión | **Alta** | Sprint 1 | Pendiente |
-| DT-03 | Sin notificaciones de vencimiento de documentos | Alta | Sprint 1 | Pendiente |
+| DT-01 | ~~Acceso CONFIDENCIAL sin enforcement~~ | ~~Crítica~~ | Sprint 1 | **RESUELTO** (2b8261cc) |
+| DT-02 | ~~AceptacionDocumental no se invalida al publicar nueva versión~~ | ~~Alta~~ | Sprint 1 | **RESUELTO** (2b8261cc) |
+| DT-03 | ~~Sin notificaciones de vencimiento de documentos~~ | ~~Alta~~ | Sprint 1 | **YA EXISTÍA** |
 | DT-04 | 2 formatos de código incompatibles (PR-001 vs POL-2026-0001) | Alta | Sprint 2 | Pendiente |
 | DT-05 | `puestos_aplicacion` campo muerto (0 usos en FE/BE) | Baja | Sprint 2 | Pendiente |
 | DT-06 | `areas_aplicacion` guarda strings arbitrarios (no Area.code) | Media | Sprint 2 | Pendiente |

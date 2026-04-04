@@ -190,10 +190,13 @@ export interface Documento {
   fecha_revision_programada: string | null;
   fecha_obsolescencia: string | null;
   elaborado_por: number;
+  elaborado_por_nombre?: string;
   elaborado_por_detail?: UserDetail;
   revisado_por: number | null;
+  revisado_por_nombre?: string;
   revisado_por_detail?: UserDetail;
   aprobado_por: number | null;
+  aprobado_por_nombre?: string;
   aprobado_por_detail?: UserDetail;
   areas_aplicacion: string[];
   puestos_aplicacion: string[];

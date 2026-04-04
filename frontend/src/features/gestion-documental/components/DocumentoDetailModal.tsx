@@ -230,17 +230,17 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Elaborado por"
-                      value={documento.elaborado_por_detail?.full_name || '-'}
+                      value={documento.elaborado_por_nombre || '-'}
                     />
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Revisado por"
-                      value={documento.revisado_por_detail?.full_name || '-'}
+                      value={documento.revisado_por_nombre || '-'}
                     />
                     <InfoItem
                       icon={<User className="w-4 h-4" />}
                       label="Aprobado por"
-                      value={documento.aprobado_por_detail?.full_name || '-'}
+                      value={documento.aprobado_por_nombre || '-'}
                     />
                   </div>
 

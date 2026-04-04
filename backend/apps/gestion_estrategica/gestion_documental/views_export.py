@@ -29,7 +29,13 @@ def _get_empresa():
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def export_documento_pdf(request, pk):
-    """Exporta un documento a PDF."""
+    """Exporta un documento a PDF.
+
+    Prioridad:
+    1. archivo_pdf existente (generado previamente) → servir directo.
+    2. archivo_original (doc externo ingestado)     → servir directo.
+    3. Generar con WeasyPrint desde contenido HTML.
+    """
     documento = get_object_or_404(
         Documento.objects.select_related(
             'tipo_documento', 'plantilla', 'elaborado_por',
@@ -37,13 +43,40 @@ def export_documento_pdf(request, pk):
         ),
         pk=pk,
     )
-    empresa = _get_empresa()
 
+    def _serve_file(field, filename):
+        """Sirve un FileField directamente como descarga PDF."""
+        try:
+            with open(field.path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                Documento.objects.filter(pk=pk).update(
+                    numero_descargas=documento.numero_descargas + 1
+                )
+                return response
+        except (FileNotFoundError, OSError):
+            return None  # archivo no existe en disco, continuar al siguiente paso
+
+    # 1. PDF generado previamente
+    if documento.archivo_pdf and documento.archivo_pdf.name:
+        filename = f'{documento.codigo}-v{documento.version_actual}.pdf'
+        resp = _serve_file(documento.archivo_pdf, filename)
+        if resp:
+            return resp
+
+    # 2. PDF original ingestado (documento externo)
+    if documento.es_externo and documento.archivo_original and documento.archivo_original.name:
+        filename = f'{documento.codigo}.pdf'
+        resp = _serve_file(documento.archivo_original, filename)
+        if resp:
+            return resp
+
+    # 3. Generar con WeasyPrint
+    empresa = _get_empresa()
     try:
         generator = DocumentoPDFGenerator(empresa=empresa)
         pdf_buffer = generator.generate_documento_pdf(documento, usuario=request.user)
 
-        # Incrementar contador de descargas
         Documento.objects.filter(pk=pk).update(
             numero_descargas=documento.numero_descargas + 1
         )

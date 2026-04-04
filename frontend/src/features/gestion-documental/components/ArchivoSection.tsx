@@ -34,7 +34,7 @@ import {
   ArrowLeftRight,
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner, ProtectedAction } from '@/components/common';
-import { Modal } from '@/components/modals';
+import { BaseModal } from '@/components/modals';
 import { Input } from '@/components/forms';
 import { PageTabs, StatsGrid, StatsGridSkeleton, TableSkeleton } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
@@ -465,7 +465,7 @@ function VersionDiffModal({
   const versionActual = versiones.find((v) => v.id === versionId);
 
   return (
-    <Modal isOpen onClose={onClose} title="Comparación de Versiones" size="xl">
+    <BaseModal isOpen onClose={onClose} title="Comparación de Versiones" size="xl">
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" />
@@ -597,7 +597,7 @@ function VersionDiffModal({
           )}
         </div>
       )}
-    </Modal>
+    </BaseModal>
   );
 }
 

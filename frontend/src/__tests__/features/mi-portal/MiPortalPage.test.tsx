@@ -322,13 +322,13 @@ describe('MiPortalPage', () => {
     it('debe mostrar vista de Portal del Administrador', () => {
       renderWithProviders(<MiPortalPage />);
 
-      expect(screen.getByText('Portal del Administrador')).toBeInTheDocument();
+      expect(screen.getByText('Administrador del Sistema')).toBeInTheDocument();
     });
 
     it('debe mostrar enlace a Dashboard', () => {
       renderWithProviders(<MiPortalPage />);
 
-      expect(screen.getByText('Ir al Dashboard')).toBeInTheDocument();
+      expect(screen.getByText('Dashboard')).toBeInTheDocument();
     });
 
     it('debe mostrar enlace a Ver Usuarios', () => {

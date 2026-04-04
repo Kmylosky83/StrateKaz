@@ -21,7 +21,7 @@ import {
   Eye,
   GitPullRequest,
 } from 'lucide-react';
-import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
+import { Card, Button, EmptyState, Badge } from '@/components/common';
 import { PageTabs, TableSkeleton } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
 import { useModuleColor } from '@/hooks/useModuleColor';

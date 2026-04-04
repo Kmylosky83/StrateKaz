@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from apps.core.base_models.mixins import get_tenant_empresa
 from .models import Documento
 from .exporters import DocumentoPDFGenerator, DocumentoDOCXGenerator
+from .mixins import verificar_acceso_documento
 
 
 def _get_empresa():
@@ -43,6 +44,7 @@ def export_documento_pdf(request, pk):
         ),
         pk=pk,
     )
+    verificar_acceso_documento(request.user, documento)
 
     def _serve_file(field, filename):
         """Sirve un FileField directamente como descarga PDF."""
@@ -106,6 +108,7 @@ def export_documento_docx(request, pk):
         ),
         pk=pk,
     )
+    verificar_acceso_documento(request.user, documento)
     empresa = _get_empresa()
 
     try:

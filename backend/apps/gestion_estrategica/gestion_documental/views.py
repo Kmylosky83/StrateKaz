@@ -20,6 +20,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.core.mixins import ExportMixin
 from apps.core.base_models.mixins import get_tenant_empresa
 from apps.audit_system.services import AuditSystemService
+from .mixins import verificar_acceso_documento
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
@@ -371,6 +372,13 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             )
 
         return queryset.order_by('-fecha_publicacion', 'codigo')
+
+    def retrieve(self, request, *args, **kwargs):
+        """Verifica acceso a documentos CONFIDENCIAL/RESTRINGIDO antes de retornar detalle."""
+        instance = self.get_object()
+        verificar_acceso_documento(request.user, instance)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         from rest_framework.exceptions import PermissionDenied
@@ -792,6 +800,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         Almacena metadata en archivos_anexos (JSONField).
         """
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         archivo = request.FILES.get('archivo')
         if not archivo:
             return Response(
@@ -872,6 +881,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def eliminar_anexo(self, request, pk=None, anexo_id=None):
         """Elimina un archivo anexo por su ID interno."""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         anexos = documento.archivos_anexos or []
 
         anexo_encontrado = None
@@ -1247,6 +1257,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def verificar_sellado(self, request, pk=None):
         """Verifica integridad del PDF sellado recalculando SHA-256."""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
 
         if documento.sellado_estado != 'COMPLETADO':
             return Response(
@@ -1539,6 +1550,7 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
         ).filter(
             usuario=request.user,
             estado__in=['PENDIENTE', 'EN_PROGRESO'],
+            invalidada=False,
         ).order_by('fecha_limite', '-fecha_asignacion')
 
         return Response(AceptacionDocumentalListSerializer(qs, many=True).data)

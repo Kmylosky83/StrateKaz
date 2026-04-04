@@ -18,6 +18,7 @@ import {
   List,
   GitPullRequest,
   Wand2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Card,
@@ -74,6 +75,19 @@ function formatFecha(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-CO');
+}
+
+/** Calcula días restantes para revisión programada. Retorna null si no aplica. */
+function diasParaRevision(doc: {
+  estado: string;
+  fecha_revision_programada?: string | null;
+}): number | null {
+  if (doc.estado !== 'PUBLICADO' || !doc.fecha_revision_programada) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fecha = new Date(doc.fecha_revision_programada);
+  if (isNaN(fecha.getTime())) return null;
+  return Math.ceil((fecha.getTime() - hoy.getTime()) / (1000 * 86400));
 }
 
 interface DocumentosSectionProps {
@@ -289,6 +303,25 @@ export function DocumentosSection({
                           metadatos={documento.ocr_metadatos}
                         />
                       )}
+                      {(() => {
+                        const dias = diasParaRevision(documento);
+                        if (dias === null) return null;
+                        if (dias < 0)
+                          return (
+                            <Badge variant="danger" size="sm">
+                              <AlertTriangle className="w-3 h-3 mr-1 inline" />
+                              Vencido
+                            </Badge>
+                          );
+                        if (dias <= 30)
+                          return (
+                            <Badge variant="warning" size="sm">
+                              <AlertTriangle className="w-3 h-3 mr-1 inline" />
+                              Vence en {dias}d
+                            </Badge>
+                          );
+                        return null;
+                      })()}
                     </div>
                     <DocumentActions
                       documento={documento}
@@ -345,10 +378,27 @@ export function DocumentosSection({
                     </div>
 
                     {/* Estado */}
-                    <div>
+                    <div className="flex items-center gap-1 flex-wrap">
                       <Badge variant={estadoCfg.variant} size="sm">
                         {estadoCfg.label}
                       </Badge>
+                      {(() => {
+                        const dias = diasParaRevision(documento);
+                        if (dias === null) return null;
+                        if (dias < 0)
+                          return (
+                            <Badge variant="danger" size="sm">
+                              Vencido
+                            </Badge>
+                          );
+                        if (dias <= 30)
+                          return (
+                            <Badge variant="warning" size="sm">
+                              {dias}d
+                            </Badge>
+                          );
+                        return null;
+                      })()}
                     </div>
 
                     {/* Fecha */}

@@ -14,6 +14,7 @@ from ..models import (
     Documento,
     VersionDocumento,
     ControlDocumental,
+    AceptacionDocumental,
 )
 
 logger = logging.getLogger(__name__)
@@ -341,6 +342,23 @@ class DocumentoService:
                         'version': doc.version_actual,
                     },
                 )
+
+        # ── Invalidar aceptaciones de versiones anteriores ─────────────────
+        # Sprint 1 — Arquitectura GD v5 §5.4: al publicar nueva versión,
+        # las AceptacionDocumental de versiones previas se invalidan y se
+        # re-distribuyen para que los usuarios lean la versión actualizada.
+        invalidadas = AceptacionDocumental.objects.filter(
+            documento=doc,
+            invalidada=False,
+        ).exclude(
+            version_documento=doc.version_actual,
+        ).update(invalidada=True)
+
+        if invalidadas > 0:
+            logger.info(
+                '[publicar] Documento %s v%s: %d aceptaciones de versiones anteriores invalidadas',
+                doc.codigo, doc.version_actual, invalidadas,
+            )
 
         # Distribuir lectura obligatoria a TODOS los usuarios activos
         if doc.lectura_obligatoria:

@@ -1410,6 +1410,17 @@ class AceptacionDocumental(models.Model):
         help_text='Navegador y dispositivo del usuario'
     )
 
+    # Invalidación por nueva versión (Sprint 1 — Arquitectura GD v5 §5.4)
+    invalidada = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name='Invalidada',
+        help_text=(
+            'True cuando se publica una nueva versión del documento. '
+            'Las aceptaciones invalidadas no aparecen en mis-pendientes.'
+        ),
+    )
+
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
@@ -1431,6 +1442,7 @@ class AceptacionDocumental(models.Model):
             models.Index(fields=['empresa_id', 'documento']),
             models.Index(fields=['fecha_limite']),
             models.Index(fields=['estado']),
+            models.Index(fields=['invalidada']),
         ]
 
     def __str__(self):

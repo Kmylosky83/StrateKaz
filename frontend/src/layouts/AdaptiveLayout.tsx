@@ -25,7 +25,7 @@ import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 
 const MAX_PROFILE_RETRIES = 5;
-const ABSOLUTE_TIMEOUT_MS = 35_000; // 35s — cubre los ~30s totales del backoff (0+2+4+8+16)
+const ABSOLUTE_TIMEOUT_MS = 90_000; // 90s — da tiempo a que Docker arranque tras sleep del SO
 
 /** Delay progresivo entre reintentos (ms): 0, 2s, 4s, 8s, 16s */
 function getRetryDelay(attempt: number): number {
@@ -122,7 +122,7 @@ export const AdaptiveLayout = () => {
       return (
         <div className="flex h-screen flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-900">
           <p className="text-gray-600 dark:text-gray-400">
-            No se pudo cargar tu sesión. Tu sesión puede haber expirado.
+            No se pudo conectar con el servidor. Verifica que Docker esté activo o intenta de nuevo.
           </p>
           <div className="flex gap-3">
             <button

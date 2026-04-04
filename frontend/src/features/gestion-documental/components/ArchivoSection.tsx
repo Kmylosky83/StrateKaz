@@ -28,6 +28,7 @@ import {
   Users,
   FileCheck,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner, ProtectedAction } from '@/components/common';
 import { Input } from '@/components/forms';
@@ -47,13 +48,14 @@ import type { Documento } from '../types/gestion-documental.types';
 
 const IngestarLoteModal = lazy(() => import('./IngestarLoteModal'));
 
-type SubTab = 'vigentes' | 'versiones' | 'distribucion' | 'archivados';
+type SubTab = 'vigentes' | 'versiones' | 'distribucion' | 'archivados' | 'registros_externos';
 
 const ARCHIVO_TABS: TabItem[] = [
   { id: 'vigentes', label: 'Vigentes', icon: BookOpen },
   { id: 'versiones', label: 'Versiones', icon: GitBranch },
   { id: 'distribucion', label: 'Distribución', icon: Share2 },
   { id: 'archivados', label: 'Archivados', icon: Archive },
+  { id: 'registros_externos', label: 'Registros Externos', icon: ExternalLink },
 ];
 
 interface ArchivoSectionProps {
@@ -131,6 +133,9 @@ export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
       {activeTab === 'versiones' && <VersionesTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'distribucion' && <DistribucionTab onViewDocumento={onViewDocumento} />}
       {activeTab === 'archivados' && <ArchivadosTab onViewDocumento={onViewDocumento} />}
+      {activeTab === 'registros_externos' && (
+        <RegistrosExternosTab onViewDocumento={onViewDocumento} />
+      )}
 
       <Suspense fallback={null}>
         {showLoteModal && (
@@ -535,6 +540,70 @@ function DistribucionTab({ onViewDocumento }: { onViewDocumento: (id: number) =>
 }
 
 // ── Tab Archivados ────────────────────────────────────────────────────────
+
+function RegistrosExternosTab({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
+  const { data: archivados, isLoading } = useDocumentos({ estado: 'ARCHIVADO' });
+  const registros = (archivados ?? []).filter((d) => d.modulo_origen);
+
+  const MODULO_LABELS: Record<string, string> = {
+    hseq: 'HSEQ',
+    talento_humano: 'Talento Humano',
+    pesv: 'PESV',
+    bpm: 'BPM',
+    auditoria: 'Auditoría',
+  };
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center py-8">
+        <Spinner size="md" />
+      </div>
+    );
+  if (registros.length === 0) {
+    return (
+      <EmptyState
+        icon={<ExternalLink className="w-10 h-10" />}
+        title="Sin registros externos"
+        description="Cuando los módulos C2 (HSEQ, Talento Humano, PESV) generen registros, aparecerán aquí como evidencia archivada."
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {registros.map((doc) => (
+        <Card key={doc.id} className="p-4 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-medium text-gray-900 dark:text-white truncate">{doc.titulo}</p>
+                <Badge variant="secondary" size="sm">
+                  {doc.codigo}
+                </Badge>
+                <Badge variant="info" size="sm">
+                  {MODULO_LABELS[doc.modulo_origen || ''] || doc.modulo_origen}
+                </Badge>
+              </div>
+              {doc.proceso_nombre && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Proceso: {doc.proceso_nombre}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={<Eye className="w-4 h-4" />}
+              onClick={() => onViewDocumento(doc.id)}
+            >
+              Ver
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 function ArchivadosTab({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
   const { data: obsoletos, isLoading: loadingObsoletos } = useDocumentos({ estado: 'OBSOLETO' });

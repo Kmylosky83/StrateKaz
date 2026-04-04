@@ -10,6 +10,7 @@ usando GenericForeignKey para vincular firmas a cualquier modelo.
 """
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
@@ -635,6 +636,30 @@ class Documento(models.Model):
         verbose_name='Auto-generado desde BPM',
         help_text='True si el documento se genera automáticamente desde un flujo BPM'
     )
+
+    # Trazabilidad inversa a módulos C2 (Sprint 3 — Arquitectura GD v5 §6.2)
+    # GenericForeignKey para saber qué objeto del módulo origen generó este documento.
+    modulo_origen = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name='Módulo Origen',
+        help_text="Módulo C2 que generó este registro: 'hseq', 'talento_humano', 'pesv', etc.",
+    )
+    referencia_origen_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_originados',
+        verbose_name='Tipo de Referencia Origen',
+    )
+    referencia_origen_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='ID Referencia Origen',
+    )
+    referencia_origen = GenericForeignKey('referencia_origen_type', 'referencia_origen_id')
 
     # Scoring heurístico (Fase 6)
     score_cumplimiento = models.IntegerField(

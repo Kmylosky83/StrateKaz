@@ -215,6 +215,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
             'proceso', 'proceso_code', 'proceso_nombre',
+            'modulo_origen',
             'es_politica_integral', 'lectura_obligatoria',
             'ocr_estado', 'ocr_metadatos', 'es_externo',
             'archivo_original', 'archivo_pdf',

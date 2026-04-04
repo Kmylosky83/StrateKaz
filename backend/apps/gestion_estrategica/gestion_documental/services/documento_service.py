@@ -91,6 +91,148 @@ class DocumentoService:
             consecutivo_codigo, empresa_id=empresa_id
         )
 
+    # =========================================================================
+    # API Pública para Módulos C2 (Sprint 3 — Arquitectura GD v5 §12.2)
+    # =========================================================================
+
+    @classmethod
+    def archivar_registro(
+        cls, pdf_file, tipo_codigo, proceso, empresa_id, usuario,
+        modulo_origen='', referencia=None, titulo='', resumen='',
+    ):
+        """
+        Deposita un PDF/registro ya completado directamente como ARCHIVADO.
+        Sin ciclo de firmas. Para evidencias, inspecciones, registros operativos.
+
+        Args:
+            pdf_file: InMemoryUploadedFile o File con el PDF.
+            tipo_codigo: str — código del TipoDocumento (ej: 'RG', 'AC').
+            proceso: Area instance — proceso SGI.
+            empresa_id: int.
+            usuario: User instance.
+            modulo_origen: str — 'hseq', 'talento_humano', 'pesv'.
+            referencia: objeto Django (opcional) — para GenericFK de trazabilidad.
+            titulo: str — título del documento.
+            resumen: str — resumen del documento.
+
+        Returns: Documento creado con estado=ARCHIVADO.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo, empresa_id=empresa_id)
+        codigo = cls.generar_codigo(tipo_documento, empresa_id, proceso)
+
+        doc = Documento(
+            codigo=codigo,
+            titulo=titulo or f'{tipo_documento.nombre} — {proceso.name}',
+            tipo_documento=tipo_documento,
+            proceso=proceso,
+            resumen=resumen,
+            estado='ARCHIVADO',
+            clasificacion='INTERNO',
+            elaborado_por=usuario,
+            es_auto_generado=True,
+            modulo_origen=modulo_origen,
+            empresa_id=empresa_id,
+        )
+
+        if referencia:
+            doc.referencia_origen_type = ContentType.objects.get_for_model(referencia)
+            doc.referencia_origen_id = referencia.pk
+
+        doc.save()
+
+        if pdf_file:
+            doc.archivo_pdf.save(f'{codigo}.pdf', pdf_file, save=True)
+
+        logger.info(
+            '[archivar_registro] %s archivado desde %s (empresa=%s)',
+            codigo, modulo_origen, empresa_id,
+        )
+        return doc
+
+    @classmethod
+    def crear_desde_modulo(
+        cls, contenido, tipo_codigo, proceso, empresa_id, usuario,
+        firmantes_config=None, modulo_origen='', referencia=None,
+        titulo='', resumen='',
+    ):
+        """
+        Crea un documento con ciclo de vida completo (firmas, distribución).
+        Para actas, procedimientos generados por BPM.
+
+        Args:
+            contenido: str — HTML del documento.
+            tipo_codigo: str — código del TipoDocumento (ej: 'AC', 'PR').
+            proceso: Area instance.
+            empresa_id: int.
+            usuario: User instance.
+            firmantes_config: list — [{cargo_id, rol_firma, orden}, ...] (opcional).
+            modulo_origen: str — 'hseq', 'bpm', 'auditoria'.
+            referencia: objeto Django (opcional).
+            titulo: str.
+            resumen: str.
+
+        Returns: Documento creado con estado=BORRADOR + FirmaDigital creadas.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo, empresa_id=empresa_id)
+        codigo = cls.generar_codigo(tipo_documento, empresa_id, proceso)
+
+        doc = Documento(
+            codigo=codigo,
+            titulo=titulo or f'{tipo_documento.nombre} — {proceso.name}',
+            tipo_documento=tipo_documento,
+            proceso=proceso,
+            contenido=contenido,
+            resumen=resumen,
+            estado='BORRADOR',
+            clasificacion='INTERNO',
+            elaborado_por=usuario,
+            es_auto_generado=True,
+            modulo_origen=modulo_origen,
+            empresa_id=empresa_id,
+        )
+
+        if referencia:
+            doc.referencia_origen_type = ContentType.objects.get_for_model(referencia)
+            doc.referencia_origen_id = referencia.pk
+
+        doc.save()
+
+        # Crear firmas digitales si se proporcionan firmantes
+        if firmantes_config and tipo_documento.requiere_firma:
+            ct = ContentType.objects.get_for_model(Documento)
+            try:
+                FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
+                Cargo = apps.get_model('core', 'Cargo')
+                User = apps.get_model('core', 'User')
+
+                for fc in firmantes_config:
+                    cargo = Cargo.objects.get(pk=fc['cargo_id'])
+                    # Buscar usuario con ese cargo
+                    firmante = User.objects.filter(cargo=cargo, is_active=True).first()
+                    if firmante:
+                        FirmaDigital.objects.create(
+                            content_type=ct,
+                            object_id=str(doc.pk),
+                            usuario=firmante,
+                            cargo=cargo,
+                            rol_firma=fc.get('rol_firma', 'ELABORO'),
+                            orden=fc.get('orden', 0),
+                            estado='PENDIENTE',
+                            empresa_id=empresa_id,
+                        )
+            except Exception as e:
+                logger.warning('[crear_desde_modulo] Error creando firmas: %s', e)
+
+        logger.info(
+            '[crear_desde_modulo] %s creado desde %s con %d firmantes (empresa=%s)',
+            codigo, modulo_origen, len(firmantes_config or []), empresa_id,
+        )
+        return doc
+
     @classmethod
     def enviar_a_revision(cls, documento_id, usuario, empresa_id, revisor_id=None):
         """BORRADOR -> EN_REVISION."""

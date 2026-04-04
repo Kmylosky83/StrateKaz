@@ -241,6 +241,7 @@ export interface Documento {
   es_auto_generado?: boolean;
   es_externo: boolean;
   archivo_original?: string | null;
+  modulo_origen?: string;
   // Scoring (Fase 6)
   score_cumplimiento?: number;
   score_detalle?: ScoreDetalle;

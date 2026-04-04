@@ -235,6 +235,49 @@ export function DashboardDocumentalSection({
           <CoberturaPanel />
         </Suspense>
       </div>
+
+      {/* ── Registros archivados por módulo (Sprint 3) ── */}
+      {(() => {
+        const archivados = (documentos ?? []).filter(
+          (d) => d.estado === 'ARCHIVADO' && d.modulo_origen
+        );
+        if (archivados.length === 0) return null;
+        const porModulo: Record<string, number> = {};
+        archivados.forEach((d) => {
+          const mod = d.modulo_origen || 'otros';
+          porModulo[mod] = (porModulo[mod] || 0) + 1;
+        });
+        const LABELS: Record<string, string> = {
+          hseq: 'HSEQ',
+          talento_humano: 'Talento Humano',
+          pesv: 'PESV',
+          bpm: 'BPM',
+          auditoria: 'Auditoría',
+          otros: 'Otros',
+        };
+        return (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
+              Registros archivados por módulo
+            </h3>
+            <Card className="p-4">
+              <div className="space-y-2">
+                {Object.entries(porModulo).map(([mod, count]) => (
+                  <div key={mod} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      <Archive className="w-3.5 h-3.5 inline mr-1.5" />
+                      {LABELS[mod] || mod}
+                    </span>
+                    <Badge variant="secondary" size="sm">
+                      {count}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        );
+      })()}
     </div>
   );
 }

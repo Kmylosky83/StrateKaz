@@ -15,6 +15,7 @@ from .models import (
     CampoFormulario,
     ControlDocumental,
     AceptacionDocumental,
+    TablaRetencionDocumental,
 )
 
 
@@ -499,3 +500,29 @@ class AsignarLecturaSerializer(serializers.Serializer):
                 'o aplica_a_todos=true.'
             )
         return data
+
+
+# =============================================================================
+# Tabla de Retención Documental (TRD) — Sprint 2
+# =============================================================================
+class TablaRetencionDocumentalSerializer(serializers.ModelSerializer):
+    """Serializer para TRD con nombres legibles de tipo y proceso."""
+    tipo_documento_codigo = serializers.CharField(source='tipo_documento.codigo', read_only=True)
+    tipo_documento_nombre = serializers.CharField(source='tipo_documento.nombre', read_only=True)
+    proceso_code = serializers.CharField(source='proceso.code', read_only=True)
+    proceso_nombre = serializers.CharField(source='proceso.name', read_only=True)
+    disposicion_display = serializers.CharField(source='get_disposicion_final_display', read_only=True)
+    tiempo_total = serializers.IntegerField(source='tiempo_total_anos', read_only=True)
+
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = [
+            'id', 'tipo_documento', 'tipo_documento_codigo', 'tipo_documento_nombre',
+            'proceso', 'proceso_code', 'proceso_nombre',
+            'serie_documental', 'tiempo_gestion_anos', 'tiempo_central_anos',
+            'tiempo_total',
+            'disposicion_final', 'disposicion_display',
+            'soporte_legal', 'requiere_acta_destruccion', 'activo',
+            'empresa_id', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['empresa_id', 'created_at', 'updated_at']

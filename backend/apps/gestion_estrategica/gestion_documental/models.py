@@ -1458,3 +1458,91 @@ class AceptacionDocumental(models.Model):
 
     def __str__(self):
         return f"{self.usuario} — {self.documento.codigo} ({self.estado})"
+
+
+class TablaRetencionDocumental(models.Model):
+    """
+    Tabla de Retención Documental (TRD) — Sprint 2, Arquitectura GD v5 §9.
+
+    Define tiempos de retención por combinación tipo+proceso, alineado con
+    la normativa del Archivo General de la Nación (AGN) de Colombia.
+
+    unique_together: (tipo_documento, proceso, empresa_id) — una regla por combinación por tenant.
+    """
+    DISPOSICION_CHOICES = [
+        ('ELIMINAR', 'Eliminar'),
+        ('CONSERVAR_PERMANENTE', 'Conservar permanentemente'),
+        ('SELECCIONAR', 'Seleccionar (muestreo)'),
+        ('DIGITALIZAR', 'Digitalizar y eliminar físico'),
+    ]
+
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
+        on_delete=models.PROTECT,
+        related_name='trd_reglas',
+        verbose_name='Tipo Documental',
+    )
+    proceso = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.PROTECT,
+        related_name='trd_reglas',
+        verbose_name='Proceso',
+    )
+    serie_documental = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name='Serie Documental',
+        help_text='Serie según normativa AGN (ej: Actas de COPASST, Historias Laborales)',
+    )
+    tiempo_gestion_anos = models.PositiveIntegerField(
+        default=2,
+        verbose_name='Archivo de Gestión (años)',
+        help_text='Años en archivo de gestión (acceso frecuente)',
+    )
+    tiempo_central_anos = models.PositiveIntegerField(
+        default=5,
+        verbose_name='Archivo Central (años)',
+        help_text='Años en archivo central (consulta esporádica)',
+    )
+    disposicion_final = models.CharField(
+        max_length=30,
+        choices=DISPOSICION_CHOICES,
+        default='ELIMINAR',
+        verbose_name='Disposición Final',
+    )
+    soporte_legal = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Soporte Legal',
+        help_text='Normativa que justifica la retención (ej: Decreto 1072/2015, Ley 594/2000)',
+    )
+    requiere_acta_destruccion = models.BooleanField(
+        default=True,
+        verbose_name='Requiere Acta de Destrucción',
+    )
+    activo = models.BooleanField(
+        default=True,
+        verbose_name='Activo',
+    )
+
+    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'documental_tabla_retencion'
+        verbose_name = 'Regla de Retención Documental'
+        verbose_name_plural = 'Tabla de Retención Documental'
+        ordering = ['tipo_documento__codigo', 'proceso__code']
+        unique_together = ['tipo_documento', 'proceso', 'empresa_id']
+        indexes = [
+            models.Index(fields=['empresa_id', 'activo']),
+        ]
+
+    def __str__(self):
+        return f"{self.tipo_documento.codigo}-{self.proceso.code}: {self.tiempo_gestion_anos}+{self.tiempo_central_anos} años → {self.disposicion_final}"
+
+    @property
+    def tiempo_total_anos(self):
+        return self.tiempo_gestion_anos + self.tiempo_central_anos

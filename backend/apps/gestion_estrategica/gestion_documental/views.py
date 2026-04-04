@@ -1776,6 +1776,30 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
         return Response(stats)
 
 
+class TablaRetencionDocumentalViewSet(viewsets.ModelViewSet):
+    """
+    CRUD para la Tabla de Retención Documental (TRD).
+    Sprint 2 — Arquitectura GD v5 §9.
+    """
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    module_code = 'gestion_documental'
+    section_code = 'configuracion'
+
+    def get_queryset(self):
+        from .models import TablaRetencionDocumental
+        return TablaRetencionDocumental.objects.select_related(
+            'tipo_documento', 'proceso'
+        ).filter(activo=True).order_by('tipo_documento__codigo', 'proceso__code')
+
+    def get_serializer_class(self):
+        from .serializers import TablaRetencionDocumentalSerializer
+        return TablaRetencionDocumentalSerializer
+
+    def perform_create(self, serializer):
+        empresa = get_tenant_empresa()
+        serializer.save(empresa_id=empresa.id if empresa else None)
+
+
 def _get_client_ip(request):
     """Obtiene IP del cliente (función standalone para reutilizar)."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')

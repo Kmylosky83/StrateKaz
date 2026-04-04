@@ -22,6 +22,7 @@ from .views import (
     VersionDocumentoViewSet,
     ControlDocumentalViewSet,
     AceptacionDocumentalViewSet,
+    TablaRetencionDocumentalViewSet,
 )
 from .views_export import export_documento_pdf, export_documento_docx
 
@@ -43,6 +44,9 @@ router.register(r'controles', ControlDocumentalViewSet, basename='control')
 
 # Aceptación Documental (Lectura Verificada — Mejora 3)
 router.register(r'aceptaciones', AceptacionDocumentalViewSet, basename='aceptacion')
+
+# Tabla de Retención Documental (TRD — Sprint 2)
+router.register(r'trd', TablaRetencionDocumentalViewSet, basename='trd')
 
 urlpatterns = [
     # Export endpoints

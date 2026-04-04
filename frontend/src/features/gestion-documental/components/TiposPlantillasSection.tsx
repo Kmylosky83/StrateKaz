@@ -19,6 +19,7 @@ import {
   FileText,
   MoreVertical,
   Tag,
+  Archive,
 } from 'lucide-react';
 import {
   Card,
@@ -45,7 +46,7 @@ import {
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
 // ─── Constantes ─────────────────────────────────────────────────
-type ConfigTab = 'tipos' | 'plantillas';
+type ConfigTab = 'tipos' | 'plantillas' | 'trd';
 type ViewMode = 'cards' | 'list';
 
 const _CONFIG_TABS: TabItem[] = [
@@ -135,6 +136,11 @@ export function TiposPlantillasSection({
       label: 'Plantillas',
       icon: FileText,
       badge: plantillasList.length > 0 ? plantillasList.length : undefined,
+    },
+    {
+      id: 'trd',
+      label: 'Retención Documental',
+      icon: Archive,
     },
   ];
 
@@ -258,6 +264,21 @@ export function TiposPlantillasSection({
               />
             )}
           </>
+        )}
+
+        {/* ── Tab: Tabla de Retención Documental ───────────── */}
+        {activeTab === 'trd' && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Tabla de Retención Documental (TRD) — Define tiempos de conservación por tipo y
+              proceso según normativa AGN.
+            </p>
+            <EmptyState
+              icon={<Archive className="w-10 h-10" />}
+              title="TRD en construcción"
+              description="La Tabla de Retención Documental se cargará con las reglas de retención por tipo documental y proceso. Use el seed para generar las reglas base."
+            />
+          </div>
         )}
       </div>
 

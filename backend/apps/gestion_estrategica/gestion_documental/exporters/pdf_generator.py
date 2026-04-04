@@ -1,168 +1,77 @@
 """
 Generador de PDF para Gestión Documental
 =========================================
-Genera PDFs profesionales de documentos del sistema de gestión
-usando WeasyPrint (HTML -> PDF).
+Convierte documentos del SGI a PDF usando WeasyPrint (HTML → PDF).
 
-Incluye:
+El HTML se construye con Django templates en:
+  templates/pdf/gestion_documental/documento.html
+  templates/pdf/gestion_documental/_watermark.html
+  templates/pdf/gestion_documental/_firmas.html
+  templates/pdf/gestion_documental/_qr.html
+  templates/pdf/gestion_documental/_formulario.html
+  templates/pdf/base_weasyprint.html
+
+Características:
 - Firmas digitales manuscritas incrustadas (canvas → Base64)
 - Código QR verificable con hash SHA-256
 - Watermarks dinámicos según estado (BORRADOR, COPIA CONTROLADA, OBSOLETO)
 - Metadata grid ISO (código, versión, estado, clasificación)
-
-Patrón: Idéntico a identidad/exporters/pdf_generator.py
+- Form Builder JSON → HTML para documentos tipo FORMULARIO
 """
 import base64
 import hashlib
 from io import BytesIO
 from datetime import datetime
 
+from django.template.loader import render_to_string
+
 try:
-    from weasyprint import HTML, CSS
+    from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
 except ImportError:
     WEASYPRINT_AVAILABLE = False
 
 try:
     import qrcode
-    from qrcode.image.svg import SvgPathImage
     QRCODE_AVAILABLE = True
 except ImportError:
     QRCODE_AVAILABLE = False
 
 
+# Textos de watermark por estado
+_WATERMARK_CONFIG = {
+    'BORRADOR': {
+        'texto': 'BORRADOR',
+        'subtexto': 'Documento no aprobado — Solo uso interno',
+        'color': 'rgba(200, 200, 200, 0.25)',
+    },
+    'EN_REVISION': {
+        'texto': 'EN REVISIÓN',
+        'subtexto': 'Pendiente de aprobación',
+        'color': 'rgba(200, 200, 200, 0.25)',
+    },
+    'OBSOLETO': {
+        'texto': 'OBSOLETO',
+        'subtexto': 'Documento fuera de vigencia',
+        'color': 'rgba(220, 50, 50, 0.20)',
+    },
+}
+
+_ROL_LABELS = {
+    'ELABORO': 'Elaboró',
+    'REVISO': 'Revisó',
+    'APROBO': 'Aprobó',
+}
+
+_ESTADO_PENDIENTE_LABELS = {
+    'PENDIENTE': 'Pendiente de firma',
+    'DELEGADO': 'Delegada',
+    'EXPIRADO': 'Expirada',
+}
+
+
 class DocumentoPDFGenerator:
-    """Genera PDFs de documentos del sistema de gestion documental."""
-
-    BASE_CSS = """
-        @page {
-            size: A4;
-            margin: 2.5cm 1.8cm 2cm 1.8cm;
-            @top-center { content: element(header); }
-            @bottom-center { content: element(footer); }
-        }
-
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 11pt;
-            line-height: 1.5;
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-
-        h1 { color: #1a365d; font-size: 16pt; font-weight: 700; margin: 0 0 12px 0; border-bottom: 2px solid #3182ce; padding-bottom: 8px; }
-        h2 { color: #2c5282; font-size: 13pt; font-weight: 600; margin: 16px 0 8px 0; }
-        h3 { color: #2d3748; font-size: 11pt; font-weight: 600; margin: 12px 0 6px 0; }
-        p { margin: 0 0 8px 0; }
-
-        /* ── Header (running) — float-based para WeasyPrint ── */
-        .header {
-            position: running(header);
-            padding: 8px 0;
-            border-bottom: 2px solid #3182ce;
-            overflow: hidden;
-        }
-        .header::after { content: ''; display: table; clear: both; }
-        .header-logo { float: left; max-height: 38px; max-width: 110px; }
-        .header-text { float: right; font-size: 8.5pt; color: #555; text-align: right; line-height: 1.4; }
-        .header-text strong { color: #1a365d; font-size: 9pt; display: block; }
-
-        /* ── Footer (running) — float-based ── */
-        .footer {
-            position: running(footer);
-            padding: 6px 0;
-            border-top: 1px solid #cbd5e0;
-            font-size: 8pt;
-            color: #718096;
-            overflow: hidden;
-        }
-        .footer::after { content: ''; display: table; clear: both; }
-        .footer-left { float: left; }
-        .footer-right { float: right; }
-        .page-number::after { content: "Pag. " counter(page) " / " counter(pages); }
-
-        /* ── Metadata — inline-block para WeasyPrint (sin grid/flex) ── */
-        .document-metadata {
-            background: #f7fafc;
-            border: 1px solid #cbd5e0;
-            border-left: 4px solid #3182ce;
-            border-radius: 4px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-        }
-        .metadata-item {
-            display: inline-block;
-            width: 48%;
-            margin-bottom: 8px;
-            vertical-align: top;
-            padding-right: 6px;
-            box-sizing: border-box;
-        }
-        .metadata-label { font-size: 7.5pt; color: #718096; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
-        .metadata-value { font-size: 10pt; color: #1a365d; font-weight: 600; display: block; margin-top: 1px; }
-
-        /* ── Estado badges ── */
-        .estado-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 8.5pt; font-weight: 700; }
-        .estado-BORRADOR { background: #e2e8f0; color: #4a5568; border: 1px solid #cbd5e0; }
-        .estado-EN_REVISION { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-        .estado-APROBADO { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-        .estado-PUBLICADO { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-        .estado-OBSOLETO { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-
-        .section { margin-bottom: 20px; }
-
-        /* ── Contenido del documento ── */
-        .contenido-documento {
-            margin-top: 16px;
-            padding: 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            line-height: 1.6;
-        }
-        .contenido-documento img { max-width: 100%; height: auto; }
-        .contenido-documento table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        .contenido-documento th, .contenido-documento td { padding: 7px 10px; border: 1px solid #cbd5e0; font-size: 10pt; }
-        .contenido-documento th { background: #edf2f7; font-weight: 700; color: #2d3748; }
-        .contenido-documento ul, .contenido-documento ol { padding-left: 20px; margin: 8px 0; }
-        .contenido-documento li { margin-bottom: 4px; }
-
-        /* ── Firmas digitales — inline-block para WeasyPrint ── */
-        .firmas-section { margin-top: 32px; padding-top: 16px; border-top: 2px solid #2d3748; page-break-inside: avoid; }
-        .firmas-title { font-size: 11pt; font-weight: 700; color: #1a365d; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
-        .firmas-grid { width: 100%; font-size: 0; }
-        .firma-card {
-            display: inline-block;
-            width: 30%;
-            margin: 0 1.5% 8px 1.5%;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 10px 8px;
-            text-align: center;
-            background: #fafafa;
-            vertical-align: top;
-            font-size: 10pt;
-            box-sizing: border-box;
-        }
-        .firma-card-header { font-size: 8.5pt; font-weight: 700; color: #2c5282; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-        .firma-imagen { width: 140px; height: 55px; margin: 0 auto 6px; display: block; }
-        .firma-linea { border-bottom: 1px solid #2d3748; width: 80%; margin: 0 auto 6px; }
-        .firma-nombre { font-size: 9.5pt; font-weight: 600; color: #2d3748; }
-        .firma-cargo { font-size: 8pt; color: #718096; margin-top: 2px; }
-        .firma-fecha { font-size: 7pt; color: #a0aec0; margin-top: 3px; }
-        .firma-hash { font-size: 5.5pt; color: #cbd5e0; font-family: monospace; margin-top: 2px; }
-        .firma-pendiente { font-style: italic; color: #a0aec0; font-size: 9pt; padding: 16px 0; }
-
-        /* ── QR — float-based ── */
-        .qr-section { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px; overflow: hidden; }
-        .qr-section::after { content: ''; display: table; clear: both; }
-        .qr-code { float: left; width: 72px; height: 72px; margin-right: 12px; }
-        .qr-info { overflow: hidden; font-size: 7pt; color: #a0aec0; line-height: 1.5; }
-        .qr-hash { font-family: monospace; font-size: 6.5pt; color: #718096; }
-
-        /* ── Pie de generación ── */
-        .gen-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #a0aec0; }
-    """
+    """Genera PDFs de documentos del sistema de gestión documental."""
 
     def __init__(self, empresa=None):
         self.empresa = empresa
@@ -183,34 +92,20 @@ class DocumentoPDFGenerator:
             return {
                 'razon_social': self.empresa.razon_social or 'Empresa',
                 'nit': self.empresa.nit or '',
-                'logo_base64': self.logo_base64,
             }
-        return {'razon_social': 'Empresa', 'nit': '', 'logo_base64': None}
+        return {'razon_social': 'Empresa', 'nit': ''}
 
-    WATERMARK_CSS = """
-        .watermark {
-            position: fixed;
-            top: 40%;
-            left: 10%;
-            width: 80%;
-            text-align: center;
-            transform: rotate(-35deg);
-            font-size: 48pt;
-            color: rgba(200, 200, 200, 0.25);
-            font-weight: 900;
-            letter-spacing: 8px;
-            z-index: -1;
-            pointer-events: none;
-        }
-    """
+    # =========================================================================
+    # Método principal
+    # =========================================================================
 
     def generate_documento_pdf(self, documento, usuario=None):
         """
-        Genera PDF de un documento del sistema de gestión.
+        Genera PDF de un documento.
 
         Args:
             documento: Instancia de Documento
-            usuario: Usuario que solicita la copia (para marca de agua)
+            usuario: Usuario que solicita la copia (para watermark PUBLICADO)
 
         Returns:
             BytesIO: Buffer con el PDF generado
@@ -218,183 +113,108 @@ class DocumentoPDFGenerator:
         if not WEASYPRINT_AVAILABLE:
             raise ImportError("WeasyPrint no está instalado. Ejecute: pip install weasyprint")
 
-        empresa_info = self._get_empresa_info()
+        context = self._build_context(documento, usuario)
+        html_string = render_to_string('pdf/gestion_documental/documento.html', context)
 
-        # Aplicar CSS de plantilla si existe
+        pdf_buffer = BytesIO()
+        HTML(string=html_string).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
+
+    # =========================================================================
+    # Construcción del contexto para el template
+    # =========================================================================
+
+    def _build_context(self, documento, usuario):
+        empresa_info = self._get_empresa_info()
+        fecha_generacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+        usuario_nombre = usuario.get_full_name() if usuario else 'N/A'
+
+        # Watermark
+        watermark_config = _WATERMARK_CONFIG.get(documento.estado)
+        if documento.estado == 'PUBLICADO':
+            watermark_config = {
+                'texto': 'COPIA CONTROLADA',
+                'subtexto': f'{fecha_generacion} — {usuario_nombre}',
+                'color': 'rgba(200, 200, 200, 0.25)',
+            }
+
+        # Plantilla: estilos y encabezado/pie personalizados
         custom_css = ''
         encabezado_html = ''
         pie_pagina_html = ''
         if documento.plantilla:
-            if documento.plantilla.estilos_css:
-                custom_css = documento.plantilla.estilos_css
-            if documento.plantilla.encabezado:
-                encabezado_html = documento.plantilla.encabezado
-            if documento.plantilla.pie_pagina:
-                pie_pagina_html = documento.plantilla.pie_pagina
+            custom_css = documento.plantilla.estilos_css or ''
+            encabezado_html = documento.plantilla.encabezado or ''
+            pie_pagina_html = documento.plantilla.pie_pagina or ''
 
-        # Sustituir variables en contenido
-        contenido = self._sustituir_variables(documento)
+        # Contenido con variables sustituidas
+        contenido = self._sustituir_variables(documento, empresa_info)
 
-        logo_img = (
-            f'<img src="data:image/png;base64,{empresa_info["logo_base64"]}" class="header-logo">'
-            if empresa_info.get('logo_base64') else ''
+        # Tipo de documento
+        es_formulario = (
+            hasattr(documento, 'tipo_documento')
+            and documento.tipo_documento
+            and documento.tipo_documento.categoria == 'FORMULARIO'
         )
 
-        estado_display = documento.get_estado_display()
-        clasificacion_display = documento.get_clasificacion_display()
+        return {
+            # Empresa
+            'razon_social': empresa_info['razon_social'],
+            'nit': empresa_info['nit'],
+            'logo_base64': self.logo_base64,
 
-        # Marca de agua dinámica según estado del documento
-        watermark_html = ''
-        watermark_css = ''
-        usuario_nombre = usuario.get_full_name() if usuario else 'N/A'
-        fecha_descarga = datetime.now().strftime('%d/%m/%Y %H:%M')
+            # Documento
+            'documento_codigo': documento.codigo or '',
+            'titulo': documento.titulo or '',
+            'version_actual': documento.version_actual or '',
+            'estado_key': documento.estado,
+            'estado_display': documento.get_estado_display(),
+            'clasificacion_display': documento.get_clasificacion_display(),
+            'tipo_documento_nombre': documento.tipo_documento.nombre if documento.tipo_documento else '',
+            'elaborado_nombre': documento.elaborado_por.get_full_name() if documento.elaborado_por else 'N/A',
+            'revisado_nombre': documento.revisado_por.get_full_name() if documento.revisado_por else '—',
+            'aprobado_nombre': documento.aprobado_por.get_full_name() if documento.aprobado_por else '—',
+            'fecha_publicacion': (
+                documento.fecha_publicacion.strftime('%d/%m/%Y')
+                if documento.fecha_publicacion else '—'
+            ),
+            'fecha_vigencia': (
+                documento.fecha_vigencia.strftime('%d/%m/%Y')
+                if documento.fecha_vigencia else '—'
+            ),
 
-        if documento.estado == 'BORRADOR':
-            watermark_css = self.WATERMARK_CSS
-            watermark_html = (
-                '<div class="watermark">'
-                'BORRADOR<br>'
-                '<span style="font-size: 14pt;">Documento no aprobado — Solo uso interno</span>'
-                '</div>'
-            )
-        elif documento.estado == 'EN_REVISION':
-            watermark_css = self.WATERMARK_CSS
-            watermark_html = (
-                '<div class="watermark">'
-                'EN REVISIÓN<br>'
-                '<span style="font-size: 14pt;">Pendiente de aprobación</span>'
-                '</div>'
-            )
-        elif documento.estado == 'PUBLICADO':
-            watermark_css = self.WATERMARK_CSS
-            watermark_html = (
-                f'<div class="watermark">'
-                f'COPIA CONTROLADA<br>'
-                f'<span style="font-size: 14pt;">{fecha_descarga} — {usuario_nombre}</span>'
-                f'</div>'
-            )
-        elif documento.estado == 'OBSOLETO':
-            watermark_css = self.WATERMARK_CSS.replace(
-                'rgba(200, 200, 200, 0.25)', 'rgba(220, 50, 50, 0.20)'
-            )
-            watermark_html = (
-                '<div class="watermark">'
-                'OBSOLETO<br>'
-                '<span style="font-size: 14pt;">Documento fuera de vigencia</span>'
-                '</div>'
-            )
+            # Watermark
+            'watermark_texto': watermark_config['texto'] if watermark_config else None,
+            'watermark_subtexto': watermark_config.get('subtexto', '') if watermark_config else '',
+            'watermark_color': watermark_config['color'] if watermark_config else '',
 
-        nit_line = f'NIT: {empresa_info["nit"]}<br>' if empresa_info.get('nit') else ''
-        elaborado_nombre = documento.elaborado_por.get_full_name() if documento.elaborado_por else 'N/A'
-        revisado_nombre = documento.revisado_por.get_full_name() if documento.revisado_por else '—'
-        aprobado_nombre = documento.aprobado_por.get_full_name() if documento.aprobado_por else '—'
-        fecha_pub = documento.fecha_publicacion.strftime('%d/%m/%Y') if documento.fecha_publicacion else '—'
-        fecha_vig = documento.fecha_vigencia.strftime('%d/%m/%Y') if documento.fecha_vigencia else '—'
+            # Plantilla personalizada
+            'custom_css': custom_css,
+            'encabezado_html': encabezado_html,
+            'pie_pagina_html': pie_pagina_html,
 
-        html = f'''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>{self.BASE_CSS}</style>
-            <style>{watermark_css}</style>
-            <style>{custom_css}</style>
-        </head>
-        <body>
-            {watermark_html}
+            # Contenido
+            'es_formulario': es_formulario,
+            'contenido': contenido,
+            'campos_formulario': self._preparar_campos_formulario(documento) if es_formulario else [],
 
-            <!-- Running header -->
-            <div class="header">
-                {logo_img}
-                <div class="header-text">
-                    <strong>{empresa_info['razon_social']}</strong>
-                    {nit_line}{documento.codigo}
-                </div>
-            </div>
+            # Firmas
+            'firmas': self._preparar_firmas(documento),
 
-            <!-- Running footer -->
-            <div class="footer">
-                <span class="footer-left">{documento.codigo} | v{documento.version_actual} | {estado_display}</span>
-                <span class="footer-right page-number"></span>
-            </div>
+            # QR
+            **self._preparar_qr(documento, empresa_info),
 
-            {encabezado_html}
+            # Meta
+            'fecha_generacion': fecha_generacion,
+        }
 
-            <h1>{documento.titulo}</h1>
+    # =========================================================================
+    # Sustitución de variables {{var}} en el contenido
+    # =========================================================================
 
-            <div class="document-metadata">
-                <div class="metadata-item">
-                    <span class="metadata-label">Código</span>
-                    <span class="metadata-value">{documento.codigo}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Versión</span>
-                    <span class="metadata-value">{documento.version_actual}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Estado</span>
-                    <span class="metadata-value">
-                        <span class="estado-badge estado-{documento.estado}">{estado_display}</span>
-                    </span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Clasificación</span>
-                    <span class="metadata-value">{clasificacion_display}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Tipo de Documento</span>
-                    <span class="metadata-value">{documento.tipo_documento.nombre}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Elaborado por</span>
-                    <span class="metadata-value">{elaborado_nombre}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Revisado por</span>
-                    <span class="metadata-value">{revisado_nombre}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Aprobado por</span>
-                    <span class="metadata-value">{aprobado_nombre}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Fecha Publicación</span>
-                    <span class="metadata-value">{fecha_pub}</span>
-                </div>
-                <div class="metadata-item">
-                    <span class="metadata-label">Fecha Vigencia</span>
-                    <span class="metadata-value">{fecha_vig}</span>
-                </div>
-            </div>
-
-            <div class="contenido-documento">
-                {contenido}
-            </div>
-
-            {pie_pagina_html}
-
-            {self._generar_bloque_firmas(documento)}
-
-            {self._generar_bloque_qr(documento, empresa_info)}
-
-            <div class="gen-footer">
-                Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')} &nbsp;|&nbsp;
-                {empresa_info['razon_social']} &nbsp;|&nbsp; StrateKaz SGI — Gestión Documental
-            </div>
-        </body>
-        </html>
-        '''
-
-        pdf_buffer = BytesIO()
-        HTML(string=html).write_pdf(pdf_buffer)
-        pdf_buffer.seek(0)
-        return pdf_buffer
-
-    def _sustituir_variables(self, documento):
-        """Sustituye variables {{var}} en el contenido del documento."""
+    def _sustituir_variables(self, documento, empresa_info):
         contenido = documento.contenido or ''
-        empresa_info = self._get_empresa_info()
-
         variables = {
             '{{codigo}}': documento.codigo or '',
             '{{titulo}}': documento.titulo or '',
@@ -423,137 +243,77 @@ class DocumentoPDFGenerator:
                 if documento.aprobado_por else ''
             ),
         }
-
         for var, value in variables.items():
             contenido = contenido.replace(var, value)
-
         return contenido
 
     # =========================================================================
-    # Bloque de firmas digitales manuscritas
+    # Preparación de datos de firmas para el template
     # =========================================================================
 
-    def _generar_bloque_firmas(self, documento):
+    def _preparar_firmas(self, documento):
         """
-        Genera HTML con las firmas digitales manuscritas del documento.
-        Muestra imagen de firma (canvas), nombre, cargo, fecha y hash truncado.
-        Si la firma está pendiente, muestra placeholder con línea.
+        Retorna lista de dicts con datos de cada firma listos para el template.
+        El template no necesita acceder a ORM — solo itera la lista.
         """
         try:
-            firmas = documento.get_firmas_digitales().select_related(
+            firmas_qs = documento.get_firmas_digitales().select_related(
                 'usuario', 'cargo'
             ).order_by('orden', 'created_at')
         except Exception:
-            return ''
+            return []
 
-        if not firmas.exists():
-            return ''
+        if not firmas_qs.exists():
+            return []
 
-        ROL_LABELS = {
-            'ELABORO': 'Elaboró',
-            'REVISO': 'Revisó',
-            'APROBO': 'Aprobó',
-        }
-
-        cards_html = ''
-        for firma in firmas:
-            rol_label = ROL_LABELS.get(firma.rol_firma, firma.rol_firma)
-            nombre = firma.usuario.get_full_name() if firma.usuario else 'N/A'
-            cargo_nombre = firma.cargo.nombre if firma.cargo else ''
-            fecha_str = (
-                firma.fecha_firma.strftime('%d/%m/%Y %H:%M')
-                if firma.fecha_firma else ''
-            )
-            hash_short = firma.firma_hash[:16] if firma.firma_hash else ''
-
+        resultado = []
+        for firma in firmas_qs:
+            img_src = ''
             if firma.estado == 'FIRMADO' and firma.firma_imagen:
-                # Firma completada — mostrar imagen del canvas
-                # firma_imagen puede ser data:image/png;base64,... o solo base64
                 img_src = firma.firma_imagen
                 if not img_src.startswith('data:'):
                     img_src = f'data:image/png;base64,{img_src}'
 
-                cards_html += f'''
-                <div class="firma-card">
-                    <div class="firma-card-header">{rol_label}</div>
-                    <img src="{img_src}" class="firma-imagen" alt="Firma {rol_label}" />
-                    <div class="firma-linea"></div>
-                    <div class="firma-nombre">{nombre}</div>
-                    <div class="firma-cargo">{cargo_nombre}</div>
-                    <div class="firma-fecha">{fecha_str}</div>
-                    <div class="firma-hash">Hash: {hash_short}...</div>
-                </div>
-                '''
-            elif firma.estado == 'RECHAZADO':
-                cards_html += f'''
-                <div class="firma-card" style="border-color: #fc8181;">
-                    <div class="firma-card-header" style="color: #c53030;">
-                        {rol_label} — RECHAZADA
-                    </div>
-                    <div class="firma-pendiente">Firma rechazada</div>
-                    <div class="firma-linea"></div>
-                    <div class="firma-nombre">{nombre}</div>
-                    <div class="firma-cargo">{cargo_nombre}</div>
-                    <div class="firma-fecha" style="color: #c53030;">
-                        {firma.comentarios or 'Sin motivo especificado'}
-                    </div>
-                </div>
-                '''
-            else:
-                # Pendiente, delegada o expirada
-                estado_label = {
-                    'PENDIENTE': 'Pendiente de firma',
-                    'DELEGADO': 'Delegada',
-                    'EXPIRADO': 'Expirada',
-                }.get(firma.estado, 'Pendiente')
+            resultado.append({
+                'rol_label': _ROL_LABELS.get(firma.rol_firma, firma.rol_firma),
+                'nombre': firma.usuario.get_full_name() if firma.usuario else 'N/A',
+                'cargo_nombre': firma.cargo.nombre if firma.cargo else '',
+                'fecha_str': (
+                    firma.fecha_firma.strftime('%d/%m/%Y %H:%M')
+                    if firma.fecha_firma else ''
+                ),
+                'hash_short': firma.firma_hash[:16] if firma.firma_hash else '',
+                'estado': firma.estado,
+                'estado_label': _ESTADO_PENDIENTE_LABELS.get(firma.estado, 'Pendiente'),
+                'comentarios': firma.comentarios or 'Sin motivo especificado',
+                'img_src': img_src,
+            })
 
-                cards_html += f'''
-                <div class="firma-card">
-                    <div class="firma-card-header">{rol_label}</div>
-                    <div class="firma-pendiente">{estado_label}</div>
-                    <div class="firma-linea"></div>
-                    <div class="firma-nombre">{nombre}</div>
-                    <div class="firma-cargo">{cargo_nombre}</div>
-                </div>
-                '''
-
-        return f'''
-        <div class="firmas-section">
-            <div class="firmas-title">Control de Firmas</div>
-            <div class="firmas-grid">
-                {cards_html}
-            </div>
-        </div>
-        '''
+        return resultado
 
     # =========================================================================
-    # QR verificable con hash SHA-256
+    # Preparación de datos QR para el template
     # =========================================================================
 
-    def _generar_bloque_qr(self, documento, empresa_info):
+    def _preparar_qr(self, documento, empresa_info):
         """
-        Genera código QR con URL de verificación + hash del contenido.
-        El QR contiene una URL que permite verificar la autenticidad del documento.
-        Incluye hash SHA-256 del contenido para detección de alteraciones.
+        Retorna dict con qr_base64 y doc_hash para el template _qr.html.
+        Si la generación del QR falla, retorna qr_base64='' y doc_hash igual.
         """
-        if not QRCODE_AVAILABLE:
-            return ''
-
-        # Calcular hash del contenido actual
         contenido_raw = (documento.contenido or '') + (documento.codigo or '')
         doc_hash = hashlib.sha256(contenido_raw.encode('utf-8')).hexdigest()
 
-        # URL de verificación (apunta a la app)
-        base_url = 'https://app.stratekaz.com'
+        if not QRCODE_AVAILABLE:
+            return {'qr_base64': '', 'doc_hash': doc_hash}
+
         verificacion_url = (
-            f'{base_url}/verificar-documento'
+            f'https://app.stratekaz.com/verificar-documento'
             f'?codigo={documento.codigo}'
             f'&version={documento.version_actual}'
             f'&hash={doc_hash[:16]}'
         )
 
         try:
-            # Generar QR como PNG Base64
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_M,
@@ -568,30 +328,116 @@ class DocumentoPDFGenerator:
             img.save(qr_buffer, format='PNG')
             qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
 
-            fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
+            return {'qr_base64': qr_base64, 'doc_hash': doc_hash}
 
-            return f'''
-            <div class="qr-section">
-                <img src="data:image/png;base64,{qr_base64}" class="qr-code"
-                     alt="QR Verificación" />
-                <div class="qr-info">
-                    <strong>Verificación de autenticidad</strong><br>
-                    Escanee el código QR para verificar este documento.<br>
-                    <span class="qr-hash">SHA-256: {doc_hash}</span><br>
-                    {documento.codigo} | v{documento.version_actual} |
-                    {empresa_info['razon_social']}<br>
-                    Generado: {fecha_gen}
-                </div>
-            </div>
-            '''
         except Exception:
-            # Si falla la generación del QR, solo mostrar hash
-            return f'''
-            <div class="qr-section">
-                <div class="qr-info">
-                    <strong>Verificación de autenticidad</strong><br>
-                    <span class="qr-hash">SHA-256: {doc_hash}</span><br>
-                    {documento.codigo} | v{documento.version_actual}
-                </div>
-            </div>
-            '''
+            return {'qr_base64': '', 'doc_hash': doc_hash}
+
+    # =========================================================================
+    # Form Builder: CampoFormulario JSON → lista de dicts para el template
+    # =========================================================================
+
+    def _preparar_campos_formulario(self, documento):
+        """
+        Transforma documento.datos_formulario (JSON) +
+        tipo_documento.campos_personalizados (CampoFormulario queryset)
+        en una lista de dicts lista para iterar en _formulario.html.
+
+        Cada dict tiene:
+          etiqueta, tipo_campo, es_seccion,
+          valor_display, img_src, columnas_tabla, filas_tabla
+        """
+        if not documento.tipo_documento:
+            return []
+
+        datos = documento.datos_formulario or {}
+
+        try:
+            campos_qs = (
+                documento.tipo_documento.campos_personalizados
+                .filter(is_active=True)
+                .order_by('orden')
+            )
+        except Exception:
+            return []
+
+        resultado = []
+        for campo in campos_qs:
+            tipo = campo.tipo_campo
+            valor_raw = datos.get(campo.nombre_campo)
+
+            if tipo == 'SECCION':
+                resultado.append({
+                    'etiqueta': campo.etiqueta,
+                    'tipo_campo': tipo,
+                    'es_seccion': True,
+                    'valor_display': '',
+                    'img_src': '',
+                    'columnas_tabla': [],
+                    'filas_tabla': [],
+                })
+                continue
+
+            # Normalizar valor según tipo
+            valor_display = ''
+            img_src = ''
+            columnas_tabla = []
+            filas_tabla = []
+
+            if valor_raw is None or valor_raw == '':
+                pass  # valor_display queda vacío
+
+            elif tipo == 'SIGNATURE':
+                raw = str(valor_raw)
+                img_src = raw if raw.startswith('data:') else f'data:image/png;base64,{raw}'
+
+            elif tipo == 'TABLA':
+                columnas_def = campo.columnas_tabla or []
+                # columnas_def puede ser lista de strings o lista de dicts con 'key'/'label'
+                if columnas_def and isinstance(columnas_def[0], dict):
+                    columnas_tabla = [c.get('label', c.get('key', '')) for c in columnas_def]
+                    col_keys = [c.get('key', '') for c in columnas_def]
+                else:
+                    columnas_tabla = list(columnas_def)
+                    col_keys = list(columnas_def)
+
+                if isinstance(valor_raw, list):
+                    for fila in valor_raw:
+                        if isinstance(fila, dict):
+                            filas_tabla.append([fila.get(k, '') for k in col_keys])
+                        else:
+                            filas_tabla.append([str(fila)])
+
+            elif tipo in ('CHECKBOX', 'MULTISELECT'):
+                if isinstance(valor_raw, list):
+                    valor_display = ', '.join(str(v) for v in valor_raw)
+                else:
+                    valor_display = str(valor_raw)
+
+            elif tipo in ('DATE', 'DATETIME'):
+                try:
+                    # Intentar parsear ISO y reformatear a español
+                    from datetime import date
+                    dt = datetime.fromisoformat(str(valor_raw).replace('Z', '+00:00'))
+                    valor_display = dt.strftime('%d/%m/%Y %H:%M') if tipo == 'DATETIME' else dt.strftime('%d/%m/%Y')
+                except Exception:
+                    valor_display = str(valor_raw)
+
+            elif tipo == 'FILE':
+                # Solo mostrar nombre, no URL (PDFs no pueden hacer links funcionales)
+                valor_display = str(valor_raw).split('/')[-1]
+
+            else:
+                valor_display = str(valor_raw)
+
+            resultado.append({
+                'etiqueta': campo.etiqueta,
+                'tipo_campo': tipo,
+                'es_seccion': False,
+                'valor_display': valor_display,
+                'img_src': img_src,
+                'columnas_tabla': columnas_tabla,
+                'filas_tabla': filas_tabla,
+            })
+
+        return resultado

@@ -14,7 +14,14 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 
-from utils.storage import tenant_media_path
+from utils.storage import (
+    tenant_media_path,
+    tenant_upload_documentos_pdf,
+    tenant_upload_documentos_originales,
+    tenant_upload_documentos_sellados,
+    tenant_upload_documentos_versiones,
+    tenant_upload_documentos_actas_destruccion,
+)
 
 
 class TipoDocumento(models.Model):
@@ -486,7 +493,7 @@ class Documento(models.Model):
 
     # Archivos adjuntos
     archivo_pdf = models.FileField(
-        upload_to=tenant_media_path('documentos', 'pdf'),
+        upload_to=tenant_upload_documentos_pdf,
         blank=True,
         null=True,
         verbose_name='Archivo PDF',
@@ -725,7 +732,7 @@ class Documento(models.Model):
         help_text='True si fue ingresado por upload de PDF externo'
     )
     archivo_original = models.FileField(
-        upload_to=tenant_media_path('documentos', 'originales'),
+        upload_to=tenant_upload_documentos_originales,
         blank=True,
         null=True,
         verbose_name='Archivo Original',
@@ -734,7 +741,7 @@ class Documento(models.Model):
 
     # Sellado PDF (Mejora 2 — ISO 27001)
     pdf_sellado = models.FileField(
-        upload_to=tenant_media_path('documentos', 'sellados'),
+        upload_to=tenant_upload_documentos_sellados,
         blank=True,
         null=True,
         verbose_name='PDF Sellado',
@@ -895,7 +902,7 @@ class VersionDocumento(models.Model):
 
     # Archivos
     archivo_pdf_version = models.FileField(
-        upload_to=tenant_media_path('documentos', 'versiones'),
+        upload_to=tenant_upload_documentos_versiones,
         blank=True,
         null=True,
         verbose_name='Archivo PDF de la Versión'
@@ -1271,7 +1278,7 @@ class ControlDocumental(models.Model):
         verbose_name='Responsable de Destrucción'
     )
     acta_destruccion = models.FileField(
-        upload_to=tenant_media_path('documentos', 'actas_destruccion'),
+        upload_to=tenant_upload_documentos_actas_destruccion,
         blank=True,
         null=True,
         verbose_name='Acta de Destrucción'

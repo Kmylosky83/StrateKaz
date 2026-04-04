@@ -1,0 +1,20 @@
+{% if qr_base64 %}
+<div class="qr-section">
+    <img src="data:image/png;base64,{{ qr_base64 }}" class="qr-code" alt="QR Verificación">
+    <div class="qr-info">
+        <strong>Verificación de autenticidad</strong><br>
+        Escanee el código QR para verificar este documento.<br>
+        <span class="qr-hash">SHA-256: {{ doc_hash }}</span><br>
+        {{ documento_codigo }} | v{{ version_actual }} | {{ razon_social }}<br>
+        Generado: {{ fecha_generacion }}
+    </div>
+</div>
+{% elif doc_hash %}
+<div class="qr-section">
+    <div class="qr-info">
+        <strong>Verificación de autenticidad</strong><br>
+        <span class="qr-hash">SHA-256: {{ doc_hash }}</span><br>
+        {{ documento_codigo }} | v{{ version_actual }}
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,55 @@
+{% for campo in campos_formulario %}
+    {% if campo.es_seccion %}
+        <h3 class="form-seccion">{{ campo.etiqueta }}</h3>
+    {% elif campo.tipo_campo == 'TABLA' %}
+        <div class="form-campo">
+            <div class="form-label">{{ campo.etiqueta }}</div>
+            <div class="form-valor">
+                {% if campo.filas_tabla %}
+                    <table class="form-tabla">
+                        <thead>
+                            <tr>
+                                {% for col in campo.columnas_tabla %}
+                                    <th>{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in campo.filas_tabla %}
+                                <tr>
+                                    {% for col in campo.columnas_tabla %}
+                                        <td>{{ fila|default:'' }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <span class="form-valor-vacio">Sin datos</span>
+                {% endif %}
+            </div>
+        </div>
+    {% elif campo.tipo_campo == 'SIGNATURE' %}
+        <div class="form-campo">
+            <div class="form-label">{{ campo.etiqueta }}</div>
+            <div class="form-valor">
+                {% if campo.img_src %}
+                    <img src="{{ campo.img_src }}" class="form-firma-img" alt="Firma">
+                {% else %}
+                    <span class="form-valor-vacio">Sin firma</span>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="form-campo">
+            <div class="form-label">{{ campo.etiqueta }}</div>
+            <div class="form-valor">
+                {% if campo.valor_display %}
+                    {{ campo.valor_display }}
+                {% else %}
+                    <span class="form-valor-vacio">—</span>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}

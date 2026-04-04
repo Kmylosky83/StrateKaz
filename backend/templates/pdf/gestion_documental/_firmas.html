@@ -1,0 +1,37 @@
+{% if firmas %}
+<div class="firmas-section">
+    <div class="firmas-title">Control de Firmas</div>
+    <div class="firmas-grid">
+        {% for firma in firmas %}
+            {% if firma.estado == 'FIRMADO' %}
+                <div class="firma-card">
+                    <div class="firma-card-header">{{ firma.rol_label }}</div>
+                    <img src="{{ firma.img_src }}" class="firma-imagen" alt="Firma {{ firma.rol_label }}">
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{{ firma.nombre }}</div>
+                    <div class="firma-cargo">{{ firma.cargo_nombre }}</div>
+                    <div class="firma-fecha">{{ firma.fecha_str }}</div>
+                    {% if firma.hash_short %}<div class="firma-hash">Hash: {{ firma.hash_short }}...</div>{% endif %}
+                </div>
+            {% elif firma.estado == 'RECHAZADO' %}
+                <div class="firma-card firma-card-rechazado">
+                    <div class="firma-card-header">{{ firma.rol_label }} — RECHAZADA</div>
+                    <div class="firma-pendiente">Firma rechazada</div>
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{{ firma.nombre }}</div>
+                    <div class="firma-cargo">{{ firma.cargo_nombre }}</div>
+                    <div class="firma-fecha firma-fecha-rechazo">{{ firma.comentarios }}</div>
+                </div>
+            {% else %}
+                <div class="firma-card">
+                    <div class="firma-card-header">{{ firma.rol_label }}</div>
+                    <div class="firma-pendiente">{{ firma.estado_label }}</div>
+                    <div class="firma-linea"></div>
+                    <div class="firma-nombre">{{ firma.nombre }}</div>
+                    <div class="firma-cargo">{{ firma.cargo_nombre }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

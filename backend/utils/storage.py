@@ -259,6 +259,16 @@ def tenant_media_path(module: str, subfolder: str = '') -> Callable:
     return _upload_to
 
 
+# Aliases de módulo para serialización en Django migrations.
+# Django busca el callable como utils.storage.<__name__>, por lo que cada
+# combinación usada en FileField/ImageField debe existir aquí.
+tenant_upload_documentos_pdf = tenant_media_path('documentos', 'pdf')
+tenant_upload_documentos_originales = tenant_media_path('documentos', 'originales')
+tenant_upload_documentos_sellados = tenant_media_path('documentos', 'sellados')
+tenant_upload_documentos_versiones = tenant_media_path('documentos', 'versiones')
+tenant_upload_documentos_actas_destruccion = tenant_media_path('documentos', 'actas_destruccion')
+
+
 # =============================================================================
 # HELPERS DE ADMINISTRACIÓN Y CUOTA
 # =============================================================================

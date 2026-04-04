@@ -296,21 +296,14 @@ class TenantRefreshView(APIView):
         try:
             refresh = RefreshToken(refresh_token)
 
-            # Generar nuevo access token ANTES de intentar blacklist
+            # Generar nuevo access token.
+            # ROTATE_REFRESH_TOKENS=False → se devuelve el mismo refresh token.
+            # NO llamar refresh.blacklist() aquí: blacklistear el token actual
+            # con ROTATE=False lo invalida permanentemente (mismo token se devuelve),
+            # causando que el siguiente refresh falle con 401 → logout diario.
+            # Blacklist solo en logout explícito (TenantLogoutView).
             new_access = str(refresh.access_token)
             new_refresh = str(refresh)
-
-            # Intentar blacklist del token viejo.
-            # PUEDE FALLAR porque token_blacklist está en TENANT_APPS
-            # y la tabla OutstandingToken tiene FK a core.User,
-            # pero nuestros tokens son de TenantUser.
-            try:
-                if hasattr(refresh, 'blacklist'):
-                    refresh.blacklist()
-            except Exception:
-                # Blacklist falla = token viejo no se invalida.
-                # No es crítico para TenantUser tokens.
-                pass
 
             return Response({
                 'access': new_access,

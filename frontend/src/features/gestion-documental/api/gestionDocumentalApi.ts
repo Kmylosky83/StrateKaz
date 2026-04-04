@@ -138,6 +138,13 @@ export const documentoApi = {
     const response = await apiClient.get(`${BASE_URL}/documentos/listado-maestro/`, { params });
     return response.data;
   },
+  listadoMaestroPdf: async (): Promise<Blob> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/listado-maestro/`, {
+      params: { formato: 'pdf' },
+      responseType: 'blob',
+    });
+    return response.data as Blob;
+  },
   getFirmas: async (id: number): Promise<unknown[]> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/${id}/firmas/`);
     return response.data;

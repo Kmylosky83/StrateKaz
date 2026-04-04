@@ -11,6 +11,7 @@ import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, PenTool, CheckCircle, TrendingUp, GitPullRequest, Archive } from 'lucide-react';
 import { Card, Button, Badge, Spinner } from '@/components/common';
+import { usePermissions } from '@/hooks/usePermissions';
 
 import { useDocumentos, useEstadisticasDocumentales } from '../hooks/useGestionDocumental';
 import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
@@ -29,6 +30,11 @@ export function DashboardDocumentalSection({
   onNavigateToSection,
 }: DashboardDocumentalSectionProps) {
   const navigate = useNavigate();
+  const { canDo } = usePermissions();
+  // Revelación progresiva: métricas globales y cobertura solo para roles con acceso al archivo
+  const canViewArchivo = canDo('gestion_documental.archivo.view');
+  const canViewRepositorio = canDo('gestion_documental.repositorio.view');
+
   const { data: documentos, isLoading: isLoadingDocs } = useDocumentos();
   const { data: estadisticas } = useEstadisticasDocumentales();
   const {
@@ -150,91 +156,95 @@ export function DashboardDocumentalSection({
         </Card>
       )}
 
-      {/* ── Resumen del sistema ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Flujo activo
-          </h4>
-          <div className="space-y-2">
-            <StatusRow
-              label="Borradores"
-              value={misBorradores.length}
-              color="text-gray-600 dark:text-gray-400"
-            />
-            <StatusRow
-              label="En revisión"
-              value={enRevision.length}
-              color="text-yellow-600 dark:text-yellow-400"
-            />
-            <StatusRow
-              label="Firmas pendientes (total)"
-              value={totalPendientes}
-              color="text-orange-600 dark:text-orange-400"
-            />
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Archivo</h4>
-          <div className="space-y-2">
-            <StatusRow
-              label="Publicados vigentes"
-              value={estadisticas?.publicados ?? 0}
-              color="text-green-600 dark:text-green-400"
-            />
-            <StatusRow
-              label="Obsoletos / Archivados"
-              value={(estadisticas?.obsoletos ?? 0) + (estadisticas?.archivados ?? 0)}
-              color="text-gray-500 dark:text-gray-400"
-            />
-            <StatusRow
-              label="Total documentos"
-              value={estadisticas?.total ?? 0}
-              color="text-indigo-600 dark:text-indigo-400"
-            />
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-            Distribución
-          </h4>
-          <div className="space-y-2">
-            <StatusRow
-              label="Lecturas pendientes (sistema)"
-              value={estadisticas?.lecturas_pendientes ?? 0}
-              color="text-blue-600 dark:text-blue-400"
-            />
-            <StatusRow
-              label="Lecturas completadas"
-              value={estadisticas?.lecturas_completadas ?? 0}
-              color="text-green-600 dark:text-green-400"
-            />
-            <StatusRow
-              label="Lecturas vencidas"
-              value={estadisticas?.lecturas_vencidas ?? 0}
-              color="text-red-600 dark:text-red-400"
-            />
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Cobertura documental ── */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-          Cobertura por tipo de documento
-        </h3>
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center py-8">
-              <Spinner size="lg" />
+      {/* ── Resumen del sistema (solo roles con acceso a repositorio/archivo) ── */}
+      {(canViewRepositorio || canViewArchivo) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card className="p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Flujo activo
+            </h4>
+            <div className="space-y-2">
+              <StatusRow
+                label="Borradores"
+                value={misBorradores.length}
+                color="text-gray-600 dark:text-gray-400"
+              />
+              <StatusRow
+                label="En revisión"
+                value={enRevision.length}
+                color="text-yellow-600 dark:text-yellow-400"
+              />
+              <StatusRow
+                label="Firmas pendientes (total)"
+                value={totalPendientes}
+                color="text-orange-600 dark:text-orange-400"
+              />
             </div>
-          }
-        >
-          <CoberturaPanel />
-        </Suspense>
-      </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Archivo</h4>
+            <div className="space-y-2">
+              <StatusRow
+                label="Publicados vigentes"
+                value={estadisticas?.publicados ?? 0}
+                color="text-green-600 dark:text-green-400"
+              />
+              <StatusRow
+                label="Obsoletos / Archivados"
+                value={(estadisticas?.obsoletos ?? 0) + (estadisticas?.archivados ?? 0)}
+                color="text-gray-500 dark:text-gray-400"
+              />
+              <StatusRow
+                label="Total documentos"
+                value={estadisticas?.total ?? 0}
+                color="text-indigo-600 dark:text-indigo-400"
+              />
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Distribución
+            </h4>
+            <div className="space-y-2">
+              <StatusRow
+                label="Lecturas pendientes (sistema)"
+                value={estadisticas?.lecturas_pendientes ?? 0}
+                color="text-blue-600 dark:text-blue-400"
+              />
+              <StatusRow
+                label="Lecturas completadas"
+                value={estadisticas?.lecturas_completadas ?? 0}
+                color="text-green-600 dark:text-green-400"
+              />
+              <StatusRow
+                label="Lecturas vencidas"
+                value={estadisticas?.lecturas_vencidas ?? 0}
+                color="text-red-600 dark:text-red-400"
+              />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ── Cobertura documental (solo admins / archivo) ── */}
+      {canViewArchivo && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
+            Cobertura por tipo de documento
+          </h3>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <CoberturaPanel />
+          </Suspense>
+        </div>
+      )}
 
       {/* ── Registros archivados por módulo (Sprint 3) ── */}
       {(() => {

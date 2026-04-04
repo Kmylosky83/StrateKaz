@@ -29,22 +29,28 @@ import {
   FileCheck,
   Layers,
   ExternalLink,
+  GitCompare,
+  FileDown,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner, ProtectedAction } from '@/components/common';
+import { Modal } from '@/components/modals';
 import { Input } from '@/components/forms';
-import { PageTabs, StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import { PageTabs, StatsGrid, StatsGridSkeleton, TableSkeleton } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import { ResponsiveTable } from '@/components/common/ResponsiveTable';
 import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
+import { documentoApi } from '../api/gestionDocumentalApi';
 
 import {
   useDocumentos,
   useVersionesDocumento,
+  useCompararVersiones,
   useEstadisticasDocumentales,
 } from '../hooks/useGestionDocumental';
-import type { Documento } from '../types/gestion-documental.types';
+import type { Documento, VersionDocumento } from '../types/gestion-documental.types';
 
 const IngestarLoteModal = lazy(() => import('./IngestarLoteModal'));
 
@@ -150,6 +156,7 @@ export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
 
 function VigentesTab({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
   const [search, setSearch] = useState('');
+  const [exportingPdf, setExportingPdf] = useState(false);
   const { data: documentos, isLoading } = useDocumentos({ estado: 'PUBLICADO' });
 
   const filtered = (documentos ?? []).filter(
@@ -159,27 +166,56 @@ function VigentesTab({ onViewDocumento }: { onViewDocumento: (id: number) => voi
       d.codigo.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+  async function handleExportListadoPdf() {
+    setExportingPdf(true);
+    try {
+      const blob = await documentoApi.listadoMaestroPdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `listado_maestro_${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
+  if (isLoading) return <TableSkeleton rows={5} columns={4} />;
 
   return (
     <div className="space-y-4">
-      <Input
-        placeholder="Buscar por título o código..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        leftIcon={<Search className="w-4 h-4" />}
-      />
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <Input
+            placeholder="Buscar por título o código..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftIcon={<Search className="w-4 h-4" />}
+          />
+        </div>
+        <ProtectedAction permission="gestion_documental.archivo.view">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<FileDown className="w-4 h-4" />}
+            onClick={handleExportListadoPdf}
+            isLoading={exportingPdf}
+          >
+            Listado Maestro PDF
+          </Button>
+        </ProtectedAction>
+      </div>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={<BookOpen className="w-12 h-12" />}
-          title="Sin documentos vigentes"
-          description="Los documentos publicados aparecerán aquí."
+          title={search ? 'Sin resultados' : 'Sin documentos vigentes'}
+          description={
+            search
+              ? `No se encontraron documentos para "${search}".`
+              : 'Los documentos publicados aparecerán aquí. Crea un documento en Repositorio y completa el flujo de aprobación.'
+          }
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -286,14 +322,10 @@ function VersionTimeline({
   documentoId: number;
   onViewDocumento: (id: number) => void;
 }) {
+  const [comparandoVersionId, setComparandoVersionId] = useState<number | null>(null);
   const { data: versiones, isLoading } = useVersionesDocumento(documentoId);
 
-  if (isLoading)
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
+  if (isLoading) return <TableSkeleton rows={4} columns={3} />;
 
   if (!versiones || versiones.length === 0)
     return (
@@ -305,79 +337,252 @@ function VersionTimeline({
     );
 
   return (
-    <div className="space-y-3">
-      {versiones.map((version, index) => (
-        <Card key={version.id} className="p-4">
-          <div className="flex items-start gap-4">
-            <div className="flex flex-col items-center shrink-0">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                  version.is_version_actual
-                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                }`}
-              >
-                <GitBranch className="w-4 h-4" />
-              </div>
-              {index < versiones.length - 1 && (
-                <div className="w-0.5 h-4 bg-gray-200 dark:bg-gray-700 mt-1" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span className="font-medium text-sm text-gray-900 dark:text-white">
-                  Versión {version.numero_version}
-                </span>
-                {version.is_version_actual && (
-                  <Badge variant="primary" size="sm">
-                    Actual
-                  </Badge>
-                )}
-                <Badge variant="secondary" size="sm">
-                  {version.tipo_cambio}
-                </Badge>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                {version.descripcion_cambios}
-              </p>
-              <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 mb-3">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(version.fecha_version).toLocaleDateString('es-CO')}
-                </span>
-                {version.fecha_aprobacion && (
-                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                    <CheckCircle className="w-3 h-3" />
-                    Aprobado
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={<Eye className="w-3.5 h-3.5" />}
-                  onClick={() => onViewDocumento(documentoId)}
+    <>
+      <div className="space-y-3">
+        {versiones.map((version, index) => (
+          <Card key={version.id} className="p-4">
+            <div className="flex items-start gap-4">
+              <div className="flex flex-col items-center shrink-0">
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                    version.is_version_actual
+                      ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                  }`}
                 >
-                  Ver
-                </Button>
-                {version.archivo_pdf_version && (
-                  <a href={version.archivo_pdf_version} target="_blank" rel="noopener noreferrer">
+                  <GitBranch className="w-4 h-4" />
+                </div>
+                {index < versiones.length - 1 && (
+                  <div className="w-0.5 h-4 bg-gray-200 dark:bg-gray-700 mt-1" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="font-medium text-sm text-gray-900 dark:text-white">
+                    Versión {version.numero_version}
+                  </span>
+                  {version.is_version_actual && (
+                    <Badge variant="primary" size="sm">
+                      Actual
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" size="sm">
+                    {version.tipo_cambio}
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  {version.descripcion_cambios}
+                </p>
+                <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 mb-3">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(version.fecha_version).toLocaleDateString('es-CO')}
+                  </span>
+                  {version.fecha_aprobacion && (
+                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                      <CheckCircle className="w-3 h-3" />
+                      Aprobado
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Eye className="w-3.5 h-3.5" />}
+                    onClick={() => onViewDocumento(documentoId)}
+                  >
+                    Ver
+                  </Button>
+                  {/* Comparar solo si no es la primera versión */}
+                  {index < versiones.length - 1 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      leftIcon={<Download className="w-3.5 h-3.5" />}
+                      leftIcon={<GitCompare className="w-3.5 h-3.5" />}
+                      onClick={() => setComparandoVersionId(version.id)}
                     >
-                      PDF
+                      Comparar
                     </Button>
-                  </a>
+                  )}
+                  {version.archivo_pdf_version && (
+                    <a href={version.archivo_pdf_version} target="_blank" rel="noopener noreferrer">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<Download className="w-3.5 h-3.5" />}
+                      >
+                        PDF
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {comparandoVersionId !== null && (
+        <VersionDiffModal
+          versionId={comparandoVersionId}
+          versiones={versiones}
+          onClose={() => setComparandoVersionId(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Modal Comparación de Versiones ────────────────────────────────────────
+
+function VersionDiffModal({
+  versionId,
+  versiones,
+  onClose,
+}: {
+  versionId: number;
+  versiones: VersionDocumento[];
+  onClose: () => void;
+}) {
+  const { data, isLoading } = useCompararVersiones(versionId);
+
+  const versionActual = versiones.find((v) => v.id === versionId);
+
+  return (
+    <Modal isOpen onClose={onClose} title="Comparación de Versiones" size="xl">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Spinner size="lg" />
+        </div>
+      ) : !data ? (
+        <EmptyState
+          icon={<ArrowLeftRight className="w-10 h-10" />}
+          title="Sin datos de comparación"
+          description="No se pudo obtener la comparación de versiones."
+        />
+      ) : (
+        <div className="space-y-5">
+          {/* Encabezado comparación */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Versión anterior</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                v{data.version_anterior?.numero_version ?? '—'}
+              </p>
+              {data.version_anterior?.fecha_version && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {new Date(data.version_anterior.fecha_version).toLocaleDateString('es-CO')}
+                </p>
+              )}
+            </div>
+            <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400 mb-0.5">Versión actual</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                v{versionActual?.numero_version ?? data.version_actual?.numero_version ?? '—'}
+              </p>
+              {data.version_actual?.fecha_version && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {new Date(data.version_actual.fecha_version).toLocaleDateString('es-CO')}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Cambios detectados */}
+          {Array.isArray(data.cambios) && data.cambios.length > 0 ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Cambios detectados ({data.cambios.length})
+              </p>
+              <div className="space-y-2 max-h-72 overflow-y-auto">
+                {(data.cambios as Array<{ campo: string; anterior: string; nuevo: string }>).map(
+                  (cambio, i) => (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
+                    >
+                      <div className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                        <span className="text-xs font-mono font-medium text-gray-700 dark:text-gray-300">
+                          {cambio.campo}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 divide-x divide-gray-200 dark:divide-gray-700">
+                        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10">
+                          <p className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">
+                            Anterior
+                          </p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap line-clamp-4">
+                            {cambio.anterior || <span className="italic text-gray-400">vacío</span>}
+                          </p>
+                        </div>
+                        <div className="px-3 py-2 bg-green-50 dark:bg-green-900/10">
+                          <p className="text-xs text-green-600 dark:text-green-400 font-medium mb-1">
+                            Nuevo
+                          </p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap line-clamp-4">
+                            {cambio.nuevo || <span className="italic text-gray-400">vacío</span>}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
                 )}
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+          ) : (
+            <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700">
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                No hay cambios detallados registrados para esta versión.
+                {versionActual?.descripcion_cambios && (
+                  <span className="block mt-1 font-medium">
+                    Descripción: {versionActual.descripcion_cambios}
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Snapshots de contenido side-by-side */}
+          {(data.version_anterior?.contenido_snapshot ||
+            data.version_actual?.contenido_snapshot) && (
+            <div>
+              <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+                Contenido
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-red-200 dark:border-red-800 overflow-hidden">
+                  <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
+                    <span className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      v{data.version_anterior?.numero_version}
+                    </span>
+                  </div>
+                  <div
+                    className="p-3 text-xs text-gray-700 dark:text-gray-300 max-h-48 overflow-y-auto prose prose-xs dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: data.version_anterior?.contenido_snapshot ?? '',
+                    }}
+                  />
+                </div>
+                <div className="rounded-lg border border-green-200 dark:border-green-800 overflow-hidden">
+                  <div className="px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      v{data.version_actual?.numero_version}
+                    </span>
+                  </div>
+                  <div
+                    className="p-3 text-xs text-gray-700 dark:text-gray-300 max-h-48 overflow-y-auto prose prose-xs dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: data.version_actual?.contenido_snapshot ?? '',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
   );
 }
 

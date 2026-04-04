@@ -22,7 +22,7 @@ import {
   GitPullRequest,
 } from 'lucide-react';
 import { Card, Button, EmptyState, Badge, Spinner } from '@/components/common';
-import { PageTabs } from '@/components/layout';
+import { PageTabs, TableSkeleton } from '@/components/layout';
 import type { TabItem } from '@/components/layout';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
@@ -118,9 +118,7 @@ export function EnProcesoSection({
           )}
 
           {firmasLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Spinner size="lg" />
-            </div>
+            <TableSkeleton rows={4} columns={3} />
           ) : !firmasPendientes || firmasPendientes.length === 0 ? (
             <EmptyState
               icon={<CheckCircle className="w-10 h-10" />}
@@ -214,9 +212,7 @@ export function EnProcesoSection({
       {activeTab === 'borradores' && (
         <section className="space-y-4">
           {isLoadingBorradores ? (
-            <div className="flex items-center justify-center py-6">
-              <Spinner size="md" />
-            </div>
+            <TableSkeleton rows={3} columns={3} />
           ) : !borradores || borradores.length === 0 ? (
             <EmptyState
               icon={<FileText className="w-10 h-10" />}
@@ -237,9 +233,7 @@ export function EnProcesoSection({
       {activeTab === 'revision' && (
         <section className="space-y-4">
           {isLoadingRevision ? (
-            <div className="flex items-center justify-center py-6">
-              <Spinner size="md" />
-            </div>
+            <TableSkeleton rows={3} columns={3} />
           ) : !enRevision || enRevision.length === 0 ? (
             <EmptyState
               icon={<GitPullRequest className="w-10 h-10" />}

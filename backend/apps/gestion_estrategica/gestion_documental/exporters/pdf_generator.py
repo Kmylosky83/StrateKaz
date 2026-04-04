@@ -152,11 +152,21 @@ class DocumentoPDFGenerator:
         contenido = self._sustituir_variables(documento, empresa_info)
 
         # Tipo de documento
-        es_formulario = (
-            hasattr(documento, 'tipo_documento')
-            and documento.tipo_documento
-            and documento.tipo_documento.categoria == 'FORMULARIO'
-        )
+        tipo_doc = documento.tipo_documento if documento.tipo_documento else None
+        es_formulario = bool(tipo_doc and tipo_doc.categoria == 'FORMULARIO')
+        tipo_codigo = tipo_doc.codigo if tipo_doc else ''
+        tipo_categoria = tipo_doc.categoria if tipo_doc else 'DOCUMENTO'
+
+        # Proceso y áreas
+        proceso_nombre = ''
+        if hasattr(documento, 'proceso') and documento.proceso:
+            proceso_nombre = documento.proceso.nombre
+        areas_aplicacion_str = ''
+        if documento.areas_aplicacion:
+            if isinstance(documento.areas_aplicacion, list):
+                areas_aplicacion_str = ', '.join(str(a) for a in documento.areas_aplicacion)
+            else:
+                areas_aplicacion_str = str(documento.areas_aplicacion)
 
         return {
             # Empresa
@@ -193,6 +203,12 @@ class DocumentoPDFGenerator:
             'custom_css': custom_css,
             'encabezado_html': encabezado_html,
             'pie_pagina_html': pie_pagina_html,
+
+            # Tipo-específico
+            'tipo_codigo': tipo_codigo,
+            'tipo_categoria': tipo_categoria,
+            'proceso_nombre': proceso_nombre,
+            'areas_aplicacion_str': areas_aplicacion_str,
 
             # Contenido
             'es_formulario': es_formulario,
@@ -332,6 +348,83 @@ class DocumentoPDFGenerator:
 
         except Exception:
             return {'qr_base64': '', 'doc_hash': doc_hash}
+
+    # =========================================================================
+    # Listado Maestro PDF
+    # =========================================================================
+
+    def generate_listado_maestro_pdf(self, documentos_qs, usuario=None):
+        """
+        Genera el PDF del Listado Maestro de Documentos agrupado por tipo.
+
+        Args:
+            documentos_qs: QuerySet de Documento (ya filtrado)
+            usuario: Usuario que solicita el export
+
+        Returns:
+            BytesIO con el PDF generado
+        """
+        if not WEASYPRINT_AVAILABLE:
+            raise ImportError("WeasyPrint no está instalado.")
+
+        empresa_info = self._get_empresa_info()
+        fecha_generacion = datetime.now().strftime('%d/%m/%Y %H:%M')
+        usuario_nombre = usuario.get_full_name() if usuario else 'Sistema'
+
+        # Agrupar por tipo
+        bloques_dict: dict = {}
+        total_publicados = 0
+        total_obsoletos = 0
+
+        for doc in documentos_qs.select_related('tipo_documento', 'proceso').order_by(
+            'tipo_documento__codigo', 'codigo'
+        ):
+            tipo = doc.tipo_documento
+            tipo_key = tipo.codigo if tipo else 'SIN_TIPO'
+            tipo_nombre = tipo.nombre if tipo else 'Sin tipo'
+
+            if tipo_key not in bloques_dict:
+                bloques_dict[tipo_key] = {'tipo_nombre': tipo_nombre, 'documentos': []}
+
+            bloques_dict[tipo_key]['documentos'].append({
+                'codigo': doc.codigo or '',
+                'titulo': doc.titulo or '',
+                'version_actual': doc.version_actual or '',
+                'estado': doc.estado,
+                'estado_display': doc.get_estado_display(),
+                'proceso_nombre': doc.proceso.nombre if hasattr(doc, 'proceso') and doc.proceso else '',
+                'fecha_publicacion_str': (
+                    doc.fecha_publicacion.strftime('%d/%m/%Y')
+                    if doc.fecha_publicacion else ''
+                ),
+            })
+
+            if doc.estado == 'PUBLICADO':
+                total_publicados += 1
+            elif doc.estado == 'OBSOLETO':
+                total_obsoletos += 1
+
+        bloques = list(bloques_dict.values())
+        total_documentos = sum(len(b['documentos']) for b in bloques)
+
+        context = {
+            'razon_social': empresa_info['razon_social'],
+            'nit': empresa_info['nit'],
+            'logo_base64': self.logo_base64,
+            'fecha_generacion': fecha_generacion,
+            'usuario_nombre': usuario_nombre,
+            'total_documentos': total_documentos,
+            'total_tipos': len(bloques),
+            'total_publicados': total_publicados,
+            'total_obsoletos': total_obsoletos,
+            'bloques': bloques,
+        }
+
+        html_string = render_to_string('pdf/gestion_documental/listado_maestro.html', context)
+        pdf_buffer = BytesIO()
+        HTML(string=html_string).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
 
     # =========================================================================
     # Form Builder: CampoFormulario JSON → lista de dicts para el template

@@ -32,7 +32,7 @@ import {
   ProtectedAction,
   ViewToggle,
 } from '@/components/common';
-import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import { StatsGrid, StatsGridSkeleton, TableSkeleton } from '@/components/layout';
 import { Input, Select } from '@/components/forms';
 import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
@@ -306,8 +306,9 @@ export function DocumentosSection({
         </div>
 
         {/* Document List */}
-        {/* Document List */}
-        {filteredDocs.length === 0 ? (
+        {isLoading ? (
+          <TableSkeleton rows={6} columns={5} />
+        ) : filteredDocs.length === 0 ? (
           <EmptyState
             icon={<FileText className="w-16 h-16" />}
             title={searchTerm ? 'Sin resultados' : 'No hay documentos'}

@@ -1,0 +1,131 @@
+{% extends "pdf/base_weasyprint.html" %}
+
+{% block extra_styles %}
+    /* ── Listado Maestro — layout tabla WeasyPrint-safe ── */
+    .lm-header { margin-bottom: 20px; overflow: hidden; }
+    .lm-header::after { content: ''; display: table; clear: both; }
+    .lm-logo { float: left; width: 80px; height: 60px; margin-right: 14px; }
+    .lm-empresa { overflow: hidden; }
+    .lm-empresa-nombre { font-size: 13pt; font-weight: 700; color: #1a365d; }
+    .lm-empresa-nit  { font-size: 9pt; color: #718096; margin-top: 2px; }
+    .lm-titulo-doc   { font-size: 11pt; font-weight: 700; color: #2d3748; margin-top: 4px; }
+    .lm-meta         { font-size: 8pt; color: #a0aec0; margin-top: 2px; }
+
+    .lm-tipo-bloque  { margin-top: 22px; page-break-inside: avoid; }
+    .lm-tipo-header  {
+        background: #2d3748;
+        color: #fff;
+        padding: 7px 12px;
+        font-size: 10pt;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .lm-tipo-sub     { font-size: 8pt; font-weight: 400; color: #cbd5e0; margin-left: 8px; }
+
+    .lm-table        { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 0; }
+    .lm-table th     { background: #edf2f7; font-weight: 700; padding: 6px 10px; border: 1px solid #cbd5e0; color: #2d3748; font-size: 8.5pt; }
+    .lm-table td     { padding: 5px 10px; border: 1px solid #e2e8f0; color: #2d3748; vertical-align: top; }
+    .lm-table tr:nth-child(even) td { background: #f7fafc; }
+
+    .lm-code         { font-family: monospace; font-size: 8pt; color: #2b6cb0; font-weight: 700; }
+    .lm-estado       { font-size: 7.5pt; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; }
+    .estado-PUBLICADO  { background: #c6f6d5; color: #276749; }
+    .estado-OBSOLETO   { background: #fed7d7; color: #c53030; }
+    .estado-ARCHIVADO  { background: #e2e8f0; color: #4a5568; }
+
+    .lm-resumen      { margin-top: 18px; padding: 10px 14px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .lm-resumen::after { content: ''; display: table; clear: both; }
+    .lm-resumen-item { float: left; width: 25%; text-align: center; font-size: 9pt; }
+    .lm-resumen-num  { font-size: 18pt; font-weight: 700; color: #2d3748; display: block; }
+    .lm-resumen-lbl  { color: #718096; font-size: 8pt; }
+
+    .lm-footer-note  { margin-top: 14px; font-size: 7.5pt; color: #a0aec0; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+{% endblock %}
+
+{% block body %}
+    <!-- Pie de página corriente -->
+    <div class="footer">
+        <span class="footer-left">Listado Maestro de Documentos — {{ razon_social }}</span>
+        <span class="footer-right page-number"></span>
+    </div>
+
+    <!-- Encabezado del documento -->
+    <div class="lm-header">
+        {% if logo_base64 %}
+            <img src="data:image/png;base64,{{ logo_base64 }}" class="lm-logo" alt="Logo">
+        {% endif %}
+        <div class="lm-empresa">
+            <div class="lm-empresa-nombre">{{ razon_social }}</div>
+            {% if nit %}<div class="lm-empresa-nit">NIT: {{ nit }}</div>{% endif %}
+            <div class="lm-titulo-doc">LISTADO MAESTRO DE DOCUMENTOS</div>
+            <div class="lm-meta">
+                Generado: {{ fecha_generacion }} &nbsp;|&nbsp;
+                Total documentos: {{ total_documentos }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen global -->
+    <div class="lm-resumen">
+        <div class="lm-resumen-item">
+            <span class="lm-resumen-num">{{ total_documentos }}</span>
+            <span class="lm-resumen-lbl">Total</span>
+        </div>
+        <div class="lm-resumen-item">
+            <span class="lm-resumen-num">{{ total_tipos }}</span>
+            <span class="lm-resumen-lbl">Tipos</span>
+        </div>
+        <div class="lm-resumen-item">
+            <span class="lm-resumen-num">{{ total_publicados }}</span>
+            <span class="lm-resumen-lbl">Publicados</span>
+        </div>
+        <div class="lm-resumen-item">
+            <span class="lm-resumen-num">{{ total_obsoletos }}</span>
+            <span class="lm-resumen-lbl">Obsoletos</span>
+        </div>
+    </div>
+
+    <!-- Bloques por tipo -->
+    {% for bloque in bloques %}
+        <div class="lm-tipo-bloque">
+            <div class="lm-tipo-header">
+                {{ bloque.tipo_nombre }}
+                <span class="lm-tipo-sub">({{ bloque.documentos|length }} documento{{ bloque.documentos|length|pluralize }})</span>
+            </div>
+            <table class="lm-table">
+                <thead>
+                    <tr>
+                        <th style="width:14%">Código</th>
+                        <th style="width:34%">Título</th>
+                        <th style="width:8%">Versión</th>
+                        <th style="width:14%">Estado</th>
+                        <th style="width:16%">Proceso</th>
+                        <th style="width:14%">F. Publicación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in bloque.documentos %}
+                        <tr>
+                            <td><span class="lm-code">{{ doc.codigo }}</span></td>
+                            <td>{{ doc.titulo }}</td>
+                            <td style="text-align:center">{{ doc.version_actual }}</td>
+                            <td>
+                                <span class="lm-estado estado-{{ doc.estado }}">
+                                    {{ doc.estado_display }}
+                                </span>
+                            </td>
+                            <td>{{ doc.proceso_nombre|default:"—" }}</td>
+                            <td>{{ doc.fecha_publicacion_str|default:"—" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endfor %}
+
+    <div class="lm-footer-note">
+        Documento generado automáticamente por StrateKaz SGI — Gestión Documental.
+        Este listado es de uso interno y control documental conforme a ISO 7.5.
+        Generado el {{ fecha_generacion }} por {{ usuario_nombre }}.
+    </div>
+{% endblock %}

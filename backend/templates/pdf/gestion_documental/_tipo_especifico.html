@@ -1,0 +1,102 @@
+{% comment %}
+  Partial: _tipo_especifico.html
+  Renderiza secciones extra según el tipo de documento (tipo_codigo).
+  Se incluye ANTES del contenido principal del documento.
+
+  Variables esperadas del contexto:
+    tipo_codigo          — ej. 'PR', 'MA', 'POL', 'AC', 'GU', 'IN', 'PG', 'RE'
+    tipo_categoria       — 'DOCUMENTO' | 'FORMULARIO'
+    proceso_nombre       — nombre del proceso aplicable
+    areas_aplicacion_str — texto de áreas de aplicación
+{% endcomment %}
+
+{% if tipo_categoria == 'DOCUMENTO' %}
+
+  {% if tipo_codigo == 'PR' %}
+    {# Procedimiento: encabezado ISO estándar con campos de alcance/objetivo #}
+    <div class="tipo-header tipo-procedimiento">
+      <div class="tipo-header-title">PROCEDIMIENTO</div>
+      <table class="tipo-meta-table">
+        <tr>
+          <td class="tipo-meta-label">Proceso aplicable</td>
+          <td class="tipo-meta-value">{{ proceso_nombre|default:"—" }}</td>
+          <td class="tipo-meta-label">Áreas de aplicación</td>
+          <td class="tipo-meta-value">{{ areas_aplicacion_str|default:"—" }}</td>
+        </tr>
+      </table>
+    </div>
+
+  {% elif tipo_codigo == 'MA' %}
+    {# Manual: banda de nivel normativo #}
+    <div class="tipo-header tipo-manual">
+      <div class="tipo-header-title">MANUAL DEL SISTEMA DE GESTIÓN</div>
+      {% if proceso_nombre %}
+        <p class="tipo-header-subtitle">Proceso: {{ proceso_nombre }}</p>
+      {% endif %}
+    </div>
+
+  {% elif tipo_codigo == 'POL' %}
+    {# Política: recuadro de declaración #}
+    <div class="tipo-header tipo-politica">
+      <div class="tipo-header-title">POLÍTICA</div>
+      {% if proceso_nombre %}
+        <p class="tipo-header-subtitle">Ámbito: {{ proceso_nombre }}</p>
+      {% endif %}
+    </div>
+
+  {% elif tipo_codigo == 'GU' %}
+    {# Guía / Instructivo #}
+    <div class="tipo-header tipo-guia">
+      <div class="tipo-header-title">GUÍA / INSTRUCTIVO</div>
+    </div>
+
+  {% elif tipo_codigo == 'PL' %}
+    {# Plan #}
+    <div class="tipo-header tipo-plan">
+      <div class="tipo-header-title">PLAN</div>
+      {% if proceso_nombre %}
+        <p class="tipo-header-subtitle">Proceso: {{ proceso_nombre }}</p>
+      {% endif %}
+    </div>
+
+  {% elif tipo_codigo == 'RE' %}
+    {# Reglamento / Normativa interna #}
+    <div class="tipo-header tipo-reglamento">
+      <div class="tipo-header-title">REGLAMENTO INTERNO</div>
+    </div>
+
+  {% elif tipo_codigo == 'PG' %}
+    {# Programa #}
+    <div class="tipo-header tipo-programa">
+      <div class="tipo-header-title">PROGRAMA</div>
+      {% if proceso_nombre %}
+        <p class="tipo-header-subtitle">Proceso: {{ proceso_nombre }}</p>
+      {% endif %}
+    </div>
+
+  {% elif tipo_codigo == 'IN' %}
+    {# Informe #}
+    <div class="tipo-header tipo-informe">
+      <div class="tipo-header-title">INFORME</div>
+    </div>
+  {% endif %}
+
+{% elif tipo_categoria == 'FORMULARIO' %}
+
+  {% if tipo_codigo == 'AC' %}
+    {# Acta: encabezado de reunión con tipo de convocatoria #}
+    <div class="tipo-header tipo-acta">
+      <div class="tipo-header-title">ACTA DE REUNIÓN / REGISTRO</div>
+      {% if proceso_nombre %}
+        <p class="tipo-header-subtitle">Proceso: {{ proceso_nombre }}</p>
+      {% endif %}
+    </div>
+
+  {% else %}
+    {# Formato / Registro genérico #}
+    <div class="tipo-header tipo-formato">
+      <div class="tipo-header-title">FORMULARIO / REGISTRO</div>
+    </div>
+  {% endif %}
+
+{% endif %}

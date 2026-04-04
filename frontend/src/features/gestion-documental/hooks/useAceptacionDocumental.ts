@@ -6,7 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { aceptacionApi } from '../api/gestionDocumentalApi';
 import { createQueryKeys } from '@/lib/query-keys';
-import type { AsignarLecturaDTO, RegistrarProgresoDTO } from '../types/gestion-documental.types';
+import type {
+  AsignarLecturaDTO,
+  AceptacionDocumental,
+  RegistrarProgresoDTO,
+} from '../types/gestion-documental.types';
 
 const aceptacionKeys = createQueryKeys('aceptaciones');
 
@@ -57,26 +61,58 @@ export function useRegistrarProgreso() {
 
 export function useAceptarLectura() {
   const queryClient = useQueryClient();
+  const pendientesKey = [...aceptacionKeys.all, 'mis-pendientes'];
+
   return useMutation({
     mutationFn: ({ id, texto }: { id: number; texto?: string }) => aceptacionApi.aceptar(id, texto),
+    // Optimistic: eliminar del listado de pendientes antes de que responda el servidor
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: pendientesKey });
+      const previous = queryClient.getQueryData<AceptacionDocumental[]>(pendientesKey);
+      queryClient.setQueryData<AceptacionDocumental[]>(pendientesKey, (old) =>
+        (old ?? []).filter((a) => a.id !== id)
+      );
+      return { previous };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: aceptacionKeys.all });
       toast.success('Documento aceptado exitosamente');
     },
-    onError: () => toast.error('Error al aceptar documento'),
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(pendientesKey, ctx.previous);
+      }
+      toast.error('Error al aceptar documento');
+    },
   });
 }
 
 export function useRechazarLectura() {
   const queryClient = useQueryClient();
+  const pendientesKey = [...aceptacionKeys.all, 'mis-pendientes'];
+
   return useMutation({
     mutationFn: ({ id, motivo }: { id: number; motivo: string }) =>
       aceptacionApi.rechazar(id, motivo),
+    // Optimistic: eliminar del listado de pendientes antes de que responda el servidor
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: pendientesKey });
+      const previous = queryClient.getQueryData<AceptacionDocumental[]>(pendientesKey);
+      queryClient.setQueryData<AceptacionDocumental[]>(pendientesKey, (old) =>
+        (old ?? []).filter((a) => a.id !== id)
+      );
+      return { previous };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: aceptacionKeys.all });
       toast.success('Documento rechazado');
     },
-    onError: () => toast.error('Error al rechazar documento'),
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous !== undefined) {
+        queryClient.setQueryData(pendientesKey, ctx.previous);
+      }
+      toast.error('Error al rechazar documento');
+    },
   });
 }
 

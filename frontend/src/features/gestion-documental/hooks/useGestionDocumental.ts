@@ -262,6 +262,14 @@ export function useVersionesDocumento(documentoId: number) {
   });
 }
 
+export function useCompararVersiones(versionId: number | null) {
+  return useQuery({
+    queryKey: ['gd-version-comparar', versionId],
+    queryFn: () => versionDocumentoApi.comparar(versionId!, 0),
+    enabled: !!versionId,
+  });
+}
+
 // ==================== CAMPOS FORMULARIO ====================
 
 export function useCamposFormulario(plantillaId: number) {

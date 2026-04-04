@@ -753,18 +753,41 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='listado-maestro')
     def listado_maestro(self, request):
-        """Listado maestro de documentos publicados"""
-        queryset = Documento.objects.filter(
-            estado='PUBLICADO'
-        ).select_related('tipo_documento').order_by('tipo_documento__codigo', 'codigo')
+        """Listado maestro de documentos. Soporta ?formato=pdf|json (default json) y ?estado=PUBLICADO,OBSOLETO"""
+        from django.http import HttpResponse
+        from .exporters.pdf_generator import DocumentoPDFGenerator
 
-        # Agrupar por tipo
+        estados = request.query_params.getlist('estado') or ['PUBLICADO']
+        queryset = (
+            Documento.objects
+            .filter(estado__in=estados)
+            .select_related('tipo_documento', 'proceso')
+            .order_by('tipo_documento__codigo', 'codigo')
+        )
+
+        formato = request.query_params.get('formato', 'json')
+
+        if formato == 'pdf':
+            empresa = get_tenant_empresa()
+            generator = DocumentoPDFGenerator(empresa=empresa)
+            try:
+                pdf_buffer = generator.generate_listado_maestro_pdf(queryset, usuario=request.user)
+            except ImportError as exc:
+                return Response({'error': str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            from datetime import date as _date
+            filename = f"listado_maestro_{_date.today().strftime('%Y%m%d')}.pdf"
+            response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        # JSON (default)
         listado = {}
         for doc in queryset:
-            tipo = doc.tipo_documento.codigo
+            tipo = doc.tipo_documento.codigo if doc.tipo_documento else 'SIN_TIPO'
             if tipo not in listado:
                 listado[tipo] = {
-                    'tipo': doc.tipo_documento.nombre,
+                    'tipo': doc.tipo_documento.nombre if doc.tipo_documento else 'Sin tipo',
                     'documentos': []
                 }
             listado[tipo]['documentos'].append(DocumentoListSerializer(doc).data)

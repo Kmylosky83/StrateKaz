@@ -69,6 +69,31 @@
     /* ── Pie de generación ── */
     .gen-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #a0aec0; }
 
+    /* ── Encabezados tipo-específicos ── */
+    .tipo-header {
+        margin-bottom: 14px;
+        padding: 10px 14px;
+        border-left: 4px solid #2d3748;
+        background: #f7fafc;
+        page-break-inside: avoid;
+    }
+    .tipo-procedimiento { border-left-color: #3182ce; background: #ebf8ff; }
+    .tipo-manual        { border-left-color: #6b46c1; background: #faf5ff; }
+    .tipo-politica      { border-left-color: #2f855a; background: #f0fff4; }
+    .tipo-guia          { border-left-color: #b7791f; background: #fffff0; }
+    .tipo-plan          { border-left-color: #2b6cb0; background: #ebf8ff; }
+    .tipo-reglamento    { border-left-color: #c53030; background: #fff5f5; }
+    .tipo-programa      { border-left-color: #276749; background: #f0fff4; }
+    .tipo-informe       { border-left-color: #744210; background: #fffaf0; }
+    .tipo-acta          { border-left-color: #553c9a; background: #faf5ff; }
+    .tipo-formato       { border-left-color: #2c7a7b; background: #e6fffa; }
+
+    .tipo-header-title    { font-size: 9pt; font-weight: 700; letter-spacing: 1px; color: #2d3748; text-transform: uppercase; margin-bottom: 6px; }
+    .tipo-header-subtitle { font-size: 8.5pt; color: #4a5568; margin: 0; }
+    .tipo-meta-table      { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-top: 6px; }
+    .tipo-meta-label      { width: 22%; font-weight: 700; color: #4a5568; padding: 3px 6px 3px 0; }
+    .tipo-meta-value      { width: 28%; color: #2d3748; padding: 3px 8px 3px 0; }
+
     {% if custom_css %}{{ custom_css }}{% endif %}
 {% endblock %}
 
@@ -142,6 +167,8 @@
             <span class="metadata-value">{{ fecha_vigencia }}</span>
         </div>
     </div>
+
+    {% include "pdf/gestion_documental/_tipo_especifico.html" %}
 
     <!-- Contenido del documento -->
     <div class="contenido-documento">

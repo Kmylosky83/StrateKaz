@@ -699,8 +699,9 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | 2.10 | Filtro por proceso en Repositorio | Frontend | Filter component | Filtrar repositorio por proceso funciona |
 | 2.11 | Tab TRD en Configuración | Frontend | Section component | Admin puede ver/editar TRD por tipo+proceso |
 
-### Sprint 3 — Integración C2 + Archivo
+### Sprint 3 — Integración C2 + Archivo `[COMPLETADO 2026-04-04]`
 
+**Commit:** `8175ba69`
 **Objetivo:** El Gestor Documental como notario. Módulos C2 depositan y crean documentos.
 
 | # | Tarea | Capa | Entregable | Criterio de Aceptación |

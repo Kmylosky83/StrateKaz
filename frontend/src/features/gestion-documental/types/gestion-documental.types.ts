@@ -179,6 +179,9 @@ export interface Documento {
   tipo_documento_nombre?: string;
   tipo_documento_codigo?: string;
   tipo_documento_detail?: TipoDocumento;
+  proceso: number | null;
+  proceso_code?: string;
+  proceso_nombre?: string;
   plantilla: number | null;
   plantilla_detail?: PlantillaDocumento;
   resumen: string;

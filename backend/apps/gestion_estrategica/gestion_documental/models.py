@@ -554,6 +554,17 @@ class Documento(models.Model):
         verbose_name='Cargo Responsable',
         help_text='Cargo responsable del documento'
     )
+    # Proceso para codificación TIPO-PROCESO-NNN (Sprint 2 — Arquitectura GD v5 §7)
+    proceso = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='documentos_gd',
+        verbose_name='Proceso',
+        help_text='Proceso SGI principal. Define el código: TIPO-PROCESO-NNN (ej: PR-SST-001)',
+    )
+
     fecha_expiracion = models.DateField(
         null=True,
         blank=True,

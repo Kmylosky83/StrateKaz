@@ -136,7 +136,7 @@ export function DocumentosSection({
         return false;
     }
     if (filterTipo && doc.tipo_documento !== Number(filterTipo)) return false;
-    if (filterProceso && !(doc.areas_aplicacion || []).includes(filterProceso)) return false;
+    if (filterProceso && String(doc.proceso) !== filterProceso) return false;
     return true;
   });
 
@@ -193,8 +193,8 @@ export function DocumentosSection({
           <Select value={filterProceso} onChange={(e) => setFilterProceso(e.target.value)}>
             <option value="">Todos los procesos</option>
             {(procesosData?.results || []).map((p) => (
-              <option key={p.id} value={p.name}>
-                {p.name}
+              <option key={p.id} value={p.id}>
+                {p.code} — {p.name}
               </option>
             ))}
           </Select>

@@ -74,6 +74,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     defaultValues: {
       titulo: '',
       tipo_documento: 0,
+      proceso: '',
       contenido: '',
       resumen: '',
       clasificacion: 'INTERNO',
@@ -91,6 +92,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       reset({
         titulo: existing.titulo,
         tipo_documento: (existing.tipo_documento_detail?.id ?? existing.tipo_documento) || 0,
+        proceso: existing.proceso ? String(existing.proceso) : '',
         plantilla: existing.plantilla_detail?.id ?? existing.plantilla ?? undefined,
         contenido: existing.contenido || '',
         resumen: existing.resumen || '',
@@ -114,6 +116,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       reset({
         titulo: '',
         tipo_documento: 0,
+        proceso: '',
         contenido: '',
         resumen: '',
         clasificacion: 'INTERNO',
@@ -399,20 +402,25 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               />
             </div>
 
-            <Select
-              label="Proceso"
-              value={(watch('areas_aplicacion') as string[])?.[0] || ''}
-              onChange={(e) => {
-                setValue('areas_aplicacion', e.target.value ? [e.target.value] : []);
-              }}
-            >
+            <Select label="Proceso" {...register('proceso')}>
               <option value="">Sin proceso asignado</option>
               {(procesosData?.results || []).map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name} ({p.tipo_display})
+                <option key={p.id} value={p.id}>
+                  {p.code} — {p.name}
                 </option>
               ))}
             </Select>
+            {watch('tipo_documento') && watch('proceso') && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 -mt-2">
+                Código generado:{' '}
+                <span className="font-mono font-medium">
+                  {tipos.find((t) => t.id === Number(watch('tipo_documento')))?.codigo || '??'}-
+                  {(procesosData?.results || []).find((p) => p.id === Number(watch('proceso')))
+                    ?.code || '??'}
+                  -???
+                </span>
+              </p>
+            )}
 
             <Textarea label="Observaciones" {...register('observaciones')} rows={2} />
           </>

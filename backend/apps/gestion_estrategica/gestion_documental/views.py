@@ -397,13 +397,14 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         empresa = get_tenant_empresa()
         empresa_id = empresa.id if empresa else None
 
-        # Auto-generar codigo si no viene en el request
+        # Auto-generar codigo TIPO-PROCESO-NNN si no viene en el request
         codigo = serializer.validated_data.get('codigo')
         if not codigo:
             tipo_documento = serializer.validated_data.get('tipo_documento')
+            proceso = serializer.validated_data.get('proceso')
             if tipo_documento:
                 from .services import DocumentoService
-                codigo = DocumentoService.generar_codigo(tipo_documento, empresa_id)
+                codigo = DocumentoService.generar_codigo(tipo_documento, empresa_id, proceso)
 
         documento = serializer.save(
             empresa_id=empresa_id,

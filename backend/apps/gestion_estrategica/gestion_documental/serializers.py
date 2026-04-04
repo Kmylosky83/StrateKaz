@@ -199,6 +199,8 @@ class DocumentoListSerializer(serializers.ModelSerializer):
     norma_iso_nombre = serializers.CharField(source='norma_iso.nombre', read_only=True, allow_null=True)
     norma_iso_codigo = serializers.CharField(source='norma_iso.codigo', read_only=True, allow_null=True)
     responsable_cargo_nombre = serializers.CharField(source='responsable_cargo.name', read_only=True, allow_null=True)
+    proceso_code = serializers.CharField(source='proceso.code', read_only=True, allow_null=True)
+    proceso_nombre = serializers.CharField(source='proceso.name', read_only=True, allow_null=True)
     total_firmas = serializers.SerializerMethodField()
     firmas_pendientes = serializers.SerializerMethodField()
 
@@ -211,6 +213,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'fecha_revision_programada', 'elaborado_por', 'elaborado_por_nombre',
             'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
             'responsable_cargo', 'responsable_cargo_nombre',
+            'proceso', 'proceso_code', 'proceso_nombre',
             'es_politica_integral', 'lectura_obligatoria',
             'ocr_estado', 'ocr_metadatos', 'es_externo',
             'archivo_original', 'archivo_pdf',
@@ -242,6 +245,8 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
     norma_iso_nombre = serializers.CharField(source='norma_iso.nombre', read_only=True, allow_null=True)
     norma_iso_codigo = serializers.CharField(source='norma_iso.codigo', read_only=True, allow_null=True)
     responsable_cargo_nombre = serializers.CharField(source='responsable_cargo.name', read_only=True, allow_null=True)
+    proceso_code = serializers.CharField(source='proceso.code', read_only=True, allow_null=True)
+    proceso_nombre = serializers.CharField(source='proceso.name', read_only=True, allow_null=True)
     firmas_digitales = serializers.SerializerMethodField()
 
     class Meta:
@@ -256,6 +261,7 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'elaborado_por', 'elaborado_por_nombre',
             'revisado_por', 'revisado_por_nombre',
             'aprobado_por', 'aprobado_por_nombre',
+            'proceso', 'proceso_code', 'proceso_nombre',
             'areas_aplicacion', 'puestos_aplicacion',
             'archivo_pdf', 'archivos_anexos',
             'documento_padre', 'documento_padre_codigo',

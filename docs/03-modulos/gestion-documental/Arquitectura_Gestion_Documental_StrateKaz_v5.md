@@ -101,8 +101,8 @@ Tres fallbacks conviven, generando **dos formatos distintos:**
 | 1 | ~~Acceso a docs CONFIDENCIAL/RESTRINGIDO sin enforcement~~ | ~~Seguridad~~ | **RESUELTO** (2b8261cc) |
 | 2 | ~~AceptacionDocumental no se invalida al publicar nueva versión~~ | ~~Funcional~~ | **RESUELTO** (2b8261cc) |
 | 3 | ~~Sin notificaciones de vencimiento de documentos~~ | ~~Funcional~~ | **YA EXISTÍA** (tasks.py) |
-| 4 | 2 formatos de código incompatibles (sin proceso en el código) | Certificación | Sprint 2 |
-| 5 | `puestos_aplicacion` campo muerto sin uso | Deuda | Sprint 2 |
+| 4 | ~~2 formatos de código incompatibles~~ | ~~Certificación~~ | **RESUELTO** (c1a2bc90) |
+| 5 | ~~`puestos_aplicacion` campo muerto~~ | ~~Deuda~~ | **DEPRECADO** (c1a2bc90) |
 | 6 | Form Builder no genera PDF (datos_formulario → PDF vacío) | Funcional | Sprint 3.5 |
 | 7 | Generador PDF monolítico (598 líneas inline) | Mantenibilidad | Sprint 3.5 |
 | 8 | Form Builder sin condiciones de visibilidad ni fórmulas | UX | Sprint 4 |
@@ -680,8 +680,9 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | 1.4 | Celery tasks de vencimiento | YA EXISTÍA | Tasks `verificar_documentos_revision_programada` y `notificar_documentos_por_vencer` ya implementadas |
 | 1.5 | Badge "Próximo a vencer" en Repositorio | DONE | Cards + list view: "Vence en Xd" (warning) / "Vencido" (danger) para PUBLICADOS |
 
-### Sprint 2 — Codificación + TRD + FK Proceso
+### Sprint 2 — Codificación + TRD + FK Proceso `[COMPLETADO 2026-04-04]`
 
+**Commits:** `c1a2bc90` (motor + FK + frontend) + `bd2ceeda` (TRD + scripts + tab)
 **Objetivo:** SGI certificable ISO con codificación estándar y retención documental formal.
 
 | # | Tarea | Capa | Entregable | Criterio de Aceptación |
@@ -796,9 +797,9 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | DT-01 | ~~Acceso CONFIDENCIAL sin enforcement~~ | ~~Crítica~~ | Sprint 1 | **RESUELTO** (2b8261cc) |
 | DT-02 | ~~AceptacionDocumental no se invalida al publicar nueva versión~~ | ~~Alta~~ | Sprint 1 | **RESUELTO** (2b8261cc) |
 | DT-03 | ~~Sin notificaciones de vencimiento de documentos~~ | ~~Alta~~ | Sprint 1 | **YA EXISTÍA** |
-| DT-04 | 2 formatos de código incompatibles (PR-001 vs POL-2026-0001) | Alta | Sprint 2 | Pendiente |
-| DT-05 | `puestos_aplicacion` campo muerto (0 usos en FE/BE) | Baja | Sprint 2 | Pendiente |
-| DT-06 | `areas_aplicacion` guarda strings arbitrarios (no Area.code) | Media | Sprint 2 | Pendiente |
+| DT-04 | ~~2 formatos de código incompatibles~~ | ~~Alta~~ | Sprint 2 | **RESUELTO** (c1a2bc90) |
+| DT-05 | ~~`puestos_aplicacion` campo muerto~~ | ~~Baja~~ | Sprint 2 | **DEPRECADO** (c1a2bc90) |
+| DT-06 | ~~`areas_aplicacion` strings arbitrarios~~ | ~~Media~~ | Sprint 2 | **RESUELTO** (migrar_procesos_gd) |
 | DT-07 | Form Builder JSON no genera PDF (datos_formulario → PDF vacío) | Alta | Sprint 3.5 | Pendiente |
 | DT-08 | Generador PDF monolítico (598 líneas, inline, no testeable) | Media | Sprint 3.5 | Pendiente |
 | DT-09 | Form Builder sin condiciones de visibilidad en UI | Media | Sprint 4 | Pendiente |

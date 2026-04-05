@@ -1585,7 +1585,7 @@ class TablaRetencionDocumental(models.Model):
         help_text='Normativa que justifica la retención (ej: Decreto 1072/2015, Ley 594/2000)',
     )
     requiere_acta_destruccion = models.BooleanField(
-        default=True,
+        default=False,
         verbose_name='Requiere Acta de Destrucción',
     )
     activo = models.BooleanField(

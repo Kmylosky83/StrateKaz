@@ -43,6 +43,49 @@ def _send_notification(tipo_codigo, usuario, titulo, mensaje, url, datos_extra=N
 class DocumentoService:
     """Servicio central para gestión documental."""
 
+    @staticmethod
+    def resolver_retencion(documento):
+        """
+        Resuelve tiempo de retención según RN-TRD-001:
+        1. Buscar regla TRD activa (tipo+proceso+empresa)
+        2. Fallback: TipoDocumento.tiempo_retencion_años
+        3. Default absoluto: 5 años + CONSERVAR_PERMANENTE
+
+        Retorna dict con: gestion, central, total, disposicion,
+        requiere_acta, fuente ('TRD' | 'FALLBACK').
+        """
+        TablaRetencionDocumental = apps.get_model(
+            'gestion_documental', 'TablaRetencionDocumental'
+        )
+        trd = None
+        if documento.proceso_id:
+            trd = TablaRetencionDocumental.objects.filter(
+                tipo_documento=documento.tipo_documento,
+                proceso_id=documento.proceso_id,
+                activo=True,
+                empresa_id=documento.empresa_id,
+            ).first()
+
+        if trd:
+            return {
+                'gestion': trd.tiempo_gestion_anos,
+                'central': trd.tiempo_central_anos,
+                'total': trd.tiempo_total_anos,
+                'disposicion': trd.disposicion_final,
+                'requiere_acta': trd.requiere_acta_destruccion,
+                'fuente': 'TRD',
+            }
+
+        fallback = getattr(documento.tipo_documento, 'tiempo_retencion_años', 5) or 5
+        return {
+            'gestion': 0,
+            'central': fallback,
+            'total': fallback,
+            'disposicion': 'CONSERVAR_PERMANENTE',
+            'requiere_acta': False,
+            'fuente': 'FALLBACK',
+        }
+
     @classmethod
     def generar_codigo(cls, tipo_documento, empresa_id, proceso=None):
         """

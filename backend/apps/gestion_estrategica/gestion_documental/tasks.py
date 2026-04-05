@@ -864,6 +864,7 @@ def procesar_retencion_documentos():
         try:
             with schema_context(tenant.schema_name):
                 from .models import Documento
+                from .services.documento_service import DocumentoService
                 from django.utils import timezone
                 from datetime import timedelta
 
@@ -875,7 +876,9 @@ def procesar_retencion_documentos():
                 ).select_related('tipo_documento', 'elaborado_por')
 
                 for doc in documentos:
-                    retencion_anos = doc.tipo_documento.tiempo_retencion_años
+                    # RN-TRD-001: TRD (tipo+proceso) > fallback TipoDocumento
+                    retencion = DocumentoService.resolver_retencion(doc)
+                    retencion_anos = retencion['total']
                     if not retencion_anos or retencion_anos <= 0:
                         continue
 

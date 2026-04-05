@@ -43,10 +43,12 @@ import {
   usePlantillasDocumento,
   useDeletePlantillaDocumento,
   useTRD,
+  useCreateTRD,
   useDeleteTRD,
 } from '../hooks/useGestionDocumental';
+import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { DISPOSICION_LABELS } from '../types/gestion-documental.types';
-import type { TablaRetencionDocumental } from '../types/gestion-documental.types';
+import type { TablaRetencionDocumental, DisposicionFinal } from '../types/gestion-documental.types';
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
 // ─── Constantes ─────────────────────────────────────────────────
@@ -107,6 +109,7 @@ export function TiposPlantillasSection({
   const { data: plantillas, isLoading: plantillasLoading } = usePlantillasDocumento();
   const deleteTipoMutation = useDeleteTipoDocumento();
   const deletePlantillaMutation = useDeletePlantillaDocumento();
+  const { data: trdReglas } = useTRD();
 
   const [activeTab, setActiveTab] = useState<ConfigTab>('tipos');
   const { color: moduleColor } = useModuleColor('gestion_documental');
@@ -145,6 +148,7 @@ export function TiposPlantillasSection({
       id: 'trd',
       label: 'Retención Documental',
       icon: Archive,
+      badge: (trdReglas as TablaRetencionDocumental[])?.length || undefined,
     },
   ];
 
@@ -678,36 +682,242 @@ function TipoMenu({
 }
 
 // ─── TRD Sub-Section ──────────────────────────────────────────
+
+const DISPOSICION_OPTIONS: { value: DisposicionFinal; label: string }[] = [
+  { value: 'CONSERVAR_PERMANENTE', label: 'Conservación permanente' },
+  { value: 'ELIMINAR', label: 'Eliminar' },
+  { value: 'SELECCIONAR', label: 'Selección (muestreo)' },
+  { value: 'DIGITALIZAR', label: 'Digitalizar y eliminar' },
+];
+
+const DISPOSICION_COLORS: Record<string, string> = {
+  ELIMINAR: 'text-red-600 dark:text-red-400',
+  CONSERVAR_PERMANENTE: 'text-green-600 dark:text-green-400',
+  SELECCIONAR: 'text-amber-600 dark:text-amber-400',
+  DIGITALIZAR: 'text-blue-600 dark:text-blue-400',
+};
+
 function TRDSubSection() {
   const { data: reglas, isLoading } = useTRD();
+  const { data: tiposData } = useTiposDocumento();
+  const { data: procesosData } = useAreas({ is_active: true });
+  const createMutation = useCreateTRD();
   const deleteMutation = useDeleteTRD();
   const [confirmDelete, setConfirmDelete] = useState<TablaRetencionDocumental | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
-  const DISPOSICION_COLORS: Record<string, string> = {
-    ELIMINAR: 'text-red-600 dark:text-red-400',
-    CONSERVAR_PERMANENTE: 'text-green-600 dark:text-green-400',
-    SELECCIONAR: 'text-amber-600 dark:text-amber-400',
-    DIGITALIZAR: 'text-blue-600 dark:text-blue-400',
+  // Form state
+  const [form, setForm] = useState({
+    tipo_documento: '',
+    proceso: '',
+    serie_documental: '',
+    tiempo_gestion_anos: 2,
+    tiempo_central_anos: 5,
+    disposicion_final: 'CONSERVAR_PERMANENTE' as DisposicionFinal,
+    soporte_legal: '',
+    requiere_acta_destruccion: true,
+  });
+
+  const tipos = (tiposData as TipoDocumento[]) ?? [];
+  const procesos = procesosData?.results ?? procesosData ?? [];
+
+  const resetForm = () => {
+    setForm({
+      tipo_documento: '',
+      proceso: '',
+      serie_documental: '',
+      tiempo_gestion_anos: 2,
+      tiempo_central_anos: 5,
+      disposicion_final: 'CONSERVAR_PERMANENTE',
+      soporte_legal: '',
+      requiere_acta_destruccion: true,
+    });
+    setShowForm(false);
+  };
+
+  const handleSubmit = () => {
+    if (!form.tipo_documento || !form.proceso || !form.serie_documental) return;
+    createMutation.mutate(
+      {
+        tipo_documento: Number(form.tipo_documento),
+        proceso: Number(form.proceso),
+        serie_documental: form.serie_documental,
+        tiempo_gestion_anos: form.tiempo_gestion_anos,
+        tiempo_central_anos: form.tiempo_central_anos,
+        disposicion_final: form.disposicion_final,
+        soporte_legal: form.soporte_legal,
+        requiere_acta_destruccion: form.requiere_acta_destruccion,
+      },
+      { onSuccess: resetForm }
+    );
   };
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        Tabla de Retención Documental (TRD) — Define tiempos de conservación por tipo y proceso
-        según normativa AGN.
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Tabla de Retención Documental (TRD) — Tiempos de conservación por tipo y proceso según
+          normativa AGN.
+        </p>
+        <ProtectedAction permission="gestion_documental.configuracion.create">
+          <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Plus className="w-4 h-4 mr-1" /> Nueva Regla
+          </Button>
+        </ProtectedAction>
+      </div>
 
+      {/* ── Formulario inline ── */}
+      {showForm && (
+        <Card className="p-4 border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-900/10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tipo de Documento *
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={form.tipo_documento}
+                onChange={(e) => setForm({ ...form, tipo_documento: e.target.value })}
+              >
+                <option value="">Seleccionar...</option>
+                {tipos.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.codigo} — {t.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Proceso *
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={form.proceso}
+                onChange={(e) => setForm({ ...form, proceso: e.target.value })}
+              >
+                <option value="">Seleccionar...</option>
+                {(procesos as { id: number; code: string; name: string }[]).map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} — {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Serie Documental *
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                placeholder="Ej: Actas de Comité SST"
+                value={form.serie_documental}
+                onChange={(e) => setForm({ ...form, serie_documental: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Gestión (años)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={form.tiempo_gestion_anos}
+                onChange={(e) =>
+                  setForm({ ...form, tiempo_gestion_anos: Number(e.target.value) || 0 })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Central (años)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={form.tiempo_central_anos}
+                onChange={(e) =>
+                  setForm({ ...form, tiempo_central_anos: Number(e.target.value) || 0 })
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Disposición Final
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                value={form.disposicion_final}
+                onChange={(e) =>
+                  setForm({ ...form, disposicion_final: e.target.value as DisposicionFinal })
+                }
+              >
+                {DISPOSICION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Soporte Legal
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm"
+                placeholder="Ej: Ley 594/2000, Decreto 1080/2015"
+                value={form.soporte_legal}
+                onChange={(e) => setForm({ ...form, soporte_legal: e.target.value })}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={form.requiere_acta_destruccion}
+                  onChange={(e) =>
+                    setForm({ ...form, requiere_acta_destruccion: e.target.checked })
+                  }
+                  className="rounded border-gray-300"
+                />
+                Requiere acta de destrucción
+              </label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <Button variant="outline" size="sm" onClick={resetForm}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!form.tipo_documento || !form.proceso || !form.serie_documental}
+              isLoading={createMutation.isPending}
+            >
+              Crear Regla
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Tabla ── */}
       {isLoading ? (
         <div className="flex justify-center py-8">
           <Spinner size="lg" />
         </div>
-      ) : !reglas?.length ? (
+      ) : !reglas?.length && !showForm ? (
         <EmptyState
           icon={<Archive className="w-10 h-10" />}
           title="Sin reglas de retención"
-          description="No hay reglas de retención documental configuradas. Agregue reglas para definir los tiempos de conservación por tipo de documento y proceso."
+          description="No hay reglas de retención documental configuradas. Use el botón 'Nueva Regla' para definir los tiempos de conservación."
         />
-      ) : (
+      ) : reglas?.length ? (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -776,11 +986,7 @@ function TRDSubSection() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <ProtectedAction
-                        modulo={Modules.GESTION_DOCUMENTAL}
-                        seccion={Sections.GESTION_DOCUMENTAL.CONFIGURACION}
-                        accion="delete"
-                      >
+                      <ProtectedAction permission="gestion_documental.configuracion.delete">
                         <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(regla)}>
                           <Trash2 className="w-3.5 h-3.5 text-red-500" />
                         </Button>
@@ -792,7 +998,7 @@ function TRDSubSection() {
             </table>
           </div>
         </Card>
-      )}
+      ) : null}
 
       <ConfirmDialog
         isOpen={!!confirmDelete}

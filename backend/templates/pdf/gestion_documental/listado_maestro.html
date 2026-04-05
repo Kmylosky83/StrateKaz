@@ -1,45 +1,46 @@
 {% extends "pdf/base_weasyprint.html" %}
 
 {% block extra_styles %}
-    /* ── Listado Maestro — layout tabla WeasyPrint-safe ── */
-    .lm-header { margin-bottom: 20px; overflow: hidden; }
+    /* ── Listado Maestro — Design System PDF StrateKaz SGI ── */
+    /* Colores: --sk-navy=#1B4F72, --sk-blue=#2E86C1, --sk-dark=#2C3E50 */
+    .lm-header { margin-bottom: 20px; overflow: hidden; border-bottom: 2.5pt solid #1B4F72; padding-bottom: 10px; }
     .lm-header::after { content: ''; display: table; clear: both; }
-    .lm-logo { float: left; width: 80px; height: 60px; margin-right: 14px; }
+    .lm-logo { float: left; width: 80px; height: 60px; margin-right: 14px; object-fit: contain; }
     .lm-empresa { overflow: hidden; }
-    .lm-empresa-nombre { font-size: 13pt; font-weight: 700; color: #1a365d; }
-    .lm-empresa-nit  { font-size: 9pt; color: #718096; margin-top: 2px; }
-    .lm-titulo-doc   { font-size: 11pt; font-weight: 700; color: #2d3748; margin-top: 4px; }
-    .lm-meta         { font-size: 8pt; color: #a0aec0; margin-top: 2px; }
+    .lm-empresa-nombre { font-size: 13pt; font-weight: 700; color: #1B4F72; }
+    .lm-empresa-nit  { font-size: 9pt; color: #85929E; margin-top: 2px; }
+    .lm-titulo-doc   { font-size: 11pt; font-weight: 700; color: #2C3E50; margin-top: 4px; }
+    .lm-meta         { font-size: 8pt; color: #85929E; margin-top: 2px; }
 
     .lm-tipo-bloque  { margin-top: 22px; page-break-inside: avoid; }
     .lm-tipo-header  {
-        background: #2d3748;
+        background: #1B4F72;
         color: #fff;
         padding: 7px 12px;
         font-size: 10pt;
         font-weight: 700;
         letter-spacing: 0.5px;
     }
-    .lm-tipo-sub     { font-size: 8pt; font-weight: 400; color: #cbd5e0; margin-left: 8px; }
+    .lm-tipo-sub     { font-size: 8pt; font-weight: 400; color: #D6EAF8; margin-left: 8px; }
 
     .lm-table        { width: 100%; border-collapse: collapse; font-size: 9pt; margin-top: 0; }
-    .lm-table th     { background: #edf2f7; font-weight: 700; padding: 6px 10px; border: 1px solid #cbd5e0; color: #2d3748; font-size: 8.5pt; }
-    .lm-table td     { padding: 5px 10px; border: 1px solid #e2e8f0; color: #2d3748; vertical-align: top; }
-    .lm-table tr:nth-child(even) td { background: #f7fafc; }
+    .lm-table th     { background: #EBF5FB; font-weight: 700; padding: 6px 10px; border: 1px solid #BDC3C7; color: #1B4F72; font-size: 8.5pt; }
+    .lm-table td     { padding: 5px 10px; border: 1px solid #EAECEE; color: #2C3E50; vertical-align: top; }
+    .lm-table tr:nth-child(even) td { background: #F4F6F7; }
 
-    .lm-code         { font-family: monospace; font-size: 8pt; color: #2b6cb0; font-weight: 700; }
+    .lm-code         { font-family: Consolas, 'Courier New', monospace; font-size: 8pt; color: #2E86C1; font-weight: 700; }
     .lm-estado       { font-size: 7.5pt; font-weight: 700; padding: 2px 6px; border-radius: 3px; display: inline-block; }
-    .estado-PUBLICADO  { background: #c6f6d5; color: #276749; }
-    .estado-OBSOLETO   { background: #fed7d7; color: #c53030; }
-    .estado-ARCHIVADO  { background: #e2e8f0; color: #4a5568; }
+    .estado-PUBLICADO  { background: #E8F8F5; color: #27AE60; border: 1px solid #82E0AA; }
+    .estado-OBSOLETO   { background: #FDEDEC; color: #C0392B; border: 1px solid #F1948A; }
+    .estado-ARCHIVADO  { background: #F4F6F7; color: #85929E; border: 1px solid #D5D8DC; }
 
-    .lm-resumen      { margin-top: 18px; padding: 10px 14px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .lm-resumen      { margin-top: 18px; padding: 10px 14px; background: #EBF5FB; border: 1px solid #D6EAF8; border-radius: 4px; overflow: hidden; }
     .lm-resumen::after { content: ''; display: table; clear: both; }
     .lm-resumen-item { float: left; width: 25%; text-align: center; font-size: 9pt; }
-    .lm-resumen-num  { font-size: 18pt; font-weight: 700; color: #2d3748; display: block; }
-    .lm-resumen-lbl  { color: #718096; font-size: 8pt; }
+    .lm-resumen-num  { font-size: 18pt; font-weight: 700; color: #1B4F72; display: block; }
+    .lm-resumen-lbl  { color: #5A6978; font-size: 8pt; }
 
-    .lm-footer-note  { margin-top: 14px; font-size: 7.5pt; color: #a0aec0; border-top: 1px solid #e2e8f0; padding-top: 8px; }
+    .lm-footer-note  { margin-top: 14px; font-size: 7.5pt; color: #85929E; border-top: 1pt solid #BDC3C7; padding-top: 8px; }
 {% endblock %}
 
 {% block body %}
@@ -124,8 +125,10 @@
     {% endfor %}
 
     <div class="lm-footer-note">
-        Documento generado automáticamente por StrateKaz SGI — Gestión Documental.
-        Este listado es de uso interno y control documental conforme a ISO 7.5.
-        Generado el {{ fecha_generacion }} por {{ usuario_nombre }}.
+        <strong style="color: #1B4F72;">StrateKaz</strong>
+        <span style="color: #BDC3C7;"> | </span>
+        <span>Consultoría 4.0</span>
+        <span style="color: #BDC3C7;"> — </span>
+        Documento controlado conforme a ISO 7.5. Generado el {{ fecha_generacion }} por {{ usuario_nombre }}.
     </div>
 {% endblock %}

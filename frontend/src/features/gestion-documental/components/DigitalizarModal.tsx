@@ -6,8 +6,8 @@
  *  - Panel derecho: formulario estructurado con secciones sugeridas por tipo.
  *  - Al guardar: marca el original como OBSOLETO y crea un nuevo BORRADOR.
  */
-import { useState, useCallback } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Plus, Trash2, ChevronDown, ChevronUp, FileText, Check, X } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button, Spinner, Badge } from '@/components/common';
 import { Input } from '@/components/forms';
@@ -266,7 +266,7 @@ export default function DigitalizarModal({ isOpen, documento, onClose }: Digital
             />
           </div>
 
-          {/* Responsables — cargo multi-select */}
+          {/* Responsables — cargo multi-select dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Responsables (por cargo)
@@ -276,30 +276,11 @@ export default function DigitalizarModal({ isOpen, documento, onClose }: Digital
                 <Spinner size="sm" /> Cargando cargos...
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {cargos.map((cargo) => {
-                  const selected = responsablesIds.includes(cargo.id);
-                  return (
-                    <button
-                      key={cargo.id}
-                      type="button"
-                      onClick={() => toggleCargo(cargo.id)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                        selected
-                          ? 'bg-indigo-600 border-indigo-600 text-white'
-                          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-indigo-400 dark:hover:border-indigo-500'
-                      }`}
-                    >
-                      {cargo.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {responsablesIds.length > 0 && (
-              <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {responsablesIds.length} cargo(s) seleccionado(s)
-              </p>
+              <ResponsablesDropdown
+                cargos={cargos}
+                selectedIds={responsablesIds}
+                onToggle={toggleCargo}
+              />
             )}
           </div>
 
@@ -367,5 +348,133 @@ export default function DigitalizarModal({ isOpen, documento, onClose }: Digital
         </div>
       </div>
     </BaseModal>
+  );
+}
+
+// ─── ResponsablesDropdown ────────────────────────────────────────────────────
+
+function ResponsablesDropdown({
+  cargos,
+  selectedIds,
+  onToggle,
+}: {
+  cargos: { id: number; label: string }[];
+  selectedIds: number[];
+  onToggle: (id: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const filtered = search
+    ? cargos.filter((c) => c.label.toLowerCase().includes(search.toLowerCase()))
+    : cargos;
+
+  const selectedCargos = cargos.filter((c) => selectedIds.includes(c.id));
+
+  return (
+    <div ref={containerRef} className="relative">
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-left hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors"
+      >
+        <span
+          className={
+            selectedIds.length > 0
+              ? 'text-gray-800 dark:text-gray-200'
+              : 'text-gray-400 dark:text-gray-500'
+          }
+        >
+          {selectedIds.length > 0
+            ? `${selectedIds.length} cargo(s) seleccionado(s)`
+            : 'Seleccionar responsables...'}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Selected chips */}
+      {selectedCargos.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {selectedCargos.map((cargo) => (
+            <span
+              key={cargo.id}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+            >
+              {cargo.label}
+              <button
+                type="button"
+                onClick={() => onToggle(cargo.id)}
+                className="hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-h-56 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
+          {/* Search input */}
+          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 p-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar cargo..."
+              className="w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 outline-none focus:border-indigo-400"
+              autoFocus
+            />
+          </div>
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-sm text-gray-400">Sin resultados</p>
+          ) : (
+            filtered.map((cargo) => {
+              const selected = selectedIds.includes(cargo.id);
+              return (
+                <button
+                  key={cargo.id}
+                  type="button"
+                  onClick={() => onToggle(cargo.id)}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
+                    selected
+                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                      selected
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                  >
+                    {selected && <Check className="w-3 h-3 text-white" />}
+                  </span>
+                  {cargo.label}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
   );
 }

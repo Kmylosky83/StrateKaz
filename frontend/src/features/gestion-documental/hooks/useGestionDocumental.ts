@@ -150,11 +150,14 @@ export function useDocumentos(filters?: {
   estado?: string;
   /** Búsqueda full-text — pasa como ?buscar= al backend (≥3 chars usa tsvector) */
   buscar?: string;
+  ordering?: string;
 }) {
+  // Default ordering: newest first (unless overridden or search is active)
+  const params = { ordering: '-created_at', ...filters };
   return useQuery({
-    queryKey: gdDocumentosKeys.list(filters),
+    queryKey: gdDocumentosKeys.list(params),
     queryFn: async () => {
-      const response = await documentoApi.getAll(filters);
+      const response = await documentoApi.getAll(params);
       return Array.isArray(response) ? response : (response?.results ?? []);
     },
   });

@@ -381,7 +381,19 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                       {!pdfUrl && !tieneContenido && (
                         <div className="text-center py-8 text-sm text-gray-400">
                           <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                          Sin contenido — edite el documento para agregar contenido
+                          {documento.es_externo ? (
+                            <div className="space-y-1">
+                              <p className="text-gray-600 dark:text-gray-300 font-medium">
+                                Documento externo sin contenido digitalizado
+                              </p>
+                              <p className="text-gray-400 dark:text-gray-500 text-xs max-w-md mx-auto">
+                                Use la opción Digitalizar para generar contenido editable desde el
+                                texto OCR extraído.
+                              </p>
+                            </div>
+                          ) : (
+                            'Sin contenido — edite el documento para agregar contenido'
+                          )}
                         </div>
                       )}
                     </div>

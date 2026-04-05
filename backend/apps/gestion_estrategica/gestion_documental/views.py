@@ -392,7 +392,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                     Q(titulo__icontains=buscar)
                 )
 
-        return queryset.order_by('-fecha_publicacion', 'codigo')
+        return queryset.order_by('-created_at', '-fecha_publicacion', 'codigo')
 
     def retrieve(self, request, *args, **kwargs):
         """Verifica acceso a documentos CONFIDENCIAL/RESTRINGIDO antes de retornar detalle."""

@@ -39,6 +39,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { SignatureData } from '@/components/modals/SignatureModal';
 
 // ==================== TYPES ====================
@@ -172,7 +173,7 @@ export function useWorkflowFirmas() {
   /**
    * Obtener firmas pendientes del usuario actual
    */
-  const useFirmasPendientes = (esMiTurno?: boolean) => {
+  const useFirmasPendientes = (esMiTurno?: boolean, options?: { enabled?: boolean }) => {
     return useQuery<FirmaPendiente[]>({
       queryKey: ['firmas-pendientes', esMiTurno],
       queryFn: async () => {
@@ -183,6 +184,7 @@ export function useWorkflowFirmas() {
         );
         return response.data;
       },
+      enabled: options?.enabled ?? true,
     });
   };
 
@@ -458,21 +460,27 @@ export function useDocumentoFirmas(contentType: number, objectId: number) {
 }
 
 /**
- * Hook simplificado para firmas pendientes del usuario
+ * Hook simplificado para firmas pendientes del usuario.
+ * Skips the query entirely if the user lacks firma_digital permissions (avoids 403).
  */
 export function useMisFirmasPendientes(soloMiTurno = true) {
+  const { canDo, isSuperAdmin } = usePermissions();
+  const hasFirmaAccess = isSuperAdmin || canDo('workflow_engine', 'firma_digital', 'view');
+
   const { useFirmasPendientes, firmarDocumento, isFirmando } = useWorkflowFirmas();
-  const { data: firmasPendientes, isLoading } = useFirmasPendientes(soloMiTurno);
+  const { data: firmasPendientes, isLoading } = useFirmasPendientes(soloMiTurno, {
+    enabled: hasFirmaAccess,
+  });
 
   const totalPendientes = firmasPendientes?.length ?? 0;
   const miTurno = firmasPendientes?.filter((f) => f.es_mi_turno).length ?? 0;
 
   return {
-    firmasPendientes,
-    totalPendientes,
-    miTurno,
+    firmasPendientes: hasFirmaAccess ? firmasPendientes : [],
+    totalPendientes: hasFirmaAccess ? totalPendientes : 0,
+    miTurno: hasFirmaAccess ? miTurno : 0,
     firmarDocumento,
-    isLoading: isLoading || isFirmando,
+    isLoading: hasFirmaAccess ? isLoading || isFirmando : false,
   };
 }
 

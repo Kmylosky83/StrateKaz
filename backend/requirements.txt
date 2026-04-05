@@ -62,7 +62,7 @@ prometheus_client==0.24.1
 prompt_toolkit==3.0.52
 psycopg2-binary==2.9.11
 pycparser==2.23
-pydyf==0.12.1
+pydyf==0.10.0  # PINNED: 0.11+ rompe WeasyPrint 60.x (PDF.__init__ signature change)
 Pygments==2.19.2
 PyJWT==2.11.0
 pyhanko==0.25.2

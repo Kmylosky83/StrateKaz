@@ -1712,7 +1712,8 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
         tiempo = request.data.get('tiempo_lectura_seg', aceptacion.tiempo_lectura_seg)
         scroll_data = request.data.get('scroll_data', aceptacion.scroll_data)
 
-        aceptacion.porcentaje_lectura = min(int(porcentaje), 100)
+        # Nunca decrementar: tomar el máximo entre el progreso actual y el nuevo
+        aceptacion.porcentaje_lectura = max(min(int(porcentaje), 100), aceptacion.porcentaje_lectura)
         aceptacion.tiempo_lectura_seg = int(tiempo)
         aceptacion.scroll_data = scroll_data
         aceptacion.save(update_fields=[

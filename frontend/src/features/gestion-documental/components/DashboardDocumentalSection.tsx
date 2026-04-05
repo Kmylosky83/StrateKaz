@@ -32,8 +32,8 @@ export function DashboardDocumentalSection({
   const navigate = useNavigate();
   const { canDo } = usePermissions();
   // Revelación progresiva: métricas globales y cobertura solo para roles con acceso al archivo
-  const canViewArchivo = canDo('gestion_documental.archivo.view');
-  const canViewRepositorio = canDo('gestion_documental.repositorio.view');
+  const canViewArchivo = canDo('gestion_documental', 'archivo', 'view');
+  const canViewRepositorio = canDo('gestion_documental', 'repositorio', 'view');
 
   const { data: documentos, isLoading: isLoadingDocs } = useDocumentos();
   const { data: estadisticas } = useEstadisticasDocumentales();
@@ -59,7 +59,7 @@ export function DashboardDocumentalSection({
           bgColor="bg-indigo-100 dark:bg-indigo-900/30"
           label="Mis Borradores"
           value={isLoadingDocs ? '...' : misBorradores.length}
-          onClick={() => onNavigateToSection?.('en_proceso')}
+          onClick={() => onNavigateToSection?.('en_proceso:borradores')}
         />
         <MetricCard
           icon={<PenTool className="w-5 h-5 text-orange-600 dark:text-orange-400" />}
@@ -67,14 +67,14 @@ export function DashboardDocumentalSection({
           label="Por Firmar"
           value={firmasLoading ? '...' : miTurno}
           badge={miTurno > 0 ? 'Tu turno' : undefined}
-          onClick={() => onNavigateToSection?.('en_proceso')}
+          onClick={() => onNavigateToSection?.('en_proceso:firmas')}
         />
         <MetricCard
           icon={<GitPullRequest className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />}
           bgColor="bg-yellow-100 dark:bg-yellow-900/30"
           label="En Revisión"
           value={isLoadingDocs ? '...' : enRevision.length}
-          onClick={() => onNavigateToSection?.('en_proceso')}
+          onClick={() => onNavigateToSection?.('en_proceso:revision')}
         />
         <MetricCard
           icon={<TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />}
@@ -158,30 +158,7 @@ export function DashboardDocumentalSection({
 
       {/* ── Resumen del sistema (solo roles con acceso a repositorio/archivo) ── */}
       {(canViewRepositorio || canViewArchivo) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="p-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Flujo activo
-            </h4>
-            <div className="space-y-2">
-              <StatusRow
-                label="Borradores"
-                value={misBorradores.length}
-                color="text-gray-600 dark:text-gray-400"
-              />
-              <StatusRow
-                label="En revisión"
-                value={enRevision.length}
-                color="text-yellow-600 dark:text-yellow-400"
-              />
-              <StatusRow
-                label="Firmas pendientes (total)"
-                value={totalPendientes}
-                color="text-orange-600 dark:text-orange-400"
-              />
-            </div>
-          </Card>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-4">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Archivo</h4>
             <div className="space-y-2">
@@ -334,7 +311,7 @@ function MetricCard({
             )}
           </div>
           {subtitle && (
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight mt-0.5">
               {subtitle}
             </p>
           )}

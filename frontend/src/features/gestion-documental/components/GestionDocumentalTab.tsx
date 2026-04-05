@@ -47,6 +47,7 @@ interface GestionDocumentalTabProps {
   onFirmar?: (firmaId: number, rolDisplay?: string) => void;
   onRechazar?: (firmaId: number) => void;
   onNavigateToSection?: (section: string) => void;
+  enProcesoSubTab?: string;
 }
 
 export const GestionDocumentalTab = ({
@@ -61,6 +62,7 @@ export const GestionDocumentalTab = ({
   onFirmar,
   onRechazar,
   onNavigateToSection,
+  enProcesoSubTab,
 }: GestionDocumentalTabProps) => {
   // Normalizar secciones antiguas a las nuevas para retrocompatibilidad
   // con notificaciones o bookmarks que todavía usen los códigos viejos
@@ -88,6 +90,7 @@ export const GestionDocumentalTab = ({
     case SECTION_KEYS.EN_PROCESO:
       return (
         <EnProcesoSection
+          initialTab={enProcesoSubTab as 'firmas' | 'borradores' | 'revision' | undefined}
           onViewDocumento={onViewDocumento}
           onEditDocumento={onEditDocumento}
           onFirmar={onFirmar}

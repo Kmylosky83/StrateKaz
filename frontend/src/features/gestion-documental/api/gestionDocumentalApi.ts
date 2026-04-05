@@ -38,6 +38,9 @@ import type {
   AnexoMeta,
   IngestarLoteResult,
   CoberturaDocumental,
+  TablaRetencionDocumental,
+  CreateTRDDTO,
+  UpdateTRDDTO,
 } from '../types/gestion-documental.types';
 
 const BASE_URL = '/gestion-estrategica/gestion-documental';
@@ -446,5 +449,12 @@ const gestionDocumentalApi = {
   campoFormulario: campoFormularioApi,
   controlDocumental: controlDocumentalApi,
 };
+
+// ==================== TABLA DE RETENCIÓN DOCUMENTAL (TRD) ====================
+
+export const trdApi = createApiClient<TablaRetencionDocumental, CreateTRDDTO, UpdateTRDDTO>(
+  BASE_URL,
+  'trd'
+);
 
 export default gestionDocumentalApi;

@@ -16,6 +16,7 @@ import {
   versionDocumentoApi,
   campoFormularioApi,
   controlDocumentalApi,
+  trdApi,
 } from '../api/gestionDocumentalApi';
 import type {
   TipoDocumento,
@@ -30,6 +31,9 @@ import type {
   CreateCampoFormularioDTO,
   UpdateCampoFormularioDTO,
   CreateControlDocumentalDTO,
+  TablaRetencionDocumental,
+  CreateTRDDTO,
+  UpdateTRDDTO,
 } from '../types/gestion-documental.types';
 
 // ==================== QUERY KEYS ====================
@@ -37,6 +41,7 @@ import type {
 const gdTiposKeys = createQueryKeys('gd-tipos-documento');
 const gdPlantillasKeys = createQueryKeys('gd-plantillas');
 const gdDocumentosKeys = createQueryKeys('gd-documentos');
+const gdTrdKeys = createQueryKeys('gd-trd');
 
 // Legacy keys for custom hooks that need specific patterns
 export const gestionDocumentalKeys = {
@@ -63,6 +68,20 @@ export const useTipoDocumento = tipoDocHooks.useDetail;
 export const useCreateTipoDocumento = tipoDocHooks.useCreate;
 export const useUpdateTipoDocumento = tipoDocHooks.useUpdate;
 export const useDeleteTipoDocumento = tipoDocHooks.useDelete;
+
+// ==================== TABLA DE RETENCIÓN DOCUMENTAL (via factory) ====================
+
+const trdHooks = createCrudHooks<TablaRetencionDocumental, CreateTRDDTO, UpdateTRDDTO>(
+  trdApi,
+  gdTrdKeys,
+  'Regla de retención'
+);
+
+export const useTRD = trdHooks.useList;
+export const useTRDDetail = trdHooks.useDetail;
+export const useCreateTRD = trdHooks.useCreate;
+export const useUpdateTRD = trdHooks.useUpdate;
+export const useDeleteTRD = trdHooks.useDelete;
 
 // ==================== PLANTILLAS (via factory + custom) ====================
 

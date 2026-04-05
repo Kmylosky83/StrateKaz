@@ -9,7 +9,7 @@
  * Absorbe la funcionalidad de ControlCambiosSection (firmas).
  * El historial de versiones se movió a ArchivoSection.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   PenTool,
   Clock,
@@ -39,6 +39,7 @@ const _PROCESO_TABS: TabItem[] = [
 ];
 
 interface EnProcesoSectionProps {
+  initialTab?: ProcesoTab;
   onViewDocumento: (id: number) => void;
   onEditDocumento: (id: number) => void;
   onFirmar?: (firmaId: number, rolDisplay?: string) => void;
@@ -46,13 +47,19 @@ interface EnProcesoSectionProps {
 }
 
 export function EnProcesoSection({
+  initialTab,
   onViewDocumento,
   onEditDocumento,
   onFirmar,
   onRechazar,
 }: EnProcesoSectionProps) {
-  const [activeTab, setActiveTab] = useState<ProcesoTab>('firmas');
+  const [activeTab, setActiveTab] = useState<ProcesoTab>(initialTab || 'firmas');
   const { color: moduleColor } = useModuleColor('gestion_documental');
+
+  // Sincronizar tab cuando se navega desde Dashboard con sub-tab específico
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
 
   const {
     firmasPendientes,

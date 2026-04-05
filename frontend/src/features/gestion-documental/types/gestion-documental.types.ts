@@ -932,3 +932,49 @@ export const INDUSTRIA_LABELS: Record<IndustriaPlantilla, string> = {
   SALUD: 'Salud',
   TECNOLOGIA: 'Tecnología',
 };
+
+// ==================== TABLA DE RETENCIÓN DOCUMENTAL (TRD) ====================
+
+export type DisposicionFinal = 'ELIMINAR' | 'CONSERVAR_PERMANENTE' | 'SELECCIONAR' | 'DIGITALIZAR';
+
+export interface TablaRetencionDocumental {
+  id: number;
+  tipo_documento: number;
+  tipo_documento_codigo: string;
+  tipo_documento_nombre: string;
+  proceso: number;
+  proceso_code: string;
+  proceso_nombre: string;
+  serie_documental: string;
+  tiempo_gestion_anos: number;
+  tiempo_central_anos: number;
+  tiempo_total: number;
+  disposicion_final: DisposicionFinal;
+  disposicion_display: string;
+  soporte_legal: string;
+  requiere_acta_destruccion: boolean;
+  activo: boolean;
+  empresa_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTRDDTO {
+  tipo_documento: number;
+  proceso: number;
+  serie_documental: string;
+  tiempo_gestion_anos: number;
+  tiempo_central_anos: number;
+  disposicion_final: DisposicionFinal;
+  soporte_legal?: string;
+  requiere_acta_destruccion?: boolean;
+}
+
+export type UpdateTRDDTO = Partial<CreateTRDDTO>;
+
+export const DISPOSICION_LABELS: Record<DisposicionFinal, string> = {
+  ELIMINAR: 'Eliminar',
+  CONSERVAR_PERMANENTE: 'Conservación permanente',
+  SELECCIONAR: 'Selección (muestreo)',
+  DIGITALIZAR: 'Digitalizar y eliminar',
+};

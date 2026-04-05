@@ -52,6 +52,17 @@ export const GestionDocumentalPage = () => {
 
   const { color: moduleColor } = useModuleColor('gestion_documental');
   const user = useAuthStore((s) => s.user);
+
+  // Sub-tab para navegación desde Dashboard (ej: "en_proceso:borradores")
+  const [enProcesoSubTab, setEnProcesoSubTab] = useState<string | undefined>();
+  const handleNavigateToSection = useCallback(
+    (target: string) => {
+      const [section, subtab] = target.split(':');
+      setActiveSection(section);
+      setEnProcesoSubTab(subtab);
+    },
+    [setActiveSection]
+  );
   const { firmarDocumento, rechazarFirma, isFirmando, isRechazando } = useWorkflowFirmas();
 
   // Modal state - documentos
@@ -181,7 +192,8 @@ export const GestionDocumentalPage = () => {
           onViewDocumento={(id) => setDocumentoDetailModal({ isOpen: true, documentoId: id })}
           onFirmar={handleFirmar}
           onRechazar={handleRechazar}
-          onNavigateToSection={setActiveSection}
+          onNavigateToSection={handleNavigateToSection}
+          enProcesoSubTab={enProcesoSubTab}
         />
       )}
 

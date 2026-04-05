@@ -42,7 +42,11 @@ import {
   useDeleteTipoDocumento,
   usePlantillasDocumento,
   useDeletePlantillaDocumento,
+  useTRD,
+  useDeleteTRD,
 } from '../hooks/useGestionDocumental';
+import { DISPOSICION_LABELS } from '../types/gestion-documental.types';
+import type { TablaRetencionDocumental } from '../types/gestion-documental.types';
 import type { TipoDocumento, PlantillaDocumento } from '../types/gestion-documental.types';
 
 // ─── Constantes ─────────────────────────────────────────────────
@@ -267,19 +271,7 @@ export function TiposPlantillasSection({
         )}
 
         {/* ── Tab: Tabla de Retención Documental ───────────── */}
-        {activeTab === 'trd' && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Tabla de Retención Documental (TRD) — Define tiempos de conservación por tipo y
-              proceso según normativa AGN.
-            </p>
-            <EmptyState
-              icon={<Archive className="w-10 h-10" />}
-              title="TRD en construcción"
-              description="La Tabla de Retención Documental se cargará con las reglas de retención por tipo documental y proceso. Use el seed para generar las reglas base."
-            />
-          </div>
-        )}
+        {activeTab === 'trd' && <TRDSubSection />}
       </div>
 
       {/* ── Confirm Dialogs ─────────────────────────────────── */}
@@ -681,6 +673,142 @@ function TipoMenu({
           </ProtectedAction>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── TRD Sub-Section ──────────────────────────────────────────
+function TRDSubSection() {
+  const { data: reglas, isLoading } = useTRD();
+  const deleteMutation = useDeleteTRD();
+  const [confirmDelete, setConfirmDelete] = useState<TablaRetencionDocumental | null>(null);
+
+  const DISPOSICION_COLORS: Record<string, string> = {
+    ELIMINAR: 'text-red-600 dark:text-red-400',
+    CONSERVAR_PERMANENTE: 'text-green-600 dark:text-green-400',
+    SELECCIONAR: 'text-amber-600 dark:text-amber-400',
+    DIGITALIZAR: 'text-blue-600 dark:text-blue-400',
+  };
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Tabla de Retención Documental (TRD) — Define tiempos de conservación por tipo y proceso
+        según normativa AGN.
+      </p>
+
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <Spinner size="lg" />
+        </div>
+      ) : !reglas?.length ? (
+        <EmptyState
+          icon={<Archive className="w-10 h-10" />}
+          title="Sin reglas de retención"
+          description="No hay reglas de retención documental configuradas. Agregue reglas para definir los tiempos de conservación por tipo de documento y proceso."
+        />
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Tipo
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Proceso
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Serie Documental
+                  </th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Gestión
+                  </th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Central
+                  </th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Total
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Disposición Final
+                  </th>
+                  <th className="text-center px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {reglas.map((regla) => (
+                  <tr
+                    key={regla.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary" size="sm">
+                        {regla.tipo_documento_codigo}
+                      </Badge>
+                      <span className="ml-2 text-gray-700 dark:text-gray-300">
+                        {regla.tipo_documento_nombre}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                      {regla.proceso_code} — {regla.proceso_nombre}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                      {regla.serie_documental}
+                    </td>
+                    <td className="px-4 py-3 text-center font-medium">
+                      {regla.tiempo_gestion_anos} año{regla.tiempo_gestion_anos !== 1 ? 's' : ''}
+                    </td>
+                    <td className="px-4 py-3 text-center font-medium">
+                      {regla.tiempo_central_anos} año{regla.tiempo_central_anos !== 1 ? 's' : ''}
+                    </td>
+                    <td className="px-4 py-3 text-center font-bold text-indigo-600 dark:text-indigo-400">
+                      {regla.tiempo_total} años
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`font-medium ${DISPOSICION_COLORS[regla.disposicion_final] || ''}`}
+                      >
+                        {DISPOSICION_LABELS[regla.disposicion_final] || regla.disposicion_display}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <ProtectedAction
+                        modulo={Modules.GESTION_DOCUMENTAL}
+                        seccion={Sections.GESTION_DOCUMENTAL.CONFIGURACION}
+                        accion="delete"
+                      >
+                        <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(regla)}>
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </Button>
+                      </ProtectedAction>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete)
+            deleteMutation.mutate(confirmDelete.id, {
+              onSuccess: () => setConfirmDelete(null),
+            });
+        }}
+        title="Eliminar Regla de Retención"
+        message={`¿Eliminar la regla para "${confirmDelete?.tipo_documento_nombre} - ${confirmDelete?.proceso_nombre}"?`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

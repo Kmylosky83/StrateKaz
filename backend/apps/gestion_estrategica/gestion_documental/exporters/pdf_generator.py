@@ -88,12 +88,38 @@ class DocumentoPDFGenerator:
             pass
 
     def _get_empresa_info(self):
+        """Resuelve datos de empresa: EmpresaConfig → Tenant (fallback)."""
+        razon = ''
+        nit = ''
         if self.empresa:
-            return {
-                'razon_social': self.empresa.razon_social or 'Empresa',
-                'nit': self.empresa.nit or '',
-            }
-        return {'razon_social': 'Empresa', 'nit': ''}
+            razon = self.empresa.razon_social or ''
+            nit = self.empresa.nit or ''
+
+        # Fallback a Tenant si EmpresaConfig tiene valores dummy
+        if not razon or razon == 'Empresa Sin Configurar':
+            try:
+                from django.db import connection
+                from apps.tenant.models import Tenant
+                tenant = Tenant.objects.filter(
+                    schema_name=connection.schema_name
+                ).first()
+                if tenant:
+                    razon = tenant.razon_social or tenant.name or razon
+                    nit = tenant.nit or nit
+                    # Cargar logo del tenant si no hay logo de EmpresaConfig
+                    if not self.logo_base64 and tenant.logo:
+                        try:
+                            with open(tenant.logo.path, 'rb') as f:
+                                self.logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+        return {
+            'razon_social': razon or 'Empresa',
+            'nit': nit or '',
+        }
 
     # =========================================================================
     # Método principal

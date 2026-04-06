@@ -45,7 +45,7 @@ export default function AdoptarPdfModal({ isOpen, onClose }: AdoptarPdfModalProp
   const { data: procesosData } = useAreas({ is_active: true });
   const adoptarMutation = useAdoptarPdf();
 
-  const procesos = procesosData ?? [];
+  const procesos = procesosData?.results ?? [];
 
   // Solo tipos con categoría DOCUMENTO (normativos, no formularios)
   const tiposDocumento = tipos.filter((t) => !t.categoria || t.categoria === 'DOCUMENTO');

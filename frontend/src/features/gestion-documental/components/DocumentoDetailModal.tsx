@@ -3,7 +3,7 @@
  * Tabs: Info, Contenido, Versiones, Anexos, Evidencias.
  * Las acciones de workflow (aprobar, publicar, sellar, etc.) viven en EnProcesoSection.
  */
-import { useState, useRef, useCallback, Fragment } from 'react';
+import { useState, useRef, useCallback, Fragment, useEffect } from 'react';
 import DOMPurify from 'dompurify';
 import {
   FileText,
@@ -68,6 +68,69 @@ const CLASIFICACION_VARIANT: Record<string, 'success' | 'warning' | 'info' | 'da
   CONFIDENCIAL: 'warning',
   RESTRINGIDO: 'danger',
 };
+
+// ==================== PDF Iframe con validación previa ====================
+// Hace un HEAD al pdfUrl antes de renderizar el iframe para evitar que una
+// respuesta HTML (ej. React SPA 404) aparezca dentro del visor.
+
+function PdfIframe({ pdfUrl, titulo }: { pdfUrl: string; titulo: string }) {
+  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus('loading');
+
+    fetch(pdfUrl, { method: 'HEAD' })
+      .then((res) => {
+        if (cancelled) return;
+        const ct = res.headers.get('content-type') || '';
+        setStatus(res.ok && ct.includes('pdf') ? 'ok' : 'error');
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('error');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfUrl]);
+
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center h-[40vh] sm:h-[60vh] border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 h-[20vh] border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900">
+        <FileText className="w-10 h-10 text-gray-300 dark:text-gray-600" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">No se puede previsualizar el PDF</p>
+        <a
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          <Download className="w-4 h-4" />
+          Abrir en nueva pestaña
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+      <iframe
+        src={pdfUrl}
+        title={`PDF: ${titulo}`}
+        className="w-full h-[40vh] sm:h-[60vh] border-0"
+      />
+    </div>
+  );
+}
 
 export function DocumentoDetailModal({ isOpen, onClose, documentoId }: DocumentoDetailModalProps) {
   const { data: documento, isLoading } = useDocumento(documentoId!);
@@ -351,15 +414,7 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                   return (
                     <div className="space-y-4">
                       {/* Visor PDF embebido (original ingestado o generado) */}
-                      {pdfUrl && (
-                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
-                          <iframe
-                            src={pdfUrl}
-                            title={`PDF: ${documento.titulo}`}
-                            className="w-full h-[40vh] sm:h-[60vh] border-0"
-                          />
-                        </div>
-                      )}
+                      {pdfUrl && <PdfIframe pdfUrl={pdfUrl} titulo={documento.titulo} />}
                       {/* Contenido HTML editado */}
                       {tieneContenido && (
                         <>

@@ -507,8 +507,8 @@ class DocumentoService:
             tiene_aprobacion = FirmaDigital.objects.filter(
                 content_type=ct,
                 object_id=str(doc.id),
-                rol='APROBO',
-                estado='FIRMADA',
+                rol_firma='APROBO',
+                estado='FIRMADO',
             ).exists()
             if not tiene_aprobacion:
                 raise ValueError(

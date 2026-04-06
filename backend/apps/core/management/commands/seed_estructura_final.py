@@ -632,6 +632,9 @@ class Command(BaseCommand):
                     {'code': 'monitoreo', 'name': 'Monitoreo', 'icon': 'Activity', 'route': 'monitoreo', 'orden': 3, 'sections': [
                         {'code': 'metricas', 'name': 'Métricas', 'icon': 'Activity', 'orden': 1, 'description': 'Monitoreo y métricas de rendimiento de flujos'},
                     ]},
+                    {'code': 'firma_digital', 'name': 'Firma Digital', 'icon': 'PenLine', 'route': 'firma-digital', 'orden': 4, 'sections': [
+                        {'code': 'firma_digital', 'name': 'Firma Digital', 'icon': 'PenLine', 'orden': 1, 'description': 'Gestión transversal de firmas digitales, asignación y seguimiento'},
+                    ]},
                 ]
             },
 

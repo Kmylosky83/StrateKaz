@@ -409,10 +409,10 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         user = self.request.user
 
         # Solo usuarios con cargo asignado pueden crear documentos SGI.
-        # El superadmin administra la plataforma pero no opera como funcionario
-        # dentro del sistema de gestión. Los documentos deben tener un responsable
-        # con cargo real (estructura organizacional).
-        if not getattr(user, 'cargo', None):
+        # EXCEPCIÓN TEMPORAL: superadmin puede crear mientras se habilita la
+        # transición a consultores/proveedores externos con cargo propio.
+        # Los documentos tienen elaborado_por=superadmin como responsable provisional.
+        if not user.is_superuser and not getattr(user, 'cargo', None):
             raise PermissionDenied(
                 'Debes tener un cargo asignado para crear documentos. '
                 'Los documentos SGI requieren un responsable con cargo en la organización.'

@@ -22,6 +22,7 @@ import {
   SlidersHorizontal,
   X,
   FileCheck,
+  Send,
 } from 'lucide-react';
 import {
   Card,
@@ -43,6 +44,7 @@ import {
   useDeleteDocumento,
   useTiposDocumento,
 } from '../hooks/useGestionDocumental';
+import { PublicarModal } from './PublicarModal';
 import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
@@ -115,6 +117,11 @@ export function DocumentosSection({
   const { data: tipos = [] } = useTiposDocumento({ is_active: true });
   const { data: procesosData } = useAreas({ is_active: true });
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; titulo: string } | null>(null);
+  const [publicarModal, setPublicarModal] = useState<{
+    id: number;
+    titulo: string;
+    codigo: string;
+  } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipo, setFilterTipo] = useState<string>('');
   const [filterProceso, setFilterProceso] = useState<string>('');
@@ -277,7 +284,8 @@ export function DocumentosSection({
             options={VIEW_OPTIONS}
             moduleColor="blue"
           />
-          {!isSuperAdmin && (
+          {/* Acciones de creación: superadmin puede crear; empleados con permiso también */}
+          {(isSuperAdmin || canCreate) && (
             <>
               <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
@@ -330,7 +338,7 @@ export function DocumentosSection({
                 : 'Comienza creando tu primer documento usando una plantilla o desde cero.'
             }
             action={
-              !searchTerm && canCreate && !isSuperAdmin
+              !searchTerm && canCreate
                 ? {
                     label: 'Crear Documento',
                     onClick: onCreateDocumento,
@@ -413,6 +421,9 @@ export function DocumentosSection({
                         })
                       }
                       onDigitalizar={(d) => setDigitalizarDocumento(d)}
+                      onPublicar={(d) =>
+                        setPublicarModal({ id: d.id, titulo: d.titulo, codigo: d.codigo })
+                      }
                     />
                   </div>
                 </Card>
@@ -502,6 +513,9 @@ export function DocumentosSection({
                         })
                       }
                       onDigitalizar={(d) => setDigitalizarDocumento(d)}
+                      onPublicar={(d) =>
+                        setPublicarModal({ id: d.id, titulo: d.titulo, codigo: d.codigo })
+                      }
                       compact
                     />
                   </div>
@@ -526,6 +540,14 @@ export function DocumentosSection({
         confirmText="Eliminar"
         variant="danger"
         isLoading={deleteDocumentoMutation.isPending}
+      />
+
+      <PublicarModal
+        isOpen={!!publicarModal}
+        onClose={() => setPublicarModal(null)}
+        documentoId={publicarModal?.id ?? 0}
+        documentoTitulo={publicarModal?.titulo ?? ''}
+        documentoCodigo={publicarModal?.codigo}
       />
 
       {contentTypeData && (
@@ -566,6 +588,7 @@ function DocumentActions({
   onDelete,
   onSolicitarFirmas,
   onDigitalizar,
+  onPublicar,
   compact,
 }: {
   documento: Documento;
@@ -574,6 +597,7 @@ function DocumentActions({
   onDelete: (d: Documento) => void;
   onSolicitarFirmas: (d: Documento) => void;
   onDigitalizar: (d: Documento) => void;
+  onPublicar?: (d: Documento) => void;
   compact?: boolean;
 }) {
   const iconBtn =
@@ -581,6 +605,7 @@ function DocumentActions({
 
   const canAssignFirmas = documento.estado === 'BORRADOR' && !documento.es_externo;
   const canDigitalizar = documento.estado === 'BORRADOR' && documento.es_externo;
+  const canPublicar = documento.estado === 'APROBADO';
 
   if (compact) {
     return (
@@ -588,6 +613,17 @@ function DocumentActions({
         <button className={iconBtn} onClick={() => onView(documento.id)} title="Ver">
           <Eye className="w-4 h-4" />
         </button>
+        {canPublicar && onPublicar && (
+          <ProtectedAction permission="gestion_documental.repositorio.edit">
+            <button
+              className="p-1.5 rounded-md text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20 dark:text-green-400 transition-colors"
+              onClick={() => onPublicar(documento)}
+              title="Publicar"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </ProtectedAction>
+        )}
         {documento.estado === 'BORRADOR' && !canDigitalizar && (
           <ProtectedAction permission="gestion_documental.repositorio.edit">
             <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">
@@ -642,6 +678,19 @@ function DocumentActions({
       >
         Ver
       </Button>
+      {canPublicar && onPublicar && (
+        <ProtectedAction permission="gestion_documental.repositorio.edit">
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Send className="w-4 h-4" />}
+            onClick={() => onPublicar(documento)}
+            className="bg-green-600 hover:bg-green-700 border-green-600"
+          >
+            Publicar
+          </Button>
+        </ProtectedAction>
+      )}
       {documento.estado === 'BORRADOR' && !canDigitalizar && (
         <ProtectedAction permission="gestion_documental.repositorio.edit">
           <button className={iconBtn} onClick={() => onEdit(documento.id)} title="Editar">

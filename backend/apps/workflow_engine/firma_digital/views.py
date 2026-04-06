@@ -388,10 +388,12 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated])
     def firmar(self, request, pk=None):
         """
         Firma una FirmaDigital existente con datos del canvas de firma.
+        Self-service: solo requiere IsAuthenticated (el usuario firma la suya).
 
         Valida que:
         - La firma esté en estado PENDIENTE
@@ -564,10 +566,12 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
         return Response(FirmaDigitalSerializer(firma).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated])
     def rechazar(self, request, pk=None):
         """
         Rechaza una firma pendiente con motivo obligatorio.
+        Self-service: solo requiere IsAuthenticated.
         """
         firma = self.get_object()
         serializer = RechazarFirmaActionSerializer(data=request.data)
@@ -845,10 +849,12 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             'documento_nuevo_estado': getattr(documento, 'estado', ''),
         }, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['get'], url_path='mis-firmas-pendientes')
+    @action(detail=False, methods=['get'], url_path='mis-firmas-pendientes',
+            permission_classes=[IsAuthenticated])
     def mis_firmas_pendientes(self, request):
         """
         Obtiene las firmas pendientes del usuario actual.
+        Self-service: solo requiere IsAuthenticated.
         Incluye firmas directas y delegadas.
 
         Query params:
@@ -985,9 +991,10 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'], url_path='mis-delegaciones-vigentes')
+    @action(detail=False, methods=['get'], url_path='mis-delegaciones-vigentes',
+            permission_classes=[IsAuthenticated])
     def mis_delegaciones_vigentes(self, request):
-        """Obtiene las delegaciones vigentes del usuario"""
+        """Obtiene las delegaciones vigentes del usuario. Self-service."""
         user = request.user
         now = timezone.now()
 
@@ -1082,9 +1089,10 @@ class AlertaRevisionViewSet(viewsets.ModelViewSet):
             'alerta': AlertaRevisionSerializer(alerta).data
         })
 
-    @action(detail=False, methods=['get'], url_path='mis-alertas-pendientes')
+    @action(detail=False, methods=['get'], url_path='mis-alertas-pendientes',
+            permission_classes=[IsAuthenticated])
     def mis_alertas_pendientes(self, request):
-        """Obtiene las alertas pendientes del usuario"""
+        """Obtiene las alertas pendientes del usuario. Self-service."""
         user = request.user
 
         alertas = AlertaRevision.objects.filter(

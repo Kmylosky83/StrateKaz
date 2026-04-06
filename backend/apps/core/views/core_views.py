@@ -320,6 +320,12 @@ def current_user(request):
                 group__is_active=True
             ).select_related('group')
         ] if hasattr(user, 'user_groups') else [],
+        # Firma digital
+        'nivel_firma': user.nivel_firma,
+        'nivel_firma_manual': user.nivel_firma_manual,
+        # Firma guardada (booleanos, no exponer base64)
+        'tiene_firma_guardada': bool(user.firma_guardada),
+        'tiene_iniciales_guardadas': bool(getattr(user, 'iniciales_guardadas', None)),
     })
 
 

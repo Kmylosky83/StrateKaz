@@ -41,6 +41,8 @@ export default function DocumentoReaderModal({
 
   const [seccionesVistas, setSeccionesVistas] = useState<Set<number>>(new Set());
   const [tiempoSeg, setTiempoSeg] = useState(0);
+  // totalSeccionesDisplay: actualizado por IntersectionObserver → re-render con denominador real
+  const [totalSeccionesDisplay, setTotalSeccionesDisplay] = useState(TOTAL_SECCIONES);
   const [aceptado, setAceptado] = useState(false);
   const [showRechazar, setShowRechazar] = useState(false);
   const [motivoRechazo, setMotivoRechazo] = useState('');
@@ -57,12 +59,22 @@ export default function DocumentoReaderModal({
   const tiempoSegRef = useRef(tiempoSeg);
   const seccionesVistasRef = useRef(seccionesVistas);
   const registrarMutateRef = useRef(registrarMutation.mutate);
+  // Conteo real de [data-section] divs generados por renderContenidoConSecciones.
+  // TOTAL_SECCIONES=10 es solo el máximo deseado; documentos cortos generan menos.
+  // 0 = sin contenido trackeable → auto-100%. Actualizado por IntersectionObserver effect.
+  const totalSeccionesRef = useRef(TOTAL_SECCIONES);
   aceptacionRef.current = aceptacion;
   tiempoSegRef.current = tiempoSeg;
   seccionesVistasRef.current = seccionesVistas;
   registrarMutateRef.current = registrarMutation.mutate;
 
-  const porcentaje = Math.round((seccionesVistas.size / TOTAL_SECCIONES) * 100);
+  // Porcentaje basado en secciones reales (no hardcoded 10).
+  // totalSeccionesDisplay (state) garantiza re-render correcto cuando el observer
+  // cuenta las secciones reales del DOM. totalSeccionesRef sirve para guardarProgreso.
+  const porcentaje =
+    totalSeccionesDisplay === 0
+      ? 100 // Documento sin contenido trackeable (ej: solo PDF adjunto)
+      : Math.min(100, Math.round((seccionesVistas.size / totalSeccionesDisplay) * 100));
   const puedeAceptar = porcentaje >= PORCENTAJE_MINIMO && aceptado;
 
   // Timer: cuenta segundos con el tab visible
@@ -71,6 +83,9 @@ export default function DocumentoReaderModal({
 
     setTiempoSeg(aceptacion.tiempo_lectura_seg || 0);
     setSeccionesVistas(new Set((aceptacion.scroll_data?.secciones_vistas as number[]) || []));
+    // Resetear al abrir un nuevo documento hasta que el observer cuente las secciones reales
+    setTotalSeccionesDisplay(TOTAL_SECCIONES);
+    totalSeccionesRef.current = TOTAL_SECCIONES;
 
     const handleVisibility = () => {
       isVisibleRef.current = document.visibilityState === 'visible';
@@ -95,6 +110,14 @@ export default function DocumentoReaderModal({
 
     const container = contentRef.current;
     const sectionElements = container.querySelectorAll('[data-section]');
+
+    // Registrar conteo real de secciones (puede ser < TOTAL_SECCIONES para documentos cortos).
+    // totalSeccionesRef → para guardarProgreso (sin causar re-render).
+    // setTotalSeccionesDisplay → dispara re-render con denominador correcto.
+    totalSeccionesRef.current = sectionElements.length;
+    setTotalSeccionesDisplay(sectionElements.length);
+
+    // Sin secciones = sin contenido trackeable; porcentaje = 100 auto (ver cálculo arriba)
     if (sectionElements.length === 0) return;
 
     const timers = new Map<number, ReturnType<typeof setTimeout>>();
@@ -138,14 +161,20 @@ export default function DocumentoReaderModal({
     const ac = aceptacionRef.current;
     if (!ac || ac.estado === 'ACEPTADO') return;
 
+    const totalReal = totalSeccionesRef.current;
+    const pct =
+      totalReal === 0
+        ? 100
+        : Math.min(100, Math.round((seccionesVistasRef.current.size / totalReal) * 100));
+
     registrarMutateRef.current({
       id: ac.id,
       data: {
-        porcentaje_lectura: Math.round((seccionesVistasRef.current.size / TOTAL_SECCIONES) * 100),
+        porcentaje_lectura: pct,
         tiempo_lectura_seg: tiempoSegRef.current,
         scroll_data: {
           secciones_vistas: Array.from(seccionesVistasRef.current),
-          total_secciones: TOTAL_SECCIONES,
+          total_secciones: totalReal,
         },
       },
     });

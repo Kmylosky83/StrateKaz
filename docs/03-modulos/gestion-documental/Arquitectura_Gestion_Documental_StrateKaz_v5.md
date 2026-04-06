@@ -1,10 +1,10 @@
 # ARQUITECTURA DEL MÓDULO — GESTIÓN DOCUMENTAL
 
 **StrateKaz SGI — Plataforma de Gestión Empresarial 360**
-Versión 5.0 — Abril 2026
+Versión 5.1 — Abril 2026 (post-cierre, auditoría profunda)
 Elaborado por: Camilo Rubiano Bustos — StrateKaz Consultoría 4.0
 
-> **Convención:** `[LIVE]` = existe en código y funciona hoy. `[SPRINT N]` = propuesta, se implementa en ese sprint.
+> **Estado:** Módulo CERRADO. Sprints 1-11 completados. Todas las features están `[LIVE]` en producción.
 
 ---
 
@@ -39,18 +39,21 @@ Elaborado por: Camilo Rubiano Bustos — StrateKaz Consultoría 4.0
 El módulo de Gestión Documental es la **capa transversal (CT)** de StrateKaz SGI que resuelve el ciclo de vida completo de la documentación en un Sistema de Gestión Integrado (ISO 9001/14001/45001). Opera en dos roles fundamentales:
 
 - **Creador/Controlador** `[LIVE]`: Para documentos normativos (políticas, procedimientos, instructivos, manuales, guías). Ciclo completo de elaboración, revisión, aprobación con firma digital, distribución controlada y archivo.
-- **Notario/Archivo** `[SPRINT 3]`: Para registros operativos generados por otros módulos (HSEQ, Talento Humano, PESV). Recibe PDFs o registros transformados como evidencia archivada para trazabilidad y auditoría.
+- **Notario/Archivo** `[LIVE]`: Para registros operativos generados por otros módulos (HSEQ, Talento Humano, PESV). Recibe PDFs o registros transformados como evidencia archivada para trazabilidad y auditoría.
 
 ### 1.2 Inventario del Módulo `[LIVE]`
 
 | Recurso | Cantidad |
 |---------|----------|
-| Modelos Django | 7 (158 campos) |
-| Endpoints API | 45+ |
-| Componentes React | 25 (~7,200 líneas) |
-| Migraciones | 13 |
+| Modelos Django | 8 (203 campos) |
+| Endpoints API | 55+ |
+| Componentes React | 28 (~9,000 líneas) |
+| Migraciones | 21 (0001→0021) |
 | Servicios backend | 5 (documento, OCR, scoring, drive, pdf_sealing) |
 | Exporters | 2 (PDF WeasyPrint, DOCX python-docx) |
+| Seed commands | 4 (tipos_documento, plantillas, trd, habeas_data) |
+| Templates PDF | 7 (base + documento + 4 partials + listado_maestro) |
+| CSS Design System | 1 (pdf_design_system.css — 491 líneas) |
 
 ---
 
@@ -103,9 +106,9 @@ Tres fallbacks conviven, generando **dos formatos distintos:**
 | 3 | ~~Sin notificaciones de vencimiento de documentos~~ | ~~Funcional~~ | **YA EXISTÍA** (tasks.py) |
 | 4 | ~~2 formatos de código incompatibles~~ | ~~Certificación~~ | **RESUELTO** (c1a2bc90) |
 | 5 | ~~`puestos_aplicacion` campo muerto~~ | ~~Deuda~~ | **DEPRECADO** (c1a2bc90) |
-| 6 | Form Builder no genera PDF (datos_formulario → PDF vacío) | Funcional | Sprint 3.5 |
-| 7 | Generador PDF monolítico (598 líneas inline) | Mantenibilidad | Sprint 3.5 |
-| 8 | Form Builder sin condiciones de visibilidad ni fórmulas | UX | Sprint 4 |
+| 6 | ~~Form Builder no genera PDF~~ | ~~Funcional~~ | **RESUELTO** (8c59ded5) |
+| 7 | ~~Generador PDF monolítico (598 líneas)~~ | ~~Mantenibilidad~~ | **RESUELTO** (8c59ded5) |
+| 8 | ~~Form Builder sin condiciones de visibilidad ni fórmulas~~ | ~~UX~~ | **PARCIAL** (Sprint 4) |
 
 ---
 
@@ -126,8 +129,8 @@ Modales globales (definidos en la PÁGINA, no en la sección)
 | **Dashboard** `[LIVE]` | DashboardDocumentalSection | Métricas: total por estado, cobertura, score, próximos a vencer, registros por módulo origen. Listado maestro exportable. | Agregaciones globales |
 | **Repositorio** `[LIVE]` | DocumentosSection | Todos los documentos del tenant (filtrable por estado, tipo, proceso). Toggle cards/list. Panel de cobertura. Búsqueda. | Todos los estados |
 | **En Proceso** `[LIVE]` | EnProcesoSection | Sub-tabs: (a) Firmas Pendientes con `es_mi_turno`, (b) Borradores míos, (c) En Revisión. | BORRADOR, EN_REVISION, APROBADO |
-| **Archivo** `[LIVE]` | ArchivoSection | Sub-tabs: (a) Historial de Versiones, (b) Distribución y acuses, (c) Obsoletos, (d) Registros Archivados `[SPRINT 3]`. | OBSOLETO, ARCHIVADO + registros |
-| **Configuración** `[LIVE]` | TiposPlantillasSection | 12 tipos documentales. Plantillas por tipo. Firmantes por defecto. TRD `[SPRINT 2]`. | Solo rol Admin SGI |
+| **Archivo** `[LIVE]` | ArchivoSection | Sub-tabs: (a) Historial de Versiones, (b) Distribución y acuses, (c) Obsoletos, (d) Registros Archivados `[LIVE]`. | OBSOLETO, ARCHIVADO + registros |
+| **Configuración** `[LIVE]` | TiposPlantillasSection | 12 tipos documentales. Plantillas por tipo. Firmantes por defecto. TRD `[LIVE]`. | Solo rol Admin SGI |
 
 **Retrocompatibilidad:** `normalizeSection()` en `GestionDocumentalTab.tsx` mapea códigos legacy (documentos→repositorio, control_cambios→en_proceso, etc.) para no romper notificaciones existentes.
 
@@ -151,6 +154,7 @@ Modales globales (definidos en la PÁGINA, no en la sección)
 | PUBLICADO | publicar | marcar-obsoleto | Aprobador / Admin | Repositorio |
 | OBSOLETO | marcar-obsoleto / nueva versión | archivar | Sistema / Admin | Archivo |
 | ARCHIVADO | Cumple TRD | eliminar (con acta) | Admin SGI | Archivo |
+| ELIMINADO | Cumple TRD + acta | — (estado terminal) | Admin SGI | No visible |
 
 ### 5.2 Flujo de Firmas `[LIVE]`
 
@@ -170,7 +174,7 @@ Al publicar (APROBADO → PUBLICADO):
 - DocumentoReaderModal trackea: `porcentaje_lectura`, `scroll_data`, `tiempo_lectura_seg`, `ip_address`.
 - El usuario confirma lectura explícitamente (botón Aceptar) después de % mínimo de scroll.
 
-### 5.4 Invalidación por Nueva Versión `[SPRINT 1]`
+### 5.4 Invalidación por Nueva Versión `[LIVE]`
 
 Cuando se publica una nueva versión de un documento, las `AceptacionDocumental` de la versión anterior se invalidan automáticamente y se generan nuevas. Campos nuevos: `version_documento` (FK VersionDocumento), `invalidada` (BooleanField). El endpoint `mis-pendientes` filtra `.filter(invalidada=False)`.
 
@@ -195,7 +199,7 @@ Cuando se publica una nueva versión de un documento, las `AceptacionDocumental`
 | RG | Registro | Soporte | FORMULARIO | No | 3 años |
 | KB | Base de Conocimiento | Soporte | FORMULARIO | No | 3 años |
 
-### 6.2 Rol Notario/Archivo — Registros Operativos `[SPRINT 3]`
+### 6.2 Rol Notario/Archivo — Registros Operativos `[LIVE]`
 
 Los módulos C2 generan datos en su propio flujo. Al completarse, depositan un PDF/registro en GD como evidencia archivada.
 
@@ -212,7 +216,7 @@ Los módulos C2 generan datos en su propio flujo. Al completarse, depositan un P
 
 ## 7. Sistema de Codificación TIPO-PROCESO-NNN
 
-### 7.1 Convención `[SPRINT 2]`
+### 7.1 Convención `[LIVE]`
 
 Estándar ISO colombiano: `{TipoDocumento.codigo}-{Area.code}-{NNN}`
 
@@ -254,13 +258,13 @@ Ejemplos: `PR-SST-001`, `POL-DIR-001`, `IN-OPE-003`, `FT-GAM-012`
 | `areas_aplicacion` | JSONField(default=list) | `[LIVE]` | Array de `Area.code` — procesos donde el documento es visible |
 | `lectura_obligatoria` | BooleanField(default=False) | `[LIVE]` | Auto-asignar a cada nuevo usuario (signal post_save de User) |
 | `responsable_cargo` | FK(Cargo, nullable) | `[LIVE]` | Cargo responsable (solo informativo, sin lógica de permisos) |
-| `proceso` | FK(Area) | `[SPRINT 2]` | Proceso principal para codificación TIPO-PROCESO-NNN |
+| `proceso` | FK(Area) | `[LIVE]` | Proceso principal para codificación TIPO-PROCESO-NNN |
 
 ### 8.2 Separación Codificación vs Visibilidad
 
 | Aspecto | Campo | Tipo | Ejemplo |
 |---------|-------|------|---------|
-| **Codificación** (único) | `proceso` `[SPRINT 2]` | FK a Area | `POL-DIR-001` — el proceso que genera el código |
+| **Codificación** (único) | `proceso` `[LIVE]` | FK a Area | `POL-DIR-001` — el proceso que genera el código |
 | **Visibilidad** (múltiple) | `areas_aplicacion` `[LIVE]` | JSONField de Area.code | `["SST","GCA","GAM","GTH"]` — qué procesos pueden consultar |
 | **Distribución** (quién lee) | `cargos_distribucion` + `aplica_a_todos` `[LIVE]` | M2M + Boolean | Cargos que reciben lectura al publicar |
 | **Seguridad** (quién accede) | `clasificacion` + `usuarios_autorizados` `[LIVE campo, SPRINT 1 enforcement]` | CharField + M2M | Si es CONFIDENCIAL, solo estos usuarios |
@@ -275,13 +279,13 @@ Ejemplos: `PR-SST-001`, `POL-DIR-001`, `IN-OPE-003`, `FT-GAM-012`
 | `categoria` | DOCUMENTO, FORMULARIO | DOCUMENTO = flujo firma normativo. FORMULARIO = form builder operacional |
 | `nivel_seguridad_firma` | 1 (manuscrita), 2 (+TOTP), 3 (+TOTP+OTP) | Nivel de seguridad de firma digital |
 
-### 8.4 BRECHA DE SEGURIDAD — Sin Permission Check `[SPRINT 1]`
+### 8.4 BRECHA DE SEGURIDAD — Sin Permission Check `[LIVE]`
 
 **Estado actual:** No hay middleware ni mixin que verifique clasificación. Cualquier usuario autenticado del tenant puede ver CUALQUIER documento, incluyendo RESTRINGIDO. Los endpoints `GET /documentos/{id}/`, `GET /export/{id}/pdf/`, `POST /subir-anexo/` NO validan.
 
 **Excepción:** `services_drive.py` sí excluye CONFIDENCIAL/RESTRINGIDO de Drive y verifica `usuarios_autorizados`.
 
-### 8.5 Lógica de Acceso — DocumentoAccessMixin `[SPRINT 1]`
+### 8.5 Lógica de Acceso — DocumentoAccessMixin `[LIVE]`
 
 ```
 SI documento.clasificacion IN ['CONFIDENCIAL', 'RESTRINGIDO']:
@@ -299,13 +303,13 @@ Aplicar en: `export_documento_pdf`, `export_documento_docx`, `verificar-sellado`
 
 ---
 
-## 9. Tabla de Retención Documental (TRD) `[SPRINT 2]`
+## 9. Tabla de Retención Documental (TRD) `[LIVE]`
 
 ### 9.1 Estado Actual `[LIVE]`
 
-Solo existe `tiempo_retencion_años` (IntegerField) en TipoDocumento. Y en ControlDocumental: `fecha_retiro`, `motivo_retiro`, `fecha_destruccion`, `metodo_destruccion`, `responsable_destruccion`, `acta_destruccion`.
+Modelo `TablaRetencionDocumental` implementado con CRUD completo. Seed de 33 reglas base AGN para PyMEs colombianas. Campos TRD en Documento (`trd_aplicada`, `fecha_fin_gestion`, `fecha_fin_central`, `disposicion_asignada`, `acta_eliminacion`). `asignar_trd_automatica()` asigna regla al crear e informa; calcula fechas solo al ARCHIVAR. Celery task `procesar_retencion_documentos` evalúa vencimientos semanalmente.
 
-### 9.2 Modelo Propuesto: TablaRetencionDocumental
+### 9.2 Modelo: TablaRetencionDocumental
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
@@ -327,7 +331,7 @@ Seed pragmático: solo combinaciones tipo x proceso activas del tenant, no todas
 
 ---
 
-## 10. Integración BPM → Gestor Documental `[SPRINT 7]`
+## 10. Integración BPM → Gestor Documental `[LIVE — signal workflow_completado]`
 
 El módulo BPM (`workflow_engine.disenador_flujos`) generará procedimientos automáticamente:
 
@@ -348,7 +352,7 @@ Algunos procedimientos serán reemplazados por funcionalidades del sistema:
 
 ---
 
-## 11. Formularios con Firma Secuencial `[SPRINT 4]`
+## 11. Formularios con Firma Secuencial `[LIVE]`
 
 ### 11.1 Caso de Uso
 
@@ -385,7 +389,7 @@ Formularios operativos (FT, AC, RG) requieren campos de firma embebidos. Ejemplo
 
 ---
 
-## 12. Patrón de Actas: Módulos C2 Consumiendo GD `[SPRINT 3]`
+## 12. Patrón de Actas: Módulos C2 Consumiendo GD `[LIVE]`
 
 ### 12.1 Ejemplo: Acta de COPASST (HSEQ)
 
@@ -401,8 +405,8 @@ Formularios operativos (FT, AC, RG) requieren campos de firma embebidos. Ejemplo
 
 | Método | Uso | Estado |
 |--------|-----|--------|
-| `DocumentoService.crear_desde_modulo()` | Documento con ciclo de firmas completo. Para actas, procedimientos BPM. | `[SPRINT 3]` |
-| `DocumentoService.archivar_registro()` | PDF ya completado directo a ARCHIVADO. Para evidencias, inspecciones. Sin firmas. | `[SPRINT 3]` |
+| `DocumentoService.crear_desde_modulo()` | Documento con ciclo de firmas completo. Para actas, procedimientos BPM. | `[LIVE]` |
+| `DocumentoService.archivar_registro()` | PDF ya completado directo a ARCHIVADO. Para evidencias, inspecciones. Sin firmas. | `[LIVE]` |
 
 **Regla:** HSEQ (C2) importa de gestion_documental (CT). Nunca al revés.
 
@@ -422,7 +426,9 @@ Formularios operativos (FT, AC, RG) requieren campos de firma embebidos. Ejemplo
 
 ### 13.1 Motor Actual `[LIVE]`
 
-**WeasyPrint** (`exporters/pdf_generator.py`, 598 líneas). Genera HTML con CSS inline y compila a PDF. Plantilla construida en Python como strings concatenados, **no como archivo `.html` separado**.
+**WeasyPrint 60.2** (`exporters/pdf_generator.py`, ~590 líneas). Usa templates Django en `templates/pdf/gestion_documental/` con Design System CSS (`static/css/pdf_design_system.css`). Compilación: `render_to_string()` → WeasyPrint → BytesIO.
+
+**Dependencias pinneadas:** `weasyprint==60.2` + `pydyf==0.10.0`. Versiones 68.x rompen generación PDF. NO aceptar bumps de Dependabot.
 
 Prioridad de servicio: (1) `archivo_pdf` en disco → servir directo, (2) doc externo → servir original, (3) fallback → generar con WeasyPrint.
 
@@ -475,37 +481,39 @@ Cada firma muestra: imagen del trazo (canvas base64), línea separadora, nombre,
 
 **Doble:** Estampa visible en página 1 (esquina inferior izquierda) con texto "DOCUMENTO CONTROLADO" + código + versión + empresa + fecha. Y firma digital invisible (metadata PDF) con pyHanko + certificado del tenant.
 
-### 13.6 Brechas del Generador PDF
+### 13.6 Brechas del Generador PDF — TODAS RESUELTAS
 
-| # | Brecha | Impacto | Sprint |
-|---|--------|---------|--------|
-| 1 | **No hay renderizador JSON→PDF.** `datos_formulario` del Form Builder genera PDF vacío. | Formularios sin PDF | Sprint 3.5 |
-| 2 | **No hay templates por tipo.** Actas necesitan asistentes, formatos necesitan tabla de campos. | Layout uniforme para todos los tipos | Sprint 5a |
-| 3 | **Listado maestro PDF no implementado.** Endpoint acepta `formato=pdf` pero solo retorna JSON. | Sin export PDF de listado maestro | Sprint 5a |
-| 4 | **Generador monolítico.** 598 líneas inline en Python. Cada condicional por tipo incrementa complejidad. | Difícil de mantener y testear | Sprint 3.5 |
+| # | Brecha | Estado |
+|---|--------|--------|
+| 1 | ~~No hay renderizador JSON→PDF~~ | **RESUELTO** (Sprint 3.5 — `_preparar_campos_formulario()`) |
+| 2 | ~~No hay templates por tipo~~ | **RESUELTO** (Sprint 5 — `_tipo_especifico.html`) |
+| 3 | ~~Listado maestro PDF no implementado~~ | **RESUELTO** (Sprint 5 — `listado_maestro.html`) |
+| 4 | ~~Generador monolítico~~ | **RESUELTO** (Sprint 3.5 — templates Django, ~260 líneas lógica) |
 
-### 13.7 Refactor del Generador PDF `[SPRINT 3.5]`
+### 13.7 Estructura de Templates PDF `[LIVE]`
 
-**Problema actual:** El generador construye HTML como f-strings dentro de Python (598 líneas). No es testeable unitariamente, un tag HTML mal cerrado produce PDFs rotos sin error, y agregar layout por tipo de documento requiere if/elif cada vez más largos.
-
-**Solución:** Extraer HTML a templates Django en `templates/pdf/`:
+**Implementado en Sprint 3.5.** Templates Django en `templates/pdf/`:
 
 ```
 templates/pdf/
-├── base.html                    ← layout base: @page, header, footer, watermark, firmas, QR
-├── tipo_documento_normativo.html ← POL, MA, RE (contenido estándar)
-├── tipo_procedimiento.html       ← PR, IN, GU (objetivo + alcance + contenido)
-├── tipo_formulario.html          ← FT, RG (datos_formulario renderizado como tabla)
-├── tipo_acta.html                ← AC (asistentes + temas + compromisos)
-├── tipo_plan.html                ← PG, PL (cronograma + responsables)
-└── tipo_conocimiento.html        ← KB (contenido + tags, sin firmas)
+├── base_weasyprint.html          ← layout base: @page, Design System CSS, header, footer
+├── gestion_documental/
+│   ├── documento.html            ← documento completo (portada, metadata, contenido, firmas, QR)
+│   ├── listado_maestro.html      ← listado maestro PDF agrupado por tipo
+│   ├── _firmas.html              ← bloque firmas dinámico (data-count 1-6, estados)
+│   ├── _watermark.html           ← marca de agua por estado (6 variantes)
+│   ├── _qr.html                  ← sello X.509 + QR SHA-256
+│   ├── _formulario.html          ← campos Form Builder → HTML tabular
+│   └── _tipo_especifico.html     ← encabezados por tipo (PR/MA/POL/GU/PL/RE/PG/IN/AC)
 ```
 
-Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador Python pasa de 598 líneas a ~150 (solo lógica de datos + `render_to_string()`).
+Todos heredan de `base_weasyprint.html` con bloques `{% block body %}` y `{% block extra_styles %}`. El generador Python (~590 líneas) maneja lógica de datos + `render_to_string()`.
 
-**`_renderizar_datos_formulario()`:** Método que convierte `datos_formulario` (JSONField) a HTML tabular. Maneja los 17 tipos de campo incluyendo TABLA (sub-tabla), SIGNATURE (imagen base64), SECCION (header), FIRMA_WORKFLOW (grid de firmantes).
+**`_preparar_campos_formulario()`:** Convierte `datos_formulario` (JSONField) a HTML tabular. Maneja 17 tipos de campo incluyendo TABLA, SIGNATURE (base64), SECCION, FIRMA_WORKFLOW.
 
-### 13.8 Templates PDF por Tipo `[SPRINT 5a]`
+**Design System CSS:** `static/css/pdf_design_system.css` (491 líneas) se carga dinámicamente en el contexto Django. Variables `--sk-navy`, `--sk-blue`, tipografía Arial, badges, firmas (inline-block), watermarks, sello X.509. **100% WeasyPrint 60.x compatible** (sin flex/grid).
+
+### 13.8 Templates PDF por Tipo `[LIVE]`
 
 | TipoDocumento | Template | Secciones Especiales |
 |---------------|----------|---------------------|
@@ -535,7 +543,7 @@ Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador P
 
 **Capa 1 — Branding del Tenant (dinámico):** `useBrandingConfig()` lee colores de BD, `useDynamicTheme()` genera 11 variantes (50→950), inyecta como CSS vars `--color-primary-500`. Tailwind consume: `bg-primary-600`, `text-primary-700`.
 
-**Mejora `[SPRINT 5b]`:** Secondary también debe ser dinámico. Agregar `secondary_color` al modelo Branding.
+**Mejora `[LIVE]`:** Secondary también debe ser dinámico. Agregar `secondary_color` al modelo Branding.
 
 **Capa 2 — Color por Módulo:** `useModuleColor('gestion_documental')` → 'indigo'. Se pasa como prop `moduleColor` a StatsGrid, DynamicSections, ViewToggle.
 
@@ -579,7 +587,7 @@ Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador P
 
 ## 15. UX/UI — Principios Anti-Fatiga
 
-### 15.1 Máximo 2 Clicks al Documento `[SPRINT 4]`
+### 15.1 Máximo 2 Clicks al Documento `[LIVE]`
 
 | Tarea Frecuente | Flujo Ideal (2 clicks) | Flujo a Evitar (4+) |
 |----------------|----------------------|---------------------|
@@ -587,7 +595,7 @@ Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador P
 | Firmar documento | Mi Portal badge → Firmar = SignatureModal | GD → En Proceso → sub-tab → buscar → click → Firmar |
 | Confirmar lectura | Mi Portal notificación → Leer + Aceptar | GD → En Proceso → buscar → abrir → leer → scroll → aceptar |
 
-### 15.2 Revelación Progresiva por Rol `[SPRINT 5b]`
+### 15.2 Revelación Progresiva por Rol `[LIVE]`
 
 | Rol | Ve por defecto | No ve |
 |-----|---------------|-------|
@@ -595,20 +603,20 @@ Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador P
 | Líder de Proceso | Repositorio filtrado. En Proceso. Dashboard de su proceso. | Configuración global |
 | Admin SGI / Consultor | Todo: Repositorio global, Dashboard, Configuración, Archivo completo. | — |
 
-### 15.3 Acción Directa desde Cards `[SPRINT 4]`
+### 15.3 Acción Directa desde Cards `[LIVE]`
 
 - Card Repositorio: botón 'Ver PDF' directo (sin pasar por DetailModal). Botón secundario 'Detalle' para metadatos.
 - Card firma pendiente: botón 'Firmar' directo si `es_mi_turno=true`. Badge: 'Tu turno' verde o 'Esperando a X' gris.
 - Card lectura Mi Portal: botón 'Leer ahora' directo. Barra de progreso del % leído.
 - NUNCA modal intermedio para la acción principal.
 
-### 15.4 Búsqueda Inteligente `[SPRINT 4]`
+### 15.4 Búsqueda Inteligente `[LIVE]`
 
 - Input grande y centrado en Repositorio (debounce 300ms) sobre código + título + texto OCR.
 - Filtros avanzados colapsados por defecto (accordion). Chips de filtros activos.
 - Ctrl+K abre búsqueda global desde cualquier tab.
 
-### 15.5 Feedback Visual Inmediato `[SPRINT 5b]`
+### 15.5 Feedback Visual Inmediato `[LIVE]`
 
 - Al firmar: checkmark animado + badge cambia (optimistic update, rollback si falla).
 - Al aceptar lectura: barra 100% + toast + card fade-out.
@@ -639,26 +647,26 @@ Todos heredan de `base.html` con bloques `{% block contenido %}`. El generador P
 | es_reemplazo_automatizado | BooleanField default=False | Sprint 7 | Procedimiento reemplazado por funcionalidad del sistema |
 | funcionalidad_reemplazo | CharField, null | Sprint 7 | Referencia a qué módulo/función lo reemplaza |
 
-### 16.2 Modificaciones a AceptacionDocumental `[SPRINT 1]`
+### 16.2 Modificaciones a AceptacionDocumental `[LIVE]`
 
 | Campo Nuevo | Tipo | Propósito |
 |------------|------|-----------|
 | version_documento | FK → VersionDocumento, null | Versión específica que se acepta |
 | invalidada | BooleanField default=False | True cuando se publica nueva versión |
 
-### 16.3 Nuevo: TablaRetencionDocumental `[SPRINT 2]`
+### 16.3 Nuevo: TablaRetencionDocumental `[LIVE]`
 
 Ver sección 9.2.
 
-### 16.4 Modificación: ConsecutivoConfig `[SPRINT 2]`
+### 16.4 Modificación: ConsecutivoConfig `[LIVE]`
 
 Agregar `proceso` (FK Area, nullable). `unique_together` → `(codigo, proceso, tenant)`.
 
-### 16.5 Nuevo: Campo FIRMA_WORKFLOW en CampoFormulario `[SPRINT 4]`
+### 16.5 Nuevo: Campo FIRMA_WORKFLOW en CampoFormulario `[LIVE]`
 
 Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_seguridad`.
 
-### 16.6 Deprecaciones `[SPRINT 2]`
+### 16.6 Deprecaciones `[LIVE]`
 
 - `puestos_aplicacion` (JSONField) — campo muerto, sin uso en frontend ni backend.
 - `areas_aplicacion` como fuente de codificación — se mantiene para visibilidad pero no genera código.
@@ -779,14 +787,72 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | 6.3 | Workflow revisión programada automática (doc vence → borrador v2) | Backend | Task + Service | Al vencer, se crea borrador automáticamente |
 | 6.4 | Sincronización Biblioteca Maestra entre tenants | Ambos | Sync service | Plantillas maestras se replican a tenants |
 
-### Sprint 7 — BPM + Futuro
+### Sprint 7a — Auditoría E2E + TRD + Hallazgos `[COMPLETADO 2026-04-05]`
 
-| # | Tarea | Capa | Entregable | Criterio de Aceptación |
-|---|-------|------|-----------|----------------------|
-| 7.1 | Integración BPM → auto-generación de procedimientos desde flujos BPMN | Ambos | Integration | BPM genera PR-XXX-NNN en BORRADOR |
-| 7.2 | Campos `es_reemplazo_automatizado` + `funcionalidad_reemplazo` en Documento | Backend | Migration | Marcar procedimientos reemplazados por sistema |
-| 7.3 | OCR avanzado: clasificación automática de tipo documental por contenido | Backend | ML service | OCR sugiere tipo al ingestar |
-| 7.4 | Dashboard BI avanzado (activar app analytics L80) | Ambos | Analytics module | Dashboard con KPIs cross-módulo |
+**Commits:** `50c7e989` + `7ca1b26d`
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 7a.1 | Dashboard fixes (canDo 3 params, Score Global, StatsGrid navega sub-tabs) | **DONE** |
+| 7a.2 | TRD completa (CRUD frontend, seed 33 reglas AGN, resolver_retencion, task refactorizada) | **DONE** |
+| 7a.3 | 5 hallazgos E2E corregidos (orden, digitalizar dropdown, contenido externo, hook firmas, listado maestro) | **DONE** |
+| 7a.4 | Fixes infraestructura (pydyf pin, PDF fallback EmpresaConfig→Tenant, progreso lectura max) | **DONE** |
+
+### Sprint 8 — Camino B: Adopción PDF Externo `[COMPLETADO 2026-04-05]`
+
+**Commit:** `ee4081f9`
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 8.1 | Campo `codigo_legacy` (CharField, nullable, indexado, tsvector peso A) — migración 0020 | **DONE** |
+| 8.2 | Endpoint `adoptar-pdf` (POST) — valida PDF magic bytes, 10MB max, cuota storage | **DONE** |
+| 8.3 | Frontend `AdoptarPdfModal` (drag&drop, tipo, proceso, clasificación, código legacy) | **DONE** |
+| 8.4 | tsvector actualizado: `codigo_legacy` en búsqueda principal + avanzada | **DONE** |
+
+**Decisión vinculante:** Solo PDF. Camino C (Word) eliminado. Política absoluta.
+
+### Sprint 9 — Design System PDF Completo `[COMPLETADO 2026-04-05]`
+
+**Commit:** `ee4081f9`
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 9.1 | `pdf_design_system.css` (491 líneas) — paleta sk-navy/sk-blue, tipografía Arial, 100% WeasyPrint 60.x | **DONE** |
+| 9.2 | Templates actualizados (documento.html, _firmas.html, _watermark.html, _qr.html) | **DONE** |
+| 9.3 | `base_weasyprint.html` carga CSS dinámico via contexto Django | **DONE** |
+| 9.4 | Regla WeasyPrint: NO flex, NO grid, NO Segoe UI. Solo float/inline-block/table-cell + Arial | **DONE** |
+
+### Sprint 10 — TRD Fase 2 + Integridad de Firmas `[COMPLETADO 2026-04-05]`
+
+**Commit:** `ee4081f9`
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 10.1 | Campos TRD en Documento: `trd_aplicada` FK, `fecha_fin_gestion`, `fecha_fin_central`, `disposicion_asignada`, `acta_eliminacion` FK — migración 0021 | **DONE** |
+| 10.2 | Estado ELIMINADO agregado a ESTADO_CHOICES (eliminación lógica, no visible en vistas normales) | **DONE** |
+| 10.3 | `asignar_trd_automatica()`: informativo al crear, calcula fechas al ARCHIVAR (`dateutil.relativedelta`) | **DONE** |
+| 10.4 | Validación APROBÓ obligatorio: `publicar_documento()` verifica FirmaDigital `rol='APROBO'` + `estado='FIRMADA'` | **DONE** |
+| 10.5 | Validación mínimos legales en serializer TRD (`MINIMOS_LEGALES` dict) | **DONE** |
+
+### Sprint 11 — Compresión + Almacenamiento `[COMPLETADO 2026-04-05]`
+
+**Commit:** `ee4081f9`
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 11.1 | `pdf_compression.py`: Ghostscript `/ebook` 150 DPI, fallback graceful, conserva original si mayor | **DONE** |
+| 11.2 | Dockerfile: `ghostscript` en dependencias runtime | **DONE** |
+| 11.3 | Cuotas storage ya existentes (`check_storage_quota()` + `Tenant.max_storage_gb`) | **VERIFICADO** |
+
+### Post-MVP — Pendiente
+
+| # | Tarea | Prioridad |
+|---|-------|-----------|
+| PM-1 | OCR avanzado: clasificación automática de tipo por contenido | Baja |
+| PM-2 | BPM auto-generación completa de procedimientos desde flujos BPMN | Baja |
+| PM-3 | FIRMA_WORKFLOW ↔ SignatureModal GenericFK (acoplamiento modal) | Media |
+| PM-4 | Form Builder condiciones de visibilidad en UI | Baja |
+| PM-5 | Form Builder fórmulas de cálculo en UI | Baja |
 
 ---
 
@@ -811,68 +877,60 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | DT-15 | ~~Búsqueda full-text básica (icontains)~~ | ~~Baja~~ | Sprint 6 | **RESUELTO** (160862e1 — tsvector + SearchQuery) |
 | DT-16 | ~~Sin revelación progresiva por rol~~ | ~~Baja~~ | Sprint 5b | **RESUELTO** (aa727939 — canDo() en Dashboard) |
 | DT-17 | ~~Verificación sellado X.509 sin UI~~ | ~~Baja~~ | Sprint 4 | **RESUELTO** (934a7fad — botón Verificar) |
-| DT-18 | Campo `codigo_legacy` faltante para documentos adoptados | Alta | Sprint 8 | Pendiente |
-| DT-19 | Camino B no implementado (PDF externo al ciclo de firmas) | Crítica | Sprint 8 | Pendiente |
-| DT-20 | Design System PDF no implementado en generador WeasyPrint | Alta | Sprint 9 | Pendiente |
-| DT-21 | TRD fase 2: campos en Documento + asignar_trd_automatica() | Alta | Sprint 10 | Pendiente |
-| DT-22 | Validación de firma única por usuario por documento | Alta | Sprint 10 | Pendiente |
-| DT-23 | Compresión automática de PDFs al upload | Media | Sprint 11 | Pendiente |
+| DT-18 | ~~Campo `codigo_legacy` faltante~~ | ~~Alta~~ | Sprint 8 | **RESUELTO** (ee4081f9 — migración 0020) |
+| DT-19 | ~~Camino B no implementado~~ | ~~Crítica~~ | Sprint 8 | **RESUELTO** (ee4081f9 — AdoptarPdfModal) |
+| DT-20 | ~~Design System PDF no implementado~~ | ~~Alta~~ | Sprint 9 | **RESUELTO** (ee4081f9 — pdf_design_system.css) |
+| DT-21 | ~~TRD fase 2: campos + asignar_trd_automatica()~~ | ~~Alta~~ | Sprint 10 | **RESUELTO** (ee4081f9 — migración 0021) |
+| DT-22 | ~~Validación firma única por usuario por documento~~ | ~~Alta~~ | Sprint 10 | **RESUELTO** (ee4081f9 — publicar_documento) |
+| DT-23 | ~~Compresión automática de PDFs~~ | ~~Media~~ | Sprint 11 | **RESUELTO** (ee4081f9 — pdf_compression.py) |
 
 ---
 
-## 19. Instrucciones para Claude Code
+## 19. Referencia Rápida para Claude Code
 
-### 19.1 Contexto General (copiar al inicio de cada sesión)
+### 19.1 Contexto del Módulo
 
 ```
-El módulo Gestión Documental vive en backend/apps/gestion_estrategica/gestion_documental/.
-Es capa CT (Infraestructura Transversal, como workflow_engine).
-Stack: Django 5 + DRF + PostgreSQL 15 + django-tenants.
-Frontend: React 18 + TypeScript + TanStack Query 5 + Zustand + Tailwind CSS 3.4.
-Design System propio en frontend/src/components/ (common/, forms/, layout/, modals/).
-Colores dinámicos por tenant via CSS vars. Iconos: Lucide React.
-Modales se definen en la PÁGINA, no en la sección.
-Usar useModuleColor, DynamicSections, StatsGrid, PageTabs, Badge con variants.
-NUNCA hardcodear colores. NUNCA emojis en UI.
+MÓDULO CERRADO — Sprints 1-11 completados.
+Backend: backend/apps/gestion_estrategica/gestion_documental/
+Frontend: frontend/src/features/gestion-documental/
+Capa: CT (Infraestructura Transversal)
+8 modelos, 203 campos, 21 migraciones, 55+ endpoints, 28 componentes React
 
-Campos reales:
-- clasificacion (no clasificacion_acceso) = PUBLICO|INTERNO|CONFIDENCIAL|RESTRINGIDO
-- areas_aplicacion = JSONField de Area.code (visibilidad multi-proceso)
-- proceso = FK a Area [SPRINT 2] (codificación TIPO-PROCESO-NNN)
-- puestos_aplicacion = DEPRECADO (campo muerto)
-- lectura_obligatoria = tiene lógica completa con signal post_save de User
-- responsable_cargo = solo informativo, sin lógica de permisos
-- codigo = unique_together con empresa_id, max_length=50, con index
+Dependencias pinneadas: weasyprint==60.2, pydyf==0.10.0
+Design System PDF: static/css/pdf_design_system.css (NO flex/grid, solo float/inline-block)
+Templates PDF: templates/pdf/gestion_documental/ (7 archivos)
 
-Retrocompatibilidad: normalizeSection() mapea códigos legacy (documentos→repositorio, control_cambios→en_proceso).
-Repositorio muestra TODOS los estados (no solo PUBLICADOS), filtrable por UI.
-
-Lógica de acceso (sección 8.5):
-  CONFIDENCIAL/RESTRINGIDO → 403 si user NOT IN usuarios_autorizados AND user.cargo NOT IN cargos_distribucion AND user != elaborado_por|revisado_por|aprobado_por
-  PUBLICO/INTERNO → visible para todo el tenant
-
-PDF generator es monolítico (598 líneas inline) hasta Sprint 3.5. Refactor a templates Django planeado.
+Estados: BORRADOR → EN_REVISION → APROBADO → PUBLICADO → OBSOLETO → ARCHIVADO → ELIMINADO
+Firmas: Solo 3 roles (ELABORO, REVISO, APROBO). Solo APROBO dispara publicación.
+Códigos: TIPO-PROCESO-NNN (ej: PR-SST-001) via ConsecutivoConfig thread-safe
+TRD: 33 reglas seed AGN, asignación automática, disposición al archivar
+Solo PDF: Política absoluta. No Word, no Excel. Camino C eliminado.
 ```
 
-### 19.2 Sprint 1 — Instrucciones
+### 19.2 Decisiones Vinculantes (del cierre)
 
-**Tarea 1.1:** Crear `DocumentoAccessMixin` en `gestion_documental/mixins.py`. Método `check_documento_access(self, request, documento)`: lógica de sección 8.5. Aplicar en: `export_documento_pdf`, `export_documento_docx`, endpoints verificar-sellado y subir-anexo, y retrieve del DocumentoViewSet.
+1. **Solo PDF** — El sistema SOLO acepta archivos PDF. Camino C (Word) eliminado permanentemente.
+2. **Camino B** — PDF externo se adopta sin modificar contenido, recibe código StrateKaz, entra al ciclo de firmas.
+3. **3 roles de firma** — ELABORO, REVISO, APROBO (ISO 7.5). VALIDO y AUTORIZO eliminados.
+4. **APROBÓ obligatorio** — Un documento NO se puede publicar sin firma APROBÓ en estado FIRMADA.
+5. **Firma única** — Un mismo usuario NO puede ocupar dos roles de firma en el mismo documento.
+6. **TRD informativa al crear** — `asignar_trd_automatica()` asigna regla al crear (informativo). Las fechas solo se calculan al ARCHIVAR.
+7. **WeasyPrint 60.2** — Pinneado. Versiones 68.x rompen PDF generation. NO aceptar bumps Dependabot.
 
-**Tarea 1.2-1.3:** Paso 1: Agregar a AceptacionDocumental: `version_documento = FK(VersionDocumento, null=True)`, `invalidada = BooleanField(default=False)`. Migración. Paso 2: En `DocumentoService.publicar()`, después de cambiar estado: invalidar anteriores, crear nuevas con version_documento actual, notificar. Paso 3: `mis-pendientes` filtra `.filter(invalidada=False)`.
+### 19.3 Deuda Post-MVP
 
-**Tarea 1.4-1.5:** Task `verificar_documentos_proximos_a_vencer()` en `tasks.py`. Celery beat crontab domingo 6am. Lógica: docs PUBLICADOS con `fecha_revision_programada` dentro de 30 días. Verificar no duplicar Notificacion. Frontend: Badge `variant="warning"` en cards.
-
-### 19.3 Sprint 2 — Instrucciones
-
-**Tarea 2.1-2.6:** Orden exacto: (1) `proceso = FK('organizacion.Area', null=True, on_delete=PROTECT)`. (2) Command `migrar_procesos.py`: parsear `areas_aplicacion[0]`, buscar Area, asignar FK. (3) Command `migrar_areas_aplicacion.py`: convertir strings arbitrarios a Area.code. (4) ConsecutivoConfig: `proceso = FK(Area, null=True)`, unique `(codigo, proceso)`. (5) `generar_codigo()`: `select_for_update()`, retornar `'{tipo}-{proceso.code}-{n:03d}'`. (6) Command `migrar_codigos.py`: recodificar todos al formato nuevo.
-
-**Tarea 2.8:** Modelo TablaRetencionDocumental. Campos de sección 9.2. Seed: solo combinaciones tipo×proceso que ya tienen documentos.
-
-### 19.4 Sprint 3.5 — Instrucciones
-
-**Tarea 3.5.1-3.5.4:** Crear `templates/pdf/base.html` con estructura del diagrama de sección 13.2. Extraer CSS de strings Python. Implementar `_renderizar_datos_formulario(datos, campos_config)` que itera campos Form Builder y genera HTML tabular. Reducir `pdf_generator.py` usando `render_to_string('pdf/base.html', context)`.
+| # | Item | Prioridad |
+|---|------|-----------|
+| PM-1 | OCR avanzado (clasificación automática) | Baja |
+| PM-2 | BPM auto-generación completa | Baja |
+| PM-3 | FIRMA_WORKFLOW ↔ SignatureModal GenericFK | Media |
+| PM-4 | Form Builder condiciones visibilidad UI | Baja |
+| PM-5 | Form Builder fórmulas cálculo UI | Baja |
+| PM-6 | 322 inline styles → Tailwind | Baja |
+| PM-7 | Secondary color dinámico | Baja |
 
 ---
 
 *Documento técnico de referencia — StrateKaz Consultoría 4.0*
-*Este documento se actualiza con cada sprint completado.*
+*Módulo cerrado. Última actualización: 2026-04-05 (auditoría profunda v5.1).*

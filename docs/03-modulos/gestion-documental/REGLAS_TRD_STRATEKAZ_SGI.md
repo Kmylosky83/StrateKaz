@@ -170,16 +170,13 @@ La eliminación de documentos **NUNCA** es automática. El sistema debe:
 
 ### 3.3 Reglas de Alertas y Automatización
 
-#### RN-TRD-006: Task Celery — Gap crítico a corregir
+#### RN-TRD-006: Task Celery — RESUELTO (Sprint 7a)
 
-La task actual `procesar_retencion_documentos` usa **SOLO** `TipoDocumento.tiempo_retencion_anos`. Debe refactorizarse para consultar primero la TRD:
+La task `procesar_retencion_documentos` fue refactorizada para usar `DocumentoService.resolver_retencion(doc)` que consulta TRD (tipo+proceso) con fallback a `TipoDocumento.tiempo_retencion_anos`. Commit: `7ca1b26d`.
 
 ```python
-# ANTES (actual — INCORRECTO):
-tiempo = doc.tipo_documento.tiempo_retencion_anos
-
-# DESPUÉS (correcto — con TRD):
-retencion = resolver_retencion(doc)  # Función RN-TRD-001
+# Implementación actual (CORRECTO):
+retencion = DocumentoService.resolver_retencion(doc)
 tiempo = retencion['total']
 ```
 

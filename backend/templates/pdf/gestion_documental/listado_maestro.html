@@ -44,10 +44,15 @@
 {% endblock %}
 
 {% block body %}
-    <!-- Pie de página corriente -->
-    <div class="footer">
-        <span class="footer-left">Listado Maestro de Documentos — {{ razon_social }}</span>
-        <span class="footer-right page-number"></span>
+    <!-- Pie de página corriente (Design System: .page-footer) -->
+    <div class="page-footer">
+        <span class="footer-left">
+            <span class="footer-tech">StrateKaz</span>
+            <span class="footer-separator">|</span>
+            <span>Consultoría 4.0</span>
+        </span>
+        <span class="footer-center">Listado Maestro de Documentos — {{ razon_social }}</span>
+        <span class="footer-right footer-page"></span>
     </div>
 
     <!-- Encabezado del documento -->

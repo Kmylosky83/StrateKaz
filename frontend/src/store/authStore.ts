@@ -401,8 +401,22 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.warn('Failed to load user profile:', error);
-          // Si falla la impersonación, limpiar estado y cargar como admin
+          // Si falla la impersonación, limpiar estado
           localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+
+          // Si es 401 (token expirado/inválido), forzar logout limpio
+          // para evitar estado zombie (isAuthenticated=true, user=null)
+          const isUnauthorized =
+            error instanceof Error &&
+            'response' in error &&
+            (error as { response?: { status?: number } }).response?.status === 401;
+
+          if (isUnauthorized) {
+            console.warn('Token expired during profile load — forcing logout');
+            get().logout();
+            return;
+          }
+
           set({
             isLoadingUser: false,
             impersonatedUserId: null,

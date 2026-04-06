@@ -23,7 +23,7 @@ PROCESO_MAP = {
     'SST': 'SST',  # Seguridad y Salud en el Trabajo
     'TH': 'GTH',   # Talento Humano → Gestión del Talento Humano
     'GA': 'GAM',   # Gestión Ambiental
-    'PESV': None,   # No existe en seed de organización estándar — skip
+    'PESV': 'PESV',  # Plan Estratégico de Seguridad Vial
 }
 
 # fmt: off
@@ -57,6 +57,13 @@ SEED_REGLAS = [
     ('Registros de Auditoría',               'RG',  'GE',  2,  5, 'SELECCIONAR',          'ISO 9001 Cl 9.2.2', True),
     ('Programa de Capacitación SST',         'PG',  'SST', 2,  5, 'ELIMINAR',             'Dto 1072/2015 Art 2.2.4.6.11', True),
     ('Programa de Vigilancia Epidemiológica','PG',  'SST', 2, 10, 'CONSERVAR_PERMANENTE', 'Dto 1072/2015 Art 2.2.4.6.24', False),
+    # ── Matrices (FT — formatos de evaluación continua) ──
+    ('Matriz de Riesgos y Peligros',         'FT',  'SST', 0, 10, 'CONSERVAR_PERMANENTE', 'Dto 1072/2015 Art 2.2.4.6.15; GTC 45', False),
+    ('Matriz de Aspectos e Impactos Ambientales','FT','GA', 0, 10, 'CONSERVAR_PERMANENTE', 'ISO 14001:2015 Cl 6.1.2', False),
+    ('Matriz de Requisitos Legales',         'FT',  'GE',  0, 10, 'CONSERVAR_PERMANENTE', 'ISO 9001 Cl 4.2; Dto 1072/2015 Art 2.2.4.6.8', False),
+    # ── Informes (RG — registros de gestión) ──
+    ('Informe Revisión por la Dirección',    'RG',  'GE',  2,  5, 'SELECCIONAR',          'ISO 9001 Cl 9.3; Dto 1072/2015 Art 2.2.4.6.31', True),
+    ('Informe Rendición de Cuentas SST',     'RG',  'SST', 2,  5, 'ELIMINAR',             'Dto 1072/2015 Art 2.2.4.6.8 num 10; Res 0312/2019', True),
 ]
 # fmt: on
 

@@ -220,7 +220,7 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'modulo_origen',
             'es_politica_integral', 'lectura_obligatoria',
             'ocr_estado', 'ocr_metadatos', 'es_externo',
-            'archivo_original', 'archivo_pdf',
+            'archivo_original', 'archivo_pdf', 'codigo_legacy',
             'score_cumplimiento',
             'drive_file_id',
             'sellado_estado', 'fecha_sellado',
@@ -275,7 +275,9 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'responsable_cargo', 'responsable_cargo_nombre',
             'fecha_expiracion', 'motivo_cambio', 'es_politica_integral', 'lectura_obligatoria',
             'texto_extraido', 'ocr_estado', 'ocr_metadatos',
-            'es_externo', 'archivo_original',
+            'es_externo', 'archivo_original', 'codigo_legacy',
+            'trd_aplicada', 'fecha_fin_gestion', 'fecha_fin_central',
+            'disposicion_asignada',
             'score_cumplimiento', 'score_detalle', 'score_actualizado_at',
             'drive_file_id', 'drive_exportado_at',
             'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
@@ -529,3 +531,42 @@ class TablaRetencionDocumentalSerializer(serializers.ModelSerializer):
             'empresa_id', 'created_at', 'updated_at',
         ]
         read_only_fields = ['empresa_id', 'created_at', 'updated_at']
+
+    # Mínimos legales colombianos (RN-TRD-010)
+    MINIMOS_LEGALES = {
+        # (tipo_codigo, proceso_code o None) → {'minimo': años, 'norma': str}
+        ('RG', 'SST'): {'minimo': 20, 'norma': 'Dto 1072/2015 Art 2.2.4.6.12'},
+        ('AC', 'SST'): {'minimo': 10, 'norma': 'Dto 1072/2015 Art 2.2.4.6.21'},
+        ('POL', None): {'minimo': 10, 'norma': 'ISO 9001/14001/45001 Cl 7.5'},
+        ('MA', None):  {'minimo': 10, 'norma': 'ISO 9001/14001/45001 Cl 7.5'},
+        ('RE', None):  {'minimo': 10, 'norma': 'ISO 9001/14001/45001 Cl 7.5'},
+        ('PR', None):  {'minimo': 7, 'norma': 'ISO 9001 Cl 7.5'},
+        ('PL', 'SST'): {'minimo': 7, 'norma': 'Dto 1072/2015 Art 2.2.4.6.25'},
+        ('PG', None):  {'minimo': 5, 'norma': 'ISO 9001 Cl 7.5'},
+        ('FT', None):  {'minimo': 4, 'norma': 'Práctica archivística estándar'},
+    }
+
+    def validate(self, attrs):
+        tipo_doc = attrs.get('tipo_documento') or (self.instance.tipo_documento if self.instance else None)
+        proceso = attrs.get('proceso') or (self.instance.proceso if self.instance else None)
+        tiempo_gestion = attrs.get('tiempo_gestion_anos', getattr(self.instance, 'tiempo_gestion_anos', 0) if self.instance else 0)
+        tiempo_central = attrs.get('tiempo_central_anos', getattr(self.instance, 'tiempo_central_anos', 0) if self.instance else 0)
+        tiempo_total = (tiempo_gestion or 0) + (tiempo_central or 0)
+
+        if tipo_doc:
+            tipo_code = tipo_doc.codigo
+            proceso_code = proceso.code if proceso else None
+
+            # Buscar mínimo exacto (tipo+proceso) → genérico (tipo+None)
+            minimo_info = self.MINIMOS_LEGALES.get((tipo_code, proceso_code))
+            if not minimo_info:
+                minimo_info = self.MINIMOS_LEGALES.get((tipo_code, None))
+
+            if minimo_info and tiempo_total < minimo_info['minimo']:
+                raise serializers.ValidationError(
+                    f"El tiempo total de retención ({tiempo_total} años) es inferior "
+                    f"al mínimo legal ({minimo_info['minimo']} años) según "
+                    f"{minimo_info['norma']}."
+                )
+
+        return attrs

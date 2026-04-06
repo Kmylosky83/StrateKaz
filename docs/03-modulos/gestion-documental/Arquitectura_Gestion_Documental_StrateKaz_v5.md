@@ -800,17 +800,23 @@ Ver sección 11.2. Tipo #17 con `config_firmantes`, `modo_firma`, `nivel_segurid
 | DT-04 | ~~2 formatos de código incompatibles~~ | ~~Alta~~ | Sprint 2 | **RESUELTO** (c1a2bc90) |
 | DT-05 | ~~`puestos_aplicacion` campo muerto~~ | ~~Baja~~ | Sprint 2 | **DEPRECADO** (c1a2bc90) |
 | DT-06 | ~~`areas_aplicacion` strings arbitrarios~~ | ~~Media~~ | Sprint 2 | **RESUELTO** (migrar_procesos_gd) |
-| DT-07 | Form Builder JSON no genera PDF (datos_formulario → PDF vacío) | Alta | Sprint 3.5 | Pendiente |
-| DT-08 | Generador PDF monolítico (598 líneas, inline, no testeable) | Media | Sprint 3.5 | Pendiente |
+| DT-07 | ~~Form Builder JSON no genera PDF~~ | ~~Alta~~ | Sprint 3.5 | **PARCIAL** (8c59ded5 — `_preparar_campos_formulario()`) |
+| DT-08 | ~~Generador PDF monolítico (598 líneas)~~ | ~~Media~~ | Sprint 3.5 | **RESUELTO** (8c59ded5 — templates Django, 260 líneas) |
 | DT-09 | Form Builder sin condiciones de visibilidad en UI | Media | Sprint 4 | Pendiente |
 | DT-10 | Form Builder sin fórmulas de cálculo en UI | Media | Sprint 4 | Pendiente |
-| DT-11 | Comparación de versiones sin UI (endpoint existe, UI no) | Media | Sprint 3 | Pendiente |
-| DT-12 | Listado maestro PDF no implementado (solo JSON) | Baja | Sprint 3.5 | Pendiente |
+| DT-11 | ~~Comparación de versiones sin UI~~ | ~~Media~~ | Sprint 5 | **RESUELTO** (aa727939 — VersionDiffModal) |
+| DT-12 | ~~Listado maestro PDF no implementado~~ | ~~Baja~~ | Sprint 5 | **RESUELTO** (aa727939 — listado_maestro.html) |
 | DT-13 | 322 inline styles → Tailwind en features | Baja | Sprint 5b | Pendiente |
 | DT-14 | Secondary color no dinámico (hardcodeado #000000) | Baja | Sprint 5b | Pendiente |
-| DT-15 | Búsqueda full-text básica (icontains, sin ranking) | Baja | Sprint 6 | Pendiente |
-| DT-16 | Sin revelación progresiva por rol (todos ven todos los tabs) | Baja | Sprint 5b | Pendiente |
-| DT-17 | Verificación sellado X.509 sin UI (endpoint existe, botón no) | Baja | Sprint 4 | Pendiente |
+| DT-15 | ~~Búsqueda full-text básica (icontains)~~ | ~~Baja~~ | Sprint 6 | **RESUELTO** (160862e1 — tsvector + SearchQuery) |
+| DT-16 | ~~Sin revelación progresiva por rol~~ | ~~Baja~~ | Sprint 5b | **RESUELTO** (aa727939 — canDo() en Dashboard) |
+| DT-17 | ~~Verificación sellado X.509 sin UI~~ | ~~Baja~~ | Sprint 4 | **RESUELTO** (934a7fad — botón Verificar) |
+| DT-18 | Campo `codigo_legacy` faltante para documentos adoptados | Alta | Sprint 8 | Pendiente |
+| DT-19 | Camino B no implementado (PDF externo al ciclo de firmas) | Crítica | Sprint 8 | Pendiente |
+| DT-20 | Design System PDF no implementado en generador WeasyPrint | Alta | Sprint 9 | Pendiente |
+| DT-21 | TRD fase 2: campos en Documento + asignar_trd_automatica() | Alta | Sprint 10 | Pendiente |
+| DT-22 | Validación de firma única por usuario por documento | Alta | Sprint 10 | Pendiente |
+| DT-23 | Compresión automática de PDFs al upload | Media | Sprint 11 | Pendiente |
 
 ---
 

@@ -1,0 +1,490 @@
+/*
+ * StrateKaz SGI — Design System PDF
+ * WeasyPrint 60.x compatible (NO flex, NO grid)
+ * Versión 1.0 — Abril 2026
+ */
+
+/* =================================================================
+   1. VARIABLES (:root)
+   ================================================================= */
+:root {
+    /* Primarios del documento */
+    --sk-navy: #1B4F72;
+    --sk-blue: #2E86C1;
+    --sk-blue-light: #D6EAF8;
+    --sk-blue-lightest: #EBF5FB;
+
+    /* Texto */
+    --sk-dark: #2C3E50;
+    --sk-dark-soft: #34495E;
+    --sk-gray-600: #5A6978;
+    --sk-gray-500: #85929E;
+    --sk-gray-400: #A6ACAF;
+    --sk-gray-300: #BDC3C7;
+    --sk-gray-100: #EAECEE;
+    --sk-gray-50: #F4F6F7;
+
+    /* Semánticos */
+    --sk-success: #27AE60;
+    --sk-success-bg: #E8F8F5;
+    --sk-success-border: #82E0AA;
+    --sk-warning: #E67E22;
+    --sk-warning-bg: #FEF5E7;
+    --sk-warning-border: #F5CBA7;
+    --sk-danger: #C0392B;
+    --sk-danger-bg: #FDEDEC;
+    --sk-danger-border: #F1948A;
+    --sk-neutral: #85929E;
+    --sk-neutral-bg: #F4F6F7;
+    --sk-neutral-border: #D5D8DC;
+
+    /* Tipografía */
+    --sk-font-body: Arial, Helvetica, Liberation Sans, sans-serif;
+    --sk-font-heading: Arial, Helvetica, Liberation Sans, sans-serif;
+    --sk-font-mono: Courier New, Courier, Liberation Mono, monospace;
+
+    /* Escala */
+    --sk-text-xs: 7pt;
+    --sk-text-sm: 8pt;
+    --sk-text-base: 9.5pt;
+    --sk-text-md: 10pt;
+    --sk-text-lg: 11pt;
+    --sk-text-xl: 13pt;
+    --sk-text-2xl: 15pt;
+    --sk-text-3xl: 18pt;
+    --sk-text-4xl: 22pt;
+}
+
+/* =================================================================
+   2. @PAGE CONFIGURATION
+   ================================================================= */
+@page {
+    size: letter;
+    margin: 25mm 20mm 25mm 20mm;
+    @top-center { content: element(pageHeader); }
+    @bottom-center { content: element(pageFooter); }
+}
+
+/* =================================================================
+   3. HEADER RUNNING
+   ================================================================= */
+.page-header {
+    position: running(pageHeader);
+    padding-bottom: 2mm;
+    border-bottom: 1.5pt solid var(--sk-navy);
+    overflow: hidden;
+    font-family: var(--sk-font-body);
+}
+.page-header::after { content: ''; display: block; clear: both; }
+
+.header-left { float: left; }
+.header-logo { max-height: 12mm; max-width: 30mm; margin-right: 3mm; float: left; }
+.header-empresa { font-size: var(--sk-text-sm); font-weight: 700; color: var(--sk-navy); }
+.header-nit { font-size: var(--sk-text-xs); color: var(--sk-gray-500); }
+
+.header-right { float: right; text-align: right; }
+.header-doc-code { font-family: var(--sk-font-mono); font-size: var(--sk-text-sm); font-weight: 700; color: var(--sk-navy); }
+.header-doc-version { font-size: var(--sk-text-xs); color: var(--sk-gray-500); }
+
+/* =================================================================
+   4. FOOTER RUNNING
+   ================================================================= */
+.page-footer {
+    position: running(pageFooter);
+    padding-top: 1mm;
+    border-top: 0.75pt solid var(--sk-gray-300);
+    font-family: var(--sk-font-body);
+    font-size: var(--sk-text-xs);
+    color: var(--sk-gray-500);
+    overflow: hidden;
+}
+.page-footer::after { content: ''; display: block; clear: both; }
+
+.footer-left { float: left; }
+.footer-tech { color: var(--sk-navy); font-weight: 700; }
+.footer-separator { color: var(--sk-gray-300); margin: 0 1mm; }
+.footer-center { display: inline-block; width: 50%; text-align: center; }
+.footer-right { float: right; }
+.footer-page::after { content: "Página " counter(page) " de " counter(pages); }
+
+/* =================================================================
+   5. BASE TYPOGRAPHY
+   ================================================================= */
+body {
+    font-family: var(--sk-font-body);
+    font-size: var(--sk-text-base);
+    line-height: 1.5;
+    color: var(--sk-dark);
+    margin: 0;
+    padding: 0;
+}
+
+h1, .sk-h1 {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-2xl);
+    font-weight: 700;
+    color: var(--sk-navy);
+    border-bottom: 2.5pt solid var(--sk-navy);
+    padding-bottom: 2mm;
+    margin: 8mm 0 5mm 0;
+    page-break-after: avoid;
+}
+
+h2, .sk-h2 {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-xl);
+    font-weight: 700;
+    color: var(--sk-blue);
+    border-left: 2.5pt solid var(--sk-blue);
+    padding-left: 3mm;
+    margin: 5mm 0 3mm 0;
+    page-break-after: avoid;
+}
+
+h3, .sk-h3 {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-lg);
+    font-weight: 600;
+    color: var(--sk-dark-soft);
+    margin: 3mm 0 2mm 0;
+    page-break-after: avoid;
+}
+
+h4, .sk-h4 {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-md);
+    font-weight: 600;
+    color: var(--sk-gray-600);
+}
+
+p { margin: 0 0 2mm 0; }
+
+/* =================================================================
+   6. TABLES
+   ================================================================= */
+.sk-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0;
+    page-break-inside: auto;
+}
+.sk-table thead { display: table-header-group; }
+.sk-table tr { page-break-inside: avoid; }
+.sk-table th {
+    background: var(--sk-navy);
+    color: white;
+    font-weight: 700;
+    font-size: var(--sk-text-sm);
+    padding: 2mm 3mm;
+    text-align: left;
+    border: 0.3pt solid var(--sk-gray-300);
+}
+.sk-table td {
+    font-size: var(--sk-text-sm);
+    color: var(--sk-dark);
+    padding: 1.5mm 3mm;
+    border: 0.3pt solid var(--sk-gray-300);
+}
+.sk-table tbody tr:nth-child(even) { background: var(--sk-gray-50); }
+.sk-table tbody tr:nth-child(odd) { background: white; }
+
+.sk-table-compact th,
+.sk-table-compact td {
+    font-size: var(--sk-text-xs);
+    padding: 1mm 2mm;
+}
+
+/* Tabla de metadatos (2 columnas label-valor) */
+.sk-table-meta { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+.sk-table-meta td { padding: 1.5mm 2mm; font-size: var(--sk-text-sm); border: none; }
+.sk-table-meta tr:nth-child(even) { background: var(--sk-gray-50); }
+.sk-table-meta .meta-label { width: 35mm; font-weight: 700; color: var(--sk-gray-600); }
+
+/* =================================================================
+   7. CALLOUT BOXES
+   ================================================================= */
+.sk-callout {
+    padding: 3mm 4mm;
+    margin: 3mm 0 4mm 0;
+    border-radius: 0 2mm 2mm 0;
+    font-size: var(--sk-text-base);
+    line-height: 1.4;
+    page-break-inside: avoid;
+}
+.sk-callout-info    { border-left: 3pt solid var(--sk-blue);    background: var(--sk-blue-lightest); }
+.sk-callout-success { border-left: 3pt solid var(--sk-success); background: var(--sk-success-bg); }
+.sk-callout-warning { border-left: 3pt solid var(--sk-warning); background: var(--sk-warning-bg); }
+.sk-callout-danger  { border-left: 3pt solid var(--sk-danger);  background: var(--sk-danger-bg); }
+.sk-callout-neutral { border-left: 3pt solid var(--sk-gray-500); background: var(--sk-neutral-bg); }
+
+/* =================================================================
+   8. BADGES
+   ================================================================= */
+.sk-badge {
+    display: inline-block;
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-xs);
+    font-weight: 700;
+    padding: 0.5mm 2.5mm;
+    border-radius: 1mm;
+    border: 0.3pt solid;
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+}
+.sk-badge-borrador    { background: #F4F6F7; color: #5A6978; border-color: #D5D8DC; }
+.sk-badge-en_revision { background: #FEF5E7; color: #E67E22; border-color: #F5CBA7; }
+.sk-badge-aprobado    { background: #D4EFDF; color: #1E8449; border-color: #82E0AA; }
+.sk-badge-publicado   { background: #E8F8F5; color: #27AE60; border-color: #82E0AA; }
+.sk-badge-obsoleto    { background: #FDEDEC; color: #C0392B; border-color: #F1948A; }
+.sk-badge-archivado   { background: #EBF5FB; color: #2E86C1; border-color: #AED6F1; }
+.sk-badge-eliminado   { background: #F4F6F7; color: #85929E; border-color: #BDC3C7; }
+
+/* =================================================================
+   9. SEPARATORS
+   ================================================================= */
+.sk-hr-primary { border: none; border-top: 2pt solid var(--sk-navy); margin: 6mm 0; }
+.sk-hr-soft    { border: none; border-top: 0.5pt solid var(--sk-gray-300); margin: 4mm 0; }
+.sk-hr-accent  { border: none; border-top: 3pt solid var(--sk-blue); width: 40%; margin: 5mm auto; }
+
+/* =================================================================
+   10. CODE BLOCKS / REFERENCE
+   ================================================================= */
+.sk-code {
+    background: var(--sk-gray-50);
+    border: 0.5pt solid var(--sk-neutral-border);
+    border-left: 3pt solid var(--sk-gray-500);
+    border-radius: 0 2mm 2mm 0;
+    padding: 3mm 4mm;
+    font-family: var(--sk-font-mono);
+    font-size: var(--sk-text-sm);
+    line-height: 1.4;
+    color: var(--sk-dark);
+    margin: 3mm 0;
+    page-break-inside: avoid;
+    white-space: pre-wrap;
+}
+.sk-ref-legal {
+    background: var(--sk-blue-lightest);
+    border: 0.5pt solid #AED6F1;
+    border-radius: 2mm;
+    padding: 3mm 4mm;
+    font-size: 8.5pt;
+    font-style: italic;
+    color: var(--sk-dark-soft);
+    margin: 3mm 0;
+}
+
+/* =================================================================
+   11. LISTS
+   ================================================================= */
+.sk-list { padding-left: 6mm; margin: 2mm 0 4mm 0; }
+.sk-list li { margin-bottom: 1.5mm; font-size: var(--sk-text-base); line-height: 1.4; }
+.sk-list li::marker { color: var(--sk-blue); font-weight: bold; }
+
+.sk-list-numbered { padding-left: 6mm; margin: 2mm 0 4mm 0; list-style-type: decimal; }
+.sk-list-numbered li { margin-bottom: 1.5mm; font-size: var(--sk-text-base); line-height: 1.4; }
+.sk-list-numbered li::marker { color: var(--sk-navy); font-weight: bold; }
+
+/* =================================================================
+   12. SIGNATURE BLOCKS (inline-block — NO flex)
+   ================================================================= */
+.sk-firmas {
+    text-align: center;
+    margin-top: 8mm;
+    padding-top: 5mm;
+    border-top: 0.75pt solid var(--sk-gray-300);
+    page-break-inside: avoid;
+}
+.sk-firma-bloque {
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    min-width: 40mm;
+    margin: 0 2mm;
+}
+.sk-firmas[data-count="1"] .sk-firma-bloque { width: 50%; }
+.sk-firmas[data-count="2"] .sk-firma-bloque { width: 45%; }
+.sk-firmas[data-count="3"] .sk-firma-bloque { width: 30%; }
+.sk-firmas[data-count="4"] .sk-firma-bloque { width: 45%; margin-bottom: 3mm; }
+.sk-firmas[data-count="5"] .sk-firma-bloque,
+.sk-firmas[data-count="6"] .sk-firma-bloque { width: 30%; margin-bottom: 3mm; }
+
+.sk-firma-etiqueta {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-xs);
+    font-weight: 700;
+    color: var(--sk-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    margin-bottom: 2mm;
+}
+.sk-firma-imagen { min-height: 15mm; text-align: center; line-height: 15mm; }
+.sk-firma-img { max-width: 35mm; max-height: 15mm; }
+.sk-firma-pendiente { font-size: var(--sk-text-xs); color: var(--sk-gray-500); font-style: italic; padding: 4mm 0; }
+.sk-firma-rechazado { font-size: var(--sk-text-xs); color: var(--sk-danger); font-weight: 700; padding: 4mm 0; }
+.sk-firma-linea { border-top: 0.75pt solid var(--sk-dark); width: 80%; margin: 1.5mm auto; }
+.sk-firma-nombre { font-size: var(--sk-text-sm); font-weight: 700; color: var(--sk-dark); }
+.sk-firma-cargo { font-size: var(--sk-text-xs); color: var(--sk-gray-600); }
+.sk-firma-fecha { font-size: 6.5pt; color: var(--sk-gray-500); }
+.sk-firma-hash { font-family: var(--sk-font-mono); font-size: 6pt; color: var(--sk-gray-400); }
+
+/* =================================================================
+   13. X.509 SEAL
+   ================================================================= */
+.sk-sello-x509 {
+    border: 1pt solid var(--sk-navy);
+    border-radius: 2mm;
+    padding: 2mm 3mm;
+    font-size: 6.5pt;
+    color: var(--sk-dark);
+    max-width: 55mm;
+    margin-top: 5mm;
+    float: left;
+}
+.sk-sello-titulo {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-xs);
+    font-weight: 700;
+    color: var(--sk-navy);
+    text-transform: uppercase;
+    letter-spacing: 0.3pt;
+    margin-bottom: 1mm;
+    border-bottom: 0.5pt solid var(--sk-gray-300);
+    padding-bottom: 1mm;
+}
+.sk-qr-container { float: right; text-align: center; margin-top: 5mm; }
+.sk-qr-img { width: 18mm; height: 18mm; }
+.sk-qr-label { font-size: 6pt; color: var(--sk-gray-500); margin-top: 1mm; }
+.sk-sello-section { overflow: hidden; margin-top: 5mm; }
+.sk-sello-section::after { content: ''; display: block; clear: both; }
+
+/* =================================================================
+   14. WATERMARKS
+   ================================================================= */
+.sk-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    font-family: var(--sk-font-heading);
+    font-size: 48pt;
+    font-weight: 900;
+    white-space: nowrap;
+    z-index: -1;
+    pointer-events: none;
+}
+.sk-watermark-borrador    { color: rgba(200,200,200,0.20); }
+.sk-watermark-en_revision { color: rgba(200,200,200,0.20); }
+.sk-watermark-publicado   { color: rgba(200,200,200,0.15); }
+.sk-watermark-obsoleto    { color: rgba(220,50,50,0.15); }
+.sk-watermark-archivado   { color: rgba(200,200,200,0.15); }
+.sk-watermark-eliminado   { color: rgba(220,50,50,0.20); }
+
+.sk-watermark-sub {
+    display: block;
+    font-size: 16pt;
+    font-weight: 400;
+    margin-top: 2mm;
+}
+
+/* =================================================================
+   15. COVER PAGE (portada)
+   ================================================================= */
+.sk-portada {
+    text-align: center;
+    padding-top: 40mm;
+    page-break-after: always;
+}
+.sk-portada-logo { max-height: 25mm; margin-bottom: 8mm; }
+.sk-portada-empresa {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-xl);
+    font-weight: 700;
+    color: var(--sk-navy);
+    margin-bottom: 2mm;
+}
+.sk-portada-nit { font-size: var(--sk-text-sm); color: var(--sk-gray-500); margin-bottom: 12mm; }
+.sk-portada-titulo {
+    font-family: var(--sk-font-heading);
+    font-size: var(--sk-text-4xl);
+    font-weight: 900;
+    color: var(--sk-navy);
+    margin-bottom: 5mm;
+    line-height: 1.2;
+}
+.sk-portada-meta { font-size: var(--sk-text-sm); color: var(--sk-gray-600); margin-bottom: 2mm; }
+.sk-portada-footer {
+    position: absolute;
+    bottom: 25mm;
+    left: 20mm;
+    right: 20mm;
+    text-align: center;
+    font-size: var(--sk-text-xs);
+    color: var(--sk-gray-500);
+    border-top: 0.75pt solid var(--sk-gray-300);
+    padding-top: 3mm;
+}
+
+/* =================================================================
+   16. UTILITIES
+   ================================================================= */
+.sk-no-break { page-break-inside: avoid; }
+.sk-break-before { page-break-before: always; }
+.sk-text-center { text-align: center; }
+.sk-text-right { text-align: right; }
+.sk-text-muted { color: var(--sk-gray-500); }
+.sk-text-sm { font-size: var(--sk-text-sm); }
+.sk-text-xs { font-size: var(--sk-text-xs); }
+.sk-mt-4 { margin-top: 4mm; }
+.sk-mb-4 { margin-bottom: 4mm; }
+
+/* Contenido del documento (HTML del editor) */
+.sk-content { margin-top: 4mm; line-height: 1.6; }
+.sk-content img { max-width: 100%; height: auto; }
+.sk-content table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+.sk-content th, .sk-content td { padding: 2mm 3mm; border: 0.3pt solid var(--sk-gray-300); font-size: var(--sk-text-sm); }
+.sk-content th { background: var(--sk-gray-50); font-weight: 700; color: var(--sk-dark); }
+.sk-content ul, .sk-content ol { padding-left: 6mm; margin: 2mm 0; }
+.sk-content li { margin-bottom: 1mm; }
+
+/* Metadata document grid */
+.sk-metadata {
+    background: var(--sk-gray-50);
+    border: 0.5pt solid var(--sk-gray-300);
+    border-left: 4pt solid var(--sk-blue);
+    border-radius: 0 2mm 2mm 0;
+    padding: 3mm 4mm;
+    margin-bottom: 5mm;
+}
+.sk-metadata-item {
+    display: inline-block;
+    width: 48%;
+    margin-bottom: 2mm;
+    vertical-align: top;
+    padding-right: 2mm;
+    box-sizing: border-box;
+}
+.sk-metadata-label {
+    font-size: var(--sk-text-xs);
+    color: var(--sk-gray-600);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    display: block;
+}
+.sk-metadata-value {
+    font-size: var(--sk-text-md);
+    color: var(--sk-navy);
+    font-weight: 600;
+    display: block;
+    margin-top: 0.5mm;
+}
+
+/* Generation footer */
+.sk-gen-footer {
+    margin-top: 5mm;
+    padding-top: 2mm;
+    border-top: 0.5pt solid var(--sk-gray-300);
+    font-size: var(--sk-text-xs);
+    color: var(--sk-gray-400);
+}

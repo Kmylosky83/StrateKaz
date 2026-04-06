@@ -1,98 +1,56 @@
 {% extends "pdf/base_weasyprint.html" %}
 
 {% block extra_styles %}
-    /* ── Contenido del documento ── */
+    /* ── Contenido del documento (HTML del editor TipTap) ── */
     .contenido-documento {
-        margin-top: 16px;
-        padding: 16px;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
+        margin-top: 4mm;
         line-height: 1.6;
     }
     .contenido-documento img  { max-width: 100%; height: auto; }
-    .contenido-documento table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+    .contenido-documento table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
     .contenido-documento th,
-    .contenido-documento td   { padding: 7px 10px; border: 1px solid #cbd5e0; font-size: 10pt; }
-    .contenido-documento th   { background: #edf2f7; font-weight: 700; color: #2d3748; }
+    .contenido-documento td   { padding: 2mm 3mm; border: 0.3pt solid var(--sk-gray-300); font-size: var(--sk-text-sm); }
+    .contenido-documento th   { background: var(--sk-gray-50); font-weight: 700; color: var(--sk-dark); }
     .contenido-documento ul,
-    .contenido-documento ol   { padding-left: 20px; margin: 8px 0; }
-    .contenido-documento li   { margin-bottom: 4px; }
-
-    /* ── Firmas digitales (inline-block — WeasyPrint) ── */
-    .firmas-section { margin-top: 32px; padding-top: 16px; border-top: 2px solid #2d3748; page-break-inside: avoid; }
-    .firmas-title   { font-size: 11pt; font-weight: 700; color: #1a365d; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
-    .firmas-grid    { width: 100%; font-size: 0; }
-    .firma-card {
-        display: inline-block;
-        width: 30%;
-        margin: 0 1.5% 8px 1.5%;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        padding: 10px 8px;
-        text-align: center;
-        background: #fafafa;
-        vertical-align: top;
-        font-size: 10pt;
-        box-sizing: border-box;
-    }
-    .firma-card-header  { font-size: 8.5pt; font-weight: 700; color: #2c5282; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-    .firma-imagen       { width: 140px; height: 55px; margin: 0 auto 6px; display: block; }
-    .firma-linea        { border-bottom: 1px solid #2d3748; width: 80%; margin: 0 auto 6px; }
-    .firma-nombre       { font-size: 9.5pt; font-weight: 600; color: #2d3748; }
-    .firma-cargo        { font-size: 8pt; color: #718096; margin-top: 2px; }
-    .firma-fecha        { font-size: 7pt; color: #a0aec0; margin-top: 3px; }
-    .firma-hash         { font-size: 5.5pt; color: #cbd5e0; font-family: monospace; margin-top: 2px; }
-    .firma-pendiente    { font-style: italic; color: #a0aec0; font-size: 9pt; padding: 16px 0; }
-    .firma-card-rechazado { border-color: #fc8181; }
-    .firma-card-rechazado .firma-card-header { color: #c53030; }
-    .firma-fecha-rechazo  { color: #c53030; }
-
-    /* ── QR (float-based) ── */
-    .qr-section        { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px; overflow: hidden; }
-    .qr-section::after { content: ''; display: table; clear: both; }
-    .qr-code  { float: left; width: 72px; height: 72px; margin-right: 12px; }
-    .qr-info  { overflow: hidden; font-size: 7pt; color: #a0aec0; line-height: 1.5; }
-    .qr-hash  { font-family: monospace; font-size: 6.5pt; color: #718096; }
+    .contenido-documento ol   { padding-left: 6mm; margin: 2mm 0; }
+    .contenido-documento li   { margin-bottom: 1mm; }
 
     /* ── Formulario dinámico ── */
-    .form-seccion       { margin: 14px 0 6px 0; padding-bottom: 4px; border-bottom: 1px solid #cbd5e0; }
-    .form-campo         { margin-bottom: 10px; overflow: hidden; }
+    .form-seccion       { margin: 4mm 0 2mm 0; padding-bottom: 1mm; border-bottom: 0.5pt solid var(--sk-gray-300); }
+    .form-campo         { margin-bottom: 3mm; overflow: hidden; }
     .form-campo::after  { content: ''; display: table; clear: both; }
-    .form-label         { float: left; width: 35%; font-size: 9pt; font-weight: 700; color: #4a5568; padding-right: 8px; box-sizing: border-box; }
-    .form-valor         { float: left; width: 65%; font-size: 10pt; color: #2d3748; box-sizing: border-box; }
-    .form-valor-vacio   { color: #a0aec0; font-style: italic; }
-    .form-tabla         { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 9pt; }
-    .form-tabla th      { background: #edf2f7; font-weight: 700; padding: 5px 8px; border: 1px solid #cbd5e0; }
-    .form-tabla td      { padding: 5px 8px; border: 1px solid #cbd5e0; }
+    .form-label         { float: left; width: 35%; font-size: var(--sk-text-base); font-weight: 700; color: var(--sk-gray-600); padding-right: 2mm; box-sizing: border-box; }
+    .form-valor         { float: left; width: 65%; font-size: var(--sk-text-md); color: var(--sk-dark); box-sizing: border-box; }
+    .form-valor-vacio   { color: var(--sk-gray-400); font-style: italic; }
+    .form-tabla         { width: 100%; border-collapse: collapse; margin-top: 1mm; font-size: var(--sk-text-sm); }
+    .form-tabla th      { background: var(--sk-gray-50); font-weight: 700; padding: 1.5mm 2mm; border: 0.3pt solid var(--sk-gray-300); }
+    .form-tabla td      { padding: 1.5mm 2mm; border: 0.3pt solid var(--sk-gray-300); }
     .form-firma-img     { max-height: 50px; max-width: 120px; }
-
-    /* ── Pie de generación ── */
-    .gen-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #a0aec0; }
 
     /* ── Encabezados tipo-específicos ── */
     .tipo-header {
-        margin-bottom: 14px;
-        padding: 10px 14px;
-        border-left: 4px solid #2d3748;
-        background: #f7fafc;
+        margin-bottom: 4mm;
+        padding: 3mm 4mm;
+        border-left: 4pt solid var(--sk-dark);
+        background: var(--sk-gray-50);
         page-break-inside: avoid;
     }
-    .tipo-procedimiento { border-left-color: #3182ce; background: #ebf8ff; }
+    .tipo-procedimiento { border-left-color: var(--sk-blue); background: var(--sk-blue-lightest); }
     .tipo-manual        { border-left-color: #6b46c1; background: #faf5ff; }
-    .tipo-politica      { border-left-color: #2f855a; background: #f0fff4; }
-    .tipo-guia          { border-left-color: #b7791f; background: #fffff0; }
-    .tipo-plan          { border-left-color: #2b6cb0; background: #ebf8ff; }
-    .tipo-reglamento    { border-left-color: #c53030; background: #fff5f5; }
+    .tipo-politica      { border-left-color: var(--sk-success); background: var(--sk-success-bg); }
+    .tipo-guia          { border-left-color: var(--sk-warning); background: var(--sk-warning-bg); }
+    .tipo-plan          { border-left-color: var(--sk-blue); background: var(--sk-blue-lightest); }
+    .tipo-reglamento    { border-left-color: var(--sk-danger); background: var(--sk-danger-bg); }
     .tipo-programa      { border-left-color: #276749; background: #f0fff4; }
     .tipo-informe       { border-left-color: #744210; background: #fffaf0; }
     .tipo-acta          { border-left-color: #553c9a; background: #faf5ff; }
     .tipo-formato       { border-left-color: #2c7a7b; background: #e6fffa; }
 
-    .tipo-header-title    { font-size: 9pt; font-weight: 700; letter-spacing: 1px; color: #2d3748; text-transform: uppercase; margin-bottom: 6px; }
-    .tipo-header-subtitle { font-size: 8.5pt; color: #4a5568; margin: 0; }
-    .tipo-meta-table      { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-top: 6px; }
-    .tipo-meta-label      { width: 22%; font-weight: 700; color: #4a5568; padding: 3px 6px 3px 0; }
-    .tipo-meta-value      { width: 28%; color: #2d3748; padding: 3px 8px 3px 0; }
+    .tipo-header-title    { font-size: var(--sk-text-base); font-weight: 700; letter-spacing: 1px; color: var(--sk-dark); text-transform: uppercase; margin-bottom: 2mm; }
+    .tipo-header-subtitle { font-size: 8.5pt; color: var(--sk-dark-soft); margin: 0; }
+    .tipo-meta-table      { width: 100%; border-collapse: collapse; font-size: 8.5pt; margin-top: 2mm; }
+    .tipo-meta-label      { width: 22%; font-weight: 700; color: var(--sk-gray-600); padding: 1mm 2mm 1mm 0; }
+    .tipo-meta-value      { width: 28%; color: var(--sk-dark); padding: 1mm 2mm 1mm 0; }
 
     {% if custom_css %}{{ custom_css }}{% endif %}
 {% endblock %}
@@ -100,71 +58,105 @@
 {% block body %}
     {% include "pdf/gestion_documental/_watermark.html" %}
 
-    <!-- Cabecera corriente -->
-    <div class="header">
-        {% if logo_base64 %}
-            <img src="data:image/png;base64,{{ logo_base64 }}" class="header-logo" alt="Logo">
-        {% endif %}
-        <div class="header-text">
-            <strong>{{ razon_social }}</strong>
-            {% if nit %}NIT: {{ nit }}<br>{% endif %}
-            {{ documento_codigo }}
+    <!-- Header corriente (Design System) -->
+    <div class="page-header">
+        <div class="header-left">
+            {% if logo_base64 %}
+                <img src="data:image/png;base64,{{ logo_base64 }}" class="header-logo" alt="Logo">
+            {% endif %}
+            <div style="float:left">
+                <div class="header-empresa">{{ razon_social }}</div>
+                {% if nit %}<div class="header-nit">NIT: {{ nit }}</div>{% endif %}
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-doc-code">{{ documento_codigo }}</div>
+            <div class="header-doc-version">Versión {{ version_actual }}</div>
+            <span class="sk-badge sk-badge-{{ estado_key|lower }}">{{ estado_display }}</span>
         </div>
     </div>
 
-    <!-- Pie corriente -->
-    <div class="footer">
-        <span class="footer-left">{{ documento_codigo }} | v{{ version_actual }} | {{ estado_display }}</span>
-        <span class="footer-right page-number"></span>
+    <!-- Footer corriente (Design System) -->
+    <div class="page-footer">
+        <span class="footer-left">
+            <span class="footer-tech">StrateKaz</span>
+            <span class="footer-separator">|</span>
+            Consultoría 4.0
+        </span>
+        <span class="footer-center">Documento controlado — Impreso: {{ fecha_generacion }}</span>
+        <span class="footer-right footer-page"></span>
     </div>
 
     {% if encabezado_html %}{{ encabezado_html|safe }}{% endif %}
 
-    <h1>{{ titulo }}</h1>
+    <!-- Portada (solo ESTRATÉGICO y TÁCTICO) -->
+    {% if nivel_documento == 'ESTRATEGICO' or nivel_documento == 'TACTICO' %}
+    <div class="sk-portada">
+        {% if logo_base64 %}
+            <img src="data:image/png;base64,{{ logo_base64 }}" class="sk-portada-logo" alt="Logo">
+        {% endif %}
+        <div class="sk-portada-empresa">{{ razon_social }}</div>
+        {% if nit %}<div class="sk-portada-nit">NIT: {{ nit }}</div>{% endif %}
+        <hr class="sk-hr-accent">
+        <div class="sk-portada-titulo">{{ titulo }}</div>
+        <hr class="sk-hr-soft" style="width:60%;margin:5mm auto">
+        <div class="sk-portada-meta">Código: {{ documento_codigo }}</div>
+        <div class="sk-portada-meta">Versión: {{ version_actual }}</div>
+        {% if fecha_publicacion and fecha_publicacion != '—' %}
+        <div class="sk-portada-meta">Fecha: {{ fecha_publicacion }}</div>
+        {% endif %}
+        <div class="sk-portada-meta">Proceso: {{ proceso_nombre }}</div>
+        <div class="sk-portada-footer">
+            StrateKaz | Consultoría 4.0 — Documento controlado. Prohibida su reproducción parcial.
+        </div>
+    </div>
+    {% endif %}
+
+    <h1 class="sk-h1">{{ titulo }}</h1>
 
     <!-- Grid de metadatos ISO -->
-    <div class="document-metadata">
-        <div class="metadata-item">
-            <span class="metadata-label">Código</span>
-            <span class="metadata-value">{{ documento_codigo }}</span>
+    <div class="sk-metadata">
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Código</span>
+            <span class="sk-metadata-value">{{ documento_codigo }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Versión</span>
-            <span class="metadata-value">{{ version_actual }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Versión</span>
+            <span class="sk-metadata-value">{{ version_actual }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Estado</span>
-            <span class="metadata-value">
-                <span class="estado-badge estado-{{ estado_key }}">{{ estado_display }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Estado</span>
+            <span class="sk-metadata-value">
+                <span class="sk-badge sk-badge-{{ estado_key|lower }}">{{ estado_display }}</span>
             </span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Clasificación</span>
-            <span class="metadata-value">{{ clasificacion_display }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Clasificación</span>
+            <span class="sk-metadata-value">{{ clasificacion_display }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Tipo de Documento</span>
-            <span class="metadata-value">{{ tipo_documento_nombre }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Tipo</span>
+            <span class="sk-metadata-value">{{ tipo_documento_nombre }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Elaborado por</span>
-            <span class="metadata-value">{{ elaborado_nombre }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Elaborado por</span>
+            <span class="sk-metadata-value">{{ elaborado_nombre }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Revisado por</span>
-            <span class="metadata-value">{{ revisado_nombre }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Revisado por</span>
+            <span class="sk-metadata-value">{{ revisado_nombre }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Aprobado por</span>
-            <span class="metadata-value">{{ aprobado_nombre }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Aprobado por</span>
+            <span class="sk-metadata-value">{{ aprobado_nombre }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Fecha Publicación</span>
-            <span class="metadata-value">{{ fecha_publicacion }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Fecha Publicación</span>
+            <span class="sk-metadata-value">{{ fecha_publicacion }}</span>
         </div>
-        <div class="metadata-item">
-            <span class="metadata-label">Fecha Vigencia</span>
-            <span class="metadata-value">{{ fecha_vigencia }}</span>
+        <div class="sk-metadata-item">
+            <span class="sk-metadata-label">Fecha Vigencia</span>
+            <span class="sk-metadata-value">{{ fecha_vigencia }}</span>
         </div>
     </div>
 
@@ -185,7 +177,7 @@
 
     {% include "pdf/gestion_documental/_qr.html" %}
 
-    <div class="gen-footer">
+    <div class="sk-gen-footer">
         Generado el {{ fecha_generacion }} &nbsp;|&nbsp;
         {{ razon_social }} &nbsp;|&nbsp; StrateKaz SGI — Gestión Documental
     </div>

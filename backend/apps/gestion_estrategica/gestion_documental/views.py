@@ -369,6 +369,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
                 vector = (
                     SearchVector('codigo', weight='A', config='spanish') +
+                    SearchVector('codigo_legacy', weight='A', config='spanish') +
                     SearchVector('titulo', weight='A', config='spanish') +
                     SearchVector('resumen', weight='B', config='spanish') +
                     SearchVector('proceso__name', weight='C', config='spanish') +
@@ -381,7 +382,8 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                     .filter(
                         Q(rank__gt=0.01) |
                         Q(codigo__icontains=buscar) |
-                        Q(titulo__icontains=buscar)
+                        Q(titulo__icontains=buscar) |
+                        Q(codigo_legacy__icontains=buscar)
                     )
                     .order_by('-rank', '-fecha_publicacion', 'codigo')
                 )
@@ -389,7 +391,8 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             else:
                 queryset = queryset.filter(
                     Q(codigo__icontains=buscar) |
-                    Q(titulo__icontains=buscar)
+                    Q(titulo__icontains=buscar) |
+                    Q(codigo_legacy__icontains=buscar)
                 )
 
         return queryset.order_by('-created_at', '-fecha_publicacion', 'codigo')
@@ -1054,6 +1057,166 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         serializer = DocumentoDetailSerializer(documento)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['post'], url_path='adoptar-pdf')
+    def adoptar_pdf(self, request):
+        """
+        Camino B: Adoptar PDF externo al ciclo de firmas → publicación.
+        Crea documento BORRADOR con es_externo=True, asigna código StrateKaz,
+        opcionalmente guarda codigo_legacy, asigna firmantes y dispara OCR.
+
+        multipart/form-data:
+          archivo (File, PDF) — obligatorio
+          tipo_documento (int) — obligatorio
+          proceso (int, FK Area) — obligatorio
+          titulo (str) — opcional, default = nombre del archivo
+          clasificacion (str) — opcional, default INTERNO
+          codigo_legacy (str) — opcional, código original de la empresa
+          firmantes (JSON str) — opcional, lista de {usuario_id, rol}
+        """
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'error': 'Se requiere un archivo PDF'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Solo PDF — política absoluta
+        if not archivo.name.lower().endswith('.pdf'):
+            return Response(
+                {'error': 'Solo se aceptan archivos PDF. Si su documento está en otro formato, conviértalo a PDF antes de subirlo.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar magic bytes PDF (%PDF)
+        header = archivo.read(5)
+        archivo.seek(0)
+        if not header.startswith(b'%PDF'):
+            return Response(
+                {'error': 'El archivo no es un PDF válido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar tamaño (10 MB máximo para adopción)
+        max_size = 10 * 1024 * 1024
+        if archivo.size > max_size:
+            return Response(
+                {'error': 'El archivo excede el tamaño máximo de 10 MB'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar cuota de almacenamiento
+        from utils.storage import check_storage_quota
+        puede_subir, usado_gb, limite_gb = check_storage_quota(archivo.size)
+        if not puede_subir:
+            return Response(
+                {
+                    'error': (
+                        f'Cuota de almacenamiento excedida: '
+                        f'{usado_gb:.2f} GB de {limite_gb:.2f} GB usados.'
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tipo_documento_id = request.data.get('tipo_documento')
+        proceso_id = request.data.get('proceso')
+        if not tipo_documento_id or not proceso_id:
+            return Response(
+                {'error': 'Se requiere tipo_documento y proceso'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa = get_tenant_empresa()
+        tipo_doc = TipoDocumento.objects.get(id=tipo_documento_id)
+
+        # Resolver proceso (FK Area)
+        from apps.gestion_estrategica.organizacion.models import Area
+        try:
+            proceso = Area.objects.get(id=proceso_id)
+        except Area.DoesNotExist:
+            return Response(
+                {'error': 'Proceso no encontrado'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generar código StrateKaz
+        from .services import DocumentoService
+        codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id, proceso=proceso)
+
+        titulo = request.data.get('titulo', archivo.name.rsplit('.', 1)[0])
+        clasificacion = request.data.get('clasificacion', 'INTERNO')
+        codigo_legacy = request.data.get('codigo_legacy', '').strip() or None
+
+        documento = Documento.objects.create(
+            codigo=codigo,
+            titulo=titulo,
+            tipo_documento=tipo_doc,
+            proceso=proceso,
+            estado='BORRADOR',
+            clasificacion=clasificacion,
+            elaborado_por=request.user,
+            archivo_original=archivo,
+            es_externo=True,
+            codigo_legacy=codigo_legacy,
+            ocr_estado='PENDIENTE',
+            empresa_id=empresa.id,
+        )
+
+        # Asignar firmantes si se proporcionan
+        import json
+        firmantes_raw = request.data.get('firmantes')
+        if firmantes_raw:
+            try:
+                firmantes = json.loads(firmantes_raw) if isinstance(firmantes_raw, str) else firmantes_raw
+                self._crear_firmantes(documento, firmantes, empresa)
+            except (json.JSONDecodeError, TypeError, ValueError) as e:
+                # Documento ya creado, pero firmantes fallaron — no fatal
+                import logging
+                logging.getLogger('gestion_documental').warning(
+                    'adoptar_pdf: firmantes no válidos para doc %s: %s', documento.id, e
+                )
+
+        # Disparar OCR async
+        from django.db import connection
+        from .tasks import procesar_ocr_documento
+        procesar_ocr_documento.delay(documento.id, connection.schema_name)
+
+        serializer = DocumentoDetailSerializer(documento)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def _crear_firmantes(self, documento, firmantes, empresa):
+        """
+        Crea instancias FirmaDigital para el documento adoptado.
+        firmantes: [{usuario_id: int, rol: str}]
+        Valida firma única por usuario.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from django.apps import apps as dj_apps
+
+        FirmaDigital = dj_apps.get_model('firma_digital', 'FirmaDigital')
+        User = dj_apps.get_model('core', 'User')
+        ct = ContentType.objects.get_for_model(documento)
+
+        # Validar unicidad de usuarios
+        usuario_ids = [f['usuario_id'] for f in firmantes]
+        if len(usuario_ids) != len(set(usuario_ids)):
+            raise ValueError(
+                'Un mismo usuario no puede ocupar dos roles de firma en el mismo documento.'
+            )
+
+        for idx, f in enumerate(firmantes):
+            usuario = User.objects.get(id=f['usuario_id'])
+            rol = f.get('rol', 'APROBO')
+            FirmaDigital.objects.create(
+                content_type=ct,
+                object_id=str(documento.id),
+                firmante=usuario,
+                rol=rol,
+                orden=idx + 1,
+                estado='PENDIENTE',
+                empresa_id=empresa.id,
+            )
+
     @action(detail=False, methods=['post'], url_path='ingestar-lote')
     def ingestar_lote(self, request):
         """
@@ -1192,7 +1355,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         )
 
         search_vector = SearchVector(
-            'texto_extraido', 'titulo', 'resumen',
+            'codigo', 'codigo_legacy', 'titulo', 'resumen', 'texto_extraido',
             config='spanish'
         )
         search_query = SearchQuery(query, config='spanish')
@@ -1234,6 +1397,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 'texto_extracto': extracto,
                 'ocr_estado': doc.ocr_estado,
                 'es_externo': doc.es_externo,
+                'codigo_legacy': doc.codigo_legacy or '',
             })
 
         return Response(data)

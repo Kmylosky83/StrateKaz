@@ -552,6 +552,28 @@ export function useDigitalizar() {
   });
 }
 
+export function useAdoptarPdf() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: FormData) => {
+      return documentoApi.adoptarPdf(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: gestionDocumentalKeys.listadoMaestro(),
+      });
+      toast.success('Documento adoptado exitosamente. Se asignaron firmantes y se inició OCR.');
+    },
+    onError: (error: unknown) => {
+      const msg =
+        (error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Error al adoptar el documento';
+      toast.error(msg);
+    },
+  });
+}
+
 export function useIngestarExterno() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -323,6 +323,14 @@ class Documento(models.Model):
         ('PUBLICADO', 'Publicado'),
         ('OBSOLETO', 'Obsoleto'),
         ('ARCHIVADO', 'Archivado'),
+        ('ELIMINADO', 'Eliminado'),
+    ]
+
+    DISPOSICION_CHOICES = [
+        ('ELIMINAR', 'Eliminar'),
+        ('CONSERVAR_PERMANENTE', 'Conservar permanentemente'),
+        ('SELECCIONAR', 'Seleccionar'),
+        ('DIGITALIZAR', 'Digitalizar'),
     ]
 
     CLASIFICACION_CHOICES = [
@@ -737,6 +745,44 @@ class Documento(models.Model):
         null=True,
         verbose_name='Archivo Original',
         help_text='PDF original subido externamente para OCR'
+    )
+    codigo_legacy = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Código original de la empresa',
+        help_text='Código del documento antes de ingresar al sistema StrateKaz'
+    )
+
+    # TRD — Tabla de Retención Documental (Sprint 10)
+    trd_aplicada = models.ForeignKey(
+        'TablaRetencionDocumental',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Regla TRD aplicada',
+    )
+    fecha_fin_gestion = models.DateField(
+        null=True, blank=True,
+        verbose_name='Fecha fin archivo de gestión',
+    )
+    fecha_fin_central = models.DateField(
+        null=True, blank=True,
+        verbose_name='Fecha fin archivo central',
+    )
+    disposicion_asignada = models.CharField(
+        max_length=25,
+        choices=DISPOSICION_CHOICES,
+        null=True, blank=True,
+        verbose_name='Disposición final asignada',
+    )
+    acta_eliminacion = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='documentos_eliminados',
+        verbose_name='Acta de eliminación',
     )
 
     # Sellado PDF (Mejora 2 — ISO 27001)

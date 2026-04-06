@@ -68,6 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-spa \
     poppler-utils \
+    ghostscript \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

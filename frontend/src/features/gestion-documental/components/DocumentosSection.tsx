@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   SlidersHorizontal,
   X,
+  FileCheck,
 } from 'lucide-react';
 import {
   Card,
@@ -46,6 +47,7 @@ import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { useDocumentoContentType } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { AsignarFirmantesModal } from './AsignarFirmantesModal';
 import IngestarExternoModal from './IngestarExternoModal';
+import AdoptarPdfModal from './AdoptarPdfModal';
 import OcrStatusBadge from './OcrStatusBadge';
 import ScoreBadge from './ScoreBadge';
 import type { Documento } from '../types/gestion-documental.types';
@@ -125,6 +127,7 @@ export function DocumentosSection({
     titulo: string;
   } | null>(null);
   const [showIngestarModal, setShowIngestarModal] = useState(false);
+  const [showAdoptarModal, setShowAdoptarModal] = useState(false);
   const [digitalizarDocumento, setDigitalizarDocumento] = useState<Documento | null>(null);
 
   const handleViewChange = (mode: ViewMode) => {
@@ -280,13 +283,22 @@ export function DocumentosSection({
                 <Button
                   variant="outline"
                   size="sm"
+                  leftIcon={<FileCheck className="w-4 h-4" />}
+                  onClick={() => setShowAdoptarModal(true)}
+                >
+                  Adoptar PDF
+                </Button>
+              </ProtectedAction>
+              <ProtectedAction permission="gestion_documental.repositorio.create">
+                <Button
+                  variant="outline"
+                  size="sm"
                   leftIcon={<Upload className="w-4 h-4" />}
                   onClick={() => setShowIngestarModal(true)}
                 >
                   Ingestar PDF
                 </Button>
               </ProtectedAction>
-              {/* Ingesta Masiva vive en el tab Archivo — no en creación */}
               <ProtectedAction permission="gestion_documental.repositorio.create">
                 <Button
                   variant="primary"
@@ -530,6 +542,8 @@ export function DocumentosSection({
         isOpen={showIngestarModal}
         onClose={() => setShowIngestarModal(false)}
       />
+
+      <AdoptarPdfModal isOpen={showAdoptarModal} onClose={() => setShowAdoptarModal(false)} />
 
       {digitalizarDocumento && (
         <Suspense fallback={null}>

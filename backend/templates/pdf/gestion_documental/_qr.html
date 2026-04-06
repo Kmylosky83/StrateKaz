@@ -1,20 +1,18 @@
-{% if qr_base64 %}
-<div class="qr-section">
-    <img src="data:image/png;base64,{{ qr_base64 }}" class="qr-code" alt="QR Verificación">
-    <div class="qr-info">
-        <strong>Verificación de autenticidad</strong><br>
-        Escanee el código QR para verificar este documento.<br>
-        <span class="qr-hash">SHA-256: {{ doc_hash }}</span><br>
-        {{ documento_codigo }} | v{{ version_actual }} | {{ razon_social }}<br>
-        Generado: {{ fecha_generacion }}
+{% if qr_base64 or doc_hash %}
+<div class="sk-sello-section">
+    <div class="sk-sello-x509">
+        <div class="sk-sello-titulo">Documento controlado</div>
+        <div><strong>Código:</strong> {{ documento_codigo }}</div>
+        <div><strong>Versión:</strong> {{ version_actual }}</div>
+        <div><strong>Empresa:</strong> {{ razon_social }}</div>
+        <div><strong>Generado:</strong> {{ fecha_generacion }}</div>
+        {% if doc_hash %}<div style="font-family:var(--sk-font-mono);font-size:5.5pt;color:var(--sk-gray-400);margin-top:1mm">SHA-256: {{ doc_hash }}</div>{% endif %}
     </div>
-</div>
-{% elif doc_hash %}
-<div class="qr-section">
-    <div class="qr-info">
-        <strong>Verificación de autenticidad</strong><br>
-        <span class="qr-hash">SHA-256: {{ doc_hash }}</span><br>
-        {{ documento_codigo }} | v{{ version_actual }}
+    {% if qr_base64 %}
+    <div class="sk-qr-container">
+        <img src="data:image/png;base64,{{ qr_base64 }}" class="sk-qr-img" alt="QR Verificación">
+        <div class="sk-qr-label">Verificar autenticidad</div>
     </div>
+    {% endif %}
 </div>
 {% endif %}

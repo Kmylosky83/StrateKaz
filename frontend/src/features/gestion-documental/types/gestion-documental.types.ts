@@ -20,7 +20,8 @@ export type EstadoDocumento =
   | 'APROBADO'
   | 'PUBLICADO'
   | 'OBSOLETO'
-  | 'ARCHIVADO';
+  | 'ARCHIVADO'
+  | 'ELIMINADO';
 
 export type ClasificacionDocumento = 'PUBLICO' | 'INTERNO' | 'CONFIDENCIAL' | 'RESTRINGIDO';
 
@@ -258,6 +259,11 @@ export interface Documento {
   es_auto_generado?: boolean;
   es_externo: boolean;
   archivo_original?: string | null;
+  codigo_legacy?: string | null;
+  trd_aplicada?: number | null;
+  fecha_fin_gestion?: string | null;
+  fecha_fin_central?: string | null;
+  disposicion_asignada?: string | null;
   modulo_origen?: string;
   // Scoring (Fase 6)
   score_cumplimiento?: number;

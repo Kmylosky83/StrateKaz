@@ -87,6 +87,66 @@ class DocumentoService:
         }
 
     @classmethod
+    def asignar_trd_automatica(cls, documento, calcular_fechas=False):
+        """
+        Asigna regla TRD a un documento.
+
+        Paso 1 (siempre): Asigna trd_aplicada y disposicion_asignada (informativo).
+        Paso 2 (solo si calcular_fechas=True): Calcula fechas de retención
+        a partir de fecha_archivado (cuando el doc entra a ARCHIVADO).
+
+        Se llama desde:
+        - crear_desde_modulo() / adoptar_pdf → calcular_fechas=False
+        - archivar_registro() / transición a ARCHIVADO → calcular_fechas=True
+        """
+        from dateutil.relativedelta import relativedelta
+
+        retencion = cls.resolver_retencion(documento)
+
+        TablaRetencionDocumental = apps.get_model(
+            'gestion_documental', 'TablaRetencionDocumental'
+        )
+        trd_obj = None
+        if retencion['fuente'] == 'TRD' and documento.proceso_id:
+            trd_obj = TablaRetencionDocumental.objects.filter(
+                tipo_documento=documento.tipo_documento,
+                proceso_id=documento.proceso_id,
+                activo=True,
+                empresa_id=documento.empresa_id,
+            ).first()
+
+        update_fields = ['trd_aplicada', 'disposicion_asignada']
+        documento.trd_aplicada = trd_obj
+        documento.disposicion_asignada = retencion['disposicion']
+
+        if calcular_fechas:
+            fecha_base = getattr(documento, 'fecha_archivado', None)
+            if not fecha_base:
+                from django.utils import timezone
+                fecha_base = timezone.localdate()
+
+            if retencion['gestion'] > 0:
+                documento.fecha_fin_gestion = fecha_base + relativedelta(
+                    years=retencion['gestion']
+                )
+            else:
+                documento.fecha_fin_gestion = fecha_base
+
+            documento.fecha_fin_central = (
+                documento.fecha_fin_gestion + relativedelta(
+                    years=retencion['central']
+                )
+            )
+            update_fields.extend(['fecha_fin_gestion', 'fecha_fin_central'])
+
+        documento.save(update_fields=update_fields)
+        logger.info(
+            '[asignar_trd] Doc %s: fuente=%s, disposicion=%s, fechas=%s',
+            documento.codigo, retencion['fuente'],
+            retencion['disposicion'], calcular_fechas,
+        )
+
+    @classmethod
     def generar_codigo(cls, tipo_documento, empresa_id, proceso=None):
         """
         Genera código TIPO-PROCESO-NNN (ej: PR-SST-001).
@@ -438,6 +498,22 @@ class DocumentoService:
                 raise ValueError(
                     'No se puede publicar: hay firmas pendientes o rechazadas. '
                     f'Firmadas: {estado_firmas["firmadas"]}/{estado_firmas["total"]}'
+                )
+
+            # Sprint 10: Solo APROBÓ dispara publicación
+            FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
+            from django.contrib.contenttypes.models import ContentType
+            ct = ContentType.objects.get_for_model(doc)
+            tiene_aprobacion = FirmaDigital.objects.filter(
+                content_type=ct,
+                object_id=str(doc.id),
+                rol='APROBO',
+                estado='FIRMADA',
+            ).exists()
+            if not tiene_aprobacion:
+                raise ValueError(
+                    'El documento no puede publicarse sin la firma de aprobación (APROBÓ). '
+                    'Verifique que el flujo de firmas incluya el rol APROBÓ.'
                 )
 
         doc.estado = 'PUBLICADO'

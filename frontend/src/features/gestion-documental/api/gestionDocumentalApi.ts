@@ -194,6 +194,12 @@ export const documentoApi = {
     return response.data;
   },
 
+  // Camino B — Adoptar PDF externo al ciclo de firmas
+  adoptarPdf: async (data: FormData): Promise<Documento> => {
+    const response = await apiClient.post(`${BASE_URL}/documentos/adoptar-pdf/`, data);
+    return response.data;
+  },
+
   // OCR — Fase 5
   ingestarExterno: async (data: FormData): Promise<Documento> => {
     const response = await apiClient.post(`${BASE_URL}/documentos/ingestar-externo/`, data);

@@ -20,10 +20,14 @@ Características:
 """
 import base64
 import hashlib
+import logging
+import os
 from io import BytesIO
 from datetime import datetime
 
 from django.template.loader import render_to_string
+
+logger = logging.getLogger('gestion_documental')
 
 try:
     from weasyprint import HTML
@@ -151,6 +155,19 @@ class DocumentoPDFGenerator:
     # Construcción del contexto para el template
     # =========================================================================
 
+    def _load_design_system_css(self):
+        """Carga el CSS del Design System PDF desde el archivo estático."""
+        css_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            'static', 'css', 'pdf_design_system.css'
+        )
+        try:
+            with open(css_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            logger.warning('Design System CSS no encontrado: %s', css_path)
+            return ''
+
     def _build_context(self, documento, usuario):
         empresa_info = self._get_empresa_info()
         fecha_generacion = datetime.now().strftime('%d/%m/%Y %H:%M')
@@ -194,7 +211,15 @@ class DocumentoPDFGenerator:
             else:
                 areas_aplicacion_str = str(documento.areas_aplicacion)
 
+        # Nivel del tipo documental (para portada condicional)
+        nivel_documento = ''
+        if tipo_doc and hasattr(tipo_doc, 'nivel_documento'):
+            nivel_documento = tipo_doc.nivel_documento or ''
+
         return {
+            # Design System CSS
+            'design_system_css': self._load_design_system_css(),
+
             # Empresa
             'razon_social': empresa_info['razon_social'],
             'nit': empresa_info['nit'],
@@ -235,6 +260,7 @@ class DocumentoPDFGenerator:
             'tipo_categoria': tipo_categoria,
             'proceso_nombre': proceso_nombre,
             'areas_aplicacion_str': areas_aplicacion_str,
+            'nivel_documento': nivel_documento,
 
             # Contenido
             'es_formulario': es_formulario,
@@ -434,6 +460,7 @@ class DocumentoPDFGenerator:
         total_documentos = sum(len(b['documentos']) for b in bloques)
 
         context = {
+            'design_system_css': self._load_design_system_css(),
             'razon_social': empresa_info['razon_social'],
             'nit': empresa_info['nit'],
             'logo_base64': self.logo_base64,

@@ -1,21 +1,6 @@
 {% if watermark_texto %}
-<style>
-    .watermark {
-        position: fixed;
-        top: 40%;
-        left: 10%;
-        width: 80%;
-        text-align: center;
-        transform: rotate(-35deg);
-        font-size: 48pt;
-        color: {{ watermark_color }};
-        font-weight: 900;
-        letter-spacing: 8px;
-        z-index: -1;
-    }
-</style>
-<div class="watermark">
-    {{ watermark_texto }}{% if watermark_subtexto %}<br>
-    <span style="font-size: 14pt;">{{ watermark_subtexto }}</span>{% endif %}
+<div class="sk-watermark sk-watermark-{{ estado_key|lower }}">
+    {{ watermark_texto }}{% if watermark_subtexto %}
+    <span class="sk-watermark-sub">{{ watermark_subtexto }}</span>{% endif %}
 </div>
 {% endif %}

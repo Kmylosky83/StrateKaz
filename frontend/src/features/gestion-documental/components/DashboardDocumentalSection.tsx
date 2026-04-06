@@ -37,12 +37,7 @@ export function DashboardDocumentalSection({
 
   const { data: documentos, isLoading: isLoadingDocs } = useDocumentos();
   const { data: estadisticas } = useEstadisticasDocumentales();
-  const {
-    firmasPendientes,
-    totalPendientes,
-    miTurno,
-    isLoading: firmasLoading,
-  } = useMisFirmasPendientes();
+  const { firmasPendientes, miTurno, isLoading: firmasLoading } = useMisFirmasPendientes();
   const { data: lecturasPendientes } = useMisPendientes();
 
   const misBorradores = documentos?.filter((d) => d.estado === 'BORRADOR') ?? [];

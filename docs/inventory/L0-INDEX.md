@@ -2,7 +2,81 @@
 
 **Fecha:** 2026-04-06
 **Alcance:** backend/apps/core/ + backend/apps/ia/ + frontend core-related
-**Total LOC:** ~65,000 (backend core: 47,301 + IA: 2,423 + frontend: ~15,400)
+**Total LOC medido:** 42,528 (apps/core sin migrations) + 2,128 (apps/ia sin migrations) + ~15,400 (frontend)
+
+---
+
+## Validación Cruzada (2026-04-06)
+
+### Pregunta 1 — Alcance del conteo
+
+El número original "~65,000 LOC" incluía estimaciones. Los números reales medidos con `wc -l`:
+
+| Ubicación | LOC totales | LOC producción | LOC tests | LOC migrations | LOC mgmt commands |
+|-----------|-------------|---------------|-----------|---------------|-------------------|
+| `apps/core/` | 42,528 | **31,686** | 4,231 | (excluidos) | 7,927 (incluidos en producción) |
+| `apps/ia/` | 2,128 | **1,677** | 451 | (excluidos) | 0 |
+| `backend/utils/` | 1,543 | **1,543** | 0 | N/A | N/A |
+| Frontend core-related | ~15,400 | ~15,400 | ~356 | N/A | N/A |
+
+**`backend/utils/` (1,543 LOC)** es infraestructura compartida que NO es exclusiva de L0:
+- `models.py` (339 LOC): TenantModel, SharedModel — importado por **15+ archivos** de L10-L90
+- `storage.py` (394 LOC): TenantFileStorage — importado por 3 módulos
+- `encryption.py` (89 LOC): Fernet — importado por 2 módulos
+- `event_bus.py` (95 LOC): EventBus — importado por 2 módulos
+- Resto (logging, constants, consecutivos, cache, validators, tasks): ~626 LOC
+
+**Decisión:** `backend/utils/` NO se cuenta como L0. Es infraestructura compartida que se inventaría aparte si es necesario. Los LOC de L0 son exclusivamente `apps/core/` + `apps/ia/`.
+
+### Pregunta 2 — Desglose del Sub-bloque 7
+
+Los 12,000 LOC originales eran una estimación. El número real medido es **13,928 LOC** (producción, sin tests). Esto es el 44% de L0.
+
+**Top 10 archivos del sub-bloque 7:**
+
+| Archivo | LOC | Qué hace |
+|---------|-----|----------|
+| `management/commands/seed_estructura_final.py` | 1,398 | Seed de SystemModule/Tab/Section (ejecuta 1 vez) |
+| `tasks.py` | 1,588 | 16 tareas Celery (email, backup, health, cleanup) |
+| `serializers_mixins.py` | 1,419 | 18 mixins para serializers (reutilizados por todos los módulos) |
+| `validators.py` | 1,378 | Validadores colombianos (NIT, cédula, teléfono, email) |
+| `permissions.py` | 908 | GranularActionPermission + helpers |
+| `management/commands/seed_riesgos_ocupacionales.py` | 872 | Seed de riesgos SST (ejecuta 1 vez) |
+| `services/onboarding_service.py` | 653 | Smart onboarding lógica |
+| `views/onboarding_views.py` | 638 | Endpoints de onboarding |
+| `management/commands/seed_permisos_rbac.py` | 505 | Seed RBAC (ejecuta 1 vez) |
+| `management/commands/seed_cargos_base.py` | 463 | Seed de cargos base (ejecuta 1 vez) |
+
+**`tasks.py` y `validators.py` están dentro de `apps/core/`**, no en `backend/utils/`.
+
+**¿Debería ser un nivel aparte?** Conceptualmente, el sub-bloque 7 mezcla 3 tipos de código:
+1. **Infraestructura heredable** (base_models, mixins, permissions, signals): 4,700 LOC — toda la cascada hereda esto
+2. **Seeds/commands** (management/commands): 7,927 LOC — se ejecutan 1 vez, no es "producción corriendo"
+3. **Features propias** (onboarding, validators, tasks, cache): 4,800 LOC — features reales de L0
+
+Los seeds (7,927 LOC) inflan el número artificialmente. Son código de configuración inicial, no lógica que corre en producción. Si los separamos:
+- **Sub-bloque 7 producción activa:** 13,928 - 7,927 = **6,001 LOC**
+- **Seeds (ejecución única):** 7,927 LOC
+
+### Pregunta 3 — Tests separados de producción
+
+| Sub-bloque | LOC producción | LOC tests | Ratio |
+|------------|---------------|-----------|-------|
+| 1. Auth/JWT/Session | **1,137** | 219 | 19% |
+| 2. RBAC Dinámico | **6,865** | 2,054 | 30% |
+| 3. System Modules/Sidebar | **1,996** | 0 | 0% |
+| 4. User/Cargo/Datos Maestros | **4,336** | 1,553 | 36% |
+| 5. 2FA/Seguridad | **1,747** | 404 | 23% |
+| 6. IA Multi-Provider | **1,677** | 451 | 27% |
+| 7. Infraestructura Transversal | **13,928** (de los cuales 7,927 son seeds) | 0 | 0% |
+| **TOTAL apps/core** | **31,686** | **4,231** | **13%** |
+| **TOTAL apps/ia** | **1,677** | **451** | **27%** |
+
+**Hallazgo clave:** "12,000 LOC sin tests" en realidad es "6,001 LOC de producción activa sin tests + 7,927 LOC de seeds sin tests". Los seeds son menos críticos (se corren 1 vez y se validan visualmente). La producción activa sin tests (6,001 LOC) es el gap real.
+
+### Discrepancia con Bloque 7
+
+El diagnóstico del Bloque 7 reportó "core | 7 test files | ~5,000 LOC | Razonable". Esa cifra era una estimación rápida del código "feature" de core, sin contar infraestructura compartida, seeds, ni serializers/mixins. El número real es 6x más grande porque L0 no es solo "auth + users" — es la plataforma entera sobre la que todo se construye.
 
 ---
 
@@ -141,17 +215,36 @@ Todo ──→ Infraestructura (base models, middleware, signals)
 
 ---
 
-## Resumen Cuantitativo
+## Resumen Cuantitativo (Validado)
 
-| Sub-bloque | LOC Backend | Modelos | Endpoints | Tests | Estado |
-|------------|-------------|---------|-----------|-------|--------|
-| Auth/JWT/Session | 1,500 | 2 | 7 | 16 | LIVE pleno |
-| RBAC Dinámico | 6,500 | 22 | 30 | 64 | LIVE pleno |
-| System Modules/Sidebar | 2,000 | 4 | 8 | 0 | LIVE pleno (sin tests) |
-| User/Cargo/Datos Maestros | 4,500 | 6 | 20 | 45 | LIVE pleno |
-| 2FA/Seguridad | 1,700 | 2 | 8 | 26 | LIVE pleno |
-| IA Multi-Provider | 2,400 | 2 | 4 | ~20 | LIVE pleno |
-| Infraestructura Transversal | 12,000 | 2 | 6 | 0 | LIVE parcial |
-| **TOTAL** | **~30,600** | **40** | **~83** | **~171** | — |
+| Sub-bloque | LOC Producción | LOC Tests | Modelos | Endpoints | Tests func | Estado |
+|------------|---------------|-----------|---------|-----------|-----------|--------|
+| 1. Auth/JWT/Session | 1,137 | 219 | 2 | 7 | 16 | LIVE pleno |
+| 2. RBAC Dinámico | 6,865 | 2,054 | 22 | ~30 | 64 | LIVE pleno |
+| 3. System Modules/Sidebar | 1,996 | 0 | 4 | ~8 | 0 | LIVE pleno (0 tests) |
+| 4. User/Cargo/Datos Maestros | 4,336 | 1,553 | 6 | ~20 | 45 | LIVE pleno |
+| 5. 2FA/Seguridad | 1,747 | 404 | 2 | 8 | 26 | LIVE pleno |
+| 6. IA Multi-Provider | 1,677 | 451 | 2 | 4 | ~20 | LIVE pleno |
+| 7. Infraestructura Transversal | 6,001 + 7,927 seeds | 0 | 2 | 6 | 0 | LIVE parcial |
+| **TOTAL** | **23,759 + 7,927 seeds** | **4,681** | **40** | **~83** | **~171** | — |
 
 Frontend core-related adicional: ~15,400 LOC (stores, hooks, API clients, guards, features/users + perfil + admin-global).
+`backend/utils/` (1,543 LOC): infraestructura compartida, NO contada como L0.
+
+---
+
+## Orden de Inventario Profundo Aprobado
+
+Orden definido por el usuario (2026-04-06). Principio: gaps primero, monstruo segundo, victorias después, sensible al final.
+
+| Orden | Sub-bloque | LOC prod | Tests | Razón |
+|-------|-----------|----------|-------|-------|
+| 1ro | **3 — System Modules / Sidebar** | 1,996 | 0 | Sidebar = primera cosa que ve el usuario. Si está roto, nada existe. Tamaño manejable para calibrar el proceso. |
+| 2do | **7 — Infraestructura Transversal** | 6,001 + 7,927 seeds | 0 | El monstruo. Lo atacamos segundo con experiencia del primero. Si esperamos al final, llegaremos agotados. |
+| 3ro | **1 — Auth / JWT / Session** | 1,137 | 16 | Corto y pleno. Victoria rápida después del monstruo. |
+| 4to | **5 — 2FA / Seguridad** | 1,747 | 26 | Similar a Auth, complementa el bloque de seguridad. |
+| 5to | **6 — IA Multi-Provider** | 1,677 | ~20 | Mediano, moderno, relativamente limpio. |
+| 6to | **4 — User / Cargo / Datos Maestros** | 4,336 | 45 | Mediano-grande, complejidad de modelos. Llegamos con experiencia. |
+| 7mo | **2 — RBAC Dinámico** | 6,865 | 64 | El más grande con tests. Lo dejamos al final porque toca permisos (lo más sensible) y queremos llegar con máxima experiencia. |
+
+**Regla:** No se avanza al siguiente sub-bloque sin aprobación explícita del usuario.

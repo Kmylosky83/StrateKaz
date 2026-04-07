@@ -1,13 +1,60 @@
-# CLAUDE.md - StrateKaz SGI (Sistema de Gestion Integral)
+# CLAUDE.md - StrateKaz | Consultoria 4.0
 
 ## Descripcion del Proyecto
 
-StrateKaz es un **Sistema de Gestion Integral (SGI)** multi-tenant tipo SaaS para empresas colombianas. Integra gestion estrategica, cumplimiento normativo (ISO 9001/14001/45001/27001), riesgos, HSEQ, cadena de valor, talento humano, finanzas y analitica en una sola plataforma.
+StrateKaz es una **Plataforma de Gestion Empresarial 360°** multi-tenant + Consultoria 4.0 para empresas colombianas. **NO es un ERP.** Integra gestion estrategica, cumplimiento normativo (ISO 9001/14001/45001/27001), riesgos, HSEQ, cadena de valor, talento humano, finanzas y analitica en una sola plataforma. Opera en 3 lineas de negocio: Consultoria pura | Consultoria + SaaS | SaaS puro.
 
 **Dominio:** stratekaz.com | **App:** app.stratekaz.com
 **Hosting:** VPS Hostinger (Nginx + Gunicorn + PostgreSQL + Redis + Celery)
 **Versiones:** 5.1.0 (frontend) | 3.7.1 (root package) | API 4.0.0 (drf-spectacular)
 **Idioma del sistema:** Espanol (es-co)
+
+---
+
+## Estrategia actual: Consolidacion L0-L20 (StrateKaz Core)
+
+**Estado del proyecto:** Consolidando el nucleo L0-L20 como StrateKaz Core estable.
+
+### Reglas operativas (vigentes hasta nuevo aviso)
+
+1. **Solo se modifica codigo LIVE.** Los modulos en niveles L25-L90 estan
+   DISABLED y NO se tocan, ni para arreglar TODOs ni para refactorizar, hasta
+   que llegue su sprint de activacion.
+
+2. **Toda modificacion debe ser browseable.** Cualquier cambio en codigo LIVE
+   debe poder probarse manualmente en el tenant demo de local antes del commit.
+   Si no se puede browsear, no se hace ahora.
+
+3. **Las factories son obligatorias para codigo nuevo.** Cualquier serializer,
+   FormModal, hook CRUD o api client nuevo debe usar la factory correspondiente.
+   Codigo viejo se migra gradualmente.
+
+4. **Ningun modulo nuevo se activa** hasta que L0-L20 este consolidado y
+   declarado "StrateKaz Core 1.0".
+
+5. **Los smoke tests en browser son parte del workflow:**
+   Code escribe -> tests pasan -> usuario browsea en local -> aprueba -> push
+
+### Modulos LIVE actuales (los unicos que se tocan ahora)
+
+| Nivel | Modulos |
+|-------|---------|
+| L0 | core (auth, RBAC, IA) |
+| L10 | configuracion, organizacion, identidad, contexto, encuestas |
+| L12 | workflow_engine (4 sub), audit_system (4 sub) |
+| L15 | gestion_documental (8 modelos, 8 fases) |
+| L20 | mi_equipo (estructura_cargos, seleccion, colaboradores, onboarding) |
+| LIVE | mi_portal |
+
+### Proximo paso
+
+Inventario detallado de cada sub-app de L0-L20 para identificar:
+- Funcion real vs funcion declarada
+- Lo que sobra (eliminar)
+- Lo que falta (agregar para "basico bien hecho")
+- Code smells especificos de cada sub-app LIVE
+
+Ver MEMORY.md seccion "2026-04-06 — Cambio de estrategia" para contexto completo.
 
 ---
 

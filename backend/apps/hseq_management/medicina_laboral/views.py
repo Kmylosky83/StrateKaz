@@ -238,9 +238,12 @@ class RestriccionMedicaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar por empresa del usuario (multi-tenant)"""
+        user = self.request.user
+        empresa_id = getattr(user, 'empresa_id', None)
         queryset = super().get_queryset()
-        # TODO: Implementar filtro por empresa según usuario autenticado
-        return queryset
+        if empresa_id:
+            return queryset.filter(empresa_id=empresa_id)
+        return queryset.none()
 
     @action(detail=False, methods=['get'], url_path='por-colaborador')
     def por_colaborador(self, request):
@@ -353,9 +356,12 @@ class ProgramaVigilanciaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar por empresa del usuario (multi-tenant)"""
+        user = self.request.user
+        empresa_id = getattr(user, 'empresa_id', None)
         queryset = super().get_queryset()
-        # TODO: Implementar filtro por empresa según usuario autenticado
-        return queryset
+        if empresa_id:
+            return queryset.filter(empresa_id=empresa_id)
+        return queryset.none()
 
     @action(detail=False, methods=['get'])
     def activos(self, request):
@@ -442,9 +448,12 @@ class CasoVigilanciaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar por empresa del usuario (multi-tenant)"""
+        user = self.request.user
+        empresa_id = getattr(user, 'empresa_id', None)
         queryset = super().get_queryset()
-        # TODO: Implementar filtro por empresa según usuario autenticado
-        return queryset
+        if empresa_id:
+            return queryset.filter(empresa_id=empresa_id)
+        return queryset.none()
 
     @action(detail=True, methods=['post'], url_path='registrar-seguimiento')
     def registrar_seguimiento(self, request, pk=None):
@@ -646,9 +655,12 @@ class EstadisticaMedicaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtrar por empresa del usuario (multi-tenant)"""
+        user = self.request.user
+        empresa_id = getattr(user, 'empresa_id', None)
         queryset = super().get_queryset()
-        # TODO: Implementar filtro por empresa según usuario autenticado
-        return queryset
+        if empresa_id:
+            return queryset.filter(empresa_id=empresa_id)
+        return queryset.none()
 
     @action(detail=False, methods=['get'], url_path='por-periodo')
     def por_periodo(self, request):

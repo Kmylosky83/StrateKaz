@@ -245,7 +245,7 @@ Las 6 capas arquitectónicas se mapean a 12 grupos de sidebar bajo modelo PHVA:
 
 ### Settings Modulares
 
-`config/settings/`: `base.py` (compartido) | `development.py` (DEBUG, console email) | `production.py` (HSTS, Sentry, SMTP) | `testing.py` (SQLite, Celery eager)
+`config/settings/`: `base.py` (compartido) | `development.py` (DEBUG, console email) | `production.py` (HSTS, Sentry, SMTP) | `testing.py` (PostgreSQL obligatorio, Celery eager)
 
 **DJANGO_SETTINGS_MODULE:** `config.settings.development` (default). **NOTA:** `config/settings.py` (legacy) esta deprecated.
 
@@ -394,6 +394,78 @@ Documentacion detallada en auto-memory (se carga automaticamente):
 
 ---
 
+## Testing — Lectura obligatoria
+
+### Patron para tests de backend (a partir de 2026-04-07)
+
+Todos los tests de backend que tocan modelos de TENANT_APPS deben heredar
+de `BaseTenantTestCase` (`apps.core.tests.base`), que provee:
+- Schema de tenant real via `FastTenantTestCase` de `django-tenants`
+- `TenantClient` que apunta al dominio del tenant (evita caer a schema public)
+- Helpers: `create_user()`, `create_cargo()`, `create_system_module()`,
+  `create_module_with_section()`, `grant_section_access()`, `authenticate_as()`
+
+**Ejemplo minimo:**
+
+```python
+from apps.core.tests.base import BaseTenantTestCase
+
+class TestMiFeature(BaseTenantTestCase):
+    def test_algo(self):
+        user = self.create_user()
+        headers = self.authenticate_as(user)
+        response = self.client.get('/api/core/algo/', **headers)
+        self.assertEqual(response.status_code, 200)
+```
+
+**NO usar:**
+- `pytest.mark.django_db` con fixtures `db` para modelos de TENANT_APPS (cae a schema public)
+- Mocks de querysets o MockUser — datos reales en schema real
+- SQLite — `testing.py` exige PostgreSQL con `django_tenants.postgresql_backend`
+
+### Comportamiento de dominio critico
+
+Al crear una `TabSection`, el signal `rbac_signals` auto-propaga un
+`CargoSectionAccess` a los cargos existentes. Por esto:
+- `grant_section_access()` en BaseTenantTestCase usa `get_or_create` (no `create`)
+- Tests que crean Cargo antes que Section deben esperar que el
+  CargoSectionAccess ya exista cuando intenten crearlo manualmente
+
+### Estructura de archivos de test
+
+```
+backend/apps/core/tests/
+  base.py           # BaseTenantTestCase — heredar de aqui
+  test_base.py      # Smoke test de la infra
+  test_sidebar.py   # 5 tests del Sub-bloque 3 (referencia)
+  test_*.py         # Tests legacy (skipped, migrar cuando se toque el sub-bloque)
+```
+
+### Como correr tests
+
+```bash
+# Tests migrados (bloqueantes en CI):
+docker compose exec backend python manage.py test apps.core.tests.test_sidebar apps.core.tests.test_base --settings=config.settings.testing -v 2
+
+# Tests legacy (informativos):
+docker compose exec backend pytest apps/core/tests/ --ignore=apps/core/tests/test_sidebar.py --ignore=apps/core/tests/test_base.py --no-cov --tb=no -q
+```
+
+Recordatorio: Docker es SOLO local. El VPS de produccion corre Python
+directo sin Docker, y CI imita VPS. Por eso ci.yml NO usa `docker compose
+exec` — usa Python directo contra los servicios de PostgreSQL y Redis
+configurados como GitHub Actions services.
+
+### Tests legacy y migracion progresiva
+
+Hay 143 tests legacy skipped en `apps/core/tests/`. Cada uno tiene una
+entrada en `docs/testing-debt.md` con categoria y plan de migracion. La
+politica es: cuando se inventaria un sub-bloque y se tocan tests legacy
+asociados, se migran al patron nuevo en esa misma sesion. NO migracion
+en bloque.
+
+---
+
 ## Documentacion
 
 ```
@@ -508,17 +580,23 @@ Si el CI falla por apps no instaladas, la solucion es:
 
 ---
 
-## CI/CD — Estado Actual (2026-03-24)
+## CI/CD — Estado Actual (2026-04-07)
 
 ### Pasos bloqueantes (deben pasar para CI verde)
 
 - Django checks + migraciones + collectstatic
+- Tests backend migrados (6 migrados bloqueantes via `manage.py test`)
 - TypeScript type checking + ESLint (max-warnings=0)
 - Vite production build
 
+Los tests backend bloqueantes en CI corren con `manage.py test` sobre los
+archivos migrados a `BaseTenantTestCase`. Los tests legacy en pytest corren
+como informativos hasta completar la migracion progresiva.
+
 ### Pasos informativos (reportan pero no bloquean)
 
-- pytest, vitest (tests en desarrollo)
+- pytest legacy (143 legacy informativos, migracion progresiva)
+- vitest (frontend tests en desarrollo)
 - Black, Ruff (formateo en refactorizacion)
 - pip-audit, npm audit (vulns en dependencias)
 

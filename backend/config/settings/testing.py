@@ -18,30 +18,20 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-testing-only-key-NOT-
 DEBUG = False
 
 # =============================================================================
-# DATABASE - Lee de env vars (CI con PostgreSQL), fallback a SQLite (local)
+# DATABASE - PostgreSQL obligatorio (django-tenants requiere schemas)
+# Hereda ENGINE, USER, PASSWORD, HOST, PORT de base.py.
+# Solo sobreescribimos el nombre de la DB para aislar tests de dev.
 # =============================================================================
-_db_engine = config('DB_ENGINE', default='django.db.backends.sqlite3')
-
-if 'postgresql' in _db_engine:
-    # CI / multi-tenant tests: PostgreSQL con django-tenants
-    DATABASES = {
-        'default': {
-            'ENGINE': _db_engine,
-            'NAME': config('DB_NAME', default='stratekaz_test'),
-            'USER': config('DB_USER', default='test_user'),
-            'PASSWORD': config('DB_PASSWORD', default='test_password'),
-            'HOST': config('DB_HOST', default='127.0.0.1'),
-            'PORT': config('DB_PORT', default='5432'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django_tenants.postgresql_backend',
+        'NAME': config('DB_NAME', default='stratekaz_test'),
+        'USER': config('DB_USER', default='stratekaz'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='db'),
+        'PORT': config('DB_PORT', default='5432'),
     }
-else:
-    # Local: SQLite en memoria para tests rapidos
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
-    }
+}
 
 # =============================================================================
 # PASSWORD HASHER - Más rápido para tests

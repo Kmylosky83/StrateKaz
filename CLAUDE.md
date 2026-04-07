@@ -35,6 +35,22 @@ StrateKaz es una **Plataforma de Gestion Empresarial 360°** multi-tenant + Cons
 5. **Los smoke tests en browser son parte del workflow:**
    Code escribe -> tests pasan -> usuario browsea en local -> aprueba -> push
 
+### Criterio de aceptacion por sub-app ("Basico bien hecho")
+
+Una sub-app L0-L20 se declara consolidada cuando cumple 6 criterios:
+1. Funcional (3-5 funciones esenciales sin errores ni features fantasma)
+2. Browseable end-to-end en tenant demo local
+3. Sin code smells criticos (cero TODOs, cero except Exception, cero
+   god-classes >1500 LOC, cero raw SQL)
+4. Usa factories obligatorias (serializer, FormModal, crud-hooks, api-client)
+5. Tests minimos: 40% coverage en happy paths criticos
+6. README breve por sub-app (que hace, que consume, que expone, modelos clave)
+
+Regla maestra: ninguna sub-app se declara consolidada sin browseo manual
+y aprobacion explicita del usuario en el tenant demo local.
+
+Ver MEMORY.md seccion "Definicion de Basico bien hecho" para detalle completo.
+
 ### Modulos LIVE actuales (los unicos que se tocan ahora)
 
 | Nivel | Modulos |

@@ -584,21 +584,15 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         if is_superuser:
             return self._get_full_sidebar()
 
-        # Usuario normal: filtrar por CargoSectionAccess
-        cargo = getattr(user, 'cargo', None)
-        if not cargo:
-            # Usuario sin cargo no ve nada
+        # Usuario normal: filtrar por Cargo + RolAdicional + Group (lógica OR)
+        from apps.core.utils.rbac import compute_user_rbac
+
+        section_ids, _permission_codes = compute_user_rbac(user)
+
+        if not section_ids:
             return Response([])
 
-        # Obtener section_ids autorizados para este cargo (SOLO can_view=True)
-        authorized_section_ids = set(
-            CargoSectionAccess.objects.filter(cargo=cargo, can_view=True)
-            .values_list('section_id', flat=True)
-        )
-
-        if not authorized_section_ids:
-            # Sin secciones autorizadas = sidebar vacío
-            return Response([])
+        authorized_section_ids = set(section_ids)
 
         # Excluir secciones restringidas a superadmin (ej: 'modulos')
         superadmin_only_sections = TabSection.objects.filter(

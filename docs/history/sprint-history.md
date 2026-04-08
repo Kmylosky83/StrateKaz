@@ -2245,6 +2245,44 @@ Opciones en orden de prioridad:
 
 ---
 
+## 2026-04-08 (parte 3) — Sesión: Auditoría del perímetro LIVE
+
+### Duración
+~1 sesión web (parte 3 del día)
+
+### Objetivo
+Definir qué es realmente "LIVE" y auditarlo.
+
+### Resultado
+- Principio fundacional escrito en CLAUDE.md: "LIVE is the truth"
+- Auditoría completa de 17 cimientos + 4 sub-apps mi_equipo
+- Documento creado: docs/architecture/PERIMETRO-LIVE.md
+- Hallazgo nuevo H4 anotado: infra de test multi-tenant rota
+- Plan de 3 sesiones definido para cerrar el perímetro LIVE
+
+### Hallazgo principal
+~525 de ~530 tests del perímetro LIVE fallan por una sola causa raíz
+(infra de test multi-tenant). Estructura sana (migraciones OK, check
+limpio), pero cero confianza automatizada.
+
+### 3 apps sin tests
+firma_digital (CRÍTICO, en producción), identidad, contexto.
+
+### Decisión metodológica clave
+Se descarta la idea de mantener o refactorizar código no-LIVE. Solo se
+arregla lo que está activo en CURRENT_DEPLOY_LEVEL. El resto es borrador
+descartable.
+
+### Próxima sesión
+H4 — diagnóstico y arreglo de la infra de test.
+
+### Commits de la sesión
+- `be54320c` docs(claude): add foundational principle "LIVE is the truth"
+- `7e6a6b9a` docs(arch): auditoría del perímetro LIVE + H4 infra de test rota
+- `6e76c878` chore(gitignore): exclude frontend/coverage/
+
+---
+
 ## Accumulated Stats (Sprints 22-P0 + FASE 5-9 P3)
 - **Backend**: 18 security fixes, 50+ models migrated to TenantModel, 18 bug fixes, unified user creation flow, Celery tasks branding, email branding, clear_tenant_users command, DB repair masiva, cross-tenant security bypass fix, User.proveedor FK, portal proveedor endpoints, crear-acceso proveedor, supply chain URL registration, 16 FK decoupled, sidebar layers (SIDEBAR_LAYERS), module migration (gestion_estrategica → 3 módulos), RBAC permisos separados, auto_generate_codigo() transversal (20 modelos), 42 ConsecutivoConfig seeds, 7 unique constraints multi-tenant fixed, DRF action url_path fixes, select_lists query fixes, import masivo proveedores + clientes, TenantModelViewSetMixin, AICallLog + AIQuotaConfig, **RevisionDireccionAggregator (14 módulos)**, **ResumenRevisionMixin (14 ViewSets)**, **ActaFirmaService**, **informe_gerencial_pdf.py (WeasyPrint)**, **PostulacionThrottle + email confirmación**, **conditional UniqueConstraint soft-delete pattern**, **soft-delete user cascade**, **public_tenant_paths for setup-password**, **AdaptiveLayout + PortalLayout**, **isPortalOnlyUser(cargo.code)**, **cross-module serializer IntegerField pattern**, **3 tenant management commands (reset, clean, delete)**, **PESTEL/Porter import/export Excel (6 @action endpoints)**, **3 context seeds en deploy_seeds_all_tenants**
 - **Frontend**: ~80+ pages/components, ~220+ hooks, ~70+ API clients, ~120+ type interfaces, SectionGuard, forceLogout, refreshUserProfile, Mi Portal redesign + avatar, ProtectedRoute definitive auth, axios interceptor fix, RBAC race condition fixes, portal proveedor + Mi Cuenta, supply chain wired, routes split 18 modules, useModules barrel, 0 cross-imports C2↔C2, 18 modales con codigo auto-gen, portal público vacantes (3 páginas), +20 HSEQ modales, +19 modales (SC+PO+WF+CRM), +2 import masivo, **Kanban board + drag&drop**, **CalendarView (zero deps)**, **InformeGerencialTab (15 secciones ISO)**, **FirmaActaModal + EnviarInformeModal**, **12 manual chunks Vite**, **Sentry lazy-loaded**, **chart-colors.ts**, **862 HTML→DS**, **SetupPasswordPage tenant_id from URL**, **Portal Proveedor Rico (6 tipos)**, **AdaptiveLayout + PortalLayout**, **useHasProveedor hook**, **portalUtils.ts**, **POLISH-2: WidgetRenderer type-aware, NotificacionDetailModal, CatalogosTab deshadowed, delete/export cumplimiento, CuentaPorCobrar create wired**, **PESTEL Vista Híbrida (tabla+matriz+stats+import/export)**, **Porter Vista Híbrida (tabla+radar+diagrama+import/export)**

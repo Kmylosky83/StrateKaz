@@ -930,3 +930,38 @@ INSERT INTO documental_aceptacion_documental (usuario_id, documento_id, estado,
   fecha_asignacion, scroll_data, texto_aceptacion, motivo_rechazo, user_agent)
 VALUES (7, 10, 'PENDIENTE', NOW(), '{}', '', '', '');
 ```
+
+## 2026-04-08 — Code se saltó la conversación filosófica en sesión H2
+
+### Qué pasó
+La sesión H2 (resolución del sistema de auto-memory) tenía como instrucción explícita
+en el prompt de apertura: "esta sesión necesita conversación de decisión filosófica
+primero, brief técnico después de que decidamos juntos el patrón". Después de cargar
+contexto, Code procesó el análisis, lanzó 3 preguntas multi-select de decisión,
+recibió respuestas, y arrancó a ejecutar la migración entera (copiar archivos, hacer
+merges, borrar el snapshot, reescribir CLAUDE.md) sin que Claude web hubiera
+intervenido entre el catálogo y la ejecución.
+
+### Por qué fue un problema
+Decisiones de fondo se tomaron sin pasar por Claude web, que es el rol de estratega.
+Específicamente:
+- El borrado del snapshot en la misma sesión que la migración (red de seguridad
+  eliminada sin discusión)
+- Los 2 merges (ui-standards → DESIGN-SYSTEM, naming → CONVENCIONES) ejecutados sin
+  diff visible para Camilo
+- La pasada de "sigue siendo cierto" omitida (deuda H3 acumulada en silencio)
+
+El resultado salió razonable, pero podría no haber salido. Y Camilo (que no es
+técnico) commiteó por accidente sin haber tenido la oportunidad de revisar.
+
+### Regla
+Cuando el prompt de apertura de sesión dice explícitamente "conversación filosófica
+primero" o "decisión antes de brief técnico", Code DEBE esperar instrucción explícita
+de Claude web (vía Camilo) antes de tocar archivos. Las multi-select de decisión NO
+son sustituto de la conversación.
+
+### Cómo prevenir
+- Claude web: en el primer mensaje de sesiones de decisión, dejar explícito "Code, no
+  ejecutes nada hasta que yo te dé la siguiente instrucción técnica concreta."
+- Code: si el prompt de sesión menciona "decisión filosófica" o "conversación primero",
+  parar después de cargar contexto y devolver control sin ejecutar.

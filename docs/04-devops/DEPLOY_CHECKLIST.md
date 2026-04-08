@@ -1,6 +1,6 @@
 # Deploy Checklist — StrateKaz SGI
 
-> Checklist genérico para cualquier deploy. Para comandos completos y one-liners, ver `memory/deploy.md`.
+> Checklist genérico para cualquier deploy. Para comandos completos y one-liners, ver [`deploy.md`](deploy.md).
 
 ---
 

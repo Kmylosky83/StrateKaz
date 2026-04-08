@@ -310,4 +310,59 @@ category: 'OPERATIONAL'   // BIEN
 
 ---
 
-**Ultima actualizacion:** 2026-02-06
+---
+
+## Campos de Modelo → Serializer → TypeScript
+
+> Contenido promovido desde auto-memory `naming-conventions.md` (2026-04-08)
+
+El flujo de un nombre de campo a través del stack:
+
+```
+Django Model (snake_case)     →  DRF Serializer (snake_case)  →  JSON response (snake_case)  →  TS type (snake_case)
+fecha_implementacion: Date    →  fecha_implementacion          →  "fecha_implementacion"       →  fecha_implementacion: string
+```
+
+**NUNCA** transformar snake_case a camelCase en el JSON. DRF envía snake_case, el frontend lo recibe snake_case, y los tipos TS lo declaran snake_case.
+
+```typescript
+// ✅ CORRECTO — snake_case en los campos, coincide con serializer
+interface RiesgoVial {
+  id: number;
+  fecha_identificacion: string;
+  tipo_riesgo: number;
+  nivel_riesgo: string;
+}
+
+// ❌ MAL — camelCase en campos, no coincide con lo que devuelve el BE
+interface RiesgoVial {
+  id: number;
+  fechaIdentificacion: string;  // el BE devuelve fecha_identificacion
+  tipoRiesgo: number;           // el BE devuelve tipo_riesgo
+}
+```
+
+### Excepción: variables TS internas
+
+Las variables TypeScript internas (NO campos de API) sí usan camelCase:
+
+```typescript
+const riesgoActual = riesgos.find(r => r.id === selectedId);  // camelCase
+const fechaFormateada = formatDate(riesgoActual.fecha_identificacion);  // camelCase
+```
+
+### Resumen Visual
+
+```
+                  BACKEND                           FRONTEND
+                  ───────                           ────────
+Clases:           PascalCase                        PascalCase (components, types)
+Funciones:        snake_case                        camelCase
+Variables:        snake_case                        camelCase
+Campos modelo:    snake_case                        snake_case (en types, iguala BE)
+URLs:             kebab-case (url_path)             kebab-case (API calls)
+Archivos:         snake_case (Python)               PascalCase (.tsx) / camelCase (.ts)
+Carpetas:         snake_case (Django apps)          kebab-case (features/)
+```
+
+**Ultima actualizacion:** 2026-04-08

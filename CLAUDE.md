@@ -1,5 +1,29 @@
 # CLAUDE.md - StrateKaz | Consultoria 4.0
 
+## Principio fundacional: LIVE es la verdad
+
+El repo no es la verdad. Lo LIVE es la verdad.
+Solo el codigo LIVE (niveles activos en CURRENT_DEPLOY_LEVEL) se considera
+parte del proyecto y debe estar 100% solido. El codigo no-LIVE es borrador
+descartable: no se mantiene, no se refactoriza, no genera deuda. Se valida
+y se reescribe (o se elimina) el dia que se quiera promover a LIVE.
+
+Hay dos capas dentro de LIVE:
+1. **CIMIENTOS** — infra, testing, DB, migraciones, multi-tenant, auth/JWT,
+   RBAC, audit_system, workflow_engine, gestion_documental, modulo IA, core.
+   Tienen que estar solidos siempre. Son la losa.
+2. **MODULOS DE NEGOCIO LIVE** — hoy unicamente mi_equipo (L20) con sus
+   4 sub-apps: estructura_cargos, seleccion_contratacion, colaboradores,
+   onboarding_induccion.
+
+Todo lo que este en niveles L25 o superior es borrador y NO cuenta.
+
+**Consecuencia practica:** cuando arreglar algo LIVE rompa algo no-LIVE,
+no nos importa. Se anota como hallazgo y se sigue. El no-LIVE se arregla
+el dia que se active, no antes.
+
+---
+
 ## Descripcion del Proyecto
 
 StrateKaz es una **Plataforma de Gestion Empresarial 360°** multi-tenant + Consultoria 4.0 para empresas colombianas. **NO es un ERP.** Integra gestion estrategica, cumplimiento normativo (ISO 9001/14001/45001/27001), riesgos, HSEQ, cadena de valor, talento humano, finanzas y analitica en una sola plataforma. Opera en 3 lineas de negocio: Consultoria pura | Consultoria + SaaS | SaaS puro.

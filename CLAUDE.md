@@ -49,7 +49,7 @@ Una sub-app L0-L20 se declara consolidada cuando cumple 6 criterios:
 Regla maestra: ninguna sub-app se declara consolidada sin browseo manual
 y aprobacion explicita del usuario en el tenant demo local.
 
-Ver MEMORY.md seccion "Definicion de Basico bien hecho" para detalle completo.
+La definicion completa de "Basico bien hecho" esta arriba en esta misma seccion.
 
 ### Modulos LIVE actuales (los unicos que se tocan ahora)
 
@@ -70,7 +70,7 @@ Inventario detallado de cada sub-app de L0-L20 para identificar:
 - Lo que falta (agregar para "basico bien hecho")
 - Code smells especificos de cada sub-app LIVE
 
-Ver MEMORY.md seccion "2026-04-06 — Cambio de estrategia" para contexto completo.
+Contexto completo del cambio de estrategia esta en la seccion "Estrategia actual" de este mismo archivo.
 
 ---
 
@@ -358,11 +358,11 @@ FormBuilder (drag & drop) | DynamicFormRenderer | TanStack React Table | TipTap 
 
 ## Convenciones de Codigo
 
-Documentacion detallada en auto-memory (se carga automaticamente):
-- `coding-standards.md` — TypeScript types, React patterns, DRF patterns, performance
-- `naming-conventions.md` — snake_case vs kebab-case vs camelCase por contexto
-- `ui-standards.md` — 3 tipos de vista, Design System obligatorio
-- `audit-api-sync.md` — @action url_path, tipos TS exactos
+Documentacion detallada en `docs/` (versionada en el repo):
+- `docs/02-desarrollo/coding-standards.md` — TypeScript types, React patterns, DRF patterns, performance
+- `docs/02-desarrollo/CONVENCIONES-NOMENCLATURA.md` — snake_case vs kebab-case vs camelCase por contexto
+- `docs/02-desarrollo/frontend/DESIGN-SYSTEM.md` — 3 tipos de vista, Design System obligatorio
+- `docs/02-desarrollo/audit-api-sync.md` — @action url_path, tipos TS exactos
 
 ### Source of Truth — Modelos de Identidad
 
@@ -496,7 +496,7 @@ docs/
 ### Produccion (VPS Hostinger)
 
 Nginx + Gunicorn + PostgreSQL + Redis + Celery. Path: `/opt/stratekaz`. NO Docker en produccion.
-Detalle completo en auto-memory `deploy.md`.
+Detalle completo en `docs/04-devops/deploy.md`.
 
 ### Variables de Entorno
 
@@ -612,3 +612,43 @@ como informativos hasta completar la migracion progresiva.
 ```bash
 cd /opt/stratekaz && bash scripts/deploy.sh --no-backup
 ```
+
+---
+
+## Sistema de Memoria — Regla de Persistencia
+
+El directorio auto-memory de Claude Code (`~/.claude/projects/.../memory/`)
+es un **SCRATCH PAD efimero**. Nada que importaria dentro de 3 meses debe
+vivir solo ahi.
+
+### Donde vive cada tipo de conocimiento
+
+| Tipo | Destino | Ejemplo |
+|------|---------|---------|
+| Arquitectura, decisiones, patrones | `docs/01-arquitectura/` | security-2fa.md |
+| Convenciones de desarrollo | `docs/02-desarrollo/` | coding-standards.md |
+| Conocimiento por modulo | `docs/03-modulos/<modulo>/` | plantillas-sgi.md |
+| Deploy, operaciones, capacidad | `docs/04-devops/` | deploy.md, capacity-planning.md |
+| Auditorias historicas | `docs/auditorias/` | audit-lifecycle-2026-03-26.md |
+| Conocimiento de negocio | `docs/business/` | brand-identity.md, pricing-plans.md |
+| Historial de sprints, pitfalls | `docs/history/` | sprint-history.md, pitfalls.md |
+| Hallazgos arquitectonicos | `docs/architecture/` | HALLAZGOS-PENDIENTES-2026-04.md |
+| Inventario L0-L20 | `docs/inventory/` | L0-INDEX.md |
+
+### Que se queda en auto-memory (scratch pad)
+
+- `MEMORY.md` — indice de punteros a `docs/` + instrucciones permanentes
+- `feedback_*.md` — reglas de comportamiento especificas de Claude
+- Reglas operacionales pequenas (self-service-rbac, middleware, etc.)
+- Estado de sesion actual
+
+### Regla al cierre de sesion
+
+Si durante una sesion se creo conocimiento nuevo:
+1. Decisiones/arquitectura → crear directamente en `docs/`
+2. Leccion aprendida → agregar a `docs/history/pitfalls.md`
+3. Sprint cerrado → agregar a `docs/history/sprint-history.md`
+4. Instruccion para Claude → se queda en auto-memory
+
+**NUNCA crear archivos de conocimiento durable en auto-memory.**
+Crearlos directamente en `docs/` desde el inicio.

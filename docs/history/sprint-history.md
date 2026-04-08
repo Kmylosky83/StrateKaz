@@ -2202,6 +2202,49 @@ Roadmap actualizado: P1 → COMPLETADO. Siguiente: P2 (CLIENTE-PORTAL / AUDITORI
 
 ---
 
+## 2026-04-08 (parte 2) — Resolución H2: Sistema de Memoria del Proyecto
+
+### Objetivo
+Resolver H2 — auto-memory de Claude Code vivía fuera del repo (45 archivos, ~475 KB sin versionar).
+
+### Resultado
+RESUELTO. 3 commits en main pusheados (72125fea, 614cae45, b4aab5b2).
+
+### Decisión arquitectónica tomada
+Opción D — Híbrido. Conocimiento durable vive en docs/ del repo (versionado). Auto-memory de Claude Code queda como scratch pad efímero solo para MEMORY.md (índice), feedback_*.md (reglas de Claude), y reglas operacionales pequeñas. Criterio de corte: "si importaría dentro de 3 meses, va a docs/".
+
+### Cambios ejecutados
+- 28 archivos del snapshot promovidos a docs/ en 6 grupos temáticos
+- 2 directorios nuevos: docs/business/ y docs/history/
+- 9 archivos del snapshot descartados por redundancia con docs/ existente
+- 2 merges: ui-standards → DESIGN-SYSTEM.md, naming-conventions → CONVENCIONES-NOMENCLATURA.md
+- coding-standards.md reemplaza POLITICAS-DESARROLLO.md (era 2x más completo)
+- 4 referencias rotas en CLAUDE.md corregidas (líneas 52, 73, 361, 499)
+- Nueva sección en CLAUDE.md: "Sistema de Memoria — Regla de Persistencia"
+- MEMORY.md en auto-memory reescrito como índice de punteros (de 28 KB a ~5 KB)
+- Snapshot .memory-backup-2026-04-08/ eliminado del repo (renames preservados en historia git)
+- Auto-memory queda con 10 archivos: MEMORY.md + 6 feedback + 3 reglas operacionales
+
+### Hallazgos nuevos generados
+- H3 — Los 28 archivos promovidos no fueron validados contra el código actual. Pueden contener decisiones obsoletas. Sesión dedicada futura.
+- Pitfall metodológico registrado en docs/history/pitfalls.md: Code se saltó la conversación filosófica preliminar y arrancó a ejecutar después de 3 multi-select. Regla escrita para que no vuelva a pasar.
+
+### Deuda colateral nueva detectada
+- frontend/coverage/ debería estar en .gitignore (output de tests, no se versiona)
+
+### Estado de hallazgos al cierre
+- ✅ H2 — RESUELTO
+- 🔲 H1 — Capa Portales no definida (próxima sesión arquitectónica grande)
+- 🔲 H3 — Validación de frescura de los 28 archivos promovidos
+
+### Próxima sesión sugerida
+Opciones en orden de prioridad:
+1. Sub-bloque 1 (Auth/JWT/Session) — victoria rápida pendiente, 1,137 LOC, ya inventariado
+2. H1 — Portales — sesión arquitectónica grande
+3. H3 — Validación de los 28 archivos
+
+---
+
 ## Accumulated Stats (Sprints 22-P0 + FASE 5-9 P3)
 - **Backend**: 18 security fixes, 50+ models migrated to TenantModel, 18 bug fixes, unified user creation flow, Celery tasks branding, email branding, clear_tenant_users command, DB repair masiva, cross-tenant security bypass fix, User.proveedor FK, portal proveedor endpoints, crear-acceso proveedor, supply chain URL registration, 16 FK decoupled, sidebar layers (SIDEBAR_LAYERS), module migration (gestion_estrategica → 3 módulos), RBAC permisos separados, auto_generate_codigo() transversal (20 modelos), 42 ConsecutivoConfig seeds, 7 unique constraints multi-tenant fixed, DRF action url_path fixes, select_lists query fixes, import masivo proveedores + clientes, TenantModelViewSetMixin, AICallLog + AIQuotaConfig, **RevisionDireccionAggregator (14 módulos)**, **ResumenRevisionMixin (14 ViewSets)**, **ActaFirmaService**, **informe_gerencial_pdf.py (WeasyPrint)**, **PostulacionThrottle + email confirmación**, **conditional UniqueConstraint soft-delete pattern**, **soft-delete user cascade**, **public_tenant_paths for setup-password**, **AdaptiveLayout + PortalLayout**, **isPortalOnlyUser(cargo.code)**, **cross-module serializer IntegerField pattern**, **3 tenant management commands (reset, clean, delete)**, **PESTEL/Porter import/export Excel (6 @action endpoints)**, **3 context seeds en deploy_seeds_all_tenants**
 - **Frontend**: ~80+ pages/components, ~220+ hooks, ~70+ API clients, ~120+ type interfaces, SectionGuard, forceLogout, refreshUserProfile, Mi Portal redesign + avatar, ProtectedRoute definitive auth, axios interceptor fix, RBAC race condition fixes, portal proveedor + Mi Cuenta, supply chain wired, routes split 18 modules, useModules barrel, 0 cross-imports C2↔C2, 18 modales con codigo auto-gen, portal público vacantes (3 páginas), +20 HSEQ modales, +19 modales (SC+PO+WF+CRM), +2 import masivo, **Kanban board + drag&drop**, **CalendarView (zero deps)**, **InformeGerencialTab (15 secciones ISO)**, **FirmaActaModal + EnviarInformeModal**, **12 manual chunks Vite**, **Sentry lazy-loaded**, **chart-colors.ts**, **862 HTML→DS**, **SetupPasswordPage tenant_id from URL**, **Portal Proveedor Rico (6 tipos)**, **AdaptiveLayout + PortalLayout**, **useHasProveedor hook**, **portalUtils.ts**, **POLISH-2: WidgetRenderer type-aware, NotificacionDetailModal, CatalogosTab deshadowed, delete/export cumplimiento, CuentaPorCobrar create wired**, **PESTEL Vista Híbrida (tabla+matriz+stats+import/export)**, **Porter Vista Híbrida (tabla+radar+diagrama+import/export)**

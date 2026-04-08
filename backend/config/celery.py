@@ -116,46 +116,58 @@ app.conf.beat_schedule = {
     # ═══════════════════════════════════════════════════
     # MOTOR DE CUMPLIMIENTO - NORMAS Y REQUISITOS LEGALES
     # ═══════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════
+    # DESACTIVADO L20 — Reactivar al activar motor_cumplimiento
+    # Tarea apunta a un módulo que NO está en INSTALLED_APPS (CURRENT_DEPLOY_LEVEL=20).
+    # Estaba fallando silenciosamente en cada disparo de Celery Beat.
+    # Limpiado en sesión de 2026-04-07. Ver MEMORY.md sub-bloque "Limpieza Celery Beat".
+    # ═══════════════════════════════════════════════════════════════════
 
-    # Web scraping de normas legales colombianas cada 15 días
-    # Ejecutar el día 1 y 15 de cada mes a las 3 AM
-    'scrape-legal-updates-biweekly': {
-        'task': 'apps.motor_cumplimiento.tasks.scrape_legal_updates',
-        'schedule': crontab(hour=3, minute=0, day_of_month='1,15'),
-        'options': {'queue': 'scraping'},
-    },
+    # # Web scraping de normas legales colombianas cada 15 días
+    # # Ejecutar el día 1 y 15 de cada mes a las 3 AM
+    # 'scrape-legal-updates-biweekly': {
+    #     'task': 'apps.motor_cumplimiento.tasks.scrape_legal_updates',
+    #     'schedule': crontab(hour=3, minute=0, day_of_month='1,15'),
+    #     'options': {'queue': 'scraping'},
+    # },
 
-    # Verificación de vencimientos de requisitos legales - Diario a las 6 AM
-    'check-license-expirations-daily': {
-        'task': 'apps.motor_cumplimiento.tasks.check_license_expirations',
-        'schedule': crontab(hour=6, minute=0),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificación de vencimientos de requisitos legales - Diario a las 6 AM
+    # 'check-license-expirations-daily': {
+    #     'task': 'apps.motor_cumplimiento.tasks.check_license_expirations',
+    #     'schedule': crontab(hour=6, minute=0),
+    #     'options': {'queue': 'compliance'},
+    # },
 
-    # Envío de notificaciones de vencimientos - Diario a las 7 AM
-    'send-expiration-notifications-daily': {
-        'task': 'apps.motor_cumplimiento.tasks.send_expiration_notifications',
-        'schedule': crontab(hour=7, minute=0),
-        'options': {'queue': 'notifications'},
-    },
+    # # Envío de notificaciones de vencimientos - Diario a las 7 AM
+    # 'send-expiration-notifications-daily': {
+    #     'task': 'apps.motor_cumplimiento.tasks.send_expiration_notifications',
+    #     'schedule': crontab(hour=7, minute=0),
+    #     'options': {'queue': 'notifications'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # TALENT HUB - GESTIÓN DE TALENTO HUMANO
     # ═══════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════
+    # DESACTIVADO L20 — Reactivar al activar talent_hub
+    # Tarea apunta a un módulo que NO está en INSTALLED_APPS (CURRENT_DEPLOY_LEVEL=20).
+    # Estaba fallando silenciosamente en cada disparo de Celery Beat.
+    # Limpiado en sesión de 2026-04-07. Ver MEMORY.md sub-bloque "Limpieza Celery Beat".
+    # ═══════════════════════════════════════════════════════════════════
 
-    # Verificar contratos próximos a vencer - Diario a las 7:30 AM
-    'th-check-contratos-por-vencer': {
-        'task': 'apps.talent_hub.tasks.check_contratos_por_vencer',
-        'schedule': crontab(hour=7, minute=30),
-        'options': {'queue': 'notifications'},
-    },
+    # # Verificar contratos próximos a vencer - Diario a las 7:30 AM
+    # 'th-check-contratos-por-vencer': {
+    #     'task': 'apps.talent_hub.tasks.check_contratos_por_vencer',
+    #     'schedule': crontab(hour=7, minute=30),
+    #     'options': {'queue': 'notifications'},
+    # },
 
-    # Verificar períodos de prueba por terminar - Diario a las 7:45 AM
-    'th-check-periodos-prueba': {
-        'task': 'apps.talent_hub.tasks.check_periodos_prueba',
-        'schedule': crontab(hour=7, minute=45),
-        'options': {'queue': 'notifications'},
-    },
+    # # Verificar períodos de prueba por terminar - Diario a las 7:45 AM
+    # 'th-check-periodos-prueba': {
+    #     'task': 'apps.talent_hub.tasks.check_periodos_prueba',
+    #     'schedule': crontab(hour=7, minute=45),
+    #     'options': {'queue': 'notifications'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # CONTROL DE TIEMPO - ASISTENCIA Y MARCAJES
@@ -217,34 +229,41 @@ app.conf.beat_schedule = {
     # ═══════════════════════════════════════════════════
     # PLANEACIÓN ESTRATÉGICA - OBJETIVOS, CAMBIOS Y KPIs
     # ═══════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════
+    # DESACTIVADO L20 — Reactivar al activar gestion_estrategica.planeacion
+    # Tarea apunta a un módulo que NO está en INSTALLED_APPS (CURRENT_DEPLOY_LEVEL=20).
+    # Estaba fallando silenciosamente en cada disparo de Celery Beat.
+    # NOTA: paths cortos (sin prefijo apps.gestion_estrategica.) — ni siquiera resolvían.
+    # Limpiado en sesión de 2026-04-07. Ver MEMORY.md sub-bloque "Limpieza Celery Beat".
+    # ═══════════════════════════════════════════════════════════════════
 
-    # Verificar objetivos estratégicos vencidos o próximos a vencer - Diario 7:00 AM
-    'planeacion-check-objectives-overdue': {
-        'task': 'planeacion.check_objectives_overdue',
-        'schedule': crontab(hour=7, minute=0),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar objetivos estratégicos vencidos o próximos a vencer - Diario 7:00 AM
+    # 'planeacion-check-objectives-overdue': {
+    #     'task': 'planeacion.check_objectives_overdue',
+    #     'schedule': crontab(hour=7, minute=0),
+    #     'options': {'queue': 'compliance'},
+    # },
 
-    # Verificar cambios organizacionales vencidos - Diario 7:15 AM
-    'planeacion-check-changes-overdue': {
-        'task': 'planeacion.check_changes_overdue',
-        'schedule': crontab(hour=7, minute=15),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar cambios organizacionales vencidos - Diario 7:15 AM
+    # 'planeacion-check-changes-overdue': {
+    #     'task': 'planeacion.check_changes_overdue',
+    #     'schedule': crontab(hour=7, minute=15),
+    #     'options': {'queue': 'compliance'},
+    # },
 
-    # Verificar KPIs pendientes de medición - Diario 8:00 AM
-    'planeacion-check-kpi-measurements-due': {
-        'task': 'planeacion.check_kpi_measurements_due',
-        'schedule': crontab(hour=8, minute=0),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar KPIs pendientes de medición - Diario 8:00 AM
+    # 'planeacion-check-kpi-measurements-due': {
+    #     'task': 'planeacion.check_kpi_measurements_due',
+    #     'schedule': crontab(hour=8, minute=0),
+    #     'options': {'queue': 'compliance'},
+    # },
 
-    # Verificar planes estratégicos próximos a vencer - Semanal lunes 8:00 AM
-    'planeacion-check-plan-expiration': {
-        'task': 'planeacion.check_plan_expiration',
-        'schedule': crontab(hour=8, minute=0, day_of_week=1),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar planes estratégicos próximos a vencer - Semanal lunes 8:00 AM
+    # 'planeacion-check-plan-expiration': {
+    #     'task': 'planeacion.check_plan_expiration',
+    #     'schedule': crontab(hour=8, minute=0, day_of_week=1),
+    #     'options': {'queue': 'compliance'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # GESTION DOCUMENTAL - REVISIONES PROGRAMADAS
@@ -306,31 +325,43 @@ app.conf.beat_schedule = {
     # ═══════════════════════════════════════════════════
     # EVIDENCIAS CENTRALIZADAS
     # ═══════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════
+    # DESACTIVADO L20 — Reactivar al activar motor_cumplimiento
+    # Tarea apunta a un módulo que NO está en INSTALLED_APPS (CURRENT_DEPLOY_LEVEL=20).
+    # Estaba fallando silenciosamente en cada disparo de Celery Beat.
+    # Limpiado en sesión de 2026-04-07. Ver MEMORY.md sub-bloque "Limpieza Celery Beat".
+    # ═══════════════════════════════════════════════════════════════════
 
-    # Verificar evidencias vencidas (certificados, licencias) - Diario a las 6 AM
-    'evidencias-check-expired': {
-        'task': 'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas',
-        'schedule': crontab(hour=6, minute=0),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar evidencias vencidas (certificados, licencias) - Diario a las 6 AM
+    # 'evidencias-check-expired': {
+    #     'task': 'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas',
+    #     'schedule': crontab(hour=6, minute=0),
+    #     'options': {'queue': 'compliance'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # REVISION POR LA DIRECCION (ISO 9.3)
     # ═══════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════
+    # DESACTIVADO L20 — Reactivar al activar gestion_estrategica.revision_direccion
+    # Tarea apunta a un módulo que NO está en INSTALLED_APPS (CURRENT_DEPLOY_LEVEL=20).
+    # Estaba fallando silenciosamente en cada disparo de Celery Beat.
+    # Limpiado en sesión de 2026-04-07. Ver MEMORY.md sub-bloque "Limpieza Celery Beat".
+    # ═══════════════════════════════════════════════════════════════════
 
-    # Verificar compromisos vencidos - Diario a las 7 AM
-    'revision-check-overdue-compromisos': {
-        'task': 'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos',
-        'schedule': crontab(hour=7, minute=0),
-        'options': {'queue': 'compliance'},
-    },
+    # # Verificar compromisos vencidos - Diario a las 7 AM
+    # 'revision-check-overdue-compromisos': {
+    #     'task': 'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos',
+    #     'schedule': crontab(hour=7, minute=0),
+    #     'options': {'queue': 'compliance'},
+    # },
 
-    # Recordatorio de revisiones proximas - Diario a las 8 AM
-    'revision-send-reminder': {
-        'task': 'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision',
-        'schedule': crontab(hour=8, minute=0),
-        'options': {'queue': 'notifications'},
-    },
+    # # Recordatorio de revisiones proximas - Diario a las 8 AM
+    # 'revision-send-reminder': {
+    #     'task': 'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision',
+    #     'schedule': crontab(hour=8, minute=0),
+    #     'options': {'queue': 'notifications'},
+    # },
 
     # ═══════════════════════════════════════════════════
     # CORE - ONBOARDING — RECORDATORIOS AUTOMÁTICOS

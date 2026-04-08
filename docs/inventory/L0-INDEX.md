@@ -231,6 +231,12 @@ Todo ──→ Infraestructura (base models, middleware, signals)
 Frontend core-related adicional: ~15,400 LOC (stores, hooks, API clients, guards, features/users + perfil + admin-global).
 `backend/utils/` (1,543 LOC): infraestructura compartida, NO contada como L0.
 
+**NOTA L20+:** `apps.analytics.config_indicadores` y `apps.analytics.exportacion_integracion`
+están activas en TENANT_APPS como excepción documentada en `base.py:237-240`
+(no dependen de C2, solo de core.Cargo). No tienen nivel asignado en la cascada.
+Esto significa que el nivel de despliegue real es "L20 + 2 parches analytics",
+no "L20 puro". Documentado en MEMORY.md sección 2026-04-07 (tercera sesión).
+
 ---
 
 ## Orden de Inventario Profundo Aprobado

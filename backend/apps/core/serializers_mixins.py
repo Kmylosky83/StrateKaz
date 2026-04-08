@@ -1,3 +1,18 @@
+# =====================================================================
+# INFRAESTRUCTURA ADELANTADA — NO CONSUMIDA EN PRODUCCIÓN
+# =====================================================================
+# Este módulo contiene 22 mixins reutilizables para serializers (audit,
+# firma, archivos, timestamps, status) diseñados para la serializer
+# factory que se implementará durante la consolidación de factories.
+#
+# Antes de empezar a usarlo:
+# 1. Validar que el patrón sigue alineado con la arquitectura actual
+# 2. Agregar tests que cubran los caminos que vayas a usar
+# 3. Migrar consumidores de a uno, no todos a la vez
+#
+# Última revisión: 2026-04-07 (inventario L0-07)
+# =====================================================================
+
 """
 Mixins reutilizables para serializers del sistema StrateKaz.
 

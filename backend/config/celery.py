@@ -405,8 +405,6 @@ app.conf.beat_schedule = {
 app.conf.task_routes = {
     # Core tasks
     'apps.core.tasks.send_email_async': {'queue': 'emails'},
-    'apps.core.tasks.generate_report_async': {'queue': 'reports'},
-    'apps.core.tasks.process_file_upload': {'queue': 'files'},
     'apps.core.tasks.cleanup_*': {'queue': 'maintenance'},
     'apps.core.tasks.backup_*': {'queue': 'maintenance'},
     'apps.core.tasks.*_health_check': {'queue': 'monitoring'},

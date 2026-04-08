@@ -1,3 +1,18 @@
+# =====================================================================
+# INFRAESTRUCTURA ADELANTADA — NO CONSUMIDA EN PRODUCCIÓN
+# =====================================================================
+# Este módulo contiene decoradores y helpers genéricos para cache Redis
+# (cache_queryset, cache_catalogo, invalidate_cache_pattern) diseñados
+# para cachear ViewSets y catálogos cuando se implemente caching general.
+#
+# Antes de empezar a usarlo:
+# 1. Validar que el patrón sigue alineado con la arquitectura actual
+# 2. Agregar tests que cubran los caminos que vayas a usar
+# 3. Migrar consumidores de a uno, no todos a la vez
+#
+# Última revisión: 2026-04-07 (inventario L0-07)
+# =====================================================================
+
 """
 Utilidades de Caché - Core
 Sistema de Gestión StrateKaz

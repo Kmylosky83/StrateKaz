@@ -455,67 +455,6 @@ def send_notification_email(self, user_id: int, template: str, context: Dict[str
 # TAREAS DE REPORTES
 # ═══════════════════════════════════════════════════
 
-@shared_task(
-    bind=True,
-    max_retries=2,
-    time_limit=1800,  # 30 minutos
-    soft_time_limit=1500,  # 25 minutos
-)
-def generate_report_async(self, report_type: str, params: Dict[str, Any],
-                         user_id: int = None,
-                         tenant_schema: str = None) -> Dict[str, Any]:
-    """
-    Generar reporte de forma asíncrona.
-
-    Args:
-        report_type: Tipo de reporte a generar
-        params: Parámetros del reporte
-        user_id: ID del usuario que solicitó el reporte
-        tenant_schema: Schema del tenant (requerido para queries multi-tenant)
-
-    Returns:
-        Dict con información del reporte generado
-    """
-    from contextlib import nullcontext
-    from django_tenants.utils import schema_context
-
-    ctx = schema_context(tenant_schema) if tenant_schema else nullcontext()
-
-    try:
-        with ctx:
-            logger.info(f"[Task {self.request.id}] Generando reporte: {report_type}")
-
-            report_name = f"reporte_{report_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            report_path = f"reports/{report_name}"
-
-            logger.info(f"[Task {self.request.id}] Reporte generado: {report_name}")
-
-            # Si se especificó un usuario, enviar email con el reporte
-            if user_id:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                user = User.objects.get(id=user_id)
-
-                send_email_async.delay(
-                    subject=f"Reporte {report_type} generado",
-                    message=f"Su reporte ha sido generado exitosamente. Puede descargarlo desde el sistema.",
-                    recipient_list=[user.email],
-                )
-
-            return {
-                'status': 'success',
-                'report_type': report_type,
-                'report_path': report_path,
-                'report_name': report_name,
-                'task_id': self.request.id,
-                'timestamp': datetime.now().isoformat(),
-            }
-
-    except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error generando reporte: {str(exc)}")
-        raise self.retry(exc=exc)
-
-
 @shared_task(bind=True)
 def send_weekly_reports(self) -> Dict[str, Any]:
     """
@@ -543,14 +482,12 @@ def send_weekly_reports(self) -> Dict[str, Any]:
                 ).distinct()
 
                 for admin in admins:
-                    generate_report_async.delay(
-                        report_type='weekly_summary',
-                        params={
-                            'start_date': (datetime.now() - timedelta(days=7)).isoformat(),
-                            'end_date': datetime.now().isoformat(),
-                        },
-                        user_id=admin.id,
-                        tenant_schema=tenant.schema_name,
+                    # TODO: Implementar generación real de reportes
+                    # cuando se active el módulo de analytics (L50+)
+                    send_email_async.delay(
+                        subject='Resumen semanal StrateKaz',
+                        message='El resumen semanal estará disponible próximamente.',
+                        recipient_list=[admin.email],
                     )
                     total_reports += 1
         except Exception as e:
@@ -566,48 +503,6 @@ def send_weekly_reports(self) -> Dict[str, Any]:
         'task_id': self.request.id,
         'timestamp': datetime.now().isoformat(),
     }
-
-
-# ═══════════════════════════════════════════════════
-# TAREAS DE ARCHIVOS
-# ═══════════════════════════════════════════════════
-
-@shared_task(bind=True, max_retries=2)
-def process_file_upload(self, file_path: str, file_type: str,
-                       metadata: Dict[str, Any] = None) -> Dict[str, Any]:
-    """
-    Procesar archivo subido de forma asíncrona.
-
-    Args:
-        file_path: Ruta del archivo en el storage
-        file_type: Tipo de archivo (excel, csv, pdf, etc.)
-        metadata: Metadata adicional del archivo
-
-    Returns:
-        Dict con el resultado del procesamiento
-    """
-    try:
-        logger.info(f"[Task {self.request.id}] Procesando archivo: {file_path}")
-
-        # Aquí iría la lógica específica según el tipo de archivo
-        # Ejemplos:
-        # - Extraer datos de Excel
-        # - Procesar CSV
-        # - Generar thumbnails de imágenes
-        # - Escanear archivos con antivirus
-        # - Comprimir archivos
-
-        return {
-            'status': 'success',
-            'file_path': file_path,
-            'file_type': file_type,
-            'task_id': self.request.id,
-            'timestamp': datetime.now().isoformat(),
-        }
-
-    except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error procesando archivo: {str(exc)}")
-        raise self.retry(exc=exc)
 
 
 # ═══════════════════════════════════════════════════
@@ -1522,67 +1417,3 @@ def check_incomplete_profiles(self) -> Dict[str, Any]:
     return summary
 
 
-# ═══════════════════════════════════════════════════
-# TAREAS DE EJEMPLO Y TESTING
-# ═══════════════════════════════════════════════════
-
-@shared_task(bind=True)
-def example_task(self, param1: str, param2: int = 0) -> Dict[str, Any]:
-    """
-    Tarea de ejemplo para testing.
-
-    Args:
-        param1: Parámetro de ejemplo
-        param2: Parámetro numérico opcional
-
-    Returns:
-        Dict con información de la ejecución
-    """
-    logger.info(f"[Task {self.request.id}] Ejecutando tarea de ejemplo")
-
-    return {
-        'status': 'success',
-        'param1': param1,
-        'param2': param2,
-        'task_id': self.request.id,
-        'task_name': self.name,
-        'timestamp': datetime.now().isoformat(),
-    }
-
-
-@shared_task(bind=True)
-def long_running_task(self, duration: int = 60) -> Dict[str, Any]:
-    """
-    Tarea de larga duración para testing.
-
-    Args:
-        duration: Duración en segundos
-
-    Returns:
-        Dict con información de la ejecución
-    """
-    import time
-
-    logger.info(f"[Task {self.request.id}] Iniciando tarea de {duration} segundos")
-
-    # Actualizar progreso
-    for i in range(duration):
-        time.sleep(1)
-        if i % 10 == 0:
-            self.update_state(
-                state='PROGRESS',
-                meta={
-                    'current': i,
-                    'total': duration,
-                    'percent': int((i / duration) * 100),
-                }
-            )
-
-    logger.info(f"[Task {self.request.id}] Tarea completada")
-
-    return {
-        'status': 'success',
-        'duration': duration,
-        'task_id': self.request.id,
-        'timestamp': datetime.now().isoformat(),
-    }

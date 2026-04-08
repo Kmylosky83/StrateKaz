@@ -254,3 +254,23 @@ Orden definido por el usuario (2026-04-06). Principio: gaps primero, monstruo se
 | 7mo | **2 — RBAC Dinámico** | 6,865 | 64 | El más grande con tests. Lo dejamos al final porque toca permisos (lo más sensible) y queremos llegar con máxima experiencia. |
 
 **Regla:** No se avanza al siguiente sub-bloque sin aprobación explícita del usuario.
+
+---
+
+## Hallazgos arquitectónicos pendientes
+
+> **Antes de continuar con cualquier inventario L0**, leer
+> [`docs/architecture/HALLAZGOS-PENDIENTES-2026-04.md`](../architecture/HALLAZGOS-PENDIENTES-2026-04.md).
+>
+> Sesión 2026-04-08 descubrió 2 hallazgos arquitectónicos críticos que
+> bloquean trabajo futuro y requieren sesiones dedicadas:
+>
+> - **H1 — Capa Portales no definida.** Mi Portal vive físicamente en
+>   `apps/talent_hub/api/` con 2 endpoints rotos en producción. Bloquea
+>   activación de talent_hub.novedades, sales_crm, supply_chain.
+> - **H2 — Auto-memory de Claude Code vive fuera del repo.** 45 archivos
+>   .md (~475 KB) de conocimiento del proyecto sin versionar. Snapshot
+>   de emergencia en `.memory-backup-2026-04-08/`. Bloquea cualquier
+>   sistema confiable de memoria del proyecto.
+>
+> Orden de ataque sugerido: **H2 primero** (bloquea a H1).

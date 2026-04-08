@@ -282,14 +282,43 @@ Resolución de H2, sesión 2026-04-08 parte 2.
 
 ---
 
+## H4 — Infraestructura de test multi-tenant rota
+
+### Detectado
+2026-04-08 (sesión auditoría perímetro LIVE)
+
+### Severidad
+**ALTA** — Bloquea cualquier validación automatizada del perímetro LIVE.
+
+### Síntoma
+~525 de ~530 tests fallan con `OperationalError` de DB de test o setup
+failure por no usar `BaseTenantTestCase`. Los únicos tests que pasan son:
+- 6 tests migrados de core (usan `BaseTenantTestCase`)
+- 37 tests de configuracion (unit tests puras que no tocan modelos tenant)
+
+### Hipótesis inicial
+Una sola pieza de infra compartida está rota. Arreglarla podría
+desbloquear la mayoría de los tests de un saque. Evidencia: los tests
+que SÍ usan `BaseTenantTestCase` pasan limpiamente.
+
+### Próxima sesión
+Dedicada exclusivamente a este hallazgo.
+
+### Documento de referencia
+`docs/architecture/PERIMETRO-LIVE.md`
+
+---
+
 ## Orden de ataque sugerido
 
-| # | Hallazgo | Razón del orden |
-|---|---|---|
-| 1 | **H2 — Auto-memory** | Bloquea todo lo demás porque sin un sistema confiable de memoria del proyecto, las decisiones de H1 (y de cualquier sesión futura) viven en frágil. |
-| 2 | **H1 — Portales** | Una vez que tenemos memoria confiable, podemos atacar la decisión arquitectónica de Portales con la garantía de que el resultado va a sobrevivir. |
+| # | Hallazgo | Estado | Razón del orden |
+|---|---|---|---|
+| 1 | **H2 — Auto-memory** | ✅ RESUELTO | Bloquea todo lo demás porque sin un sistema confiable de memoria del proyecto, las decisiones de H1 (y de cualquier sesión futura) viven en frágil. |
+| 2 | **H4 — Infra de test** | 🔲 PENDIENTE | Sin tests funcionando, no podemos validar nada automatizadamente. Bloquea la confianza en todo el perímetro LIVE. |
+| 3 | **H3 — Validación de frescura** | 🔲 PENDIENTE | Los 28 archivos promovidos pueden tener info obsoleta. Menos urgente que H4. |
+| 4 | **H1 — Portales** | 🔲 PENDIENTE | Decisión arquitectónica grande. Requiere perímetro LIVE sólido primero. |
 
-**Sesiones estimadas:** 1 sesión completa cada uno, posiblemente 2 para H1
+**Sesiones estimadas:** 1 sesión para H4, 1 para H3, 1-2 para H1.
 si el patrón elegido requiere prototipo de migración.
 
 ---

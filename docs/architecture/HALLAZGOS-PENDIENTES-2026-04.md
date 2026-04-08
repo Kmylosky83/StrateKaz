@@ -135,7 +135,15 @@ completamente cuando se defina la capa Portales.
 
 ## H2 — Sistema de auto-memory de Claude Code vive fuera del repo
 
-### Severidad
+### Estado: RESUELTO (2026-04-08)
+
+**Resolución:** Migración completa ejecutada. 28 archivos promovidos a
+`docs/`, 9 descartados (redundantes con docs/ existentes), 2 mergeados,
+10 se quedan en auto-memory (scratch pad). Snapshot de emergencia eliminado.
+CLAUDE.md actualizado con 4 referencias corregidas + sección "Sistema de
+Memoria — Regla de Persistencia". MEMORY.md reescrito como índice de punteros.
+
+### Severidad original
 **ALTA** — Riesgo de pérdida total de conocimiento crítico del proyecto
 ante fallo de disco, reinstalación de Claude Code, o cambio de máquina.
 
@@ -238,6 +246,39 @@ solo hasta que se ejecute la sesión dedicada.
 dedicada futura.** No tocar `CLAUDE.md` hoy porque cualquier edición seria
 requiere primero entender el sistema completo, y eso es trabajo de la
 sesión dedicada.
+
+---
+
+## H3 — Archivos promovidos del snapshot no validados contra código actual
+
+### Severidad
+**MEDIA** — No bloquea, pero erosiona la confianza en docs/ como fuente de verdad.
+
+### Síntoma
+Durante la resolución de H2 (2026-04-08), 28 archivos del snapshot de auto-memory
+fueron promovidos a docs/ sin hacer la pasada de "sigue siendo cierto" contra el
+estado actual del código. Algunos de esos archivos pueden contener decisiones
+revertidas, planes abandonados, o referencias a estructuras que ya cambiaron.
+
+### Por qué se aceptó la deuda
+La sesión H2 estaba enfocada en arquitectura del sistema de memoria, no en validar
+contenido archivo por archivo. Validar 28 archivos contra el código actual habría
+tomado una sesión completa adicional y habría escalado el compromiso de la sesión H2.
+
+### Lo que bloquea
+Nada urgente. Pero significa que docs/ contiene contenido sin validación de frescura,
+y un colaborador futuro podría leer una decisión vieja como si fuera vigente.
+
+### Qué hay que hacer en sesión dedicada
+Para cada uno de los 28 archivos promovidos:
+1. Identificar las afirmaciones técnicas concretas (rutas de archivos, nombres de
+   clases, decisiones de diseño)
+2. Verificar contra el código actual del repo
+3. Marcar el archivo como VIGENTE, ACTUALIZAR, o DESCARTAR
+4. Si hay actualizaciones, hacerlas en el mismo PR
+
+### Origen
+Resolución de H2, sesión 2026-04-08 parte 2.
 
 ---
 

@@ -44,7 +44,7 @@ yarn-error.log*
 .pnp.js
 
 # Testing
-/coverage
+coverage/
 .nyc_output
 
 # Production

@@ -18,42 +18,50 @@ import pytest
 # =============================================================================
 # TENANT MULTI-SCHEMA SETUP — Bridge entre pytest-django y django-tenants
 # =============================================================================
-# Patrón estándar: creamos UN tenant de test con su propio schema una sola
-# vez por corrida (session scope), y envolvemos cada test que use `db` con
-# schema_context para que las fixtures pytest existentes operen sobre las
-# tablas de TENANT_APPS en lugar del schema public.
+# Schema unificado: tanto pytest (via este fixture) como BaseTenantTestCase
+# (unittest-style) usan schema "test". Esto garantiza que ambos frameworks
+# operen sobre las mismas tablas de TENANT_APPS.
 #
-# Schema name: "pytest_test" durante la fase de migración (coexiste con
-# "test" usado por BaseTenantTestCase). Será renombrado a "test" cuando
-# BaseTenantTestCase sea eliminado.
+# El fixture tenant_test_schema (session scope) crea el schema una sola vez
+# por corrida y fuerza migrate_schemas para asegurar que TODAS las tablas
+# de TENANT_APPS actuales existan (fix del pitfall check_if_exists).
+#
+# El fixture enable_tenant_db (autouse) envuelve cada test que use `db`
+# en schema_context("test") para que las operaciones ORM caigan en el
+# schema del tenant de test, no en public.
 
 
 @pytest.fixture(scope="session")
 def tenant_test_schema(django_db_setup, django_db_blocker):
     """
-    Crea un tenant de test con schema 'pytest_test' una sola vez por corrida.
-    Idempotente: reutiliza el schema si ya existe (útil para correr la suite
-    múltiples veces en desarrollo sin recrear).
+    Crea (o reutiliza) un tenant de test con schema 'test' una sola vez
+    por corrida. Fuerza migrate_schemas para garantizar que todas las tablas
+    de TENANT_APPS actuales existan en el schema.
     """
     from django_tenants.utils import get_tenant_domain_model, get_tenant_model
+    from django.core.management import call_command
 
     TenantModel = get_tenant_model()
     DomainModel = get_tenant_domain_model()
 
     with django_db_blocker.unblock():
         tenant, _ = TenantModel.objects.get_or_create(
-            schema_name="pytest_test",
+            schema_name="test",
             defaults={
-                "code": "pytest_test",
-                "name": "Pytest Test Tenant",
+                "code": "test",
+                "name": "Test Tenant",
             },
         )
-        # auto_create_schema=False en el modelo Tenant; forzamos creación.
+        # auto_create_schema=False en el modelo Tenant; forzamos creacion.
         tenant.create_schema(check_if_exists=True, sync_schema=True, verbosity=0)
+
+        # Forzar migraciones para asegurar que TODAS las tablas de
+        # TENANT_APPS actuales existan (fix pitfall check_if_exists).
+        call_command('migrate_schemas', schema_name='test', verbosity=0)
 
         DomainModel.objects.get_or_create(
             tenant=tenant,
-            domain="pytest.test.com",
+            domain="tenant.test.com",
             defaults={"is_primary": True},
         )
 

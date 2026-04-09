@@ -7,49 +7,26 @@ Proporciona fixtures reutilizables para las 4 sub-apps:
 - colaboradores
 - onboarding_induccion
 
-Autor: Sistema de Gestion StrateKaz
+Las fixtures base (user, admin_user, empresa, cargo, area, api_client,
+authenticated_client, admin_client) se heredan del root conftest.py.
+Este archivo solo define fixtures especificas de mi_equipo.
 """
 import pytest
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
 
 
 # ==============================================================================
-# FIXTURES DE USUARIOS
+# FIXTURES DE USUARIOS ADICIONALES
 # ==============================================================================
-
-
-@pytest.fixture
-def user(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser_mi_equipo',
-        email='testuser_miequipo@example.com',
-        password='TestPass123!',
-        first_name='Test',
-        last_name='User',
-        is_active=True,
-    )
-
-
-@pytest.fixture
-def admin_user(db):
-    """Usuario administrador de prueba."""
-    return User.objects.create_superuser(
-        username='admin_mi_equipo',
-        email='admin_miequipo@example.com',
-        password='AdminPass123!',
-        first_name='Admin',
-        last_name='User',
-    )
 
 
 @pytest.fixture
 def second_user(db):
     """Segundo usuario para tests de aprobacion, testigo, etc."""
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
     return User.objects.create_user(
         username='seconduser',
         email='second@example.com',
@@ -61,80 +38,31 @@ def second_user(db):
 
 
 # ==============================================================================
-# FIXTURES DE EMPRESA
+# FIXTURES DE ESTRUCTURA ORGANIZACIONAL ADICIONALES
 # ==============================================================================
-
-
-@pytest.fixture
-def empresa(db):
-    """Empresa de prueba (EmpresaConfig)."""
-    from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-
-    return EmpresaConfig.objects.create(
-        nombre='StrateKaz Test',
-        nit='900123456-1',
-        razon_social='StrateKaz Test S.A.S.',
-        nombre_comercial='SKT',
-        email='info@stratekaz-test.com',
-        telefono='3001234567',
-        direccion='Calle 123 # 45-67',
-        ciudad='Bogota',
-        departamento='Cundinamarca',
-        pais='Colombia',
-    )
-
-
-# ==============================================================================
-# FIXTURES DE ESTRUCTURA ORGANIZACIONAL
-# ==============================================================================
-
-
-@pytest.fixture
-def cargo(db):
-    """Cargo basico de prueba."""
-    from apps.core.models import Cargo
-
-    return Cargo.objects.create(
-        code='ANALISTA',
-        name='Analista',
-        nivel_jerarquico=1,
-    )
 
 
 @pytest.fixture
 def cargo_gerente(db):
-    """Cargo de gerente (nivel 3)."""
+    """Cargo de gerente (nivel estrategico)."""
     from apps.core.models import Cargo
 
     return Cargo.objects.create(
         code='GERENTE',
         name='Gerente',
-        nivel_jerarquico=3,
+        nivel_jerarquico='ESTRATEGICO',
     )
 
 
 @pytest.fixture
 def cargo_coordinador(db):
-    """Cargo de coordinador (nivel 2)."""
+    """Cargo de coordinador (nivel tactico)."""
     from apps.core.models import Cargo
 
     return Cargo.objects.create(
         code='COORDINADOR',
         name='Coordinador',
-        nivel_jerarquico=2,
-    )
-
-
-@pytest.fixture
-def area(db):
-    """Area organizacional de prueba."""
-    from apps.gestion_estrategica.organizacion.models import Area
-
-    return Area.objects.create(
-        code='ADM',
-        name='Administracion',
-        tipo='APOYO',
-        orden=1,
+        nivel_jerarquico='TACTICO',
     )
 
 
@@ -149,33 +77,6 @@ def area_operaciones(db):
         tipo='MISIONAL',
         orden=2,
     )
-
-
-# ==============================================================================
-# FIXTURES DE API CLIENT
-# ==============================================================================
-
-
-@pytest.fixture
-def api_client():
-    """Cliente API sin autenticar."""
-    from rest_framework.test import APIClient
-
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_client(api_client, user):
-    """Cliente API autenticado con usuario basico."""
-    api_client.force_authenticate(user=user)
-    return api_client
-
-
-@pytest.fixture
-def admin_client(api_client, admin_user):
-    """Cliente API autenticado con usuario admin."""
-    api_client.force_authenticate(user=admin_user)
-    return api_client
 
 
 # ==============================================================================

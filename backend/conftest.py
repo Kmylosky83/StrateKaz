@@ -16,6 +16,76 @@ import pytest
 
 
 # =============================================================================
+# TENANT MULTI-SCHEMA SETUP — Bridge entre pytest-django y django-tenants
+# =============================================================================
+# Patrón estándar: creamos UN tenant de test con su propio schema una sola
+# vez por corrida (session scope), y envolvemos cada test que use `db` con
+# schema_context para que las fixtures pytest existentes operen sobre las
+# tablas de TENANT_APPS en lugar del schema public.
+#
+# Schema name: "pytest_test" durante la fase de migración (coexiste con
+# "test" usado por BaseTenantTestCase). Será renombrado a "test" cuando
+# BaseTenantTestCase sea eliminado.
+
+
+@pytest.fixture(scope="session")
+def tenant_test_schema(django_db_setup, django_db_blocker):
+    """
+    Crea un tenant de test con schema 'pytest_test' una sola vez por corrida.
+    Idempotente: reutiliza el schema si ya existe (útil para correr la suite
+    múltiples veces en desarrollo sin recrear).
+    """
+    from django_tenants.utils import get_tenant_domain_model, get_tenant_model
+
+    TenantModel = get_tenant_model()
+    DomainModel = get_tenant_domain_model()
+
+    with django_db_blocker.unblock():
+        tenant, _ = TenantModel.objects.get_or_create(
+            schema_name="pytest_test",
+            defaults={
+                "code": "pytest_test",
+                "name": "Pytest Test Tenant",
+            },
+        )
+        # auto_create_schema=False en el modelo Tenant; forzamos creación.
+        tenant.create_schema(check_if_exists=True, sync_schema=True, verbosity=0)
+
+        DomainModel.objects.get_or_create(
+            tenant=tenant,
+            domain="pytest.test.com",
+            defaults={"is_primary": True},
+        )
+
+    return tenant
+
+
+@pytest.fixture(autouse=True)
+def enable_tenant_db(request, tenant_test_schema):
+    """
+    Envuelve cada test que use el fixture `db` en schema_context del tenant
+    de test. Tests que NO usan db (unit tests puros sin acceso a modelos)
+    no se ven afectados — yield directo sin entrar al schema_context.
+    """
+    from django_tenants.utils import schema_context
+
+    db_fixtures = {
+        "db",
+        "transactional_db",
+        "django_db_setup",
+        "django_db_reset_sequences",
+    }
+    needs_db = bool(db_fixtures.intersection(request.fixturenames))
+
+    if not needs_db:
+        yield
+        return
+
+    with schema_context(tenant_test_schema.schema_name):
+        yield
+
+
+# =============================================================================
 # API CLIENTS
 # =============================================================================
 

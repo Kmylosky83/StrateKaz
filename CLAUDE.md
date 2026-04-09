@@ -420,6 +420,17 @@ Documentacion detallada en `docs/` (versionada en el repo):
 
 ## Testing — Lectura obligatoria
 
+### Alcance: solo apps LIVE
+
+Los tests se corren, miden y arreglan **exclusivamente** para las apps
+activas (descomentadas) en `base.py` TENANT_APPS. Las 61 apps extra que
+`testing.py` agrega son borrador: sus tests pueden estar rotos y eso es
+esperado. `testing.py` las habilita solo para que pytest no crashee al
+importar modelos referenciados por código LIVE — NO para que sus tests pasen.
+
+Cuando un módulo L25+ se vaya a activar, sus tests se revisan ese día:
+si sirven se usan, si no se eliminan y se reescriben desde cero.
+
 ### Patron para tests de backend (a partir de 2026-04-07)
 
 Todos los tests de backend que tocan modelos de TENANT_APPS deben heredar

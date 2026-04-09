@@ -32,7 +32,7 @@ from apps.analytics.config_indicadores.models import (
 class TestCatalogoKPIViewSet:
     """Tests para CatalogoKPIViewSet."""
 
-    def test_listar_kpis(self, api_client, catalogo_kpi, catalogo_kpi_financiero):
+    def test_listar_kpis(self, authenticated_client, catalogo_kpi, catalogo_kpi_financiero):
         """
         Test: Listar todos los KPIs.
 
@@ -41,13 +41,13 @@ class TestCatalogoKPIViewSet:
         Then: Debe retornar lista de KPIs con status 200
         """
         url = '/api/analytics/config-indicadores/catalogo-kpis/'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         # Verificar que existen al menos los 2 KPIs creados
         assert len(response.data['results']) >= 2
 
-    def test_crear_kpi(self, api_client, empresa):
+    def test_crear_kpi(self, authenticated_client, empresa):
         """
         Test: Crear nuevo KPI.
 
@@ -67,13 +67,13 @@ class TestCatalogoKPIViewSet:
             'unidad_medida': '%',
             'es_mayor_mejor': True
         }
-        response = api_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['codigo'] == 'KPI-NEW-001'
         assert response.data['nombre'] == 'Nuevo KPI Test'
 
-    def test_actualizar_kpi(self, api_client, catalogo_kpi):
+    def test_actualizar_kpi(self, authenticated_client, catalogo_kpi):
         """
         Test: Actualizar KPI existente.
 
@@ -86,7 +86,7 @@ class TestCatalogoKPIViewSet:
             'nombre': 'Nombre Actualizado',
             'descripcion': 'Descripción actualizada'
         }
-        response = api_client.patch(url, data, format='json')
+        response = authenticated_client.patch(url, data, format='json')
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data['nombre'] == 'Nombre Actualizado'
@@ -95,7 +95,7 @@ class TestCatalogoKPIViewSet:
         catalogo_kpi.refresh_from_db()
         assert catalogo_kpi.nombre == 'Nombre Actualizado'
 
-    def test_eliminar_kpi_soft_delete(self, api_client, catalogo_kpi):
+    def test_eliminar_kpi_soft_delete(self, authenticated_client, catalogo_kpi):
         """
         Test: Eliminar KPI (soft delete).
 
@@ -104,7 +104,7 @@ class TestCatalogoKPIViewSet:
         Then: Debe marcar is_active=False
         """
         url = f'/api/analytics/config-indicadores/catalogo-kpis/{catalogo_kpi.id}/'
-        response = api_client.delete(url)
+        response = authenticated_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
@@ -112,7 +112,7 @@ class TestCatalogoKPIViewSet:
         catalogo_kpi.refresh_from_db()
         assert catalogo_kpi.is_active is False
 
-    def test_filtro_por_categoria(self, api_client, catalogo_kpi, catalogo_kpi_financiero):
+    def test_filtro_por_categoria(self, authenticated_client, catalogo_kpi, catalogo_kpi_financiero):
         """
         Test: Filtrar KPIs por categoría.
 
@@ -121,14 +121,14 @@ class TestCatalogoKPIViewSet:
         Then: Debe retornar solo KPIs de categoría SST
         """
         url = '/api/analytics/config-indicadores/catalogo-kpis/?categoria=sst'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         # Todos los resultados deben ser categoría SST
         for kpi in response.data['results']:
             assert kpi['categoria'] == 'sst'
 
-    def test_filtro_por_tipo_indicador(self, api_client, catalogo_kpi, catalogo_kpi_financiero):
+    def test_filtro_por_tipo_indicador(self, authenticated_client, catalogo_kpi, catalogo_kpi_financiero):
         """
         Test: Filtrar KPIs por tipo de indicador.
 
@@ -137,13 +137,13 @@ class TestCatalogoKPIViewSet:
         Then: Debe retornar solo KPIs de tipo eficiencia
         """
         url = '/api/analytics/config-indicadores/catalogo-kpis/?tipo_indicador=eficiencia'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         for kpi in response.data['results']:
             assert kpi['tipo_indicador'] == 'eficiencia'
 
-    def test_accion_por_categoria(self, api_client, catalogo_kpi, catalogo_kpi_financiero, catalogo_kpi_calidad):
+    def test_accion_por_categoria(self, authenticated_client, catalogo_kpi, catalogo_kpi_financiero, catalogo_kpi_calidad):
         """
         Test: Acción customizada por_categoria.
 
@@ -152,7 +152,7 @@ class TestCatalogoKPIViewSet:
         Then: Debe retornar KPIs agrupados por categoría con conteo
         """
         url = '/api/analytics/config-indicadores/catalogo-kpis/por_categoria/'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
@@ -166,7 +166,7 @@ class TestCatalogoKPIViewSet:
 class TestFichaTecnicaKPIViewSet:
     """Tests para FichaTecnicaKPIViewSet."""
 
-    def test_crear_ficha_tecnica(self, api_client, empresa, catalogo_kpi, cargo_medicion, cargo_analisis):
+    def test_crear_ficha_tecnica(self, authenticated_client, empresa, catalogo_kpi, cargo_medicion, cargo_analisis):
         """
         Test: Crear ficha técnica de KPI.
 
@@ -187,13 +187,13 @@ class TestFichaTecnicaKPIViewSet:
             'fecha_inicio_medicion': date.today().isoformat(),
             'notas': 'Notas de prueba'
         }
-        response = api_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['objetivo'] == 'Objetivo de test'
         assert response.data['kpi'] == catalogo_kpi.id
 
-    def test_listar_fichas_tecnicas(self, api_client, ficha_tecnica):
+    def test_listar_fichas_tecnicas(self, authenticated_client, ficha_tecnica):
         """
         Test: Listar fichas técnicas.
 
@@ -202,7 +202,7 @@ class TestFichaTecnicaKPIViewSet:
         Then: Debe retornar lista con status 200
         """
         url = '/api/analytics/config-indicadores/fichas-tecnicas/'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
@@ -212,7 +212,7 @@ class TestFichaTecnicaKPIViewSet:
 class TestMetaKPIViewSet:
     """Tests para MetaKPIViewSet."""
 
-    def test_crear_meta_kpi(self, api_client, empresa, catalogo_kpi):
+    def test_crear_meta_kpi(self, authenticated_client, empresa, catalogo_kpi):
         """
         Test: Crear meta de KPI.
 
@@ -231,12 +231,12 @@ class TestMetaKPIViewSet:
             'valor_satisfactorio': '5.00',
             'valor_sobresaliente': '2.00'
         }
-        response = api_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Decimal(response.data['valor_meta']) == Decimal('5.00')
 
-    def test_listar_metas(self, api_client, meta_kpi):
+    def test_listar_metas(self, authenticated_client, meta_kpi):
         """
         Test: Listar metas de KPIs.
 
@@ -245,7 +245,7 @@ class TestMetaKPIViewSet:
         Then: Debe retornar lista con status 200
         """
         url = '/api/analytics/config-indicadores/metas-kpi/'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
@@ -255,7 +255,7 @@ class TestMetaKPIViewSet:
 class TestConfiguracionSemaforoViewSet:
     """Tests para ConfiguracionSemaforoViewSet."""
 
-    def test_crear_configuracion_semaforo(self, api_client, empresa, catalogo_kpi_calidad):
+    def test_crear_configuracion_semaforo(self, authenticated_client, empresa, catalogo_kpi_calidad):
         """
         Test: Crear configuración de semáforo.
 
@@ -274,12 +274,12 @@ class TestConfiguracionSemaforoViewSet:
             'umbral_rojo_min': '5.01',
             'umbral_rojo_max': None
         }
-        response = api_client.post(url, data, format='json')
+        response = authenticated_client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
         assert Decimal(response.data['umbral_verde_max']) == Decimal('2.00')
 
-    def test_listar_configuraciones_semaforo(self, api_client, semaforo_config):
+    def test_listar_configuraciones_semaforo(self, authenticated_client, semaforo_config):
         """
         Test: Listar configuraciones de semáforo.
 
@@ -288,7 +288,7 @@ class TestConfiguracionSemaforoViewSet:
         Then: Debe retornar lista con status 200
         """
         url = '/api/analytics/config-indicadores/configuraciones-semaforo/'
-        response = api_client.get(url)
+        response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1

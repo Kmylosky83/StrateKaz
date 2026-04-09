@@ -186,14 +186,6 @@ def admin_fd(db):
 
 
 @pytest.fixture
-def api_client():
-    """Cliente API sin autenticación."""
-    from rest_framework.test import APIClient
-
-    return APIClient()
-
-
-@pytest.fixture
 def client_elaborador(api_client, user_elaborador):
     """Cliente autenticado como elaborador."""
     api_client.force_authenticate(user=user_elaborador)

@@ -1,66 +1,28 @@
 """
-Fixtures para tests de tareas_recordatorios
+Fixtures para tests de tareas_recordatorios.
 
-Fixtures disponibles:
-- tarea: Tarea pendiente con alta prioridad
-- recordatorio: Recordatorio una vez
-- evento_calendario: Evento de reunion
-- comentario_tarea: Comentario en tarea
+Las fixtures base (user, admin_user, api_client, authenticated_client)
+se heredan del root conftest.py.
 """
 import pytest
-from datetime import datetime, timedelta, time
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
+from datetime import timedelta, time
 from django.utils import timezone
 
 from apps.audit_system.tareas_recordatorios.models import (
     Tarea, Recordatorio, EventoCalendario, ComentarioTarea
 )
 
-User = get_user_model()
-
-
-@pytest.fixture
-def user(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser', email='test@example.com',
-        password='testpass123', first_name='Test',
-        last_name='User', is_active=True
-    )
-
 
 @pytest.fixture
 def other_user(db):
     """Segundo usuario de prueba."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     return User.objects.create_user(
         username='otheruser', email='other@example.com',
         password='testpass123', first_name='Other',
         last_name='User', is_active=True
     )
-
-
-@pytest.fixture
-def admin_user(db):
-    """Usuario administrador de prueba."""
-    return User.objects.create_superuser(
-        username='admin', email='admin@example.com',
-        password='adminpass123', first_name='Admin', last_name='User'
-    )
-
-
-@pytest.fixture
-def api_client():
-    """Cliente API de prueba."""
-    from rest_framework.test import APIClient
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_client(api_client, user):
-    """Cliente API autenticado con usuario basico."""
-    api_client.force_authenticate(user=user)
-    return api_client
 
 
 @pytest.fixture

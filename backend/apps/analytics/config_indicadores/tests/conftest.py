@@ -1,20 +1,13 @@
 """
-Fixtures para tests de Analytics - Config Indicadores
+Fixtures para tests de Analytics - Config Indicadores.
 
-Proporciona fixtures reutilizables para:
-- CatalogoKPI con diferentes configuraciones
-- FichaTecnicaKPI completa
-- MetaKPI con diferentes rangos
-- ConfiguracionSemaforo con umbrales
-- Fixtures compartidas de empresa y usuarios
+Las fixtures base (user, admin_user, empresa, api_client,
+authenticated_client, admin_client) se heredan del root conftest.py.
 """
 import pytest
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from django.contrib.auth import get_user_model
-from django.utils import timezone
 
-from apps.gestion_estrategica.configuracion.models import EmpresaConfig
 from apps.analytics.config_indicadores.models import (
     CatalogoKPI,
     FichaTecnicaKPI,
@@ -22,25 +15,12 @@ from apps.analytics.config_indicadores.models import (
     ConfiguracionSemaforo
 )
 
-User = get_user_model()
-
-
-@pytest.fixture
-def usuario(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser_analytics',
-        email='test@analytics.com',
-        password='testpass123',
-        first_name='Test',
-        last_name='Analytics',
-        is_active=True
-    )
-
 
 @pytest.fixture
 def responsable(db):
     """Usuario responsable de KPIs."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
     return User.objects.create_user(
         username='responsable_kpi',
         email='responsable@analytics.com',
@@ -52,56 +32,35 @@ def responsable(db):
 
 
 @pytest.fixture
-def empresa(db):
-    """Empresa de prueba."""
-    return EmpresaConfig.objects.create(
-        nombre='StrateKaz',
-        nit='900123456-1',
-        razon_social='StrateKaz.',
-        nombre_comercial='GHN',
-        email='info@ghn.com',
-        telefono='3001234567',
-        direccion='Calle 123 # 45-67',
-        ciudad='Bogota',
-        departamento='Cundinamarca',
-        pais='Colombia'
+def cargo_medicion(db):
+    """Cargo responsable de medicion."""
+    from apps.core.models import Cargo
+    return Cargo.objects.create(
+        code='CARGO-MED-001',
+        name='Analista de Calidad',
+        nivel_jerarquico='OPERATIVO',
     )
 
 
 @pytest.fixture
-def cargo_medicion(db, empresa):
-    """Cargo responsable de medición."""
-    from apps.mi_equipo.estructura_cargos.models import Cargo
+def cargo_analisis(db):
+    """Cargo responsable de analisis."""
+    from apps.core.models import Cargo
     return Cargo.objects.create(
-        empresa_id=empresa.id,
-        codigo='CARGO-MED-001',
-        nombre='Analista de Calidad',
-        nivel_jerarquico=3,
-        tipo_cargo='operativo'
-    )
-
-
-@pytest.fixture
-def cargo_analisis(db, empresa):
-    """Cargo responsable de análisis."""
-    from apps.mi_equipo.estructura_cargos.models import Cargo
-    return Cargo.objects.create(
-        empresa_id=empresa.id,
-        codigo='CARGO-ANA-001',
-        nombre='Jefe de Calidad',
-        nivel_jerarquico=2,
-        tipo_cargo='jefatura'
+        code='CARGO-ANA-001',
+        name='Jefe de Calidad',
+        nivel_jerarquico='TACTICO',
     )
 
 
 @pytest.fixture
 def catalogo_kpi(db, empresa):
-    """KPI básico de SST."""
+    """KPI basico de SST."""
     return CatalogoKPI.objects.create(
         empresa_id=empresa.id,
         codigo='KPI-SST-001',
-        nombre='Índice de Frecuencia de Accidentes',
-        descripcion='Número de accidentes por millón de horas trabajadas',
+        nombre='Indice de Frecuencia de Accidentes',
+        descripcion='Numero de accidentes por millon de horas trabajadas',
         tipo_indicador='eficacia',
         categoria='sst',
         frecuencia_medicion='mensual',
@@ -133,7 +92,7 @@ def catalogo_kpi_calidad(db, empresa):
         empresa_id=empresa.id,
         codigo='KPI-CAL-001',
         nombre='Tasa de No Conformidades',
-        descripcion='Número de NC por 1000 productos',
+        descripcion='Numero de NC por 1000 productos',
         tipo_indicador='eficacia',
         categoria='calidad',
         frecuencia_medicion='mensual',
@@ -144,17 +103,17 @@ def catalogo_kpi_calidad(db, empresa):
 
 @pytest.fixture
 def ficha_tecnica(db, empresa, catalogo_kpi, cargo_medicion, cargo_analisis):
-    """Ficha técnica completa de KPI."""
+    """Ficha tecnica completa de KPI."""
     return FichaTecnicaKPI.objects.create(
         empresa_id=empresa.id,
         kpi=catalogo_kpi,
         objetivo='Monitorear la accidentalidad y reducir lesiones',
-        formula='(Número de accidentes * 1,000,000) / Total HH trabajadas',
+        formula='(Numero de accidentes * 1,000,000) / Total HH trabajadas',
         variables={
-            'numero_accidentes': 'Total de accidentes con incapacidad en el período',
-            'total_hh': 'Total de horas hombre trabajadas en el período'
+            'numero_accidentes': 'Total de accidentes con incapacidad en el periodo',
+            'total_hh': 'Total de horas hombre trabajadas en el periodo'
         },
-        fuente_datos='Sistema de gestión de SST, registros de nómina',
+        fuente_datos='Sistema de gestion de SST, registros de nomina',
         responsable_medicion=cargo_medicion,
         responsable_analisis=cargo_analisis,
         fecha_inicio_medicion=date(2025, 1, 1),
@@ -164,7 +123,7 @@ def ficha_tecnica(db, empresa, catalogo_kpi, cargo_medicion, cargo_analisis):
 
 @pytest.fixture
 def meta_kpi(db, empresa, catalogo_kpi):
-    """Meta de KPI para el año."""
+    """Meta de KPI para el ano."""
     return MetaKPI.objects.create(
         empresa_id=empresa.id,
         kpi=catalogo_kpi,
@@ -179,7 +138,7 @@ def meta_kpi(db, empresa, catalogo_kpi):
 
 @pytest.fixture
 def semaforo_config(db, empresa, catalogo_kpi):
-    """Configuración de semáforo para KPI."""
+    """Configuracion de semaforo para KPI."""
     return ConfiguracionSemaforo.objects.create(
         empresa_id=empresa.id,
         kpi=catalogo_kpi,
@@ -194,7 +153,7 @@ def semaforo_config(db, empresa, catalogo_kpi):
 
 @pytest.fixture
 def semaforo_config_financiero(db, empresa, catalogo_kpi_financiero):
-    """Configuración de semáforo para KPI financiero (mayor es mejor)."""
+    """Configuracion de semaforo para KPI financiero (mayor es mejor)."""
     return ConfiguracionSemaforo.objects.create(
         empresa_id=empresa.id,
         kpi=catalogo_kpi_financiero,
@@ -205,12 +164,3 @@ def semaforo_config_financiero(db, empresa, catalogo_kpi_financiero):
         umbral_rojo_min=Decimal('0'),
         umbral_rojo_max=Decimal('19.99')
     )
-
-
-@pytest.fixture
-def api_client(usuario):
-    """API Client autenticado."""
-    from rest_framework.test import APIClient
-    client = APIClient()
-    client.force_authenticate(user=usuario)
-    return client

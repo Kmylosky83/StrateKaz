@@ -1,85 +1,10 @@
 """
-Fixtures para tests de gestion_documental
+Fixtures para tests de gestion_documental.
 
-Fixtures disponibles:
-- user: Usuario basico de prueba
-- admin_user: Usuario administrador
-- empresa: EmpresaConfig de prueba
-- api_client: Cliente API sin autenticar
-- authenticated_client: Cliente API autenticado
-- tipo_documento: TipoDocumento de prueba
-- plantilla_documento: PlantillaDocumento de prueba
-- documento: Documento de prueba
-- version_documento: VersionDocumento de prueba
+Las fixtures base (user, admin_user, empresa, api_client,
+authenticated_client, admin_client) se heredan del root conftest.py.
 """
 import pytest
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-
-@pytest.fixture
-def user(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser_documental',
-        email='documental@example.com',
-        password='testpass123',
-        first_name='Test',
-        last_name='User',
-        is_active=True
-    )
-
-
-@pytest.fixture
-def admin_user(db):
-    """Usuario administrador de prueba."""
-    return User.objects.create_superuser(
-        username='admin_documental',
-        email='admin_documental@example.com',
-        password='adminpass123',
-        first_name='Admin',
-        last_name='User'
-    )
-
-
-@pytest.fixture
-def empresa(db):
-    """Empresa de prueba."""
-    from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-    return EmpresaConfig.objects.create(
-        nombre='Empresa Test Documental',
-        nit='900111222-3',
-        razon_social='Empresa Test Documental S.A.S.',
-        nombre_comercial='ETD',
-        email='info@etd.com',
-        telefono='3001234567',
-        direccion='Calle 100 # 10-20',
-        ciudad='Bogota',
-        departamento='Cundinamarca',
-        pais='Colombia'
-    )
-
-
-@pytest.fixture
-def api_client():
-    """Cliente API de prueba."""
-    from rest_framework.test import APIClient
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_client(api_client, user):
-    """Cliente API autenticado con usuario basico."""
-    api_client.force_authenticate(user=user)
-    return api_client
-
-
-@pytest.fixture
-def admin_client(api_client, admin_user):
-    """Cliente API autenticado con usuario admin."""
-    api_client.force_authenticate(user=admin_user)
-    return api_client
 
 
 @pytest.fixture

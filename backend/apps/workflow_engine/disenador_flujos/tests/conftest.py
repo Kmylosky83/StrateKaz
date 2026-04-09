@@ -1,87 +1,10 @@
 """
-Fixtures para tests de disenador_flujos (workflow_engine)
+Fixtures para tests de disenador_flujos (workflow_engine).
 
-Fixtures disponibles:
-- user: Usuario basico de prueba
-- admin_user: Usuario administrador
-- empresa: EmpresaConfig de prueba
-- api_client: Cliente API sin autenticar
-- authenticated_client: Cliente API autenticado
-- categoria_flujo: CategoriaFlujo de prueba
-- plantilla_flujo: PlantillaFlujo de prueba
-- nodo_inicio: NodoFlujo tipo INICIO
-- nodo_tarea: NodoFlujo tipo TAREA
-- nodo_fin: NodoFlujo tipo FIN
-- transicion_flujo: TransicionFlujo entre nodos
+Las fixtures base (user, admin_user, empresa, api_client,
+authenticated_client, admin_client) se heredan del root conftest.py.
 """
 import pytest
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-
-@pytest.fixture
-def user(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser_workflow',
-        email='workflow@example.com',
-        password='testpass123',
-        first_name='Test',
-        last_name='User',
-        is_active=True
-    )
-
-
-@pytest.fixture
-def admin_user(db):
-    """Usuario administrador de prueba."""
-    return User.objects.create_superuser(
-        username='admin_workflow',
-        email='admin_workflow@example.com',
-        password='adminpass123',
-        first_name='Admin',
-        last_name='User'
-    )
-
-
-@pytest.fixture
-def empresa(db):
-    """Empresa de prueba."""
-    from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-    return EmpresaConfig.objects.create(
-        nombre='Empresa Test Workflow',
-        nit='900222333-4',
-        razon_social='Empresa Test Workflow S.A.S.',
-        nombre_comercial='ETW',
-        email='info@etw.com',
-        telefono='3009876543',
-        direccion='Carrera 50 # 20-30',
-        ciudad='Medellin',
-        departamento='Antioquia',
-        pais='Colombia'
-    )
-
-
-@pytest.fixture
-def api_client():
-    """Cliente API de prueba."""
-    from rest_framework.test import APIClient
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_client(api_client, user):
-    """Cliente API autenticado con usuario basico."""
-    api_client.force_authenticate(user=user)
-    return api_client
-
-
-@pytest.fixture
-def admin_client(api_client, admin_user):
-    """Cliente API autenticado con usuario admin."""
-    api_client.force_authenticate(user=admin_user)
-    return api_client
 
 
 @pytest.fixture

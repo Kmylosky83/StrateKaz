@@ -1,16 +1,11 @@
 """
-Fixtures para tests de config_alertas
+Fixtures para tests de config_alertas.
 
-Fixtures disponibles:
-- tipo_alerta: TipoAlerta de vencimiento
-- configuracion_alerta: ConfiguracionAlerta con dias anticipacion
-- alerta_generada: AlertaGenerada pendiente
-- escalamiento_alerta: EscalamientoAlerta de nivel 1
+Las fixtures base (user, admin_user, empresa, cargo, api_client,
+authenticated_client, admin_client) se heredan del root conftest.py.
 """
 import pytest
-from datetime import datetime, timedelta
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
+from datetime import timedelta
 
 from apps.audit_system.config_alertas.models import (
     TipoAlerta,
@@ -18,84 +13,6 @@ from apps.audit_system.config_alertas.models import (
     AlertaGenerada,
     EscalamientoAlerta
 )
-
-User = get_user_model()
-
-
-@pytest.fixture
-def user(db):
-    """Usuario de prueba basico."""
-    return User.objects.create_user(
-        username='testuser',
-        email='test@example.com',
-        password='testpass123',
-        first_name='Test',
-        last_name='User',
-        is_active=True
-    )
-
-
-@pytest.fixture
-def admin_user(db):
-    """Usuario administrador de prueba."""
-    return User.objects.create_superuser(
-        username='admin',
-        email='admin@example.com',
-        password='adminpass123',
-        first_name='Admin',
-        last_name='User'
-    )
-
-
-@pytest.fixture
-def empresa(db):
-    """Empresa de prueba."""
-    from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-    return EmpresaConfig.objects.create(
-        nombre='StrateKaz',
-        nit='900123456-1',
-        razon_social='StrateKaz.',
-        nombre_comercial='GHN',
-        email='info@ghn.com',
-        telefono='3001234567',
-        direccion='Calle 123 # 45-67',
-        ciudad='Bogota',
-        departamento='Cundinamarca',
-        pais='Colombia'
-    )
-
-
-@pytest.fixture
-def cargo(db):
-    """Cargo de prueba."""
-    from apps.core.models import Cargo
-    return Cargo.objects.create(
-        codigo='RESP_HSE',
-        nombre='Responsable HSE',
-        descripcion='Responsable de HSE',
-        is_active=True
-    )
-
-
-@pytest.fixture
-def api_client():
-    """Cliente API de prueba."""
-    from rest_framework.test import APIClient
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_client(api_client, user):
-    """Cliente API autenticado con usuario basico."""
-    api_client.force_authenticate(user=user)
-    return api_client
-
-
-@pytest.fixture
-def admin_client(api_client, admin_user):
-    """Cliente API autenticado con usuario admin."""
-    api_client.force_authenticate(user=admin_user)
-    return api_client
 
 
 @pytest.fixture

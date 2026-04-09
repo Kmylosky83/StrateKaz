@@ -34,7 +34,7 @@ class TestTipoDocumento:
         assert tipo.nivel_documento == 'OPERATIVO'
         assert tipo.requiere_aprobacion is True
         assert tipo.requiere_firma is True
-        assert tipo.tiempo_retencion_anos == 5
+        assert tipo.tiempo_retencion_años == 5
         assert tipo.is_active is True
 
     def test_tipo_documento_str(self, tipo_documento):
@@ -114,11 +114,11 @@ class TestTipoDocumento:
             codigo='TMP',
             nombre='Temporal',
             prefijo_codigo='TMP-',
-            tiempo_retencion_anos=1,
+            tiempo_retencion_años=1,
             empresa_id=empresa.pk,
             created_by=user
         )
-        assert tipo.tiempo_retencion_anos == 1
+        assert tipo.tiempo_retencion_años == 1
 
     def test_tipo_documento_ordering(self, tipo_documento, tipo_documento_manual):
         """Tipos de documento ordenados por orden, codigo."""

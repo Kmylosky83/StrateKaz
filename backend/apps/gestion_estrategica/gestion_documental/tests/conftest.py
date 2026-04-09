@@ -19,7 +19,7 @@ def tipo_documento(empresa, user):
         prefijo_codigo='PR-',
         requiere_aprobacion=True,
         requiere_firma=True,
-        tiempo_retencion_anos=5,
+        tiempo_retencion_años=5,
         campos_obligatorios=['titulo', 'contenido'],
         color_identificacion='#3498db',
         is_active=True,
@@ -41,7 +41,7 @@ def tipo_documento_manual(empresa, user):
         prefijo_codigo='MA-',
         requiere_aprobacion=True,
         requiere_firma=True,
-        tiempo_retencion_anos=10,
+        tiempo_retencion_años=10,
         campos_obligatorios=[],
         color_identificacion='#e74c3c',
         is_active=True,
@@ -91,7 +91,7 @@ def documento(empresa, tipo_documento, plantilla_documento, user):
 
 
 @pytest.fixture
-def version_documento(documento, user):
+def version_documento(documento, empresa, user):
     """VersionDocumento de prueba."""
     from apps.gestion_estrategica.gestion_documental.models import VersionDocumento
     return VersionDocumento.objects.create(
@@ -100,5 +100,6 @@ def version_documento(documento, user):
         tipo_cambio='CREACION',
         contenido_snapshot=documento.contenido,
         descripcion_cambios='Creacion inicial del documento',
-        creado_por=user
+        creado_por=user,
+        empresa_id=empresa.pk,
     )

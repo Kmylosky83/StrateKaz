@@ -25,26 +25,10 @@ from apps.gestion_estrategica.configuracion.models import (
 
 @pytest.fixture
 def datos_empresa_validos():
-    """Fixture con datos válidos para crear una EmpresaConfig."""
+    """Fixture con datos validos para crear una EmpresaConfig."""
     return {
         'nit': '900123456-7',
         'razon_social': 'STRATEKAZ S.A.S.',
-        'nombre_comercial': 'StrateKaz',
-        'representante_legal': 'Juan Pérez García',
-        'cedula_representante': '1234567890',
-        'tipo_sociedad': 'SAS',
-        'actividad_economica': '1011',
-        'descripcion_actividad': 'Procesamiento de carne',
-        'regimen_tributario': 'COMUN',
-        'direccion_fiscal': 'Calle 123 # 45-67',
-        'ciudad': 'Bogotá',
-        'departamento': 'CUNDINAMARCA',
-        'pais': 'Colombia',
-        'codigo_postal': '110111',
-        'telefono_principal': '6011234567',
-        'telefono_secundario': '3001234567',
-        'email_corporativo': 'contacto@grasasdelnorte.com',
-        'sitio_web': 'https://www.grasasdelnorte.com',
     }
 
 
@@ -253,12 +237,6 @@ class TestSingletonPattern:
             EmpresaConfig.objects.create(
                 nit='860007738-9',
                 razon_social='OTRA EMPRESA S.A.S.',
-                representante_legal='Pedro González',
-                direccion_fiscal='Carrera 50 # 20-30',
-                ciudad='Medellín',
-                departamento='ANTIOQUIA',
-                telefono_principal='6044567890',
-                email_corporativo='info@otraempresa.com',
             )
 
         # Verificar mensaje de error
@@ -405,48 +383,9 @@ class TestPropiedadesComputadas:
         # Then
         assert dv == '7'
 
-    @pytest.mark.django_db
-    def test_direccion_completa_property(self, empresa_instance):
-        """
-        Given: Una empresa con dirección, ciudad y departamento configurados
-        When: Se accede a la propiedad direccion_completa
-        Then: Debe retornar la dirección formateada con comas
-        """
-        # Given
-        empresa_instance.direccion_fiscal = 'Calle 123 # 45-67'
-        empresa_instance.ciudad = 'Bogotá'
-        empresa_instance.departamento = 'CUNDINAMARCA'
-        empresa_instance.pais = 'Colombia'
-        empresa_instance.save()
-
-        # When
-        direccion = empresa_instance.direccion_completa
-
-        # Then
-        assert 'Calle 123 # 45-67' in direccion
-        assert 'Bogotá' in direccion
-        assert 'Cundinamarca' in direccion
-        assert ', ' in direccion
-
-    @pytest.mark.django_db
-    def test_direccion_completa_con_pais_extranjero(self, empresa_instance):
-        """
-        Given: Una empresa con país diferente a Colombia
-        When: Se accede a la propiedad direccion_completa
-        Then: Debe incluir el país en la dirección
-        """
-        # Given
-        empresa_instance.direccion_fiscal = 'Main Street 123'
-        empresa_instance.ciudad = 'New York'
-        empresa_instance.departamento = 'CUNDINAMARCA'  # Mantener requerido
-        empresa_instance.pais = 'Estados Unidos'
-        empresa_instance.save()
-
-        # When
-        direccion = empresa_instance.direccion_completa
-
-        # Then
-        assert 'Estados Unidos' in direccion
+    # test_direccion_completa_property y test_direccion_completa_con_pais_extranjero
+    # ELIMINADOS: EmpresaConfig ya no tiene campos direccion_fiscal, ciudad,
+    # departamento, pais. Esos datos se gestionan en Tenant.
 
 
 # ==============================================================================
@@ -534,7 +473,6 @@ class TestGetOrCreateDefault:
         assert instance.pk is not None
         assert instance.nit == '000000000-0'
         assert instance.razon_social == 'Empresa Sin Configurar'
-        assert instance.representante_legal == 'Por Definir'
         assert EmpresaConfig.objects.count() == 1
 
 

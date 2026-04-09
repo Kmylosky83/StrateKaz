@@ -21,75 +21,55 @@ from apps.core.models import User
 # FIXTURES Y SETUP
 # =============================================================================
 
-@pytest.fixture
-def user_admin(db):
-    """Crea un usuario administrador para pruebas de API."""
-    return User.objects.create_user(
-        username='admin_test',
-        email='admin@test.com',
-        password='testpass123',
-        first_name='Admin',
-        last_name='Test',
-        is_staff=True,
-        is_active=True
-    )
+# Fixtures base (user, authenticated_client) se heredan del root conftest.py
 
 
 @pytest.fixture
-def api_client(user_admin):
-    """Cliente de API autenticado."""
-    client = APIClient()
-    client.force_authenticate(user=user_admin)
-    return client
-
-
-@pytest.fixture
-def area_raiz(db, user_admin):
-    """Crea un área raíz (sin parent)."""
+def area_raiz(db, user):
+    """Crea un area raiz (sin parent)."""
     return Area.objects.create(
         code='GER',
         name='Gerencia General',
-        description='Área de dirección general',
-        cost_center='CC001',
-        manager=user_admin,
+        description='Area de direccion general',
+        tipo='ESTRATEGICO',
         is_active=True,
-        order=1,
-        created_by=user_admin
+        orden=1,
+        created_by=user,
     )
 
 
 @pytest.fixture
-def area_operaciones(db, area_raiz, user_admin):
-    """Crea un área de operaciones como hija de Gerencia."""
+def area_operaciones(db, area_raiz, user):
+    """Crea un area de operaciones como hija de Gerencia."""
     return Area.objects.create(
         code='OPE',
         name='Operaciones',
-        description='Área de operaciones',
+        description='Area de operaciones',
         parent=area_raiz,
-        cost_center='CC002',
+        tipo='MISIONAL',
         is_active=True,
-        order=1,
-        created_by=user_admin
+        orden=1,
+        created_by=user,
     )
 
 
 @pytest.fixture
-def area_produccion(db, area_operaciones, user_admin):
-    """Crea un área de producción como hija de Operaciones."""
+def area_produccion(db, area_operaciones, user):
+    """Crea un area de produccion como hija de Operaciones."""
     return Area.objects.create(
         code='PRO',
-        name='Producción',
-        description='Área de producción',
+        name='Produccion',
+        description='Area de produccion',
         parent=area_operaciones,
-        cost_center='CC003',
+        tipo='MISIONAL',
         is_active=True,
-        order=1,
-        created_by=user_admin
+        orden=1,
+        created_by=user,
     )
 
 
 @pytest.fixture
-def jerarquia_completa(db, area_raiz, area_operaciones, area_produccion, user_admin):
+def jerarquia_completa(db, area_raiz, area_operaciones, area_produccion, user):
     """
     Crea una jerarquía completa de áreas para pruebas.
 
@@ -102,51 +82,51 @@ def jerarquia_completa(db, area_raiz, area_operaciones, area_produccion, user_ad
             - Finanzas (FIN)
             - RRHH (RHH)
     """
-    # Crear área de Logística (hermana de Producción)
+    # Crear area de Logistica (hermana de Produccion)
     logistica = Area.objects.create(
         code='LOG',
-        name='Logística',
-        description='Área de logística',
+        name='Logistica',
+        description='Area de logistica',
         parent=area_operaciones,
-        cost_center='CC004',
+        tipo='MISIONAL',
         is_active=True,
-        order=2,
-        created_by=user_admin
+        orden=2,
+        created_by=user,
     )
 
-    # Crear área de Administración (hermana de Operaciones)
+    # Crear area de Administracion (hermana de Operaciones)
     administracion = Area.objects.create(
         code='ADM',
-        name='Administración',
-        description='Área administrativa',
+        name='Administracion',
+        description='Area administrativa',
         parent=area_raiz,
-        cost_center='CC005',
+        tipo='APOYO',
         is_active=True,
-        order=2,
-        created_by=user_admin
+        orden=2,
+        created_by=user,
     )
 
-    # Crear áreas hijas de Administración
+    # Crear areas hijas de Administracion
     finanzas = Area.objects.create(
         code='FIN',
         name='Finanzas',
-        description='Área de finanzas',
+        description='Area de finanzas',
         parent=administracion,
-        cost_center='CC006',
+        tipo='APOYO',
         is_active=True,
-        order=1,
-        created_by=user_admin
+        orden=1,
+        created_by=user,
     )
 
     rrhh = Area.objects.create(
         code='RHH',
         name='Recursos Humanos',
-        description='Área de RRHH',
+        description='Area de RRHH',
         parent=administracion,
-        cost_center='CC007',
+        tipo='APOYO',
         is_active=True,
-        order=2,
-        created_by=user_admin
+        orden=2,
+        created_by=user,
     )
 
     return {
@@ -261,7 +241,7 @@ class TestAreaJerarquia:
         assert jerarquia_completa['produccion'].children_count == 0  # Sin hijos
         assert jerarquia_completa['finanzas'].children_count == 0  # Sin hijos
 
-    def test_area_multiple_niveles_jerarquia(self, jerarquia_completa, user_admin):
+    def test_area_multiple_niveles_jerarquia(self, jerarquia_completa, user):
         """
         Test: Jerarquía puede tener múltiples niveles
 
@@ -280,8 +260,8 @@ class TestAreaJerarquia:
             parent=produccion,
             cost_center='CC010',
             is_active=True,
-            order=1,
-            created_by=user_admin
+            orden=1,
+            created_by=user
         )
 
         # Assert
@@ -365,7 +345,7 @@ class TestAreaValidaciones:
 
         assert 'ciclo' in str(exc_info.value).lower()
 
-    def test_area_codigo_unico(self, area_raiz, user_admin):
+    def test_area_codigo_unico(self, area_raiz, user):
         """
         Test: El código del área debe ser único
 
@@ -380,11 +360,11 @@ class TestAreaValidaciones:
                 name='Otra Gerencia',
                 description='Descripción',
                 is_active=True,
-                order=2,
-                created_by=user_admin
+                orden=2,
+                created_by=user
             )
 
-    def test_area_nombre_requerido(self, user_admin):
+    def test_area_nombre_requerido(self, user):
         """
         Test: El nombre del área es requerido
 
@@ -398,11 +378,11 @@ class TestAreaValidaciones:
                 code='TEST',
                 name='',  # Nombre vacío
                 is_active=True,
-                order=1,
-                created_by=user_admin
+                orden=1,
+                created_by=user
             )
 
-    def test_area_soft_delete_hijos(self, jerarquia_completa, user_admin):
+    def test_area_soft_delete_hijos(self, jerarquia_completa, user):
         """
         Test: Al hacer soft delete de un área, los hijos activos se mantienen
 
@@ -415,7 +395,7 @@ class TestAreaValidaciones:
         produccion = jerarquia_completa['produccion']
 
         # Act
-        operaciones.soft_delete(user=user_admin)
+        operaciones.soft_delete(user=user)
         produccion.refresh_from_db()
 
         # Assert
@@ -444,11 +424,11 @@ class TestAreaOrdenamiento:
         """
         # Arrange
         area_raiz = jerarquia_completa['raiz']
-        hijos = area_raiz.children.filter(is_active=True).order_by('order', 'name')
+        hijos = area_raiz.children.filter(is_active=True).order_by('orden', 'name')
 
         # Assert
-        assert hijos[0].code == 'OPE'  # order=1
-        assert hijos[1].code == 'ADM'  # order=2
+        assert hijos[0].code == 'OPE'  # orden=1
+        assert hijos[1].code == 'ADM'  # orden=2
 
     def test_area_move_up_down(self, jerarquia_completa):
         """
@@ -462,8 +442,8 @@ class TestAreaOrdenamiento:
         operaciones = jerarquia_completa['operaciones']
         administracion = jerarquia_completa['administracion']
 
-        orden_original_ope = operaciones.order
-        orden_original_adm = administracion.order
+        orden_original_ope = operaciones.orden
+        orden_original_adm = administracion.orden
 
         # Act - Mover Administración hacia arriba
         administracion.move_up()
@@ -474,9 +454,9 @@ class TestAreaOrdenamiento:
 
         # Assert
         # El orden debe haberse invertido
-        assert administracion.order < operaciones.order or administracion.order == orden_original_adm
+        assert administracion.orden < operaciones.orden or administracion.orden == orden_original_adm
 
-    def test_area_ordenamiento_dentro_de_parent(self, jerarquia_completa, user_admin):
+    def test_area_ordenamiento_dentro_de_parent(self, jerarquia_completa, user):
         """
         Test: El ordenamiento es independiente por parent
 
@@ -488,16 +468,16 @@ class TestAreaOrdenamiento:
         operaciones = jerarquia_completa['operaciones']
         administracion = jerarquia_completa['administracion']
 
-        # Ambos tienen hijos con order=1 y order=2
-        hijos_ope = operaciones.children.filter(is_active=True).order_by('order')
-        hijos_adm = administracion.children.filter(is_active=True).order_by('order')
+        # Ambos tienen hijos con orden=1 y orden=2
+        hijos_ope = operaciones.children.filter(is_active=True).order_by('orden')
+        hijos_adm = administracion.children.filter(is_active=True).order_by('orden')
 
         # Assert
         assert hijos_ope.count() == 2
         assert hijos_adm.count() == 2
         # Cada uno tiene su propio ordenamiento
-        assert hijos_ope[0].order == 1
-        assert hijos_adm[0].order == 1
+        assert hijos_ope[0].orden == 1
+        assert hijos_adm[0].orden == 1
 
 
 # =============================================================================
@@ -508,7 +488,7 @@ class TestAreaOrdenamiento:
 class TestAreaAPI:
     """Tests para los endpoints de la API de áreas."""
 
-    def test_listar_areas_jerarquicas(self, api_client, jerarquia_completa):
+    def test_listar_areas_jerarquicas(self, authenticated_client, jerarquia_completa):
         """
         Test: GET /api/organizacion/areas/ - Lista todas las áreas
 
@@ -517,7 +497,7 @@ class TestAreaAPI:
         Then: Debe retornar todas las áreas activas
         """
         # Act
-        response = api_client.get('/api/organizacion/areas/')
+        response = authenticated_client.get('/api/organizacion/areas/')
 
         # Assert
         assert response.status_code == status.HTTP_200_OK
@@ -530,7 +510,7 @@ class TestAreaAPI:
         assert 'name' in area_data
         assert 'parent' in area_data
 
-    def test_crear_area_con_parent(self, api_client, area_raiz, user_admin):
+    def test_crear_area_con_parent(self, authenticated_client, area_raiz, user):
         """
         Test: POST /api/organizacion/areas/ - Crea área con parent
 
@@ -550,7 +530,7 @@ class TestAreaAPI:
         }
 
         # Act
-        response = api_client.post('/api/organizacion/areas/', data, format='json')
+        response = authenticated_client.post('/api/organizacion/areas/', data, format='json')
 
         # Assert
         assert response.status_code == status.HTTP_201_CREATED
@@ -562,7 +542,7 @@ class TestAreaAPI:
         assert nueva_area.parent == area_raiz
         assert nueva_area.level == 1
 
-    def test_mover_area_a_otro_parent(self, api_client, jerarquia_completa):
+    def test_mover_area_a_otro_parent(self, authenticated_client, jerarquia_completa):
         """
         Test: PATCH /api/organizacion/areas/{id}/ - Mueve área a otro parent
 
@@ -579,7 +559,7 @@ class TestAreaAPI:
         }
 
         # Act
-        response = api_client.patch(
+        response = authenticated_client.patch(
             f'/api/organizacion/areas/{produccion.id}/',
             data,
             format='json'
@@ -594,7 +574,7 @@ class TestAreaAPI:
         assert produccion.level == 2  # Sigue siendo nivel 2
         assert 'Administración > Producción' in produccion.full_path
 
-    def test_filtrar_areas_activas(self, api_client, jerarquia_completa, user_admin):
+    def test_filtrar_areas_activas(self, authenticated_client, jerarquia_completa, user):
         """
         Test: GET /api/organizacion/areas/?show_inactive=false
 
@@ -604,10 +584,10 @@ class TestAreaAPI:
         """
         # Arrange - Desactivar un área
         produccion = jerarquia_completa['produccion']
-        produccion.soft_delete(user=user_admin)
+        produccion.soft_delete(user=user)
 
         # Act
-        response = api_client.get('/api/organizacion/areas/?show_inactive=false')
+        response = authenticated_client.get('/api/organizacion/areas/?show_inactive=false')
 
         # Assert
         assert response.status_code == status.HTTP_200_OK
@@ -617,7 +597,7 @@ class TestAreaAPI:
         codes = [area['code'] for area in response.data]
         assert 'PRO' not in codes
 
-    def test_endpoint_organigrama(self, api_client, jerarquia_completa):
+    def test_endpoint_organigrama(self, authenticated_client, jerarquia_completa):
         """
         Test: GET /api/organizacion/organigrama/ - Datos para organigrama visual
 
@@ -626,7 +606,7 @@ class TestAreaAPI:
         Then: Debe retornar estructura completa con stats
         """
         # Act
-        response = api_client.get('/api/organizacion/organigrama/')
+        response = authenticated_client.get('/api/organizacion/organigrama/')
 
         # Assert
         assert response.status_code == status.HTTP_200_OK
@@ -660,7 +640,7 @@ class TestAreaAPI:
 class TestAreaEdgeCases:
     """Tests para casos límite y edge cases."""
 
-    def test_area_sin_manager_permitido(self, user_admin):
+    def test_area_sin_manager_permitido(self, user):
         """
         Test: Un área puede crearse sin manager
 
@@ -675,15 +655,15 @@ class TestAreaEdgeCases:
             description='Test',
             manager=None,  # Sin manager
             is_active=True,
-            order=1,
-            created_by=user_admin
+            orden=1,
+            created_by=user
         )
 
         # Assert
         assert area.pk is not None
         assert area.manager is None
 
-    def test_area_sin_cost_center_permitido(self, user_admin):
+    def test_area_sin_cost_center_permitido(self, user):
         """
         Test: Un área puede crearse sin centro de costo
 
@@ -698,8 +678,8 @@ class TestAreaEdgeCases:
             description='Test',
             cost_center='',  # Sin cost center
             is_active=True,
-            order=1,
-            created_by=user_admin
+            orden=1,
+            created_by=user
         )
 
         # Assert
@@ -737,7 +717,7 @@ class TestAreaEdgeCases:
         assert children == []
         assert len(children) == 0
 
-    def test_area_children_count_con_inactivos(self, jerarquia_completa, user_admin):
+    def test_area_children_count_con_inactivos(self, jerarquia_completa, user):
         """
         Test: children_count solo cuenta hijos activos
 
@@ -750,7 +730,7 @@ class TestAreaEdgeCases:
         produccion = jerarquia_completa['produccion']
 
         # Desactivar producción
-        produccion.soft_delete(user=user_admin)
+        produccion.soft_delete(user=user)
 
         # Act
         count = operaciones.children_count
@@ -773,7 +753,7 @@ class TestAreaEdgeCases:
         assert path == area_raiz.name
         assert '>' not in path
 
-    def test_multiple_areas_raiz_permitidas(self, area_raiz, user_admin):
+    def test_multiple_areas_raiz_permitidas(self, area_raiz, user):
         """
         Test: Se pueden tener múltiples áreas raíz
 
@@ -788,8 +768,8 @@ class TestAreaEdgeCases:
             description='Área de ventas',
             parent=None,
             is_active=True,
-            order=2,
-            created_by=user_admin
+            orden=2,
+            created_by=user
         )
 
         # Assert

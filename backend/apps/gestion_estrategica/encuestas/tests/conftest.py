@@ -116,5 +116,4 @@ def respuesta_encuesta(tema_encuesta, user):
         clasificacion='fortaleza',
         justificacion='La empresa tiene buenos procesos de gestion del conocimiento',
         impacto_percibido='alto',
-        ip_address='192.168.1.100'
     )

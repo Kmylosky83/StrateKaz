@@ -441,8 +441,97 @@ class TenantLifecycleService:
         confirmation_token: str,
         deleted_by_user_id: int | None = None,
     ) -> None:
-        """Eliminar tenant + schema. Implementación en Bloque 3."""
-        raise NotImplementedError("Bloque 3")
+        """
+        Elimina Tenant + Domain + schema físico.
+
+        Operación irreversible. Requiere confirmation_token explícito.
+        Acepta estados inconsistentes como input (row sin schema,
+        schema sin row, row con schema vacío) — por eso sirve para
+        purgar desyncs como fast_test.
+
+        A diferencia de create_tenant, todo cabe en un solo
+        transaction.atomic() porque no hay operaciones largas.
+        DROP SCHEMA CASCADE es DDL rápido y transaccional en PostgreSQL.
+
+        Raises:
+            InvalidConfirmationTokenError: Token incorrecto.
+            TenantNotFoundError: Ni row ni schema existen.
+            SchemaDropFailedError: DROP SCHEMA CASCADE falló.
+            TenantInvariantViolationError: Post-delete encontró residuos.
+        """
+        from django_tenants.utils import get_tenant_model
+        from apps.tenant.models import Domain
+
+        Tenant = get_tenant_model()
+
+        # 1. Validar token ANTES de cualquier operación
+        expected_token = cls.CONFIRMATION_TOKEN_TEMPLATE.format(
+            schema_name=schema_name,
+        )
+        if confirmation_token != expected_token:
+            raise InvalidConfirmationTokenError(
+                f"Token incorrecto para {schema_name}. "
+                f"Formato esperado: DELETE-{{schema_name}}-CONFIRMED"
+            )
+
+        # 2. Operar bajo schema public, transacción atómica
+        with schema_context("public"):
+            with transaction.atomic():
+                # 2a. Lock advisory
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock(hashtext(%s))",
+                        [schema_name],
+                    )
+
+                # 2b. Pre-validación: al menos una parte debe existir
+                pre_status = cls.validate_invariant(schema_name)
+                if not pre_status.row_exists and not pre_status.schema_exists:
+                    raise TenantNotFoundError(
+                        f"Cannot delete: tenant {schema_name} does not "
+                        f"exist (neither row nor schema)"
+                    )
+
+                # 2c. Eliminar Domain + Tenant rows (si existen)
+                if pre_status.row_exists:
+                    Domain.objects.filter(
+                        tenant__schema_name=schema_name,
+                    ).delete()
+                    Tenant.objects.filter(
+                        schema_name=schema_name,
+                    ).delete()
+
+                # 2d. Drop schema físico (si existe)
+                if pre_status.schema_exists:
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute(
+                                sql.SQL("DROP SCHEMA {} CASCADE").format(
+                                    sql.Identifier(schema_name)
+                                )
+                            )
+                    except Exception as drop_error:
+                        raise SchemaDropFailedError(
+                            f"Failed to drop schema {schema_name}: "
+                            f"{drop_error}"
+                        ) from drop_error
+
+                # 2e. Post-validación: ambos deben estar ausentes
+                post_status = cls.validate_invariant(schema_name)
+                if post_status.row_exists or post_status.schema_exists:
+                    raise TenantInvariantViolationError(
+                        f"Post-delete invariant failed for {schema_name}: "
+                        f"row_exists={post_status.row_exists}, "
+                        f"schema_exists={post_status.schema_exists}"
+                    )
+
+                # 2f. Auditoría
+                cls._audit_log(
+                    action="delete",
+                    schema_name=schema_name,
+                    user_id=deleted_by_user_id,
+                    result="success",
+                )
 
     # ------------------------------------------------------------------
     # Validación de invariante (implementadas — Bloque 1)

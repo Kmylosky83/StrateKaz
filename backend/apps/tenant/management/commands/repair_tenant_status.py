@@ -1,27 +1,25 @@
 """
-Comando para reparar el estado de schemas de tenants.
+Comando para reparar el schema_status de tenants.
 
-Verifica la integridad de cada tenant comparando su schema_status
-con el estado real del schema en PostgreSQL.
+Compara schema_status con el estado real del schema en PostgreSQL
+(via TenantLifecycleService) y corrige discrepancias.
+
+NO crea ni borra schemas. Solo actualiza schema_status y schema_error.
 
 Uso:
     python manage.py repair_tenant_status            # Dry-run
     python manage.py repair_tenant_status --confirm  # Aplicar correcciones
+    python manage.py repair_tenant_status --all      # Incluir tenants ready
 """
 import logging
 from django.core.management.base import BaseCommand
-from django.db import connection
-
-from apps.tenant.models import Tenant
+from django_tenants.utils import schema_context
 
 logger = logging.getLogger(__name__)
 
-# Fallback si no hay tenant de referencia con status 'ready'
-FALLBACK_TABLE_COUNT = 600
-
 
 class Command(BaseCommand):
-    help = 'Verifica y repara el schema_status de tenants basado en el estado real de PostgreSQL'
+    help = 'Verifica y repara schema_status de tenants basado en el estado real de PostgreSQL'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -37,103 +35,73 @@ class Command(BaseCommand):
             help='Verificar todos los tenants, no solo los que tienen status != ready',
         )
 
-    def _get_reference_table_count(self):
-        """
-        Obtener el conteo de tablas de un tenant 'ready' como referencia.
-        Usa un tenant existente con schema_status='ready' para determinar
-        dinámicamente cuántas tablas debe tener un schema completo.
-        Fallback a FALLBACK_TABLE_COUNT si no hay referencia.
-        """
-        reference_count = FALLBACK_TABLE_COUNT
-        ready_tenant = Tenant.objects.filter(
-            schema_status='ready'
-        ).exclude(schema_name='public').first()
-
-        if ready_tenant:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT COUNT(*)
-                    FROM information_schema.tables
-                    WHERE table_schema = %s
-                """, [ready_tenant.schema_name])
-                reference_count = cursor.fetchone()[0]
-                self.stdout.write(
-                    f'  Referencia: {ready_tenant.name} '
-                    f'({reference_count} tablas)\n'
-                )
-        else:
-            self.stdout.write(
-                f'  Sin tenant de referencia, usando fallback: '
-                f'{FALLBACK_TABLE_COUNT} tablas\n'
-            )
-
-        return reference_count
-
     def handle(self, *args, **options):
         confirm = options['confirm']
         check_all = options['all']
 
-        self.stdout.write(self.style.MIGRATE_HEADING('=== Reparación de Estado de Tenants ==='))
+        from apps.tenant.models import Tenant
+        from apps.tenant.services import TenantLifecycleService
+
+        self.stdout.write(self.style.MIGRATE_HEADING(
+            '=== Reparación de Estado de Tenants ==='
+        ))
         self.stdout.write('')
 
-        # Obtener conteo de referencia dinámico
-        expected_table_count = self._get_reference_table_count()
-        # Umbral: 90% del conteo de referencia
+        # ── Umbral dinámico: 90% de tablas de un tenant ready ────────
+        expected_table_count = self._get_reference_table_count(
+            Tenant, TenantLifecycleService,
+        )
         threshold = int(expected_table_count * 0.9)
 
-        # Obtener tenants a verificar
-        if check_all:
-            tenants = Tenant.objects.exclude(schema_name='public')
-        else:
-            tenants = Tenant.objects.exclude(
-                schema_name='public'
-            ).exclude(
-                schema_status='ready'
-            )
+        # ── Tenants a verificar ──────────────────────────────────────
+        with schema_context("public"):
+            if check_all:
+                tenants = Tenant.objects.exclude(schema_name='public')
+            else:
+                tenants = Tenant.objects.exclude(
+                    schema_name='public',
+                ).exclude(schema_status='ready')
 
         if not tenants.exists():
-            self.stdout.write(self.style.SUCCESS('Todos los tenants tienen status correcto.'))
+            self.stdout.write(self.style.SUCCESS(
+                'Todos los tenants tienen status correcto.'
+            ))
             return
 
+        # ── Diagnosticar cada tenant ─────────────────────────────────
         repairs = []
 
         for tenant in tenants:
-            schema = tenant.schema_name
+            status = TenantLifecycleService.validate_invariant(
+                tenant.schema_name,
+            )
 
-            # Verificar si el schema existe
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT COUNT(*)
-                    FROM information_schema.schemata
-                    WHERE schema_name = %s
-                """, [schema])
-                schema_exists = cursor.fetchone()[0] > 0
-
-            table_count = 0
-            if schema_exists:
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT COUNT(*)
-                        FROM information_schema.tables
-                        WHERE table_schema = %s
-                    """, [schema])
-                    table_count = cursor.fetchone()[0]
-
-            # Determinar estado correcto usando umbral dinámico (90% de referencia)
             current_status = tenant.schema_status
 
-            if not schema_exists:
+            if not status.schema_exists:
                 correct_status = 'failed'
                 reason = 'Schema no existe en PostgreSQL'
-            elif table_count >= threshold:
-                correct_status = 'ready'
-                reason = f'Schema completo ({table_count}/{expected_table_count} tablas)'
-            elif table_count > 0:
-                correct_status = 'failed'
-                reason = f'Schema incompleto ({table_count}/{expected_table_count} tablas, mínimo {threshold})'
+                table_count = 0
+            elif status.schema_has_tables:
+                # Refinamiento: conteo exacto via servicio centralizado
+                table_count = TenantLifecycleService.count_schema_tables(
+                    tenant.schema_name,
+                )
+                if table_count >= threshold:
+                    correct_status = 'ready'
+                    reason = (
+                        f'Schema completo ({table_count}/{expected_table_count} tablas)'
+                    )
+                else:
+                    correct_status = 'failed'
+                    reason = (
+                        f'Schema incompleto ({table_count}/{expected_table_count} '
+                        f'tablas, mínimo {threshold})'
+                    )
             else:
                 correct_status = 'failed'
                 reason = 'Schema existe pero sin tablas'
+                table_count = 0
 
             if current_status != correct_status:
                 repairs.append({
@@ -143,11 +111,13 @@ class Command(BaseCommand):
                     'table_count': table_count,
                     'reason': reason,
                 })
-
-                status_color = self.style.WARNING if correct_status == 'failed' else self.style.SUCCESS
+                status_color = (
+                    self.style.WARNING if correct_status == 'failed'
+                    else self.style.SUCCESS
+                )
                 self.stdout.write(
                     f'  Tenant: {tenant.name} (ID={tenant.id})\n'
-                    f'    Schema: {schema}\n'
+                    f'    Schema: {tenant.schema_name}\n'
                     f'    Status actual: {current_status}\n'
                     f'    Status correcto: {status_color(correct_status)}\n'
                     f'    Razón: {reason}\n'
@@ -161,7 +131,9 @@ class Command(BaseCommand):
         self.stdout.write('')
 
         if not repairs:
-            self.stdout.write(self.style.SUCCESS('No se requieren reparaciones.'))
+            self.stdout.write(self.style.SUCCESS(
+                'No se requieren reparaciones.'
+            ))
             return
 
         self.stdout.write(f'Reparaciones necesarias: {len(repairs)}')
@@ -173,20 +145,26 @@ class Command(BaseCommand):
             ))
             return
 
-        # Aplicar reparaciones
-        self.stdout.write(self.style.MIGRATE_HEADING('\nAplicando reparaciones...'))
+        # ── Aplicar reparaciones ─────────────────────────────────────
+        self.stdout.write(self.style.MIGRATE_HEADING(
+            '\nAplicando reparaciones...'
+        ))
 
         for repair in repairs:
             tenant = repair['tenant']
             try:
-                tenant.schema_status = repair['correct_status']
-                if repair['correct_status'] == 'failed':
-                    tenant.schema_error = repair['reason']
-                else:
-                    tenant.schema_error = ''
-                tenant.save(update_fields=['schema_status', 'schema_error'])
+                with schema_context("public"):
+                    tenant.schema_status = repair['correct_status']
+                    if repair['correct_status'] == 'failed':
+                        tenant.schema_error = repair['reason']
+                    else:
+                        tenant.schema_error = ''
+                    tenant.save(
+                        update_fields=['schema_status', 'schema_error'],
+                    )
                 self.stdout.write(self.style.SUCCESS(
-                    f'  {tenant.name}: {repair["current_status"]} -> {repair["correct_status"]}'
+                    f'  {tenant.name}: '
+                    f'{repair["current_status"]} -> {repair["correct_status"]}'
                 ))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(
@@ -195,3 +173,28 @@ class Command(BaseCommand):
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('Reparación completada.'))
+
+    def _get_reference_table_count(self, Tenant, service):
+        """
+        Conteo de tablas de un tenant 'ready' como referencia para umbral.
+        Usa count_schema_tables del servicio (fuente única de verdad).
+        Fallback a 600 si no hay tenant de referencia.
+        """
+        FALLBACK = 600
+
+        with schema_context("public"):
+            ready_tenant = Tenant.objects.filter(
+                schema_status='ready',
+            ).exclude(schema_name='public').first()
+
+        if ready_tenant:
+            count = service.count_schema_tables(ready_tenant.schema_name)
+            self.stdout.write(
+                f'  Referencia: {ready_tenant.name} ({count} tablas)\n'
+            )
+            return count
+
+        self.stdout.write(
+            f'  Sin tenant de referencia, usando fallback: {FALLBACK} tablas\n'
+        )
+        return FALLBACK

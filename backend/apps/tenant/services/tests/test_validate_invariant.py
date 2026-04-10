@@ -123,3 +123,19 @@ class TestValidateInvariant:
         assert status.schema_exists is False
         assert status.is_consistent is True
         assert status.inconsistency_type is None
+
+
+@pytest.mark.tenant_lifecycle
+@pytest.mark.django_db
+class TestCountSchemaTables:
+    """Tests para count_schema_tables (query centralizada de conteo)."""
+
+    def test_existing_schema_returns_positive(self, tenant_test_schema):
+        """Schema 'test' tiene tablas migradas → conteo > 0."""
+        count = TenantLifecycleService.count_schema_tables("test")
+        assert count > 0
+
+    def test_nonexistent_schema_returns_zero(self, tenant_test_schema):
+        """Schema inexistente → 0."""
+        count = TenantLifecycleService.count_schema_tables("nonexistent_xyz")
+        assert count == 0

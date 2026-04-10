@@ -620,6 +620,25 @@ class TenantLifecycleService:
             total_schemas=len(physical_schemas),
         )
 
+    @classmethod
+    def count_schema_tables(cls, schema_name: str) -> int:
+        """
+        Retorna el número de tablas (BASE TABLE) en el schema especificado.
+        Retorna 0 si el schema no existe.
+
+        Público porque lo usa repair_tenant_status para aplicar umbrales
+        de "schema completo vs incompleto". La query es idéntica a la que
+        usa validate_invariant() internamente — fuente única de verdad.
+        """
+        with schema_context("public"):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                    "WHERE table_schema = %s AND table_type = 'BASE TABLE'",
+                    [schema_name],
+                )
+                return cursor.fetchone()[0]
+
     # ------------------------------------------------------------------
     # Helpers privados
     # ------------------------------------------------------------------

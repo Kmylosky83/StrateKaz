@@ -9,20 +9,21 @@ Implementa 6 mejores prácticas enterprise:
 5. Auditoría explícita de cada operación de lifecycle
 6. Idempotencia en reintentos
 
-NOTA ARQUITECTÓNICA sobre create_tenant:
-    migrate_schemas y seeds abren sus propias conexiones y transacciones
-    internas. PostgreSQL puede cerrar conexiones por timeout durante
-    migraciones largas (10+ min). Por esto, create_tenant NO envuelve
-    TODO en un solo transaction.atomic(). En vez:
-
+NOTA ARQUITECTÓNICA:
     Fase A (transaccional): Lock advisory + pre-validación + crear rows
             (Tenant + Domain). Si falla → rollback limpio, cero residuos.
     Fase B (secuencial): CREATE SCHEMA + migrate + seeds + post-validación
             + marcar ready. Si falla → cleanup explícito (DROP SCHEMA +
             marcar row como 'failed').
 
-    Esto replica el patrón probado de create_tenant_schema_task (que lleva
-    meses corriendo en producción) pero con invariante pre/post validado.
+    Fase B acepta un progress_callback opcional para que el caller
+    (ej: Celery task) publique progreso sin acoplar el servicio a Redis.
+
+DOS FLUJOS DE CREACIÓN:
+    1. create_tenant(): Monolítico (Fase A + B). Usado por management
+       commands (bootstrap_production) y tests directos.
+    2. provision_schema_for_pending_tenant(): Solo Fase B. Usado por la
+       Celery task cuando el serializer ya creó la row en 'pending'.
 """
 
 from __future__ import annotations
@@ -30,7 +31,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
@@ -47,6 +48,7 @@ from apps.tenant.services.exceptions import (
     TenantAlreadyExistsError,
     TenantInvariantViolationError,
     TenantLifecycleConcurrencyError,
+    TenantLifecycleError,
     TenantNotFoundError,
 )
 
@@ -54,6 +56,10 @@ if TYPE_CHECKING:
     from apps.tenant.models import Tenant
 
 logger = logging.getLogger("tenant.lifecycle")
+
+# Type alias para el callback de progreso.
+# Args: (progress_pct: int, phase_name: str, message: str)
+ProgressCallback = Callable[[int, str, str], None]
 
 # Schemas que no representan tenants y deben excluirse del escaneo.
 RESERVED_SCHEMAS = frozenset({
@@ -64,11 +70,8 @@ RESERVED_SCHEMAS = frozenset({
     "information_schema",
 })
 
-# Regex para validación de schema_name: letras minúsculas, números, guión bajo.
-# Mínimo 3 caracteres, máximo 63 (límite de PostgreSQL).
 _SCHEMA_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{2,62}$")
 
-# Nombres de schema reservados por PostgreSQL o por el proyecto.
 _RESERVED_NAMES = frozenset({
     "public",
     "information_schema",
@@ -78,13 +81,11 @@ _RESERVED_NAMES = frozenset({
     "catalog", "toast", "temp", "default", "global",
 ])
 
-# Seeds críticos: si cualquiera falla, la creación aborta.
 _CRITICAL_SEEDS = (
     "seed_estructura_final",
     "seed_permisos_rbac",
 )
 
-# Seeds no-críticos: fallo se registra como warning, no aborta.
 _NON_CRITICAL_SEEDS = (
     "seed_config_identidad",
 )
@@ -101,7 +102,7 @@ class TenantLifecycleService:
     CONFIRMATION_TOKEN_TEMPLATE = "DELETE-{schema_name}-CONFIRMED"
 
     # ------------------------------------------------------------------
-    # Operaciones de lifecycle
+    # Creación: flujo monolítico (Fase A + B)
     # ------------------------------------------------------------------
 
     @classmethod
@@ -115,21 +116,19 @@ class TenantLifecycleService:
         is_trial: bool = True,
         trial_days: int = 30,
         created_by_user_id: int | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> tuple[Tenant, list[str]]:
         """
         Crea Tenant + Domain + schema físico + migraciones + seeds.
 
-        Fase A (transaccional): lock + pre-validación + crear rows.
-        Fase B (secuencial): DDL + migrate + seeds + post-validación.
+        Flujo monolítico: Fase A (rows) + Fase B (DDL + migrate + seeds).
+        Usado por management commands y tests directos.
+
+        Para el flujo asíncrono (serializer crea row → task crea schema),
+        usar provision_schema_for_pending_tenant().
 
         Returns:
             Tuple de (Tenant, non_critical_warnings).
-
-        Raises:
-            ValidationError: schema_name inválido.
-            TenantAlreadyExistsError: row o schema ya existen.
-            TenantInvariantViolationError: post-validación falló.
-            SchemaCreationFailedError: DDL, migraciones o seeds fallaron.
         """
         from django_tenants.utils import get_tenant_model
         from apps.tenant.models import Domain
@@ -138,21 +137,18 @@ class TenantLifecycleService:
 
         cls._validate_schema_name(schema_name)
         code = cls._derive_code(schema_name)
-        non_critical_warnings: list[str] = []
 
         # ==============================================================
         # FASE A — Transaccional: lock + pre-validación + crear rows
         # ==============================================================
         with schema_context("public"):
             with transaction.atomic():
-                # Lock advisory — serializa creates concurrentes
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT pg_advisory_xact_lock(hashtext(%s))",
                         [schema_name],
                     )
 
-                # Pre-validación: nada debe existir
                 pre_status = cls.validate_invariant(schema_name)
                 if pre_status.row_exists or pre_status.schema_exists:
                     raise TenantAlreadyExistsError(
@@ -161,10 +157,8 @@ class TenantLifecycleService:
                         f"schema_exists={pre_status.schema_exists})"
                     )
 
-                # Resolver plan
                 plan = cls._resolve_plan(plan_code)
 
-                # Crear row Tenant con schema_status='creating'
                 tenant = Tenant(
                     schema_name=schema_name,
                     code=code,
@@ -179,22 +173,151 @@ class TenantLifecycleService:
                 )
                 tenant.save()
 
-                # Crear Domain
                 Domain.objects.create(
                     domain=domain_url,
                     tenant=tenant,
                     is_primary=True,
                 )
 
-        # Fase A completada: row + domain existen en DB con status='creating'.
-        # Si algo falla a partir de acá, la row ya existe y se marca 'failed'.
+        # ==============================================================
+        # FASE B — Secuencial: DDL + migrate + seeds + ready
+        # ==============================================================
+        try:
+            warnings = cls._execute_phase_b(
+                tenant=tenant,
+                progress_callback=progress_callback,
+            )
 
-        # ==============================================================
-        # FASE B — Secuencial: DDL + migrate + seeds + post-validación
-        # ==============================================================
+            cls._audit_log(
+                action="create",
+                schema_name=schema_name,
+                user_id=created_by_user_id,
+                result="success",
+            )
+
+            return tenant, warnings
+
+        except (TenantAlreadyExistsError, ValidationError):
+            raise
+        except Exception as original_error:
+            # Marcar row como 'failed' si sobrevivió Fase A
+            cls._mark_failed_safe(schema_name, original_error)
+            raise original_error from None
+
+    # ------------------------------------------------------------------
+    # Creación: flujo asíncrono (solo Fase B, row ya existe)
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def provision_schema_for_pending_tenant(
+        cls,
+        *,
+        tenant_id: int,
+        progress_callback: ProgressCallback | None = None,
+    ) -> tuple[Tenant, list[str]]:
+        """
+        Ejecuta Fase B para un tenant cuya row ya existe en pending/creating.
+
+        Usado por create_tenant_schema_task (Celery) cuando el serializer
+        ya creó la row Tenant + Domain con schema_status='pending'.
+
+        Args:
+            tenant_id: ID del Tenant existente.
+            progress_callback: Callback opcional (progress_pct, phase, msg).
+
+        Returns:
+            Tuple de (Tenant, non_critical_warnings).
+
+        Raises:
+            TenantNotFoundError: tenant_id no existe.
+            TenantLifecycleError: tenant no está en pending/creating.
+            TenantInvariantViolationError: post-validación falló.
+        """
+        from django_tenants.utils import get_tenant_model
+
+        Tenant = get_tenant_model()
+
+        # Obtener y validar el tenant
+        with schema_context("public"):
+            try:
+                tenant = Tenant.objects.get(id=tenant_id)
+            except Tenant.DoesNotExist:
+                raise TenantNotFoundError(
+                    f"Tenant con ID {tenant_id} no existe"
+                )
+
+            allowed_statuses = ("pending", "creating")
+            if tenant.schema_status not in allowed_statuses:
+                raise TenantLifecycleError(
+                    f"Tenant {tenant.schema_name} tiene schema_status="
+                    f"'{tenant.schema_status}', se esperaba uno de "
+                    f"{allowed_statuses}. No se puede reprovisionar."
+                )
+
+            # Marcar como creating si estaba en pending
+            if tenant.schema_status == "pending":
+                tenant.schema_status = "creating"
+                tenant.save(update_fields=["schema_status"])
+
+        schema_name = tenant.schema_name
+
+        try:
+            warnings = cls._execute_phase_b(
+                tenant=tenant,
+                progress_callback=progress_callback,
+            )
+
+            cls._audit_log(
+                action="provision",
+                schema_name=schema_name,
+                user_id=None,
+                result="success",
+            )
+
+            return tenant, warnings
+
+        except Exception as original_error:
+            cls._mark_failed_safe(schema_name, original_error)
+            raise original_error from None
+
+    # ------------------------------------------------------------------
+    # Fase B compartida (privada)
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _execute_phase_b(
+        cls,
+        *,
+        tenant: Tenant,
+        progress_callback: ProgressCallback | None = None,
+    ) -> list[str]:
+        """
+        Fase B: CREATE SCHEMA + migrate + seeds + post-validate + ready.
+
+        Compartida entre create_tenant() y provision_schema_for_pending_tenant().
+        Si falla, hace cleanup del schema (DROP IF EXISTS) y re-raise.
+
+        Args:
+            tenant: Tenant row existente (ya commiteada en DB).
+            progress_callback: Opcional. (pct, phase, msg) → None.
+
+        Returns:
+            Lista de warnings no-críticos (strings).
+        """
+        schema_name = tenant.schema_name
+        non_critical_warnings: list[str] = []
+
+        def _progress(pct: int, phase: str, msg: str) -> None:
+            if progress_callback is not None:
+                try:
+                    progress_callback(pct, phase, msg)
+                except Exception:
+                    pass  # Nunca interrumpir por fallo de callback
+
         schema_created = False
         try:
             # B1. Crear schema físico
+            _progress(5, "creating_schema", "Creando schema PostgreSQL")
             close_old_connections()
             connection.ensure_connection()
             with connection.cursor() as cursor:
@@ -209,13 +332,15 @@ class TenantLifecycleService:
                 schema_name,
             )
 
-            # B2. Migraciones (puede durar 10+ min)
+            # B2. Migraciones
+            _progress(10, "migrating", "Corriendo migraciones")
             call_command(
                 "migrate_schemas",
                 schema_name=schema_name,
                 interactive=False,
                 verbosity=0,
             )
+            _progress(85, "migrations_complete", "Migraciones completadas")
             logger.info(
                 "TenantLifecycle: action=migrate schema=%s result=success",
                 schema_name,
@@ -226,8 +351,11 @@ class TenantLifecycleService:
             connection.ensure_connection()
 
             with schema_context(schema_name):
-                # Críticos: fallo aborta
-                for seed_cmd in _CRITICAL_SEEDS:
+                # Críticos
+                for i, seed_cmd in enumerate(_CRITICAL_SEEDS):
+                    pct = 90 + i * 3  # 90, 93
+                    phase = f"seeding_{seed_cmd.replace('seed_', '')}"
+                    _progress(pct, phase, f"Sembrando {seed_cmd}")
                     close_old_connections()
                     connection.ensure_connection()
                     call_command(seed_cmd, verbosity=0)
@@ -237,8 +365,9 @@ class TenantLifecycleService:
                         schema_name,
                     )
 
-                # No-críticos: fallo se acumula como warning
+                # No-críticos
                 for seed_cmd in _NON_CRITICAL_SEEDS:
+                    _progress(95, "seeding_identity", "Configurando identidad")
                     try:
                         close_old_connections()
                         connection.ensure_connection()
@@ -260,7 +389,8 @@ class TenantLifecycleService:
                             str(seed_err)[:200],
                         )
 
-            # B4. Post-validación del invariante
+            # B4. Post-validación
+            _progress(98, "finalizing", "Finalizando")
             close_old_connections()
             connection.ensure_connection()
             post_status = cls.validate_invariant(schema_name)
@@ -281,17 +411,10 @@ class TenantLifecycleService:
                 tenant.schema_error = ""
                 tenant.save(update_fields=["schema_status", "schema_error"])
 
-            cls._audit_log(
-                action="create",
-                schema_name=schema_name,
-                user_id=created_by_user_id,
-                result="success",
-            )
+            return non_critical_warnings
 
-            return tenant, non_critical_warnings
-
-        except Exception as original_error:
-            # Cleanup Fase B: DROP schema si fue creado
+        except Exception:
+            # Cleanup: DROP schema si fue creado
             if schema_created:
                 try:
                     close_old_connections()
@@ -303,39 +426,22 @@ class TenantLifecycleService:
                             ).format(sql.Identifier(schema_name))
                         )
                     logger.info(
-                        "TenantLifecycle: action=create_rollback "
+                        "TenantLifecycle: action=phase_b_rollback "
                         "schema=%s result=schema_dropped",
                         schema_name,
                     )
                 except Exception as drop_err:
                     logger.error(
-                        "TenantLifecycle: action=create_rollback "
+                        "TenantLifecycle: action=phase_b_rollback "
                         "schema=%s result=drop_failed error=%s",
                         schema_name,
                         str(drop_err)[:200],
                     )
+            raise
 
-            # Marcar row como 'failed' (row sobrevivió Fase A)
-            try:
-                close_old_connections()
-                connection.ensure_connection()
-                with schema_context("public"):
-                    with transaction.atomic():
-                        Tenant.objects.filter(
-                            schema_name=schema_name,
-                        ).update(
-                            schema_status="failed",
-                            schema_error=str(original_error)[:5000],
-                        )
-            except Exception as status_err:
-                logger.error(
-                    "TenantLifecycle: action=record_failure schema=%s "
-                    "result=update_failed error=%s",
-                    schema_name,
-                    str(status_err)[:200],
-                )
-
-            raise original_error from None
+    # ------------------------------------------------------------------
+    # Archive / Restore
+    # ------------------------------------------------------------------
 
     @classmethod
     def archive_tenant(
@@ -345,15 +451,7 @@ class TenantLifecycleService:
         archived_by_user_id: int | None = None,
         reason: str = "",
     ) -> Tenant:
-        """
-        Desactiva un tenant (is_active=False) sin eliminar su schema.
-
-        El schema y sus datos se preservan para posible restauración.
-
-        Raises:
-            TenantNotFoundError: No existe tenant con ese schema_name.
-            TenantInvariantViolationError: Post-validación detectó desync.
-        """
+        """Desactiva un tenant (is_active=False) sin eliminar su schema."""
         from django_tenants.utils import get_tenant_model
 
         Tenant = get_tenant_model()
@@ -395,12 +493,7 @@ class TenantLifecycleService:
 
     @classmethod
     def restore_tenant(cls, *, schema_name: str) -> Tenant:
-        """
-        Reactiva un tenant desactivado (is_active=True).
-
-        Raises:
-            TenantNotFoundError: No existe tenant con ese schema_name.
-        """
+        """Reactiva un tenant desactivado (is_active=True)."""
         from django_tenants.utils import get_tenant_model
 
         Tenant = get_tenant_model()
@@ -433,6 +526,10 @@ class TenantLifecycleService:
 
                 return tenant
 
+    # ------------------------------------------------------------------
+    # Delete
+    # ------------------------------------------------------------------
+
     @classmethod
     def delete_tenant_with_schema(
         cls,
@@ -443,28 +540,13 @@ class TenantLifecycleService:
     ) -> None:
         """
         Elimina Tenant + Domain + schema físico.
-
-        Operación irreversible. Requiere confirmation_token explícito.
-        Acepta estados inconsistentes como input (row sin schema,
-        schema sin row, row con schema vacío) — por eso sirve para
-        purgar desyncs como fast_test.
-
-        A diferencia de create_tenant, todo cabe en un solo
-        transaction.atomic() porque no hay operaciones largas.
-        DROP SCHEMA CASCADE es DDL rápido y transaccional en PostgreSQL.
-
-        Raises:
-            InvalidConfirmationTokenError: Token incorrecto.
-            TenantNotFoundError: Ni row ni schema existen.
-            SchemaDropFailedError: DROP SCHEMA CASCADE falló.
-            TenantInvariantViolationError: Post-delete encontró residuos.
+        Acepta estados inconsistentes como input.
         """
         from django_tenants.utils import get_tenant_model
         from apps.tenant.models import Domain
 
         Tenant = get_tenant_model()
 
-        # 1. Validar token ANTES de cualquier operación
         expected_token = cls.CONFIRMATION_TOKEN_TEMPLATE.format(
             schema_name=schema_name,
         )
@@ -474,17 +556,14 @@ class TenantLifecycleService:
                 f"Formato esperado: DELETE-{{schema_name}}-CONFIRMED"
             )
 
-        # 2. Operar bajo schema public, transacción atómica
         with schema_context("public"):
             with transaction.atomic():
-                # 2a. Lock advisory
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "SELECT pg_advisory_xact_lock(hashtext(%s))",
                         [schema_name],
                     )
 
-                # 2b. Pre-validación: al menos una parte debe existir
                 pre_status = cls.validate_invariant(schema_name)
                 if not pre_status.row_exists and not pre_status.schema_exists:
                     raise TenantNotFoundError(
@@ -492,7 +571,6 @@ class TenantLifecycleService:
                         f"exist (neither row nor schema)"
                     )
 
-                # 2c. Eliminar Domain + Tenant rows (si existen)
                 if pre_status.row_exists:
                     Domain.objects.filter(
                         tenant__schema_name=schema_name,
@@ -501,7 +579,6 @@ class TenantLifecycleService:
                         schema_name=schema_name,
                     ).delete()
 
-                # 2d. Drop schema físico (si existe)
                 if pre_status.schema_exists:
                     try:
                         with connection.cursor() as cursor:
@@ -516,7 +593,6 @@ class TenantLifecycleService:
                             f"{drop_error}"
                         ) from drop_error
 
-                # 2e. Post-validación: ambos deben estar ausentes
                 post_status = cls.validate_invariant(schema_name)
                 if post_status.row_exists or post_status.schema_exists:
                     raise TenantInvariantViolationError(
@@ -525,7 +601,6 @@ class TenantLifecycleService:
                         f"schema_exists={post_status.schema_exists}"
                     )
 
-                # 2f. Auditoría
                 cls._audit_log(
                     action="delete",
                     schema_name=schema_name,
@@ -534,15 +609,12 @@ class TenantLifecycleService:
                 )
 
     # ------------------------------------------------------------------
-    # Validación de invariante (implementadas — Bloque 1)
+    # Validación de invariante
     # ------------------------------------------------------------------
 
     @classmethod
     def validate_invariant(cls, schema_name: str) -> InvariantStatus:
-        """
-        Verifica el invariante para un tenant específico.
-        Solo lectura. Seguro de ejecutar contra cualquier entorno.
-        """
+        """Verifica el invariante para un tenant específico. Solo lectura."""
         from django_tenants.utils import get_tenant_model
 
         Tenant = get_tenant_model()
@@ -584,10 +656,7 @@ class TenantLifecycleService:
 
     @classmethod
     def list_inconsistencies(cls) -> InvariantReport:
-        """
-        Escanea todos los Tenants y schemas físicos.
-        Retorna InvariantReport con desyncs encontrados. Solo lectura.
-        """
+        """Escanea todos los Tenants y schemas físicos. Solo lectura."""
         from django_tenants.utils import get_tenant_model
 
         Tenant = get_tenant_model()
@@ -622,14 +691,7 @@ class TenantLifecycleService:
 
     @classmethod
     def count_schema_tables(cls, schema_name: str) -> int:
-        """
-        Retorna el número de tablas (BASE TABLE) en el schema especificado.
-        Retorna 0 si el schema no existe.
-
-        Público porque lo usa repair_tenant_status para aplicar umbrales
-        de "schema completo vs incompleto". La query es idéntica a la que
-        usa validate_invariant() internamente — fuente única de verdad.
-        """
+        """Retorna el número de BASE TABLEs en el schema. 0 si no existe."""
         with schema_context("public"):
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -645,11 +707,7 @@ class TenantLifecycleService:
 
     @classmethod
     def _validate_schema_name(cls, schema_name: str) -> None:
-        """
-        Valida formato y reservados del schema_name.
-        Defensa en profundidad: incluso con sql.Identifier, validamos
-        el formato para detectar errores lógicos tempranamente.
-        """
+        """Valida formato y reservados del schema_name."""
         if not _SCHEMA_NAME_RE.match(schema_name):
             raise ValidationError(
                 f"schema_name '{schema_name}' inválido. "
@@ -667,10 +725,7 @@ class TenantLifecycleService:
 
     @classmethod
     def _derive_code(cls, schema_name: str) -> str:
-        """
-        Deriva `code` del Tenant a partir del schema_name.
-        Convención del modelo: schema_name = f"tenant_{code}".
-        """
+        """Deriva `code` del Tenant a partir del schema_name."""
         if schema_name.startswith("tenant_"):
             return schema_name[7:]
         return schema_name
@@ -687,6 +742,35 @@ class TenantLifecycleService:
 
         with schema_context("public"):
             return Plan.objects.filter(code=plan_code).first()
+
+    @classmethod
+    def _mark_failed_safe(cls, schema_name: str, error: Exception) -> None:
+        """
+        Intenta marcar la row del tenant como 'failed'.
+        Si la row no existe (fue revertida), no hace nada.
+        Nunca levanta excepciones — solo loguea.
+        """
+        from django_tenants.utils import get_tenant_model
+
+        Tenant = get_tenant_model()
+        try:
+            close_old_connections()
+            connection.ensure_connection()
+            with schema_context("public"):
+                with transaction.atomic():
+                    Tenant.objects.filter(
+                        schema_name=schema_name,
+                    ).update(
+                        schema_status="failed",
+                        schema_error=str(error)[:5000],
+                    )
+        except Exception as status_err:
+            logger.error(
+                "TenantLifecycle: action=mark_failed schema=%s "
+                "result=update_failed error=%s",
+                schema_name,
+                str(status_err)[:200],
+            )
 
     @classmethod
     def _audit_log(

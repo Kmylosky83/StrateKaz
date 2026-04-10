@@ -1,18 +1,12 @@
 """
 Bootstrap completo de producción para StrateKaz.
 
-Resuelve el problema de que el tenant público (schema_name='public')
-NO tiene tablas de TENANT_APPS porque django-tenants solo crea esas
-tablas en schemas de tenant propios (tenant_xxx), no en 'public'.
+Crea un tenant operativo con schema, migraciones, seeds y superadmin.
+Idempotente: correrlo 2 veces no rompe nada.
 
-Este comando:
-1. Verifica/crea el TenantUser superadmin en schema public (SHARED_APPS)
-2. Verifica/crea el Tenant con un schema propio (tenant_stratekaz)
-3. Crea el schema en PostgreSQL si no existe
-4. Corre migraciones en el schema del tenant
-5. Crea el User (core) dentro del schema del tenant
-6. Carga seed data (módulos, permisos, cargo admin)
-7. Asocia el dominio stratekaz.com al tenant
+Usa TenantLifecycleService para la creación del tenant (fases 3-6+8+10),
+garantizando el invariante row↔schema. El setup de admin (fases 1,2,7,9)
+queda fuera del servicio porque es concern de bootstrap, no de lifecycle.
 
 Uso:
     DJANGO_SETTINGS_MODULE=config.settings.production python manage.py bootstrap_production
@@ -132,62 +126,69 @@ class Command(BaseCommand):
             self.stdout.write('   [i]Plan Empresarial ya existe')
 
         # ==============================================
-        # FASE 3: Tenant (schema public)
+        # FASES 3-6+8+10: Tenant via TenantLifecycleService
         # ==============================================
-        self.stdout.write('\n[*]Fase 3: Tenant')
+        # Delega al servicio: row + domain + schema + migrate + seeds + ready.
+        # plan_code='empresarial' es el plan de producción (creado en Fase 2).
+        # is_trial=False porque bootstrap de producción no es trial.
+        self.stdout.write('\n[*]Fases 3-6: Tenant + Schema + Migraciones + Seeds')
         self.stdout.write('-' * 50)
+        self.stdout.write(f'   Schema: {schema_name}')
+        self.stdout.write('   (esto puede tardar varios minutos)')
 
-        from apps.tenant.models import Tenant
-        tenant = Tenant.objects.filter(code=tenant_code).first()
+        from apps.tenant.services import TenantLifecycleService, TenantAlreadyExistsError
 
-        if tenant:
-            old_schema = tenant.schema_name
-            if old_schema == 'public':
-                self.stdout.write(self.style.WARNING(
-                    f'   [!]Tenant existe con schema_name="public" (incorrecto)'
-                ))
-                self.stdout.write(f'   ->Actualizando a schema_name="{schema_name}"')
-                tenant.schema_name = schema_name
-                tenant.save(update_fields=['schema_name'])
-            elif old_schema == schema_name:
-                self.stdout.write(f'   [i]Tenant ya existe: {tenant.name} (schema: {schema_name})')
-            else:
-                self.stdout.write(f'   [i]Tenant existe con schema: {old_schema}')
-                schema_name = old_schema  # Usar el schema existente
-        else:
-            tenant = Tenant(
-                code=tenant_code,
-                name=tenant_name,
+        tenant = None
+        try:
+            tenant, warnings = TenantLifecycleService.create_tenant(
                 schema_name=schema_name,
-                plan=plan,
-                is_active=True,
-                schema_status='creating',
-                created_by=tenant_user,
+                name=tenant_name,
+                domain_url=domain,
+                plan_code='empresarial',
+                is_trial=False,
             )
-            # Bypass auto_create_schema=False
-            tenant.auto_create_schema = False
-            tenant.save()
             self.stdout.write(self.style.SUCCESS(
                 f'   [OK]Tenant creado: {tenant_name} (schema: {schema_name})'
             ))
+            for w in warnings:
+                self.stdout.write(self.style.WARNING(f'   [warn]{w}'))
 
-        # ==============================================
-        # FASE 4: Crear schema PostgreSQL
-        # ==============================================
-        self.stdout.write('\n[*]Fase 4: Schema PostgreSQL')
-        self.stdout.write('-' * 50)
+        except TenantAlreadyExistsError:
+            # Idempotencia: si el tenant ya existe, validar invariante y continuar.
+            status = TenantLifecycleService.validate_invariant(schema_name)
+            if status.is_consistent:
+                from django_tenants.utils import get_tenant_model
+                tenant = get_tenant_model().objects.get(schema_name=schema_name)
+                self.stdout.write(
+                    f'   [i]Tenant ya existe: {tenant.name} (schema: {schema_name})'
+                )
+            else:
+                self.stderr.write(self.style.ERROR(
+                    f'   [ERROR]Tenant {schema_name} existe pero en estado inconsistente: '
+                    f'{status.inconsistency_type}. Correr cleanup_orphan_schemas o '
+                    f'delete_tenant antes de reintentar bootstrap.'
+                ))
+                return
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'
-            )
-        self.stdout.write(self.style.SUCCESS(f'   [OK]Schema "{schema_name}" listo'))
-
-        # ==============================================
-        # FASE 4b: Limpiar migraciones fantasma del schema public
-        # ==============================================
-        # Las migraciones de TENANT_APPS quedaron registradas en public
-        # pero sin tablas reales. Limpiar para evitar conflictos.
+        # ============================================================
+        # Fase 4b — Cleanup de migraciones fantasma (legacy)
+        # ============================================================
+        # Limpia registros de django_migrations en public.* que NO
+        # corresponden a SHARED_APPS. Parche histórico para tenants
+        # creados antes de que django-tenants separara correctamente
+        # migraciones shared vs tenant.
+        #
+        # Corre SIEMPRE porque es idempotente y barato: si no hay
+        # registros fantasma, el DELETE no afecta nada.
+        #
+        # NO pertenece al TenantLifecycleService porque no es parte
+        # del lifecycle de tenants nuevos — es reparación de estado
+        # legacy en el schema public.
+        #
+        # Hallazgo relacionado: H18 — evaluar si este cleanup sigue
+        # siendo necesario o si puede eliminarse con evidencia de que
+        # ningún tenant activo depende de él.
+        # ============================================================
         self.stdout.write('\n[*]Fase 4b: Limpiar migraciones fantasma (schema public)')
         self.stdout.write('-' * 50)
 
@@ -206,49 +207,12 @@ class Command(BaseCommand):
             self.stdout.write('   [i]Sin registros fantasma')
 
         # ==============================================
-        # FASE 5: Migraciones en el schema del tenant
-        # ==============================================
-        self.stdout.write('\n[*]Fase 5: Migraciones')
-        self.stdout.write('-' * 50)
-        self.stdout.write(f'   Ejecutando migraciones en schema "{schema_name}"...')
-        self.stdout.write('   (esto puede tardar varios minutos)')
-
-        call_command(
-            'migrate_schemas',
-            schema_name=schema_name,
-            interactive=False,
-            verbosity=1,
-        )
-        self.stdout.write(self.style.SUCCESS('   [OK]Migraciones completadas'))
-
-        # ==============================================
-        # FASE 6: Seed data dentro del schema del tenant
-        # ==============================================
-        self.stdout.write('\n[*]Fase 6: Datos iniciales (seeds)')
-        self.stdout.write('-' * 50)
-
-        from django_tenants.utils import schema_context
-        with schema_context(schema_name):
-            # 6a. Estructura de modulos
-            try:
-                call_command('seed_estructura_final', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   [OK]seed_estructura_final'))
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   [!]seed_estructura_final: {e}'))
-
-            # 6b. Permisos RBAC
-            try:
-                call_command('seed_permisos_rbac', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   [OK]seed_permisos_rbac'))
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   [!]seed_permisos_rbac: {e}'))
-
-        # ==============================================
         # FASE 7: User superadmin dentro del tenant
         # ==============================================
         self.stdout.write('\n[*]Fase 7: User en schema del tenant')
         self.stdout.write('-' * 50)
 
+        from django_tenants.utils import schema_context
         with schema_context(schema_name):
             from apps.core.models import User
             user, user_created = User.objects.get_or_create(
@@ -274,23 +238,6 @@ class Command(BaseCommand):
                     user.save(update_fields=['is_superuser', 'is_staff'])
 
         # ==============================================
-        # FASE 8: Dominio
-        # ==============================================
-        self.stdout.write('\n[*]Fase 8: Dominio')
-        self.stdout.write('-' * 50)
-
-        from apps.tenant.models import Domain
-        # Limpiar dominios viejos que apunten a este tenant O que usen el mismo dominio
-        Domain.objects.filter(tenant=tenant).delete()
-        Domain.objects.filter(domain=domain).delete()
-        Domain.objects.create(
-            domain=domain,
-            tenant=tenant,
-            is_primary=True,
-        )
-        self.stdout.write(self.style.SUCCESS(f'   [OK]Dominio configurado: {domain} -> {schema_name}'))
-
-        # ==============================================
         # FASE 9: TenantUserAccess
         # ==============================================
         self.stdout.write('\n[*]Fase 9: Acceso del superadmin al tenant')
@@ -306,13 +253,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('   [OK]Acceso otorgado'))
         else:
             self.stdout.write('   [i]Acceso ya existia')
-
-        # ==============================================
-        # FASE 10: Actualizar estado del tenant
-        # ==============================================
-        tenant.schema_status = 'ready'
-        tenant.schema_error = ''
-        tenant.save(update_fields=['schema_status', 'schema_error'])
 
         # ==============================================
         # RESUMEN

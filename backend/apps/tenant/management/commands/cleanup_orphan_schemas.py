@@ -1,179 +1,185 @@
 """
-Comando para limpiar schemas huérfanos de PostgreSQL.
+Comando para detectar y limpiar inconsistencias tenant row ↔ schema.
 
-Detecta y elimina schemas con prefijo 'tenant_' que no tienen
-un registro correspondiente en la tabla tenant_tenant.
+Wrapper CLI sobre TenantLifecycleService.list_inconsistencies() y
+delete_tenant_with_schema(). Detecta 3 tipos de inconsistencias:
+- row_orphan: Tenant row sin schema físico
+- schema_orphan: Schema físico sin Tenant row
+- empty_schema: Ambos existen pero 0 tablas migradas
+
+Opcionalmente limpia tenants con schema_status='failed' (--include-failed).
 
 Uso:
-    python manage.py cleanup_orphan_schemas          # Dry-run (solo lista)
-    python manage.py cleanup_orphan_schemas --confirm  # Ejecuta la limpieza
+    python manage.py cleanup_orphan_schemas                        # Dry-run
+    python manage.py cleanup_orphan_schemas --confirm              # Ejecutar
+    python manage.py cleanup_orphan_schemas --schema tenant_viejo  # Filtrar
+    python manage.py cleanup_orphan_schemas --include-failed       # + failed
+    python manage.py cleanup_orphan_schemas --confirm --force      # Sin prompt
 """
 import logging
-from django.core.management.base import BaseCommand
-from django.db import connection
-
-from apps.tenant.models import Tenant, Domain
+from django.core.management.base import BaseCommand, CommandError
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Detecta y elimina schemas PostgreSQL huérfanos (sin registro de Tenant)'
+    help = 'Detecta y limpia inconsistencias tenant row ↔ schema PostgreSQL'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--confirm',
             action='store_true',
             default=False,
-            help='Ejecutar la limpieza (sin esto, solo lista los huérfanos)',
+            help='Ejecutar la limpieza (sin esto, solo lista inconsistencias)',
+        )
+        parser.add_argument(
+            '--force',
+            action='store_true',
+            default=False,
+            help='No pedir confirmación interactiva (requiere --confirm)',
+        )
+        parser.add_argument(
+            '--schema',
+            type=str,
+            default=None,
+            help='Filtrar a un schema específico (ej: --schema tenant_viejo)',
         )
         parser.add_argument(
             '--include-failed',
             action='store_true',
             default=False,
-            help='También limpiar tenants con schema_status=failed',
+            help='También incluir tenants con schema_status=failed',
         )
 
     def handle(self, *args, **options):
         confirm = options['confirm']
+        force = options['force']
+        schema_filter = options.get('schema')
         include_failed = options['include_failed']
 
-        self.stdout.write(self.style.MIGRATE_HEADING('=== Limpieza de Schemas Huérfanos ==='))
-        self.stdout.write('')
-
-        # 1. Obtener schemas existentes con prefijo tenant_
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT schema_name
-                FROM information_schema.schemata
-                WHERE schema_name LIKE 'tenant_%%'
-                ORDER BY schema_name
-            """)
-            db_schemas = {row[0] for row in cursor.fetchall()}
-
-        # 2. Obtener schemas registrados en tenant_tenant
-        registered_schemas = set(
-            Tenant.objects.values_list('schema_name', flat=True)
+        from apps.tenant.services import (
+            TenantLifecycleService,
+            TenantLifecycleError,
         )
 
-        # 3. Detectar huérfanos
-        orphan_schemas = db_schemas - registered_schemas
-
-        self.stdout.write(f'Schemas en PostgreSQL con prefijo tenant_: {len(db_schemas)}')
-        self.stdout.write(f'Tenants registrados: {len(registered_schemas)}')
-        self.stdout.write(f'Schemas huérfanos detectados: {len(orphan_schemas)}')
+        self.stdout.write(self.style.MIGRATE_HEADING(
+            '=== Auditoría de Integridad Tenant ↔ Schema ==='
+        ))
         self.stdout.write('')
 
-        if orphan_schemas:
-            self.stdout.write(self.style.WARNING('Schemas huérfanos (sin registro de Tenant):'))
-            for schema in sorted(orphan_schemas):
-                # Contar tablas en el schema
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT COUNT(*)
-                        FROM information_schema.tables
-                        WHERE table_schema = %s
-                    """, [schema])
-                    table_count = cursor.fetchone()[0]
-                self.stdout.write(f'  - {schema} ({table_count} tablas)')
+        # ── 1. Detectar inconsistencias via el servicio ──────────────
+        report = TenantLifecycleService.list_inconsistencies()
+        to_clean = list(report.inconsistencies)
 
-        # 4. Detectar registros de Tenant sin schema
-        orphan_tenants = []
-        for tenant in Tenant.objects.all():
-            if tenant.schema_name not in db_schemas and tenant.schema_name != 'public':
-                orphan_tenants.append(tenant)
+        self.stdout.write(f'Tenants registrados:       {report.total_tenants}')
+        self.stdout.write(f'Schemas físicos (no-reservados): {report.total_schemas}')
+        self.stdout.write(f'Inconsistencias detectadas: {len(to_clean)}')
 
-        if orphan_tenants:
-            self.stdout.write('')
-            self.stdout.write(self.style.WARNING('Tenants registrados sin schema en PostgreSQL:'))
-            for tenant in orphan_tenants:
-                self.stdout.write(
-                    f'  - ID={tenant.id} code={tenant.code} '
-                    f'schema={tenant.schema_name} status={tenant.schema_status}'
-                )
-
-        # 5. Detectar tenants con status failed (opcional)
-        failed_tenants = []
+        # ── 2. --include-failed: agregar failed tenants consistentes ─
+        # El servicio no sabe de schema_status (SRP). Failed tenants
+        # consistentes son caso legítimo donde el operador sabe que el
+        # tenant está roto aunque el invariante row↔schema se cumpla.
         if include_failed:
-            failed_tenants = list(
-                Tenant.objects.filter(schema_status='failed')
-                .exclude(id__in=[t.id for t in orphan_tenants])
-            )
-            if failed_tenants:
-                self.stdout.write('')
-                self.stdout.write(self.style.WARNING('Tenants con schema_status=failed:'))
+            from django_tenants.utils import get_tenant_model, schema_context
+            Tenant = get_tenant_model()
+            with schema_context("public"):
+                failed_tenants = Tenant.objects.filter(schema_status='failed')
+                added_failed = 0
                 for tenant in failed_tenants:
+                    # Dedup: no agregar si ya está en la lista
+                    if any(s.schema_name == tenant.schema_name for s in to_clean):
+                        continue
+                    status = TenantLifecycleService.validate_invariant(
+                        tenant.schema_name,
+                    )
+                    to_clean.append(status)
+                    added_failed += 1
+                if added_failed:
                     self.stdout.write(
-                        f'  - ID={tenant.id} code={tenant.code} '
-                        f'error={tenant.schema_error[:80] if tenant.schema_error else "N/A"}'
+                        f'Failed tenants agregados:  {added_failed}'
                     )
 
-        # 6. Resumen
-        total_to_clean = len(orphan_schemas) + len(orphan_tenants) + len(failed_tenants)
-        if total_to_clean == 0:
+        # ── 3. Filtrar por --schema si se pidió ──────────────────────
+        if schema_filter:
+            to_clean = [
+                s for s in to_clean if s.schema_name == schema_filter
+            ]
+            if not to_clean:
+                raise CommandError(
+                    f"No se encontró inconsistencia para schema '{schema_filter}'. "
+                    f"Listá todas las inconsistencias corriendo el command sin --schema."
+                )
+
+        # ── 4. Mostrar detalle ───────────────────────────────────────
+        if not to_clean:
             self.stdout.write('')
-            self.stdout.write(self.style.SUCCESS('No se encontraron datos huérfanos.'))
+            self.stdout.write(self.style.SUCCESS(
+                'No hay inconsistencias que limpiar.'
+            ))
             return
 
         self.stdout.write('')
+        self.stdout.write('Items a limpiar:')
+        for status in to_clean:
+            inc_type = status.inconsistency_type or 'failed_consistent'
+            self.stdout.write(
+                f'  - {status.schema_name}: {inc_type} '
+                f'(row={status.row_exists}, schema={status.schema_exists}, '
+                f'tables={status.schema_has_tables})'
+            )
+
+        # ── 5. Dry-run: mostrar y salir ──────────────────────────────
         if not confirm:
+            self.stdout.write('')
             self.stdout.write(self.style.NOTICE(
                 'Modo DRY-RUN: No se realizaron cambios.\n'
                 'Ejecuta con --confirm para aplicar la limpieza.'
             ))
             return
 
-        # 7. Ejecutar limpieza
+        # ── 6. Prompt de confirmación (salvo --force) ────────────────
+        if not force:
+            self.stdout.write('')
+            resp = input(
+                f'Limpiar {len(to_clean)} inconsistencia(s)? (yes/no): '
+            ).strip()
+            if resp.lower() != 'yes':
+                self.stdout.write(self.style.WARNING('Operación cancelada.'))
+                return
+
+        # ── 7. Ejecutar limpieza via el servicio ─────────────────────
+        self.stdout.write('')
         self.stdout.write(self.style.MIGRATE_HEADING('Ejecutando limpieza...'))
 
-        # 7a. Eliminar schemas huérfanos
-        from psycopg2 import sql
-        for schema in sorted(orphan_schemas):
+        cleaned = 0
+        errors = 0
+        for status in to_clean:
             try:
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
-                            sql.Identifier(schema)
-                        )
-                    )
-                self.stdout.write(self.style.SUCCESS(f'  DROP SCHEMA {schema} CASCADE'))
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(f'  Error eliminando {schema}: {e}'))
-
-        # 7b. Eliminar registros de Tenant sin schema
-        for tenant in orphan_tenants:
-            try:
-                tenant_name = tenant.name
-                Domain.objects.filter(tenant=tenant).delete()
-                tenant.delete()
+                TenantLifecycleService.delete_tenant_with_schema(
+                    schema_name=status.schema_name,
+                    confirmation_token=(
+                        TenantLifecycleService.CONFIRMATION_TOKEN_TEMPLATE
+                        .format(schema_name=status.schema_name)
+                    ),
+                    deleted_by_user_id=None,
+                )
                 self.stdout.write(self.style.SUCCESS(
-                    f'  DELETE Tenant ID={tenant.id} ({tenant_name})'
+                    f'  - {status.schema_name}: limpiado'
                 ))
-            except Exception as e:
+                cleaned += 1
+            except TenantLifecycleError as e:
                 self.stdout.write(self.style.ERROR(
-                    f'  Error eliminando Tenant ID={tenant.id}: {e}'
+                    f'  - {status.schema_name}: ERROR {e}'
                 ))
-
-        # 7c. Limpiar tenants con status failed
-        for tenant in failed_tenants:
-            try:
-                schema = tenant.schema_name
-                tenant_name = tenant.name
-                Domain.objects.filter(tenant=tenant).delete()
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
-                            sql.Identifier(schema)
-                        )
-                    )
-                tenant.delete()
-                self.stdout.write(self.style.SUCCESS(
-                    f'  CLEANUP failed Tenant ID={tenant.id} ({tenant_name})'
-                ))
-            except Exception as e:
-                self.stdout.write(self.style.ERROR(
-                    f'  Error limpiando Tenant ID={tenant.id}: {e}'
-                ))
+                errors += 1
 
         self.stdout.write('')
-        self.stdout.write(self.style.SUCCESS('Limpieza completada.'))
+        self.stdout.write(
+            f'Resultado: {cleaned} limpiados, {errors} errores.'
+        )
+        if errors == 0:
+            self.stdout.write(self.style.SUCCESS('Limpieza completada.'))
+        else:
+            self.stdout.write(self.style.WARNING(
+                'Limpieza parcial. Revisar errores arriba.'
+            ))

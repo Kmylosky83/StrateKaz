@@ -314,12 +314,14 @@ Dedicada exclusivamente a este hallazgo.
 | # | Hallazgo | Estado | Razón del orden |
 |---|---|---|---|
 | 1 | **H2 — Auto-memory** | ✅ RESUELTO | Bloquea todo lo demás porque sin un sistema confiable de memoria del proyecto, las decisiones de H1 (y de cualquier sesión futura) viven en frágil. |
-| 2 | **H4 — Infra de test** | 🔲 PENDIENTE | Sin tests funcionando, no podemos validar nada automatizadamente. Bloquea la confianza en todo el perímetro LIVE. |
-| 3 | **H3 — Validación de frescura** | 🔲 PENDIENTE | Los 28 archivos promovidos pueden tener info obsoleta. Menos urgente que H4. |
-| 4 | **H1 — Portales** | 🔲 PENDIENTE | Decisión arquitectónica grande. Requiere perímetro LIVE sólido primero. |
+| 2 | **H4 — Infra de test** | ✅ RESUELTO (2026-04-09) | Infra de test multi-tenant reconstruida. 528 passed, 0 errors. |
+| 3 | **H10 — fast_test huérfano** | ✅ RESUELTO (2026-04-10) | Purgado vía TenantLifecycleService.delete_tenant_with_schema(). |
+| 4 | **H3 — Validación de frescura** | 🔲 PENDIENTE | Los 28 archivos promovidos pueden tener info obsoleta. Menos urgente que H4. |
+| 5 | **H1 — Portales** | 🔲 PENDIENTE | Decisión arquitectónica grande. Requiere perímetro LIVE sólido primero. |
+| 6 | **H11 — DatabaseScheduler drift** | 🔲 PENDIENTE | 15 tareas zombie en DB. Requiere purga de django_celery_beat_periodictask. |
+| 7 | **H17 — Docker healthcheck celery** | 🔲 PENDIENTE | Dockerfile healthcheck asume HTTP :8000. celery/celerybeat no tienen HTTP. |
 
-**Sesiones estimadas:** 1 sesión para H4, 1 para H3, 1-2 para H1.
-si el patrón elegido requiere prototipo de migración.
+**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H17 (15 min).
 
 ---
 

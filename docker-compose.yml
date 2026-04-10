@@ -135,6 +135,17 @@ services:
       - backend
       - redis
     command: celery -A config worker -l info --concurrency=2 -Q celery,tenant_ops,emails,reports,files,maintenance,monitoring,scraping,compliance,notifications,workflow
+    # Healthcheck via celery inspect ping al worker local.
+    # Gotcha: con --concurrency=1, un worker atendiendo una tarea
+    # larga no responde al ping y el contenedor aparece unhealthy.
+    # Con --concurrency=2 (config actual) el segundo slot responde.
+    # NO bajar concurrency a 1 sin revisar este healthcheck.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping --destination celery@$$HOSTNAME --timeout 10 2>&1 | grep -q pong || exit 1"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
     networks:
       - stratekaz_network
 
@@ -164,6 +175,8 @@ services:
     depends_on:
       - celery
     command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    healthcheck:
+      disable: true
     networks:
       - stratekaz_network
 

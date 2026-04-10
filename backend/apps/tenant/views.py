@@ -302,15 +302,17 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
         Eliminacion permanente: borra el registro Y el schema PostgreSQL.
         IRREVERSIBLE - requiere confirmacion explicita.
 
-        Limpia en orden:
-        1. TenantUser.last_tenant FK references (SET NULL)
-        2. TenantUserAccess (accesos de usuarios)
-        3. Domain (dominios asociados)
-        4. Schema PostgreSQL (DROP CASCADE)
-        5. Tenant record (DELETE real via raw SQL)
+        Delega al TenantLifecycleService para el lifecycle (Domain + Tenant
+        row + DROP SCHEMA). Side effects de usuarios (last_tenant FK,
+        TenantUserAccess) se limpian en el view antes del servicio.
         """
-        from django.db import connection
-        from apps.tenant.models import Domain, TenantUser, TenantUserAccess
+        from apps.tenant.models import TenantUser, TenantUserAccess
+        from apps.tenant.services import (
+            TenantLifecycleService,
+            TenantNotFoundError,
+            SchemaDropFailedError,
+            TenantInvariantViolationError,
+        )
 
         tenant = self.get_object()
         schema_name = tenant.schema_name
@@ -330,48 +332,51 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
             )
 
         tenant_name = tenant.name
-        tenant_id = tenant.id
 
         try:
+            # 1. Side effects pre-servicio (concern de usuarios, no de lifecycle)
             with schema_context('public'):
-                # 1. Limpiar FK last_tenant en TenantUser
                 TenantUser.objects.filter(last_tenant=tenant).update(last_tenant=None)
-
-                # 2. Eliminar accesos de usuarios a este tenant
                 TenantUserAccess.objects.filter(tenant=tenant).delete()
 
-                # 3. Eliminar dominios asociados
-                Domain.objects.filter(tenant=tenant).delete()
-
-                # 4. Eliminar schema PostgreSQL
-                from psycopg2 import sql
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
-                            sql.Identifier(schema_name)
-                        )
-                    )
-
-                # 5. Eliminar registro del tenant (DELETE real, no soft-delete)
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        "DELETE FROM tenant_tenant WHERE id = %s",
-                        [tenant_id]
-                    )
+            # 2. Lifecycle: Domain + Tenant row + DROP SCHEMA via servicio
+            deleted_by = getattr(request.user, 'id', None)
+            TenantLifecycleService.delete_tenant_with_schema(
+                schema_name=schema_name,
+                confirmation_token=(
+                    TenantLifecycleService.CONFIRMATION_TOKEN_TEMPLATE
+                    .format(schema_name=schema_name)
+                ),
+                deleted_by_user_id=deleted_by,
+            )
 
             logger.info(
                 f'Hard delete completado: "{tenant_name}" '
-                f'(schema={schema_name}, id={tenant_id})'
+                f'(schema={schema_name}, user={deleted_by})'
             )
 
             return Response({
                 'detail': f'Empresa "{tenant_name}" y schema "{schema_name}" eliminados permanentemente'
             })
 
+        except TenantNotFoundError:
+            return Response(
+                {'detail': f'Tenant {schema_name} no existe'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except (SchemaDropFailedError, TenantInvariantViolationError) as e:
+            logger.error(
+                f'Hard delete fallido para tenant {schema_name}: {e}',
+                exc_info=True,
+            )
+            return Response(
+                {'detail': f'Error eliminando tenant: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         except Exception as e:
             logger.error(
-                f'Hard delete fallido para tenant {tenant_id}: {e}',
-                exc_info=True
+                f'Hard delete fallido para tenant {schema_name}: {e}',
+                exc_info=True,
             )
             return Response(
                 {'detail': f'Error eliminando tenant: {str(e)}'},

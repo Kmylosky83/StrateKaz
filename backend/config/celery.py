@@ -113,6 +113,13 @@ app.conf.beat_schedule = {
         'options': {'queue': 'tenant_ops'},
     },
 
+    # Detección periódica de desyncs Tenant row ↔ schema - Cada 30 minutos
+    'tenant-schema-integrity-check': {
+        'task': 'apps.tenant.tasks.check_tenant_schema_integrity',
+        'schedule': crontab(minute='*/30'),
+        'options': {'queue': 'monitoring'},
+    },
+
     # ═══════════════════════════════════════════════════
     # MOTOR DE CUMPLIMIENTO - NORMAS Y REQUISITOS LEGALES
     # ═══════════════════════════════════════════════════
@@ -448,6 +455,7 @@ app.conf.task_routes = {
     'apps.tenant.tasks.cleanup_failed_tenant': {'queue': 'tenant_ops'},
     'apps.tenant.tasks.cleanup_stale_creating_tenants': {'queue': 'tenant_ops'},
     'apps.tenant.tasks.check_tenant_expirations': {'queue': 'tenant_ops'},
+    'apps.tenant.tasks.check_tenant_schema_integrity': {'queue': 'monitoring'},
 
     # Motor de Cumplimiento tasks
     'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},

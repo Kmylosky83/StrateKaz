@@ -653,3 +653,99 @@ def cleanup_stale_creating_tenants():
         logger.warning(f"Stale tenant marked as failed: {tenant.name} ({tenant.schema_name})")
 
     return {'stale_count': count}
+
+
+# ══════════════════════════════════════════════════════════════════
+# TASK: Detección periódica de desyncs Tenant row ↔ schema
+# ══════════════════════════════════════════════════════════════════
+
+@shared_task(
+    name='apps.tenant.tasks.check_tenant_schema_integrity',
+    queue='monitoring',
+)
+def check_tenant_schema_integrity():
+    """
+    Detección periódica de desyncs del invariante
+    Tenant row ↔ schema físico.
+
+    Última línea de defensa después del TenantLifecycleService.
+    No auto-repara: detecta, loguea, alerta a Sentry y retorna
+    un reporte. La decisión de reparación es humana porque
+    puede involucrar pérdida de datos.
+
+    Corre cada 30 minutos vía Celery Beat.
+    """
+    from apps.tenant.services import TenantLifecycleService
+
+    logger.info("[IntegrityCheck] Iniciando escaneo de invariante")
+
+    try:
+        report = TenantLifecycleService.list_inconsistencies()
+    except Exception as e:
+        logger.error(f"[IntegrityCheck] Fallo al listar inconsistencias: {e}")
+        if hasattr(settings, 'SENTRY_DSN') and settings.SENTRY_DSN:
+            try:
+                import sentry_sdk
+                sentry_sdk.capture_exception(e)
+            except ImportError:
+                pass
+        return {
+            'status': 'error',
+            'error': str(e),
+            'inconsistencies_found': 0,
+        }
+
+    if not report.has_inconsistencies:
+        logger.info(
+            f"[IntegrityCheck] Invariante consistente: "
+            f"{report.total_tenants} tenants, "
+            f"{report.total_schemas} schemas, 0 inconsistencias"
+        )
+        return {
+            'status': 'ok',
+            'total_tenants': report.total_tenants,
+            'total_schemas': report.total_schemas,
+            'inconsistencies_found': 0,
+        }
+
+    # Hay inconsistencias: loguear cada una y reportar a Sentry
+    for status in report.inconsistencies:
+        logger.error(
+            f"[IntegrityCheck] Invariante violado: "
+            f"schema_name={status.schema_name} "
+            f"type={status.inconsistency_type} "
+            f"row_exists={status.row_exists} "
+            f"schema_exists={status.schema_exists} "
+            f"schema_has_tables={status.schema_has_tables}"
+        )
+
+        if hasattr(settings, 'SENTRY_DSN') and settings.SENTRY_DSN:
+            try:
+                import sentry_sdk
+                sentry_sdk.capture_message(
+                    f"Tenant invariant violation: {status.schema_name}",
+                    level='error',
+                    tags={
+                        'tenant_schema': status.schema_name,
+                        'inconsistency_type': status.inconsistency_type,
+                    },
+                )
+            except ImportError:
+                pass
+
+    return {
+        'status': 'inconsistencies_found',
+        'total_tenants': report.total_tenants,
+        'total_schemas': report.total_schemas,
+        'inconsistencies_found': len(report.inconsistencies),
+        'inconsistencies': [
+            {
+                'schema_name': s.schema_name,
+                'type': s.inconsistency_type,
+                'row_exists': s.row_exists,
+                'schema_exists': s.schema_exists,
+                'schema_has_tables': s.schema_has_tables,
+            }
+            for s in report.inconsistencies
+        ],
+    }

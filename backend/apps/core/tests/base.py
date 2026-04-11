@@ -62,7 +62,13 @@ class BaseTenantTestCase(FastTenantTestCase):
         cls.setup_tenant(cls.tenant)
         cls.tenant.save(verbosity=cls.get_verbosity())
 
-        # auto_create_schema=False → crear schema manualmente
+        # noqa: TENANT-LIFECYCLE
+        # BaseTenantTestCase crea schemas directamente sin el
+        # TenantLifecycleService porque hereda de FastTenantTestCase
+        # (django-tenants) que gestiona su propio ciclo de setup/teardown.
+        # El servicio agregaría seeds, locks y validaciones innecesarias
+        # para el contexto de unittest donde el schema es efímero y
+        # controlado por el framework de test.
         cls.tenant.create_schema(
             check_if_exists=True,
             sync_schema=True,

@@ -52,7 +52,14 @@ def tenant_test_schema(django_db_setup, django_db_blocker):
                 "name": "Test Tenant",
             },
         )
-        # auto_create_schema=False en el modelo Tenant; forzamos creacion.
+        # noqa: TENANT-LIFECYCLE
+        # Test infrastructure fuera del TenantLifecycleService. Usa
+        # django-tenants create_schema() directo porque:
+        # 1. El schema 'test' es efímero (session scope, no producción).
+        # 2. El servicio carga seeds que encarecen el setup (~10 min).
+        #    create_schema + migrate_schemas es más rápido (~7 min).
+        # 3. Los tests necesitan un schema base sin las garantías de
+        #    producción del servicio (locks, invariante, callbacks).
         tenant.create_schema(check_if_exists=True, sync_schema=True, verbosity=0)
 
         # Forzar migraciones para asegurar que TODAS las tablas de

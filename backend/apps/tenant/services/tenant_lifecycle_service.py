@@ -314,23 +314,40 @@ class TenantLifecycleService:
                 except Exception:
                     pass  # Nunca interrumpir por fallo de callback
 
+        schema_was_pre_existing = False
         schema_created = False
         try:
-            # B1. Crear schema físico
+            # B1. Crear schema físico (idempotente para redelivery — H22)
             _progress(5, "creating_schema", "Creando schema PostgreSQL")
             close_old_connections()
             connection.ensure_connection()
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    sql.SQL("CREATE SCHEMA {}").format(
-                        sql.Identifier(schema_name)
-                    )
+
+            pre_schema = cls.validate_invariant(schema_name)
+            if pre_schema.schema_exists:
+                # Redelivery detectado: schema ya existe de un intento
+                # previo (crash del worker entre CREATE y ready).
+                # Saltamos CREATE y continuamos con migrate (idempotente)
+                # + seeds (idempotentes con get_or_create).
+                schema_was_pre_existing = True
+                schema_created = True  # para tracking, no para cleanup
+                logger.info(
+                    "TenantLifecycle: action=create_schema schema=%s "
+                    "result=redelivery_detected has_tables=%s",
+                    schema_name,
+                    pre_schema.schema_has_tables,
                 )
-            schema_created = True
-            logger.info(
-                "TenantLifecycle: action=create_schema schema=%s result=success",
-                schema_name,
-            )
+            else:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("CREATE SCHEMA {}").format(
+                            sql.Identifier(schema_name)
+                        )
+                    )
+                schema_created = True
+                logger.info(
+                    "TenantLifecycle: action=create_schema schema=%s result=success",
+                    schema_name,
+                )
 
             # B2. Migraciones
             _progress(10, "migrating", "Corriendo migraciones")
@@ -414,8 +431,10 @@ class TenantLifecycleService:
             return non_critical_warnings
 
         except Exception:
-            # Cleanup: DROP schema si fue creado
-            if schema_created:
+            # Cleanup: DROP schema solo si NOSOTROS lo creamos.
+            # Si era pre-existente (redelivery), NO dropear — preservar
+            # recovery state del intento previo (H22).
+            if schema_created and not schema_was_pre_existing:
                 try:
                     close_old_connections()
                     connection.ensure_connection()
@@ -437,6 +456,14 @@ class TenantLifecycleService:
                         schema_name,
                         str(drop_err)[:200],
                     )
+            elif schema_was_pre_existing:
+                logger.warning(
+                    "TenantLifecycle: action=phase_b_failed "
+                    "schema=%s result=preserved_pre_existing "
+                    "detail=Schema NOT dropped to preserve recovery "
+                    "state from previous attempt",
+                    schema_name,
+                )
             raise
 
     # ------------------------------------------------------------------

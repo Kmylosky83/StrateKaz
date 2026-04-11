@@ -175,3 +175,116 @@ class TestProvisionSchemaForPendingTenant:
 
         finally:
             _cleanup_tenant(schema_name)
+
+
+@pytest.mark.tenant_lifecycle
+@pytest.mark.django_db(transaction=True)
+class TestExecutePhaseBIdempotency:
+    """Tests de idempotencia para redelivery de Celery (H22)."""
+
+    def test_idempotent_on_existing_empty_schema(self, tenant_test_schema):
+        """
+        Redelivery scenario B: schema existe vacío (crash antes de migrate).
+        provision debe migrar + seed + marcar ready.
+        """
+        schema_name = "tenant_h22_empty"
+        tenant = _create_pending_tenant(schema_name)
+        try:
+            # Simular crash: crear schema vacío manualmente
+            with schema_context("public"):
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'
+                    )
+
+            # Verificar pre-condición: schema existe, 0 tablas
+            pre = TenantLifecycleService.validate_invariant(schema_name)
+            assert pre.schema_exists is True
+            assert pre.schema_has_tables is False
+
+            # Provision debe completar exitosamente (idempotente)
+            result_tenant, warnings = (
+                TenantLifecycleService.provision_schema_for_pending_tenant(
+                    tenant_id=tenant.id,
+                )
+            )
+
+            assert result_tenant.schema_status == "ready"
+
+            post = TenantLifecycleService.validate_invariant(schema_name)
+            assert post.is_consistent is True
+            assert post.schema_has_tables is True
+
+        finally:
+            _cleanup_tenant(schema_name)
+
+    def test_idempotent_on_existing_full_schema(self, tenant_test_schema):
+        """
+        Redelivery scenario D: schema completo (crash entre migrate y ready).
+        Replica EXACTAMENTE el escenario real del crash de Docker.
+        provision debe re-migrar (no-op) + re-seed (idempotente) + marcar ready.
+        """
+        schema_name = "tenant_h22_full"
+        try:
+            # Crear tenant completo via servicio
+            TenantLifecycleService.create_tenant(
+                schema_name=schema_name,
+                name="H22 Full Test",
+                domain_url="h22full.test.com",
+            )
+
+            # Simular crash: forzar schema_status='creating'
+            from django_tenants.utils import get_tenant_model
+            Tenant = get_tenant_model()
+            with schema_context("public"):
+                t = Tenant.objects.get(schema_name=schema_name)
+                t.schema_status = "creating"
+                t.save(update_fields=["schema_status"])
+
+            # Redelivery: provision sobre tenant que ya tiene todo
+            result_tenant, warnings = (
+                TenantLifecycleService.provision_schema_for_pending_tenant(
+                    tenant_id=t.id,
+                )
+            )
+
+            assert result_tenant.schema_status == "ready"
+            assert result_tenant.schema_error == ""
+
+            post = TenantLifecycleService.validate_invariant(schema_name)
+            assert post.is_consistent is True
+
+        finally:
+            _cleanup_tenant(schema_name)
+
+    def test_preserves_pre_existing_schema_on_failure(self, tenant_test_schema):
+        """
+        Si falla durante Phase B en schema pre-existente, NO hacer DROP.
+        Preservar recovery state del intento previo.
+        """
+        schema_name = "tenant_h22_preserve"
+        tenant = _create_pending_tenant(schema_name)
+        try:
+            # Crear schema vacío pre-existente
+            with schema_context("public"):
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'
+                    )
+
+            # Mock migrate_schemas para que falle
+            with patch(
+                "apps.tenant.services.tenant_lifecycle_service.call_command",
+                side_effect=RuntimeError("Simulated failure on redelivery"),
+            ):
+                with pytest.raises(RuntimeError, match="Simulated failure"):
+                    TenantLifecycleService.provision_schema_for_pending_tenant(
+                        tenant_id=tenant.id,
+                    )
+
+            # Schema NO fue dropeado (preservado para recovery)
+            status = TenantLifecycleService.validate_invariant(schema_name)
+            assert status.schema_exists is True
+
+        finally:
+            _cleanup_tenant(schema_name)

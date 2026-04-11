@@ -321,7 +321,15 @@ Dedicada exclusivamente a este hallazgo.
 | 6 | **H11 — DatabaseScheduler drift** | 🔲 PENDIENTE | 15 tareas zombie en DB. Requiere purga de django_celery_beat_periodictask. |
 | 7 | **H17 — Docker healthcheck celery** | 🔲 PENDIENTE | Dockerfile healthcheck asume HTTP :8000. celery/celerybeat no tienen HTTP. |
 
-**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H17 (15 min).
+| 8 | **H13 — Paths cortos documental** | 🔲 PENDIENTE | Tasks documental usan paths cortos en vez de dotted path completo. |
+| 9 | **H14 — ess_urls.py imports incondicionales** | 🔲 PENDIENTE | Amplía H1 — views NO-LIVE importadas a nivel de módulo. |
+| 10 | **H18 — bootstrap Fase 4b legacy** | 🔲 PENDIENTE | Cleanup migraciones fantasma. Evaluar si sigue siendo necesario. |
+| 11 | **H19 — delete_tenant dry-run/confirm** | 🔲 PENDIENTE | Flags redundantes. Simplificar. |
+| 12 | **H20 — delete_tenant → purge_tenant** | ✅ RESUELTO (2026-04-10) | Renombrado por colisión con django-tenants. |
+| 13 | **H21 — hard-delete sin tests API** | 🔲 PENDIENTE | Endpoint usa servicio testeado, falta cobertura HTTP. |
+| 14 | **H22 — Idempotencia Fase B** | ✅ RESUELTO (2026-04-10) | Pre-check validate_invariant antes de CREATE SCHEMA. |
+
+**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min).
 
 ---
 

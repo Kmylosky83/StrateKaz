@@ -24,7 +24,7 @@ def tipo_documento(empresa, user):
         color_identificacion='#3498db',
         is_active=True,
         orden=1,
-        empresa_id=empresa.pk,
+        empresa=empresa,
         created_by=user
     )
 
@@ -46,7 +46,7 @@ def tipo_documento_manual(empresa, user):
         color_identificacion='#e74c3c',
         is_active=True,
         orden=2,
-        empresa_id=empresa.pk,
+        empresa=empresa,
         created_by=user
     )
 
@@ -66,7 +66,7 @@ def plantilla_documento(empresa, tipo_documento, user):
         version='1.0',
         estado='ACTIVA',
         es_por_defecto=True,
-        empresa_id=empresa.pk,
+        empresa=empresa,
         created_by=user
     )
 
@@ -86,7 +86,7 @@ def documento(empresa, tipo_documento, plantilla_documento, user):
         estado='BORRADOR',
         clasificacion='INTERNO',
         elaborado_por=user,
-        empresa_id=empresa.pk
+        empresa=empresa
     )
 
 
@@ -101,5 +101,5 @@ def version_documento(documento, empresa, user):
         contenido_snapshot=documento.contenido,
         descripcion_cambios='Creacion inicial del documento',
         creado_por=user,
-        empresa_id=empresa.pk,
+        empresa=empresa,
     )

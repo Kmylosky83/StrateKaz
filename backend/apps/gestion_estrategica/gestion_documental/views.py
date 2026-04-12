@@ -125,7 +125,10 @@ class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
+        serializer.save(empresa=empresa, created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def activos(self, request):
@@ -167,7 +170,10 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
+        serializer.save(empresa=empresa, created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def activar(self, request, pk=None):
@@ -301,7 +307,10 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
+        serializer.save(empresa=empresa, created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     @action(detail=False, methods=['post'])
     def reordenar(self, request):
@@ -419,7 +428,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             )
 
         empresa = get_tenant_empresa()
-        empresa_id = empresa.id if empresa else None
 
         # Auto-generar codigo TIPO-PROCESO-NNN si no viene en el request
         codigo = serializer.validated_data.get('codigo')
@@ -428,10 +436,11 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             proceso = serializer.validated_data.get('proceso')
             if tipo_documento:
                 from .services import DocumentoService
-                codigo = DocumentoService.generar_codigo(tipo_documento, empresa_id, proceso)
+                codigo = DocumentoService.generar_codigo(tipo_documento, empresa.id if empresa else None, proceso)
 
         documento = serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
+            created_by=self.request.user,
             elaborado_por=self.request.user,
             codigo=codigo,
         )
@@ -1584,7 +1593,10 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, creado_por=self.request.user)
+        serializer.save(empresa=empresa, created_by=self.request.user, creado_por=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     @action(detail=False, methods=['get'], url_path='por-documento')
     def por_documento(self, request):
@@ -1659,7 +1671,10 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
+        serializer.save(empresa=empresa, created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='confirmar-recepcion')
     def confirmar_recepcion(self, request, pk=None):
@@ -1998,7 +2013,7 @@ class TablaRetencionDocumentalViewSet(viewsets.ModelViewSet):
         from .models import TablaRetencionDocumental
         return TablaRetencionDocumental.objects.select_related(
             'tipo_documento', 'proceso'
-        ).filter(activo=True).order_by('tipo_documento__codigo', 'proceso__code')
+        ).filter(is_active=True).order_by('tipo_documento__codigo', 'proceso__code')
 
     def get_serializer_class(self):
         from .serializers import TablaRetencionDocumentalSerializer
@@ -2006,7 +2021,10 @@ class TablaRetencionDocumentalViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None)
+        serializer.save(empresa=empresa, created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 
 def _get_client_ip(request):

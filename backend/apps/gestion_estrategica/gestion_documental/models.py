@@ -8,12 +8,13 @@ Razón: El gestor documental es transversal a toda la organización, no específ
 NOTA: Las firmas digitales se manejan con FirmaDigital de workflow_engine.firma_digital
 usando GenericForeignKey para vincular firmas a cualquier modelo.
 """
-from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.validators import MinValueValidator
+from django.db import models
 from django.utils import timezone
 
+from apps.core.base_models.base import BaseCompanyModel
 from utils.storage import (
     tenant_media_path,
     tenant_upload_documentos_pdf,
@@ -24,7 +25,7 @@ from utils.storage import (
 )
 
 
-class TipoDocumento(models.Model):
+class TipoDocumento(BaseCompanyModel):
     """
     Catálogo de tipos de documentos configurables
     Ejemplos: Procedimiento, Instructivo, Formato, Manual, Política, etc.
@@ -119,30 +120,10 @@ class TipoDocumento(models.Model):
         verbose_name='Categoría',
         help_text='DOCUMENTO: flujo de firma normativo. FORMULARIO: constructor de formularios operacionales.'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
     orden = models.IntegerField(
         default=0,
         verbose_name='Orden',
         help_text='Orden de visualización'
-    )
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='tipos_documento_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -151,9 +132,6 @@ class TipoDocumento(models.Model):
         verbose_name_plural = 'Tipos de Documentos'
         ordering = ['orden', 'codigo']
         unique_together = ['empresa_id', 'codigo']
-        indexes = [
-            models.Index(fields=['empresa_id', 'is_active']),
-        ]
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
@@ -165,7 +143,7 @@ class TipoDocumento(models.Model):
         super().save(*args, **kwargs)
 
 
-class PlantillaDocumento(models.Model):
+class PlantillaDocumento(BaseCompanyModel):
     """
     Plantillas base con estructura predefinida para generación de documentos
     """
@@ -247,22 +225,6 @@ class PlantillaDocumento(models.Model):
         verbose_name='¿Es Plantilla por Defecto?'
     )
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='gestion_documental_plantillas_created',
-        verbose_name='Creado por'
-    )
-
     # Biblioteca Maestra (Fase 8)
     plantilla_maestra_codigo = models.CharField(
         max_length=50,
@@ -294,10 +256,6 @@ class PlantillaDocumento(models.Model):
         verbose_name_plural = 'Plantillas de Documentos'
         ordering = ['-es_por_defecto', 'nombre']
         unique_together = ['empresa_id', 'codigo']
-        indexes = [
-            models.Index(fields=['empresa_id', 'tipo_documento']),
-            models.Index(fields=['empresa_id', 'estado']),
-        ]
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} (v{self.version})"
@@ -309,7 +267,7 @@ class PlantillaDocumento(models.Model):
         super().save(*args, **kwargs)
 
 
-class Documento(models.Model):
+class Documento(BaseCompanyModel):
     """
     Documentos del sistema con control de versiones completo.
 
@@ -826,16 +784,6 @@ class Documento(models.Model):
         help_text='{"certificado_serial": "...", "algoritmo": "sha256WithRSA", "error": "..."}'
     )
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         db_table = 'documental_documento'
         verbose_name = 'Documento'
@@ -843,9 +791,6 @@ class Documento(models.Model):
         ordering = ['-fecha_publicacion', 'codigo']
         unique_together = ['empresa_id', 'codigo']
         indexes = [
-            models.Index(fields=['empresa_id', 'tipo_documento']),
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['empresa_id', 'clasificacion']),
             models.Index(fields=['fecha_revision_programada']),
             models.Index(fields=['codigo']),
             models.Index(fields=['workflow_asociado_id']),
@@ -869,7 +814,7 @@ class Documento(models.Model):
         )
 
 
-class VersionDocumento(models.Model):
+class VersionDocumento(BaseCompanyModel):
     """
     Historial de versiones de documentos con control de cambios completo
     """
@@ -968,12 +913,6 @@ class VersionDocumento(models.Model):
         help_text='Hash para verificar integridad del contenido'
     )
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
     class Meta:
         db_table = 'documental_version_documento'
         verbose_name = 'Versión de Documento'
@@ -981,7 +920,6 @@ class VersionDocumento(models.Model):
         ordering = ['-fecha_version']
         unique_together = ['documento', 'numero_version']
         indexes = [
-            models.Index(fields=['empresa_id', 'documento']),
             models.Index(fields=['fecha_version']),
         ]
 
@@ -989,7 +927,7 @@ class VersionDocumento(models.Model):
         return f"{self.documento.codigo} - Versión {self.numero_version}"
 
 
-class CampoFormulario(models.Model):
+class CampoFormulario(BaseCompanyModel):
     """
     Campos dinámicos configurables para Form Builder
     """
@@ -1195,37 +1133,11 @@ class CampoFormulario(models.Model):
         )
     )
 
-    # Estado
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='gestion_campos_formulario_created',
-        verbose_name='Creado por'
-    )
-
     class Meta:
         db_table = 'documental_campo_formulario'
         verbose_name = 'Campo de Formulario'
         verbose_name_plural = 'Campos de Formulario'
         ordering = ['orden', 'nombre_campo']
-        indexes = [
-            models.Index(fields=['empresa_id', 'plantilla']),
-            models.Index(fields=['empresa_id', 'tipo_documento']),
-        ]
 
     def __str__(self):
         return f"{self.etiqueta} ({self.tipo_campo})"
@@ -1237,7 +1149,7 @@ class CampoFormulario(models.Model):
 # Ver: apps.workflow_engine.firma_digital.models.FirmaDigital
 
 
-class ControlDocumental(models.Model):
+class ControlDocumental(BaseCompanyModel):
     """
     Control de distribución, obsolescencia y trazabilidad de documentos
     """
@@ -1371,31 +1283,12 @@ class ControlDocumental(models.Model):
         verbose_name='Observaciones'
     )
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='gestion_controles_documentales_created',
-        verbose_name='Creado por'
-    )
-
     class Meta:
         db_table = 'documental_control_documental'
         verbose_name = 'Control Documental'
         verbose_name_plural = 'Controles Documentales'
         ordering = ['-fecha_distribucion']
         indexes = [
-            models.Index(fields=['empresa_id', 'documento']),
-            models.Index(fields=['empresa_id', 'tipo_control']),
             models.Index(fields=['fecha_distribucion']),
             models.Index(fields=['fecha_retiro']),
         ]
@@ -1404,7 +1297,7 @@ class ControlDocumental(models.Model):
         return f"{self.get_tipo_control_display()} - {self.documento.codigo} - {self.fecha_distribucion}"
 
 
-class AceptacionDocumental(models.Model):
+class AceptacionDocumental(BaseCompanyModel):
     """
     Registro de lectura verificada de documentos (ISO 7.3 Toma de Conciencia).
     Cada registro = 1 usuario + 1 documento + evidencia de lectura con scroll tracking.
@@ -1545,16 +1438,6 @@ class AceptacionDocumental(models.Model):
         ),
     )
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         db_table = 'documental_aceptacion_documental'
         verbose_name = 'Aceptación Documental'
@@ -1562,8 +1445,6 @@ class AceptacionDocumental(models.Model):
         ordering = ['-fecha_asignacion']
         unique_together = ['documento', 'version_documento', 'usuario', 'empresa_id']
         indexes = [
-            models.Index(fields=['empresa_id', 'usuario', 'estado']),
-            models.Index(fields=['empresa_id', 'documento']),
             models.Index(fields=['fecha_limite']),
             models.Index(fields=['estado']),
             models.Index(fields=['invalidada']),
@@ -1573,7 +1454,7 @@ class AceptacionDocumental(models.Model):
         return f"{self.usuario} — {self.documento.codigo} ({self.estado})"
 
 
-class TablaRetencionDocumental(models.Model):
+class TablaRetencionDocumental(BaseCompanyModel):
     """
     Tabla de Retención Documental (TRD) — Sprint 2, Arquitectura GD v5 §9.
 
@@ -1634,14 +1515,6 @@ class TablaRetencionDocumental(models.Model):
         default=False,
         verbose_name='Requiere Acta de Destrucción',
     )
-    activo = models.BooleanField(
-        default=True,
-        verbose_name='Activo',
-    )
-
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'documental_tabla_retencion'
@@ -1649,9 +1522,6 @@ class TablaRetencionDocumental(models.Model):
         verbose_name_plural = 'Tabla de Retención Documental'
         ordering = ['tipo_documento__codigo', 'proceso__code']
         unique_together = ['tipo_documento', 'proceso', 'empresa_id']
-        indexes = [
-            models.Index(fields=['empresa_id', 'activo']),
-        ]
 
     def __str__(self):
         return f"{self.tipo_documento.codigo}-{self.proceso.code}: {self.tiempo_gestion_anos}+{self.tiempo_central_anos} años → {self.disposicion_final}"

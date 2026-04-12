@@ -8,7 +8,42 @@ Coverage:
 - LogConsultaViewSet: lectura, filtros
 """
 import pytest
+from django.urls import reverse
 from rest_framework import status
+
+
+# ---- URL helpers (reverse-based, decoupled from routing) --------------------
+
+def _cfg_list():
+    return reverse('audit_system:logs_sistema:configuracion-list')
+
+
+def _cfg_detail(pk):
+    return reverse('audit_system:logs_sistema:configuracion-detail', args=[pk])
+
+
+def _accesos_list():
+    return reverse('audit_system:logs_sistema:accesos-list')
+
+
+def _accesos_detail(pk):
+    return reverse('audit_system:logs_sistema:accesos-detail', args=[pk])
+
+
+def _cambios_list():
+    return reverse('audit_system:logs_sistema:cambios-list')
+
+
+def _cambios_detail(pk):
+    return reverse('audit_system:logs_sistema:cambios-detail', args=[pk])
+
+
+def _consultas_list():
+    return reverse('audit_system:logs_sistema:consultas-list')
+
+
+def _consultas_detail(pk):
+    return reverse('audit_system:logs_sistema:consultas-detail', args=[pk])
 
 
 @pytest.mark.django_db
@@ -23,10 +58,7 @@ class TestConfiguracionAuditoriaViewSet:
         When: GET /configuraciones-auditoria/
         Then: Debe retornar lista
         """
-        # Act
-        response = authenticated_client.get('/api/audit/logs/configuraciones-auditoria/')
-
-        # Assert
+        response = authenticated_client.get(_cfg_list())
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -38,7 +70,6 @@ class TestConfiguracionAuditoriaViewSet:
         When: POST /configuraciones-auditoria/
         Then: Debe crearse exitosamente
         """
-        # Arrange
         data = {
             'empresa_id': empresa.id,
             'modulo': 'supply_chain',
@@ -51,15 +82,7 @@ class TestConfiguracionAuditoriaViewSet:
             'dias_retencion': 180,
             'is_active': True
         }
-
-        # Act
-        response = authenticated_client.post(
-            '/api/audit/logs/configuraciones-auditoria/',
-            data=data,
-            format='json'
-        )
-
-        # Assert
+        response = authenticated_client.post(_cfg_list(), data=data, format='json')
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['modulo'] == 'supply_chain'
         assert response.data['modelo'] == 'Pedido'
@@ -73,7 +96,6 @@ class TestConfiguracionAuditoriaViewSet:
         When: PUT /configuraciones-auditoria/{id}/
         Then: Debe actualizarse
         """
-        # Arrange
         data = {
             'empresa_id': configuracion_auditoria.empresa.id,
             'modulo': configuracion_auditoria.modulo,
@@ -81,20 +103,16 @@ class TestConfiguracionAuditoriaViewSet:
             'auditar_creacion': True,
             'auditar_modificacion': True,
             'auditar_eliminacion': True,
-            'auditar_consulta': True,  # Cambio
+            'auditar_consulta': True,
             'campos_sensibles': ['password', 'token'],
             'dias_retencion': 365,
             'is_active': True
         }
-
-        # Act
         response = authenticated_client.put(
-            f'/api/audit/logs/configuraciones-auditoria/{configuracion_auditoria.id}/',
+            _cfg_detail(configuracion_auditoria.id),
             data=data,
             format='json'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert response.data['auditar_consulta'] is True
 
@@ -106,7 +124,6 @@ class TestConfiguracionAuditoriaViewSet:
         When: GET con filtro modulo
         Then: Debe retornar solo del modulo especificado
         """
-        # Arrange
         from apps.audit_system.logs_sistema.models import ConfiguracionAuditoria
         ConfiguracionAuditoria.objects.create(
             empresa=empresa,
@@ -114,13 +131,9 @@ class TestConfiguracionAuditoriaViewSet:
             modelo='Indicador',
             created_by=user
         )
-
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/configuraciones-auditoria/?modulo=hseq_management'
+            _cfg_list() + '?modulo=hseq_management'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) == 1
         assert response.data['results'][0]['modulo'] == 'hseq_management'
@@ -133,12 +146,9 @@ class TestConfiguracionAuditoriaViewSet:
         When: GET con parametro search
         Then: Debe retornar coincidencias
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/configuraciones-auditoria/?search=AccionCorrectiva'
+            _cfg_list() + '?search=AccionCorrectiva'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -150,7 +160,6 @@ class TestConfiguracionAuditoriaViewSet:
         When: GET con filtro is_active=True
         Then: Debe retornar solo activas
         """
-        # Arrange
         from apps.audit_system.logs_sistema.models import ConfiguracionAuditoria
         ConfiguracionAuditoria.objects.create(
             empresa=empresa,
@@ -159,13 +168,9 @@ class TestConfiguracionAuditoriaViewSet:
             is_active=False,
             created_by=user
         )
-
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/configuraciones-auditoria/?is_active=true'
+            _cfg_list() + '?is_active=true'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for config in response.data['results']:
             assert config['is_active'] is True
@@ -178,12 +183,9 @@ class TestConfiguracionAuditoriaViewSet:
         When: GET con ordering=modulo
         Then: Debe retornar ordenadas
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/configuraciones-auditoria/?ordering=modulo'
+            _cfg_list() + '?ordering=modulo'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -199,10 +201,7 @@ class TestLogAccesoViewSet:
         When: GET /logs-acceso/
         Then: Debe retornar lista
         """
-        # Act
-        response = authenticated_client.get('/api/audit/logs/logs-acceso/')
-
-        # Assert
+        response = authenticated_client.get(_accesos_list())
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -214,10 +213,7 @@ class TestLogAccesoViewSet:
         When: GET /logs-acceso/{id}/
         Then: Debe retornar detalle completo
         """
-        # Act
-        response = authenticated_client.get(f'/api/audit/logs/logs-acceso/{log_acceso.id}/')
-
-        # Assert
+        response = authenticated_client.get(_accesos_detail(log_acceso.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.data['tipo_evento'] == 'login'
         assert response.data['fue_exitoso'] is True
@@ -230,21 +226,13 @@ class TestLogAccesoViewSet:
         When: POST /logs-acceso/
         Then: Debe rechazar la peticion
         """
-        # Arrange
         data = {
             'usuario': user.id,
             'tipo_evento': 'login',
             'ip_address': '192.168.1.100',
             'fue_exitoso': True
         }
-
-        # Act
-        response = authenticated_client.post(
-            '/api/audit/logs/logs-acceso/',
-            data=data
-        )
-
-        # Assert
+        response = authenticated_client.post(_accesos_list(), data=data)
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     def test_filtrar_por_tipo_evento(self, authenticated_client, log_acceso, user):
@@ -255,7 +243,6 @@ class TestLogAccesoViewSet:
         When: GET con filtro tipo_evento
         Then: Debe retornar solo del tipo especificado
         """
-        # Arrange
         from apps.audit_system.logs_sistema.models import LogAcceso
         LogAcceso.objects.create(
             usuario=user,
@@ -264,13 +251,9 @@ class TestLogAccesoViewSet:
             user_agent='Mozilla/5.0',
             fue_exitoso=True
         )
-
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-acceso/?tipo_evento=login'
+            _accesos_list() + '?tipo_evento=login'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['tipo_evento'] == 'login'
@@ -283,12 +266,9 @@ class TestLogAccesoViewSet:
         When: GET con filtro fue_exitoso=true
         Then: Debe retornar solo exitosos
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-acceso/?fue_exitoso=true'
+            _accesos_list() + '?fue_exitoso=true'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['fue_exitoso'] is True
@@ -301,12 +281,9 @@ class TestLogAccesoViewSet:
         When: GET con filtro fue_exitoso=false
         Then: Debe retornar solo fallidos
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-acceso/?fue_exitoso=false'
+            _accesos_list() + '?fue_exitoso=false'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['fue_exitoso'] is False
@@ -319,12 +296,9 @@ class TestLogAccesoViewSet:
         When: GET con search de IP
         Then: Debe retornar logs de esa IP
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-acceso/?search=192.168.1.100'
+            _accesos_list() + '?search=192.168.1.100'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -333,15 +307,13 @@ class TestLogAccesoViewSet:
         Test: Custom action por_usuario
 
         Given: Logs de un usuario
-        When: GET /logs-acceso/por_usuario/?usuario_id=X
+        When: GET /accesos/por-usuario/?usuario_id=X
         Then: Debe retornar logs del usuario
         """
-        # Act
+        url = reverse('audit_system:logs_sistema:accesos-por-usuario')
         response = authenticated_client.get(
-            f'/api/audit/logs/logs-acceso/por_usuario/?usuario_id={user.id}'
+            url + f'?usuario_id={user.id}'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 1
 
@@ -353,12 +325,9 @@ class TestLogAccesoViewSet:
         When: GET con ordering=-created_at
         Then: Debe retornar ordenados
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-acceso/?ordering=-created_at'
+            _accesos_list() + '?ordering=-created_at'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -374,10 +343,7 @@ class TestLogCambioViewSet:
         When: GET /logs-cambio/
         Then: Debe retornar lista
         """
-        # Act
-        response = authenticated_client.get('/api/audit/logs/logs-cambio/')
-
-        # Assert
+        response = authenticated_client.get(_cambios_list())
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -389,10 +355,7 @@ class TestLogCambioViewSet:
         When: GET /logs-cambio/{id}/
         Then: Debe retornar detalle con cambios
         """
-        # Act
-        response = authenticated_client.get(f'/api/audit/logs/logs-cambio/{log_cambio.id}/')
-
-        # Assert
+        response = authenticated_client.get(_cambios_detail(log_cambio.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.data['accion'] == 'modificar'
         assert 'cambios' in response.data
@@ -406,12 +369,9 @@ class TestLogCambioViewSet:
         When: GET con filtro accion
         Then: Debe retornar solo de esa accion
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-cambio/?accion=crear'
+            _cambios_list() + '?accion=crear'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['accion'] == 'crear'
@@ -424,12 +384,9 @@ class TestLogCambioViewSet:
         When: GET con search
         Then: Debe retornar coincidencias
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-cambio/?search=StrateKaz'
+            _cambios_list() + '?search=StrateKaz'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -438,15 +395,13 @@ class TestLogCambioViewSet:
         Test: Custom action por_objeto
 
         Given: Logs de un objeto especifico
-        When: GET /logs-cambio/por_objeto/?content_type_id=X&object_id=Y
+        When: GET /cambios/por-objeto/?content_type_id=X&object_id=Y
         Then: Debe retornar logs del objeto
         """
-        # Act
+        url = reverse('audit_system:logs_sistema:cambios-por-objeto')
         response = authenticated_client.get(
-            f'/api/audit/logs/logs-cambio/por_objeto/?content_type_id={log_cambio.content_type_id}&object_id={log_cambio.object_id}'
+            url + f'?content_type_id={log_cambio.content_type_id}&object_id={log_cambio.object_id}'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 1
 
@@ -455,15 +410,13 @@ class TestLogCambioViewSet:
         Test: Custom action por_usuario
 
         Given: Logs de un usuario
-        When: GET /logs-cambio/por_usuario/?usuario_id=X
+        When: GET /cambios/por-usuario/?usuario_id=X
         Then: Debe retornar logs del usuario
         """
-        # Act
+        url = reverse('audit_system:logs_sistema:cambios-por-usuario')
         response = authenticated_client.get(
-            f'/api/audit/logs/logs-cambio/por_usuario/?usuario_id={user.id}'
+            url + f'?usuario_id={user.id}'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) >= 1
 
@@ -475,16 +428,11 @@ class TestLogCambioViewSet:
         When: PUT /logs-cambio/{id}/
         Then: Debe rechazar
         """
-        # Arrange
         data = {'accion': 'eliminar'}
-
-        # Act
         response = authenticated_client.put(
-            f'/api/audit/logs/logs-cambio/{log_cambio.id}/',
+            _cambios_detail(log_cambio.id),
             data=data
         )
-
-        # Assert
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     def test_no_permite_eliminar(self, authenticated_client, log_cambio):
@@ -495,12 +443,9 @@ class TestLogCambioViewSet:
         When: DELETE /logs-cambio/{id}/
         Then: Debe rechazar
         """
-        # Act
         response = authenticated_client.delete(
-            f'/api/audit/logs/logs-cambio/{log_cambio.id}/'
+            _cambios_detail(log_cambio.id)
         )
-
-        # Assert
         assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
@@ -516,10 +461,7 @@ class TestLogConsultaViewSet:
         When: GET /logs-consulta/
         Then: Debe retornar lista
         """
-        # Act
-        response = authenticated_client.get('/api/audit/logs/logs-consulta/')
-
-        # Assert
+        response = authenticated_client.get(_consultas_list())
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -531,10 +473,7 @@ class TestLogConsultaViewSet:
         When: GET /logs-consulta/{id}/
         Then: Debe retornar detalle con parametros
         """
-        # Act
-        response = authenticated_client.get(f'/api/audit/logs/logs-consulta/{log_consulta.id}/')
-
-        # Assert
+        response = authenticated_client.get(_consultas_detail(log_consulta.id))
         assert response.status_code == status.HTTP_200_OK
         assert response.data['modulo'] == 'hseq_management'
         assert response.data['fue_exportacion'] is True
@@ -548,12 +487,9 @@ class TestLogConsultaViewSet:
         When: GET con filtro modulo
         Then: Debe retornar solo del modulo
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-consulta/?modulo=hseq_management'
+            _consultas_list() + '?modulo=hseq_management'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['modulo'] == 'hseq_management'
@@ -566,12 +502,9 @@ class TestLogConsultaViewSet:
         When: GET con filtro fue_exportacion=true
         Then: Debe retornar solo exportaciones
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-consulta/?fue_exportacion=true'
+            _consultas_list() + '?fue_exportacion=true'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['fue_exportacion'] is True
@@ -584,12 +517,9 @@ class TestLogConsultaViewSet:
         When: GET con filtro fue_exportacion=false
         Then: Debe retornar solo consultas normales
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-consulta/?fue_exportacion=false'
+            _consultas_list() + '?fue_exportacion=false'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         for log in response.data['results']:
             assert log['fue_exportacion'] is False
@@ -602,12 +532,9 @@ class TestLogConsultaViewSet:
         When: GET con search
         Then: Debe retornar coincidencias
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-consulta/?search=accidentes'
+            _consultas_list() + '?search=accidentes'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) >= 1
 
@@ -619,12 +546,9 @@ class TestLogConsultaViewSet:
         When: GET con filtro usuario
         Then: Debe retornar solo del usuario
         """
-        # Act
         response = authenticated_client.get(
-            f'/api/audit/logs/logs-consulta/?usuario={user.id}'
+            _consultas_list() + f'?usuario={user.id}'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK
 
     def test_ordenar_por_modulo(self, authenticated_client, log_consulta):
@@ -635,10 +559,7 @@ class TestLogConsultaViewSet:
         When: GET con ordering=modulo
         Then: Debe retornar ordenados
         """
-        # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-consulta/?ordering=modulo'
+            _consultas_list() + '?ordering=modulo'
         )
-
-        # Assert
         assert response.status_code == status.HTTP_200_OK

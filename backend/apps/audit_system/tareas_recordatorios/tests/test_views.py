@@ -7,8 +7,34 @@ Coverage: TareaViewSet (completar, cancelar, reasignar, mis_tareas, vencidas),
           ComentarioTareaViewSet
 """
 import pytest
+from django.urls import reverse
 from rest_framework import status
-from datetime import datetime
+
+
+# ---- URL helpers (reverse-based) -------------------------------------------
+
+def _tareas_list():
+    return reverse('audit_system:tareas_recordatorios:tareas-list')
+
+
+def _tareas_detail(pk):
+    return reverse('audit_system:tareas_recordatorios:tareas-detail', args=[pk])
+
+
+def _recordatorios_list():
+    return reverse('audit_system:tareas_recordatorios:recordatorios-list')
+
+
+def _recordatorios_detail(pk):
+    return reverse('audit_system:tareas_recordatorios:recordatorios-detail', args=[pk])
+
+
+def _eventos_list():
+    return reverse('audit_system:tareas_recordatorios:eventos-list')
+
+
+def _comentarios_list():
+    return reverse('audit_system:tareas_recordatorios:comentarios-list')
 
 
 @pytest.mark.django_db
@@ -17,7 +43,7 @@ class TestTareaViewSet:
 
     def test_listar_tareas(self, authenticated_client, tarea):
         """Test: Listar tareas"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/')
+        response = authenticated_client.get(_tareas_list())
         assert response.status_code == status.HTTP_200_OK
 
     def test_crear_tarea(self, authenticated_client, user):
@@ -29,55 +55,60 @@ class TestTareaViewSet:
             'estado': 'pendiente', 'asignado_a': user.id,
             'fecha_limite': (timezone.now() + timezone.timedelta(days=5)).isoformat()
         }
-        response = authenticated_client.post('/api/audit/tareas/tareas/', data=data)
+        response = authenticated_client.post(_tareas_list(), data=data)
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_completar_tarea(self, authenticated_client, tarea):
         """Test: Custom action completar"""
         assert tarea.estado == 'pendiente'
-        response = authenticated_client.post(f'/api/audit/tareas/tareas/{tarea.id}/completar/')
+        url = reverse('audit_system:tareas_recordatorios:tareas-completar', args=[tarea.id])
+        response = authenticated_client.post(url)
         assert response.status_code == status.HTTP_200_OK
         tarea.refresh_from_db()
         assert tarea.estado == 'completada'
 
     def test_cancelar_tarea(self, authenticated_client, tarea):
         """Test: Custom action cancelar"""
-        response = authenticated_client.post(f'/api/audit/tareas/tareas/{tarea.id}/cancelar/')
+        url = reverse('audit_system:tareas_recordatorios:tareas-cancelar', args=[tarea.id])
+        response = authenticated_client.post(url)
         assert response.status_code == status.HTTP_200_OK
         tarea.refresh_from_db()
         assert tarea.estado == 'cancelada'
 
     def test_reasignar_tarea(self, authenticated_client, tarea, other_user):
         """Test: Custom action reasignar"""
+        url = reverse('audit_system:tareas_recordatorios:tareas-reasignar', args=[tarea.id])
         data = {'nuevo_usuario_id': other_user.id}
-        response = authenticated_client.post(f'/api/audit/tareas/tareas/{tarea.id}/reasignar/', data=data)
+        response = authenticated_client.post(url, data=data)
         assert response.status_code == status.HTTP_200_OK
         tarea.refresh_from_db()
         assert tarea.asignado_a == other_user
 
     def test_mis_tareas(self, authenticated_client, tarea):
         """Test: Custom action mis_tareas"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/mis_tareas/')
+        url = reverse('audit_system:tareas_recordatorios:tareas-mis-tareas')
+        response = authenticated_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
     def test_vencidas(self, authenticated_client):
         """Test: Custom action vencidas"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/vencidas/')
+        url = reverse('audit_system:tareas_recordatorios:tareas-vencidas')
+        response = authenticated_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
     def test_filtrar_por_estado(self, authenticated_client, tarea):
         """Test: Filtrar por estado"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/?estado=pendiente')
+        response = authenticated_client.get(_tareas_list() + '?estado=pendiente')
         assert response.status_code == status.HTTP_200_OK
 
     def test_filtrar_por_prioridad(self, authenticated_client, tarea):
         """Test: Filtrar por prioridad"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/?prioridad=alta')
+        response = authenticated_client.get(_tareas_list() + '?prioridad=alta')
         assert response.status_code == status.HTTP_200_OK
 
     def test_filtrar_por_tipo(self, authenticated_client, tarea):
         """Test: Filtrar por tipo"""
-        response = authenticated_client.get('/api/audit/tareas/tareas/?tipo=manual')
+        response = authenticated_client.get(_tareas_list() + '?tipo=manual')
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -87,7 +118,7 @@ class TestRecordatorioViewSet:
 
     def test_listar_recordatorios(self, authenticated_client, recordatorio):
         """Test: Listar recordatorios"""
-        response = authenticated_client.get('/api/audit/tareas/recordatorios/')
+        response = authenticated_client.get(_recordatorios_list())
         assert response.status_code == status.HTTP_200_OK
 
     def test_crear_recordatorio(self, authenticated_client, user):
@@ -99,34 +130,35 @@ class TestRecordatorioViewSet:
             'fecha_recordatorio': (timezone.now() + timezone.timedelta(days=1)).isoformat(),
             'repetir': 'una_vez', 'esta_activo': True
         }
-        response = authenticated_client.post('/api/audit/tareas/recordatorios/', data=data)
+        response = authenticated_client.post(_recordatorios_list(), data=data)
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_activar_recordatorio(self, authenticated_client, recordatorio):
         """Test: Custom action activar"""
         recordatorio.esta_activo = False
         recordatorio.save()
-
-        response = authenticated_client.post(f'/api/audit/tareas/recordatorios/{recordatorio.id}/activar/')
+        url = reverse('audit_system:tareas_recordatorios:recordatorios-activar', args=[recordatorio.id])
+        response = authenticated_client.post(url)
         assert response.status_code == status.HTTP_200_OK
         recordatorio.refresh_from_db()
         assert recordatorio.esta_activo is True
 
     def test_desactivar_recordatorio(self, authenticated_client, recordatorio):
         """Test: Custom action desactivar"""
-        response = authenticated_client.post(f'/api/audit/tareas/recordatorios/{recordatorio.id}/desactivar/')
+        url = reverse('audit_system:tareas_recordatorios:recordatorios-desactivar', args=[recordatorio.id])
+        response = authenticated_client.post(url)
         assert response.status_code == status.HTTP_200_OK
         recordatorio.refresh_from_db()
         assert recordatorio.esta_activo is False
 
     def test_filtrar_activos(self, authenticated_client, recordatorio):
         """Test: Filtrar recordatorios activos"""
-        response = authenticated_client.get('/api/audit/tareas/recordatorios/?esta_activo=true')
+        response = authenticated_client.get(_recordatorios_list() + '?esta_activo=true')
         assert response.status_code == status.HTTP_200_OK
 
     def test_filtrar_por_repetir(self, authenticated_client, recordatorio):
         """Test: Filtrar por tipo de repeticion"""
-        response = authenticated_client.get('/api/audit/tareas/recordatorios/?repetir=una_vez')
+        response = authenticated_client.get(_recordatorios_list() + '?repetir=una_vez')
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -136,7 +168,7 @@ class TestEventoCalendarioViewSet:
 
     def test_listar_eventos(self, authenticated_client, evento_calendario):
         """Test: Listar eventos"""
-        response = authenticated_client.get('/api/audit/tareas/eventos-calendario/')
+        response = authenticated_client.get(_eventos_list())
         assert response.status_code == status.HTTP_200_OK
 
     def test_crear_evento(self, authenticated_client, user):
@@ -148,25 +180,27 @@ class TestEventoCalendarioViewSet:
             'fecha_fin': (timezone.now() + timezone.timedelta(days=2, hours=1)).isoformat(),
             'todo_el_dia': False
         }
-        response = authenticated_client.post('/api/audit/tareas/eventos-calendario/', data=data)
+        response = authenticated_client.post(_eventos_list(), data=data)
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_por_mes(self, authenticated_client, evento_calendario):
         """Test: Custom action por_mes"""
+        url = reverse('audit_system:tareas_recordatorios:eventos-por-mes')
         now = evento_calendario.fecha_inicio
         response = authenticated_client.get(
-            f'/api/audit/tareas/eventos-calendario/por_mes/?mes={now.month}&anio={now.year}'
+            url + f'?mes={now.month}&anio={now.year}'
         )
         assert response.status_code == status.HTTP_200_OK
 
     def test_mis_eventos(self, authenticated_client):
         """Test: Custom action mis_eventos"""
-        response = authenticated_client.get('/api/audit/tareas/eventos-calendario/mis_eventos/')
+        url = reverse('audit_system:tareas_recordatorios:eventos-mis-eventos')
+        response = authenticated_client.get(url)
         assert response.status_code == status.HTTP_200_OK
 
     def test_filtrar_por_tipo(self, authenticated_client, evento_calendario):
         """Test: Filtrar por tipo"""
-        response = authenticated_client.get('/api/audit/tareas/eventos-calendario/?tipo=reunion')
+        response = authenticated_client.get(_eventos_list() + '?tipo=reunion')
         assert response.status_code == status.HTTP_200_OK
 
 
@@ -176,7 +210,7 @@ class TestComentarioTareaViewSet:
 
     def test_listar_comentarios(self, authenticated_client, comentario_tarea):
         """Test: Listar comentarios"""
-        response = authenticated_client.get('/api/audit/tareas/comentarios-tarea/')
+        response = authenticated_client.get(_comentarios_list())
         assert response.status_code == status.HTTP_200_OK
 
     def test_crear_comentario(self, authenticated_client, tarea):
@@ -185,10 +219,10 @@ class TestComentarioTareaViewSet:
             'tarea': tarea.id,
             'mensaje': 'Nuevo comentario de prueba'
         }
-        response = authenticated_client.post('/api/audit/tareas/comentarios-tarea/', data=data)
+        response = authenticated_client.post(_comentarios_list(), data=data)
         assert response.status_code == status.HTTP_201_CREATED
 
     def test_filtrar_por_tarea(self, authenticated_client, comentario_tarea, tarea):
         """Test: Filtrar comentarios por tarea"""
-        response = authenticated_client.get(f'/api/audit/tareas/comentarios-tarea/?tarea={tarea.id}')
+        response = authenticated_client.get(_comentarios_list() + f'?tarea={tarea.id}')
         assert response.status_code == status.HTTP_200_OK

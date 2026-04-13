@@ -128,11 +128,11 @@ jobs:
         run: |
           python manage.py test apps.core.tests.test_sidebar apps.core.tests.test_base --settings=config.settings.testing --verbosity=2
 
-      - name: Run legacy pytest suite (informativo, no bloquea)
+      - name: Run LIVE pytest suite (informativo, 21 rutas via pytest.ini)
         working-directory: ./backend
         continue-on-error: true
         run: |
-          pytest apps/core/tests/ --ignore=apps/core/tests/test_sidebar.py --ignore=apps/core/tests/test_base.py --no-cov --tb=no -q 2>&1 || true
+          pytest --ignore=apps/core/tests/test_sidebar.py --ignore=apps/core/tests/test_base.py --no-cov --tb=no -q
 
       - name: Check code formatting with Black
         working-directory: ./backend

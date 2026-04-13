@@ -114,9 +114,10 @@ El servidor estará disponible en: http://localhost:8000
 
 ## API Endpoints
 
-### Autenticación
-- `POST /api/auth/login/` - Login (obtener tokens JWT)
-- `POST /api/auth/refresh/` - Refresh token
+### Autenticación (Multi-Tenant)
+- `POST /api/tenant/auth/login/` - Login (obtener tokens JWT)
+- `POST /api/tenant/auth/refresh/` - Refresh token
+- `POST /api/tenant/auth/logout/` - Logout (blacklist token)
 
 ### Core
 - `/api/core/users/` - Gestión de usuarios

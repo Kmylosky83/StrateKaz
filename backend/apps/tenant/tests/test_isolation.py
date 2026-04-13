@@ -46,7 +46,6 @@ class TenantMiddlewareAccessValidationTest(TestCase):
         Paths públicos no requieren validación de tenant.
         """
         public_paths = [
-            '/api/auth/login/',
             '/api/tenant/auth/login/',
             '/api/tenant/public/branding/',
             '/api/tenant/plans/',

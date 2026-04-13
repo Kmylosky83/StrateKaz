@@ -454,9 +454,9 @@ revoke('task-id-here', terminate=True)
 
 ```bash
 # 1. Obtener token de autenticación
-TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/login/ \
+TOKEN=$(curl -s -X POST http://localhost:8000/api/tenant/auth/login/ \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"tu_password"}' \
+  -d '{"email":"admin@example.com","password":"tu_password"}' \
   | jq -r '.access')
 
 echo $TOKEN

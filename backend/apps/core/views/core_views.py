@@ -330,60 +330,6 @@ def current_user(request):
 
 
 # ═══════════════════════════════════════════════════
-# LOGOUT ENDPOINT (P0-03)
-# ═══════════════════════════════════════════════════
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout_view(request):
-    """
-    Endpoint de logout que invalida el refresh token (P0-03)
-
-    POST /api/auth/logout/
-
-    Body:
-        {
-            "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-        }
-
-    Returns:
-        204 No Content si el logout fue exitoso
-        400 Bad Request si el token es inválido
-    """
-    from apps.core.serializers import LogoutSerializer
-    import logging
-
-    logger = logging.getLogger('security')
-
-    serializer = LogoutSerializer(data=request.data)
-    if serializer.is_valid():
-        try:
-            serializer.save()
-            # Log de seguridad para auditoría
-            logger.info(
-                f"Logout exitoso - User: {request.user.username} (ID: {request.user.id}) "
-                f"- IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
-            )
-            # Registrar en LogAcceso (Centro de Control)
-            try:
-                from apps.audit_system.logs_sistema.signals import _create_log_acceso
-                _create_log_acceso(request.user, request, 'logout', fue_exitoso=True)
-            except Exception:
-                pass  # Nunca bloquear logout por auditoría
-            return Response(status=http_status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            logger.warning(
-                f"Error en logout - User: {request.user.username} - Error: {str(e)}"
-            )
-            return Response(
-                {'error': 'Error al invalidar el token'},
-                status=http_status.HTTP_400_BAD_REQUEST
-            )
-
-    return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
-
-
-# ═══════════════════════════════════════════════════
 # CELERY TASK ENDPOINTS
 # ═══════════════════════════════════════════════════
 

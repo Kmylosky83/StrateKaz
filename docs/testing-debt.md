@@ -32,17 +32,6 @@ La migración se hace sub-bloque por sub-bloque a medida que avancen los inventa
 
 ---
 
-## test_auth.py
-
-**Categoría:** LÓGICA_ROTA
-**Síntoma:** 5 tests fallan por asserts incorrectos (ej: `assert 400 == 401`)
-**Tests totales:** 16 | **Pasando:** 11 | **Fallando:** 5
-**Causa raíz:** los tests esperan status codes que no coinciden con la implementación actual del endpoint de login/refresh. Probable cambio en HybridJWTAuthentication que ahora retorna 400 en vez de 401 para credenciales inválidas. Los 11 tests que pasan son los de validación de formato (campos faltantes, JSON inválido, etc).
-**Migración recomendada:** corregir los 5 asserts de status code. No necesita BaseTenantTestCase porque los tests de auth crean usuarios en public schema via `db` fixture de pytest-django y el endpoint `/api/auth/login/` funciona en public.
-**Prioridad:** media (auth es crítico)
-
----
-
 ## test_cargo.py
 
 **Categoría:** TENANT_SCHEMA

@@ -17,10 +17,10 @@ El sistema implementa autenticación basada en JWT (JSON Web Tokens).
 
 | Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `/api/auth/login/` | POST | Login (obtener tokens) |
-| `/api/auth/refresh/` | POST | Renovar access token |
-| `/api/auth/logout/` | POST | Logout (blacklist token) |
-| `/api/auth/me/` | GET | Usuario actual |
+| `/api/tenant/auth/login/` | POST | Login multi-tenant (obtener tokens) |
+| `/api/tenant/auth/refresh/` | POST | Renovar access token |
+| `/api/tenant/auth/logout/` | POST | Logout (blacklist token) |
+| `/api/tenant/auth/me/` | GET | Usuario actual + tenants accesibles |
 | `/api/auth/change-password/` | POST | Cambiar contrasena |
 | `/api/core/2fa/setup/` | POST | Configurar 2FA (generar QR) |
 | `/api/core/2fa/verify/` | POST | Verificar y activar 2FA |
@@ -34,29 +34,30 @@ El sistema implementa autenticación basada en JWT (JSON Web Tokens).
 
 ```
 1. Usuario envía credenciales
-   POST /api/auth/login/
+   POST /api/tenant/auth/login/
    { "email": "...", "password": "..." }
 
-2. Backend valida y retorna tokens
+2. Backend valida TenantUser y retorna tokens + tenants accesibles
    {
      "access": "eyJ...",
      "refresh": "eyJ...",
-     "user": { "id": 1, "email": "...", ... }
+     "user": { "id": 1, "email": "...", ... },
+     "tenants": [{ "id": 1, "schema_name": "...", "name": "..." }]
    }
 
-3. Frontend almacena tokens
-   localStorage.setItem('accessToken', access)
-   localStorage.setItem('refreshToken', refresh)
+3. Frontend almacena tokens y selecciona tenant
+   Requests subsiguientes incluyen header X-Tenant-ID
 
 4. Requests autenticados
    Authorization: Bearer eyJ...
+   X-Tenant-ID: tenant_schema_name
 
 5. Token expirado → Renovar
-   POST /api/auth/refresh/
+   POST /api/tenant/auth/refresh/
    { "refresh": "eyJ..." }
 
 6. Logout → Blacklist
-   POST /api/auth/logout/
+   POST /api/tenant/auth/logout/
    { "refresh": "eyJ..." }
 ```
 
@@ -131,7 +132,9 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        const response = await axios.post('/api/auth/refresh/', {
+        // TODO: Este ejemplo es ilustrativo. Ver frontend/src/api/axios-config.ts
+        // para la implementación real con tenant/auth/refresh/
+        const response = await axios.post('/api/tenant/auth/refresh/', {
           refresh: refreshToken,
         });
 
@@ -188,8 +191,10 @@ export const useAuth = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
+      // TODO: Este ejemplo es ilustrativo. Ver frontend/src/api/auth.api.ts
+      // y frontend/src/store/authStore.ts para la implementación real
       login: async (email, password) => {
-        const response = await apiClient.post('/api/auth/login/', {
+        const response = await apiClient.post('/api/tenant/auth/login/', {
           email,
           password,
         });
@@ -205,7 +210,7 @@ export const useAuth = create<AuthState>()(
       logout: async () => {
         try {
           const refresh = localStorage.getItem('refreshToken');
-          await apiClient.post('/api/auth/logout/', { refresh });
+          await apiClient.post('/api/tenant/auth/logout/', { refresh });
         } finally {
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
@@ -214,7 +219,7 @@ export const useAuth = create<AuthState>()(
       },
 
       refreshUser: async () => {
-        const response = await apiClient.get('/api/auth/me/');
+        const response = await apiClient.get('/api/tenant/auth/me/');
         set({ user: response.data });
       },
     }),

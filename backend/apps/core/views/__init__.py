@@ -15,11 +15,6 @@ from .core_views import (
     mi_equipo_jefe,
 )
 
-from .auth_views import (
-    RateLimitedTokenObtainPairView,
-    RateLimitedTokenRefreshView,
-)
-
 from .two_factor_views import (
     TwoFactorStatusView,
     TwoFactorSetupView,
@@ -59,9 +54,6 @@ __all__ = [
     'test_celery_task',
     'task_status',
     'revoke_task',
-    # Auth views with rate limiting
-    'RateLimitedTokenObtainPairView',
-    'RateLimitedTokenRefreshView',
     # Two Factor Authentication views
     'TwoFactorStatusView',
     'TwoFactorSetupView',

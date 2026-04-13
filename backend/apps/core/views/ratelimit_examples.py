@@ -178,7 +178,7 @@ Formato de log:
     "level": "WARNING",
     "event": "Rate limit exceeded",
     "ip": "192.168.1.100",
-    "endpoint": "/api/auth/login/",
+    "endpoint": "/api/tenant/auth/login/",
     "limit": 5,
     "period": 60
 }

@@ -15,8 +15,6 @@ from django.conf.urls.static import static
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.static import serve
 from django.apps import apps
-from apps.core.views import RateLimitedTokenObtainPairView, RateLimitedTokenRefreshView
-from apps.core.views.core_views import logout_view
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
@@ -138,12 +136,6 @@ urlpatterns = [
     path('api/schema/', login_required(SpectacularAPIView.as_view()), name='schema'),
     path('api/docs/', login_required(SpectacularSwaggerView.as_view(url_name='schema')), name='swagger-ui'),
     path('api/redoc/', login_required(SpectacularRedocView.as_view(url_name='schema')), name='redoc'),
-
-    # JWT Authentication (with rate limiting protection)
-    path('api/auth/login/', RateLimitedTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/refresh/', RateLimitedTokenRefreshView.as_view(), name='token_refresh'),
-    # P0-03: Logout endpoint para invalidar refresh tokens
-    path('api/auth/logout/', logout_view, name='token_logout'),
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 0: CORE (siempre activo)

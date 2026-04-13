@@ -646,48 +646,6 @@ class UserPhotoUploadSerializer(serializers.Serializer):
         return user
 
 
-class LogoutSerializer(serializers.Serializer):
-    """
-    Serializer para logout (P0-03) - Invalida el refresh token
-    MS-002-A: También invalida la sesión de usuario asociada
-    """
-    refresh = serializers.CharField(
-        help_text="Refresh token a invalidar"
-    )
-
-    def validate_refresh(self, value):
-        """Valida que el token sea un refresh token válido"""
-        from rest_framework_simplejwt.tokens import RefreshToken
-        from rest_framework_simplejwt.exceptions import TokenError
-        try:
-            self.token = RefreshToken(value)
-            # Guardar el valor original para invalidar la sesión
-            self._refresh_token_value = value
-        except TokenError as e:
-            raise serializers.ValidationError(str(e))
-        return value
-
-    def save(self, **kwargs):
-        """Agrega el token a la blacklist y cierra la sesión de usuario"""
-        import logging
-        from apps.core.models import UserSession
-
-        logger = logging.getLogger('security')
-
-        # MS-002-A: Invalidar la sesión de usuario
-        try:
-            if hasattr(self, '_refresh_token_value'):
-                invalidated = UserSession.invalidate_by_token(self._refresh_token_value)
-                if invalidated:
-                    logger.info("MS-002-A: Sesión de usuario invalidada en logout")
-        except Exception as e:
-            # No fallar el logout si hay error en la sesión
-            logger.warning(f"MS-002-A: Error invalidando sesión en logout: {e}")
-
-        # Agregar token a blacklist
-        self.token.blacklist()
-
-
 # =============================================================================
 # USER PREFERENCES SERIALIZER (MS-003)
 # =============================================================================

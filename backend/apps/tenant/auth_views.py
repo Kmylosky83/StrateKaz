@@ -7,7 +7,7 @@ Este módulo maneja el login en un sistema multi-tenant donde:
 - El frontend puede elegir a qué tenant conectarse
 
 FLUJO DE LOGIN:
-1. POST /api/auth/login/ con { email, password }
+1. POST /api/tenant/auth/login/ con { email, password }
 2. Verificar credenciales contra TenantUser
 3. Si tiene 2FA habilitado, retornar requires_2fa: true
 4. Retornar tokens JWT + lista de tenants accesibles

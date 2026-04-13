@@ -6,8 +6,7 @@ Migrado desde: apps.hseq_management.sistema_documental
 NOTA: FirmaDocumentoViewSet ha sido ELIMINADO.
 Las firmas digitales usan los endpoints de workflow_engine.firma_digital
 
-v4.1: Corregido perform_create() para usar get_tenant_empresa().
-      Eliminado filtro por empresa_id (tenant schema isolation lo maneja).
+Modelos migrados a TenantModel (SoftDeleteManager auto-filtra is_deleted).
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -76,7 +75,6 @@ def _auto_distribuir_documento(documento, asignado_por, empresa, fecha_limite=No
         cargo_ids = documento.cargos_distribucion.values_list('id', flat=True)
         usuarios = base_qs.filter(cargo_id__in=cargo_ids)
 
-    empresa_id = empresa.id if empresa else (documento.empresa_id or 0)
     creados = 0
 
     for usuario in usuarios.iterator(chunk_size=200):
@@ -84,7 +82,6 @@ def _auto_distribuir_documento(documento, asignado_por, empresa, fecha_limite=No
             documento=documento,
             version_documento=documento.version_actual,
             usuario=usuario,
-            empresa_id=empresa_id,
             defaults={
                 'estado': 'PENDIENTE',
                 'asignado_por': asignado_por,
@@ -113,10 +110,6 @@ class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         queryset = TipoDocumento.objects.select_related('created_by')
 
         # Filtros
-        activo = self.request.query_params.get('activo')
-        if activo is not None:
-            queryset = queryset.filter(is_active=activo.lower() == 'true')
-
         nivel = self.request.query_params.get('nivel')
         if nivel:
             queryset = queryset.filter(nivel_documento=nivel)
@@ -124,16 +117,15 @@ class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         return queryset.order_by('orden', 'codigo')
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def activos(self, request):
-        """Obtiene tipos de documento activos"""
-        queryset = self.get_queryset().filter(is_active=True)
+        """Obtiene tipos de documento activos (SoftDeleteManager ya filtra eliminados)"""
+        queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -169,8 +161,7 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-es_por_defecto', 'nombre')
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -198,7 +189,6 @@ class PlantillaDocumentoViewSet(viewsets.ModelViewSet):
 
         # Quitar flag de otras plantillas del mismo tipo
         PlantillaDocumento.objects.filter(
-            empresa_id=plantilla.empresa_id,
             tipo_documento=plantilla.tipo_documento,
             es_por_defecto=True
         ).update(es_por_defecto=False)
@@ -299,15 +289,10 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
         if tipo_campo:
             queryset = queryset.filter(tipo_campo=tipo_campo)
 
-        activo = self.request.query_params.get('activo')
-        if activo is not None:
-            queryset = queryset.filter(is_active=activo.lower() == 'true')
-
         return queryset.order_by('orden', 'nombre_campo')
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -436,10 +421,9 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             proceso = serializer.validated_data.get('proceso')
             if tipo_documento:
                 from .services import DocumentoService
-                codigo = DocumentoService.generar_codigo(tipo_documento, empresa.id if empresa else None, proceso)
+                codigo = DocumentoService.generar_codigo(tipo_documento, proceso)
 
         documento = serializer.save(
-            empresa=empresa,
             created_by=self.request.user,
             elaborado_por=self.request.user,
             codigo=codigo,
@@ -488,7 +472,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         empresa = get_tenant_empresa()
         if not empresa:
             return Response({'tiene_politica': False, 'estado': None})
-        resultado = DocumentoService.verificar_habeas_data_publicada(empresa.id)
+        resultado = DocumentoService.verificar_habeas_data_publicada()
         return Response(resultado)
 
     @action(detail=False, methods=['get'], url_path='mis-lecturas-count')
@@ -518,7 +502,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             doc = DocumentoService.aprobar_documento(
                 documento_id=documento.id,
                 usuario=request.user,
-                empresa_id=empresa.id if empresa else documento.empresa_id,
                 observaciones=request.data.get('observaciones', ''),
             )
             return Response(DocumentoDetailSerializer(doc).data)
@@ -573,7 +556,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             doc = DocumentoService.publicar_documento(
                 documento_id=documento.id,
                 usuario=request.user,
-                empresa_id=empresa.id if empresa else documento.empresa_id,
                 fecha_vigencia=request.data.get('fecha_vigencia'),
             )
         except ValueError as e:
@@ -601,7 +583,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             doc = DocumentoService.marcar_obsoleto(
                 documento_id=documento.id,
                 usuario=request.user,
-                empresa_id=empresa.id if empresa else documento.empresa_id,
                 motivo=request.data.get('motivo', 'Documento obsoleto'),
                 sustituto_id=request.data.get('documento_sustituto'),
             )
@@ -633,7 +614,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         from .services import DocumentoService
         documento = self.get_object()
         empresa = get_tenant_empresa()
-        empresa_id = empresa.id if empresa else documento.empresa_id
+        empresa_id = empresa.id if empresa else None
 
         # Validaciones
         if not documento.es_externo:
@@ -692,7 +673,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             es_externo=False,
             elaborado_por=request.user,
             documento_padre=documento,
-            empresa_id=empresa_id,
             codigo=codigo,
         )
 
@@ -724,7 +704,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             doc = DocumentoService.enviar_a_revision(
                 documento_id=documento.id,
                 usuario=request.user,
-                empresa_id=empresa.id if empresa else documento.empresa_id,
                 revisor_id=request.data.get('revisor_id'),
             )
             return Response(DocumentoDetailSerializer(doc).data)
@@ -741,7 +720,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             doc = DocumentoService.devolver_a_borrador(
                 documento_id=documento.id,
                 usuario=request.user,
-                empresa_id=empresa.id if empresa else documento.empresa_id,
                 motivo=request.data.get('motivo', ''),
             )
             return Response(DocumentoDetailSerializer(doc).data)
@@ -769,7 +747,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         """Estadísticas del sistema documental para dashboard"""
         from .services import DocumentoService
         empresa = get_tenant_empresa()
-        stats = DocumentoService.obtener_estadisticas(empresa.id if empresa else None)
+        stats = DocumentoService.obtener_estadisticas()
         return Response(stats)
 
     @action(detail=False, methods=['get'], url_path='pendientes-revision')
@@ -1031,7 +1009,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         # Generar código automático
         from .services import DocumentoService
         tipo_doc = TipoDocumento.objects.get(id=tipo_documento_id)
-        codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id)
+        codigo = DocumentoService.generar_codigo(tipo_doc)
 
         documento = Documento.objects.create(
             codigo=codigo,
@@ -1043,7 +1021,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             archivo_original=archivo,
             es_externo=True,
             ocr_estado='PENDIENTE',
-            empresa_id=empresa.id,
         )
 
         # Palabras clave desde request (opcional)
@@ -1150,7 +1127,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
         # Generar código StrateKaz
         from .services import DocumentoService
-        codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id, proceso=proceso)
+        codigo = DocumentoService.generar_codigo(tipo_doc, proceso=proceso)
 
         titulo = request.data.get('titulo', archivo.name.rsplit('.', 1)[0])
         clasificacion = request.data.get('clasificacion', 'INTERNO')
@@ -1168,7 +1145,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             es_externo=True,
             codigo_legacy=codigo_legacy,
             ocr_estado='PENDIENTE',
-            empresa_id=empresa.id,
         )
 
         # Asignar firmantes si se proporcionan
@@ -1291,7 +1267,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 continue
 
             try:
-                codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id)
+                codigo = DocumentoService.generar_codigo(tipo_doc)
                 titulo = archivo.name.rsplit('.', 1)[0]
                 documento = Documento.objects.create(
                     codigo=codigo,
@@ -1303,7 +1279,6 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                     archivo_original=archivo,
                     es_externo=True,
                     ocr_estado='PENDIENTE',
-                    empresa_id=empresa.id,
                 )
                 procesar_ocr_documento.delay(documento.id, connection.schema_name)
                 creados.append({
@@ -1592,8 +1567,7 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_version')
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user, creado_por=self.request.user)
+        serializer.save(created_by=self.request.user, creado_por=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -1670,8 +1644,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_distribucion')
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -1810,8 +1783,6 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        empresa = get_tenant_empresa(request)
-        empresa_id = empresa.id if empresa else 0
         User = get_user_model()
         base_qs = User.objects.filter(is_active=True, deleted_at__isnull=True)
 
@@ -1848,7 +1819,6 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
                 documento=documento,
                 version_documento=documento.version_actual,
                 usuario=usuario,
-                empresa_id=empresa_id,
                 defaults={
                     'asignado_por': request.user,
                     'fecha_limite': fecha_limite,
@@ -2013,15 +1983,14 @@ class TablaRetencionDocumentalViewSet(viewsets.ModelViewSet):
         from .models import TablaRetencionDocumental
         return TablaRetencionDocumental.objects.select_related(
             'tipo_documento', 'proceso'
-        ).filter(is_active=True).order_by('tipo_documento__codigo', 'proceso__code')
+        ).order_by('tipo_documento__codigo', 'proceso__code')
 
     def get_serializer_class(self):
         from .serializers import TablaRetencionDocumentalSerializer
         return TablaRetencionDocumentalSerializer
 
     def perform_create(self, serializer):
-        empresa = get_tenant_empresa()
-        serializer.save(empresa=empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

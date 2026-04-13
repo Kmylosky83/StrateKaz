@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 class TestTipoDocumento:
     """Tests para el modelo TipoDocumento."""
 
-    def test_crear_tipo_documento_basico(self, empresa, user):
+    def test_crear_tipo_documento_basico(self, user):
         """Crear tipo de documento con datos minimos."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
@@ -24,7 +24,6 @@ class TestTipoDocumento:
             codigo='IN',
             nombre='Instructivo',
             prefijo_codigo='IN-',
-            empresa_id=empresa.pk,
             created_by=user
         )
 
@@ -35,14 +34,14 @@ class TestTipoDocumento:
         assert tipo.requiere_aprobacion is True
         assert tipo.requiere_firma is True
         assert tipo.tiempo_retencion_años == 5
-        assert tipo.is_active is True
+        assert tipo.is_deleted is False
 
     def test_tipo_documento_str(self, tipo_documento):
         """Representacion string de TipoDocumento."""
         assert str(tipo_documento) == 'PR - Procedimiento'
 
     def test_tipo_documento_unique_together(self, tipo_documento, user):
-        """Empresa + codigo deben ser unicos."""
+        """Codigo debe ser unico dentro del tenant."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
         with pytest.raises(IntegrityError):
@@ -50,11 +49,10 @@ class TestTipoDocumento:
                 codigo='PR',
                 nombre='Procedimiento Duplicado',
                 prefijo_codigo='PR-',
-                empresa_id=tipo_documento.empresa_id,
                 created_by=user
             )
 
-    def test_tipo_documento_niveles(self, empresa, user):
+    def test_tipo_documento_niveles(self, user):
         """Validar todos los niveles de documento."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
@@ -65,7 +63,6 @@ class TestTipoDocumento:
                 nombre=f'Tipo Nivel {nivel}',
                 nivel_documento=nivel,
                 prefijo_codigo=f'NV{i}-',
-                empresa_id=empresa.pk,
                 created_by=user
             )
             assert tipo.nivel_documento == nivel
@@ -76,7 +73,7 @@ class TestTipoDocumento:
         assert 'titulo' in tipo_documento.campos_obligatorios
         assert 'contenido' in tipo_documento.campos_obligatorios
 
-    def test_tipo_documento_campos_obligatorios_vacio(self, empresa, user):
+    def test_tipo_documento_campos_obligatorios_vacio(self, user):
         """campos_obligatorios puede ser lista vacia."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
@@ -85,12 +82,11 @@ class TestTipoDocumento:
             nombre='Formato',
             prefijo_codigo='FT-',
             campos_obligatorios=[],
-            empresa_id=empresa.pk,
             created_by=user
         )
         assert tipo.campos_obligatorios == []
 
-    def test_tipo_documento_sin_aprobacion(self, empresa, user):
+    def test_tipo_documento_sin_aprobacion(self, user):
         """Tipo de documento que no requiere aprobacion ni firma."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
@@ -100,13 +96,12 @@ class TestTipoDocumento:
             prefijo_codigo='REG-',
             requiere_aprobacion=False,
             requiere_firma=False,
-            empresa_id=empresa.pk,
             created_by=user
         )
         assert tipo.requiere_aprobacion is False
         assert tipo.requiere_firma is False
 
-    def test_tipo_documento_retencion_minima(self, empresa, user):
+    def test_tipo_documento_retencion_minima(self, user):
         """Tiempo de retencion con validador MinValue(1)."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
@@ -115,7 +110,6 @@ class TestTipoDocumento:
             nombre='Temporal',
             prefijo_codigo='TMP-',
             tiempo_retencion_años=1,
-            empresa_id=empresa.pk,
             created_by=user
         )
         assert tipo.tiempo_retencion_años == 1
@@ -124,9 +118,7 @@ class TestTipoDocumento:
         """Tipos de documento ordenados por orden, codigo."""
         from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
 
-        tipos = list(TipoDocumento.objects.filter(
-            empresa_id=tipo_documento.empresa_id
-        ))
+        tipos = list(TipoDocumento.objects.all())
         assert tipos[0] == tipo_documento
         assert tipos[1] == tipo_documento_manual
 
@@ -135,7 +127,7 @@ class TestTipoDocumento:
 class TestPlantillaDocumento:
     """Tests para el modelo PlantillaDocumento."""
 
-    def test_crear_plantilla_basica(self, empresa, tipo_documento, user):
+    def test_crear_plantilla_basica(self, tipo_documento, user):
         """Crear plantilla de documento basica."""
         from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
 
@@ -145,7 +137,6 @@ class TestPlantillaDocumento:
             tipo_documento=tipo_documento,
             tipo_plantilla='HTML',
             contenido_plantilla='<p>Test</p>',
-            empresa_id=empresa.pk,
             created_by=user
         )
 
@@ -160,7 +151,7 @@ class TestPlantillaDocumento:
         assert 'PLT-PR-001' in str(plantilla_documento)
         assert 'v1.0' in str(plantilla_documento)
 
-    def test_plantilla_tipos(self, empresa, tipo_documento, user):
+    def test_plantilla_tipos(self, tipo_documento, user):
         """Validar los tres tipos de plantilla."""
         from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
 
@@ -172,12 +163,11 @@ class TestPlantillaDocumento:
                 tipo_documento=tipo_documento,
                 tipo_plantilla=tipo,
                 contenido_plantilla='Contenido test',
-                empresa_id=empresa.pk,
                 created_by=user
             )
             assert plantilla.tipo_plantilla == tipo
 
-    def test_plantilla_estados(self, empresa, tipo_documento, user):
+    def test_plantilla_estados(self, tipo_documento, user):
         """Validar estados de plantilla."""
         from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
 
@@ -190,7 +180,6 @@ class TestPlantillaDocumento:
                 tipo_plantilla='HTML',
                 contenido_plantilla='Contenido',
                 estado=estado,
-                empresa_id=empresa.pk,
                 created_by=user
             )
             assert plantilla.estado == estado
@@ -201,7 +190,7 @@ class TestPlantillaDocumento:
         assert 'titulo' in plantilla_documento.variables_disponibles
 
     def test_plantilla_unique_together(self, plantilla_documento, user):
-        """Empresa + codigo deben ser unicos."""
+        """Codigo debe ser unico dentro del tenant."""
         from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
 
         with pytest.raises(IntegrityError):
@@ -211,11 +200,10 @@ class TestPlantillaDocumento:
                 tipo_documento=plantilla_documento.tipo_documento,
                 tipo_plantilla='HTML',
                 contenido_plantilla='Test',
-                empresa_id=plantilla_documento.empresa_id,
                 created_by=user
             )
 
-    def test_plantilla_firmantes_por_defecto(self, empresa, tipo_documento, user):
+    def test_plantilla_firmantes_por_defecto(self, tipo_documento, user):
         """Firmantes por defecto almacena lista JSON."""
         from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
 
@@ -230,7 +218,6 @@ class TestPlantillaDocumento:
             tipo_plantilla='HTML',
             contenido_plantilla='<p>Con firmas</p>',
             firmantes_por_defecto=firmantes,
-            empresa_id=empresa.pk,
             created_by=user
         )
         assert len(plantilla.firmantes_por_defecto) == 2
@@ -241,7 +228,7 @@ class TestPlantillaDocumento:
 class TestDocumento:
     """Tests para el modelo Documento."""
 
-    def test_crear_documento_basico(self, empresa, tipo_documento, user):
+    def test_crear_documento_basico(self, tipo_documento, user):
         """Crear documento con datos minimos."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -251,7 +238,6 @@ class TestDocumento:
             tipo_documento=tipo_documento,
             contenido='<p>Contenido de prueba</p>',
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
 
         assert doc.pk is not None
@@ -267,7 +253,7 @@ class TestDocumento:
         assert 'PR-001' in result
         assert 'v1.0' in result
 
-    def test_documento_todos_los_estados(self, empresa, tipo_documento, user):
+    def test_documento_todos_los_estados(self, tipo_documento, user):
         """Validar todos los estados de documento."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -280,11 +266,10 @@ class TestDocumento:
                 contenido='Contenido',
                 estado=estado,
                 elaborado_por=user,
-                empresa_id=empresa.pk
             )
             assert doc.estado == estado
 
-    def test_documento_clasificaciones(self, empresa, tipo_documento, user):
+    def test_documento_clasificaciones(self, tipo_documento, user):
         """Validar todas las clasificaciones de seguridad."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -297,12 +282,11 @@ class TestDocumento:
                 contenido='Contenido',
                 clasificacion=clasif,
                 elaborado_por=user,
-                empresa_id=empresa.pk
             )
             assert doc.clasificacion == clasif
 
     def test_documento_unique_together(self, documento, user):
-        """Empresa + codigo deben ser unicos."""
+        """Codigo debe ser unico dentro del tenant."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
         with pytest.raises(IntegrityError):
@@ -312,7 +296,6 @@ class TestDocumento:
                 tipo_documento=documento.tipo_documento,
                 contenido='Contenido',
                 elaborado_por=user,
-                empresa_id=documento.empresa_id
             )
 
     def test_documento_con_plantilla(self, documento, plantilla_documento):
@@ -320,7 +303,7 @@ class TestDocumento:
         assert documento.plantilla == plantilla_documento
         assert documento.plantilla.tipo_plantilla == 'HTML'
 
-    def test_documento_palabras_clave(self, empresa, tipo_documento, user):
+    def test_documento_palabras_clave(self, tipo_documento, user):
         """Palabras clave almacena lista JSON."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -331,12 +314,11 @@ class TestDocumento:
             contenido='Contenido',
             palabras_clave=['calidad', 'ISO', 'procedimiento'],
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert len(doc.palabras_clave) == 3
         assert 'calidad' in doc.palabras_clave
 
-    def test_documento_datos_formulario(self, empresa, tipo_documento, user):
+    def test_documento_datos_formulario(self, tipo_documento, user):
         """Datos de formulario almacena JSON."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -348,12 +330,11 @@ class TestDocumento:
             contenido='Contenido',
             datos_formulario=datos,
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert doc.datos_formulario['campo1'] == 'valor1'
         assert doc.datos_formulario['campo2'] == 42
 
-    def test_documento_ocr_estados(self, empresa, tipo_documento, user):
+    def test_documento_ocr_estados(self, tipo_documento, user):
         """Validar estados OCR."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -364,11 +345,10 @@ class TestDocumento:
             contenido='Contenido',
             ocr_estado='PENDIENTE',
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert doc.ocr_estado == 'PENDIENTE'
 
-    def test_documento_sellado_estados(self, empresa, tipo_documento, user):
+    def test_documento_sellado_estados(self, tipo_documento, user):
         """Validar estados de sellado PDF."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -380,12 +360,11 @@ class TestDocumento:
             sellado_estado='COMPLETADO',
             hash_pdf_sellado='abc123def456',
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert doc.sellado_estado == 'COMPLETADO'
         assert doc.hash_pdf_sellado == 'abc123def456'
 
-    def test_documento_workflow_asociado(self, empresa, tipo_documento, user):
+    def test_documento_workflow_asociado(self, tipo_documento, user):
         """Documento con workflow BPM asociado."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -398,12 +377,11 @@ class TestDocumento:
             workflow_asociado_nombre='Flujo Aprobacion Docs',
             es_auto_generado=True,
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert doc.workflow_asociado_id == 42
         assert doc.es_auto_generado is True
 
-    def test_documento_score_cumplimiento(self, empresa, tipo_documento, user):
+    def test_documento_score_cumplimiento(self, tipo_documento, user):
         """Score de cumplimiento heuristico."""
         from apps.gestion_estrategica.gestion_documental.models import Documento
 
@@ -415,7 +393,6 @@ class TestDocumento:
             score_cumplimiento=85,
             score_detalle={'completitud': 90, 'firmas': 80},
             elaborado_por=user,
-            empresa_id=empresa.pk
         )
         assert doc.score_cumplimiento == 85
         assert doc.score_detalle['completitud'] == 90

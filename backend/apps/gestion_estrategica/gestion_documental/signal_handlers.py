@@ -70,7 +70,6 @@ def auto_asignar_lecturas_obligatorias(sender, instance, created, **kwargs):
                 documento=doc,
                 version_documento=doc.version_actual,
                 usuario=user,
-                empresa_id=doc.empresa_id,
                 defaults={
                     'estado': 'PENDIENTE',
                     'asignado_por': None,  # Sistema automático

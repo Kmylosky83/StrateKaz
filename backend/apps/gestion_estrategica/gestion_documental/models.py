@@ -14,7 +14,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from apps.core.base_models.base import BaseCompanyModel
+from utils.models import TenantModel
 from utils.storage import (
     tenant_media_path,
     tenant_upload_documentos_pdf,
@@ -25,7 +25,7 @@ from utils.storage import (
 )
 
 
-class TipoDocumento(BaseCompanyModel):
+class TipoDocumento(TenantModel):
     """
     Catálogo de tipos de documentos configurables
     Ejemplos: Procedimiento, Instructivo, Formato, Manual, Política, etc.
@@ -131,7 +131,7 @@ class TipoDocumento(BaseCompanyModel):
         verbose_name = 'Tipo de Documento'
         verbose_name_plural = 'Tipos de Documentos'
         ordering = ['orden', 'codigo']
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['codigo']
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
@@ -143,7 +143,7 @@ class TipoDocumento(BaseCompanyModel):
         super().save(*args, **kwargs)
 
 
-class PlantillaDocumento(BaseCompanyModel):
+class PlantillaDocumento(TenantModel):
     """
     Plantillas base con estructura predefinida para generación de documentos
     """
@@ -255,7 +255,7 @@ class PlantillaDocumento(BaseCompanyModel):
         verbose_name = 'Plantilla de Documento'
         verbose_name_plural = 'Plantillas de Documentos'
         ordering = ['-es_por_defecto', 'nombre']
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['codigo']
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} (v{self.version})"
@@ -267,7 +267,7 @@ class PlantillaDocumento(BaseCompanyModel):
         super().save(*args, **kwargs)
 
 
-class Documento(BaseCompanyModel):
+class Documento(TenantModel):
     """
     Documentos del sistema con control de versiones completo.
 
@@ -789,7 +789,7 @@ class Documento(BaseCompanyModel):
         verbose_name = 'Documento'
         verbose_name_plural = 'Documentos'
         ordering = ['-fecha_publicacion', 'codigo']
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['codigo']
         indexes = [
             models.Index(fields=['fecha_revision_programada']),
             models.Index(fields=['codigo']),
@@ -814,7 +814,7 @@ class Documento(BaseCompanyModel):
         )
 
 
-class VersionDocumento(BaseCompanyModel):
+class VersionDocumento(TenantModel):
     """
     Historial de versiones de documentos con control de cambios completo
     """
@@ -927,7 +927,7 @@ class VersionDocumento(BaseCompanyModel):
         return f"{self.documento.codigo} - Versión {self.numero_version}"
 
 
-class CampoFormulario(BaseCompanyModel):
+class CampoFormulario(TenantModel):
     """
     Campos dinámicos configurables para Form Builder
     """
@@ -1149,7 +1149,7 @@ class CampoFormulario(BaseCompanyModel):
 # Ver: apps.workflow_engine.firma_digital.models.FirmaDigital
 
 
-class ControlDocumental(BaseCompanyModel):
+class ControlDocumental(TenantModel):
     """
     Control de distribución, obsolescencia y trazabilidad de documentos
     """
@@ -1297,7 +1297,7 @@ class ControlDocumental(BaseCompanyModel):
         return f"{self.get_tipo_control_display()} - {self.documento.codigo} - {self.fecha_distribucion}"
 
 
-class AceptacionDocumental(BaseCompanyModel):
+class AceptacionDocumental(TenantModel):
     """
     Registro de lectura verificada de documentos (ISO 7.3 Toma de Conciencia).
     Cada registro = 1 usuario + 1 documento + evidencia de lectura con scroll tracking.
@@ -1443,7 +1443,7 @@ class AceptacionDocumental(BaseCompanyModel):
         verbose_name = 'Aceptación Documental'
         verbose_name_plural = 'Aceptaciones Documentales'
         ordering = ['-fecha_asignacion']
-        unique_together = ['documento', 'version_documento', 'usuario', 'empresa_id']
+        unique_together = ['documento', 'version_documento', 'usuario']
         indexes = [
             models.Index(fields=['fecha_limite']),
             models.Index(fields=['estado']),
@@ -1454,7 +1454,7 @@ class AceptacionDocumental(BaseCompanyModel):
         return f"{self.usuario} — {self.documento.codigo} ({self.estado})"
 
 
-class TablaRetencionDocumental(BaseCompanyModel):
+class TablaRetencionDocumental(TenantModel):
     """
     Tabla de Retención Documental (TRD) — Sprint 2, Arquitectura GD v5 §9.
 
@@ -1521,7 +1521,7 @@ class TablaRetencionDocumental(BaseCompanyModel):
         verbose_name = 'Regla de Retención Documental'
         verbose_name_plural = 'Tabla de Retención Documental'
         ordering = ['tipo_documento__codigo', 'proceso__code']
-        unique_together = ['tipo_documento', 'proceso', 'empresa_id']
+        unique_together = ['tipo_documento', 'proceso']
 
     def __str__(self):
         return f"{self.tipo_documento.codigo}-{self.proceso.code}: {self.tiempo_gestion_anos}+{self.tiempo_central_anos} años → {self.disposicion_final}"

@@ -63,7 +63,6 @@ class DocumentoService:
                 tipo_documento=documento.tipo_documento,
                 proceso_id=documento.proceso_id,
                 activo=True,
-                empresa_id=documento.empresa_id,
             ).first()
 
         if trd:
@@ -112,7 +111,6 @@ class DocumentoService:
                 tipo_documento=documento.tipo_documento,
                 proceso_id=documento.proceso_id,
                 activo=True,
-                empresa_id=documento.empresa_id,
             ).first()
 
         update_fields = ['trd_aplicada', 'disposicion_asignada']
@@ -147,7 +145,7 @@ class DocumentoService:
         )
 
     @classmethod
-    def generar_codigo(cls, tipo_documento, empresa_id, proceso=None):
+    def generar_codigo(cls, tipo_documento, proceso=None):
         """
         Genera código TIPO-PROCESO-NNN (ej: PR-SST-001).
 
@@ -156,8 +154,17 @@ class DocumentoService:
         - Auto-crea la config si no existe (get_or_create)
         - Thread-safe via select_for_update()
         - Si no hay proceso, genera TIPO-NNN (ej: PR-001)
+
+        empresa_id se obtiene internamente desde EmpresaConfig (requerido
+        por ConsecutivoConfig, que aún usa empresa_id).
         """
+        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+
         ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
+
+        empresa = EmpresaConfig.objects.first()
+        empresa_id = empresa.id if empresa else 0
+
         tipo_code = tipo_documento.codigo
 
         if proceso:
@@ -186,8 +193,8 @@ class DocumentoService:
 
         if created:
             logger.info(
-                '[generar_codigo] ConsecutivoConfig creado: %s (empresa=%s)',
-                consecutivo_codigo, empresa_id,
+                '[generar_codigo] ConsecutivoConfig creado: %s',
+                consecutivo_codigo,
             )
 
         return ConsecutivoConfig.obtener_siguiente_consecutivo(
@@ -200,7 +207,7 @@ class DocumentoService:
 
     @classmethod
     def archivar_registro(
-        cls, pdf_file, tipo_codigo, proceso, empresa_id, usuario,
+        cls, pdf_file, tipo_codigo, proceso, usuario,
         modulo_origen='', referencia=None, titulo='', resumen='',
     ):
         """
@@ -211,7 +218,6 @@ class DocumentoService:
             pdf_file: InMemoryUploadedFile o File con el PDF.
             tipo_codigo: str — código del TipoDocumento (ej: 'RG', 'AC').
             proceso: Area instance — proceso SGI.
-            empresa_id: int.
             usuario: User instance.
             modulo_origen: str — 'hseq', 'talento_humano', 'pesv'.
             referencia: objeto Django (opcional) — para GenericFK de trazabilidad.
@@ -222,8 +228,8 @@ class DocumentoService:
         """
         from django.contrib.contenttypes.models import ContentType
 
-        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo, empresa_id=empresa_id)
-        codigo = cls.generar_codigo(tipo_documento, empresa_id, proceso)
+        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo)
+        codigo = cls.generar_codigo(tipo_documento, proceso)
 
         doc = Documento(
             codigo=codigo,
@@ -236,7 +242,6 @@ class DocumentoService:
             elaborado_por=usuario,
             es_auto_generado=True,
             modulo_origen=modulo_origen,
-            empresa_id=empresa_id,
         )
 
         if referencia:
@@ -249,14 +254,14 @@ class DocumentoService:
             doc.archivo_pdf.save(f'{codigo}.pdf', pdf_file, save=True)
 
         logger.info(
-            '[archivar_registro] %s archivado desde %s (empresa=%s)',
-            codigo, modulo_origen, empresa_id,
+            '[archivar_registro] %s archivado desde %s',
+            codigo, modulo_origen,
         )
         return doc
 
     @classmethod
     def crear_desde_modulo(
-        cls, contenido, tipo_codigo, proceso, empresa_id, usuario,
+        cls, contenido, tipo_codigo, proceso, usuario,
         firmantes_config=None, modulo_origen='', referencia=None,
         titulo='', resumen='',
     ):
@@ -268,7 +273,6 @@ class DocumentoService:
             contenido: str — HTML del documento.
             tipo_codigo: str — código del TipoDocumento (ej: 'AC', 'PR').
             proceso: Area instance.
-            empresa_id: int.
             usuario: User instance.
             firmantes_config: list — [{cargo_id, rol_firma, orden}, ...] (opcional).
             modulo_origen: str — 'hseq', 'bpm', 'auditoria'.
@@ -280,8 +284,8 @@ class DocumentoService:
         """
         from django.contrib.contenttypes.models import ContentType
 
-        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo, empresa_id=empresa_id)
-        codigo = cls.generar_codigo(tipo_documento, empresa_id, proceso)
+        tipo_documento = TipoDocumento.objects.get(codigo=tipo_codigo)
+        codigo = cls.generar_codigo(tipo_documento, proceso)
 
         doc = Documento(
             codigo=codigo,
@@ -295,7 +299,6 @@ class DocumentoService:
             elaborado_por=usuario,
             es_auto_generado=True,
             modulo_origen=modulo_origen,
-            empresa_id=empresa_id,
         )
 
         if referencia:
@@ -325,21 +328,20 @@ class DocumentoService:
                             rol_firma=fc.get('rol_firma', 'ELABORO'),
                             orden=fc.get('orden', 0),
                             estado='PENDIENTE',
-                            empresa_id=empresa_id,
                         )
             except Exception as e:
                 logger.warning('[crear_desde_modulo] Error creando firmas: %s', e)
 
         logger.info(
-            '[crear_desde_modulo] %s creado desde %s con %d firmantes (empresa=%s)',
-            codigo, modulo_origen, len(firmantes_config or []), empresa_id,
+            '[crear_desde_modulo] %s creado desde %s con %d firmantes',
+            codigo, modulo_origen, len(firmantes_config or []),
         )
         return doc
 
     @classmethod
-    def enviar_a_revision(cls, documento_id, usuario, empresa_id, revisor_id=None):
+    def enviar_a_revision(cls, documento_id, usuario, revisor_id=None):
         """BORRADOR -> EN_REVISION."""
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
         if doc.estado != 'BORRADOR':
             raise ValueError('Solo se pueden enviar borradores a revisión')
 
@@ -398,9 +400,9 @@ class DocumentoService:
         }
 
     @classmethod
-    def devolver_a_borrador(cls, documento_id, usuario, empresa_id, motivo=''):
+    def devolver_a_borrador(cls, documento_id, usuario, motivo=''):
         """EN_REVISION -> BORRADOR. Permite desbloquear documentos enviados sin firmantes."""
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
         if doc.estado != 'EN_REVISION':
             raise ValueError('Solo se pueden devolver documentos en revisión')
 
@@ -430,9 +432,9 @@ class DocumentoService:
         return doc
 
     @classmethod
-    def aprobar_documento(cls, documento_id, usuario, empresa_id, observaciones=''):
+    def aprobar_documento(cls, documento_id, usuario, observaciones=''):
         """EN_REVISION -> APROBADO, crea VersionDocumento snapshot."""
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
         if doc.estado != 'EN_REVISION':
             raise ValueError('Solo se pueden aprobar documentos en revisión')
 
@@ -485,9 +487,9 @@ class DocumentoService:
         return doc
 
     @classmethod
-    def publicar_documento(cls, documento_id, usuario, empresa_id, fecha_vigencia=None):
+    def publicar_documento(cls, documento_id, usuario, fecha_vigencia=None):
         """APROBADO -> PUBLICADO, crea VersionDocumento + ControlDocumental."""
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
         if doc.estado != 'APROBADO':
             raise ValueError('Solo se pueden publicar documentos aprobados')
 
@@ -538,7 +540,6 @@ class DocumentoService:
             aprobado_por=doc.aprobado_por,
             fecha_aprobacion=doc.fecha_aprobacion,
             is_version_actual=True,
-            empresa_id=empresa_id,
         )
 
         # Crear control de distribución automático
@@ -549,7 +550,6 @@ class DocumentoService:
             medio_distribucion='DIGITAL',
             areas_distribucion=doc.areas_aplicacion,
             observaciones='Distribución automática al publicar',
-            empresa_id=empresa_id,
             created_by=usuario,
         )
 
@@ -600,9 +600,9 @@ class DocumentoService:
         return doc
 
     @classmethod
-    def marcar_obsoleto(cls, documento_id, usuario, empresa_id, motivo, sustituto_id=None):
+    def marcar_obsoleto(cls, documento_id, usuario, motivo, sustituto_id=None):
         """PUBLICADO -> OBSOLETO, crea ControlDocumental de retiro."""
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
         doc.estado = 'OBSOLETO'
         doc.fecha_obsolescencia = timezone.now().date()
         doc.save(update_fields=['estado', 'fecha_obsolescencia', 'updated_at'])
@@ -613,7 +613,6 @@ class DocumentoService:
             fecha_retiro=timezone.now().date(),
             motivo_retiro=motivo,
             documento_sustituto_id=sustituto_id,
-            empresa_id=empresa_id,
             created_by=usuario,
         )
 
@@ -640,17 +639,19 @@ class DocumentoService:
         return doc
 
     @classmethod
-    def obtener_estadisticas(cls, empresa_id):
+    def obtener_estadisticas(cls):
         """
         Dashboard stats completas para Gestión Documental.
         Incluye: totales por estado, por tipo, por nivel, revisiones,
         distribución y lecturas (AceptacionDocumental).
         Diseñado para consumo por BI y dashboard interno.
+
+        Datos aislados por schema (django-tenants), no requiere empresa_id.
         """
         from apps.gestion_estrategica.gestion_documental.models import AceptacionDocumental
 
         hoy = timezone.now().date()
-        docs = Documento.objects.filter(empresa_id=empresa_id)
+        docs = Documento.objects.all()
 
         # ── Totales por estado ────────────────────────────────────────────
         por_estado_raw = dict(
@@ -705,7 +706,6 @@ class DocumentoService:
 
         # ── Distribución (ControlDocumental) ─────────────────────────────
         distribuciones = ControlDocumental.objects.filter(
-            empresa_id=empresa_id,
             tipo_control='DISTRIBUCION',
             documento__estado='PUBLICADO',
         )
@@ -716,7 +716,7 @@ class DocumentoService:
         )
 
         # ── Lecturas (AceptacionDocumental) ───────────────────────────────
-        lecturas = AceptacionDocumental.objects.filter(empresa_id=empresa_id)
+        lecturas = AceptacionDocumental.objects.all()
         lecturas_pendientes = lecturas.filter(estado__in=['PENDIENTE', 'EN_PROGRESO']).count()
         lecturas_completadas = lecturas.filter(estado='ACEPTADO').count()
         lecturas_vencidas = lecturas.filter(estado='VENCIDO').count()
@@ -750,28 +750,31 @@ class DocumentoService:
         }
 
     @classmethod
-    def verificar_revisiones_programadas(cls, empresa_id=None):
+    def verificar_revisiones_programadas(cls):
         """
         Encuentra documentos con fecha_revision_programada pasada.
-        Retorna lista de IDs para notificación.
+        Retorna lista de tuples (id, codigo, titulo, elaborado_por_id)
+        para notificación.
+
+        Se ejecuta dentro de schema_context por tenant, sin necesidad
+        de empresa_id.
         """
         hoy = timezone.now().date()
         filtros = Q(
             estado='PUBLICADO',
             fecha_revision_programada__lte=hoy,
         )
-        if empresa_id:
-            filtros &= Q(empresa_id=empresa_id)
 
         docs_vencidos = Documento.objects.filter(filtros).values_list(
-            'id', 'codigo', 'titulo', 'empresa_id', 'elaborado_por_id'
+            'id', 'codigo', 'titulo', 'elaborado_por_id'
         )
         return list(docs_vencidos)
 
     @classmethod
-    def documentos_por_vencer(cls, empresa_id=None, dias=15):
+    def documentos_por_vencer(cls, dias=15):
         """
         Documentos cuya revisión programada vence en los próximos N días.
+        Se ejecuta dentro de schema_context por tenant.
         """
         hoy = timezone.now().date()
         limite = hoy + timezone.timedelta(days=dias)
@@ -780,18 +783,16 @@ class DocumentoService:
             fecha_revision_programada__gt=hoy,
             fecha_revision_programada__lte=limite,
         )
-        if empresa_id:
-            filtros &= Q(empresa_id=empresa_id)
 
         return list(
             Documento.objects.filter(filtros).values_list(
-                'id', 'codigo', 'titulo', 'empresa_id', 'elaborado_por_id',
+                'id', 'codigo', 'titulo', 'elaborado_por_id',
                 'fecha_revision_programada'
             )
         )
 
     @classmethod
-    def iniciar_revision_automatica(cls, documento_id, empresa_id):
+    def iniciar_revision_automatica(cls, documento_id):
         """
         Inicia un ciclo de revisión automático para un documento PUBLICADO vencido.
         PUBLICADO → BORRADOR (nueva versión mayor).
@@ -802,7 +803,7 @@ class DocumentoService:
         Guarda: no modifica estado si ya está en BORRADOR (idempotente).
         Retorna: (doc, creado) donde creado=True si se inició la revisión.
         """
-        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc = Documento.objects.get(id=documento_id)
 
         if doc.estado != 'PUBLICADO':
             return doc, False
@@ -823,7 +824,6 @@ class DocumentoService:
             aprobado_por=doc.aprobado_por,
             fecha_aprobacion=doc.fecha_aprobacion,
             is_version_actual=False,
-            empresa_id=empresa_id,
         )
 
         # Incrementar versión mayor (1.0 → 2.0, 2.3 → 3.0)
@@ -1070,7 +1070,6 @@ class DocumentoService:
                 documento=documento,
                 version_documento=documento.version_actual,
                 usuario=user,
-                empresa_id=documento.empresa_id,
                 defaults={
                     'estado': 'PENDIENTE',
                     'asignado_por': publicado_por,
@@ -1104,13 +1103,13 @@ class DocumentoService:
         )
 
     @classmethod
-    def verificar_habeas_data_publicada(cls, empresa_id):
+    def verificar_habeas_data_publicada(cls):
         """
         Verifica si el tenant tiene una Política de Datos Personales publicada.
         Retorna dict con estado y datos para banner de dashboard.
+        Datos aislados por schema (django-tenants).
         """
         doc = Documento.objects.filter(
-            empresa_id=empresa_id,
             tipo_documento__codigo='POL',
             titulo__icontains='datos personales',
         ).order_by('-updated_at').first()
@@ -1179,7 +1178,7 @@ class DocumentoService:
         """
         from django.apps import apps as django_apps
 
-        tipos = TipoDocumento.objects.filter(is_active=True)
+        tipos = TipoDocumento.objects.all()
         detalle = []
         total_docs = 0
         total_publicados = 0

@@ -57,7 +57,7 @@ def verificar_documentos_revision_programada():
                         f'{tenant.schema_name}: Documentos con revisión vencida: '
                         f'{len(docs_vencidos)}'
                     )
-                    for doc_id, codigo, titulo, empresa_id, elaborado_por_id in docs_vencidos:
+                    for doc_id, codigo, titulo, elaborado_por_id in docs_vencidos:
                         logger.warning(
                             f'[{tenant.schema_name}] Documento {codigo} "{titulo}" '
                             f'tiene revisión programada vencida. '
@@ -132,11 +132,10 @@ def crear_borradores_revision_automatica():
                 from .services import DocumentoService
 
                 docs_vencidos = DocumentoService.verificar_revisiones_programadas()
-                for doc_id, codigo, titulo, empresa_id, _elaborado_por_id in docs_vencidos:
+                for doc_id, codigo, titulo, _elaborado_por_id in docs_vencidos:
                     try:
                         _doc, creado = DocumentoService.iniciar_revision_automatica(
                             documento_id=doc_id,
-                            empresa_id=empresa_id,
                         )
                         if creado:
                             total_iniciados += 1
@@ -191,7 +190,7 @@ def notificar_documentos_por_vencer():
                         f'{tenant.schema_name}: Documentos por vencer revisión (15 días): '
                         f'{len(docs_por_vencer)}'
                     )
-                    for doc_id, codigo, titulo, empresa_id, elaborado_por_id, fecha_rev in docs_por_vencer:
+                    for doc_id, codigo, titulo, elaborado_por_id, fecha_rev in docs_por_vencer:
                         logger.info(
                             f'[{tenant.schema_name}] Documento {codigo} "{titulo}" '
                             f'vence revisión el {fecha_rev}. '
@@ -511,8 +510,7 @@ def generar_documento_desde_workflow(
             return {'status': 'error', 'error': 'Tipo documento no encontrado'}
 
         # Generar código
-        empresa_id = instancia.empresa_id if hasattr(instancia, 'empresa_id') else 1
-        codigo = DocumentoService.generar_codigo(tipo_doc, empresa_id)
+        codigo = DocumentoService.generar_codigo(tipo_doc)
 
         # Renderizar contenido: plantilla o auto-generación desde nodos
         contenido = ''
@@ -567,7 +565,6 @@ def generar_documento_desde_workflow(
             workflow_asociado_id=instancia.plantilla_id,
             workflow_asociado_nombre=instancia.titulo or '',
             es_auto_generado=True,
-            empresa_id=empresa_id,
         )
 
         # Calcular score inicial
@@ -622,7 +619,7 @@ def generar_documento_desde_workflow(
     soft_time_limit=600,
 )
 def exportar_drive_lote(
-    self, empresa_id: int, integracion_id: int,
+    self, integracion_id: int,
     folder_id: str = None, usuario_id: int = None,
     filtros: dict = None, tenant_schema: str = ''
 ):
@@ -641,7 +638,6 @@ def exportar_drive_lote(
 
         try:
             resultado = GoogleDriveService.exportar_lote(
-                empresa_id=empresa_id,
                 integracion_id=integracion_id,
                 folder_id=folder_id,
                 usuario=usuario,

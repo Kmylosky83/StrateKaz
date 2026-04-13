@@ -501,7 +501,6 @@ class DocumentoPDFGenerator:
         try:
             campos_qs = (
                 documento.tipo_documento.campos_personalizados
-                .filter(is_active=True)
                 .order_by('orden')
             )
         except Exception:

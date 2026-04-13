@@ -34,14 +34,14 @@ class TipoDocumentoListSerializer(serializers.ModelSerializer):
             'categoria',
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
             'nivel_seguridad_firma',
-            'color_identificacion', 'is_active', 'orden', 'total_documentos'
+            'color_identificacion', 'orden', 'total_documentos'
         ]
         extra_kwargs = {
             'codigo': {'required': False, 'allow_blank': True},
         }
 
     def get_total_documentos(self, obj):
-        return obj.documentos.filter(empresa=obj.empresa).count()
+        return obj.documentos.count()
 
 
 class TipoDocumentoDetailSerializer(serializers.ModelSerializer):
@@ -58,17 +58,17 @@ class TipoDocumentoDetailSerializer(serializers.ModelSerializer):
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
             'nivel_seguridad_firma',
             'tiempo_retencion_años', 'plantilla_por_defecto', 'campos_obligatorios',
-            'color_identificacion', 'is_active', 'orden', 'total_plantillas',
-            'empresa', 'created_by', 'created_by_nombre', 'updated_by',
+            'color_identificacion', 'orden', 'total_plantillas',
+            'created_by', 'created_by_nombre', 'updated_by',
             'created_at', 'updated_at', 'deleted_at'
         ]
-        read_only_fields = ['empresa', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
         extra_kwargs = {
             'codigo': {'required': False, 'allow_blank': True},
         }
 
     def get_total_plantillas(self, obj):
-        return obj.plantillas.filter(empresa=obj.empresa).count()
+        return obj.plantillas.count()
 
 
 # =============================================================================
@@ -95,7 +95,7 @@ class PlantillaDocumentoListSerializer(serializers.ModelSerializer):
         }
 
     def get_total_documentos(self, obj):
-        return obj.documentos_generados.filter(empresa=obj.empresa).count()
+        return obj.documentos_generados.count()
 
 
 class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
@@ -114,10 +114,10 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
             'version', 'estado', 'estado_display', 'es_por_defecto',
             'firmantes_por_defecto',
             'plantilla_maestra_codigo', 'es_personalizada',
-            'empresa', 'created_by', 'created_by_nombre', 'updated_by',
+            'created_by', 'created_by_nombre', 'updated_by',
             'created_at', 'updated_at', 'deleted_at'
         ]
-        read_only_fields = ['empresa', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
         extra_kwargs = {
             'codigo': {'required': False, 'allow_blank': True},
         }
@@ -163,7 +163,7 @@ class CampoFormularioListSerializer(serializers.ModelSerializer):
         model = CampoFormulario
         fields = [
             'id', 'nombre_campo', 'etiqueta', 'tipo_campo', 'tipo_campo_display',
-            'es_obligatorio', 'orden', 'plantilla', 'plantilla_nombre', 'is_active'
+            'es_obligatorio', 'orden', 'plantilla', 'plantilla_nombre'
         ]
 
 
@@ -185,11 +185,10 @@ class CampoFormularioDetailSerializer(serializers.ModelSerializer):
             'columnas_tabla', 'orden', 'ancho_columna', 'clase_css',
             'condicion_visible', 'formula_calculo',
             'config_firmantes', 'modo_firma', 'nivel_seguridad_firma',
-            'is_active',
-            'empresa', 'created_by', 'created_by_nombre', 'updated_by',
+            'created_by', 'created_by_nombre', 'updated_by',
             'created_at', 'updated_at', 'deleted_at'
         ]
-        read_only_fields = ['empresa', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
 
 
 # =============================================================================
@@ -285,8 +284,8 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'drive_file_id', 'drive_exportado_at',
             'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
             'sellado_estado', 'sellado_metadatos',
-            'empresa', 'created_by', 'updated_by',
-            'created_at', 'updated_at', 'is_active', 'deleted_at',
+            'created_by', 'updated_by',
+            'created_at', 'updated_at', 'deleted_at',
             'firmas_digitales'
         ]
         read_only_fields = [
@@ -296,8 +295,8 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'drive_file_id', 'drive_exportado_at',
             'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
             'sellado_estado', 'sellado_metadatos',
-            'empresa', 'created_by', 'updated_by',
-            'created_at', 'updated_at', 'is_active', 'deleted_at'
+            'created_by', 'updated_by',
+            'created_at', 'updated_at', 'deleted_at'
         ]
         extra_kwargs = {
             'contenido': {'required': False, 'allow_blank': True},
@@ -348,9 +347,9 @@ class VersionDocumentoDetailSerializer(serializers.ModelSerializer):
             'fecha_version', 'creado_por', 'creado_por_nombre',
             'aprobado_por', 'aprobado_por_nombre', 'fecha_aprobacion',
             'archivo_pdf_version', 'is_version_actual', 'checksum',
-            'empresa', 'created_at', 'updated_at', 'deleted_at'
+            'created_at', 'updated_at', 'deleted_at'
         ]
-        read_only_fields = ['empresa', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_at', 'updated_at', 'deleted_at']
 
 
 # =============================================================================
@@ -400,10 +399,10 @@ class ControlDocumentalDetailSerializer(serializers.ModelSerializer):
             'confirmaciones_recepcion', 'fecha_destruccion', 'metodo_destruccion',
             'responsable_destruccion', 'responsable_destruccion_nombre', 'acta_destruccion',
             'observaciones',
-            'empresa', 'created_by', 'created_by_nombre', 'updated_by',
+            'created_by', 'created_by_nombre', 'updated_by',
             'created_at', 'updated_at', 'deleted_at'
         ]
-        read_only_fields = ['empresa', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
 
 
 # =============================================================================
@@ -466,12 +465,12 @@ class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
             'porcentaje_lectura', 'tiempo_lectura_seg', 'scroll_data',
             'texto_aceptacion', 'motivo_rechazo',
             'ip_address', 'user_agent',
-            'empresa', 'created_by', 'updated_by',
-            'created_at', 'updated_at', 'is_active', 'deleted_at',
+            'created_by', 'updated_by',
+            'created_at', 'updated_at', 'deleted_at',
         ]
         read_only_fields = [
-            'empresa', 'created_by', 'updated_by',
-            'created_at', 'updated_at', 'is_active', 'deleted_at',
+            'created_by', 'updated_by',
+            'created_at', 'updated_at', 'deleted_at',
             'fecha_asignacion', 'fecha_aceptacion', 'fecha_rechazo',
             'ip_address', 'user_agent',
         ]
@@ -535,11 +534,11 @@ class TablaRetencionDocumentalSerializer(serializers.ModelSerializer):
             'serie_documental', 'tiempo_gestion_anos', 'tiempo_central_anos',
             'tiempo_total',
             'disposicion_final', 'disposicion_display',
-            'soporte_legal', 'requiere_acta_destruccion', 'is_active',
-            'empresa', 'created_by', 'updated_by',
+            'soporte_legal', 'requiere_acta_destruccion',
+            'created_by', 'updated_by',
             'created_at', 'updated_at', 'deleted_at',
         ]
-        read_only_fields = ['empresa', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at']
 
     # Mínimos legales colombianos (RN-TRD-010)
     MINIMOS_LEGALES = {

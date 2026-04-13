@@ -41,7 +41,7 @@ class Command(BaseCommand):
             codigo_viejo = doc.codigo
             try:
                 codigo_nuevo = DocumentoService.generar_codigo(
-                    doc.tipo_documento, empresa.id, doc.proceso
+                    doc.tipo_documento, doc.proceso
                 )
             except Exception as e:
                 self.stdout.write(self.style.ERROR(

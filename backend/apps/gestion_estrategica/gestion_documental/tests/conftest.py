@@ -1,14 +1,14 @@
 """
 Fixtures para tests de gestion_documental.
 
-Las fixtures base (user, admin_user, empresa, api_client,
+Las fixtures base (user, admin_user, api_client,
 authenticated_client, admin_client) se heredan del root conftest.py.
 """
 import pytest
 
 
 @pytest.fixture
-def tipo_documento(empresa, user):
+def tipo_documento(user):
     """TipoDocumento de prueba."""
     from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
     return TipoDocumento.objects.create(
@@ -22,15 +22,13 @@ def tipo_documento(empresa, user):
         tiempo_retencion_años=5,
         campos_obligatorios=['titulo', 'contenido'],
         color_identificacion='#3498db',
-        is_active=True,
         orden=1,
-        empresa=empresa,
         created_by=user
     )
 
 
 @pytest.fixture
-def tipo_documento_manual(empresa, user):
+def tipo_documento_manual(user):
     """TipoDocumento tipo Manual."""
     from apps.gestion_estrategica.gestion_documental.models import TipoDocumento
     return TipoDocumento.objects.create(
@@ -44,15 +42,13 @@ def tipo_documento_manual(empresa, user):
         tiempo_retencion_años=10,
         campos_obligatorios=[],
         color_identificacion='#e74c3c',
-        is_active=True,
         orden=2,
-        empresa=empresa,
         created_by=user
     )
 
 
 @pytest.fixture
-def plantilla_documento(empresa, tipo_documento, user):
+def plantilla_documento(tipo_documento, user):
     """PlantillaDocumento de prueba."""
     from apps.gestion_estrategica.gestion_documental.models import PlantillaDocumento
     return PlantillaDocumento.objects.create(
@@ -66,13 +62,12 @@ def plantilla_documento(empresa, tipo_documento, user):
         version='1.0',
         estado='ACTIVA',
         es_por_defecto=True,
-        empresa=empresa,
         created_by=user
     )
 
 
 @pytest.fixture
-def documento(empresa, tipo_documento, plantilla_documento, user):
+def documento(tipo_documento, plantilla_documento, user):
     """Documento de prueba."""
     from apps.gestion_estrategica.gestion_documental.models import Documento
     return Documento.objects.create(
@@ -86,12 +81,11 @@ def documento(empresa, tipo_documento, plantilla_documento, user):
         estado='BORRADOR',
         clasificacion='INTERNO',
         elaborado_por=user,
-        empresa=empresa
     )
 
 
 @pytest.fixture
-def version_documento(documento, empresa, user):
+def version_documento(documento, user):
     """VersionDocumento de prueba."""
     from apps.gestion_estrategica.gestion_documental.models import VersionDocumento
     return VersionDocumento.objects.create(
@@ -101,5 +95,4 @@ def version_documento(documento, empresa, user):
         contenido_snapshot=documento.contenido,
         descripcion_cambios='Creacion inicial del documento',
         creado_por=user,
-        empresa=empresa,
     )

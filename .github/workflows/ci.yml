@@ -128,11 +128,16 @@ jobs:
         run: |
           python manage.py test apps.core.tests.test_sidebar apps.core.tests.test_base --settings=config.settings.testing --verbosity=2
 
-      - name: Run LIVE pytest suite (informativo, 21 rutas via pytest.ini)
+      - name: Run LIVE pytest suite (BLOQUEANTE, 4 rutas verdes)
+        working-directory: ./backend
+        run: |
+          pytest apps/core apps/gestion_estrategica/gestion_documental apps/workflow_engine/disenador_flujos apps/workflow_engine/ejecucion --ignore=apps/core/tests/test_sidebar.py --ignore=apps/core/tests/test_base.py --no-cov --tb=short -q
+
+      - name: Run LIVE pytest suite (informativo, rutas restantes via pytest.ini)
         working-directory: ./backend
         continue-on-error: true
         run: |
-          pytest --ignore=apps/core/tests/test_sidebar.py --ignore=apps/core/tests/test_base.py --no-cov --tb=no -q
+          pytest --ignore=apps/core --ignore=apps/gestion_estrategica/gestion_documental --ignore=apps/workflow_engine/disenador_flujos --ignore=apps/workflow_engine/ejecucion --no-cov --tb=no -q
 
       - name: Check code formatting with Black
         working-directory: ./backend

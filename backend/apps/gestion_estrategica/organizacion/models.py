@@ -11,6 +11,7 @@ from apps.core.base_models import (
     SoftDeleteModel,
     OrderedModel
 )
+from utils.models import TenantModel
 
 # Re-exportar modelos migrados para backward compatibility
 from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA, TODOS_CONSECUTIVOS_SISTEMA
@@ -208,7 +209,7 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
                 parent = parent.parent
 
 
-class OrganigramaNodePosition(models.Model):
+class OrganigramaNodePosition(TenantModel):
     """
     Posiciones personalizadas de nodos en el organigrama.
     Permite persistir la ubicación de cada nodo cuando el usuario lo arrastra.
@@ -224,7 +225,6 @@ class OrganigramaNodePosition(models.Model):
     direction = models.CharField(max_length=2, default='TB')
     x = models.FloatField()
     y = models.FloatField()
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'organizacion_node_position'

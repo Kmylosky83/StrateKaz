@@ -372,14 +372,23 @@ ACTION_CHOICES = [
 
 class AuditImpersonation(models.Model):
     """
-    Registro de acciones realizadas durante impersonación.
+    Append-only audit log for superadmin impersonation events.
 
-    Cada vez que un superadmin impersona a un usuario y realiza una acción
-    que modifica datos (POST/PUT/PATCH/DELETE) o accede a endpoints sensibles,
-    se crea un registro aquí para trazabilidad completa.
+    This model is intentionally immutable by design:
+    - No updates allowed (save() override rejects editing existing records)
+    - No deletes allowed (delete() override rejects removal)
+    - No soft-delete (does NOT inherit from TenantModel to prevent
+      SoftDeleteManager from hiding records)
 
-    Este modelo vive en el schema del tenant (TENANT_APPS) para que cada
-    empresa tenga su propio historial de impersonación.
+    Security rationale: impersonation logs are forensic evidence of
+    privilege usage. Allowing modification or deletion would enable
+    a malicious admin to hide evidence of their own abuse.
+
+    The only valid operation is create() via the impersonation middleware
+    (core.middleware.impersonation_audit.ImpersonationAuditMiddleware).
+
+    Key fields: superadmin (who), target_user (whom), timestamp (when),
+    action/endpoint/method (what), ip_address/user_agent (from where).
     """
 
     superadmin = models.ForeignKey(
@@ -460,6 +469,14 @@ class AuditImpersonation(models.Model):
                 name='idx_imp_action_ts',
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise PermissionError("AuditImpersonation is append-only — editing forbidden")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("AuditImpersonation is append-only — deletion forbidden")
 
     def __str__(self):
         sa = self.superadmin.username if self.superadmin else '?'

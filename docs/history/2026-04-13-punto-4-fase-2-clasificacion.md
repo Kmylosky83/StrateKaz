@@ -119,3 +119,27 @@ local.
 ## Próximos pasos sugeridos
 
 Sesiones siguientes: atacar rutas 🟡 en orden de menos a más fallos, luego 🔴.
+
+## Cierre de Fase 2 — CI #879 verde
+
+**Commit de promoción:** `a6d72a57`
+**CI run:** #879
+**Resultado global:**
+- Backend - Django Tests: verde (1h 14m 40s)
+- Frontend - Build & Type Check: verde (2m 1s)
+- Quality Summary: verde
+
+**Steps de test:**
+
+| Step | Estado | Tiempo | Tests |
+|------|--------|--------|-------|
+| Run migrated tests (BLOQUEANTE) | ✅ | 5m 19s | 6 passed (manage.py) |
+| Run LIVE pytest suite (BLOQUEANTE, 4 rutas verdes) | ✅ | 5m 16s | 106 passed, 127 skipped |
+| Run LIVE pytest suite (informativo, 17 rutas) | ⚠️ continue-on-error | ~1h | 225 failed esperados |
+
+**Módulos ahora protegidos contra regresión:** core, gestion_documental,
+disenador_flujos, ejecucion.
+
+**Cambio neto en CI:** gate bloqueante pasó de 6 tests (manage.py) a 112 tests
+(6 manage.py + 106 pytest). Step informativo reducido de 21 a 17 rutas sin
+duplicación. pytest.ini intacto como single source of truth.

@@ -328,8 +328,9 @@ Dedicada exclusivamente a este hallazgo.
 | 12 | **H20 — delete_tenant → purge_tenant** | ✅ RESUELTO (2026-04-10) | Renombrado por colisión con django-tenants. |
 | 13 | **H21 — hard-delete sin tests API** | 🔲 PENDIENTE | Endpoint usa servicio testeado, falta cobertura HTTP. |
 | 14 | **H22 — Idempotencia Fase B** | ✅ RESUELTO (2026-04-10) | Pre-check validate_invariant antes de CREATE SCHEMA. |
+| 15 | **H23 — testing.py lee DB_NAME del env** | 🔲 PENDIENTE | Config frágil: test DB name depende de .env en vez de ser independiente. |
 
-**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min).
+**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min).
 
 ---
 

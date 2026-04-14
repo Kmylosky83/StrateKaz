@@ -888,6 +888,14 @@ connection.set_schema('tenant_demo')  # ✅ local
 # connection.set_schema('tenant_stratekaz')  # ❌ no existe en Docker
 ```
 
+### pytest en Docker local usa development settings (NO testing)
+**Estado**: RESUELTO (2026-04-14)
+Docker-compose.yml define `DJANGO_SETTINGS_MODULE=config.settings.development` en el servicio backend.
+pytest-django respeta la precedencia: env var > pytest.ini. Por tanto, `DJANGO_SETTINGS_MODULE` en
+pytest.ini es ignorado cuando se corre `docker compose exec backend pytest`. Síntoma:
+`DuplicateDatabase: database "test_stratekaz" already exists`. Fix: agregar `--ds=config.settings.testing`
+a `addopts` en pytest.ini (tiene la prioridad más alta en pytest-django, por encima de env vars).
+
 ### `localStorage` auth key es `access_token` directamente
 Para obtener el JWT en DevTools Console:
 ```javascript

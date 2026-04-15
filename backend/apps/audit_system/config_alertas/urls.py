@@ -8,7 +8,9 @@ app_name = 'config_alertas'
 router = DefaultRouter()
 router.register(r'tipos', TipoAlertaViewSet, basename='tipos')
 router.register(r'configuraciones', ConfiguracionAlertaViewSet, basename='configuraciones')
-router.register(r'', AlertaGeneradaViewSet, basename='alertas')
+# Prefijos específicos ANTES del catch-all r'' para evitar que
+# ^(?P<pk>[^/.]+)/$ intercepte escalamientos/
 router.register(r'escalamientos', EscalamientoAlertaViewSet, basename='escalamientos')
+router.register(r'', AlertaGeneradaViewSet, basename='alertas')
 
 urlpatterns = [path('', include(router.urls))]

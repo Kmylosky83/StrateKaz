@@ -72,6 +72,36 @@ def tenant_test_schema(django_db_setup, django_db_blocker):
             defaults={"is_primary": True},
         )
 
+        # Seed SystemModule rows para que ModuleAccessMiddleware no bloquee
+        # requests en tests. Sin esto, todas las APIs de módulos LIVE
+        # retornan 403 porque el middleware verifica is_enabled en DB.
+        from django_tenants.utils import schema_context
+        with schema_context("test"):
+            from apps.core.models import SystemModule
+
+            _LIVE_MODULES = [
+                ("fundacion", "Fundación", "STRATEGIC"),
+                ("sistema_gestion", "Gestión Documental", "INFRASTRUCTURE"),
+                ("workflow_engine", "Flujos de Trabajo", "INFRASTRUCTURE"),
+                ("audit_system", "Centro de Control", "INTELLIGENCE"),
+                ("mi_equipo", "Gestión de Personas", "OPERATIONAL"),
+                ("analytics", "Analítica", "INTELLIGENCE"),
+                ("planeacion_estrategica", "Planificación Estratégica", "STRATEGIC"),
+                ("motor_cumplimiento", "Motor de Cumplimiento", "COMPLIANCE"),
+                ("motor_riesgos", "Motor de Riesgos", "COMPLIANCE"),
+                ("hseq_management", "Gestión HSEQ", "INTEGRATED"),
+                ("talent_hub", "Talent Hub", "OPERATIONAL"),
+            ]
+            for code, name, category in _LIVE_MODULES:
+                SystemModule.objects.get_or_create(
+                    code=code,
+                    defaults={
+                        "name": name,
+                        "category": category,
+                        "is_enabled": True,
+                    },
+                )
+
     return tenant
 
 
@@ -106,11 +136,19 @@ def enable_tenant_db(request, tenant_test_schema):
 
 
 @pytest.fixture
-def api_client():
-    """Cliente API de prueba (sin autenticacion)."""
+def api_client(tenant_test_schema):
+    """Cliente API de prueba (sin autenticacion).
+
+    Setea HTTP_HOST al dominio del tenant de test para que
+    TenantMainMiddleware resuelva el schema correcto. Sin esto,
+    APIClient envia Host: testserver y las requests caen a schema
+    'public' donde las tablas de TENANT_APPS no existen.
+    """
     from rest_framework.test import APIClient
 
-    return APIClient()
+    client = APIClient()
+    client.defaults['HTTP_HOST'] = 'tenant.test.com'
+    return client
 
 
 @pytest.fixture

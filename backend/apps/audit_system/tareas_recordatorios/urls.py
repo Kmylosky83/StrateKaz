@@ -6,9 +6,11 @@ from .views import TareaViewSet, RecordatorioViewSet, EventoCalendarioViewSet, C
 app_name = 'tareas_recordatorios'
 
 router = DefaultRouter()
-router.register(r'', TareaViewSet, basename='tareas')
+# Prefijos específicos PRIMERO — el catch-all r'' al final para
+# que ^(?P<pk>[^/.]+)/$ no intercepte recordatorios/, eventos/, etc.
 router.register(r'recordatorios', RecordatorioViewSet, basename='recordatorios')
 router.register(r'eventos', EventoCalendarioViewSet, basename='eventos')
 router.register(r'comentarios', ComentarioTareaViewSet, basename='comentarios')
+router.register(r'', TareaViewSet, basename='tareas')
 
 urlpatterns = [path('', include(router.urls))]

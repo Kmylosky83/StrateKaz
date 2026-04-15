@@ -26,6 +26,8 @@ def other_user(db):
         password='testpass123',
         first_name='Other',
         last_name='User',
+        document_number='8888888888',
+        document_type='CC',
         is_active=True
     )
 

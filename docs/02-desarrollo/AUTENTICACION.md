@@ -104,132 +104,32 @@ SIMPLE_JWT = {
 
 ## Frontend - Axios Interceptor
 
-```typescript
-// src/api/client.ts
-import axios from 'axios';
+El cliente Axios centralizado configura dos interceptors:
 
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-});
+- **Request interceptor:** inyecta el header `Authorization: Bearer <access_token>`
+  en toda request autenticada. Incluye `X-Tenant-ID` cuando hay tenant activo.
+- **Response interceptor:** detecta respuestas 401, intenta refrescar el access
+  token via `POST /api/tenant/auth/refresh/`, y reintenta el request original con
+  el nuevo token. Si el refresh falla, dispara logout y redirige a `/login`.
 
-// Agregar token a requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Renovar token si expira
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        // TODO: Este ejemplo es ilustrativo. Ver frontend/src/api/axios-config.ts
-        // para la implementación real con tenant/auth/refresh/
-        const response = await axios.post('/api/tenant/auth/refresh/', {
-          refresh: refreshToken,
-        });
-
-        const { access } = response.data;
-        localStorage.setItem('accessToken', access);
-
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        // Refresh falló, redirigir a login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
-      }
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-export { apiClient };
-```
+**Implementacion:** `frontend/src/api/axios-config.ts`
 
 ---
 
-## Hook useAuth
+## Estado de autenticacion (Zustand)
 
-```typescript
-// src/hooks/useAuth.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { apiClient } from '@/api/client';
+El estado global de autenticacion se gestiona con Zustand (store persistido):
 
-interface User {
-  id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  cargo?: { id: number; nombre: string };
-}
+- **login:** envia credenciales a `POST /api/tenant/auth/login/`, almacena
+  tokens (access + refresh) y datos de usuario, selecciona tenant activo.
+- **logout:** blacklista el refresh token via `POST /api/tenant/auth/logout/`,
+  limpia tokens y estado local, redirige a login.
+- **refreshUser:** obtiene datos actualizados del usuario autenticado via
+  `GET /api/tenant/auth/me/` (incluye tenants accesibles y permisos).
 
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-export const useAuth = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-
-      // TODO: Este ejemplo es ilustrativo. Ver frontend/src/api/auth.api.ts
-      // y frontend/src/store/authStore.ts para la implementación real
-      login: async (email, password) => {
-        const response = await apiClient.post('/api/tenant/auth/login/', {
-          email,
-          password,
-        });
-
-        const { access, refresh, user } = response.data;
-
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-
-        set({ user, isAuthenticated: true });
-      },
-
-      logout: async () => {
-        try {
-          const refresh = localStorage.getItem('refreshToken');
-          await apiClient.post('/api/tenant/auth/logout/', { refresh });
-        } finally {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          set({ user: null, isAuthenticated: false });
-        }
-      },
-
-      refreshUser: async () => {
-        const response = await apiClient.get('/api/tenant/auth/me/');
-        set({ user: response.data });
-      },
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({ user: state.user }),
-    }
-  )
-);
-```
+**Implementacion:**
+- API client: `frontend/src/api/auth.api.ts`
+- Store Zustand: `frontend/src/store/authStore.ts`
 
 ---
 

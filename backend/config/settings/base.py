@@ -125,6 +125,9 @@ TENANT_APPS = [
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.gestion_estrategica.gestion_documental',
 
+    # CT-layer: catálogo maestro de productos (transversal, consumido por Supply Chain, Almacenamiento, etc.)
+    'apps.catalogo_productos',
+
     # ═══════════════════════════════════════════════════════════════════════════
     # GAMIFICACIÓN — Módulo independiente (Juego SST)
     # Desacoplado de talent_hub. Requiere refactor completo antes de activar.

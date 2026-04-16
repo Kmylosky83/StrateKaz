@@ -103,6 +103,13 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   },
 
   // NIVEL_CADENA — Cadena de Valor
+  // CT-layer: catálogo maestro, visible desde L15 (transversal como gestion_documental)
+  {
+    code: 'catalogo_productos',
+    name: 'Catálogo de Productos',
+    category: 'NIVEL_CADENA',
+    deployLevel: 15,
+  },
   { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA', deployLevel: 50 },
   {
     code: 'production_ops',

@@ -198,6 +198,12 @@ if is_app_installed('apps.hseq_management.calidad'):
     urlpatterns.append(path('api/hseq/', include('apps.hseq_management.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
+# CT-LAYER: CATÁLOGO DE PRODUCTOS (transversal, consumido por Cadena de Valor)
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.catalogo_productos'):
+    urlpatterns.append(path('api/catalogo-productos/', include('apps.catalogo_productos.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.supply_chain.gestion_proveedores'):

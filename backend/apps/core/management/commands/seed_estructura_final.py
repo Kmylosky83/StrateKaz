@@ -857,6 +857,31 @@ class Command(BaseCommand):
 
             # ─── Nivel 9: CADENA DE VALOR ────────────────────────────────
 
+            # 9.0: Catálogo de Productos (CT-layer, transversal)
+            {
+                'code': 'catalogo_productos',
+                'name': 'Catálogo de Productos',
+                'description': 'Dato maestro de productos, categorías y unidades de medida',
+                'category': 'OPERATIONAL',
+                'color': 'green',
+                'icon': 'Package',
+                'route': '/catalogo-productos',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 49,
+                'tabs': [
+                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 1, 'sections': [
+                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
+                    ]},
+                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 2, 'sections': [
+                        {'code': 'gestion_categorias', 'name': 'Gestión de Categorías', 'icon': 'FolderTree', 'orden': 1, 'description': 'Categorías jerárquicas de productos'},
+                    ]},
+                    {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
+                        {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
+                    ]},
+                ]
+            },
+
             # 9A: Supply Chain
             {
                 'code': 'supply_chain',

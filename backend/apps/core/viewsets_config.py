@@ -116,6 +116,7 @@ SIDEBAR_LAYERS = [
         'color': '#10B981',
         'phase': 'HACER',
         'module_codes': [
+            'catalogo_productos',
             'supply_chain', 'production_ops',
             'logistics_fleet', 'sales_crm',
         ],

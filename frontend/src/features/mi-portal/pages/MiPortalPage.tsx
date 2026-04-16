@@ -16,11 +16,6 @@ import { motion } from 'framer-motion';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import {
   User,
-  Calendar,
-  FileText,
-  DollarSign,
-  GraduationCap,
-  BarChart3,
   FolderOpen,
   BookOpen,
   ShieldCheck,
@@ -54,7 +49,6 @@ import {
   MiPerfilCard,
   MiPerfilEditForm,
   MisDocumentos,
-  MiHSEQ,
   MiFirmaDigital,
   PortalProveedorView,
   PortalClienteView,
@@ -101,46 +95,17 @@ function getCurrentDateFormatted(): string {
 // TAB CONFIGURATION
 // ============================================================================
 
-/** Tabs que solo aplican a empleados internos (no contratistas) */
-const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'recibos']);
-
-/** Tabs que solo aplican a externos (contratistas, consultores) */
-const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['hseq']);
-
 /**
- * Tabs que requieren apps L60 (talent_hub: novedades, nomina, formacion, desempeno).
- * Se ocultan hasta que se active el Level 60 en INSTALLED_APPS.
+ * Tabs LIVE de Mi Portal.
+ * Cuando se activen módulos L60+ (novedades, nómina, formación, desempeño),
+ * sus tabs se agregan aquí.
  */
-const L60_TABS = new Set<MiPortalTab>([
-  'vacaciones',
-  'permisos',
-  'recibos',
-  'capacitaciones',
-  'evaluacion',
-]);
-
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mis datos', icon: <User className="w-4 h-4" /> },
   { id: 'firma' as const, label: 'Mi Firma', icon: <PenTool className="w-4 h-4" /> },
   { id: 'lecturas' as const, label: 'Lecturas Pendientes', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'encuestas' as const, label: 'Encuestas', icon: <ClipboardList className="w-4 h-4" /> },
   { id: 'documentos' as const, label: 'Documentos', icon: <FolderOpen className="w-4 h-4" /> },
-  { id: 'hseq' as const, label: 'HSEQ', icon: <ShieldCheck className="w-4 h-4" /> },
-  { id: 'vacaciones' as const, label: 'Vacaciones', icon: <Calendar className="w-4 h-4" /> },
-  { id: 'permisos' as const, label: 'Permisos', icon: <FileText className="w-4 h-4" /> },
-  { id: 'recibos' as const, label: 'Recibos', icon: <DollarSign className="w-4 h-4" /> },
-  {
-    id: 'capacitaciones' as const,
-    label: 'Capacitaciones',
-    icon: <GraduationCap className="w-4 h-4" />,
-  },
-  { id: 'evaluacion' as const, label: 'Evaluación', icon: <BarChart3 className="w-4 h-4" /> },
-  // Juego SST desactivado — requiere refactor completo
-  // {
-  //   id: 'juego_sst' as const,
-  //   label: 'Héroes SST',
-  //   icon: <Swords className="w-4 h-4" />,
-  // },
 ];
 
 // ============================================================================
@@ -508,17 +473,8 @@ export default function MiPortalPage() {
   const firstName = perfil?.nombre_completo?.split(' ')[0] || user?.first_name || 'Usuario';
   const fullName = perfil?.nombre_completo || user?.full_name || user?.first_name || 'Usuario';
 
-  // Filtrar tabs: excluir L60 (apps apagadas) + por tipo de cargo
-  const visibleTabs = useMemo(() => {
-    return ALL_PORTAL_TABS.filter((tab) => {
-      // Ocultar tabs de apps L60 (no liberadas aún)
-      if (L60_TABS.has(tab.id)) return false;
-      // Filtrar por interno/externo
-      if (isExterno && INTERNAL_ONLY_TABS.has(tab.id)) return false;
-      if (!isExterno && EXTERNAL_ONLY_TABS.has(tab.id)) return false;
-      return true;
-    });
-  }, [isExterno]);
+  // Tabs LIVE — todos visibles para cualquier tipo de usuario con colaborador
+  const visibleTabs = ALL_PORTAL_TABS;
 
   // Si el tab activo fue filtrado, volver a 'perfil'
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
@@ -723,8 +679,6 @@ export default function MiPortalPage() {
             </Suspense>
           )}
           {safeActiveTab === 'documentos' && <MisDocumentos />}
-          {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
-          {/* Juego SST desactivado — requiere refactor completo */}
         </motion.div>
 
         {/* ================================================================

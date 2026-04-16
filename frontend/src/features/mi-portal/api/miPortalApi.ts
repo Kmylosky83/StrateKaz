@@ -1,6 +1,14 @@
 /**
  * React Query Hooks para Mi Portal (ESS)
- * Sistema de Gestion StrateKaz
+ * Sistema de Gestión StrateKaz
+ *
+ * Mi Portal consume de:
+ * - /api/mi-portal/ (perfil ESS — app propia LIVE)
+ * - /api/core/users/ (firma digital, stats admin)
+ * - /api/mi-equipo/ (hoja de vida)
+ *
+ * Cuando se activen módulos L60+ (novedades, nómina, formación, desempeño),
+ * sus hooks se agregan aquí.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,18 +16,9 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
 import { authAPI } from '@/api/auth.api';
 import { useAuthStore } from '@/store/authStore';
-import type {
-  ColaboradorESS,
-  InfoPersonalUpdateData,
-  VacacionesSaldo,
-  SolicitudVacacionesFormData,
-  SolicitudPermisoFormData,
-  ReciboNomina,
-  CapacitacionESS,
-  EvaluacionESS,
-} from '../types';
+import type { ColaboradorESS, InfoPersonalUpdateData } from '../types';
 
-const BASE_URL = '/talent-hub/mi-portal';
+const BASE_URL = '/mi-portal';
 
 // ============================================================================
 // QUERY KEYS
@@ -29,10 +28,6 @@ export const miPortalKeys = {
   all: ['mi-portal'] as const,
   perfil: () => [...miPortalKeys.all, 'perfil'] as const,
   documentos: () => [...miPortalKeys.all, 'documentos'] as const,
-  vacaciones: () => [...miPortalKeys.all, 'vacaciones'] as const,
-  recibos: () => [...miPortalKeys.all, 'recibos'] as const,
-  capacitaciones: () => [...miPortalKeys.all, 'capacitaciones'] as const,
-  evaluacion: () => [...miPortalKeys.all, 'evaluacion'] as const,
   adminStats: () => [...miPortalKeys.all, 'admin-stats'] as const,
 };
 
@@ -85,9 +80,7 @@ export function useUploadMiPhoto() {
   return useMutation({
     mutationFn: (file: File) => authAPI.uploadPhoto(file),
     onSuccess: () => {
-      // Refresh foto_url en el perfil ESS (Colaborador.foto via signal)
       queryClient.invalidateQueries({ queryKey: miPortalKeys.perfil() });
-      // Refresh photo_url en el user del authStore
       refreshUserProfile();
       toast.success('Foto actualizada');
     },
@@ -190,110 +183,6 @@ export function useMisDocumentos(colaboradorId: number | null | undefined) {
     enabled: !!colaboradorId,
     staleTime: 10 * 60 * 1000,
     retry: false,
-  });
-}
-
-// ============================================================================
-// HOOKS - VACACIONES
-// ============================================================================
-
-export function useMisVacaciones(enabled = true) {
-  return useQuery({
-    queryKey: miPortalKeys.vacaciones(),
-    queryFn: async () => {
-      const response = await api.get<VacacionesSaldo>(`${BASE_URL}/mis-vacaciones/`);
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled,
-  });
-}
-
-export function useSolicitarVacaciones() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: SolicitudVacacionesFormData) => {
-      const response = await api.post(`${BASE_URL}/mis-vacaciones/`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: miPortalKeys.vacaciones() });
-      toast.success('Solicitud de vacaciones creada');
-    },
-    onError: (error: unknown) => {
-      toast.error(error.response?.data?.detail || 'Error al solicitar vacaciones');
-    },
-  });
-}
-
-// ============================================================================
-// HOOKS - PERMISOS
-// ============================================================================
-
-export function useSolicitarPermiso() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: SolicitudPermisoFormData) => {
-      const response = await api.post(`${BASE_URL}/solicitar-permiso/`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: miPortalKeys.all });
-      toast.success('Permiso solicitado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(error.response?.data?.detail || 'Error al solicitar permiso');
-    },
-  });
-}
-
-// ============================================================================
-// HOOKS - RECIBOS DE NOMINA
-// ============================================================================
-
-export function useMisRecibos(enabled = true) {
-  return useQuery({
-    queryKey: miPortalKeys.recibos(),
-    queryFn: async () => {
-      const response = await api.get<ReciboNomina[]>(`${BASE_URL}/mis-recibos/`);
-      return response.data;
-    },
-    staleTime: 10 * 60 * 1000,
-    enabled,
-  });
-}
-
-// ============================================================================
-// HOOKS - CAPACITACIONES
-// ============================================================================
-
-export function useMisCapacitaciones(enabled = true) {
-  return useQuery({
-    queryKey: miPortalKeys.capacitaciones(),
-    queryFn: async () => {
-      const response = await api.get<CapacitacionESS[]>(`${BASE_URL}/mis-capacitaciones/`);
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000,
-    enabled,
-  });
-}
-
-// ============================================================================
-// HOOKS - EVALUACION
-// ============================================================================
-
-export function useMiEvaluacion(enabled = true) {
-  return useQuery({
-    queryKey: miPortalKeys.evaluacion(),
-    queryFn: async () => {
-      const response = await api.get<EvaluacionESS[]>(`${BASE_URL}/mi-evaluacion/`);
-      return response.data;
-    },
-    staleTime: 10 * 60 * 1000,
-    enabled,
   });
 }
 

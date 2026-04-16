@@ -1,6 +1,9 @@
 /**
  * Types para Mi Portal (ESS - Employee Self-Service)
- * Sistema de Gestion StrateKaz
+ * Sistema de Gestión StrateKaz
+ *
+ * Solo types LIVE. Cuando se activen módulos L60+,
+ * sus types se agregan aquí.
  */
 
 // ============ PERFIL ============
@@ -44,81 +47,6 @@ export interface InfoPersonalUpdateData {
   contacto_emergencia_parentesco?: string;
 }
 
-// ============ VACACIONES ============
+// ============ PORTAL TABS (solo LIVE) ============
 
-export interface VacacionesSaldo {
-  dias_acumulados: number;
-  dias_disfrutados: number;
-  dias_disponibles: number;
-  fecha_ultimo_periodo: string | null;
-  solicitudes_pendientes: number;
-}
-
-export interface SolicitudVacacionesFormData {
-  fecha_inicio: string;
-  fecha_fin: string;
-  dias_solicitados: number;
-  observaciones?: string;
-}
-
-// ============ PERMISOS ============
-
-export type TipoPermisoESS = 'personal' | 'medico' | 'familiar' | 'academico' | 'legal' | 'otro';
-
-export interface SolicitudPermisoFormData {
-  tipo_permiso: TipoPermisoESS;
-  fecha: string;
-  hora_inicio?: string;
-  hora_fin?: string;
-  motivo: string;
-}
-
-// ============ RECIBOS DE NOMINA ============
-
-export interface ReciboNomina {
-  id: string;
-  periodo: string;
-  fecha_liquidacion: string;
-  salario_base: number;
-  total_devengado: number;
-  total_deducciones: number;
-  neto_pagar: number;
-}
-
-// ============ CAPACITACIONES ============
-
-export interface CapacitacionESS {
-  id: string;
-  nombre: string;
-  fecha_inicio: string | null;
-  fecha_fin: string | null;
-  estado: string;
-  calificacion: number | null;
-  certificado_url: string | null;
-}
-
-// ============ EVALUACIONES ============
-
-export interface EvaluacionESS {
-  id: string;
-  periodo: string;
-  calificacion_general: number | null;
-  estado: string;
-  fecha_evaluacion: string | null;
-}
-
-// ============ PORTAL TABS ============
-
-export type MiPortalTab =
-  | 'perfil'
-  | 'firma'
-  | 'lecturas'
-  | 'encuestas'
-  | 'documentos'
-  | 'hseq'
-  | 'vacaciones'
-  | 'permisos'
-  | 'recibos'
-  | 'capacitaciones'
-  | 'evaluacion'
-  | 'juego_sst';
+export type MiPortalTab = 'perfil' | 'firma' | 'lecturas' | 'encuestas' | 'documentos';

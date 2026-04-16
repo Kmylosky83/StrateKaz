@@ -67,7 +67,7 @@ EXCLUDED_PREFIXES = (
     'api/docs/',
     'api/redoc/',
     # Portales transversales (acceso personal, no dependen de módulo)
-    'api/talent-hub/mi-portal/',
+    'api/mi-portal/',
     'api/mi-equipo/',
     'api/encuestas-dofa/encuestas/mis-encuestas/',
     'api/encuestas-dofa/respuestas/',

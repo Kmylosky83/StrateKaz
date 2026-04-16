@@ -4,12 +4,11 @@
  * Cobertura:
  * - Renderizado con perfil de colaborador
  * - Hero section con saludo y datos
- * - Tabs visibles (perfil, firma, lecturas, documentos)
- * - Tabs L60 ocultos (vacaciones, permisos, recibos, capacitaciones, evaluacion)
+ * - Tabs LIVE visibles (perfil, firma, lecturas, encuestas, documentos)
  * - Vista de admin (super admin sin Colaborador)
  * - Vista de usuario sin Colaborador
  * - Estado de carga
- * - Navegacion entre tabs
+ * - Navegación entre tabs
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
@@ -124,7 +123,6 @@ vi.mock('@/features/mi-portal/components', () => ({
   MiPerfilEditForm: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="edit-form">Edit Form</div> : null,
   MisDocumentos: () => <div data-testid="documentos-tab">Documentos Content</div>,
-  MiHSEQ: () => <div data-testid="hseq-tab">HSEQ Content</div>,
   MiFirmaDigital: () => <div data-testid="firma-tab">Firma Digital Content</div>,
 }));
 
@@ -214,43 +212,10 @@ describe('MiPortalPage', () => {
       expect(screen.getByText('Documentos')).toBeInTheDocument();
     });
 
-    it('debe ocultar tabs L60 (vacaciones, permisos, recibos, capacitaciones, evaluacion)', () => {
+    it('debe mostrar tab Encuestas', () => {
       renderWithProviders(<MiPortalPage />);
 
-      expect(screen.queryByText('Vacaciones')).not.toBeInTheDocument();
-      expect(screen.queryByText('Permisos')).not.toBeInTheDocument();
-      expect(screen.queryByText('Recibos')).not.toBeInTheDocument();
-      expect(screen.queryByText('Capacitaciones')).not.toBeInTheDocument();
-      // "Evaluacion" tab label
-      expect(screen.queryByRole('tab', { name: /evaluacion/i })).not.toBeInTheDocument();
-    });
-
-    it('debe ocultar tab HSEQ para empleados internos', () => {
-      renderWithProviders(<MiPortalPage />);
-
-      expect(screen.queryByText('HSEQ')).not.toBeInTheDocument();
-    });
-  });
-
-  // --------------------------------------------------------------------------
-  // TABS PARA EXTERNOS
-  // --------------------------------------------------------------------------
-
-  describe('Tabs para colaboradores externos', () => {
-    beforeEach(() => {
-      mockIsExterno = true;
-    });
-
-    it('debe mostrar tab HSEQ para colaboradores externos', () => {
-      renderWithProviders(<MiPortalPage />);
-
-      expect(screen.getByText('HSEQ')).toBeInTheDocument();
-    });
-
-    it('debe mostrar badge Colaborador Externo', () => {
-      renderWithProviders(<MiPortalPage />);
-
-      expect(screen.getByText('Colaborador Externo')).toBeInTheDocument();
+      expect(screen.getByText('Encuestas')).toBeInTheDocument();
     });
   });
 

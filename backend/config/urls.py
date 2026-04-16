@@ -219,6 +219,13 @@ if is_app_installed('apps.mi_equipo'):
     urlpatterns.append(path('api/mi-equipo/', include('apps.mi_equipo.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
+# MI PORTAL — Portal del empleado (ESS), LIVE e independiente
+# Consume de mi_equipo.colaboradores (L20), core (L0), gestion_documental (L15)
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.mi_equipo'):
+    urlpatterns.append(path('api/mi-portal/', include('apps.mi_portal.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
 # GAMIFICACIÓN — Módulo independiente (Juego SST)
 # Requiere refactor completo antes de activar.
 # ═══════════════════════════════════════════════════════════════════════════
@@ -227,9 +234,10 @@ if is_app_installed('apps.mi_equipo'):
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)
-# talent_hub/urls.py se auto-detecta: solo monta sub-apps instaladas
+# talent_hub se monta SOLO cuando sus sub-apps L60 estén en INSTALLED_APPS.
+# Mi Portal ya no vive aquí — se movió a apps.mi_portal (LIVE, independiente).
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.mi_equipo') or is_app_installed('apps.talent_hub.novedades'):
+if is_app_installed('apps.talent_hub.novedades'):
     urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))
 
 if is_app_installed('apps.administracion.presupuesto'):

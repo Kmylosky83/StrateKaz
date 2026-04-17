@@ -75,9 +75,9 @@ class ProveedorImportRowSerializer(serializers.Serializer):
 
         from .models import Proveedor, TipoProveedor, TipoDocumentoIdentidad, Departamento
 
-        # Verificar número de documento único
+        # Verificar número de documento único (manager default excluye soft-deleted)
         numero_doc = attrs.get('numero_documento')
-        if Proveedor.objects.filter(numero_documento=numero_doc, deleted_at__isnull=True).exists():
+        if Proveedor.objects.filter(numero_documento=numero_doc).exists():
             raise serializers.ValidationError({
                 'numero_documento': f'Ya existe un proveedor con el documento "{numero_doc}".'
             })

@@ -5,10 +5,12 @@ Sistema de Gestión StrateKaz
 100% DINÁMICO: Todos los catálogos se gestionan desde la base de datos.
 """
 from django.db import models
-from django.db.models import Q
+from django.db.models import F, Q
 from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+
+from utils.models import TenantModel, TimeStampedModel
 
 # Datos Maestros Compartidos — importados de Core (C0)
 from apps.core.models import TipoDocumentoIdentidad, Departamento, Ciudad
@@ -309,10 +311,34 @@ class TipoCuentaBancaria(models.Model):
 # Endpoint: /api/fundacion/configuracion/unidades-negocio/
 
 
-class Proveedor(models.Model):
+class Proveedor(TenantModel):
     """
-    Proveedor - Modelo principal 100% dinámico.
+    Proveedor — Modelo principal 100% dinámico.
+
+    Dos dimensiones de clasificación:
+      - tipo_entidad (TextChoices): rol semántico en el sistema
+      - tipo_proveedor (FK dinámica): clasificación operativa del tenant
     """
+
+    class TipoEntidad(models.TextChoices):
+        MATERIA_PRIMA = 'materia_prima', 'Proveedor de Materia Prima'
+        SERVICIO = 'servicio', 'Proveedor de Servicios'
+        UNIDAD_INTERNA = 'unidad_interna', 'Unidad Interna'
+
+    tipo_entidad = models.CharField(
+        max_length=20,
+        choices=TipoEntidad.choices,
+        default=TipoEntidad.MATERIA_PRIMA,
+        verbose_name='Tipo de entidad',
+        help_text=(
+            'Rol semántico en el sistema. '
+            'Materia prima: proveedor de insumos. '
+            'Servicio: proveedor de productos/servicios. '
+            'Unidad interna: puede ser proveedor Y cliente.'
+        ),
+        db_index=True,
+    )
+
     # Código interno autogenerado
     codigo_interno = models.CharField(
         max_length=50,
@@ -451,17 +477,9 @@ class Proveedor(models.Model):
 
     # Metadatos
     observaciones = models.TextField(null=True, blank=True)
+    # is_active: semántica de negocio (proveedor comercialmente activo),
+    # independiente del soft-delete de TenantModel.
     is_active = models.BooleanField(default=True, db_index=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name='sc_proveedores_creados',
-        null=True,
-        blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'supply_chain_proveedor'
@@ -472,17 +490,17 @@ class Proveedor(models.Model):
             models.Index(fields=['tipo_proveedor', 'is_active']),
             models.Index(fields=['numero_documento']),
             models.Index(fields=['nombre_comercial']),
-            models.Index(fields=['deleted_at']),
+            models.Index(fields=['tipo_entidad']),
         ]
         constraints = [
             models.UniqueConstraint(
                 fields=['numero_documento'],
-                condition=Q(deleted_at__isnull=True),
+                condition=Q(is_deleted=False),
                 name='unique_numero_documento_activo',
             ),
             models.UniqueConstraint(
                 fields=['codigo_interno'],
-                condition=Q(deleted_at__isnull=True),
+                condition=Q(is_deleted=False),
                 name='unique_codigo_interno_activo',
             ),
         ]
@@ -521,10 +539,10 @@ class Proveedor(models.Model):
         try:
             return ConsecutivoConfig.obtener_siguiente_consecutivo(consecutivo_code)
         except ConsecutivoConfig.DoesNotExist:
-            # Fallback manual con prefijo del tipo (excluir soft-deleted)
+            # Fallback manual con prefijo del tipo. El manager de TenantModel
+            # ya excluye is_deleted=True por defecto.
             ultimo = Proveedor.objects.filter(
                 codigo_interno__startswith=f'{prefijo_fallback}-',
-                deleted_at__isnull=True,
             ).order_by('-codigo_interno').first()
 
             if ultimo and ultimo.codigo_interno:
@@ -538,40 +556,32 @@ class Proveedor(models.Model):
             return f'{prefijo_fallback}-{numero:05d}'
 
     @property
-    def is_deleted(self):
-        return self.deleted_at is not None
-
-    @property
     def es_proveedor_materia_prima(self):
         return self.tipo_proveedor.requiere_materia_prima
 
-    def soft_delete(self):
-        """Soft delete: marca como eliminado y libera campos únicos."""
-        self.deleted_at = timezone.now()
-        self.is_active = False
-        # Manglar campos únicos para liberar valores y permitir recreación
-        if not self.numero_documento.startswith('DEL-'):
-            self.numero_documento = f'DEL-{self.id}-{self.numero_documento}'
-        if not self.codigo_interno.startswith('DEL-'):
-            self.codigo_interno = f'DEL-{self.id}-{self.codigo_interno}'
-        self.save(update_fields=[
-            'deleted_at', 'is_active', 'numero_documento', 'codigo_interno', 'updated_at',
-        ])
-        # Desactivar todos los usuarios vinculados a este proveedor
-        self.usuarios_vinculados.filter(is_active=True).update(is_active=False)
+    def delete(self, using=None, keep_parents=False, user=None):
+        """
+        Override de TenantModel.delete() para preservar efectos laterales
+        de negocio del soft-delete original:
+          1. Marca el proveedor como comercialmente inactivo (is_active=False)
+          2. Desactiva todos los usuarios vinculados (seguridad: usuarios de
+             proveedor borrado no pueden seguir autenticándose).
+             User.proveedor_id_ext es IntegerField (no FK — ver SOURCE_OF_TRUTH.md),
+             por eso filtramos manualmente en vez de usar reverse relation.
 
-    def restore(self):
-        self.deleted_at = None
-        self.is_active = True
-        # Restaurar campos únicos originales (quitar prefijo DEL-{id}-)
-        prefix = f'DEL-{self.id}-'
-        if self.numero_documento.startswith(prefix):
-            self.numero_documento = self.numero_documento[len(prefix):]
-        if self.codigo_interno.startswith(prefix):
-            self.codigo_interno = self.codigo_interno[len(prefix):]
-        self.save(update_fields=[
-            'deleted_at', 'is_active', 'numero_documento', 'codigo_interno', 'updated_at',
-        ])
+        El mangling de prefijo 'DEL-' del código legacy se eliminó:
+        UniqueConstraint condicional con Q(is_deleted=False) cumple la misma
+        función sin tocar los datos.
+        """
+        from django.contrib.auth import get_user_model
+
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+        User = get_user_model()
+        User.objects.filter(
+            proveedor_id_ext=self.pk, is_active=True,
+        ).update(is_active=False)
+        super().delete(using=using, keep_parents=keep_parents, user=user)
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo_interno:
@@ -589,9 +599,13 @@ class Proveedor(models.Model):
                 })
 
 
-class PrecioMateriaPrima(models.Model):
+class PrecioMateriaPrima(TenantModel):
     """
-    Precio por Tipo de Materia Prima (dinámico).
+    Precio vigente por Proveedor × (Materia Prima legacy / Producto catálogo).
+
+    Coexistencia (D3): el registro puede apuntar a TipoMateriaPrima (legado)
+    y/o a Producto del catálogo maestro. Al menos uno debe estar presente.
+    Los cambios históricos se registran en HistorialPrecioProveedor.
     """
     proveedor = models.ForeignKey(
         Proveedor,
@@ -603,46 +617,74 @@ class PrecioMateriaPrima(models.Model):
         TipoMateriaPrima,
         on_delete=models.PROTECT,
         related_name='precios',
-        verbose_name='Tipo de materia prima'
+        null=True,
+        blank=True,
+        verbose_name='Tipo de materia prima (legado)',
+        help_text='FK legada. Coexiste con producto del catálogo maestro.',
+    )
+    producto = models.ForeignKey(
+        'catalogo_productos.Producto',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='precios_proveedor',
+        verbose_name='Producto del catálogo',
+        help_text='Referencia al catálogo maestro. Coexiste con tipo_materia.',
     )
     precio_kg = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         verbose_name='Precio por kg'
     )
-    modificado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='sc_precios_materia_modificados',
-        verbose_name='Modificado por'
-    )
-    modificado_fecha = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'supply_chain_precio_materia_prima'
         verbose_name = 'Precio de Materia Prima'
         verbose_name_plural = 'Precios de Materias Primas'
-        ordering = ['proveedor', 'tipo_materia']
-        unique_together = [['proveedor', 'tipo_materia']]
+        ordering = ['proveedor']
         indexes = [
             models.Index(fields=['proveedor', 'tipo_materia']),
+            models.Index(fields=['proveedor', 'producto']),
             models.Index(fields=['tipo_materia']),
+            models.Index(fields=['producto']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['proveedor', 'tipo_materia'],
+                condition=Q(tipo_materia__isnull=False, is_deleted=False),
+                name='uq_precio_proveedor_tipo_materia_active',
+            ),
+            models.UniqueConstraint(
+                fields=['proveedor', 'producto'],
+                condition=Q(producto__isnull=False, is_deleted=False),
+                name='uq_precio_proveedor_producto_active',
+            ),
         ]
 
     def __str__(self):
-        return f"{self.proveedor.nombre_comercial} - {self.tipo_materia.nombre}: ${self.precio_kg}/kg"
+        item = self.producto.nombre if self.producto else (
+            self.tipo_materia.nombre if self.tipo_materia else 'sin ítem'
+        )
+        return f"{self.proveedor.nombre_comercial} - {item}: ${self.precio_kg}/kg"
 
     def clean(self):
         super().clean()
         if self.precio_kg is not None and self.precio_kg < 0:
             raise ValidationError({'precio_kg': 'El precio no puede ser negativo'})
+        if self.tipo_materia is None and self.producto is None:
+            raise ValidationError(
+                'Debe especificar al menos uno: tipo_materia (legado) o producto (catálogo).'
+            )
 
 
-class HistorialPrecioProveedor(models.Model):
+class HistorialPrecioProveedor(TimeStampedModel):
     """
-    Historial de Precios de Proveedores (auditoría).
+    Historial inmutable de cambios de precio de proveedores (audit log).
+
+    Append-only: una vez creado, el registro no se modifica ni elimina.
+    Hereda sólo de TimeStampedModel (created_at, updated_at) — sin
+    SoftDelete ni AuditModel: en un audit log, "quién" es dato de negocio
+    (modificado_por), no metadato técnico.
     """
     proveedor = models.ForeignKey(
         Proveedor,
@@ -656,7 +698,15 @@ class HistorialPrecioProveedor(models.Model):
         null=True,
         blank=True,
         related_name='historial_precios',
-        verbose_name='Tipo de materia prima'
+        verbose_name='Tipo de materia prima (legado)'
+    )
+    producto = models.ForeignKey(
+        'catalogo_productos.Producto',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='historial_precios_proveedor',
+        verbose_name='Producto del catálogo',
     )
     precio_anterior = models.DecimalField(
         max_digits=10,
@@ -670,29 +720,50 @@ class HistorialPrecioProveedor(models.Model):
         decimal_places=2,
         verbose_name='Precio nuevo'
     )
+    # Campo de negocio del audit log. on_delete=SET_NULL alineado con
+    # política TenantModel (Habeas Data Ley 1581). Ver docs/history/2026-04-12.
     modificado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='sc_historiales_precio_proveedor',
         verbose_name='Modificado por'
     )
     motivo = models.TextField(verbose_name='Motivo del cambio')
-    fecha_modificacion = models.DateTimeField(auto_now_add=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'supply_chain_historial_precio'
         verbose_name = 'Historial de Precio'
         verbose_name_plural = 'Historiales de Precios'
-        ordering = ['-fecha_modificacion']
+        ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['proveedor', '-fecha_modificacion']),
+            models.Index(fields=['proveedor', '-created_at']),
             models.Index(fields=['modificado_por']),
+            models.Index(fields=['producto']),
         ]
 
     def __str__(self):
-        tipo_nombre = self.tipo_materia.nombre if self.tipo_materia else 'N/A'
-        return f"{self.proveedor.nombre_comercial} - {tipo_nombre}: {self.precio_anterior} -> {self.precio_nuevo}"
+        item = self.producto.nombre if self.producto else (
+            self.tipo_materia.nombre if self.tipo_materia else 'N/A'
+        )
+        return f"{self.proveedor.nombre_comercial} - {item}: {self.precio_anterior} -> {self.precio_nuevo}"
+
+    def save(self, *args, **kwargs):
+        """Enforce append-only: una vez creado, no se puede modificar."""
+        if self.pk is not None:
+            raise PermissionError(
+                'HistorialPrecioProveedor es append-only: no se permite '
+                'modificar registros existentes.'
+            )
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Enforce append-only: no se permite eliminar."""
+        raise PermissionError(
+            'HistorialPrecioProveedor es append-only: no se permite '
+            'eliminar registros.'
+        )
 
     @property
     def variacion_precio(self):
@@ -713,9 +784,12 @@ class HistorialPrecioProveedor(models.Model):
             return 'SIN_CAMBIO'
 
 
-class CondicionComercialProveedor(models.Model):
+class CondicionComercialProveedor(TenantModel):
     """
-    Condiciones Comerciales de Proveedores.
+    Condiciones comerciales bitemporales por proveedor.
+
+    Modelo bitemporal correcto: (vigencia_desde, vigencia_hasta). Permite
+    historial completo de condiciones pactadas sin bloquear nuevas.
     """
     proveedor = models.ForeignKey(
         Proveedor,
@@ -730,15 +804,6 @@ class CondicionComercialProveedor(models.Model):
     garantias = models.TextField(null=True, blank=True)
     vigencia_desde = models.DateField(verbose_name='Vigencia desde')
     vigencia_hasta = models.DateField(null=True, blank=True, verbose_name='Vigencia hasta')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        related_name='sc_condiciones_comerciales_creadas',
-        null=True,
-        blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'supply_chain_condicion_comercial'
@@ -748,6 +813,15 @@ class CondicionComercialProveedor(models.Model):
         indexes = [
             models.Index(fields=['proveedor', '-vigencia_desde']),
             models.Index(fields=['vigencia_desde', 'vigencia_hasta']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    Q(vigencia_hasta__isnull=True) |
+                    Q(vigencia_hasta__gte=F('vigencia_desde'))
+                ),
+                name='ck_condicion_vigencia_rango_valido',
+            ),
         ]
 
     def __str__(self):

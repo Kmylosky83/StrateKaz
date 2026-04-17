@@ -127,22 +127,26 @@ class TipoCuentaBancariaSerializer(serializers.ModelSerializer):
 # ==============================================================================
 
 class PrecioMateriaPrimaSerializer(serializers.ModelSerializer):
-    """Serializer para precios de materia prima."""
+    """Serializer para precios de materia prima (coexistencia tipo_materia + producto)."""
 
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True)
-    tipo_materia_codigo = serializers.CharField(source='tipo_materia.codigo', read_only=True)
-    categoria_nombre = serializers.CharField(source='tipo_materia.categoria.nombre', read_only=True)
-    modificado_por_nombre = serializers.CharField(source='modificado_por.get_full_name', read_only=True)
+    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True, allow_null=True)
+    tipo_materia_codigo = serializers.CharField(source='tipo_materia.codigo', read_only=True, allow_null=True)
+    categoria_nombre = serializers.CharField(source='tipo_materia.categoria.nombre', read_only=True, allow_null=True)
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True, allow_null=True)
+    producto_codigo = serializers.CharField(source='producto.codigo', read_only=True, allow_null=True)
+    updated_by_nombre = serializers.CharField(source='updated_by.get_full_name', read_only=True, allow_null=True)
 
     class Meta:
         model = PrecioMateriaPrima
         fields = [
-            'id', 'proveedor', 'tipo_materia', 'tipo_materia_nombre',
-            'tipo_materia_codigo', 'categoria_nombre', 'precio_kg',
-            'modificado_por', 'modificado_por_nombre', 'modificado_fecha',
-            'created_at', 'updated_at'
+            'id', 'proveedor',
+            'tipo_materia', 'tipo_materia_nombre', 'tipo_materia_codigo', 'categoria_nombre',
+            'producto', 'producto_nombre', 'producto_codigo',
+            'precio_kg',
+            'updated_by', 'updated_by_nombre', 'updated_at',
+            'created_at',
         ]
-        read_only_fields = ['id', 'modificado_fecha', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'updated_by', 'updated_at', 'created_at']
 
 
 # ==============================================================================
@@ -413,7 +417,8 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
                     proveedor=proveedor,
                     tipo_materia=tipo_materia,
                     precio_kg=Decimal(str(precio_info['precio_kg'])),
-                    modificado_por=usuario
+                    created_by=usuario,
+                    updated_by=usuario,
                 )
 
                 # Crear registro en historial (audit trail)
@@ -568,7 +573,8 @@ class CambiarPrecioSerializer(serializers.Serializer):
             tipo_materia=tipo_materia,
             defaults={
                 'precio_kg': precio_nuevo,
-                'modificado_por': usuario
+                'created_by': usuario,
+                'updated_by': usuario,
             }
         )
 
@@ -576,7 +582,7 @@ class CambiarPrecioSerializer(serializers.Serializer):
 
         if not created:
             precio_obj.precio_kg = precio_nuevo
-            precio_obj.modificado_por = usuario
+            precio_obj.updated_by = usuario
             precio_obj.save()
 
         HistorialPrecioProveedor.objects.create(
@@ -637,23 +643,26 @@ class CrearAccesoProveedorSerializer(serializers.Serializer):
 # ==============================================================================
 
 class HistorialPrecioSerializer(serializers.ModelSerializer):
-    """Serializer para historial de precios."""
+    """Serializer para historial de precios (append-only)."""
 
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True)
-    modificado_por_nombre = serializers.CharField(source='modificado_por.get_full_name', read_only=True)
+    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True, allow_null=True)
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True, allow_null=True)
+    modificado_por_nombre = serializers.CharField(source='modificado_por.get_full_name', read_only=True, allow_null=True)
     variacion_precio = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     tipo_cambio = serializers.CharField(read_only=True)
 
     class Meta:
         model = HistorialPrecioProveedor
         fields = [
-            'id', 'proveedor', 'proveedor_nombre', 'tipo_materia', 'tipo_materia_nombre',
+            'id', 'proveedor', 'proveedor_nombre',
+            'tipo_materia', 'tipo_materia_nombre',
+            'producto', 'producto_nombre',
             'precio_anterior', 'precio_nuevo', 'variacion_precio', 'tipo_cambio',
             'modificado_por', 'modificado_por_nombre', 'motivo',
-            'fecha_modificacion', 'created_at'
+            'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'fecha_modificacion']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 # ==============================================================================

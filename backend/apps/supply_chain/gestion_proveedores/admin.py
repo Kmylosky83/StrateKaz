@@ -110,31 +110,40 @@ class PrecioMateriaPrimaInline(admin.TabularInline):
     """Inline para precios de materia prima en Proveedor."""
     model = PrecioMateriaPrima
     extra = 0
-    readonly_fields = ['modificado_por', 'modificado_fecha', 'created_at']
-    raw_id_fields = ['tipo_materia']
+    readonly_fields = ['updated_by', 'updated_at', 'created_at']
+    raw_id_fields = ['tipo_materia', 'producto']
 
 
 @admin.register(Proveedor)
 class ProveedorAdmin(admin.ModelAdmin):
     """Admin para Proveedores."""
     list_display = [
-        'codigo_interno', 'nombre_comercial', 'tipo_proveedor',
+        'codigo_interno', 'nombre_comercial', 'tipo_entidad', 'tipo_proveedor',
         'numero_documento', 'ciudad', 'is_active', 'is_deleted_display'
     ]
-    list_filter = ['tipo_proveedor', 'modalidad_logistica', 'departamento', 'is_active']
+    list_filter = [
+        'tipo_entidad', 'tipo_proveedor', 'modalidad_logistica',
+        'departamento', 'is_active', 'is_deleted',
+    ]
     search_fields = ['codigo_interno', 'nombre_comercial', 'razon_social', 'numero_documento', 'nit']
     ordering = ['nombre_comercial']
     raw_id_fields = [
         'tipo_proveedor', 'tipo_documento', 'modalidad_logistica',
-        'departamento', 'tipo_cuenta', 'created_by'
+        'departamento', 'tipo_cuenta', 'created_by', 'updated_by', 'deleted_by',
     ]
     filter_horizontal = ['tipos_materia_prima', 'formas_pago']
-    readonly_fields = ['codigo_interno', 'created_at', 'updated_at', 'deleted_at', 'created_by']
+    readonly_fields = [
+        'codigo_interno', 'created_at', 'updated_at', 'deleted_at',
+        'created_by', 'updated_by', 'deleted_by',
+    ]
     inlines = [PrecioMateriaPrimaInline]
 
     fieldsets = (
         ('Identificación', {
-            'fields': ('codigo_interno', 'tipo_proveedor', 'tipos_materia_prima', 'modalidad_logistica')
+            'fields': (
+                'codigo_interno', 'tipo_entidad', 'tipo_proveedor',
+                'tipos_materia_prima', 'modalidad_logistica',
+            )
         }),
         ('Datos Básicos', {
             'fields': ('nombre_comercial', 'razon_social', 'tipo_documento', 'numero_documento', 'nit')
@@ -152,10 +161,10 @@ class ProveedorAdmin(admin.ModelAdmin):
             'fields': ('observaciones',)
         }),
         ('Estado', {
-            'fields': ('is_active', 'deleted_at')
+            'fields': ('is_active', 'is_deleted', 'deleted_at', 'deleted_by')
         }),
         ('Auditoría', {
-            'fields': ('created_by', 'created_at', 'updated_at'),
+            'fields': ('created_by', 'created_at', 'updated_by', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
@@ -171,28 +180,30 @@ class ProveedorAdmin(admin.ModelAdmin):
 class PrecioMateriaPrimaAdmin(admin.ModelAdmin):
     """Admin para Precios de Materia Prima."""
     list_display = [
-        'proveedor', 'tipo_materia', 'precio_kg',
-        'modificado_por', 'modificado_fecha'
+        'proveedor', 'tipo_materia', 'producto', 'precio_kg',
+        'updated_by', 'updated_at',
     ]
     list_filter = ['tipo_materia__categoria', 'tipo_materia']
-    search_fields = ['proveedor__nombre_comercial', 'tipo_materia__nombre']
-    raw_id_fields = ['proveedor', 'tipo_materia', 'modificado_por']
-    readonly_fields = ['modificado_fecha', 'created_at', 'updated_at']
+    search_fields = [
+        'proveedor__nombre_comercial', 'tipo_materia__nombre', 'producto__nombre',
+    ]
+    raw_id_fields = ['proveedor', 'tipo_materia', 'producto', 'updated_by', 'created_by']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
 
 
 @admin.register(HistorialPrecioProveedor)
 class HistorialPrecioProveedorAdmin(admin.ModelAdmin):
-    """Admin para Historial de Precios (solo lectura)."""
+    """Admin para Historial de Precios (append-only, solo lectura)."""
     list_display = [
-        'proveedor', 'tipo_materia', 'precio_anterior', 'precio_nuevo',
-        'variacion_display', 'modificado_por', 'fecha_modificacion'
+        'proveedor', 'tipo_materia', 'producto', 'precio_anterior', 'precio_nuevo',
+        'variacion_display', 'modificado_por', 'created_at',
     ]
     list_filter = ['tipo_materia__categoria', 'tipo_materia', 'modificado_por']
     search_fields = ['proveedor__nombre_comercial', 'motivo']
-    ordering = ['-fecha_modificacion']
+    ordering = ['-created_at']
     readonly_fields = [
-        'proveedor', 'tipo_materia', 'precio_anterior', 'precio_nuevo',
-        'modificado_por', 'motivo', 'fecha_modificacion', 'created_at'
+        'proveedor', 'tipo_materia', 'producto', 'precio_anterior', 'precio_nuevo',
+        'modificado_por', 'motivo', 'created_at', 'updated_at',
     ]
 
     def variacion_display(self, obj):
@@ -220,13 +231,16 @@ class CondicionComercialProveedorAdmin(admin.ModelAdmin):
     """Admin para Condiciones Comerciales."""
     list_display = [
         'proveedor', 'descripcion', 'vigencia_desde',
-        'vigencia_hasta', 'esta_vigente_display', 'created_by'
+        'vigencia_hasta', 'esta_vigente_display', 'created_by',
     ]
-    list_filter = ['proveedor__tipo_proveedor']
+    list_filter = ['proveedor__tipo_proveedor', 'is_deleted']
     search_fields = ['proveedor__nombre_comercial', 'descripcion']
     ordering = ['-vigencia_desde']
-    raw_id_fields = ['proveedor', 'created_by']
-    readonly_fields = ['created_by', 'created_at', 'updated_at']
+    raw_id_fields = ['proveedor', 'created_by', 'updated_by', 'deleted_by']
+    readonly_fields = [
+        'created_by', 'updated_by', 'deleted_by',
+        'created_at', 'updated_at', 'deleted_at',
+    ]
 
     def esta_vigente_display(self, obj):
         if obj.esta_vigente:

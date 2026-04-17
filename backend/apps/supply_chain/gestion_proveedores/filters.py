@@ -239,13 +239,13 @@ class HistorialPrecioFilter(django_filters.FilterSet):
     )
 
     fecha_desde = django_filters.DateTimeFilter(
-        field_name='fecha_modificacion',
+        field_name='created_at',
         lookup_expr='gte',
         label='Fecha desde'
     )
 
     fecha_hasta = django_filters.DateTimeFilter(
-        field_name='fecha_modificacion',
+        field_name='created_at',
         lookup_expr='lte',
         label='Fecha hasta'
     )

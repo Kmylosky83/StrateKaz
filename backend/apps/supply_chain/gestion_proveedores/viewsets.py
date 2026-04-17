@@ -297,8 +297,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
     def get_resumen_data(self, queryset, fecha_desde, fecha_hasta):
         """Resumen de proveedores para Revisión por la Dirección."""
-        # Total de proveedores activos
-        todos = Proveedor.objects.filter(is_active=True, deleted_at__isnull=True)
+        # Total de proveedores activos (manager default excluye soft-deleted)
+        todos = Proveedor.objects.filter(is_active=True)
         total_activos = todos.count()
 
         # Nuevos en período
@@ -333,12 +333,17 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         }
 
     def get_queryset(self):
-        """Excluir proveedores eliminados por defecto."""
-        queryset = super().get_queryset()
+        """Excluir proveedores eliminados por defecto.
 
-        include_deleted = self.request.query_params.get('include_deleted', 'false')
-        if include_deleted.lower() != 'true':
-            queryset = queryset.filter(deleted_at__isnull=True)
+        HALLAZGO: `include_deleted=true` no incluye deleted porque
+        super().get_queryset() usa el manager default que ya excluye.
+        Para incluir deleted correctamente usar `Proveedor.all_objects`.
+        Deuda fuera de alcance de Sesión 2.
+        """
+        if self.request.query_params.get('include_deleted', 'false').lower() == 'true':
+            queryset = Proveedor.all_objects.all()
+        else:
+            queryset = super().get_queryset()
 
         return queryset.select_related(
             'tipo_proveedor',
@@ -421,11 +426,13 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         return Response({
             'detail': 'Precio actualizado exitosamente',
-            'tipo_materia': precio_obj.tipo_materia.nombre,
-            'tipo_materia_id': precio_obj.tipo_materia.id,
+            'tipo_materia': precio_obj.tipo_materia.nombre if precio_obj.tipo_materia else None,
+            'tipo_materia_id': precio_obj.tipo_materia.id if precio_obj.tipo_materia else None,
+            'producto': precio_obj.producto.nombre if precio_obj.producto else None,
+            'producto_id': precio_obj.producto.id if precio_obj.producto else None,
             'precio_nuevo': str(precio_obj.precio_kg),
             'modificado_por': request.user.get_full_name(),
-            'fecha_modificacion': precio_obj.modificado_fecha
+            'fecha_modificacion': precio_obj.updated_at,
         })
 
     @action(
@@ -446,12 +453,12 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         # Obtener precios actuales por tipo de materia
         precios_actuales = PrecioMateriaPrima.objects.filter(
             proveedor=proveedor
-        ).select_related('tipo_materia', 'tipo_materia__categoria', 'modificado_por')
+        ).select_related('tipo_materia', 'tipo_materia__categoria', 'producto', 'updated_by')
 
         # Obtener historial
         historial = HistorialPrecioProveedor.objects.filter(
             proveedor=proveedor
-        ).select_related('tipo_materia', 'modificado_por').order_by('-fecha_modificacion')
+        ).select_related('tipo_materia', 'producto', 'modificado_por').order_by('-created_at')
 
         return Response({
             'proveedor': proveedor.nombre_comercial,
@@ -481,10 +488,10 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         if doc_original.startswith(prefix):
             doc_original = doc_original[len(prefix):]
 
-        # Verificar que el número de documento no esté en uso por otro proveedor activo
+        # Verificar que el número de documento no esté en uso por otro proveedor activo.
+        # Manager default excluye is_deleted=True automáticamente.
         if Proveedor.objects.filter(
             numero_documento=doc_original,
-            deleted_at__isnull=True,
         ).exclude(pk=proveedor.pk).exists():
             return Response(
                 {'detail': f'Ya existe un proveedor activo con el documento {doc_original}. '
@@ -788,7 +795,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         GET /api/supply-chain/proveedores/estadisticas/
         """
-        base_qs = Proveedor.objects.filter(deleted_at__isnull=True)
+        # Manager default excluye is_deleted=True
+        base_qs = Proveedor.objects.all()
 
         total = base_qs.count()
         activos = base_qs.filter(is_active=True).count()
@@ -1093,7 +1101,7 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         try:
             proveedores_existentes = list(
-                Proveedor.objects.filter(deleted_at__isnull=True)
+                Proveedor.objects.all()  # manager excluye is_deleted=True
                 .values('nombre_comercial', 'codigo_interno')
                 .order_by('nombre_comercial')
             )
@@ -1288,13 +1296,13 @@ class HistorialPrecioViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = HistorialPrecioSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['proveedor', 'tipo_materia', 'modificado_por']
-    ordering_fields = ['fecha_modificacion']
-    ordering = ['-fecha_modificacion']
+    filterset_fields = ['proveedor', 'tipo_materia', 'producto', 'modificado_por']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.select_related('proveedor', 'tipo_materia', 'modificado_por')
+        return queryset.select_related('proveedor', 'tipo_materia', 'producto', 'modificado_por')
 
 
 class CondicionComercialViewSet(viewsets.ModelViewSet):

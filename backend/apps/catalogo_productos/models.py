@@ -223,3 +223,8 @@ class Producto(TenantModel):
 
     def __str__(self):
         return f'[{self.codigo}] {self.nombre}'
+
+
+# Registrar extensiones para que Django las descubra en el app registry.
+# Patrón: docs/01-arquitectura/modular-tenancy.md sección 3.
+from apps.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad  # noqa: E402, F401

@@ -1,7 +1,8 @@
 """Fixtures para tests de catalogo_productos."""
 import pytest
 
-from apps.catalogo_productos.models import CategoriaProducto, UnidadMedida, Producto
+from apps.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad
+from apps.catalogo_productos.models import CategoriaProducto, Producto, UnidadMedida
 
 
 @pytest.fixture
@@ -60,4 +61,28 @@ def producto(db, categoria, unidad_medida):
         unidad_medida=unidad_medida,
         tipo='MATERIA_PRIMA',
         precio_referencia=2500.00,
+    )
+
+
+@pytest.fixture
+def producto_sin_calidad(db, categoria, unidad_medida):
+    """Producto que NO tiene extensión de calidad (caso común)."""
+    return Producto.objects.create(
+        codigo='SVC-001',
+        nombre='Consultoría SST',
+        categoria=categoria,
+        unidad_medida=unidad_medida,
+        tipo='SERVICIO',
+        precio_referencia=150000.00,
+    )
+
+
+@pytest.fixture
+def espec_calidad(db, producto):
+    """Especificación de calidad asociada a un producto."""
+    return ProductoEspecCalidad.objects.create(
+        producto=producto,
+        acidez_min=0.50,
+        acidez_max=2.00,
+        requiere_prueba_acidez=True,
     )

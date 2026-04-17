@@ -1,7 +1,8 @@
 """Admin básico para Catálogo de Productos."""
 from django.contrib import admin
 
-from .models import CategoriaProducto, UnidadMedida, Producto
+from .extensiones.espec_calidad import ProductoEspecCalidad
+from .models import CategoriaProducto, Producto, UnidadMedida
 
 
 @admin.register(CategoriaProducto)
@@ -27,3 +28,11 @@ class ProductoAdmin(admin.ModelAdmin):
     search_fields = ['codigo', 'nombre', 'sku']
     ordering = ['codigo']
     raw_id_fields = ['categoria', 'unidad_medida']
+
+
+@admin.register(ProductoEspecCalidad)
+class ProductoEspecCalidadAdmin(admin.ModelAdmin):
+    list_display = ['producto', 'acidez_min', 'acidez_max', 'requiere_prueba_acidez', 'is_deleted']
+    list_filter = ['requiere_prueba_acidez', 'is_deleted']
+    search_fields = ['producto__codigo', 'producto__nombre']
+    raw_id_fields = ['producto']

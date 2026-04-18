@@ -20,7 +20,6 @@ from .views import (
     CotizacionViewSet,
     OrdenCompraViewSet,
     ContratoViewSet,
-    RecepcionCompraViewSet,
 )
 
 app_name = 'compras'
@@ -105,13 +104,6 @@ router.register(
     r'contratos',
     ContratoViewSet,
     basename='contrato'
-)
-
-# Recepciones de Compra
-router.register(
-    r'recepciones',
-    RecepcionCompraViewSet,
-    basename='recepcion'
 )
 
 urlpatterns = [

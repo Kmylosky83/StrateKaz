@@ -8,10 +8,12 @@ Tests completos para validaciones, métodos y propiedades de:
 - Cotizacion y EvaluacionCotizacion
 - OrdenCompra y DetalleOrdenCompra
 - Contrato
-- RecepcionCompra
 
 Autor: Sistema ERP StrateKaz
 Fecha: 27 Diciembre 2025
+
+Nota: Tests de RecepcionCompra eliminados en S3 (modelo removido).
+Ver apps.supply_chain.recepcion.tests para tests de VoucherRecepcion.
 """
 import pytest
 from decimal import Decimal
@@ -35,7 +37,6 @@ from apps.supply_chain.compras.models import (
     OrdenCompra,
     DetalleOrdenCompra,
     Contrato,
-    RecepcionCompra,
 )
 
 
@@ -466,61 +467,5 @@ class TestContrato:
         assert contrato.puede_generar_ordenes is True
 
 
-# ==============================================================================
-# TESTS DE RECEPCION
-# ==============================================================================
-
-@pytest.mark.django_db
-class TestRecepcionCompra:
-    """Tests para modelo RecepcionCompra."""
-
-    def test_crear_recepcion(self, recepcion_compra):
-        """Test creación de recepción."""
-        assert recepcion_compra.pk is not None
-        assert recepcion_compra.numero_remision == 'REM-001'
-
-    def test_str_representation(self, recepcion_compra):
-        """Test representación en string."""
-        str_repr = str(recepcion_compra)
-        assert recepcion_compra.numero_remision in str_repr
-
-    def test_property_material_conforme(self, recepcion_compra):
-        """Test propiedad material_conforme."""
-        assert recepcion_compra.material_conforme is True
-
-    def test_property_requiere_accion(self, recepcion_compra):
-        """Test propiedad requiere_accion."""
-        assert recepcion_compra.requiere_accion is False
-
-    def test_validacion_cantidad_cero(self, orden_compra, estado_material_conforme, usuario):
-        """Test validación de cantidad cero."""
-        recepcion = RecepcionCompra(
-            orden_compra=orden_compra,
-            numero_remision='REM-TEST',
-            fecha_recepcion=timezone.now(),
-            recibido_por=usuario,
-            cantidad_recibida=Decimal('0.000'),
-            estado_material=estado_material_conforme
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            recepcion.full_clean()
-
-        assert 'cantidad_recibida' in exc_info.value.error_dict
-
-    def test_validacion_orden_no_permite_recepcion(self, orden_compra, estado_material_conforme, usuario):
-        """Test validación de orden que no permite recepción."""
-        # Estado BORRADOR no permite recepción
-        recepcion = RecepcionCompra(
-            orden_compra=orden_compra,
-            numero_remision='REM-TEST',
-            fecha_recepcion=timezone.now(),
-            recibido_por=usuario,
-            cantidad_recibida=Decimal('10.000'),
-            estado_material=estado_material_conforme
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            recepcion.full_clean()
-
-        assert 'orden_compra' in exc_info.value.error_dict
+# Nota: Tests de RecepcionCompra eliminados en S3.
+# Los tests de la nueva recepción viven en apps.supply_chain.recepcion.tests.

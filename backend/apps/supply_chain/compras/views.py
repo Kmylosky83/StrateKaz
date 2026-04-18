@@ -16,7 +16,7 @@ from .models import (
     TipoContrato, PrioridadRequisicion, Moneda, EstadoContrato,
     EstadoMaterial, Requisicion, DetalleRequisicion, Cotizacion,
     EvaluacionCotizacion, OrdenCompra, DetalleOrdenCompra,
-    Contrato, RecepcionCompra
+    Contrato,
 )
 from .serializers import (
     EstadoRequisicionSerializer, EstadoCotizacionSerializer,
@@ -28,8 +28,7 @@ from .serializers import (
     CotizacionListSerializer, EvaluacionCotizacionSerializer,
     OrdenCompraSerializer, OrdenCompraListSerializer,
     OrdenCompraCreateUpdateSerializer, ContratoSerializer,
-    ContratoListSerializer, RecepcionCompraSerializer,
-    RecepcionCompraListSerializer
+    ContratoListSerializer,
 )
 
 
@@ -367,64 +366,8 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         })
 
-    @action(detail=True, methods=['post'], url_path='registrar-recepcion')
-    def registrar_recepcion(self, request, pk=None):
-        """Registrar recepción de materiales para esta orden"""
-        orden = self.get_object()
-
-        if not orden.puede_recibir:
-            return Response(
-                {'error': 'La orden no está en un estado que permita recepción'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        recepcion_data = {
-            'orden_compra': orden.id,
-            'numero_remision': request.data.get('numero_remision'),
-            'fecha_recepcion': request.data.get('fecha_recepcion', timezone.now()),
-            'cantidad_recibida': request.data.get('cantidad_recibida'),
-            'estado_material': request.data.get('estado_material'),
-            'observaciones': request.data.get('observaciones', ''),
-            'genera_movimiento_inventario': request.data.get('genera_movimiento_inventario', True)
-        }
-
-        serializer = RecepcionCompraSerializer(
-            data=recepcion_data,
-            context={'request': request}
-        )
-
-        if serializer.is_valid():
-            recepcion = serializer.save()
-
-            cantidad_recibida = recepcion.cantidad_recibida
-            detalles = orden.detalles.all()
-
-            if detalles.exists():
-                detalle = detalles.first()
-                detalle.cantidad_recibida = Decimal(str(detalle.cantidad_recibida)) + Decimal(str(cantidad_recibida))
-                detalle.save()
-
-                if detalle.esta_completo:
-                    try:
-                        estado_recibida = EstadoOrdenCompra.objects.get(codigo='RECIBIDA_TOTAL', is_active=True)
-                        orden.estado = estado_recibida
-                    except EstadoOrdenCompra.DoesNotExist:
-                        pass
-                else:
-                    try:
-                        estado_parcial = EstadoOrdenCompra.objects.get(codigo='RECIBIDA_PARCIAL', is_active=True)
-                        orden.estado = estado_parcial
-                    except EstadoOrdenCompra.DoesNotExist:
-                        pass
-
-                orden.save()
-
-            return Response({
-                'message': 'Recepción registrada exitosamente',
-                'data': serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # NOTA: registrar_recepcion legacy eliminada en S3. Las recepciones
+    # ahora se registran vía apps.supply_chain.recepcion.VoucherRecepcion.
 
 
 class ContratoViewSet(viewsets.ModelViewSet):
@@ -475,31 +418,5 @@ class ContratoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class RecepcionCompraViewSet(viewsets.ModelViewSet):
-    """ViewSet para recepciones de compra"""
-    queryset = RecepcionCompra.objects.select_related(
-        'orden_compra', 'orden_compra__proveedor',
-        'estado_material', 'recibido_por'
-    ).filter(deleted_at__isnull=True)
-
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['orden_compra', 'estado_material', 'recibido_por']
-    search_fields = ['numero_remision', 'orden_compra__numero_orden']
-    ordering_fields = ['fecha_recepcion', 'created_at']
-    ordering = ['-fecha_recepcion']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return RecepcionCompraListSerializer
-        return RecepcionCompraSerializer
-
-    @action(detail=False, methods=['get'], url_path='no-conformes')
-    def no_conformes(self, request):
-        """Listar recepciones con material no conforme"""
-        recepciones = self.get_queryset().exclude(
-            estado_material__codigo='CONFORME'
-        )
-
-        serializer = self.get_serializer(recepciones, many=True)
-        return Response(serializer.data)
+# Nota: RecepcionCompraViewSet legacy eliminado en S3.
+# Reemplazado por apps.supply_chain.recepcion.views.VoucherRecepcionViewSet.

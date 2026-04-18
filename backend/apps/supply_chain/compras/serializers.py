@@ -10,7 +10,7 @@ from .models import (
     TipoContrato, PrioridadRequisicion, Moneda, EstadoContrato,
     EstadoMaterial, Requisicion, DetalleRequisicion, Cotizacion,
     EvaluacionCotizacion, OrdenCompra, DetalleOrdenCompra,
-    Contrato, RecepcionCompra
+    Contrato,
 )
 from apps.supply_chain.gestion_proveedores.models import Proveedor
 from apps.gestion_estrategica.configuracion.models import EmpresaConfig, SedeEmpresa
@@ -613,77 +613,5 @@ class ContratoSerializer(serializers.ModelSerializer):
         return data
 
 
-class RecepcionCompraListSerializer(serializers.ModelSerializer):
-    """Serializer para listar recepciones"""
-    orden_compra_numero = serializers.CharField(
-        source='orden_compra.numero_orden',
-        read_only=True
-    )
-    proveedor_nombre = serializers.CharField(
-        source='orden_compra.proveedor.nombre_comercial',
-        read_only=True
-    )
-    estado_material_nombre = serializers.CharField(
-        source='estado_material.nombre',
-        read_only=True
-    )
-    recibido_por_nombre = serializers.CharField(
-        source='recibido_por.get_full_name',
-        read_only=True
-    )
-
-    class Meta:
-        model = RecepcionCompra
-        fields = [
-            'id', 'orden_compra', 'orden_compra_numero', 'proveedor_nombre',
-            'numero_remision', 'fecha_recepcion', 'cantidad_recibida',
-            'estado_material', 'estado_material_nombre',
-            'recibido_por', 'recibido_por_nombre', 'created_at'
-        ]
-
-
-class RecepcionCompraSerializer(serializers.ModelSerializer):
-    """Serializer completo para recepciones"""
-    orden_compra_numero = serializers.CharField(
-        source='orden_compra.numero_orden',
-        read_only=True
-    )
-    proveedor_nombre = serializers.CharField(
-        source='orden_compra.proveedor.nombre_comercial',
-        read_only=True
-    )
-    estado_material_nombre = serializers.CharField(
-        source='estado_material.nombre',
-        read_only=True
-    )
-    recibido_por_nombre = serializers.CharField(
-        source='recibido_por.get_full_name',
-        read_only=True
-    )
-    material_conforme = serializers.BooleanField(read_only=True)
-    requiere_accion = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = RecepcionCompra
-        fields = [
-            'id', 'orden_compra', 'orden_compra_numero', 'proveedor_nombre',
-            'numero_remision', 'fecha_recepcion', 'recibido_por',
-            'recibido_por_nombre', 'cantidad_recibida', 'estado_material',
-            'estado_material_nombre', 'observaciones',
-            'genera_movimiento_inventario', 'numero_movimiento_inventario',
-            'material_conforme', 'requiere_accion',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'recibido_por', 'numero_movimiento_inventario',
-            'created_at', 'updated_at'
-        ]
-
-    def create(self, validated_data):
-        validated_data['recibido_por'] = self.context['request'].user
-        return super().create(validated_data)
-
-    def validate_cantidad_recibida(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("La cantidad recibida debe ser mayor a cero")
-        return value
+# Nota: RecepcionCompraSerializer + RecepcionCompraListSerializer eliminados en S3.
+# Reemplazados por apps.supply_chain.recepcion.serializers.VoucherRecepcionSerializer.

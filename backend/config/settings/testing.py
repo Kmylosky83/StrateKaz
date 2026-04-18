@@ -16,6 +16,7 @@ from .base import *
 # =============================================================================
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-testing-only-key-NOT-FOR-PRODUCTION')
 DEBUG = False
+ALLOWED_HOSTS = ['*']  # Tests pueden usar cualquier Host header (tenant.test.com, etc.)
 
 # =============================================================================
 # DATABASE - PostgreSQL obligatorio (django-tenants requiere schemas)
@@ -131,6 +132,8 @@ _TESTING_EXTRA_APPS = [
     'apps.supply_chain.compras',
     'apps.supply_chain.almacenamiento',
     'apps.supply_chain.programacion_abastecimiento',
+    'apps.supply_chain.recepcion',
+    'apps.supply_chain.liquidaciones',
 
     # Production Ops
     'apps.production_ops.recepcion',

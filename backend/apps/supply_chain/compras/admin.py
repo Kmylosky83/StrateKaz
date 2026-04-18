@@ -23,7 +23,6 @@ from .models import (
     OrdenCompra,
     DetalleOrdenCompra,
     Contrato,
-    RecepcionCompra,
 )
 
 
@@ -143,9 +142,3 @@ class ContratoAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
 
 
-@admin.register(RecepcionCompra)
-class RecepcionCompraAdmin(admin.ModelAdmin):
-    list_display = ['orden_compra', 'numero_remision', 'fecha_recepcion', 'recibido_por', 'estado_material']
-    list_filter = ['fecha_recepcion', 'estado_material']
-    search_fields = ['numero_remision']
-    readonly_fields = ['created_at', 'updated_at']

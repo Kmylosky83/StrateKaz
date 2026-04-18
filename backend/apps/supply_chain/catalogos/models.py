@@ -6,6 +6,60 @@ from django.db import models
 from apps.core.base_models.base import BaseCompanyModel
 
 
+class TipoAlmacen(models.Model):
+    """
+    Tipo de almacenamiento físico (catálogo universal, no tenant).
+
+    Define la clasificación de cómo se almacena el inventario:
+    silo (granel líquido/sólido), contenedor, pallet (estibado), piso (suelto).
+
+    Usado por: Almacen.tipo_almacen (FK nullable, backward compat con almacenes existentes).
+    """
+    codigo = models.CharField(
+        max_length=30,
+        unique=True,
+        db_index=True,
+        verbose_name='Código',
+        help_text='Código único (ej: SILO, CONTENEDOR, PALLET, PISO)'
+    )
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripción'
+    )
+    icono = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Icono',
+        help_text='Nombre de ícono Lucide React (ej: Cylinder, Package, Layers, Grid)'
+    )
+    orden = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name='Activo'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'supply_chain_tipo_almacen'
+        verbose_name = 'Tipo de Almacén'
+        verbose_name_plural = 'Tipos de Almacén'
+        ordering = ['orden', 'nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class UnidadMedida(models.Model):
     """
     Unidad de medida para inventarios y operaciones (catálogo compartido).
@@ -121,6 +175,23 @@ class Almacen(BaseCompanyModel):
     permite_recepcion = models.BooleanField(
         default=True,
         verbose_name='Permite recepción'
+    )
+    tipo_almacen = models.ForeignKey(
+        TipoAlmacen,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='almacenes',
+        verbose_name='Tipo de almacén',
+        help_text='Clasificación de cómo se almacena (silo / contenedor / pallet / piso)'
+    )
+    capacidad_maxima = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Capacidad máxima',
+        help_text='Capacidad máxima numérica (la unidad se define por tipo_almacen o UnidadMedida)'
     )
 
     class Meta:

@@ -52,7 +52,7 @@ def user_analista(db):
 @pytest.fixture
 def empresa(db):
     return EmpresaConfig.objects.create(
-        nombre='Empresa Test S.A.S.',
+        razon_social='Empresa Test S.A.S.',
         nit='900000001',
     )
 
@@ -60,20 +60,24 @@ def empresa(db):
 @pytest.fixture
 def uneg_planta(db, empresa):
     return SedeEmpresa.objects.create(
-        empresa=empresa,
         nombre='Planta Principal',
         tipo_unidad='PLANTA',
         es_sede_principal=True,
+        direccion='Cra 1 # 1-1',
+        ciudad='Bogotá',
+        departamento='CUNDINAMARCA',
     )
 
 
 @pytest.fixture
 def uneg_recolectora(db, empresa):
     return SedeEmpresa.objects.create(
-        empresa=empresa,
         nombre='Ruta Recolección Norte',
         tipo_unidad='CENTRO_ACOPIO',
         es_proveedor_interno=True,
+        direccion='Km 5 vía Norte',
+        ciudad='Bogotá',
+        departamento='CUNDINAMARCA',
     )
 
 

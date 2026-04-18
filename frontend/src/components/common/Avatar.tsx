@@ -32,9 +32,9 @@ export const Avatar = ({ src, alt, name, size = 'md', status, className }: Avata
   };
 
   const statusClasses = {
-    active: 'ring-2 ring-green-400',
+    active: 'ring-2 ring-success-400',
     inactive: 'ring-2 ring-gray-300',
-    external: 'ring-2 ring-blue-400',
+    external: 'ring-2 ring-info-400',
   };
 
   const getInitials = (name: string): string => {

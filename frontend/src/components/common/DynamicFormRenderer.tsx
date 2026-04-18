@@ -28,6 +28,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from './Button';
+import { CHART_AXIS_COLORS } from '@/constants/chart-colors';
+
+// Color de trazo para canvas — gray-800 como fallback semántico
+const CANVAS_STROKE_COLOR = CHART_AXIS_COLORS.title;
 
 // ============================================================
 // TIPOS
@@ -729,7 +733,7 @@ const SignatureField = ({ value, onChange, readOnly }: SignatureFieldProps) => {
       const pos = getPosition(e, canvas);
       ctx.lineWidth = 2;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = '#1f2937';
+      ctx.strokeStyle = CANVAS_STROKE_COLOR;
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
     },
@@ -1044,7 +1048,7 @@ const InlineSignatureCanvas = ({ onSave, onCancel }: InlineSignatureCanvasProps)
     const pos = getPos(e, canvas);
     ctx.lineWidth = 1.5;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#1f2937';
+    ctx.strokeStyle = CANVAS_STROKE_COLOR;
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
     setHasStrokes(true);

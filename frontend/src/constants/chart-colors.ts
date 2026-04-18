@@ -92,6 +92,16 @@ export const SEMAFORO_COLORS = {
   rojo: '#EF4444',
 } as const;
 
+// Gauge / velocímetro colors (KPIGaugeAdvanced)
+export const GAUGE_COLORS = {
+  verde: '#10b981', // emerald-500
+  amarillo: '#eab308', // yellow-500
+  rojo: '#ef4444', // red-500
+  azul: '#3b82f6', // blue-500
+  gris: '#9ca3af', // gray-400
+  violeta: '#8b5cf6', // violet-500
+} as const;
+
 // Chart axis / grid neutral colors (ECharts compatible)
 export const CHART_AXIS_COLORS = {
   axisLine: '#E5E7EB',

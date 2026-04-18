@@ -39,6 +39,10 @@ import SignatureCanvas from 'react-signature-canvas';
 import { X, RotateCcw, Check } from 'lucide-react';
 import clsx from 'clsx';
 
+// Colores del grid de guía — gray-700 dark / gray-200 light
+const GRID_COLOR_DARK = '#374151';
+const GRID_COLOR_LIGHT = '#e5e7eb';
+
 export interface SignaturePadProps {
   /** Label del campo */
   label?: string;
@@ -370,8 +374,8 @@ export const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(
                 className="absolute inset-0 pointer-events-none"
                 style={{
                   backgroundImage: `
-                    linear-gradient(${isDark ? '#374151' : '#e5e7eb'} 1px, transparent 1px),
-                    linear-gradient(90deg, ${isDark ? '#374151' : '#e5e7eb'} 1px, transparent 1px)
+                    linear-gradient(${isDark ? GRID_COLOR_DARK : GRID_COLOR_LIGHT} 1px, transparent 1px),
+                    linear-gradient(90deg, ${isDark ? GRID_COLOR_DARK : GRID_COLOR_LIGHT} 1px, transparent 1px)
                   `,
                   backgroundSize: '20px 20px',
                 }}

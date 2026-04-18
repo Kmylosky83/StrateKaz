@@ -11,6 +11,7 @@ import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { TrendingUp, TrendingDown, Minus, Target, Clock, Zap } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
+import { GAUGE_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -55,14 +56,7 @@ const SIZE_CONFIG = {
 
 // ==================== COLORES ====================
 
-const COLORS = {
-  verde: '#10b981',
-  amarillo: '#eab308',
-  rojo: '#ef4444',
-  azul: '#3b82f6',
-  gris: '#9ca3af',
-  violeta: '#8b5cf6',
-};
+const COLORS = GAUGE_COLORS;
 
 // ==================== HELPERS ====================
 

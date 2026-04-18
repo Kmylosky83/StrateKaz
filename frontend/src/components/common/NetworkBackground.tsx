@@ -16,6 +16,10 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PARTICLE_CONFIG, isLowPerformanceDevice, shouldReduceMotion } from '@/lib/animations';
 
+// Colores Three.js — named para que el intent sea claro
+const PARTICLE_TEXTURE_COLOR = '#ffffff'; // mask del círculo (opaco en textura)
+const PARTICLE_SECONDARY_COLOR = '#ffffff'; // partículas secundarias (mezcla con brand)
+
 interface NetworkBackgroundProps {
   /** Primary brand color for particles and connections */
   brandColor?: string;
@@ -51,7 +55,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
     if (ctx) {
       ctx.beginPath();
       ctx.arc(16, 16, 14, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = PARTICLE_TEXTURE_COLOR;
       ctx.fill();
     }
     const texture = new THREE.CanvasTexture(canvas);
@@ -62,7 +66,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
   const particles = useMemo<Particle[]>(() => {
     const temp: Particle[] = [];
     const primary = new THREE.Color(brandColor);
-    const white = new THREE.Color('#ffffff');
+    const white = new THREE.Color(PARTICLE_SECONDARY_COLOR);
 
     for (let i = 0; i < particleCount; i++) {
       // Color mix: ~70% Primary, ~30% White for visual variety

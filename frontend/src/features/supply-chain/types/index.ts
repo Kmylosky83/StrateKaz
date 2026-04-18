@@ -159,8 +159,7 @@ export type {
   DetalleOrdenCompra,
   Contrato,
   ContratoList,
-  RecepcionCompra,
-  RecepcionCompraList,
+  // Nota: RecepcionCompra/RecepcionCompraList eliminadas en S3.
 
   // DTOs
   CreateEstadoRequisicionDTO,
@@ -175,8 +174,6 @@ export type {
   CreateDetalleOrdenCompraDTO,
   CreateContratoDTO,
   UpdateContratoDTO,
-  CreateRecepcionCompraDTO,
-  UpdateRecepcionCompraDTO,
 
   // Responses
   EstadisticasComprasResponse,

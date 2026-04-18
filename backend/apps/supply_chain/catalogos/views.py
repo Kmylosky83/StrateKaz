@@ -6,8 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import UnidadMedida, Almacen
-from .serializers import UnidadMedidaSerializer, AlmacenSerializer
+from .models import Almacen, TipoAlmacen, UnidadMedida
+from .serializers import AlmacenSerializer, TipoAlmacenSerializer, UnidadMedidaSerializer
 
 
 class UnidadMedidaViewSet(viewsets.ModelViewSet):
@@ -21,15 +21,31 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['orden', 'nombre', 'codigo']
 
 
+class TipoAlmacenViewSet(viewsets.ModelViewSet):
+    """CRUD para Tipos de Almacén (silo / contenedor / pallet / piso)."""
+    queryset = TipoAlmacen.objects.filter(is_active=True)
+    serializer_class = TipoAlmacenSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active']
+    search_fields = ['codigo', 'nombre']
+    ordering_fields = ['orden', 'nombre', 'codigo']
+
+
 class AlmacenViewSet(viewsets.ModelViewSet):
     """CRUD para Almacenes."""
     queryset = Almacen.objects.all()
     serializer_class = AlmacenSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['es_principal', 'permite_despacho', 'permite_recepcion', 'is_active']
+    filterset_fields = [
+        'es_principal', 'permite_despacho', 'permite_recepcion',
+        'tipo_almacen', 'is_active',
+    ]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['codigo', 'nombre']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('empresa', 'created_by', 'updated_by')
+        return super().get_queryset().select_related(
+            'empresa', 'tipo_almacen', 'created_by', 'updated_by',
+        )

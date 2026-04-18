@@ -14,6 +14,15 @@ urlpatterns = [
     # Gestión de Proveedores (endpoints raíz: proveedores/, categorias-materia-prima/, etc.)
     path('', include('apps.supply_chain.gestion_proveedores.urls')),
 
+    # Catálogos (UnidadMedida, Almacen, TipoAlmacen)
+    path('catalogos/', include('apps.supply_chain.catalogos.urls')),
+
+    # Recepción (VoucherRecepcion, RecepcionCalidad) — S3
+    path('recepcion/', include('apps.supply_chain.recepcion.urls')),
+
+    # Liquidaciones (Liquidacion) — S3
+    path('liquidaciones/', include('apps.supply_chain.liquidaciones.urls')),
+
     # Almacenamiento e Inventario
     path('almacenamiento/', include('apps.supply_chain.almacenamiento.urls')),
 

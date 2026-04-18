@@ -2,7 +2,7 @@
 Admin para catalogos - supply_chain
 """
 from django.contrib import admin
-from .models import UnidadMedida, Almacen
+from .models import Almacen, TipoAlmacen, UnidadMedida
 
 
 class CatalogoBaseAdmin(admin.ModelAdmin):
@@ -23,10 +23,24 @@ class UnidadMedidaAdmin(CatalogoBaseAdmin):
     list_editable = ['orden', 'is_active']
 
 
+@admin.register(TipoAlmacen)
+class TipoAlmacenAdmin(CatalogoBaseAdmin):
+    """Admin para Tipos de Almacén."""
+    list_display = ['codigo', 'nombre', 'icono', 'orden', 'is_active']
+    search_fields = ['codigo', 'nombre']
+
+
 @admin.register(Almacen)
 class AlmacenAdmin(admin.ModelAdmin):
     """Admin para Almacenes."""
-    list_display = ['codigo', 'nombre', 'empresa', 'es_principal', 'permite_recepcion', 'permite_despacho', 'is_active']
-    list_filter = ['empresa', 'es_principal', 'permite_recepcion', 'permite_despacho', 'is_active']
+    list_display = [
+        'codigo', 'nombre', 'empresa', 'tipo_almacen', 'es_principal',
+        'permite_recepcion', 'permite_despacho', 'is_active',
+    ]
+    list_filter = [
+        'empresa', 'tipo_almacen', 'es_principal',
+        'permite_recepcion', 'permite_despacho', 'is_active',
+    ]
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['codigo']
+    autocomplete_fields = ['tipo_almacen']

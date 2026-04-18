@@ -362,39 +362,8 @@ export interface ContratoList {
   created_at: string;
 }
 
-export interface RecepcionCompra {
-  id: number;
-  orden_compra: number;
-  orden_compra_numero?: string;
-  numero_remision: string;
-  fecha_recepcion: string;
-  recibido_por: number;
-  recibido_por_nombre?: string;
-  cantidad_recibida: number;
-  estado_material: number;
-  estado_material_data?: EstadoMaterial;
-  observaciones?: string;
-  genera_movimiento_inventario: boolean;
-  numero_movimiento_inventario?: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  // Properties
-  is_deleted?: boolean;
-  material_conforme?: boolean;
-  requiere_accion?: boolean;
-}
-
-export interface RecepcionCompraList {
-  id: number;
-  numero_remision: string;
-  orden_compra_numero?: string;
-  fecha_recepcion: string;
-  cantidad_recibida: number;
-  estado_material_data?: EstadoMaterial;
-  material_conforme?: boolean;
-  created_at: string;
-}
+// Nota: RecepcionCompra y RecepcionCompraList eliminadas en S3.
+// Ver features/supply-chain/recepcion/types para VoucherRecepcion.
 
 // ==================== DTOs - CREATE ====================
 
@@ -493,15 +462,7 @@ export interface CreateContratoDTO {
   observaciones?: string;
 }
 
-export interface CreateRecepcionCompraDTO {
-  orden_compra: number;
-  numero_remision: string;
-  fecha_recepcion: string;
-  cantidad_recibida: number;
-  estado_material: number;
-  observaciones?: string;
-  genera_movimiento_inventario?: boolean;
-}
+// Nota: CreateRecepcionCompraDTO eliminado en S3.
 
 // ==================== DTOs - UPDATE ====================
 
@@ -521,7 +482,7 @@ export interface UpdateContratoDTO extends Partial<CreateContratoDTO> {
   estado?: number;
 }
 
-export type UpdateRecepcionCompraDTO = Partial<CreateRecepcionCompraDTO>;
+// Nota: UpdateRecepcionCompraDTO eliminado en S3.
 
 // ==================== RESPONSE TYPES ====================
 

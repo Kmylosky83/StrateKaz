@@ -42,7 +42,6 @@ import {
   useCotizaciones,
   useOrdenesCompra,
   useContratos,
-  useRecepcionesCompra,
 } from '../hooks';
 import RequisicionFormModal from './RequisicionFormModal';
 import type { Requisicion } from '../types';
@@ -643,95 +642,9 @@ const ContratosSection = () => {
   );
 };
 
-// ==================== RECEPCIONES SECTION ====================
-
-const RecepcionesSection = () => {
-  const { data, isLoading } = useRecepcionesCompra();
-  const recepciones = Array.isArray(data) ? data : (data?.results ?? []);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <SectionToolbar title="Recepciones de Compra" count={recepciones.length} />
-
-      {recepciones.length === 0 ? (
-        <EmptyState
-          icon={<PackageCheck className="w-16 h-16" />}
-          title="No hay recepciones registradas"
-          description="Registre las recepciones de las órdenes de compra"
-        />
-      ) : (
-        <Card variant="bordered" padding="none">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Orden Compra
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Fecha Recepción
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Recibido Por
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Conforme
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {recepciones.map((rec: Record<string, unknown>) => (
-                  <tr key={rec.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {rec.orden_compra_numero as string}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                      {rec.fecha_recepcion
-                        ? format(new Date(rec.fecha_recepcion as string), 'dd/MM/yyyy', {
-                            locale: es,
-                          })
-                        : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {rec.recibido_por_nombre as string}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {rec.conforme ? (
-                        <Badge variant="success" size="sm">
-                          Conforme
-                        </Badge>
-                      ) : (
-                        <Badge variant="danger" size="sm">
-                          No Conforme
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" size="sm" title="Ver detalle">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
-    </div>
-  );
-};
+// Nota: RecepcionesSection legacy eliminada en S3 (RecepcionCompra legacy removida).
+// Las recepciones de MP ahora viven en apps.supply_chain.recepcion (VoucherRecepcion),
+// accesibles vía features/supply-chain/recepcion/ (frontend S3 pendiente).
 
 // ==================== MAIN COMPONENT ====================
 
@@ -744,7 +657,6 @@ export default function ComprasTab() {
     { id: 'cotizaciones', label: 'Cotizaciones', icon: TrendingUp },
     { id: 'ordenes', label: 'Órdenes de Compra', icon: ShoppingCart },
     { id: 'contratos', label: 'Contratos', icon: FileSignature },
-    { id: 'recepciones', label: 'Recepciones', icon: PackageCheck },
   ];
 
   return (
@@ -762,7 +674,6 @@ export default function ComprasTab() {
         {activeTab === 'cotizaciones' && <CotizacionesSection />}
         {activeTab === 'ordenes' && <OrdenesCompraSection />}
         {activeTab === 'contratos' && <ContratosSection />}
-        {activeTab === 'recepciones' && <RecepcionesSection />}
       </div>
     </div>
   );

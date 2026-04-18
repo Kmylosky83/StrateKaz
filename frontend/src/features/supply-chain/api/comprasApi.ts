@@ -22,9 +22,6 @@ import type {
   ContratoList,
   CreateContratoDTO,
   UpdateContratoDTO,
-  RecepcionCompra,
-  RecepcionCompraList,
-  CreateRecepcionCompraDTO,
   PaginatedResponse,
   EstadisticasComprasResponse,
 } from '../types';
@@ -85,26 +82,14 @@ const contratoApi = {
     apiClient.get<Contrato[]>(`${BASE_URL}/contratos/por-vencer/?dias=${dias}`),
 };
 
-const recepcionApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<PaginatedResponse<RecepcionCompraList>>(`${BASE_URL}/recepciones/`, { params }),
-  getById: (id: number) => apiClient.get<RecepcionCompra>(`${BASE_URL}/recepciones/${id}/`),
-  create: (data: CreateRecepcionCompraDTO) =>
-    apiClient.post<RecepcionCompra>(`${BASE_URL}/recepciones/`, data),
-  registrarRecepcion: (ordenCompraId: number, data: CreateRecepcionCompraDTO) =>
-    apiClient.post<RecepcionCompra>(
-      `${BASE_URL}/ordenes-compra/${ordenCompraId}/registrar-recepcion/`,
-      data
-    ),
-  noConformes: () => apiClient.get<RecepcionCompra[]>(`${BASE_URL}/recepciones/no-conformes/`),
-};
+// Nota: recepcionApi eliminado en S3. Ver features/supply-chain/recepcion/api
+// para VoucherRecepcion (nuevo documento primario de recepción de MP).
 
 const comprasApi = {
   requisicion: requisicionApi,
   cotizacion: cotizacionApi,
   ordenCompra: ordenCompraApi,
   contrato: contratoApi,
-  recepcion: recepcionApi,
   estadisticas: () => apiClient.get<EstadisticasComprasResponse>(`${BASE_URL}/estadisticas/`),
 };
 

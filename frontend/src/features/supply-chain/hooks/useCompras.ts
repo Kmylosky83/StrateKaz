@@ -1,6 +1,7 @@
 /**
  * Hooks React Query para Gestión de Compras - Supply Chain
- * Sistema de gestión de requisiciones, cotizaciones, órdenes de compra, contratos y recepciones
+ * Sistema de gestión de requisiciones, cotizaciones, órdenes de compra y contratos.
+ * (Recepciones viven en features/supply-chain/recepcion desde S3.)
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
@@ -18,8 +19,6 @@ import type {
   UpdateOrdenCompraDTO,
   CreateContratoDTO,
   UpdateContratoDTO,
-  CreateRecepcionCompraDTO,
-  UpdateRecepcionCompraDTO,
 } from '../types';
 
 // ==================== QUERY KEYS ====================
@@ -63,12 +62,7 @@ export const comprasKeys = {
   contratosVigentes: () => [...comprasKeys.all, 'contratos-vigentes'] as const,
   contratosPorVencer: (dias: number) => [...comprasKeys.all, 'contratos-por-vencer', dias] as const,
 
-  // Recepciones
-  recepciones: () => [...comprasKeys.all, 'recepciones'] as const,
-  recepcionesFiltered: (filters: Record<string, unknown>) =>
-    [...comprasKeys.recepciones(), 'filtered', filters] as const,
-  recepcion: (id: number) => [...comprasKeys.all, 'recepcion', id] as const,
-  recepcionesNoConformes: () => [...comprasKeys.all, 'recepciones-no-conformes'] as const,
+  // Recepciones: keys eliminadas en S3 (ver features/supply-chain/recepcion/)
 
   // Estadísticas
   estadisticas: () => [...comprasKeys.all, 'estadisticas'] as const,
@@ -448,30 +442,7 @@ export function useDeleteOrdenCompra() {
   });
 }
 
-export function useRecepcionarOrdenCompra() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      ordenCompraId,
-      data,
-    }: {
-      ordenCompraId: number;
-      data: CreateRecepcionCompraDTO;
-    }) => {
-      const response = await comprasApi.recepcion.registrarRecepcion(ordenCompraId, data);
-      return response.data;
-    },
-    onSuccess: (_, { ordenCompraId }) => {
-      queryClient.invalidateQueries({ queryKey: comprasKeys.ordenesCompra() });
-      queryClient.invalidateQueries({ queryKey: comprasKeys.ordenCompra(ordenCompraId) });
-      queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
-      toast.success('Recepción registrada exitosamente');
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error, 'Error al registrar recepción'));
-    },
-  });
-}
+// Nota: useRecepcionarOrdenCompra eliminado en S3 (RecepcionCompra legacy removida).
 
 // ==================== CONTRATOS ====================
 
@@ -569,91 +540,10 @@ export function useContratosPorVencer(dias: number = 30) {
   });
 }
 
-// ==================== RECEPCIONES DE COMPRA ====================
-
-export function useRecepcionesCompra(params?: Record<string, unknown>) {
-  return useQuery({
-    queryKey: params ? comprasKeys.recepcionesFiltered(params) : comprasKeys.recepciones(),
-    queryFn: async () => {
-      const response = await comprasApi.recepcion.getAll(params);
-      return response.data;
-    },
-  });
-}
-
-export function useRecepcionCompra(id: number) {
-  return useQuery({
-    queryKey: comprasKeys.recepcion(id),
-    queryFn: async () => {
-      const response = await comprasApi.recepcion.getById(id);
-      return response.data;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useCreateRecepcionCompra() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: CreateRecepcionCompraDTO) => {
-      const response = await comprasApi.recepcion.create(data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
-      toast.success('Recepción de compra creada exitosamente');
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear recepción'));
-    },
-  });
-}
-
-export function useUpdateRecepcionCompra() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ _id, _data }: { _id: number; _data: UpdateRecepcionCompraDTO }) => {
-      // The API doesn't have an update endpoint for recepciones
-      throw new Error('Endpoint not implemented');
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
-      queryClient.invalidateQueries({ queryKey: comprasKeys.recepcion(id) });
-      toast.success('Recepción actualizada exitosamente');
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar recepción'));
-    },
-  });
-}
-
-export function useDeleteRecepcionCompra() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (_id: number) => {
-      // The API doesn't have a delete endpoint for recepciones
-      throw new Error('Endpoint not implemented');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
-      toast.success('Recepción eliminada exitosamente');
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar recepción'));
-    },
-  });
-}
-
-export function useRecepcionesNoConformes() {
-  return useQuery({
-    queryKey: comprasKeys.recepcionesNoConformes(),
-    queryFn: async () => {
-      const response = await comprasApi.recepcion.noConformes();
-      return response.data;
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-  });
-}
+// Nota: Hooks useRecepcionesCompra/useRecepcionCompra/useCreateRecepcionCompra/
+// useUpdateRecepcionCompra/useDeleteRecepcionCompra/useRecepcionesNoConformes
+// eliminados en S3. Ver features/supply-chain/recepcion/ para los nuevos hooks
+// de VoucherRecepcion.
 
 // ==================== ESTADÍSTICAS ====================
 

@@ -22,3 +22,12 @@ export * from './useCompras';
 
 // ==================== ALMACENAMIENTO ====================
 export * from './useAlmacenamiento';
+
+// ==================== RECEPCION (S3) ====================
+export * from './useRecepcion';
+
+// ==================== LIQUIDACIONES (S3) ====================
+export * from './useLiquidaciones';
+
+// ==================== TIPOS ALMACÉN (S3 — catálogo silo/contenedor/pallet/piso) ====================
+export * from './useTiposAlmacen';

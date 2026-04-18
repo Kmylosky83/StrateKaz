@@ -179,6 +179,10 @@ export type {
   EstadisticasComprasResponse,
 } from './compras.types';
 
+// S3: Recepcion + Liquidaciones
+export * from './recepcion.types';
+export * from './liquidaciones.types';
+
 // ==================== ALMACENAMIENTO ====================
 
 export type {

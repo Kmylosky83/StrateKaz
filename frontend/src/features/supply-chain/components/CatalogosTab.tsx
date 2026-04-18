@@ -37,6 +37,12 @@ import {
   useDepartamentos,
   useCiudades,
 } from '../hooks/useCatalogos';
+import {
+  useTiposAlmacen,
+  useCreateTipoAlmacen,
+  useUpdateTipoAlmacen,
+  useDeleteTipoAlmacen,
+} from '../hooks/useTiposAlmacen';
 
 // ==================== TIPOS ====================
 
@@ -81,6 +87,7 @@ const CATALOGS: CatalogConfig[] = [
   { key: 'modalidades', label: 'Modalidades Logísticas', group: 'Proveedores' },
   { key: 'formas-pago', label: 'Formas de Pago', group: 'Financiero' },
   { key: 'tipos-cuenta', label: 'Tipos de Cuenta Bancaria', group: 'Financiero' },
+  { key: 'tipos-almacen', label: 'Tipos de Almacén', group: 'Almacenamiento' },
   { key: 'tipos-documento', label: 'Tipos de Documento', group: 'Ubicación' },
   { key: 'departamentos', label: 'Departamentos', group: 'Ubicación' },
   { key: 'ciudades', label: 'Ciudades', group: 'Ubicación', hasExtraFields: true },
@@ -109,6 +116,7 @@ export function CatalogosTab() {
   const { data: tiposDocData, isLoading: l7 } = useTiposDocumento();
   const { data: departamentosData, isLoading: l8 } = useDepartamentos();
   const { data: ciudadesData, isLoading: l9 } = useCiudades();
+  const { data: tiposAlmacenData, isLoading: l10 } = useTiposAlmacen();
 
   // Mutations para catálogos base
   const createCategoria = useCreateCategoriaMateriaPrima();
@@ -118,6 +126,9 @@ export function CatalogosTab() {
   const updateTipoMp = useUpdateTipoMateriaPrima();
   const deleteTipoMp = useDeleteTipoMateriaPrima();
   const createTipoProv = useCreateTipoProveedor();
+  const createTipoAlm = useCreateTipoAlmacen();
+  const updateTipoAlm = useUpdateTipoAlmacen();
+  const deleteTipoAlm = useDeleteTipoAlmacen();
 
   // Resolver datos según catálogo seleccionado
   const resolveData = (): { items: CatalogItem[]; isLoading: boolean } => {
@@ -142,6 +153,8 @@ export function CatalogosTab() {
         return { items: normalize(departamentosData), isLoading: l8 };
       case 'ciudades':
         return { items: normalize(ciudadesData), isLoading: l9 };
+      case 'tipos-almacen':
+        return { items: normalize(tiposAlmacenData), isLoading: l10 };
       default:
         return { items: [], isLoading: false };
     }
@@ -200,6 +213,13 @@ export function CatalogosTab() {
             }
           }
           break;
+        case 'tipos-almacen':
+          if (editItem) {
+            await updateTipoAlm.mutateAsync({ id: editItem.id, data: baseData });
+          } else {
+            await createTipoAlm.mutateAsync(baseData);
+          }
+          break;
         default:
           if (editItem) {
             await updateCategoria.mutateAsync({ id: editItem.id, data: baseData });
@@ -224,6 +244,9 @@ export function CatalogosTab() {
           break;
         case 'tipos-mp':
           await deleteTipoMp.mutateAsync(deleteItemId);
+          break;
+        case 'tipos-almacen':
+          await deleteTipoAlm.mutateAsync(deleteItemId);
           break;
         default:
           await deleteCategoria.mutateAsync(deleteItemId);

@@ -18,6 +18,8 @@ export { CatalogosTab } from './CatalogosTab';
 export { default as ProgramacionTab } from './ProgramacionTab';
 export { default as ComprasTab } from './ComprasTab';
 export { default as AlmacenamientoTab } from './AlmacenamientoTab';
+export { default as RecepcionTab } from './RecepcionTab';
+export { default as LiquidacionesTab } from './LiquidacionesTab';
 
 // Modales CRUD
 export { default as RequisicionFormModal } from './RequisicionFormModal';

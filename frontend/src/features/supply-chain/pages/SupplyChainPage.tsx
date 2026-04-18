@@ -27,6 +27,8 @@ import {
   Calendar,
   ClipboardCheck,
   FolderOpen,
+  Scale,
+  FileCheck,
 } from 'lucide-react';
 import {
   ProveedoresTab,
@@ -36,6 +38,8 @@ import {
   ProgramacionTab,
   EvaluacionesTab,
   CatalogosTab,
+  RecepcionTab,
+  LiquidacionesTab,
 } from '../components';
 
 // ============================================================================
@@ -64,9 +68,21 @@ const SECTION_MAP: Record<string, SectionMeta> = {
   },
   compras: {
     title: 'Compras',
-    description: 'Requisiciones, cotizaciones, órdenes de compra y recepciones',
+    description: 'Requisiciones, cotizaciones, órdenes de compra y contratos',
     icon: <ShoppingCart className="w-5 h-5" />,
     component: ComprasTab,
+  },
+  recepcion: {
+    title: 'Recepción de MP',
+    description: 'Vouchers de báscula: pesaje, calidad opcional e ingreso a inventario',
+    icon: <Scale className="w-5 h-5" />,
+    component: RecepcionTab,
+  },
+  liquidaciones: {
+    title: 'Liquidaciones',
+    description: 'Cálculo y aprobación de pagos al proveedor por recepciones',
+    icon: <FileCheck className="w-5 h-5" />,
+    component: LiquidacionesTab,
   },
   almacenamiento: {
     title: 'Almacenamiento',

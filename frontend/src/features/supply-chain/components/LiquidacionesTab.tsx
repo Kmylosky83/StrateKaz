@@ -6,7 +6,7 @@
  */
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle, Clock, DollarSign, Eye, FileCheck, Trash2 } from 'lucide-react';
+import { CheckCircle, Clock, DollarSign, Eye, FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/common/Badge';

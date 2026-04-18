@@ -162,9 +162,8 @@ export default function RecepcionTab() {
             ? {
                 label: 'Nuevo Voucher',
                 onClick: () => {
-                  // TODO(S3.1): implementar VoucherFormModal completo con RHF + Zod
-                  // eslint-disable-next-line no-alert
-                  alert(
+                  // TODO: implementar VoucherFormModal completo con RHF + Zod (sesión dedicada post-S4)
+                  window.alert(
                     'Formulario de creación pendiente — se implementa en siguiente iteración con RHF/Zod.'
                   );
                 },
@@ -188,8 +187,7 @@ export default function RecepcionTab() {
               ? {
                   label: 'Nuevo Voucher',
                   onClick: () => {
-                    // eslint-disable-next-line no-alert
-                    alert('Formulario pendiente.');
+                    window.alert('Formulario pendiente.');
                   },
                   icon: <Plus className="w-4 h-4" />,
                 }

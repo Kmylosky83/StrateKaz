@@ -34,6 +34,7 @@ def user_operador(db):
         password='test-pass',
         first_name='Juan',
         last_name='Operador',
+        document_number='CC-OPER-001',
     )
 
 
@@ -45,6 +46,7 @@ def user_analista(db):
         password='test-pass',
         first_name='Ana',
         last_name='Analista',
+        document_number='CC-ANA-002',
     )
 
 

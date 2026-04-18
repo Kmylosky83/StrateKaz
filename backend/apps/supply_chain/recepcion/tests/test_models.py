@@ -242,7 +242,9 @@ class TestRecepcionCalidad:
             analista=user_analista,
             fecha_analisis=timezone.now(),
         )
-        assert 'Condicional' in str(qc) or 'CONDICIONAL' in str(qc)
+        # __str__ usa get_resultado_display() que devuelve la label humana.
+        assert f'Voucher #{v.pk}' in str(qc)
+        assert qc.get_resultado_display() in str(qc)
 
 
 # ==============================================================================

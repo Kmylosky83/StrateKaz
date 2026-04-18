@@ -18,7 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.supply_chain.catalogos.models import UnidadMedida
+from apps.catalogo_productos.models import UnidadMedida
 
 from .models import (
     AlertaStock,
@@ -126,8 +126,8 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
     queryset = UnidadMedida.objects.all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['codigo', 'nombre', 'simbolo']
-    filterset_fields = ['tipo', 'is_active']
+    search_fields = ['nombre', 'abreviatura']
+    filterset_fields = ['tipo', 'es_base']
     ordering_fields = ['orden', 'nombre', 'created_at']
     ordering = ['orden', 'nombre']
 
@@ -135,12 +135,6 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return UnidadMedidaListSerializer
         return UnidadMedidaSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action == 'list':
-            queryset = queryset.filter(is_active=True)
-        return queryset
 
 
 # ==============================================================================

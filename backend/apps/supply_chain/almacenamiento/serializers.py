@@ -10,8 +10,7 @@ from decimal import Decimal
 from django.db.models import Sum
 from rest_framework import serializers
 
-from apps.catalogo_productos.models import Producto
-from apps.supply_chain.catalogos.models import UnidadMedida
+from apps.catalogo_productos.models import Producto, UnidadMedida
 
 from .models import (
     AlertaStock,
@@ -92,25 +91,25 @@ class TipoAlertaListSerializer(serializers.ModelSerializer):
 
 class UnidadMedidaSerializer(serializers.ModelSerializer):
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    # Compatibilidad con código existente que usa 'abreviatura'
-    abreviatura = serializers.CharField(source='simbolo', read_only=True)
+    # simbolo mantenido como alias de abreviatura para retro-compat con frontend
+    simbolo = serializers.CharField(source='abreviatura', read_only=True)
 
     class Meta:
         model = UnidadMedida
         fields = [
-            'id', 'codigo', 'nombre', 'simbolo', 'abreviatura',
-            'tipo', 'tipo_display', 'factor_conversion_kg',
-            'orden', 'is_active', 'created_at', 'updated_at',
+            'id', 'nombre', 'abreviatura', 'simbolo',
+            'tipo', 'tipo_display', 'factor_conversion', 'es_base',
+            'orden', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class UnidadMedidaListSerializer(serializers.ModelSerializer):
-    abreviatura = serializers.CharField(source='simbolo', read_only=True)
+    simbolo = serializers.CharField(source='abreviatura', read_only=True)
 
     class Meta:
         model = UnidadMedida
-        fields = ['id', 'codigo', 'simbolo', 'abreviatura', 'nombre']
+        fields = ['id', 'abreviatura', 'simbolo', 'nombre']
 
 
 # ==============================================================================
@@ -119,7 +118,7 @@ class UnidadMedidaListSerializer(serializers.ModelSerializer):
 
 class InventarioSerializer(serializers.ModelSerializer):
     almacen_nombre = serializers.CharField(source='almacen.nombre', read_only=True)
-    unidad_medida_abrev = serializers.CharField(source='unidad_medida.simbolo', read_only=True)
+    unidad_medida_abrev = serializers.CharField(source='unidad_medida.abreviatura', read_only=True)
     estado_nombre = serializers.CharField(source='estado.nombre', read_only=True)
     estado_color = serializers.CharField(source='estado.color_hex', read_only=True)
 
@@ -162,7 +161,7 @@ class InventarioSerializer(serializers.ModelSerializer):
 
 class InventarioListSerializer(serializers.ModelSerializer):
     almacen_nombre = serializers.CharField(source='almacen.nombre', read_only=True)
-    unidad_medida_abrev = serializers.CharField(source='unidad_medida.simbolo', read_only=True)
+    unidad_medida_abrev = serializers.CharField(source='unidad_medida.abreviatura', read_only=True)
     estado_nombre = serializers.CharField(source='estado.nombre', read_only=True)
     estado_color = serializers.CharField(source='estado.color_hex', read_only=True)
     producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
@@ -191,7 +190,7 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
     tipo_movimiento_afecta = serializers.CharField(
         source='tipo_movimiento.afecta_stock', read_only=True,
     )
-    unidad_medida_abrev = serializers.CharField(source='unidad_medida.simbolo', read_only=True)
+    unidad_medida_abrev = serializers.CharField(source='unidad_medida.abreviatura', read_only=True)
     registrado_por_nombre = serializers.CharField(
         source='registrado_por.get_full_name', read_only=True,
     )
@@ -243,7 +242,7 @@ class MovimientoInventarioListSerializer(serializers.ModelSerializer):
     almacen_destino_nombre = serializers.CharField(
         source='almacen_destino.nombre', read_only=True,
     )
-    unidad_medida_abrev = serializers.CharField(source='unidad_medida.simbolo', read_only=True)
+    unidad_medida_abrev = serializers.CharField(source='unidad_medida.abreviatura', read_only=True)
     producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
 
@@ -418,7 +417,7 @@ class RegistrarMovimientoSerializer(serializers.Serializer):
     lote = serializers.CharField(max_length=50, required=False, allow_blank=True)
     cantidad = serializers.DecimalField(max_digits=12, decimal_places=3)
     unidad_medida = serializers.PrimaryKeyRelatedField(
-        queryset=UnidadMedida.objects.filter(is_active=True),
+        queryset=UnidadMedida.objects.all(),
     )
     costo_unitario = serializers.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal('0.00'),
@@ -480,7 +479,7 @@ class AjustarInventarioSerializer(serializers.Serializer):
         max_digits=12, decimal_places=2, required=False,
     )
     nuevo_estado = serializers.PrimaryKeyRelatedField(
-        queryset=EstadoInventario.objects.filter(is_active=True), required=False,
+        queryset=EstadoInventario.objects.all(), required=False,
     )
     motivo = serializers.CharField()
 

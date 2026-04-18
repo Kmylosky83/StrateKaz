@@ -14,8 +14,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
+from apps.catalogo_productos.models import UnidadMedida
 from utils.models import TenantModel
-from apps.supply_chain.catalogos.models import UnidadMedida
 
 
 # ==============================================================================

@@ -18,6 +18,9 @@ import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { Spinner } from '@/components/common/Spinner';
 
+import { Modules, Sections } from '@/constants/permissions';
+import { usePermissions } from '@/hooks/usePermissions';
+
 import { useAprobarLiquidacion, useLiquidaciones } from '../hooks/useLiquidaciones';
 import type { EstadoLiquidacion, Liquidacion } from '../types/liquidaciones.types';
 
@@ -49,6 +52,9 @@ const formatKg = (kg: string | number) => {
 };
 
 export default function LiquidacionesTab() {
+  const { canDo } = usePermissions();
+  const canEdit = canDo(Modules.SUPPLY_CHAIN, Sections.LIQUIDACIONES_SC, 'edit');
+
   const [estadoFilter, setEstadoFilter] = useState<EstadoLiquidacion | ''>('');
   const [aprobarId, setAprobarId] = useState<number | null>(null);
 
@@ -221,7 +227,7 @@ export default function LiquidacionesTab() {
                         <Button variant="ghost" size="sm" title="Ver detalle">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {l.estado === 'PENDIENTE' && (
+                        {l.estado === 'PENDIENTE' && canEdit && (
                           <Button
                             variant="ghost"
                             size="sm"

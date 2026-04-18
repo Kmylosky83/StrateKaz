@@ -183,6 +183,8 @@ export const Sections = {
   IMPORTACION_PROVEEDORES: 'importacion_proveedores',
   PRECIOS_MATERIA_PRIMA: 'precios_materia_prima',
   ORDENES_COMPRA: 'ordenes_compra',
+  RECEPCION_MP_SC: 'recepcion_mp_sc',
+  LIQUIDACIONES_SC: 'liquidaciones_sc',
   INVENTARIO: 'inventario',
   PROGRAMACION_SC: 'programacion_sc',
   EVALUACIONES_PROV: 'evaluaciones_prov',

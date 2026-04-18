@@ -73,10 +73,8 @@ const formatCOP = (value?: string | number | null) => {
 
 export default function RecepcionTab() {
   const { canDo } = usePermissions();
-  // TODO(S3.1): agregar Sections.RECEPCION_MP_SC en constants/permissions.ts + seed
-  // backend. Por ahora se reusa ORDENES_COMPRA como permiso transversal.
-  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'create');
-  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.ORDENES_COMPRA, 'delete');
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.RECEPCION_MP_SC, 'create');
+  const canDelete = canDo(Modules.SUPPLY_CHAIN, Sections.RECEPCION_MP_SC, 'delete');
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVoucher | ''>('');

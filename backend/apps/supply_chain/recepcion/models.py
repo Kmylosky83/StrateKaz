@@ -214,6 +214,25 @@ class VoucherRecepcion(TenantModel):
             Decimal('0.01')
         )
 
+    # ─── Transiciones de estado ────────────────────────────────────────
+    def aprobar(self):
+        """
+        Transiciona el voucher a APROBADO.
+
+        Idempotente: si ya está APROBADO no hace nada.
+        Dispara el signal post_save que crea MovimientoInventario + Inventario
+        en almacen_destino (ver apps.supply_chain.recepcion.signals).
+        """
+        if self.estado == self.EstadoVoucher.APROBADO:
+            return
+        if self.estado != self.EstadoVoucher.PENDIENTE_QC:
+            raise ValidationError(
+                f"No se puede aprobar un voucher en estado "
+                f"{self.get_estado_display()}."
+            )
+        self.estado = self.EstadoVoucher.APROBADO
+        self.save(update_fields=['estado', 'updated_at'])
+
 
 class RecepcionCalidad(TenantModel):
     """

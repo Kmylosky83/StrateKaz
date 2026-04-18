@@ -42,18 +42,19 @@ export default {
         black: {
           deep: '#000000', // Fondo principal
           card: '#0a0a0a', // Cards/contenedores
-          'card-soft': '#151515', // Cards más suaves
+          'card-soft': '#0f0f0f', // Cards más suaves
           hover: '#1a1a1a', // Hover states
-          'hover-soft': '#121212', // Hover más sutil
+          'hover-soft': '#151515', // Hover más sutil
           border: '#2a2a2a', // Bordes sutiles
-          'border-soft': '#333333', // Bordes más suaves
+          'border-soft': '#1f1f1f', // Bordes más suaves
         },
         white: '#ffffff', // Standard white color
         'white-text': '#ffffff', // Texto principal
-        'white-text-soft': '#e5e5e5', // Texto secundario
-        'white-muted': '#cccccc', // Texto terciario
-        'white-muted-soft': '#b3b3b3', // Texto aún más suave
-        'white-soft': '#f5f5f5', // Texto muy suave
+        'white-text-soft': '#f8f8f8', // Texto principal suave
+        'white-muted': '#e5e5e5', // Texto secundario
+        'white-muted-soft': '#d0d0d0', // Texto terciario
+        'white-subtle': '#b8b8b8', // Texto de menor importancia
+        'white-soft': '#f5f5f5', // Fondos muy sutiles
         brand: {
           50: '#fdf2f8',
           100: '#fce7f3',
@@ -68,8 +69,36 @@ export default {
         },
         // Colores de acento para UI
         accent: {
-          icon: '#a855f7', // Color para iconos neutrales
+          icon: '#71717a', // Iconos por defecto (gris)
+          'icon-hover': '#a1a1aa', // Iconos hover
+          highlight: '#d4d4d8', // Elementos destacados sin rosa
           success: '#22c55e', // Verde para checkmarks
+        },
+        // Colores de error
+        error: {
+          50: '#fef2f2',
+          100: '#fee2e2',
+          200: '#fecaca',
+          300: '#fca5a5',
+          400: '#f87171',
+          500: '#ef4444',
+          600: '#dc2626',
+          700: '#b91c1c',
+          800: '#991b1b',
+          900: '#7f1d1d',
+        },
+        // Colores de advertencia
+        warning: {
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#f59e0b',
+          600: '#d97706',
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
         },
         // Sistema de colores de éxito
         success: {
@@ -230,41 +259,44 @@ export default {
         ], // Hero optimized
       },
       fontFamily: {
-        title: ['Montserrat', 'sans-serif'], // Títulos
-        content: ['Inter', 'sans-serif'], // Contenido
+        title: ['Montserrat', 'sans-serif'], // Títulos h1-h3
+        subtitle: ['Montserrat', 'sans-serif'], // Títulos h4-h6
+        content: ['Inter', 'sans-serif'], // Texto body
+        ui: ['Inter', 'sans-serif'], // Botones, labels
+      },
+      boxShadow: {
+        brand: '0 0 20px 2px rgba(236, 38, 143, 0.2)',
+        'brand-sm': '0 0 10px 1px rgba(236, 38, 143, 0.15)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.5s ease-out',
-        'slide-down': 'slideDown 0.3s ease-out',
-        flow: 'flow 3s ease-in-out infinite',
-        'line-pulse': 'linePulse 2s ease-in-out infinite',
-        shimmer: 'shimmer 2s ease-in-out infinite',
+        // Nombres kebab-case — fuente de verdad en globals.css @keyframes
+        'fade-in':       'fade-in 0.5s ease-out',
+        'slide-up':      'slide-up 0.3s ease-out',
+        'slide-down':    'slide-down 0.3s ease-out',
+        'scale-in':      'scale-in 0.3s ease-out',
+        'bounce-subtle': 'bounce-subtle 2s infinite',
+        'border-glow':   'border-glow 3s ease-in-out infinite',
+        flow:            'flow 3s ease-in-out infinite',
+        'line-pulse':    'line-pulse 2s ease-in-out infinite',
+        shimmer:         'shimmer 2s ease-in-out infinite',
       },
       keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideUp: {
-          '0%': { transform: 'translateY(20px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
-        },
-        slideDown: {
-          '0%': { transform: 'translateY(-10px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)', opacity: '1' },
+        // Solo keyframes exclusivos de Tailwind (los compartidos viven en globals.css)
+        'slide-down': {
+          '0%':   { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)',     opacity: '1' },
         },
         flow: {
           '0%, 100%': { transform: 'translateX(-100%)', opacity: '0' },
-          '50%': { transform: 'translateX(0)', opacity: '1' },
+          '50%':      { transform: 'translateX(0)',      opacity: '1' },
         },
-        linePulse: {
+        'line-pulse': {
           '0%, 100%': { opacity: '0.3' },
-          '50%': { opacity: '0.8' },
+          '50%':      { opacity: '0.8' },
         },
         shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+          '0%':   { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)'  },
         },
       },
       maxWidth: {

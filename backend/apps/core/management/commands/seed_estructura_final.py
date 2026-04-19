@@ -943,22 +943,22 @@ class Command(BaseCommand):
                     {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 2, 'sections': [
                         {'code': 'precios_materia_prima', 'name': 'Precios Materia Prima', 'icon': 'DollarSign', 'orden': 1, 'description': 'Control de precios por tipo de materia prima'},
                     ]},
-                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 3, 'sections': [
-                        {'code': 'ordenes_compra', 'name': 'Órdenes de Compra', 'icon': 'ShoppingCart', 'orden': 1, 'description': 'Gestión de órdenes de compra. Consume UNeg y sedes de Fundación'},
-                    ]},
-                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 4, 'sections': [
+                    # Tab Compras: NO expuesta en sidebar. App compras registrada en
+                    # TENANT_APPS solo para integridad referencial del FK
+                    # VoucherRecepcion.orden_compra. Reescritura futura.
+                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 3, 'sections': [
                         {'code': 'recepcion_mp_sc', 'name': 'Vouchers de Recepción', 'icon': 'Scale', 'orden': 1, 'description': 'Vouchers de báscula, QC opcional, ingreso a inventario'},
                     ]},
-                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 5, 'sections': [
+                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 4, 'sections': [
                         {'code': 'liquidaciones_sc', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'orden': 1, 'description': 'Cálculo y aprobación de pagos a proveedores por recepciones'},
                     ]},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 6, 'sections': [
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
-                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 7, 'sections': [
+                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 6, 'sections': [
                         {'code': 'evaluaciones_prov', 'name': 'Evaluación Proveedores', 'icon': 'ClipboardCheck', 'orden': 1, 'description': 'Evaluación periódica de proveedores'},
                     ]},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 8, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 7, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

@@ -449,6 +449,36 @@ temporalmente porque no bloquea funcionalidad ni compromete integridad.
 
 ---
 
+## H-S6-unidades-medida-dup — Ruta `unidades-medida` duplicada post-activación
+
+### Detectado
+2026-04-19 (S6 activación supply_chain)
+
+### Severidad
+**BAJA** — No bloquea funcionalidad. Dos rutas exponen el mismo modelo canónico
+(`catalogo_productos.UnidadMedida`).
+
+### Síntoma
+Tras eliminar el `UnidadMedida` legacy de `supply_chain/catalogos`, quedó un
+wrapper `UnidadMedidaViewSet` en `supply_chain/almacenamiento/views.py:125` que
+sirve el modelo canónico vía ruta `/supply-chain/almacenamiento/unidades-medida/`.
+El canónico sigue en `/catalogo-productos/unidades-medida/`.
+
+El wrapper se preserva porque `MovimientoInventarioFormModal.tsx` del frontend
+consume la ruta vía `useUnidadesMedidaAlmacenamiento` hook.
+
+### Solución futura
+1. Cambiar `frontend/src/features/supply-chain/hooks/useAlmacenamiento.ts` para
+   que `useUnidadesMedidaAlmacenamiento` apunte a `/catalogo-productos/unidades-medida/`
+2. Eliminar `UnidadMedidaViewSet` de `supply_chain/almacenamiento/views.py`
+3. Eliminar el register en `supply_chain/almacenamiento/urls.py:29`
+4. Verificar que `MovimientoInventarioFormModal.tsx` sigue funcionando
+
+### Trigger
+Sprint de refactor frontend de supply-chain (sin urgencia).
+
+---
+
 ## Orden de ataque sugerido
 
 | # | Hallazgo | Estado | Razón del orden |

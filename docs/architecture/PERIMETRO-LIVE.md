@@ -1,14 +1,43 @@
-# Perímetro LIVE — Estado al 2026-04-08
+# Perímetro LIVE — Estado al 2026-04-19 (post-S6)
 
 ## Principio rector
 El repo no es la verdad. Lo LIVE es la verdad.
-Solo el código en CURRENT_DEPLOY_LEVEL=20 se mantiene. El resto es borrador.
+Solo el código activo en TENANT_APPS se mantiene. El resto es borrador.
 
 ## Composición LIVE
-- **CURRENT_DEPLOY_LEVEL:** 20
+- **CURRENT_DEPLOY_LEVEL:** 20 (core obligatorio — cascada lineal)
 - **17 apps de cimientos** (L0, L10, L12, L15)
 - **4 sub-apps de mi_equipo** (L20)
 - **2 excepciones de analytics** (config_indicadores, exportacion_integracion)
+- **6 sub-apps supply_chain** (módulo C2 activo fuera de cascada — ver sección abajo)
+
+## Módulos C2 activos (fuera de cascada lineal)
+
+A partir de 2026-04-19 (S6), los módulos C2 se activan por **feature flag**
+(presencia en TENANT_APPS + registro en sidebar vía SystemModule) cuando sus
+dependencias están satisfechas, sin requerir activación lineal L25→L30→L35.
+
+| Módulo | Capa | Dependencias satisfechas | Activado | Sub-apps en TENANT_APPS |
+|--------|------|---------------------------|----------|-------------------------|
+| supply_chain | C2 | C0 (core) + C1 (configuracion, organizacion, identidad, contexto) + CT (gestion_documental, workflow_engine, catalogo_productos) | 2026-04-19 | catalogos, gestion_proveedores, recepcion, liquidaciones, almacenamiento, compras* |
+
+\* `compras` registrada **solo para integridad referencial** del FK
+`VoucherRecepcion.orden_compra → compras.OrdenCompra`. URLs NO montadas,
+sidebar NO expone, funcionalidad dormida. Reescritura futura.
+
+### Doctrina de feature-flag por módulo
+
+**Feature flag efectivo** = presencia en `TENANT_APPS` + `SystemModule.is_active=True`
+en cada tenant. El primer gate es infra (Django app registry), el segundo es UX
+(sidebar visible). Ambos deben alinearse para que un módulo esté "activo".
+
+Beneficios vs. cascada lineal:
+- Un C2 puede activarse cuando sus dependencias (C0+C1+CT) están listas, sin
+  esperar otros C2 vecinos
+- Permite paralelismo en el roadmap (ej: talent_hub podría activarse aunque
+  HSEQ no esté listo)
+- Alineado con patrones de mercado (Saleor, Wagtail, Django-Oscar): app
+  registration ≠ feature activation
 
 ### Apps LIVE detalladas
 

@@ -92,7 +92,53 @@ Portal proveedor = fase 2. Pago real = L70-L72 (Tesorería / Accounting).
 - Doctrina `docs/01-arquitectura/modular-tenancy.md` creada (12 secciones)
 - Detalle: `docs/history/2026-04-17-sesion-cierre-supply-chain-s2.md`
 
-### S3 — VoucherRecepcion + Liquidacion + TipoAlmacen 🔲
+### S3 — VoucherRecepcion + Liquidacion + TipoAlmacen ✅
+
+- Commits: múltiples commits S3/S3.1 (2026-04-17)
+- `VoucherRecepcion` + `RecepcionCalidad` + `Liquidacion` + `TipoAlmacen` creados
+- `RecepcionCompra` legacy eliminado
+- RBAC allowlist para `recepcion_mp_sc` + `liquidaciones_sc` aplicado en S3.1
+- Detalle: `docs/history/2026-04-17-sesion-cierre-supply-chain-s3.md` + `s3-1.md`
+
+### S4 — Inventario limpio ✅
+
+- Commit: sesión 2026-04-18
+- `almacenamiento/` reescrito con FK Producto (no strings), TenantModel
+- Signal `VoucherRecepcion.APROBADO → MovimientoInventario ENTRADA` implementado
+- Detalle: `docs/history/2026-04-18-sesion-cierre-supply-chain-s4.md`
+
+### S5 — Catálogo Productos CT-layer consolidado ✅
+
+- Commits: `f24e0e53` + `4db45d11` (2026-04-19 AM)
+- `catalogo_productos` promovido a NIVEL_INFRAESTRUCTURA, `is_system`, autocódigo
+- RBAC allowlist específico: `JEFE_PRODUCCION|ALMACENISTA|INSPECTOR_CALIDAD|SUPERVISOR_PLANTA`
+- Detalle: `docs/history/2026-04-19-catalogo-productos-s5-completo.md`
+
+### S6 — Activación supply_chain como módulo C2 ✅
+
+- Commit: `43800b1f` (2026-04-19 PM)
+- **6 sub-apps activadas** en TENANT_APPS (5 IN + compras registrada para integridad FK):
+  catalogos, gestion_proveedores, recepcion, liquidaciones, almacenamiento, compras
+- **CURRENT_DEPLOY_LEVEL permanece en 20.** Doctrina nueva: feature-flag por módulo,
+  no activación lineal. Supply Chain es el primer módulo C2 activo fuera de cascada.
+- **Limpieza:**
+  - Eliminada sub-app `programacion_abastecimiento` completa (código + frontend +
+    refs). Deuda futura: recrear con modelo canónico (catalogo_productos) si el
+    negocio la requiere.
+  - Eliminado `UnidadMedida` legacy de `supply_chain/catalogos` (reemplazado por
+    canónico CT-layer).
+  - `Almacen` migrado de `BaseCompanyModel` a `TenantModel`.
+- **Migraciones regeneradas clean-slate** para las 6 sub-apps (ninguna había
+  sido aplicada previamente).
+- **migrate_schemas OK** en shared + tenant_demo + test.
+- **Seeds idempotentes verificados** (2x ejecuciones seguras).
+- **Sidebar NIVEL_CADENA** con 7 tabs (Proveedores, Precios, Recepción, Liquidaciones,
+  Almacenamiento, Evaluaciones, Catálogos). Compras NO expuesta.
+- **Hallazgo `H-S6-unidades-medida-dup`** registrado: wrapper UnidadMedida en
+  almacenamiento sirve canónico de catalogo_productos — refactor frontend pendiente.
+- Detalle: `docs/history/2026-04-19-supply-chain-s6-activacion.md`
+
+### S3 detalle técnico (histórico) 🔲
 
 #### Backend
 

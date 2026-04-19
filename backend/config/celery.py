@@ -490,8 +490,11 @@ app.conf.task_routes = {
     'planeacion.check_plan_expiration': {'queue': 'compliance'},
 
     # Revision por la Direccion tasks
-    'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos': {'queue': 'compliance'},
-    'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision': {'queue': 'notifications'},
+    # DESACTIVADO L20 — Reactivar al activar gestion_estrategica.revision_direccion
+    # Deja mensajes zombie en Redis si la task se enruta sin el app instalado
+    # (ver Sentry PYTHON-DJANGO-2: 157 KeyError en 2 meses).
+    # 'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos': {'queue': 'compliance'},
+    # 'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision': {'queue': 'notifications'},
 
     # Evidencias Centralizadas tasks
     'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas': {'queue': 'compliance'},

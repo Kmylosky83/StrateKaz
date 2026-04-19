@@ -11,7 +11,7 @@ Flujo:
   4. Si es FORMULARIO, crea CampoFormulario desde JSON de la maestra
 
 Protección: si el tenant ya personalizó una plantilla (es_personalizada=True), NO se sobreescribe.
-Idempotente — usa update_or_create con unique_together (empresa_id, codigo).
+Idempotente — usa update_or_create con unique_together (codigo) por schema de tenant.
 Depende de: seed_biblioteca_plantillas (public) + seed_tipos_documento_sgi (tenant).
 """
 from django.core.management.base import BaseCommand
@@ -27,15 +27,6 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        from apps.core.base_models.mixins import get_tenant_empresa
-
-        empresa = get_tenant_empresa(auto_create=True)
-        if not empresa:
-            self.stdout.write(self.style.WARNING(
-                '  No se encontró empresa en el tenant actual'
-            ))
-            return
-
         TipoDocumento = apps.get_model('gestion_documental', 'TipoDocumento')
         PlantillaDocumento = apps.get_model('gestion_documental', 'PlantillaDocumento')
         BibliotecaPlantilla = apps.get_model('shared_library', 'BibliotecaPlantilla')
@@ -60,7 +51,6 @@ class Command(BaseCommand):
             # Desactivar plantillas en tenant que ya no están en la biblioteca
             codigos_activos = [m.codigo for m in plantillas_maestras]
             obsoletas = PlantillaDocumento.objects.filter(
-                empresa_id=empresa.id,
                 es_personalizada=False,
                 plantilla_maestra_codigo__isnull=False,
             ).exclude(codigo__in=codigos_activos)
@@ -76,7 +66,6 @@ class Command(BaseCommand):
                 # Buscar TipoDocumento existente (seed_tipos_documento_sgi)
                 try:
                     tipo_doc = TipoDocumento.objects.get(
-                        empresa_id=empresa.id,
                         codigo=tipo_codigo,
                     )
                 except TipoDocumento.DoesNotExist:
@@ -89,7 +78,6 @@ class Command(BaseCommand):
                 # PROTECCIÓN: si el tenant ya personalizó la plantilla, NO sobreescribir
                 tipo_plantilla = getattr(maestra, 'tipo_plantilla', 'HTML') or 'HTML'
                 existente = PlantillaDocumento.objects.filter(
-                    empresa_id=empresa.id,
                     codigo=maestra.codigo,
                 ).first()
 
@@ -98,7 +86,6 @@ class Command(BaseCommand):
                     continue
 
                 plantilla_obj, was_created = PlantillaDocumento.objects.update_or_create(
-                    empresa_id=empresa.id,
                     codigo=maestra.codigo,
                     defaults={
                         'nombre': maestra.nombre,
@@ -153,8 +140,6 @@ class Command(BaseCommand):
                             'orden': campo_data.get('orden', 0),
                             'ancho_columna': campo_data.get('ancho_columna', 12),
                             'columnas_tabla': campo_data.get('columnas_tabla', []),
-                            'is_active': True,
-                            'empresa_id': empresa.id,
                         }
                         _, cf_created = CampoFormulario.objects.update_or_create(
                             plantilla=plantilla_obj,

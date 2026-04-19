@@ -8,7 +8,7 @@ Jerarquía documental:
   - OPERATIVO: Instructivos, Formatos
   - SOPORTE: Actas, Registros, Base de Conocimiento
 
-Idempotente — usa update_or_create con unique_together (empresa_id, codigo).
+Idempotente — usa update_or_create con unique_together (codigo) por schema de tenant.
 CTR (Contrato de Trabajo) se crea en seed_plantillas_sgi (mismo módulo gestion_documental).
 """
 from django.core.management.base import BaseCommand
@@ -247,15 +247,6 @@ class Command(BaseCommand):
     help = 'Crea los 12 Tipos de Documento estándar del SGI (ISO 9001/14001/45001/27001)'
 
     def handle(self, *args, **options):
-        from apps.core.base_models.mixins import get_tenant_empresa
-
-        empresa = get_tenant_empresa(auto_create=True)
-        if not empresa:
-            self.stdout.write(self.style.WARNING(
-                '  No se encontró empresa en el tenant actual'
-            ))
-            return
-
         TipoDocumento = apps.get_model('gestion_documental', 'TipoDocumento')
 
         created_count = 0
@@ -265,10 +256,8 @@ class Command(BaseCommand):
             for tipo_data in TIPOS_DOCUMENTO_SGI:
                 codigo = tipo_data['codigo']
                 defaults = {k: v for k, v in tipo_data.items() if k != 'codigo'}
-                defaults['is_active'] = True
 
                 _, was_created = TipoDocumento.objects.update_or_create(
-                    empresa_id=empresa.id,
                     codigo=codigo,
                     defaults=defaults,
                 )

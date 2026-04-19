@@ -74,6 +74,7 @@ class Command(BaseCommand):
         """Ejecuta el seed completo dentro del schema del tenant actual."""
         # PASO 0: Limpiar registros huérfanos de versiones anteriores
         self._cleanup_legacy_mi_equipo_under_talent_hub()
+        self._cleanup_catalogo_productos_sin_frontend()
 
         # PASO 1: Migrar módulos V1 → V2
         self._migrate_v1_to_v2()
@@ -125,6 +126,26 @@ class Command(BaseCommand):
     # =========================================================================
     # MIGRACIÓN V1 → V2
     # =========================================================================
+
+    def _cleanup_catalogo_productos_sin_frontend(self):
+        """
+        Elimina catalogo_productos del sidebar porque no tiene UI frontend.
+        Backend L17 LIVE (modelos consumidos vía FK por Supply Chain) pero
+        sin route/feature en React. Causaba 404 al navegar desde sidebar.
+        CASCADE elimina ModuleTab + TabSection + CargoSectionAccess.
+        """
+        from apps.core.models import SystemModule
+
+        try:
+            module = SystemModule.objects.get(code='catalogo_productos')
+            tabs_count = module.tabs.count()
+            module.delete()
+            self.stdout.write(self.style.SUCCESS(
+                f'  [CLEANUP] catalogo_productos eliminado del sidebar '
+                f'({tabs_count} tabs + cascade sections)'
+            ))
+        except SystemModule.DoesNotExist:
+            pass
 
     def _cleanup_legacy_mi_equipo_under_talent_hub(self):
         """
@@ -857,30 +878,11 @@ class Command(BaseCommand):
 
             # ─── Nivel 9: CADENA DE VALOR ────────────────────────────────
 
-            # 9.0: Catálogo de Productos (CT-layer, transversal)
-            {
-                'code': 'catalogo_productos',
-                'name': 'Catálogo de Productos',
-                'description': 'Dato maestro de productos, categorías y unidades de medida',
-                'category': 'OPERATIONAL',
-                'color': 'green',
-                'icon': 'Package',
-                'route': '/catalogo-productos',
-                'is_core': False,
-                'is_enabled': True,
-                'orden': 49,
-                'tabs': [
-                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 1, 'sections': [
-                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
-                    ]},
-                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 2, 'sections': [
-                        {'code': 'gestion_categorias', 'name': 'Gestión de Categorías', 'icon': 'FolderTree', 'orden': 1, 'description': 'Categorías jerárquicas de productos'},
-                    ]},
-                    {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
-                        {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
-                    ]},
-                ]
-            },
+            # NOTA: catalogo_productos (L17 LIVE backend) REMOVIDO del sidebar
+            # hasta que la UI frontend correspondiente (/catalogo-productos) se
+            # construya en una sesión dedicada. Causaba 404 al navegar desde
+            # sidebar. Los modelos siguen siendo consumidos vía FK por supply
+            # chain (recepción, liquidaciones, almacenamiento).
 
             # 9A: Supply Chain
             {

@@ -12,6 +12,7 @@ export interface CategoriaProducto {
   parent: number | null;
   codigo: string;
   orden: number;
+  is_system: boolean;
   full_path: string;
   subcategorias_count: number;
   created_at: string;
@@ -49,6 +50,7 @@ export interface UnidadMedida {
   factor_conversion: string | null;
   es_base: boolean;
   orden: number;
+  is_system: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -94,7 +96,7 @@ export interface Producto {
 }
 
 export interface CreateProductoDTO {
-  codigo: string;
+  codigo?: string;
   nombre: string;
   descripcion?: string;
   categoria?: number | null;

@@ -40,6 +40,7 @@ export default function ProductosTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [codigoManual, setCodigoManual] = useState(false);
 
   const { data: productos = [], isLoading } = useProductos();
   const { data: categorias = [] } = useCategorias();
@@ -70,12 +71,14 @@ export default function ProductosTab() {
 
   function openCreate() {
     setEditing(null);
+    setCodigoManual(false);
     reset({ codigo: '', nombre: '', descripcion: '', tipo: 'MATERIA_PRIMA', sku: '', notas: '' });
     setModalOpen(true);
   }
 
   function openEdit(p: Producto) {
     setEditing(p);
+    setCodigoManual(true);
     reset({
       codigo: p.codigo,
       nombre: p.nombre,
@@ -93,6 +96,7 @@ export default function ProductosTab() {
   function onSubmit(raw: CreateProductoDTO) {
     const data: CreateProductoDTO = {
       ...raw,
+      codigo: codigoManual || editing ? raw.codigo || undefined : undefined,
       categoria: raw.categoria ? Number(raw.categoria) : null,
       unidad_medida: Number(raw.unidad_medida),
       precio_referencia: raw.precio_referencia || null,
@@ -216,13 +220,26 @@ export default function ProductosTab() {
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Código"
-              required
-              placeholder="Ej: PROD-001"
-              error={errors.codigo?.message}
-              {...register('codigo', { required: 'El código es obligatorio' })}
-            />
+            <div>
+              <Input
+                label="Código"
+                placeholder={editing || codigoManual ? 'PROD-00001' : 'Se generará automáticamente'}
+                disabled={!editing && !codigoManual}
+                error={errors.codigo?.message}
+                {...register('codigo')}
+              />
+              {!editing && (
+                <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={codigoManual}
+                    onChange={(e) => setCodigoManual(e.target.checked)}
+                    className="rounded"
+                  />
+                  Ingresar código manualmente
+                </label>
+              )}
+            </div>
             <Select label="Tipo" options={TIPO_OPTIONS} {...register('tipo')} />
           </div>
           <Input

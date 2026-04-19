@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, FolderTree } from 'lucide-react';
+import { Plus, Edit, Trash2, FolderTree, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Card } from '@/components/common/Card';
@@ -131,7 +131,15 @@ export default function CategoriasTab() {
                 {categorias.map((cat) => (
                   <tr key={cat.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
-                      {cat.nombre}
+                      <div className="flex items-center gap-2">
+                        {cat.is_system && (
+                          <Lock
+                            className="w-3.5 h-3.5 text-slate-400"
+                            aria-label="Categoría del sistema"
+                          />
+                        )}
+                        {cat.nombre}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">
                       {cat.full_path}
@@ -147,9 +155,11 @@ export default function CategoriasTab() {
                         <Button variant="ghost" size="sm" onClick={() => openEdit(cat)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeletingId(cat.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
+                        {!cat.is_system && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeletingId(cat.id)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

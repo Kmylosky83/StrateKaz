@@ -12,10 +12,10 @@ class CategoriaProductoSerializer(serializers.ModelSerializer):
         model = CategoriaProducto
         fields = [
             'id', 'nombre', 'descripcion', 'parent', 'codigo',
-            'orden', 'full_path', 'subcategorias_count',
+            'orden', 'is_system', 'full_path', 'subcategorias_count',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'is_system', 'created_at', 'updated_at']
 
     def get_subcategorias_count(self, obj):
         return obj.subcategorias.filter(is_deleted=False).count()
@@ -26,13 +26,14 @@ class UnidadMedidaSerializer(serializers.ModelSerializer):
         model = UnidadMedida
         fields = [
             'id', 'nombre', 'abreviatura', 'tipo',
-            'factor_conversion', 'es_base', 'orden',
+            'factor_conversion', 'es_base', 'orden', 'is_system',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'is_system', 'created_at', 'updated_at']
 
 
 class ProductoSerializer(serializers.ModelSerializer):
+    codigo = serializers.CharField(required=False, allow_blank=True)
     categoria_nombre = serializers.CharField(
         source='categoria.nombre', read_only=True, default=None,
     )

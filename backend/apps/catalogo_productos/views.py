@@ -1,7 +1,8 @@
 """ViewSets para Catálogo de Productos."""
-from django.db.models import Count, Q
-from rest_framework import viewsets, status
+from django.db.models import Count
+from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -12,6 +13,14 @@ from .serializers import (
     UnidadMedidaSerializer,
     ProductoSerializer,
 )
+
+
+def _protect_system_delete(instance, label: str):
+    """Rechaza delete si el registro es del sistema."""
+    if getattr(instance, 'is_system', False):
+        raise PermissionDenied(
+            f'{label} es del sistema y no puede eliminarse.'
+        )
 
 
 class CategoriaProductoViewSet(viewsets.ModelViewSet):
@@ -35,6 +44,7 @@ class CategoriaProductoViewSet(viewsets.ModelViewSet):
         serializer.save(updated_by=self.request.user)
 
     def perform_destroy(self, instance):
+        _protect_system_delete(instance, 'La categoría')
         instance.soft_delete(user=self.request.user)
 
 
@@ -59,6 +69,7 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
         serializer.save(updated_by=self.request.user)
 
     def perform_destroy(self, instance):
+        _protect_system_delete(instance, 'La unidad de medida')
         instance.soft_delete(user=self.request.user)
 
 

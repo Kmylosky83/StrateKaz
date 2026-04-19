@@ -46,6 +46,11 @@ class CategoriaProducto(TenantModel):
         default=0,
         verbose_name='Orden',
     )
+    is_system = models.BooleanField(
+        default=False,
+        verbose_name='Es del sistema',
+        help_text='Las categorías del sistema son protegidas y no se pueden eliminar',
+    )
 
     class Meta:
         verbose_name = 'Categoría de producto'
@@ -124,6 +129,11 @@ class UnidadMedida(TenantModel):
     orden = models.PositiveIntegerField(
         default=0,
         verbose_name='Orden',
+    )
+    is_system = models.BooleanField(
+        default=False,
+        verbose_name='Es del sistema',
+        help_text='Las unidades del sistema son protegidas y no se pueden eliminar',
     )
 
     class Meta:
@@ -223,6 +233,16 @@ class Producto(TenantModel):
 
     def __str__(self):
         return f'[{self.codigo}] {self.nombre}'
+
+    @staticmethod
+    def generar_codigo():
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('PRODUCTO')
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            self.codigo = self.generar_codigo()
+        super().save(*args, **kwargs)
 
 
 # Registrar extensiones para que Django las descubra en el app registry.

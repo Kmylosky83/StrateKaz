@@ -923,6 +923,17 @@ CONSECUTIVOS_ADICIONALES = [
         'reset_yearly': True,
         'es_sistema': True,
     },
+    # ── Catálogo de Productos (CT-layer L17) ──────────────
+    {
+        'codigo': 'PRODUCTO',
+        'nombre': 'Producto (catálogo maestro)',
+        'categoria': 'INVENTARIO',
+        'prefix': 'PROD',
+        'padding': 5,
+        'include_year': False,
+        'reset_yearly': False,
+        'es_sistema': True,
+    },
     # ── Gestión Documental (catálogos) ─────────────────────
     {
         'codigo': 'TIPO_DOCUMENTO',

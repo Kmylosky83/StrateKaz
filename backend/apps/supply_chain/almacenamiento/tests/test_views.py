@@ -1,75 +1,106 @@
 """
-Tests para views/viewsets de Almacenamiento e Inventario
-=========================================================
+Tests de viewsets de almacenamiento — CRUD básico con JWT auth.
 
-Tests de APIs REST y acciones custom
-
-Autor: Sistema ERP StrateKaz
-Fecha: 27 Diciembre 2025
+Valida que las URLs responden y los permisos de IsAuthenticated aplican.
 """
-import pytest
-from rest_framework.test import APIClient
-from rest_framework import status
+from decimal import Decimal
+
+from django.urls import reverse
+
+from apps.core.tests.base import BaseTenantTestCase
+from apps.supply_chain.almacenamiento.models import Inventario
+
+from . import factories
 
 
-@pytest.fixture
-def api_client():
-    """Cliente API."""
-    return APIClient()
+class TestInventarioViewSetAuth(BaseTenantTestCase):
+    """Auth: endpoints requieren autenticación."""
+
+    def setUp(self):
+        super().setUp()
+        # Necesario para pasar ModuleAccessMiddleware
+        self.create_system_module(code='supply_chain', name='Supply Chain')
+
+    def test_list_unauthenticated_returns_401(self):
+        response = self.client.get('/api/supply-chain/almacenamiento/inventarios/')
+        self.assertEqual(response.status_code, 401)
 
 
-@pytest.fixture
-def authenticated_client(api_client, usuario):
-    """Cliente autenticado."""
-    api_client.force_authenticate(user=usuario)
-    return api_client
+class TestInventarioViewSetCRUD(BaseTenantTestCase):
+    """CRUD básico de Inventario autenticado."""
+
+    def setUp(self):
+        super().setUp()
+        self.create_system_module(code='supply_chain', name='Supply Chain')
+        factories.setup_full_supply_chain(self)
+        self.user = self.create_user()
+        self.headers = self.authenticate_as(self.user)
+
+        self.inventario = Inventario.objects.create(
+            almacen=self.almacen,
+            producto=self.producto,
+            lote='LOTE-TEST',
+            estado=self.estado_disponible,
+            unidad_medida=self.unidad_kg,
+            cantidad_disponible=Decimal('100.000'),
+            costo_unitario=Decimal('1500.00'),
+            costo_promedio=Decimal('1500.00'),
+        )
+
+    def test_list_returns_inventarios(self):
+        response = self.client.get('/api/supply-chain/almacenamiento/inventarios/', **self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        results = data.get('results', data)
+        self.assertGreaterEqual(len(results), 1)
+
+    def test_detail_expone_producto_codigo_y_nombre_desde_fk(self):
+        response = self.client.get(
+            f'/api/supply-chain/almacenamiento/inventarios/{self.inventario.pk}/',
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['producto'], self.producto.pk)
+        self.assertEqual(data['producto_codigo'], self.producto.codigo)
+        self.assertEqual(data['producto_nombre'], self.producto.nombre)
+
+    def test_reservar_action_reduce_disponible(self):
+        response = self.client.post(
+            f'/api/supply-chain/almacenamiento/inventarios/{self.inventario.pk}/reservar/',
+            data={'cantidad': 30},
+            content_type='application/json',
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.inventario.refresh_from_db()
+        self.assertEqual(self.inventario.cantidad_disponible, Decimal('70.000'))
+        self.assertEqual(self.inventario.cantidad_reservada, Decimal('30.000'))
 
 
-@pytest.mark.django_db
-class TestInventarioViewSet:
-    """Tests para viewset de Inventario."""
+class TestTipoMovimientoViewSet(BaseTenantTestCase):
+    """Catálogo TipoMovimiento — CRUD básico."""
 
-    def test_list_inventarios(self, authenticated_client, inventario):
-        """Test listar inventarios."""
-        # Implementar cuando existan URLs configuradas
-        pass
+    def setUp(self):
+        super().setUp()
+        self.create_system_module(code='supply_chain', name='Supply Chain')
+        self.user = self.create_user()
+        self.headers = self.authenticate_as(self.user)
 
-    def test_stock_bajo_action(self, authenticated_client, inventario_bajo_stock):
-        """Test acción custom para listar stock bajo."""
-        # Implementar cuando exista la acción custom
-        pass
-
-
-@pytest.mark.django_db
-class TestMovimientoInventarioViewSet:
-    """Tests para viewset de MovimientoInventario."""
-
-    def test_create_movimiento(self, authenticated_client):
-        """Test crear movimiento de inventario."""
-        # Implementar cuando existan URLs configuradas
-        pass
-
-    def test_kardex_action(self, authenticated_client, inventario):
-        """Test acción custom para consultar kardex."""
-        # Implementar cuando exista la acción custom
-        pass
-
-
-@pytest.mark.django_db
-class TestAlertaStockViewSet:
-    """Tests para viewset de AlertaStock."""
-
-    def test_list_alertas_activas(self, authenticated_client, alerta_stock):
-        """Test listar alertas activas (no resueltas)."""
-        # Implementar cuando existan URLs configuradas
-        pass
-
-    def test_resolver_alerta(self, authenticated_client, alerta_stock):
-        """Test acción custom para resolver alerta."""
-        # Implementar cuando exista la acción custom
-        pass
-
-    def test_marcar_leida(self, authenticated_client, alerta_stock):
-        """Test acción custom para marcar alerta como leída."""
-        # Implementar cuando exista la acción custom
-        pass
+    def test_crear_tipo_movimiento_via_api(self):
+        response = self.client.post(
+            '/api/supply-chain/almacenamiento/tipos-movimiento/',
+            data={
+                'codigo': 'SALIDA',
+                'nombre': 'Salida de Inventario',
+                'afecta_stock': 'NEGATIVO',
+                'requiere_origen': True,
+                'requiere_destino': False,
+            },
+            content_type='application/json',
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        self.assertEqual(data['codigo'], 'SALIDA')
+        self.assertEqual(data['signo'], '-')

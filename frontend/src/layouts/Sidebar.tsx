@@ -97,36 +97,32 @@ const NavItemComponent = ({
     return false;
   }, [item, location.pathname]);
 
-  // ── Categoría (grupo de módulos) ──
+  // ── Categoría (grupo de módulos) — TIER 0: label estructural ──
+  // Patrón: Material Design / Atlassian / Fluent UI
+  // UPPERCASE pequeño, muted, colapsable, sin background hover.
   if (item.is_category) {
     return (
-      <div className="mt-5 first:mt-0">
-        {/* Separador sutil */}
-        {depth === 0 && !isCollapsed && (
-          <div className="mb-2 mx-3">
-            <div className="h-px bg-gray-200 dark:bg-gray-700" />
-          </div>
-        )}
-
+      <div className="mt-5 first:mt-2">
         <button
           onClick={() => toggleExpanded(item.code)}
           className={cn(
-            'w-full flex items-center px-3 py-2 rounded-lg transition-colors group relative',
-            isActive
-              ? 'bg-gray-100 dark:bg-gray-700/60 text-gray-900 dark:text-gray-100'
-              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+            'w-full flex items-center px-3 py-1.5 rounded-md transition-colors group relative',
+            'text-gray-400 dark:text-gray-500',
+            'hover:text-gray-600 dark:hover:text-gray-300'
           )}
         >
-          <Icon className="h-4 w-4 flex-shrink-0" />
-          {!isCollapsed && (
+          {isCollapsed ? (
+            <Icon className="h-4 w-4 flex-shrink-0 mx-auto opacity-60" />
+          ) : (
             <>
-              <span className="ml-3 flex-1 text-left text-xs font-semibold uppercase tracking-wider">
+              <Icon className="h-3.5 w-3.5 flex-shrink-0 opacity-60" />
+              <span className="ml-2.5 flex-1 text-left text-[10.5px] font-semibold uppercase tracking-[0.08em]">
                 {item.name}
               </span>
               {isExpanded ? (
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                <ChevronDown className="h-3 w-3 opacity-50" />
               ) : (
-                <ChevronRight className="h-3.5 w-3.5 opacity-50" />
+                <ChevronRight className="h-3 w-3 opacity-50" />
               )}
             </>
           )}

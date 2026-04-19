@@ -10,7 +10,10 @@
 | `980f4418` | fix(supply-chain): S4 hot-fix — almacenamiento usa catalogo_productos.UnidadMedida | (encadenado) |
 | `a841f5f2` | test(supply-chain): S4 FASE 4+5 — tests almacenamiento + admin configurado (25/25 OK) | CodeQL ✅ / CI cancelled |
 | `8046faff` | fix(supply-chain): resuelve conflicto useLiquidaciones en barrel export | cancelled (superseded) |
-| `18d1ae03` | fix(celery): desactiva task_routes de revision_direccion (app pre-LIVE) | pending push |
+| `18d1ae03` | fix(celery): desactiva task_routes de revision_direccion (app pre-LIVE) | ✅ pusheado |
+| `1cc322f9` | docs(history): cierre sesion S4 supply chain — almacenamiento + signal | ✅ pusheado |
+| `48032d3c` | chore: bump version to 5.7.0 | ✅ CI verde completo |
+| `71de12f1` | fix(sidebar): remueve catalogo_productos del sidebar (sin UI frontend) | ✅ pusheado |
 
 ## Estado del producto
 
@@ -83,10 +86,11 @@
 
 ### Deuda técnica creada en S4
 
-- **H-S4-1**: Desactivación del task_routes en `celery.py` (commit `18d1ae03`) no pusheado hasta terminar el CI corriente. Push pendiente.
 - **H-S4-views-refactor**: `almacenamiento/views.py` sigue siendo god-file de 903 LOC con 10 ViewSets. Refactor a módulos separados para sesión dedicada.
 - **H-S4-tipomateriaprima-vs-producto**: 9 call sites en `production_ops/recepcion` usan `TipoMateriaPrima`. Sesión dedicada para decidir: fusionar, especializar via `CategoriaProducto`, o mantener separado.
 - **H-S4-reversal**: No hay política de reversal del signal — si un voucher se rechaza/anula después de APROBADO, el `Inventario` queda incrementado. No bloqueante hoy. Abrir issue cuando se active el módulo.
+- **H-S4-catalogo-productos-frontend**: Backend L17 LIVE sin UI frontend. Oculto del sidebar por hot-fix `71de12f1`. Construir feature + route + re-agregar al seed en sesión dedicada.
+- **H-S4-seeds-legacy**: 3 seeds rotos (`seed_tipos_documento_sgi`, `seed_plantillas_sgi` con `empresa_id` post-TenantModel; `seed_supply_chain_catalogs` comando inexistente). 6 errores recurrentes cada deploy. Sesión operacional dedicada.
 
 ### Deuda heredada (no atendida en S4)
 
@@ -101,14 +105,72 @@
 - **STRATEKAZ-P** (2 eventos, 2 semanas): `Failed to fetch dynamically imported module` — stale chunk de PWA tras deploy. Deuda pre-existente, config `vite-plugin-pwa` necesita `cleanupOutdatedCaches: true`.
 - **STRATEKAZ-J** (4 eventos, 12 semanas): `WebGL context error` en login. Entorno de cliente, fallback opcional.
 
+## Deploy a producción (ejecutado al cierre)
+
+Tras CI verde en `1cc322f9` (102 min total — bloqueantes verdes a los ~30 min,
+informativo pytest lento), se ejecutó el deploy al VPS con el commit `48032d3c`.
+
+- **VPS antes:** `9ca3e9ae` (2026-04-06) → **12 días / 99 commits atrás**.
+- **VPS después:** `71de12f1` (2026-04-18) → sincronizado.
+- **Comando:** one-liner Opción C de `docs/04-devops/deploy.md` (git pull +
+  migrate_schemas + deploy_seeds_all_tenants + collectstatic + npm build +
+  systemctl restart de gunicorn/celery/celerybeat).
+- **Migraciones aplicadas:** 5 × 3 schemas (public + 2 tenants):
+  `catalogo_productos.0001_initial`, `catalogo_productos.0002_productoespeccalidad_and_more`,
+  `gestion_documental.0022_migrate_to_base_company_model`,
+  `gestion_documental.0023_revert_to_tenant_model`,
+  `organizacion.0003_migrate_node_position_to_tenant_model`.
+- **Secciones RBAC propagadas:** `gestion_productos`, `gestion_categorias`,
+  `gestion_unidades` (catalogo_productos), `recepcion_mp_sc`, `liquidaciones_sc`
+  (supply_chain) a los cargos existentes (5 en grasas_y_huesos, 3 en stratekaz).
+- **Build frontend:** 5.7.0 en 58.76s, PWA generado (`dist/sw.js` + `dist/workbox-*.js`).
+- **Servicios:** los 3 `stratekaz-*` active (running) post-restart.
+- **Cola Redis zombie:** drenada por el worker al reiniciar (purge retornó 0).
+
+### Hot-fix post-deploy: sidebar `catalogo_productos` sin UI (commit `71de12f1`)
+
+Tras el deploy, el sidebar mostraba el módulo `catalogo_productos` con 3 tabs
+(productos, categorías, unidades) pero todos retornaban 404 porque el frontend
+no tiene `/catalogo-productos` route ni feature directory correspondiente.
+
+**Fix aplicado:**
+1. `seed_estructura_final.py`: eliminado el bloque completo de
+   `catalogo_productos` de `get_modules_config()`.
+2. Nuevo método `_cleanup_catalogo_productos_sin_frontend()` en paso 0 del seed
+   que elimina el `SystemModule(code='catalogo_productos')` existente.
+   CASCADE limpia `ModuleTab` + `TabSection` + `CargoSectionAccess`.
+3. Re-corrido `deploy_seeds_all_tenants` en VPS → limpieza aplicada
+   (logs confirmaron `SECTION_ACCESSES_CLEANED` para los 3 códigos × 2 tenants).
+4. `systemctl restart stratekaz-gunicorn` — caches de sidebar rehechos.
+5. Usuario verificó visualmente: sidebar limpio, solo módulos con frontend real.
+
+**Nota importante:** los modelos `catalogo_productos.Producto`, `Categoria`,
+`UnidadMedida` siguen siendo L17 LIVE backend — consumidos vía FK por
+supply_chain (recepción, liquidaciones, almacenamiento). Solo se ocultó la UI
+administrativa del sidebar hasta que alguien construya el feature frontend.
+
+### Errores no-bloqueantes observados durante deploy
+
+Los 6 errores reportados por `deploy_seeds_all_tenants` (3 seeds × 2 tenants)
+son deuda pre-existente, no introducida hoy:
+- `seed_tipos_documento_sgi` y `seed_plantillas_sgi` intentan filtrar por
+  `empresa_id` que ya no existe tras migrar `gestion_documental` a `TenantModel`.
+- `seed_supply_chain_catalogs` referencia comando inexistente.
+
+Abiertos como `H-S4-seeds-legacy` para sesión operacional dedicada.
+
 ## Próximo paso claro
 
-**S5**: Cuando S4 esté consolidado post-push:
-1. Ejecutar seed de catálogos base (`TipoMovimientoInventario` con ENTRADA/SALIDA/AJUSTE, `EstadoInventario` con DISPONIBLE/RESERVADO/BLOQUEADO, `TipoAlerta` con STOCK_MINIMO/VENCIMIENTO).
-2. Migrar viewsets de `recepcion`/`liquidaciones` a `GranularActionPermission` con `section_code` (H-S3.1-2).
-3. Activar módulos `sc_recepcion` + `liquidaciones` + `almacenamiento` en `base.py` (descomentar líneas 181-184).
-4. Correr `deploy_seeds_all_tenants` para distribuir seeds a tenants existentes.
-5. Incrementar `CURRENT_DEPLOY_LEVEL` a 35.
+**S5**: Supply Chain activation (VPS ya al día).
+1. Construir UI frontend mínima para `catalogo_productos` (3 páginas CRUD)
+   + registrar route `/catalogo-productos` + re-agregar módulo al seed.
+2. Ejecutar seed de catálogos base (`TipoMovimientoInventario` con ENTRADA/SALIDA/AJUSTE, `EstadoInventario` con DISPONIBLE/RESERVADO/BLOQUEADO, `TipoAlerta` con STOCK_MINIMO/VENCIMIENTO).
+3. Migrar viewsets de `recepcion`/`liquidaciones` a `GranularActionPermission` con `section_code` (H-S3.1-2).
+4. Activar módulos `sc_recepcion` + `liquidaciones` + `almacenamiento` en `base.py` (descomentar líneas 181-184).
+5. Arreglar los 3 seeds rotos (`H-S4-seeds-legacy`).
+6. Correr `deploy_seeds_all_tenants` + re-deploy VPS.
+7. Smoke test end-to-end: crear voucher → aprobar → verificar movimiento + inventario.
+8. Incrementar `CURRENT_DEPLOY_LEVEL` a 35.
 
 ## Archivos clave tocados
 
@@ -136,9 +198,17 @@
 
 Ver "Deuda consciente activa" arriba. Severidad:
 
-- **H-S4-1** (push pendiente): BAJA — commit local, push tras CI verde.
 - **H-S4-views-refactor**: MEDIA — god-file 903 LOC, afecta mantenibilidad.
 - **H-S4-tipomateriaprima-vs-producto**: MEDIA — requiere decisión arquitectónica.
 - **H-S4-reversal**: BAJA — no bloqueante hasta activación del módulo.
+- **H-S4-catalogo-productos-frontend**: MEDIA — módulo LIVE backend sin UI. Retraso S5 porque bloquea flujo natural de consumo.
+- **H-S4-seeds-legacy**: BAJA — 6 errores recurrentes, sistema operativo no-bloqueado.
 
 Ninguno bloqueante para continuar a S5.
+
+## Versión + deploy
+
+- `package.json` + `frontend/package.json`: **5.6.1 → 5.7.0** (MINOR, commit `48032d3c`).
+- `marketing_site/package.json`: 5.3.0 sin cambios.
+- Backend API spec (`base.py:429`): 5.3.0 sin cambios.
+- Cubre 19 días / 99 commits desde el bump anterior (2026-03-30).

@@ -1,29 +1,53 @@
 """
-Management command MAESTRO para configurar los 21 módulos del ERP StrateKaz
-según la Arquitectura Cascada V3.
+Management command MAESTRO para configurar los módulos del ERP StrateKaz.
 
-DEPLOY CASCADE — is_enabled=True por nivel:
-    L0:  core + ia (siempre activos, no son SystemModule)
-    L10: fundacion (is_core)
-    L12: workflow_engine + audit_system (transversal)
+DOCTRINA DE ACTIVACIÓN (post-S6, 2026-04-19):
+    Los módulos se activan por FEATURE-FLAG por módulo, no por cascada
+    lineal. Supply Chain fue el primer módulo C2 activado bajo esta
+    doctrina (ver docs/architecture/PERIMETRO-LIVE.md).
+
+    Separación de responsabilidades:
+      1. is_enabled=True         → "StrateKaz soporta este módulo LIVE"
+                                   (universal: todos los tenants lo reciben)
+      2. Tenant.enabled_modules  → "Este tenant pagó por este módulo"
+                                   (licenciamiento comercial, opcional)
+      3. CargoSectionAccess RBAC → "Este cargo puede ver esta sección"
+                                   (granular por sección)
+
+    Un módulo LIVE (is_enabled=True en seed) es visible en TODOS los
+    tenants que no tengan restricción explícita de licenciamiento.
+
+FLUJO DE LIBERACIÓN DE NUEVO MÓDULO A LIVE:
+    1. Descomentar app en base.py TENANT_APPS
+    2. makemigrations + migrate_schemas
+    3. Editar este seed: agregar bloque del módulo con is_enabled: True
+    4. Deploy VPS → deploy_seeds_all_tenants corre automáticamente
+    5. Módulo visible en todos los tenants (salvo licensing override)
+
+LIVE actual (fecha de activación):
+    L0:  core + ia (always, no son SystemModule)
+    L10: fundacion (is_core)          [always]
+    L12: workflow_engine + audit_system (transversal)  [always]
     L15: gestion_documental
-    L20: mi_equipo
+    L16: catalogo_productos (CT-layer)
+    L20: mi_equipo (Gestión de Personas)
+    L50: supply_chain (S6 — 2026-04-19)
+    L92: workflow_engine
+    L97: configuracion_plataforma (is_core)
+
+DORMIDOS (is_enabled=False por design, aún no promovidos a LIVE):
     L25: planificacion_operativa
     L30: planeacion_estrategica
     L35: proteccion_cumplimiento
     L40: gestion_integral
-    L50-53: supply_chain + production_ops + logistics_fleet + sales_crm
+    L51-53: production_ops, logistics_fleet, sales_crm
     L60: talent_hub
-    L70-72: administracion + tesoreria + accounting
-    L80-90: analytics + revision_direccion + acciones_mejora
-    SIEMPRE: configuracion_plataforma (is_core)
-
-Para activar un nivel: cambiar is_enabled=False → True, descomentar apps
-en base.py TENANT_APPS, y re-ejecutar seeds.
+    L70-72: administracion, tesoreria, accounting
+    L80-90: analytics, revision_direccion, acciones_mejora
 
 Uso:
-    docker exec -it backend python manage.py seed_estructura_final
-    (o: python manage.py deploy_seeds_all_tenants)
+    docker compose exec backend python manage.py seed_estructura_final
+    docker compose exec backend python manage.py deploy_seeds_all_tenants
 """
 import copy
 
@@ -933,7 +957,7 @@ class Command(BaseCommand):
                 'icon': 'Package',
                 'route': '/supply-chain',
                 'is_core': False,
-                'is_enabled': False,  # CASCADE L30
+                'is_enabled': True,  # S6 LIVE — módulo universal post-deploy
                 'orden': 50,
                 'tabs': [
                     {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [

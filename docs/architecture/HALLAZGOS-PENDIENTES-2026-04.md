@@ -449,50 +449,45 @@ temporalmente porque no bloquea funcionalidad ni compromete integridad.
 
 ---
 
-## H-S6-activation-procedure — Feature-flag tiene 3 gates, no 2
+## H-S6-activation-procedure — ✅ RESUELTO (2026-04-19)
 
-### Detectado
-2026-04-19 (S6 smoke browseable en tenant_demo)
+### Resolución
+Era un **bug de datos en el seed**, no un problema arquitectónico de 3 gates.
+Fix: 1 línea en `seed_estructura_final.py:936` (`is_enabled: False` → `True`).
 
-### Severidad
-**MEDIA** — No bloquea activación pero requiere pasos manuales post-deploy
-que deben convertirse en management command para escalar a más tenants.
+### Doctrina correcta (validada vs patrones Saleor/Wagtail/Odoo)
 
-### Síntoma
-Al activar supply_chain via `TENANT_APPS` + `migrate_schemas` + seeds, el
-módulo NO aparecía en el sidebar del frontend. Causa: el sistema tiene
-**3 gates** de feature-flag, no 2 como se documentó inicialmente:
+El sistema tiene **3 conceptos con responsabilidades distintas**, no 3 gates:
 
-1. `TENANT_APPS` (Django app registry) — vía base.py ✅ automático
-2. `SystemModule.is_enabled=True` — vía `.enable()` o UPDATE directo
-3. `Tenant.enabled_modules` (JSONField en public schema) — debe incluir el
-   `code` del módulo para que el endpoint `/api/core/system-modules/tree/`
-   lo retorne
+| Concepto | Significado | Fuente |
+|----------|-------------|--------|
+| **Codebase LIVE** | "StrateKaz soporta este módulo en producción" | `TENANT_APPS` en base.py + `is_enabled=True` en seed |
+| **Licensing** | "Este tenant pagó por este módulo" | `Tenant.enabled_modules` + `Plan.features` |
+| **RBAC** | "Este cargo puede ver esta sección" | `CargoSectionAccess` (granular) |
 
-En S6 se ejecutaron manualmente:
-```python
-# Gate 2: En cada tenant schema
-SystemModule.objects.filter(code='supply_chain').update(is_enabled=True)
+**Empty `enabled_modules` + empty `Plan.features` = sin filtro** — el tenant
+ve TODOS los módulos LIVE. Esto es la doctrina "módulos universales
+post-deploy" que Camilo articuló.
 
-# Gate 3: En public schema
-Tenant.objects.filter(schema_name='tenant_demo').update(
-    enabled_modules=F('enabled_modules') || ['supply_chain']
-)
-```
+### Causa original del síntoma
+El seed tenía `'is_enabled': False, # CASCADE L30` hardcodeado para
+supply_chain — legado de la doctrina vieja (cascada lineal L0→L90). Cuando
+S6 promovió supply_chain a LIVE, el seed no fue actualizado.
 
-### Solución propuesta
-Crear management command `enable_module_for_tenant`:
-```bash
-python manage.py enable_module_for_tenant supply_chain --tenant tenant_demo
-```
-Que haga los 3 gates de una vez con validación de dependencias.
+### Flujo correcto de liberación (documentado en seed docstring post-fix)
 
-Alternativamente, agregar UI en Admin Global para toggle visual de módulos
-por tenant.
+1. Descomentar app en `base.py` TENANT_APPS
+2. `makemigrations` + `migrate_schemas`
+3. Editar `seed_estructura_final.py`: cambiar `is_enabled: True` en el bloque del módulo
+4. Deploy VPS → `deploy_seeds_all_tenants` propaga a todos los tenants
+5. Módulo visible universalmente (salvo override comercial en Admin Global)
 
-### Trigger
-Deploy VPS de S6 a tenant productivo (grasas_y_huesos): requiere ejecutar
-los mismos 3 gates manualmente hasta que el command exista.
+### Cambios aplicados
+- `seed_estructura_final.py:936`: `is_enabled=True` para supply_chain
+- `seed_estructura_final.py:1-63`: docstring reescrito con doctrina nueva
+- `tenant_demo.enabled_modules`: reseteado a `[]` (respeta "universal")
+
+---
 
 ---
 

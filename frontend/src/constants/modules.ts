@@ -2,22 +2,67 @@
  * Constantes de módulos disponibles del sistema.
  *
  * Fuente de verdad única para módulos en PlanFormModal y TenantFormModal.
- * Las categorías reflejan los 10 grupos visuales del sidebar V2
+ * Las categorías reflejan los 12 grupos visuales del sidebar V2
  * (SIDEBAR_LAYERS en backend/apps/core/viewsets_config.py).
  *
- * Arquitectura Cascada V3 — 20 módulos organizados por ciclo PHVA + Transversal.
+ * DOCTRINA DE DESPLIEGUE (post-S6, 2026-04-19):
+ *   Los módulos pasan a LIVE por feature-flag individual, NO por cascada lineal.
+ *   `DEPLOYED_MODULES` es la lista canónica de códigos LIVE. El campo
+ *   `deployLevel` se conserva solo como metadata informativa (orden relativo
+ *   dentro del roadmap original), no como gate de activación.
+ *
+ *   Cuando un módulo pasa a LIVE:
+ *     1. Se agrega su `code` a `DEPLOYED_MODULES` en este archivo
+ *     2. Se actualiza `is_enabled: True` en `seed_estructura_final.py`
+ *     3. Deploy VPS → módulo visible universalmente
  */
 
 export interface SystemModule {
   code: string;
   name: string;
   category: ModuleCategory;
-  /** Nivel de cascade en el que se despliega. 0 = siempre activo. undefined = no desplegado aún. */
+  /**
+   * Nivel informativo del roadmap original (cascada V3). Metadata ordinal.
+   * NO se usa como gate de activación — ver `DEPLOYED_MODULES`.
+   */
   deployLevel?: number;
 }
 
-/** Nivel máximo de cascade actualmente desplegado */
+/**
+ * Códigos de módulos LIVE (desplegados en producción).
+ *
+ * Un módulo en esta lista:
+ *   - Tiene `is_enabled: True` en seed_estructura_final.py
+ *   - Está descomentado en backend/config/settings/base.py TENANT_APPS
+ *   - Es universalmente visible para todos los tenants (salvo override en Admin Global)
+ *
+ * Para agregar un módulo: actualizar este array + el seed + base.py.
+ */
+export const DEPLOYED_MODULES: readonly string[] = [
+  // CT-layer y core (always-on)
+  'fundacion',
+  'gestion_documental',
+  'catalogo_productos',
+  'workflow_engine',
+  'audit_system',
+  'configuracion_plataforma',
+  // L20 — Mi Equipo
+  'mi_equipo',
+  // L50 — Supply Chain (S6, 2026-04-19)
+  'supply_chain',
+];
+
+/**
+ * @deprecated Usar `DEPLOYED_MODULES.includes(code)` en vez de comparar deployLevel.
+ * Se conserva solo por compatibilidad con componentes legacy.
+ */
 export const CURRENT_DEPLOY_LEVEL = 20;
+
+/**
+ * Verifica si un módulo está desplegado (LIVE).
+ * Reemplaza la comparación `deployLevel <= CURRENT_DEPLOY_LEVEL`.
+ */
+export const isModuleDeployed = (code: string): boolean => DEPLOYED_MODULES.includes(code);
 
 /**
  * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.

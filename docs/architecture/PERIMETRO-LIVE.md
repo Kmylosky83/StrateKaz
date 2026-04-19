@@ -25,19 +25,38 @@ dependencias están satisfechas, sin requerir activación lineal L25→L30→L35
 `VoucherRecepcion.orden_compra → compras.OrdenCompra`. URLs NO montadas,
 sidebar NO expone, funcionalidad dormida. Reescritura futura.
 
-### Doctrina de feature-flag por módulo
+### Doctrina de activación (post-S6 — validada vs Saleor/Wagtail/Odoo)
 
-**Feature flag efectivo** = presencia en `TENANT_APPS` + `SystemModule.is_active=True`
-en cada tenant. El primer gate es infra (Django app registry), el segundo es UX
-(sidebar visible). Ambos deben alinearse para que un módulo esté "activo".
+El sistema separa **3 conceptos con responsabilidades distintas**, NO 3 gates:
 
-Beneficios vs. cascada lineal:
-- Un C2 puede activarse cuando sus dependencias (C0+C1+CT) están listas, sin
-  esperar otros C2 vecinos
-- Permite paralelismo en el roadmap (ej: talent_hub podría activarse aunque
-  HSEQ no esté listo)
-- Alineado con patrones de mercado (Saleor, Wagtail, Django-Oscar): app
-  registration ≠ feature activation
+| Concepto | Significado | Fuente técnica |
+|----------|-------------|----------------|
+| **Codebase LIVE** | "StrateKaz soporta este módulo en producción" | `TENANT_APPS` en base.py + `SystemModule.is_enabled=True` (vía seed) |
+| **Licensing comercial** | "Este tenant pagó por este módulo" | `Tenant.enabled_modules` JSONField + `Plan.features` fallback |
+| **RBAC acceso** | "Este cargo puede ver esta sección" | `CargoSectionAccess` (granular por sección) |
+
+**Empty `enabled_modules` + empty `Plan.features` = sin filtro.** El tenant
+ve TODOS los módulos LIVE. Es la doctrina "módulos universales post-deploy".
+
+### Flujo de liberación de nuevo módulo
+
+```
+1. Descomentar app en base.py TENANT_APPS
+2. makemigrations + migrate_schemas
+3. Editar seed_estructura_final.py: is_enabled: True en el bloque del módulo
+4. Deploy VPS → deploy_seeds_all_tenants propaga a todos los tenants
+5. Módulo visible universalmente
+```
+
+Tras el deploy, el tenant admin puede opcionalmente **restringir** módulos
+via Admin Global → Tenant → TabModulos (licensing comercial). Por default,
+todo lo LIVE es visible.
+
+Alineación con mercado:
+- **Saleor**: features instaladas = universales, permissions controlan acceso
+- **Wagtail**: plugins registrados = activos en todos los sites
+- **Odoo**: modules "Installed" = disponibles, per-company activation opcional
+- **Shopify**: apps publicadas = disponibles para todos los merchants
 
 ### Apps LIVE detalladas
 

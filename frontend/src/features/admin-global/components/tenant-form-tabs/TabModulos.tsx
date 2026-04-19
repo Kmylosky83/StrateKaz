@@ -3,7 +3,7 @@
  */
 import { Check, Clock } from 'lucide-react';
 import { Button } from '@/components/common/Button';
-import { AVAILABLE_MODULES, CURRENT_DEPLOY_LEVEL } from '@/constants/modules';
+import { AVAILABLE_MODULES, isModuleDeployed } from '@/constants/modules';
 import { CATEGORY_LABELS } from './constants';
 import type { TabModulosProps } from './types';
 
@@ -37,8 +37,7 @@ export const TabModulos = ({ formData, handleModuleToggle }: TabModulosProps) =>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 {categoryModules.map((module) => {
                   const isEnabled = formData.enabled_modules?.includes(module.code) ?? false;
-                  const isDeployed =
-                    module.deployLevel !== undefined && module.deployLevel <= CURRENT_DEPLOY_LEVEL;
+                  const isDeployed = isModuleDeployed(module.code);
                   return (
                     <Button
                       key={module.code}

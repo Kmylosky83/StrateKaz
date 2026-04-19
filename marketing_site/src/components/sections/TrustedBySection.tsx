@@ -89,8 +89,8 @@ export const TrustedBySection: React.FC = () => {
                                     {/* Icon Container */}
                                     <div className='p-3 rounded-lg bg-black-deep/50 group-hover:bg-black-deep transition-colors duration-300'>
                                         <Icon
-                                            className={`h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300 
-                                        opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 
+                                            className={`h-8 w-8 lg:h-10 lg:w-10 transition-all duration-300
+                                        opacity-70 group-hover:opacity-100 group-hover:scale-110
                                         ${client.color}`}
                                         />
                                     </div>

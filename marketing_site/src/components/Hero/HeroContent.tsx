@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ArrowRight, Calendar } from 'lucide-react';
 import { HERO_CONTENT } from './heroData';
 import { DURATION, EASING } from '@/lib/animations';
 
@@ -22,9 +23,13 @@ export const HeroContent: React.FC<HeroContentProps> = ({ displayedWord }) => {
             <span className='sm:hidden'> </span>
             {HERO_CONTENT.headline.continuation}
             <br />
-            <span className='text-white-text text-fluid-3xl lg:text-fluid-4xl'>
+            <span
+              className='text-white-text text-fluid-3xl lg:text-fluid-4xl'
+              aria-live='polite'
+              aria-atomic='true'
+            >
               {displayedWord}
-              <span className='animate-pulse text-brand-500'>|</span>
+              <span className='animate-pulse text-brand-500' aria-hidden='true'>|</span>
             </span>
           </h1>
         </div>
@@ -34,6 +39,24 @@ export const HeroContent: React.FC<HeroContentProps> = ({ displayedWord }) => {
           <p className='text-sm sm:text-lg lg:text-xl text-white-muted leading-relaxed font-content line-clamp-2 sm:line-clamp-none'>
             {HERO_CONTENT.description}
           </p>
+        </div>
+
+        {/* Hero CTAs */}
+        <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2'>
+          <a
+            href='/contacto'
+            className='inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold font-title text-sm sm:text-base transition-all duration-200 shadow-brand hover:shadow-lg min-h-[48px]'
+          >
+            <Calendar className='h-4 w-4' aria-hidden='true' />
+            Agendar Demo Gratuita
+            <ArrowRight className='h-4 w-4 group-hover:translate-x-1 transition-transform' aria-hidden='true' />
+          </a>
+          <a
+            href='/precios'
+            className='inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-black-card border border-black-border-soft hover:border-neutral-500 text-white-muted hover:text-white-text font-medium font-title text-sm sm:text-base transition-all duration-200 min-h-[48px]'
+          >
+            Ver Precios →
+          </a>
         </div>
       </div>
 

@@ -50,7 +50,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
               aria-hidden='true'
             />
           ),
-          variant: 'primary' as const,
+          variant: 'default' as const,
         };
       case 'demo':
         return {
@@ -84,7 +84,7 @@ export const CTAButton: React.FC<CTAButtonProps> = ({
               aria-hidden='true'
             />
           ),
-          variant: 'primary' as const,
+          variant: 'default' as const,
         };
     }
   };

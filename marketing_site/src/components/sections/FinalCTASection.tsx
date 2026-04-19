@@ -69,8 +69,8 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
               </p>
             </div>
 
-            {/* CTA único y poderoso */}
-            <div>
+            {/* CTAs */}
+            <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
               <TrialCTA
                 size='xl'
                 onClick={onTrialStart}
@@ -78,6 +78,12 @@ export const FinalCTASection: React.FC<FinalCTASectionProps> = ({
               >
                 {FINAL_CTA_CONTENT.cta.text}
               </TrialCTA>
+              <a
+                href='/precios'
+                className='inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-black-border-soft hover:border-neutral-500 text-white-muted hover:text-white-text font-medium font-title text-base transition-all duration-200 min-h-[48px]'
+              >
+                Ver Precios →
+              </a>
             </div>
           </div>
         </div>

@@ -228,7 +228,7 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
 
                 <Button
                   type='submit'
-                  variant='primary'
+                  variant='default'
                   size='lg'
                   fullWidth
                   loading={loading}

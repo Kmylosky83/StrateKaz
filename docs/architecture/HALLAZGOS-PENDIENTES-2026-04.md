@@ -449,6 +449,53 @@ temporalmente porque no bloquea funcionalidad ni compromete integridad.
 
 ---
 
+## H-S6-activation-procedure — Feature-flag tiene 3 gates, no 2
+
+### Detectado
+2026-04-19 (S6 smoke browseable en tenant_demo)
+
+### Severidad
+**MEDIA** — No bloquea activación pero requiere pasos manuales post-deploy
+que deben convertirse en management command para escalar a más tenants.
+
+### Síntoma
+Al activar supply_chain via `TENANT_APPS` + `migrate_schemas` + seeds, el
+módulo NO aparecía en el sidebar del frontend. Causa: el sistema tiene
+**3 gates** de feature-flag, no 2 como se documentó inicialmente:
+
+1. `TENANT_APPS` (Django app registry) — vía base.py ✅ automático
+2. `SystemModule.is_enabled=True` — vía `.enable()` o UPDATE directo
+3. `Tenant.enabled_modules` (JSONField en public schema) — debe incluir el
+   `code` del módulo para que el endpoint `/api/core/system-modules/tree/`
+   lo retorne
+
+En S6 se ejecutaron manualmente:
+```python
+# Gate 2: En cada tenant schema
+SystemModule.objects.filter(code='supply_chain').update(is_enabled=True)
+
+# Gate 3: En public schema
+Tenant.objects.filter(schema_name='tenant_demo').update(
+    enabled_modules=F('enabled_modules') || ['supply_chain']
+)
+```
+
+### Solución propuesta
+Crear management command `enable_module_for_tenant`:
+```bash
+python manage.py enable_module_for_tenant supply_chain --tenant tenant_demo
+```
+Que haga los 3 gates de una vez con validación de dependencias.
+
+Alternativamente, agregar UI en Admin Global para toggle visual de módulos
+por tenant.
+
+### Trigger
+Deploy VPS de S6 a tenant productivo (grasas_y_huesos): requiere ejecutar
+los mismos 3 gates manualmente hasta que el command exista.
+
+---
+
 ## H-S6-unidades-medida-dup — Ruta `unidades-medida` duplicada post-activación
 
 ### Detectado

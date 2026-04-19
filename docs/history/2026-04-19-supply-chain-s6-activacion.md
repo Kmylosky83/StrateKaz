@@ -98,6 +98,32 @@ de almacenamiento ya consumían el canónico desde sesiones previas.
 - [x] 2.2 `seed_estructura_final` (tab Compras retirada, 7 tabs finales)
 - [x] 2.3 RBAC coherente (5 sec 27/27 default + 2 sec 25/27 allowlist S3.1)
 
+### Fase 5 — Smoke browseable en tenant_demo (validación final)
+
+Ejecutado tras detectar que el sidebar no mostraba supply_chain aún con
+`is_enabled=True`. Causa raíz: **3 gates de feature-flag**, no 2:
+
+1. `TENANT_APPS` en base.py ✅ (automatizado via commit)
+2. `SystemModule.is_enabled=True` ❌ requirió UPDATE manual en ambos tenants
+3. `Tenant.enabled_modules` (public schema) ❌ requirió UPDATE con `|| '["supply_chain"]'::jsonb`
+
+Tras aplicar los 3 gates + hard reload:
+- ✅ Sidebar renderiza "Cadena de Suministro" entre Gestión de Personas y Centro de Control
+- ✅ Cadena de Suministro expande 7 tabs correctas (Proveedores, Precios,
+  Recepción de MP, Liquidaciones, Almacenamiento, Evaluaciones, Catálogos)
+- ✅ Compras NO aparece (dormida por design)
+- ✅ Programación NO aparece (eliminada en S6)
+- ✅ `/supply-chain/proveedores` carga con KPI cards (Total/Activos/Inactivos/Calificación)
+- ✅ Form "Nuevo Proveedor" renderiza con selectores poblados:
+  - 6 tipos de proveedor
+  - 5 modalidades logísticas
+  - 8 formas de pago
+- ✅ Console browser: 0 errores JS en el flujo
+- ✅ Versión frontend 5.8.0 visible en footer
+
+Hallazgo registrado: `H-S6-activation-procedure` (MEDIA) — los 3 gates
+requieren management command para escalar a tenants productivos.
+
 ### Fase 3 — Tests (parcial — hallazgo)
 - Pre-check BaseTenantTestCase: 3/11 archivos (27%) < umbral 80%
 - Solo `almacenamiento/tests/` usa patrón migrado

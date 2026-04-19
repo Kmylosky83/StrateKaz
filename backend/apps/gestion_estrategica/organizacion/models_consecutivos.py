@@ -934,6 +934,16 @@ CONSECUTIVOS_ADICIONALES = [
         'reset_yearly': False,
         'es_sistema': True,
     },
+    {
+        'codigo': 'CATEGORIA_PRODUCTO',
+        'nombre': 'Categoría de Producto',
+        'categoria': 'INVENTARIO',
+        'prefix': 'CAT',
+        'padding': 3,
+        'include_year': False,
+        'reset_yearly': False,
+        'es_sistema': True,
+    },
     # ── Gestión Documental (catálogos) ─────────────────────
     {
         'codigo': 'TIPO_DOCUMENTO',

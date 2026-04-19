@@ -69,6 +69,16 @@ class CategoriaProducto(TenantModel):
             return f'{self.parent.nombre} > {self.nombre}'
         return self.nombre
 
+    @staticmethod
+    def generar_codigo():
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('CATEGORIA_PRODUCTO')
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            self.codigo = self.generar_codigo()
+        super().save(*args, **kwargs)
+
     @property
     def full_path(self):
         """Ruta completa: Raíz > Sub > Sub-sub."""

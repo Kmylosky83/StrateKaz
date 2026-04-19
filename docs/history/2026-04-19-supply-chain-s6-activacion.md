@@ -6,9 +6,12 @@
 
 ## Commits del día (sólo esta sesión)
 
-| Commit | Descripción |
-|--------|-------------|
-| `43800b1f` | feat(supply-chain): S6 activación 6 sub-apps + cleanup legacy |
+| Commit | Descripción | CI |
+|--------|-------------|-----|
+| `43800b1f` | feat(supply-chain): S6 activación 6 sub-apps + cleanup legacy | ⏳ superseded |
+| `2cac855a` | docs(supply-chain): S6 complete — activación C2 + doctrina feature-flag | ⏳ superseded |
+| `9a59e03c` | docs(supply-chain): smoke browseable S6 + hallazgo 3-gates feature-flag | ⏳ superseded |
+| `b6ee8155` | fix(seed): supply_chain is_enabled=True — módulo universal post-deploy | ⏳ pendiente al cierre |
 
 ## Estado del producto
 
@@ -237,11 +240,64 @@ Bloquea validación automatizada en ventana de sesión. Posibles mitigaciones
 
 ## Nota de cierre
 
-Sesión con 3 decisiones arquitectónicas importantes:
+Sesión con 4 decisiones arquitectónicas importantes:
 - (1) Feature-flag por módulo como nuevo modelo de activación de C2.
 - (2) compras registrada para integridad referencial sin exposición funcional.
 - (3) programacion_abastecimiento eliminada en lugar de dormida.
+- (4) **Doctrina de activación refinada** (commit `b6ee8155`): no son "3 gates"
+  sino **3 conceptos con responsabilidades distintas**:
+  - `is_enabled` en seed = "StrateKaz soporta el módulo LIVE" (universal)
+  - `Tenant.enabled_modules` = licencia comercial (override opcional)
+  - `CargoSectionAccess` = RBAC granular por sección
 
-Las 3 se validaron contra prácticas de mercado (Saleor, Wagtail, Django-Oscar,
-Django docs) tras crítica explícita del usuario a recomendaciones iniciales.
-El ejercicio reforzó el valor de validación externa antes de ejecutar.
+Las 4 decisiones se validaron contra prácticas de mercado (Saleor, Wagtail,
+Django-Oscar, Odoo, Shopify) tras crítica explícita del usuario a
+recomendaciones iniciales. El ejercicio reforzó el valor de validación
+externa antes de ejecutar.
+
+## Commit final — fix doctrina + frontend (b6ee8155)
+
+Camilo cuestionó correctamente la narrativa de "3 gates manuales". La
+investigación reveló que el síntoma era un bug del seed (legacy de doctrina
+cascada V3), no un problema arquitectónico. Fix aplicado:
+
+### Backend
+- `seed_estructura_final.py:936` supply_chain `is_enabled: False → True`
+- Docstring del seed reescrito con doctrina nueva + flujo de liberación
+  en 5 pasos + lista LIVE actual vs módulos DORMIDOS
+- `tenant_demo.enabled_modules` reseteado a `[]` (respeta doctrina universal)
+
+### Frontend — residuo cascada lineal detectado en Admin Global
+Al editar un tenant en Admin Global → tab Módulos, los módulos mostraban
+icono reloj según `deployLevel <= CURRENT_DEPLOY_LEVEL = 20`. Supply Chain
+tenía `deployLevel=50` → mostraba reloj aunque ya estaba LIVE.
+
+Migración:
+- `constants/modules.ts`: nueva `DEPLOYED_MODULES` (array explícito de
+  códigos LIVE) + helper `isModuleDeployed()`
+- `CURRENT_DEPLOY_LEVEL` marcado `@deprecated` (se conserva por compat)
+- `admin-global/TabModulos.tsx`: usa `isModuleDeployed(code)` para decidir
+  render del reloj
+
+### Validación UI final
+- tenant_demo sidebar muestra "Cadena de Suministro" sin UPDATE manual
+- Admin Global modal Módulos: supply_chain SIN reloj ✅
+- Módulos dormidos (Base Operaciones, Logística, Ventas CRM, HSEQ, Talento,
+  Admin, Tesorería, Contabilidad) CON reloj ✅
+
+### Docs actualizados
+- `HALLAZGOS-PENDIENTES`: H-S6-activation-procedure marcado ✅ RESUELTO
+  con explicación: "Era bug del seed, no problema arquitectónico. Fix de
+  1 línea."
+- `PERIMETRO-LIVE`: doctrina reescrita como "3 conceptos con
+  responsabilidades distintas" + flujo de liberación + alineación mercado
+
+### Flujo oficial de liberación (post-S6)
+```
+1. Descomentar app en base.py TENANT_APPS
+2. makemigrations + migrate_schemas
+3. Editar seed_estructura_final.py: is_enabled: True
+4. Agregar code a DEPLOYED_MODULES (frontend/src/constants/modules.ts)
+5. Deploy VPS → deploy_seeds_all_tenants automático
+→ Módulo visible universalmente en todos los tenants
+```

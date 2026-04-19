@@ -3,7 +3,9 @@ Modelos para catálogos de Supply Chain
 Sistema de Gestión StrateKaz
 """
 from django.db import models
-from apps.core.base_models.base import BaseCompanyModel
+from django.db.models import Q
+
+from utils.models import TenantModel
 
 
 class TipoAlmacen(models.Model):
@@ -140,9 +142,12 @@ class UnidadMedida(models.Model):
         return self.simbolo
 
 
-class Almacen(BaseCompanyModel):
+class Almacen(TenantModel):
     """
-    Almacenes de la empresa para almacenamiento de inventario
+    Almacenes del tenant para almacenamiento de inventario.
+
+    Hereda de TenantModel: el schema-per-tenant reemplaza la FK empresa
+    (doctrina modular-tenancy). Se migró desde BaseCompanyModel en S6.
     """
     codigo = models.CharField(
         max_length=50,
@@ -191,15 +196,28 @@ class Almacen(BaseCompanyModel):
         null=True,
         blank=True,
         verbose_name='Capacidad máxima',
-        help_text='Capacidad máxima numérica (la unidad se define por tipo_almacen o UnidadMedida)'
+        help_text='Capacidad máxima numérica (la unidad se define por tipo_almacen o la unidad de medida del producto)'
+    )
+    # is_active: semántica de negocio (almacén operativamente activo),
+    # independiente del soft-delete de TenantModel.
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name='Activo',
     )
 
     class Meta:
         verbose_name = 'Almacén'
         verbose_name_plural = 'Almacenes'
         ordering = ['codigo']
-        unique_together = [['empresa', 'codigo']]
         db_table = 'supply_chain_almacen'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['codigo'],
+                condition=Q(is_deleted=False),
+                name='uq_almacen_codigo_active',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"

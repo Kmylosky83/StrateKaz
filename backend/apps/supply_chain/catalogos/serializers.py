@@ -2,18 +2,7 @@
 Serializers para catalogos - supply_chain
 """
 from rest_framework import serializers
-from .models import Almacen, TipoAlmacen, UnidadMedida
-
-
-class UnidadMedidaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UnidadMedida
-        fields = [
-            'id', 'codigo', 'nombre', 'simbolo', 'tipo',
-            'descripcion', 'factor_conversion_kg', 'orden',
-            'is_active', 'created_at', 'updated_at',
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+from .models import Almacen, TipoAlmacen
 
 
 class TipoAlmacenSerializer(serializers.ModelSerializer):

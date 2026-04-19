@@ -9,11 +9,12 @@
  * Secciones (flujo de negocio):
  * 1. Proveedores — Registro, KPIs, importación masiva
  * 2. Precios — Gestión de precios por tipo materia prima
- * 3. Compras — Requisiciones, cotizaciones, órdenes, recepciones
- * 4. Almacenamiento — Inventarios, movimientos, kardex, alertas
- * 5. Programación — Programación de abastecimiento
+ * 3. Recepción — Vouchers de báscula, calidad opcional
+ * 4. Liquidaciones — Cálculo y aprobación de pagos
+ * 5. Almacenamiento — Inventarios, movimientos, kardex, alertas
  * 6. Evaluaciones — Evaluación periódica de proveedores
  * 7. Catálogos — Catálogos dinámicos (configuración admin)
+ * 8. Compras — (deuda futura) Requisiciones, cotizaciones, órdenes, contratos
  */
 import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
@@ -24,7 +25,6 @@ import {
   DollarSign,
   ShoppingCart,
   Package,
-  Calendar,
   ClipboardCheck,
   FolderOpen,
   Scale,
@@ -35,7 +35,6 @@ import {
   PreciosTab,
   ComprasTab,
   AlmacenamientoTab,
-  ProgramacionTab,
   EvaluacionesTab,
   CatalogosTab,
   RecepcionTab,
@@ -89,12 +88,6 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Control de inventario, movimientos, kardex y alertas de stock',
     icon: <Package className="w-5 h-5" />,
     component: AlmacenamientoTab,
-  },
-  programacion: {
-    title: 'Programación',
-    description: 'Programación de abastecimiento y operaciones logísticas',
-    icon: <Calendar className="w-5 h-5" />,
-    component: ProgramacionTab,
   },
   evaluaciones: {
     title: 'Evaluaciones',

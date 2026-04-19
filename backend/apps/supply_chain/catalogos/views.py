@@ -6,19 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Almacen, TipoAlmacen, UnidadMedida
-from .serializers import AlmacenSerializer, TipoAlmacenSerializer, UnidadMedidaSerializer
-
-
-class UnidadMedidaViewSet(viewsets.ModelViewSet):
-    """CRUD para Unidades de Medida (catálogo compartido)."""
-    queryset = UnidadMedida.objects.filter(is_active=True)
-    serializer_class = UnidadMedidaSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['tipo', 'is_active']
-    search_fields = ['codigo', 'nombre', 'simbolo']
-    ordering_fields = ['orden', 'nombre', 'codigo']
+from .models import Almacen, TipoAlmacen
+from .serializers import AlmacenSerializer, TipoAlmacenSerializer
 
 
 class TipoAlmacenViewSet(viewsets.ModelViewSet):
@@ -47,5 +36,5 @@ class AlmacenViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'empresa', 'tipo_almacen', 'created_by', 'updated_by',
+            'tipo_almacen', 'created_by', 'updated_by',
         )

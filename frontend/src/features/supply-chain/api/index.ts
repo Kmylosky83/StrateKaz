@@ -31,9 +31,6 @@ export {
 
 // NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/api/)
 
-// ==================== PROGRAMACIÓN DE ABASTECIMIENTO ====================
-export { default as programacionAbastecimientoApi } from './programacionApi';
-
 // ==================== COMPRAS ====================
 export { default as comprasApi } from './comprasApi';
 

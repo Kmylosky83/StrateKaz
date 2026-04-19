@@ -174,15 +174,25 @@ TENANT_APPS = [
     # 'apps.hseq_management.gestion_comites',
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # CASCADA LEVEL 35: CADENA DE VALOR
-    # Descomentar cuando Level 30 (HSEQ) esté estabilizado
+    # MÓDULO C2 ACTIVO — Supply Chain (activación fuera de cascada lineal)
+    # Dependencias satisfechas: C0 (core) + C1 (configuracion/organizacion) + CT
+    # (gestion_documental, workflow_engine, catalogo_productos). Feature-flag por
+    # presencia en TENANT_APPS. Activado 2026-04-20 (S6).
     # ═══════════════════════════════════════════════════════════════════════════
-    # 'apps.supply_chain.catalogos',
-    # 'apps.supply_chain.gestion_proveedores',
-    # 'apps.supply_chain.compras',
-    # 'apps.supply_chain.almacenamiento',
-    # 'apps.supply_chain.programacion_abastecimiento',
-    #
+    'apps.supply_chain.catalogos',
+    'apps.supply_chain.gestion_proveedores',
+    'apps.supply_chain.recepcion',
+    'apps.supply_chain.liquidaciones',
+    'apps.supply_chain.almacenamiento',
+    # compras: registrada para integridad referencial del FK
+    # VoucherRecepcion.orden_compra → compras.OrdenCompra. URLs NO montadas,
+    # sidebar NO expone. Funcionalidad dormida hasta reescritura futura.
+    'apps.supply_chain.compras',
+    # Eliminada en S6: 'apps.supply_chain.programacion_abastecimiento'
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # CASCADA LEVEL 35 (resto): otros C2 fuera de cascada, activar por feature-flag
+    # ═══════════════════════════════════════════════════════════════════════════
     # 'apps.production_ops.recepcion',
     # 'apps.production_ops.procesamiento',
     # 'apps.production_ops.producto_terminado',

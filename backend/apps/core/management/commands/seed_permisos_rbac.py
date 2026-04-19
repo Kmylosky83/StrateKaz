@@ -156,9 +156,10 @@ SECCIONES_PERMISOS = {
         'secciones': [
             {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'catalogos', 'name': 'Catálogos', 'acciones': ['view', 'create', 'update', 'delete']},
-            {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'compras', 'name': 'Compras', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'almacenamiento', 'name': 'Almacenamiento', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'recepcion', 'name': 'Recepción', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'liquidaciones', 'name': 'Liquidaciones', 'acciones': ['view', 'create', 'update', 'delete']},
         ]
     },
 

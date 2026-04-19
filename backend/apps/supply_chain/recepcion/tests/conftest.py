@@ -92,9 +92,8 @@ def tipo_almacen_silo(db):
 
 
 @pytest.fixture
-def almacen_silo(db, empresa, tipo_almacen_silo):
+def almacen_silo(db, tipo_almacen_silo):
     return Almacen.objects.create(
-        empresa=empresa,
         codigo='SIL-01',
         nombre='Silo 01 Sebo',
         tipo_almacen=tipo_almacen_silo,
@@ -103,10 +102,9 @@ def almacen_silo(db, empresa, tipo_almacen_silo):
 
 
 @pytest.fixture
-def almacen_sin_tipo(db, empresa):
+def almacen_sin_tipo(db):
     """Almacén legacy sin tipo — backward compat."""
     return Almacen.objects.create(
-        empresa=empresa,
         codigo='ALM-OLD',
         nombre='Almacén legacy',
         permite_recepcion=True,

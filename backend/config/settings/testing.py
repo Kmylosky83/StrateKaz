@@ -131,7 +131,6 @@ _TESTING_EXTRA_APPS = [
     'apps.supply_chain.gestion_proveedores',
     'apps.supply_chain.compras',
     'apps.supply_chain.almacenamiento',
-    'apps.supply_chain.programacion_abastecimiento',
     'apps.supply_chain.recepcion',
     'apps.supply_chain.liquidaciones',
 

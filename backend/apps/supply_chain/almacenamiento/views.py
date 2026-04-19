@@ -123,6 +123,15 @@ class TipoAlertaViewSet(viewsets.ModelViewSet):
 
 
 class UnidadMedidaViewSet(viewsets.ModelViewSet):
+    """
+    Wrapper read-through de catalogo_productos.UnidadMedida (canónico CT).
+
+    Sirve el mismo modelo en /supply-chain/almacenamiento/unidades-medida/
+    por compatibilidad con MovimientoInventarioFormModal del frontend.
+
+    Deuda H-S6-unidades-medida-dup: migrar frontend a la ruta canónica
+    /catalogo-productos/unidades-medida/ y eliminar este wrapper.
+    """
     queryset = UnidadMedida.objects.all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

@@ -955,13 +955,10 @@ class Command(BaseCommand):
                     {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 6, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
-                    {'code': 'programacion_abastecimiento', 'name': 'Programación', 'icon': 'Calendar', 'route': 'programacion', 'orden': 7, 'sections': [
-                        {'code': 'programacion_sc', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Programación de abastecimiento'},
-                    ]},
-                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 8, 'sections': [
+                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 7, 'sections': [
                         {'code': 'evaluaciones_prov', 'name': 'Evaluación Proveedores', 'icon': 'ClipboardCheck', 'orden': 1, 'description': 'Evaluación periódica de proveedores'},
                     ]},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 9, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 8, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

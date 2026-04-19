@@ -108,8 +108,6 @@ const TAB_ROUTES: Record<string, string> = {
   accidentalidad: 'accidentalidad',
   emergencias: 'emergencias',
   gestion_ambiental: 'gestion-ambiental',
-  // ── Supply Chain ──
-  programacion_abastecimiento: 'programacion',
   // ── Production Ops ──
   producto_terminado: 'producto-terminado',
   mantenimiento_industrial: 'mantenimiento',

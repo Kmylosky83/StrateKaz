@@ -91,9 +91,8 @@ def create_tipo_almacen(codigo='SILO'):
     return TipoAlmacen.objects.create(codigo=codigo, nombre='Silo', orden=1)
 
 
-def create_almacen(empresa, tipo_almacen, codigo='SIL-01'):
+def create_almacen(tipo_almacen, codigo='SIL-01'):
     return Almacen.objects.create(
-        empresa=empresa,
         codigo=codigo,
         nombre='Almacén Test',
         tipo_almacen=tipo_almacen,
@@ -156,6 +155,6 @@ def setup_full_supply_chain(test_case):
     test_case.tipo_proveedor = create_tipo_proveedor()
     test_case.proveedor = create_proveedor(test_case.tipo_proveedor, test_case.tipo_doc)
     test_case.tipo_almacen = create_tipo_almacen()
-    test_case.almacen = create_almacen(test_case.empresa, test_case.tipo_almacen)
+    test_case.almacen = create_almacen(test_case.tipo_almacen)
     test_case.tipo_entrada = create_tipo_movimiento_entrada()
     test_case.estado_disponible = create_estado_disponible()

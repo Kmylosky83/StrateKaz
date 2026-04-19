@@ -2,7 +2,7 @@
 Admin para catalogos - supply_chain
 """
 from django.contrib import admin
-from .models import Almacen, TipoAlmacen, UnidadMedida
+from .models import Almacen, TipoAlmacen
 
 
 class CatalogoBaseAdmin(admin.ModelAdmin):
@@ -11,15 +11,6 @@ class CatalogoBaseAdmin(admin.ModelAdmin):
     list_filter = ['is_active']
     search_fields = ['codigo', 'nombre']
     ordering = ['orden', 'nombre']
-    list_editable = ['orden', 'is_active']
-
-
-@admin.register(UnidadMedida)
-class UnidadMedidaAdmin(CatalogoBaseAdmin):
-    """Admin para Unidades de Medida."""
-    list_display = ['codigo', 'nombre', 'simbolo', 'tipo', 'factor_conversion_kg', 'orden', 'is_active']
-    list_filter = ['is_active', 'tipo']
-    search_fields = ['codigo', 'nombre', 'simbolo']
     list_editable = ['orden', 'is_active']
 
 
@@ -34,12 +25,12 @@ class TipoAlmacenAdmin(CatalogoBaseAdmin):
 class AlmacenAdmin(admin.ModelAdmin):
     """Admin para Almacenes."""
     list_display = [
-        'codigo', 'nombre', 'empresa', 'tipo_almacen', 'es_principal',
-        'permite_recepcion', 'permite_despacho', 'is_active',
+        'codigo', 'nombre', 'tipo_almacen', 'es_principal',
+        'permite_recepcion', 'permite_despacho', 'is_deleted',
     ]
     list_filter = [
-        'empresa', 'tipo_almacen', 'es_principal',
-        'permite_recepcion', 'permite_despacho', 'is_active',
+        'tipo_almacen', 'es_principal',
+        'permite_recepcion', 'permite_despacho', 'is_deleted',
     ]
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['codigo']

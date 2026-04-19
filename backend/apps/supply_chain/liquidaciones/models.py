@@ -108,8 +108,6 @@ class Liquidacion(TenantModel):
     )
 
     class Meta:
-        # Nota: usamos 'liquidacion_recepcion' para evitar colisión con
-        # programacion_abastecimiento.Liquidacion legacy (out-of-scope).
         db_table = 'supply_chain_liquidacion_recepcion'
         verbose_name = 'Liquidación'
         verbose_name_plural = 'Liquidaciones'

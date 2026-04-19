@@ -92,48 +92,6 @@ export type {
 
 // NOTA: Pruebas de Acidez → migradas a Production Ops (features/production-ops/types/)
 
-// ==================== PROGRAMACIÓN DE ABASTECIMIENTO ====================
-
-export type {
-  // Catálogos
-  TipoOperacion,
-  EstadoProgramacion,
-  UnidadMedida as UnidadMedidaProgramacion,
-  EstadoEjecucion,
-  EstadoLiquidacion,
-
-  // Entidades
-  Programacion,
-  ProgramacionList,
-  AsignacionRecurso,
-  Ejecucion,
-  Liquidacion,
-
-  // DTOs
-  CreateTipoOperacionDTO,
-  UpdateTipoOperacionDTO,
-  CreateEstadoProgramacionDTO,
-  UpdateEstadoProgramacionDTO,
-  CreateUnidadMedidaDTO as CreateUnidadMedidaProgramacionDTO,
-  UpdateUnidadMedidaDTO as UpdateUnidadMedidaProgramacionDTO,
-  CreateEstadoEjecucionDTO,
-  UpdateEstadoEjecucionDTO,
-  CreateEstadoLiquidacionDTO,
-  UpdateEstadoLiquidacionDTO,
-  CreateProgramacionDTO,
-  UpdateProgramacionDTO,
-  CreateAsignacionRecursoDTO,
-  UpdateAsignacionRecursoDTO,
-  CreateEjecucionDTO,
-  UpdateEjecucionDTO,
-  CreateLiquidacionDTO,
-  UpdateLiquidacionDTO,
-
-  // Responses
-  CalendarioEvent,
-  EstadisticasResponse as EstadisticasProgramacion,
-} from './programacion.types';
-
 // ==================== COMPRAS ====================
 
 export type {

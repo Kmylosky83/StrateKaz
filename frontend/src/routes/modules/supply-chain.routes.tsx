@@ -2,9 +2,11 @@
  * Rutas: Supply Chain (Cadena de Suministro)
  * Capa 2 — Módulo de Negocio
  *
- * Página unificada con 7 tabs en flujo de negocio:
- * proveedores → precios → compras → almacenamiento → programación →
+ * Secciones (flujo de negocio):
+ * proveedores → precios → recepcion → liquidaciones → almacenamiento →
  * evaluaciones → catálogos
+ *
+ * Compras dormida (tabla existe pero sin UI/URLs). programacion eliminada en S6.
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -26,16 +28,16 @@ export const supplyChainRoutes = (
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'precios')}
     />
     <Route
-      path="/supply-chain/compras"
-      element={withFullGuard(SupplyChainPage, 'supply_chain', 'compras')}
+      path="/supply-chain/recepcion"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'recepcion')}
+    />
+    <Route
+      path="/supply-chain/liquidaciones"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'liquidaciones')}
     />
     <Route
       path="/supply-chain/almacenamiento"
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'almacenamiento')}
-    />
-    <Route
-      path="/supply-chain/programacion"
-      element={withFullGuard(SupplyChainPage, 'supply_chain', 'programacion')}
     />
     <Route
       path="/supply-chain/evaluaciones"

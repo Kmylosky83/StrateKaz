@@ -15,7 +15,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Q, Avg, Sum, Count
+from django.db.models import Q, Avg, Sum, Count, OuterRef, Subquery, IntegerField
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.conf import settings
 from apps.core.utils.impersonation import get_effective_user
@@ -345,6 +346,21 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         else:
             queryset = super().get_queryset()
 
+        # Conteo de usuarios vinculados via Subquery:
+        # User.proveedor_id_ext es IntegerField (no FK), por lo que no existe
+        # reverse relation 'usuarios_vinculados'. Ver CLAUDE.md — SOURCE_OF_TRUTH.
+        User = get_user_model()
+        user_count_sq = (
+            User.objects.filter(
+                proveedor_id_ext=OuterRef('pk'),
+                is_active=True,
+            )
+            .order_by()
+            .values('proveedor_id_ext')
+            .annotate(total=Count('id'))
+            .values('total')
+        )
+
         return queryset.select_related(
             'tipo_proveedor',
             'tipo_documento',
@@ -357,11 +373,10 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             'formas_pago',
             'precios_materia_prima',
             'precios_materia_prima__tipo_materia',
-            'usuarios_vinculados',
         ).annotate(
-            usuarios_vinculados_count=Count(
-                'usuarios_vinculados',
-                filter=Q(usuarios_vinculados__is_active=True)
+            usuarios_vinculados_count=Coalesce(
+                Subquery(user_count_sq, output_field=IntegerField()),
+                0,
             ),
         )
 

@@ -201,10 +201,15 @@ class ProveedorListSerializer(serializers.ModelSerializer):
         ]
 
     def get_tiene_acceso(self, obj):
-        """Retorna True si el proveedor tiene al menos un usuario activo."""
+        """Retorna True si el proveedor tiene al menos un usuario activo.
+
+        Fallback directo via proveedor_id_ext (IntegerField, no FK).
+        """
         if hasattr(obj, 'usuarios_vinculados_count'):
             return obj.usuarios_vinculados_count > 0
-        return obj.usuarios_vinculados.filter(is_active=True).exists()
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        return User.objects.filter(proveedor_id_ext=obj.pk, is_active=True).exists()
 
     def get_tipos_materia_prima_display(self, obj):
         """Retorna nombres de tipos de materia prima."""

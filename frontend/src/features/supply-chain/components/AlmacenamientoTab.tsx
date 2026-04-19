@@ -72,6 +72,8 @@ const getEstadoBadgeVariant = (
 // ==================== INVENTARIOS SECTION ====================
 
 const InventariosSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
   const { data, isLoading } = useInventarios();
   const { data: estadisticasData } = useEstadisticasAlmacenamiento();
   const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
@@ -223,6 +225,8 @@ const InventariosSection = () => {
 // ==================== MOVIMIENTOS SECTION ====================
 
 const MovimientosSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
   const { data, isLoading } = useMovimientosInventario();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -357,6 +361,8 @@ const KardexSection = () => {
 // ==================== ALERTAS SECTION ====================
 
 const AlertasSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
   const { data, isLoading } = useAlertasStock();
   const generarAlertasMutation = useGenerarAlertas();
   const marcarLeidaMutation = useMarcarAlertaLeida();
@@ -499,6 +505,8 @@ const AlertasSection = () => {
 // ==================== CONFIGURACIÓN SECTION ====================
 
 const ConfiguracionSection = () => {
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
   const { data, isLoading } = useConfiguracionesStock();
   const configuraciones = Array.isArray(data) ? data : (data?.results ?? []);
 
@@ -597,9 +605,6 @@ const ConfiguracionSection = () => {
 // ==================== MAIN COMPONENT ====================
 
 export default function AlmacenamientoTab() {
-  const { canDo } = usePermissions();
-  const _canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.INVENTARIO, 'create');
-
   const { color: moduleColor } = useModuleColor('supply_chain');
   const [activeTab, setActiveTab] = useState('inventarios');
 

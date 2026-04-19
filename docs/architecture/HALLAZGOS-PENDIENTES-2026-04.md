@@ -309,6 +309,146 @@ Dedicada exclusivamente a este hallazgo.
 
 ---
 
+## H-S5-pwa-branding-unificado — Modelo Tenant duplica branding PWA
+
+### Detectado
+2026-04-19 (validación visual post-deploy Catálogo Productos S5)
+
+### Severidad
+**MEDIA** — Arquitectónica, afecta a **TODOS los tenants** (presentes y
+futuros), no sólo al que se detectó. No bloquea funcionalidad pero
+genera data quality issues recurrentes y onboarding más lento por cada
+tenant que se crea.
+
+### Alcance
+- **Modelo**: `apps.tenant.models.Tenant` — campos duplicados estructurales
+- **Universo afectado**: TODOS los tenants del sistema (productivos + futuros)
+- **No es bug de un tenant específico** — es falla del data model
+- **Grasas y Huesos del Norte** fue el primer caso visible, pero cada
+  tenant creado a través del admin workflow hereda el mismo riesgo de
+  data quality
+
+### Síntoma observable
+El modelo `Tenant` (apps/tenant/models.py) tiene **5 campos de texto/color
+PWA que duplican información del branding core**:
+
+| Campo PWA | Debería derivarse de | Realidad |
+|---|---|---|
+| `pwa_name` | `nombre_comercial` o `name` | Requiere llenado manual separado |
+| `pwa_short_name` | `nombre_comercial[:12]` o `name[:12]` | Requiere llenado manual separado |
+| `pwa_description` | `slogan` o computed | Requiere llenado manual separado |
+| `pwa_theme_color` | `primary_color` | Requiere llenado manual separado |
+| `pwa_background_color` | `secondary_color` o bg | Requiere llenado manual separado |
+
+**Caso observado (primero de muchos)**: el tenant Grasas y Huesos del Norte
+tenía:
+- `pwa_name = "StrateKaz App"` (placeholder genérico)
+- `pwa_short_name = "StrateKaz"` (placeholder)
+- `pwa_description = "Aplicación Adecuada para los sistemas de Gestion"` (genérico con typo)
+- `pwa_theme_color = "#000000"` (negro, no marca del tenant)
+- `pwa_background_color = "#ec268f"` (pink de StrateKaz, no del tenant)
+
+Resultado visual: la PWA en escritorio muestra "StrateKaz App" + logo amarillo
+StrateKaz en lugar del branding del tenant. Sólo los íconos del tenant se
+renderizan correctos (porque viven en su propio folder `/media/tenants/...`).
+
+**Este no es caso aislado.** Cualquier tenant creado por el admin workflow
+puede acabar con valores placeholder, genéricos o desincronizados, porque
+el modelo obliga a llenar dos capas paralelas de branding para información
+que debería ser una sola. El fix por tenant es imposible de escalar; el
+fix es eliminar la duplicación del data model.
+
+### El error de fondo
+El diseño original violó **DRY (Don't Repeat Yourself)** al crear una capa
+paralela de branding para PWA en vez de derivar del tenant core. Esto:
+
+1. Obliga a llenar información duplicada en 2 lugares (tab General + tab PWA)
+2. Es propenso a quedar desincronizado (exactamente lo que pasó)
+3. Multiplica la superficie de bugs de data quality
+4. No alinea con patrones de industria
+
+### Patrones de industria para multi-tenant PWA
+
+| Plataforma | Patrón |
+|---|---|
+| **Slack** | Workspace name + icon → manifest auto-computed |
+| **Linear** | Workspace identity → manifest computed |
+| **Notion** | Workspace → manifest computed |
+| **Shopify** | Store name + logo → manifest computed |
+| **GitHub** | Org/repo identity → manifest computed |
+
+**Principio universal**: el PWA manifest se deriva del core identity del
+tenant. No se duplica. Sólo los íconos pueden ser uploads separados por
+requisitos técnicos (sizes 192/512, maskable).
+
+### Solución propuesta
+
+**Refactor: Branding Unificado v2**
+
+1. **Eliminar del modelo Tenant** los 5 campos duplicados:
+   - `pwa_name`, `pwa_short_name`, `pwa_description`
+   - `pwa_theme_color`, `pwa_background_color`
+2. **Mantener en el modelo** los 3 uploads específicos:
+   - `pwa_icon_192`, `pwa_icon_512`, `pwa_icon_maskable`
+3. **Computar el manifest** al vuelo desde el branding core:
+   ```python
+   def get_pwa_manifest(self):
+       return {
+           'name': self.nombre_comercial or self.name,
+           'short_name': (self.nombre_comercial or self.name)[:12],
+           'description': self.slogan or f'Sistema de gestión - {self.name}',
+           'theme_color': self.primary_color,
+           'background_color': self.secondary_color or '#FFFFFF',
+           'icons': self._build_pwa_icons(),
+       }
+   ```
+4. **Actualizar frontend** `TabPwa.tsx`:
+   - Remover 5 inputs de texto/color
+   - Mantener solo los 3 uploads de íconos
+   - Agregar nota: "El nombre, descripción y colores se derivan del tab
+     Información General"
+5. **Data migration**: para cada tenant, si tiene valores PWA no-genéricos
+   distintos al core, decidir override vs rescue. Luego drop columns.
+
+### Esfuerzo estimado
+1-2 días:
+- Model + migration: 2h
+- Endpoint refactor: 1h
+- Frontend TabPwa: 2h
+- Tests: 2h
+- Data migration + validación por tenant: 4h
+- Documentación: 1h
+
+### Trigger de activación
+Sprint dedicado "Branding Unificado v2", scheduled para post-S6 (Supply
+Chain). Bundled potencialmente con refactor de `Admin Global` /
+`Configuración Organizacional`.
+
+### Política aplicada: NO workaround
+**Decisión 2026-04-19:** no se aplica ningún parche en producción. Política
+de desarrollo del software StrateKaz: **solución de fondo o deuda documentada,
+sin punto medio**. Aplicar workarounds en prod (vaciar campos manualmente,
+crear commands paliativos) genera falsa sensación de resolución y diluye la
+urgencia del refactor. El tenant Grasas y Huesos del Norte queda con branding
+PWA genérico hasta que el refactor se ejecute. Data quality aceptable
+temporalmente porque no bloquea funcionalidad ni compromete integridad.
+
+### Criterio de cierre del hallazgo
+1. Los 5 campos duplicados eliminados del modelo `Tenant` con migration
+2. Endpoint manifest computa desde core branding (`name`, `nombre_comercial`,
+   `slogan`, `primary_color`, `secondary_color`)
+3. Frontend `TabPwa.tsx` actualizado: sólo uploads de íconos
+4. Tests verifican el manifest para tenants con y sin branding completo
+5. Verificación visual en al menos 2 tenants productivos que el branding
+   correcto aparece en desktop app PWA
+
+### Documentos de referencia
+- `backend/apps/tenant/models.py` — campos duplicados
+- `backend/apps/tenant/views.py:1038-1122` — endpoint manifest dinámico
+- `frontend/src/features/admin-global/components/tenant-form-tabs/TabPwa.tsx`
+
+---
+
 ## Orden de ataque sugerido
 
 | # | Hallazgo | Estado | Razón del orden |
@@ -329,8 +469,9 @@ Dedicada exclusivamente a este hallazgo.
 | 13 | **H21 — hard-delete sin tests API** | 🔲 PENDIENTE | Endpoint usa servicio testeado, falta cobertura HTTP. |
 | 14 | **H22 — Idempotencia Fase B** | ✅ RESUELTO (2026-04-10) | Pre-check validate_invariant antes de CREATE SCHEMA. |
 | 15 | **H23 — testing.py lee DB_NAME del env** | 🔲 PENDIENTE | Config frágil: test DB name depende de .env en vez de ser independiente. |
+| 16 | **H-S5-pwa-branding-unificado** | 🔲 PENDIENTE | Sin workaround por política. Scheduled para sprint Branding v2 post-S6 Supply Chain. |
 
-**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min).
+**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones).
 
 ---
 

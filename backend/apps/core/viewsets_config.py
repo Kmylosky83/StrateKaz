@@ -71,7 +71,7 @@ SIDEBAR_LAYERS = [
         'icon': 'FileText',
         'color': '#6366F1',
         'phase': 'PLANEAR',
-        'module_codes': ['gestion_documental'],
+        'module_codes': ['gestion_documental', 'catalogo_productos'],
     },
     {
         'code': 'NIVEL_EQUIPO',
@@ -116,7 +116,6 @@ SIDEBAR_LAYERS = [
         'color': '#10B981',
         'phase': 'HACER',
         'module_codes': [
-            'catalogo_productos',
             'supply_chain', 'production_ops',
             'logistics_fleet', 'sales_crm',
         ],

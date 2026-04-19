@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { BaseModal } from '@/components/modals/BaseModal';
+import { FormModal } from '@/components/modals/FormModal';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 
@@ -32,12 +32,12 @@ export default function CategoriasTab() {
   const updateMutation = useUpdateCategoria();
   const deleteMutation = useDeleteCategoria();
 
+  const form = useForm<CreateCategoriaProductoDTO>();
   const {
     register,
-    handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CreateCategoriaProductoDTO>();
+  } = form;
 
   function openCreate() {
     setEditing(null);
@@ -57,24 +57,15 @@ export default function CategoriasTab() {
     setModalOpen(true);
   }
 
+  function closeModal() {
+    setModalOpen(false);
+  }
+
   function onSubmit(data: CreateCategoriaProductoDTO) {
     if (editing) {
-      updateMutation.mutate(
-        { id: editing.id, data },
-        {
-          onSuccess: () => {
-            setModalOpen(false);
-            reset();
-          },
-        }
-      );
+      updateMutation.mutate({ id: editing.id, data }, { onSuccess: closeModal });
     } else {
-      createMutation.mutate(data, {
-        onSuccess: () => {
-          setModalOpen(false);
-          reset();
-        },
-      });
+      createMutation.mutate(data, { onSuccess: closeModal });
     }
   }
 
@@ -103,7 +94,7 @@ export default function CategoriasTab() {
           <EmptyState
             icon={<FolderTree className="w-8 h-8 text-slate-400" />}
             title="Sin categorías"
-            description="Crea la primera categoría de productos"
+            description="Crea la primera categoría de productos (ej: Grasas Animales, Empaques...)"
           />
         ) : (
           <div className="overflow-x-auto">
@@ -170,49 +161,44 @@ export default function CategoriasTab() {
         )}
       </Card>
 
-      <BaseModal
+      <FormModal
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          reset();
-        }}
+        onClose={closeModal}
+        onSubmit={onSubmit}
+        form={form}
         title={editing ? 'Editar categoría' : 'Nueva categoría'}
+        submitLabel={editing ? 'Guardar cambios' : 'Crear categoría'}
+        isLoading={isPending}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Nombre"
-            required
-            error={errors.nombre?.message}
-            {...register('nombre', { required: 'El nombre es obligatorio' })}
-          />
-          <Input label="Código interno" placeholder="Ej: MAT-GRASA" {...register('codigo')} />
-          <Textarea label="Descripción" rows={3} {...register('descripcion')} />
-          <Input label="Orden" type="number" {...register('orden', { valueAsNumber: true })} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setModalOpen(false);
-                reset();
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? <Spinner size="sm" /> : editing ? 'Guardar cambios' : 'Crear categoría'}
-            </Button>
-          </div>
-        </form>
-      </BaseModal>
+        <Input
+          label="Nombre"
+          required
+          placeholder="Ej: Grasas Animales"
+          error={errors.nombre?.message}
+          {...register('nombre', { required: 'El nombre es obligatorio' })}
+        />
+        <Input
+          label="Código interno"
+          placeholder="Ej: MAT-GRASA"
+          helperText="Opcional — útil para integraciones con sistemas externos"
+          {...register('codigo')}
+        />
+        <Textarea label="Descripción" rows={3} {...register('descripcion')} />
+        <Input
+          label="Orden"
+          type="number"
+          helperText="Controla el orden de aparición en listados"
+          {...register('orden', { valueAsNumber: true })}
+        />
+      </FormModal>
 
       <ConfirmDialog
         isOpen={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={onDelete}
         title="Eliminar categoría"
-        description="Esta acción eliminará la categoría permanentemente. Las subcategorías quedarán sin categoría padre."
-        confirmLabel="Eliminar"
+        message="Esta acción eliminará la categoría permanentemente. Las subcategorías y productos asociados quedarán sin categoría padre."
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

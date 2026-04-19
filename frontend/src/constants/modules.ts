@@ -22,7 +22,7 @@ export const CURRENT_DEPLOY_LEVEL = 20;
 /**
  * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.
  * NIVEL_FUNDACION      → Fundación (C1)
- * NIVEL_INFRAESTRUCTURA → Gestión Documental
+ * NIVEL_INFRAESTRUCTURA → Gestión Documental + Catálogo de Productos (CT-layer)
  * NIVEL_EQUIPO         → Mi Equipo
  * NIVEL_PLANIFICACION  → Planificación Operativa + Planeación Estratégica
  * NIVEL_PROTECCION     → Protección y Cumplimiento
@@ -59,10 +59,16 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   // NIVEL_FUNDACION — Fundación (C1)
   { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION', deployLevel: 10 },
 
-  // NIVEL_INFRAESTRUCTURA — Documentos
+  // NIVEL_INFRAESTRUCTURA — CT-layer transversal (dato maestro + documentos)
   {
     code: 'gestion_documental',
     name: 'Gestión Documental',
+    category: 'NIVEL_INFRAESTRUCTURA',
+    deployLevel: 15,
+  },
+  {
+    code: 'catalogo_productos',
+    name: 'Catálogo de Productos',
     category: 'NIVEL_INFRAESTRUCTURA',
     deployLevel: 15,
   },
@@ -103,13 +109,6 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   },
 
   // NIVEL_CADENA — Cadena de Valor
-  // CT-layer: catálogo maestro, visible desde L15 (transversal como gestion_documental)
-  {
-    code: 'catalogo_productos',
-    name: 'Catálogo de Productos',
-    category: 'NIVEL_CADENA',
-    deployLevel: 15,
-  },
   { code: 'supply_chain', name: 'Cadena de Suministro', category: 'NIVEL_CADENA', deployLevel: 50 },
   {
     code: 'production_ops',

@@ -199,6 +199,10 @@ class Producto(TenantModel):
         related_name='productos',
         verbose_name='Unidad de medida',
     )
+    # NOTA: hoy `tipo` es solo un label clasificatorio (no controla comportamiento).
+    # A futuro: SERVICIO → skip inventario, PRODUCTO_TERMINADO → habilita en Sales CRM.
+    # Mientras tanto, la clasificación administrativa la hace el usuario con
+    # categorías custom (ej: "Grasas Animales > Sebo Vacuno").
     tipo = models.CharField(
         max_length=30,
         choices=TIPO_CHOICES,
@@ -210,15 +214,21 @@ class Producto(TenantModel):
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Precio de referencia',
-        help_text='Precio base referencial (no vinculante)',
+        verbose_name='Precio estimado (referencia)',
+        help_text=(
+            'Valor estimado para presupuesto inicial. El precio real se define '
+            'por proveedor en Supply Chain > Precios.'
+        ),
     )
     sku = models.CharField(
         max_length=100,
         blank=True,
         default='',
         verbose_name='SKU / Código externo',
-        help_text='Código de barras, SKU o referencia externa',
+        help_text=(
+            'Código de barras, referencia del proveedor o código externo '
+            '(EAN-13, SAP, INVIMA, etc.)'
+        ),
     )
     notas = models.TextField(
         blank=True,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
 import { Card } from '@/components/common/Card';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { BaseModal } from '@/components/modals/BaseModal';
+import { FormModal } from '@/components/modals/FormModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
@@ -41,6 +41,7 @@ export default function ProductosTab() {
   const [editing, setEditing] = useState<Producto | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [codigoManual, setCodigoManual] = useState(false);
+  const [showOpcionales, setShowOpcionales] = useState(false);
 
   const { data: productos = [], isLoading } = useProductos();
   const { data: categorias = [] } = useCategorias();
@@ -50,14 +51,14 @@ export default function ProductosTab() {
   const updateMutation = useUpdateProducto();
   const deleteMutation = useDeleteProducto();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateProductoDTO>({
+  const form = useForm<CreateProductoDTO>({
     defaultValues: { tipo: 'MATERIA_PRIMA' },
   });
+  const {
+    register,
+    reset,
+    formState: { errors },
+  } = form;
 
   const categoriaOptions = [
     { value: '', label: 'Sin categoría' },
@@ -72,6 +73,7 @@ export default function ProductosTab() {
   function openCreate() {
     setEditing(null);
     setCodigoManual(false);
+    setShowOpcionales(false);
     reset({ codigo: '', nombre: '', descripcion: '', tipo: 'MATERIA_PRIMA', sku: '', notas: '' });
     setModalOpen(true);
   }
@@ -79,6 +81,7 @@ export default function ProductosTab() {
   function openEdit(p: Producto) {
     setEditing(p);
     setCodigoManual(true);
+    setShowOpcionales(!!(p.precio_referencia || p.sku || p.notas));
     reset({
       codigo: p.codigo,
       nombre: p.nombre,
@@ -93,6 +96,10 @@ export default function ProductosTab() {
     setModalOpen(true);
   }
 
+  function closeModal() {
+    setModalOpen(false);
+  }
+
   function onSubmit(raw: CreateProductoDTO) {
     const data: CreateProductoDTO = {
       ...raw,
@@ -102,22 +109,9 @@ export default function ProductosTab() {
       precio_referencia: raw.precio_referencia || null,
     };
     if (editing) {
-      updateMutation.mutate(
-        { id: editing.id, data },
-        {
-          onSuccess: () => {
-            setModalOpen(false);
-            reset();
-          },
-        }
-      );
+      updateMutation.mutate({ id: editing.id, data }, { onSuccess: closeModal });
     } else {
-      createMutation.mutate(data, {
-        onSuccess: () => {
-          setModalOpen(false);
-          reset();
-        },
-      });
+      createMutation.mutate(data, { onSuccess: closeModal });
     }
   }
 
@@ -209,96 +203,107 @@ export default function ProductosTab() {
         )}
       </Card>
 
-      <BaseModal
+      <FormModal
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          reset();
-        }}
+        onClose={closeModal}
+        onSubmit={onSubmit}
+        form={form}
         title={editing ? 'Editar producto' : 'Nuevo producto'}
+        subtitle={
+          editing ? `Código ${editing.codigo}` : 'Código interno se generará automáticamente'
+        }
+        submitLabel={editing ? 'Guardar cambios' : 'Crear producto'}
+        isLoading={isPending}
         size="lg"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Input
-                label="Código"
-                placeholder={editing || codigoManual ? 'PROD-00001' : 'Se generará automáticamente'}
-                disabled={!editing && !codigoManual}
-                error={errors.codigo?.message}
-                {...register('codigo')}
-              />
-              {!editing && (
-                <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={codigoManual}
-                    onChange={(e) => setCodigoManual(e.target.checked)}
-                    className="rounded"
-                  />
-                  Ingresar código manualmente
-                </label>
-              )}
-            </div>
-            <Select label="Tipo" options={TIPO_OPTIONS} {...register('tipo')} />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Input
+              label="Código"
+              placeholder={editing || codigoManual ? 'PROD-00001' : 'Se generará automáticamente'}
+              disabled={!editing && !codigoManual}
+              error={errors.codigo?.message}
+              leftIcon={!editing && !codigoManual ? <Lock className="w-4 h-4" /> : undefined}
+              {...register('codigo')}
+            />
+            {!editing && (
+              <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={codigoManual}
+                  onChange={(e) => setCodigoManual(e.target.checked)}
+                  className="rounded"
+                />
+                Ingresar código manualmente
+              </label>
+            )}
           </div>
-          <Input
-            label="Nombre"
-            required
-            error={errors.nombre?.message}
-            {...register('nombre', { required: 'El nombre es obligatorio' })}
+          <Select label="Tipo" options={TIPO_OPTIONS} {...register('tipo')} />
+        </div>
+
+        <Input
+          label="Nombre"
+          required
+          error={errors.nombre?.message}
+          {...register('nombre', { required: 'El nombre es obligatorio' })}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Categoría"
+            options={categoriaOptions}
+            helperText="Usa 'Sin categoría' si aún no has definido taxonomía"
+            {...register('categoria')}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Select label="Categoría" options={categoriaOptions} {...register('categoria')} />
-            <Select
-              label="Unidad de medida"
-              required
-              options={unidadOptions}
-              error={errors.unidad_medida?.message}
-              {...register('unidad_medida', { required: 'La unidad de medida es obligatoria' })}
-            />
+          <Select
+            label="Unidad de medida"
+            required
+            options={unidadOptions}
+            error={errors.unidad_medida?.message}
+            {...register('unidad_medida', { required: 'La unidad de medida es obligatoria' })}
+          />
+        </div>
+
+        <Textarea label="Descripción" rows={2} {...register('descripcion')} />
+
+        <button
+          type="button"
+          onClick={() => setShowOpcionales((v) => !v)}
+          className="text-xs text-primary hover:underline self-start"
+        >
+          {showOpcionales ? '− Ocultar' : '+ Mostrar'} información opcional
+        </button>
+
+        {showOpcionales && (
+          <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="SKU / Código externo"
+                placeholder="7702001234567"
+                helperText="Código de barras, referencia del proveedor o ERP (EAN-13, SAP, INVIMA)"
+                {...register('sku')}
+              />
+              <Input
+                label="Precio estimado (referencia)"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                helperText="Valor estimado para presupuesto. El precio real se define por proveedor en Supply Chain."
+                {...register('precio_referencia')}
+              />
+            </div>
+            <Textarea label="Notas" rows={2} {...register('notas')} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="SKU / Código externo"
-              placeholder="Código de barras o referencia externa"
-              {...register('sku')}
-            />
-            <Input
-              label="Precio de referencia"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              {...register('precio_referencia')}
-            />
-          </div>
-          <Textarea label="Descripción" rows={2} {...register('descripcion')} />
-          <Textarea label="Notas" rows={2} {...register('notas')} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setModalOpen(false);
-                reset();
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? <Spinner size="sm" /> : editing ? 'Guardar cambios' : 'Crear producto'}
-            </Button>
-          </div>
-        </form>
-      </BaseModal>
+        )}
+      </FormModal>
 
       <ConfirmDialog
         isOpen={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={onDelete}
         title="Eliminar producto"
-        description="Esta acción eliminará el producto del catálogo. Si está referenciado en inventario o recepciones, el sistema lo impedirá."
-        confirmLabel="Eliminar"
+        message="Esta acción eliminará el producto del catálogo. Si está referenciado en inventario o recepciones, el sistema lo impedirá."
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

@@ -8,7 +8,7 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { BaseModal } from '@/components/modals/BaseModal';
+import { FormModal } from '@/components/modals/FormModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
@@ -18,11 +18,7 @@ import {
   useUpdateUnidadMedida,
   useDeleteUnidadMedida,
 } from '../hooks/useUnidadesMedida';
-import type {
-  UnidadMedida,
-  CreateUnidadMedidaDTO,
-  UnidadMedidaTipo,
-} from '../types/catalogoProductos.types';
+import type { UnidadMedida, CreateUnidadMedidaDTO } from '../types/catalogoProductos.types';
 import { UNIDAD_MEDIDA_TIPO_LABELS } from '../types/catalogoProductos.types';
 
 const TIPO_OPTIONS = Object.entries(UNIDAD_MEDIDA_TIPO_LABELS).map(([value, label]) => ({
@@ -40,14 +36,14 @@ export default function UnidadesMedidaTab() {
   const updateMutation = useUpdateUnidadMedida();
   const deleteMutation = useDeleteUnidadMedida();
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateUnidadMedidaDTO>({
+  const form = useForm<CreateUnidadMedidaDTO>({
     defaultValues: { tipo: 'UNIDAD', es_base: false, orden: 0 },
   });
+  const {
+    register,
+    reset,
+    formState: { errors },
+  } = form;
 
   function openCreate() {
     setEditing(null);
@@ -75,25 +71,16 @@ export default function UnidadesMedidaTab() {
     setModalOpen(true);
   }
 
+  function closeModal() {
+    setModalOpen(false);
+  }
+
   function onSubmit(data: CreateUnidadMedidaDTO) {
     const payload = { ...data, factor_conversion: data.factor_conversion || null };
     if (editing) {
-      updateMutation.mutate(
-        { id: editing.id, data: payload },
-        {
-          onSuccess: () => {
-            setModalOpen(false);
-            reset();
-          },
-        }
-      );
+      updateMutation.mutate({ id: editing.id, data: payload }, { onSuccess: closeModal });
     } else {
-      createMutation.mutate(payload, {
-        onSuccess: () => {
-          setModalOpen(false);
-          reset();
-        },
-      });
+      createMutation.mutate(payload, { onSuccess: closeModal });
     }
   }
 
@@ -122,7 +109,7 @@ export default function UnidadesMedidaTab() {
           <EmptyState
             icon={<Ruler className="w-8 h-8 text-slate-400" />}
             title="Sin unidades de medida"
-            description="Crea la primera unidad de medida"
+            description="Crea la primera unidad de medida (ej: kg, litro, unidad...)"
           />
         ) : (
           <div className="overflow-x-auto">
@@ -185,67 +172,53 @@ export default function UnidadesMedidaTab() {
         )}
       </Card>
 
-      <BaseModal
+      <FormModal
         isOpen={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          reset();
-        }}
+        onClose={closeModal}
+        onSubmit={onSubmit}
+        form={form}
         title={editing ? 'Editar unidad de medida' : 'Nueva unidad de medida'}
+        submitLabel={editing ? 'Guardar cambios' : 'Crear unidad'}
+        isLoading={isPending}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Nombre"
-            required
-            placeholder="Ej: Kilogramo"
-            error={errors.nombre?.message}
-            {...register('nombre', { required: 'El nombre es obligatorio' })}
-          />
-          <Input
-            label="Abreviatura"
-            required
-            placeholder="Ej: kg"
-            error={errors.abreviatura?.message}
-            {...register('abreviatura', { required: 'La abreviatura es obligatoria' })}
-          />
-          <Select label="Tipo" options={TIPO_OPTIONS} {...register('tipo')} />
-          <Input
-            label="Factor de conversión"
-            type="number"
-            step="any"
-            placeholder="Ej: 1000 (g → kg)"
-            {...register('factor_conversion')}
-          />
-          <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-            <input type="checkbox" {...register('es_base')} className="rounded" />
-            Es unidad base del tipo
-          </label>
-          <Input label="Orden" type="number" {...register('orden', { valueAsNumber: true })} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setModalOpen(false);
-                reset();
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? <Spinner size="sm" /> : editing ? 'Guardar cambios' : 'Crear unidad'}
-            </Button>
-          </div>
-        </form>
-      </BaseModal>
+        <Input
+          label="Nombre"
+          required
+          placeholder="Ej: Kilogramo"
+          error={errors.nombre?.message}
+          {...register('nombre', { required: 'El nombre es obligatorio' })}
+        />
+        <Input
+          label="Abreviatura"
+          required
+          placeholder="Ej: kg"
+          helperText="Símbolo corto que se muestra en listados e informes"
+          error={errors.abreviatura?.message}
+          {...register('abreviatura', { required: 'La abreviatura es obligatoria' })}
+        />
+        <Select label="Tipo" options={TIPO_OPTIONS} {...register('tipo')} />
+        <Input
+          label="Factor de conversión"
+          type="number"
+          step="any"
+          placeholder="Ej: 1000"
+          helperText="Conversión a la unidad base del tipo (ej: 1000 para g → kg). Opcional."
+          {...register('factor_conversion')}
+        />
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+          <input type="checkbox" {...register('es_base')} className="rounded" />
+          Es unidad base del tipo
+        </label>
+        <Input label="Orden" type="number" {...register('orden', { valueAsNumber: true })} />
+      </FormModal>
 
       <ConfirmDialog
         isOpen={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={onDelete}
         title="Eliminar unidad de medida"
-        description="Si hay productos usando esta unidad, el sistema lo impedirá (PROTECT)."
-        confirmLabel="Eliminar"
+        message="Si hay productos usando esta unidad, el sistema impedirá la eliminación (PROTECT)."
+        confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
       />

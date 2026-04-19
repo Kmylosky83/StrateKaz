@@ -120,11 +120,50 @@ class Command(BaseCommand):
         # PASO 3: Eliminar módulos obsoletos V1
         self._cleanup_obsolete_modules()
 
+        # PASO 4: Restricciones RBAC selectivas (post-propagación del signal)
+        self._restrict_catalogo_productos_rbac()
+
         self.print_summary(total_modules, total_tabs, total_sections, deleted_sections, deleted_tabs)
 
     # =========================================================================
     # MIGRACIÓN V1 → V2
     # =========================================================================
+
+    # Secciones del módulo catalogo_productos cuyo acceso se restringe.
+    CATALOGO_PRODUCTOS_SECTIONS = [
+        'gestion_productos', 'gestion_categorias', 'gestion_unidades',
+    ]
+
+    # Cargos autorizados a gestionar catalogo_productos (dato maestro).
+    # Regex sobre `Cargo.code` — usuarios custom del tenant también aplican
+    # si su code contiene alguno de estos fragmentos.
+    CATALOGO_PRODUCTOS_ALLOWED_CARGOS_REGEX = (
+        r'(GER_GENERAL|DIR_CALIDAD|COORD_LOGISTICA|COORD_ADMIN|'
+        r'JEFE_PRODUCCION|ALMACENISTA|INSPECTOR_CALIDAD|SUPERVISOR_PLANTA)'
+    )
+
+    def _restrict_catalogo_productos_rbac(self):
+        """
+        Revoca CargoSectionAccess creados por el signal rbac_signals para
+        cargos NO autorizados a gestionar catálogo de productos.
+
+        rbac_signals.propaga por default a TODOS los cargos. Catálogo de
+        productos es dato maestro administrativo y no todos lo necesitan.
+        """
+        from apps.core.models.models_rbac_adicionales import CargoSectionAccess
+
+        access_qs = CargoSectionAccess.objects.filter(
+            section__code__in=self.CATALOGO_PRODUCTOS_SECTIONS,
+        ).exclude(
+            cargo__code__regex=self.CATALOGO_PRODUCTOS_ALLOWED_CARGOS_REGEX,
+        )
+        revoked = access_qs.count()
+        if revoked:
+            access_qs.delete()
+            self.stdout.write(self.style.WARNING(
+                f'  [RBAC] Revocados {revoked} accesos a catalogo_productos '
+                f'(cargos fuera del allowlist administrativo)'
+            ))
 
     def _cleanup_legacy_mi_equipo_under_talent_hub(self):
         """
@@ -610,6 +649,33 @@ class Command(BaseCommand):
                 ]
             },
 
+            # ─── Nivel 2B: CATÁLOGO DE PRODUCTOS (CT-layer, transversal) ─
+            # Dato maestro universal consumido por Supply Chain, Production Ops,
+            # Sales CRM. Ubicado en INFRAESTRUCTURA junto a Gestión Documental.
+            {
+                'code': 'catalogo_productos',
+                'name': 'Catálogo de Productos',
+                'description': 'Dato maestro de productos, categorías y unidades de medida',
+                'category': 'INFRASTRUCTURE',
+                'color': 'indigo',
+                'icon': 'Package',
+                'route': '/catalogo-productos',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 16,
+                'tabs': [
+                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 1, 'sections': [
+                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
+                    ]},
+                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 2, 'sections': [
+                        {'code': 'gestion_categorias', 'name': 'Gestión de Categorías', 'icon': 'FolderTree', 'orden': 1, 'description': 'Categorías jerárquicas de productos'},
+                    ]},
+                    {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
+                        {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
+                    ]},
+                ]
+            },
+
             # ─── Nivel 3: WORKFLOWS ──────────────────────────────────────
             {
                 'code': 'workflow_engine',
@@ -856,31 +922,6 @@ class Command(BaseCommand):
             },
 
             # ─── Nivel 9: CADENA DE VALOR ────────────────────────────────
-
-            # 9.0: Catálogo de Productos (CT-layer, transversal L17)
-            {
-                'code': 'catalogo_productos',
-                'name': 'Catálogo de Productos',
-                'description': 'Dato maestro de productos, categorías y unidades de medida',
-                'category': 'OPERATIONAL',
-                'color': 'green',
-                'icon': 'Package',
-                'route': '/catalogo-productos',
-                'is_core': False,
-                'is_enabled': True,
-                'orden': 49,
-                'tabs': [
-                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 1, 'sections': [
-                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
-                    ]},
-                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 2, 'sections': [
-                        {'code': 'gestion_categorias', 'name': 'Gestión de Categorías', 'icon': 'FolderTree', 'orden': 1, 'description': 'Categorías jerárquicas de productos'},
-                    ]},
-                    {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
-                        {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
-                    ]},
-                ]
-            },
 
             # 9A: Supply Chain
             {

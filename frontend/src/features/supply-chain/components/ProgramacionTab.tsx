@@ -40,7 +40,7 @@ import {
   useEstadisticasProgramaciones,
   useAsignacionesRecurso,
   useEjecuciones,
-  useLiquidaciones,
+  useProgramacionLiquidaciones,
 } from '../hooks';
 import ProgramacionFormModal from './ProgramacionFormModal';
 import type { Programacion } from '../types';
@@ -490,7 +490,7 @@ const EjecucionesSection = () => {
 // ==================== LIQUIDACIONES SECTION ====================
 
 const LiquidacionesSection = () => {
-  const { data, isLoading } = useLiquidaciones();
+  const { data, isLoading } = useProgramacionLiquidaciones();
   const liquidaciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {

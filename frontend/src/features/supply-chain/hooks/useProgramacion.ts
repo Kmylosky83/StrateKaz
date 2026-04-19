@@ -758,9 +758,12 @@ export function useCompletarEjecucion() {
   });
 }
 
-// ==================== LIQUIDACIONES ====================
+// ==================== LIQUIDACIONES (legacy programación) ====================
+// NOTA: renombrados con prefijo `Programacion` para evitar colisión con
+// los hooks nuevos de `useLiquidaciones.ts` (supply_chain.liquidaciones S3).
+// Cuando ProgramacionTab deje de usar el legacy, remover este bloque entero.
 
-export function useLiquidaciones(params?: Record<string, unknown>) {
+export function useProgramacionLiquidaciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params
       ? programacionKeys.liquidacionesFiltered(params)
@@ -772,7 +775,7 @@ export function useLiquidaciones(params?: Record<string, unknown>) {
   });
 }
 
-export function useLiquidacion(id: number) {
+export function useProgramacionLiquidacion(id: number) {
   return useQuery({
     queryKey: programacionKeys.liquidacion(id),
     queryFn: async () => {
@@ -783,7 +786,7 @@ export function useLiquidacion(id: number) {
   });
 }
 
-export function useCreateLiquidacion() {
+export function useCreateProgramacionLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateLiquidacionDTO) => {
@@ -800,7 +803,7 @@ export function useCreateLiquidacion() {
   });
 }
 
-export function useUpdateLiquidacion() {
+export function useUpdateProgramacionLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdateLiquidacionDTO }) => {
@@ -818,7 +821,7 @@ export function useUpdateLiquidacion() {
   });
 }
 
-export function useDeleteLiquidacion() {
+export function useDeleteProgramacionLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
@@ -834,7 +837,7 @@ export function useDeleteLiquidacion() {
   });
 }
 
-export function useAprobarLiquidacion() {
+export function useAprobarProgramacionLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones?: string }) => {
@@ -854,7 +857,7 @@ export function useAprobarLiquidacion() {
   });
 }
 
-export function useGenerarCxPLiquidacion() {
+export function useGenerarCxPProgramacionLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {

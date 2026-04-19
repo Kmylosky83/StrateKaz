@@ -47,6 +47,7 @@ import { riesgosRoutes } from './modules/riesgos.routes';
 import { workflowsRoutes } from './modules/workflows.routes';
 import { gestionIntegralRoutes } from './modules/gestion-integral.routes';
 import { hseqRoutes } from './modules/hseq.routes';
+import { catalogoProductosRoutes } from './modules/catalogo-productos.routes';
 import { supplyChainRoutes } from './modules/supply-chain.routes';
 import { productionOpsRoutes } from './modules/production-ops.routes';
 import { logisticsFleetRoutes } from './modules/logistics-fleet.routes';
@@ -119,6 +120,7 @@ export const AppRoutes = () => {
           {gestionIntegralRoutes}
 
           {/* Cadena de Valor (HACER) */}
+          {catalogoProductosRoutes}
           {supplyChainRoutes}
           {productionOpsRoutes}
           {logisticsFleetRoutes}

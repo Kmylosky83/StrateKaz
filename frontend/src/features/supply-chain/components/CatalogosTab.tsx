@@ -31,9 +31,7 @@ import {
   useTiposProveedor,
   useCreateTipoProveedor,
   useModalidadesLogistica,
-  useFormasPago,
   useTiposCuentaBancaria,
-  useTiposDocumento,
   useDepartamentos,
   useCiudades,
 } from '../hooks/useCatalogos';
@@ -70,6 +68,8 @@ interface CatalogItem {
 
 // ==================== CONFIGURACIÓN DE CATÁLOGOS ====================
 
+// Formas de Pago y Tipos de Documento se administran en Configuración → Catálogos.
+// Aquí solo viven catálogos específicos de supply chain.
 const CATALOGS: CatalogConfig[] = [
   { key: 'categorias-mp', label: 'Categorías de Materia Prima', group: 'Materias Primas' },
   {
@@ -85,10 +85,8 @@ const CATALOGS: CatalogConfig[] = [
     hasExtraFields: true,
   },
   { key: 'modalidades', label: 'Modalidades Logísticas', group: 'Proveedores' },
-  { key: 'formas-pago', label: 'Formas de Pago', group: 'Financiero' },
   { key: 'tipos-cuenta', label: 'Tipos de Cuenta Bancaria', group: 'Financiero' },
   { key: 'tipos-almacen', label: 'Tipos de Almacén', group: 'Almacenamiento' },
-  { key: 'tipos-documento', label: 'Tipos de Documento', group: 'Ubicación' },
   { key: 'departamentos', label: 'Departamentos', group: 'Ubicación' },
   { key: 'ciudades', label: 'Ciudades', group: 'Ubicación', hasExtraFields: true },
 ];
@@ -111,9 +109,7 @@ export function CatalogosTab() {
   const { data: tiposMpData, isLoading: l2 } = useTiposMateriaPrima();
   const { data: tiposProvData, isLoading: l3 } = useTiposProveedor();
   const { data: modalidadesData, isLoading: l4 } = useModalidadesLogistica();
-  const { data: formasPagoData, isLoading: l5 } = useFormasPago();
   const { data: tiposCuentaData, isLoading: l6 } = useTiposCuentaBancaria();
-  const { data: tiposDocData, isLoading: l7 } = useTiposDocumento();
   const { data: departamentosData, isLoading: l8 } = useDepartamentos();
   const { data: ciudadesData, isLoading: l9 } = useCiudades();
   const { data: tiposAlmacenData, isLoading: l10 } = useTiposAlmacen();
@@ -143,12 +139,8 @@ export function CatalogosTab() {
         return { items: normalize(tiposProvData), isLoading: l3 };
       case 'modalidades':
         return { items: normalize(modalidadesData), isLoading: l4 };
-      case 'formas-pago':
-        return { items: normalize(formasPagoData), isLoading: l5 };
       case 'tipos-cuenta':
         return { items: normalize(tiposCuentaData), isLoading: l6 };
-      case 'tipos-documento':
-        return { items: normalize(tiposDocData), isLoading: l7 };
       case 'departamentos':
         return { items: normalize(departamentosData), isLoading: l8 };
       case 'ciudades':

@@ -7,10 +7,37 @@
  * 2. Asincronicas - Entrevistas por email con link publico
  *
  * Usa design system: Card, Badge, Button, SectionHeader, StatsGrid, EmptyState, Spinner
+ *
+ * ============================================================================
+ * EJEMPLO CANONICO DE ADOPCION RBAC FE (ref: docs/history/2026-04-20-s85-rbac-unificado.md)
+ * ============================================================================
+ * Patron:
+ *   1. Importar useSectionPermissions + Modules + Sections
+ *   2. En el componente padre: obtener flags (canCreate/canEdit/canDelete)
+ *   3. Pasar flags a sub-componentes via props
+ *   4. Condicionar cada boton CRUD con el flag correspondiente:
+ *        {canCreate && <Button onClick={onCreateNew}>Nuevo</Button>}
+ *
+ * Por que este patron:
+ *   - canCreate/canEdit/canDelete son strings booleanos simples, no JSX
+ *     → mas facil de testear y propagar por props que <CanCreate> HOC
+ *   - Cuando hay varias acciones por fila condicionadas (row actions),
+ *     el booleano es mas ergonomico que 3 HOCs anidados
+ *   - El backend (GranularActionPermission) enforza igual los mismos codigos
+ *     (talent_hub.candidatos.create/edit/delete) — el FE solo esconde UI
+ *
+ * Seccion RBAC elegida: talent_hub.candidatos
+ *   Todas las acciones del flujo de seleccion (pruebas, entrevistas, contratos,
+ *   afiliaciones) se permisan bajo esta seccion unica para no fragmentar el
+ *   cargo en 10 sub-secciones que apenas se distinguen operativamente.
+ *   Alineado con ContratosTab.tsx, PruebasDinamicasTab.tsx, AfiliacionesTab.tsx.
+ * ============================================================================
  */
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
+import { useSectionPermissions } from '@/components/common/ProtectedAction';
+import { Modules, Sections } from '@/constants/permissions';
 import { Badge } from '@/components/common/Badge';
 import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
@@ -128,6 +155,13 @@ export const EntrevistasTab = () => {
   // Module color
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
   const colorClasses = getModuleColorClasses(moduleColor);
+
+  // RBAC granular — todas las acciones de seleccion bajo talent_hub.candidatos
+  // (alineado con ContratosTab, PruebasDinamicasTab, AfiliacionesTab)
+  const { canCreate, canEdit, canDelete } = useSectionPermissions(
+    Modules.TALENT_HUB,
+    Sections.CANDIDATOS
+  );
 
   // Queries
   const { data: entrevistasData, isLoading: isLoadingSync } = useEntrevistas({
@@ -270,6 +304,9 @@ export const EntrevistasTab = () => {
           onRealizar={handleRealizarEntrevista}
           onCancel={setCancelTarget}
           colorClasses={colorClasses}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       ) : (
         <AsyncEntrevistasView
@@ -283,6 +320,9 @@ export const EntrevistasTab = () => {
           onCancel={setCancelAsyncTarget}
           getPublicUrl={getPublicUrl}
           colorClasses={colorClasses}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       )}
 
@@ -359,6 +399,9 @@ interface SyncEntrevistasViewProps {
   onRealizar: (entrevista: Entrevista) => void;
   onCancel: (entrevista: Entrevista) => void;
   colorClasses: ReturnType<typeof getModuleColorClasses>;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const SyncEntrevistasView = ({
@@ -370,6 +413,9 @@ const SyncEntrevistasView = ({
   onRealizar,
   onCancel,
   colorClasses,
+  canCreate,
+  canEdit,
+  canDelete,
 }: SyncEntrevistasViewProps) => {
   return (
     <>
@@ -377,10 +423,12 @@ const SyncEntrevistasView = ({
         title="Entrevistas Programadas"
         description="Entrevistas presenciales, virtuales y telefonicas"
         actions={
-          <Button onClick={onCreateNew} size="sm">
-            <Plus size={16} className="mr-1" />
-            Programar Entrevista
-          </Button>
+          canCreate ? (
+            <Button onClick={onCreateNew} size="sm">
+              <Plus size={16} className="mr-1" />
+              Programar Entrevista
+            </Button>
+          ) : null
         }
       >
         <div className="flex items-center gap-3">
@@ -507,25 +555,30 @@ const SyncEntrevistasView = ({
                       <div className="flex items-center justify-end gap-1">
                         {entrevista.estado === 'programada' && (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onRealizar(entrevista)}
-                              title="Registrar resultado"
-                            >
-                              <CheckCircle size={16} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onCancel(entrevista)}
-                              title="Cancelar"
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <XCircle size={16} />
-                            </Button>
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onRealizar(entrevista)}
+                                title="Registrar resultado"
+                              >
+                                <CheckCircle size={16} />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onCancel(entrevista)}
+                                title="Cancelar"
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <XCircle size={16} />
+                              </Button>
+                            )}
                           </>
                         )}
+                        {/* Ver evaluacion (read) - siempre visible si puede ver la tabla */}
                         {entrevista.estado === 'realizada' && (
                           <Button
                             variant="ghost"
@@ -564,6 +617,9 @@ interface AsyncEntrevistasViewProps {
   onCancel: (entrevista: EntrevistaAsincronicaList) => void;
   getPublicUrl: (token: string) => string;
   colorClasses: ReturnType<typeof getModuleColorClasses>;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const AsyncEntrevistasView = ({
@@ -577,6 +633,9 @@ const AsyncEntrevistasView = ({
   onCancel,
   getPublicUrl,
   colorClasses,
+  canCreate,
+  canEdit,
+  canDelete,
 }: AsyncEntrevistasViewProps) => {
   return (
     <>
@@ -584,10 +643,12 @@ const AsyncEntrevistasView = ({
         title="Entrevistas Asincronicas"
         description="Entrevistas por email que el candidato responde a su ritmo"
         actions={
-          <Button onClick={onCreateNew} size="sm">
-            <Plus size={16} className="mr-1" />
-            Nueva Entrevista Async
-          </Button>
+          canCreate ? (
+            <Button onClick={onCreateNew} size="sm">
+              <Plus size={16} className="mr-1" />
+              Nueva Entrevista Async
+            </Button>
+          ) : null
         }
       >
         <div className="flex items-center gap-3">
@@ -703,23 +764,29 @@ const AsyncEntrevistasView = ({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
-                        {/* Evaluar (para completadas) */}
-                        {['completada', 'evaluada'].includes(entrevista.estado) && (
+                        {/* Evaluar: edit si es "completada", view si ya "evaluada" */}
+                        {entrevista.estado === 'completada' && canEdit && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onEvaluar(entrevista)}
-                            title={entrevista.estado === 'evaluada' ? 'Ver evaluacion' : 'Evaluar'}
+                            title="Evaluar"
                           >
-                            {entrevista.estado === 'evaluada' ? (
-                              <Eye size={16} />
-                            ) : (
-                              <Star size={16} />
-                            )}
+                            <Star size={16} />
+                          </Button>
+                        )}
+                        {entrevista.estado === 'evaluada' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onEvaluar(entrevista)}
+                            title="Ver evaluacion"
+                          >
+                            <Eye size={16} />
                           </Button>
                         )}
 
-                        {/* Copiar link */}
+                        {/* Copiar link publico (accion de lectura del token, siempre visible) */}
                         {!['completada', 'evaluada', 'cancelada', 'vencida'].includes(
                           entrevista.estado
                         ) && (
@@ -736,20 +803,21 @@ const AsyncEntrevistasView = ({
                           </Button>
                         )}
 
-                        {/* Reenviar email */}
-                        {['pendiente', 'enviada', 'en_progreso'].includes(entrevista.estado) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onReenviarEmail(entrevista.id)}
-                            title="Reenviar email"
-                          >
-                            <RefreshCw size={16} />
-                          </Button>
-                        )}
+                        {/* Reenviar email (edit) */}
+                        {canEdit &&
+                          ['pendiente', 'enviada', 'en_progreso'].includes(entrevista.estado) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onReenviarEmail(entrevista.id)}
+                              title="Reenviar email"
+                            >
+                              <RefreshCw size={16} />
+                            </Button>
+                          )}
 
-                        {/* Cancelar */}
-                        {!['evaluada', 'cancelada'].includes(entrevista.estado) && (
+                        {/* Cancelar (delete) */}
+                        {canDelete && !['evaluada', 'cancelada'].includes(entrevista.estado) && (
                           <Button
                             variant="ghost"
                             size="sm"

@@ -9,13 +9,16 @@ Comportamiento idempotente:
 - Solo CREA cargos nuevos (si el code no existe en el tenant).
 - NUNCA sobrescribe ediciones del admin (nombre, nivel, objetivo, etc.).
 - Si un cargo fue desactivado (is_active=False), NO lo recrea ni reactiva.
+- Si un cargo fue ELIMINADO físicamente y se vuelve a correr el seed,
+  SÍ se recrea. Por eso el seed NO está en deploy_seeds_all_tenants —
+  se ejecuta solo 1 vez al crear el tenant, o manual con --force.
 - Cargos de negocio se crean con is_system=False (editables y eliminables).
 - Asigna área (proceso) por defecto según CARGO_AREA_MAPPING si no tiene una.
 
 Uso:
-    python manage.py seed_cargos_base
+    python manage.py seed_cargos_base  # ejecución única en tenant vacío
     python manage.py seed_cargos_base --industria manufactura
-    python manage.py seed_cargos_base --reset
+    python manage.py seed_cargos_base --reset  # solo si admin lo pide explícito
 """
 from django.core.management.base import BaseCommand
 from django_tenants.utils import schema_context
@@ -428,14 +431,6 @@ class Command(BaseCommand):
             Cargo.objects.create(**fields)
             created += 1
 
-        # Fix: desmarcar cargos de negocio que fueron marcados incorrectamente
-        # como is_system=True por el backfill anterior. is_system solo aplica
-        # en la creación inicial (línea 407) — cargos editados son de negocio.
-        unmarked = Cargo.objects.filter(
-            code__in=seed_codes, is_system=True
-        ).update(is_system=False)
-        marked = 0
-
         # Backfill: asignar área a cargos seed que no tengan una
         linked = 0
         if Area:
@@ -456,8 +451,6 @@ class Command(BaseCommand):
                         linked += 1
 
         parts = [f'Creados: {created}', f'Omitidos: {skipped}']
-        if unmarked:
-            parts.append(f'Desmarcados is_system: {unmarked}')
         if linked:
             parts.append(f'Vinculados a área: {linked}')
         self.stdout.write(f'    {" | ".join(parts)}')

@@ -40,7 +40,10 @@ class Command(BaseCommand):
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),
         ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
         ('procesos', 'seed_procesos_base', [], 'Catálogo base de procesos organizacionales (17 procesos ISO)'),
-        ('cargos', 'seed_cargos_base', [], 'Catálogo base de cargos organizacionales (13 cargos)'),
+        # seed_cargos_base retirado del pipeline automático (doctrina "tenant
+        # soberano post-setup"). Se corre 1 vez al crear tenant vía
+        # TenantLifecycleService, y manual con `--force` si el admin lo pide.
+        # Ver docs/history/2026-04-19-seeds-cargos-off-pipeline.md.
         # ('juego_sst', 'seed_juego_sst', [], 'Juego SST: Nivel 1 + 10 preguntas quiz (Los Héroes de la Seguridad) [gamificacion]'),
         ('tipos_dofa', 'seed_tipos_analisis_dofa', [], 'Tipos de Análisis DOFA (10 catálogos estándar)'),
         ('tipos_pestel', 'seed_tipos_analisis_pestel', [], 'Tipos de Análisis PESTEL (10 catálogos estándar)'),

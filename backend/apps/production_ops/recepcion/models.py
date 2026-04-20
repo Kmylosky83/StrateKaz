@@ -660,17 +660,23 @@ class DetalleRecepcion(models.Model):
 
     @property
     def cumple_acidez(self):
-        """Verifica si la acidez está dentro del rango esperado."""
+        """Verifica si la acidez está dentro del rango esperado.
+
+        NOTA post-S7: TipoMateriaPrima fue eliminado. Los rangos de acidez
+        son metadata especifica de industria rendering; se reimplementaran
+        en production_ops cuando el modulo se active (via ProductoEspecCalidad
+        o campo en Producto).
+        """
         if self.acidez_medida is None:
             return None
-
-        # Lazy load tipo_materia_prima via apps.get_model
         from django.apps import apps
-        TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
+        try:
+            TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
+        except LookupError:
+            return None  # Modelo legacy eliminado; funcionalidad diferida a activacion de production_ops
         tipo = TipoMateriaPrima.objects.filter(id=self.tipo_materia_prima_id).first()
         if tipo and tipo.acidez_min is not None and tipo.acidez_max is not None:
             return tipo.acidez_min <= self.acidez_medida <= tipo.acidez_max
-
         return None
 
     def generar_lote(self):

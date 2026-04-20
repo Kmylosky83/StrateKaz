@@ -8,15 +8,12 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
-    # Catálogos dinámicos
-    CategoriaMateriaPrima,
-    TipoMateriaPrima,
+    # Catálogos dinámicos (MP migrada a catalogo_productos)
     TipoProveedor,
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
     # Modelos principales
-    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
@@ -41,33 +38,8 @@ class CatalogoBaseAdmin(admin.ModelAdmin):
     list_editable = ['orden', 'is_active']
 
 
-@admin.register(CategoriaMateriaPrima)
-class CategoriaMateriaPrimaAdmin(CatalogoBaseAdmin):
-    """Admin para Categorías de Materia Prima."""
-    list_display = ['codigo', 'nombre', 'descripcion', 'orden', 'is_active', 'count_tipos']
-
-    def count_tipos(self, obj):
-        return obj.tipos.count()
-    count_tipos.short_description = 'Tipos'
-
-
-@admin.register(TipoMateriaPrima)
-class TipoMateriaPrimaAdmin(admin.ModelAdmin):
-    """Admin para Tipos de Materia Prima."""
-    list_display = [
-        'codigo', 'nombre', 'categoria', 'acidez_range', 'orden', 'is_active'
-    ]
-    list_filter = ['categoria', 'is_active']
-    search_fields = ['codigo', 'nombre', 'categoria__nombre']
-    ordering = ['categoria__orden', 'orden', 'nombre']
-    list_editable = ['orden', 'is_active']
-    raw_id_fields = ['categoria']
-
-    def acidez_range(self, obj):
-        if obj.acidez_min is not None and obj.acidez_max is not None:
-            return f"{obj.acidez_min}% - {obj.acidez_max}%"
-        return "-"
-    acidez_range.short_description = 'Rango Acidez'
+# CategoriaMateriaPrimaAdmin y TipoMateriaPrimaAdmin eliminados post-S7.
+# Catalogo unico en catalogo_productos (CT-layer). Ver /admin/catalogo_productos/
 
 
 @admin.register(TipoProveedor)
@@ -111,7 +83,7 @@ class PrecioMateriaPrimaInline(admin.TabularInline):
     model = PrecioMateriaPrima
     extra = 0
     readonly_fields = ['updated_by', 'updated_at', 'created_at']
-    raw_id_fields = ['tipo_materia', 'producto']
+    raw_id_fields = ['producto']
 
 
 @admin.register(Proveedor)
@@ -131,7 +103,7 @@ class ProveedorAdmin(admin.ModelAdmin):
         'tipo_proveedor', 'tipo_documento', 'modalidad_logistica',
         'departamento', 'tipo_cuenta', 'created_by', 'updated_by', 'deleted_by',
     ]
-    filter_horizontal = ['tipos_materia_prima', 'formas_pago']
+    filter_horizontal = ['productos_suministrados', 'formas_pago']
     readonly_fields = [
         'codigo_interno', 'created_at', 'updated_at', 'deleted_at',
         'created_by', 'updated_by', 'deleted_by',
@@ -142,7 +114,7 @@ class ProveedorAdmin(admin.ModelAdmin):
         ('Identificación', {
             'fields': (
                 'codigo_interno', 'tipo_entidad', 'tipo_proveedor',
-                'tipos_materia_prima', 'modalidad_logistica',
+                'productos_suministrados', 'modalidad_logistica',
             )
         }),
         ('Datos Básicos', {
@@ -180,14 +152,14 @@ class ProveedorAdmin(admin.ModelAdmin):
 class PrecioMateriaPrimaAdmin(admin.ModelAdmin):
     """Admin para Precios de Materia Prima."""
     list_display = [
-        'proveedor', 'tipo_materia', 'producto', 'precio_kg',
+        'proveedor', 'producto', 'precio_kg',
         'updated_by', 'updated_at',
     ]
-    list_filter = ['tipo_materia__categoria', 'tipo_materia']
+    list_filter = ['producto__categoria']
     search_fields = [
-        'proveedor__nombre_comercial', 'tipo_materia__nombre', 'producto__nombre',
+        'proveedor__nombre_comercial', 'producto__nombre',
     ]
-    raw_id_fields = ['proveedor', 'tipo_materia', 'producto', 'updated_by', 'created_by']
+    raw_id_fields = ['proveedor', 'producto', 'updated_by', 'created_by']
     readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
 
 
@@ -195,14 +167,14 @@ class PrecioMateriaPrimaAdmin(admin.ModelAdmin):
 class HistorialPrecioProveedorAdmin(admin.ModelAdmin):
     """Admin para Historial de Precios (append-only, solo lectura)."""
     list_display = [
-        'proveedor', 'tipo_materia', 'producto', 'precio_anterior', 'precio_nuevo',
+        'proveedor', 'producto', 'precio_anterior', 'precio_nuevo',
         'variacion_display', 'modificado_por', 'created_at',
     ]
-    list_filter = ['tipo_materia__categoria', 'tipo_materia', 'modificado_por']
+    list_filter = ['producto__categoria', 'modificado_por']
     search_fields = ['proveedor__nombre_comercial', 'motivo']
     ordering = ['-created_at']
     readonly_fields = [
-        'proveedor', 'tipo_materia', 'producto', 'precio_anterior', 'precio_nuevo',
+        'proveedor', 'producto', 'precio_anterior', 'precio_nuevo',
         'modificado_por', 'motivo', 'created_at', 'updated_at',
     ]
 

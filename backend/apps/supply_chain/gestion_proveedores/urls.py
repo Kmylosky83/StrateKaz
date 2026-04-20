@@ -6,9 +6,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .viewsets import (
-    # Catálogos dinámicos (propios de Supply Chain)
-    CategoriaMateriaPrimaViewSet,
-    TipoMateriaPrimaViewSet,
+    # Catálogos dinámicos (propios de Supply Chain — MP migrado a catalogo_productos)
     TipoProveedorViewSet,
     ModalidadLogisticaViewSet,
     FormaPagoViewSet,
@@ -34,17 +32,9 @@ router = DefaultRouter()
 # RUTAS DE CATÁLOGOS DINÁMICOS
 # ==============================================================================
 
-# Categorías y Tipos de Materia Prima
-router.register(
-    r'categorias-materia-prima',
-    CategoriaMateriaPrimaViewSet,
-    basename='categoria-materia-prima'
-)
-router.register(
-    r'tipos-materia-prima',
-    TipoMateriaPrimaViewSet,
-    basename='tipo-materia-prima'
-)
+# Categorías y Tipos de Materia Prima migrados a:
+#   /api/catalogo-productos/categorias/  (CategoriaProducto)
+#   /api/catalogo-productos/productos/?tipo=MATERIA_PRIMA  (Producto)
 
 # Tipos de Proveedor
 router.register(

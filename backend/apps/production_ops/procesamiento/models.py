@@ -764,12 +764,13 @@ class ConsumoMateriaPrima(models.Model):
         verbose_name='Lote de producción'
     )
 
-    # Tipo de materia prima consumida
-    tipo_materia_prima = models.ForeignKey(
-        'gestion_proveedores.TipoMateriaPrima',
+    # Producto consumido (catalogo_productos canonico post-S7)
+    producto = models.ForeignKey(
+        'catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='consumos_procesamiento',
-        verbose_name='Tipo de materia prima'
+        verbose_name='Producto consumido',
+        help_text='Producto del catalogo maestro (tipo=MATERIA_PRIMA)',
     )
 
     # Cantidad consumida
@@ -821,12 +822,12 @@ class ConsumoMateriaPrima(models.Model):
         ordering = ['lote_produccion', 'id']
         indexes = [
             models.Index(fields=['lote_produccion']),
-            models.Index(fields=['tipo_materia_prima']),
+            models.Index(fields=['producto']),
             models.Index(fields=['lote_origen']),
         ]
 
     def __str__(self):
-        return f"{self.lote_produccion.codigo} - {self.tipo_materia_prima.nombre}: {self.cantidad} {self.unidad_medida}"
+        return f"{self.lote_produccion.codigo} - {self.producto.nombre}: {self.cantidad} {self.unidad_medida}"
 
     def calcular_costo_total(self):
         """Calcula el costo total del consumo."""

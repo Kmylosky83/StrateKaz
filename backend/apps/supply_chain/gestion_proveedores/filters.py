@@ -77,15 +77,15 @@ class ProveedorFilter(django_filters.FilterSet):
         label='Unidad de negocio (ID)'
     )
 
-    # Filtros de M2M (dinámicos)
-    tipo_materia_prima = django_filters.NumberFilter(
-        method='filter_tipo_materia_prima',
-        label='Tipo de materia prima (ID)'
+    # Filtros por producto (catalogo_productos canonico) y categoria
+    producto_suministrado = django_filters.NumberFilter(
+        method='filter_producto_suministrado',
+        label='Producto suministrado (ID del catalogo maestro)'
     )
 
-    categoria_materia_prima = django_filters.NumberFilter(
-        method='filter_categoria_materia_prima',
-        label='Categoría de materia prima (ID)'
+    categoria_producto = django_filters.NumberFilter(
+        method='filter_categoria_producto',
+        label='Categoría de producto (CategoriaProducto ID)'
     )
 
     forma_pago = django_filters.NumberFilter(
@@ -111,21 +111,21 @@ class ProveedorFilter(django_filters.FilterSet):
             'tipo_proveedor', 'tipo_proveedor_codigo',
             'departamento', 'departamento_codigo',
             'modalidad_logistica', 'modalidad_logistica_codigo',
-            'unidad_negocio', 'tipo_materia_prima', 'categoria_materia_prima',
+            'unidad_negocio', 'producto_suministrado', 'categoria_producto',
             'forma_pago', 'is_active', 'es_materia_prima'
         ]
 
-    def filter_tipo_materia_prima(self, queryset, name, value):
-        """Filtrar proveedores que manejan un tipo específico de materia prima."""
+    def filter_producto_suministrado(self, queryset, name, value):
+        """Filtrar proveedores que suministran un producto específico."""
         if not value:
             return queryset
-        return queryset.filter(tipos_materia_prima__id=value).distinct()
+        return queryset.filter(productos_suministrados__id=value).distinct()
 
-    def filter_categoria_materia_prima(self, queryset, name, value):
-        """Filtrar proveedores que manejan materias primas de una categoría."""
+    def filter_categoria_producto(self, queryset, name, value):
+        """Filtrar proveedores que suministran productos de una categoría."""
         if not value:
             return queryset
-        return queryset.filter(tipos_materia_prima__categoria_id=value).distinct()
+        return queryset.filter(productos_suministrados__categoria_id=value).distinct()
 
     def filter_forma_pago(self, queryset, name, value):
         """Filtrar proveedores que aceptan una forma de pago específica."""
@@ -227,15 +227,15 @@ class HistorialPrecioFilter(django_filters.FilterSet):
         label='Nombre del proveedor'
     )
 
-    tipo_materia = django_filters.NumberFilter(
-        field_name='tipo_materia_id',
-        label='Tipo de materia prima (ID)'
+    producto = django_filters.NumberFilter(
+        field_name='producto_id',
+        label='Producto (ID del catalogo_productos)'
     )
 
-    tipo_materia_codigo = django_filters.CharFilter(
-        field_name='tipo_materia__codigo',
+    producto_codigo = django_filters.CharFilter(
+        field_name='producto__codigo',
         lookup_expr='exact',
-        label='Tipo de materia prima (código)'
+        label='Producto (código)'
     )
 
     fecha_desde = django_filters.DateTimeFilter(
@@ -258,6 +258,6 @@ class HistorialPrecioFilter(django_filters.FilterSet):
     class Meta:
         model = HistorialPrecioProveedor
         fields = [
-            'proveedor', 'proveedor_nombre', 'tipo_materia', 'tipo_materia_codigo',
+            'proveedor', 'proveedor_nombre', 'producto', 'producto_codigo',
             'fecha_desde', 'fecha_hasta', 'modificado_por'
         ]

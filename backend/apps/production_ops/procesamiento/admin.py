@@ -43,7 +43,7 @@ class ConsumoMateriaPrimaInline(admin.TabularInline):
     model = ConsumoMateriaPrima
     extra = 1
     fields = [
-        'tipo_materia_prima', 'cantidad', 'unidad_medida',
+        'producto', 'cantidad', 'unidad_medida',
         'costo_unitario', 'costo_total', 'lote_origen'
     ]
     readonly_fields = ['costo_total']
@@ -360,12 +360,12 @@ class LoteProduccionAdmin(admin.ModelAdmin):
 class ConsumoMateriaPrimaAdmin(admin.ModelAdmin):
     """Admin para Consumo de Materia Prima."""
     list_display = [
-        'lote_produccion', 'tipo_materia_prima', 'cantidad',
+        'lote_produccion', 'producto', 'cantidad',
         'unidad_medida', 'costo_unitario', 'costo_total', 'lote_origen'
     ]
-    list_filter = ['tipo_materia_prima', 'unidad_medida', 'created_at']
+    list_filter = ['producto', 'unidad_medida', 'created_at']
     search_fields = [
-        'lote_produccion__codigo', 'tipo_materia_prima__nombre', 'lote_origen'
+        'lote_produccion__codigo', 'producto__nombre', 'lote_origen'
     ]
     ordering = ['-created_at']
     readonly_fields = ['costo_total', 'created_at', 'updated_at']
@@ -375,7 +375,7 @@ class ConsumoMateriaPrimaAdmin(admin.ModelAdmin):
             'fields': ('lote_produccion',)
         }),
         ('Materia Prima', {
-            'fields': ('tipo_materia_prima', 'lote_origen')
+            'fields': ('producto', 'lote_origen')
         }),
         ('Cantidad Consumida', {
             'fields': ('cantidad', 'unidad_medida')

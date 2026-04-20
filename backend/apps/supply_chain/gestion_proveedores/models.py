@@ -25,135 +25,10 @@ def prueba_acidez_upload_path(instance, filename):
 # MODELOS DE CATÁLOGO DINÁMICO
 # ==============================================================================
 
-class CategoriaMateriaPrima(models.Model):
-    """
-    Categoría principal de materia prima (dinámico).
-    Ejemplos: HUESO, SEBO_CRUDO, SEBO_PROCESADO, OTROS
-    """
-    codigo = models.CharField(
-        max_length=50,
-        unique=True,
-        db_index=True,
-        verbose_name='Código',
-        help_text='Código único de la categoría (ej: HUESO, SEBO_CRUDO)'
-    )
-    nombre = models.CharField(
-        max_length=100,
-        verbose_name='Nombre',
-        help_text='Nombre de la categoría'
-    )
-    descripcion = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Descripción'
-    )
-    orden = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Orden',
-        help_text='Orden de visualización'
-    )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'supply_chain_categoria_materia_prima'
-        verbose_name = 'Categoría de Materia Prima'
-        verbose_name_plural = 'Categorías de Materia Prima'
-        ordering = ['orden', 'nombre']
-
-    def __str__(self):
-        return self.nombre
-
-
-class TipoMateriaPrima(models.Model):
-    """
-    Tipo específico de materia prima (dinámico).
-    Ejemplos: HUESO_CRUDO, SEBO_PROCESADO_A, ACU
-    """
-    categoria = models.ForeignKey(
-        CategoriaMateriaPrima,
-        on_delete=models.PROTECT,
-        related_name='tipos',
-        verbose_name='Categoría'
-    )
-    codigo = models.CharField(
-        max_length=50,
-        unique=True,
-        db_index=True,
-        verbose_name='Código',
-        help_text='Código único del tipo (ej: HUESO_CRUDO, SEBO_PROCESADO_A)'
-    )
-    nombre = models.CharField(
-        max_length=150,
-        verbose_name='Nombre',
-        help_text='Nombre del tipo de materia prima'
-    )
-    descripcion = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Descripción'
-    )
-    # Para sebo procesado: rangos de acidez
-    acidez_min = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name='Acidez mínima (%)',
-        help_text='Límite inferior de acidez (solo para sebo procesado)'
-    )
-    acidez_max = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name='Acidez máxima (%)',
-        help_text='Límite superior de acidez (solo para sebo procesado)'
-    )
-    # Código legacy para compatibilidad
-    codigo_legacy = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Código legacy',
-        help_text='Código anterior para migración de datos'
-    )
-    orden = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Orden'
-    )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'supply_chain_tipo_materia_prima'
-        verbose_name = 'Tipo de Materia Prima'
-        verbose_name_plural = 'Tipos de Materia Prima'
-        ordering = ['categoria__orden', 'orden', 'nombre']
-
-    def __str__(self):
-        return f"{self.categoria.nombre} - {self.nombre}"
-
-    @classmethod
-    def obtener_por_acidez(cls, valor_acidez):
-        """
-        Obtiene el tipo de sebo procesado según valor de acidez.
-        """
-        return cls.objects.filter(
-            acidez_min__lte=valor_acidez,
-            acidez_max__gte=valor_acidez,
-            is_active=True
-        ).first()
+# CategoriaMateriaPrima y TipoMateriaPrima eliminados post-S7 (2026-04-19).
+# El catalogo unico de productos/categorias vive en catalogo_productos (CT-layer).
+# Proveedor.productos_suministrados M2M reemplaza Proveedor.tipos_materia_prima.
+# Data migrada en gestion_proveedores.0003_migrar_tipos_materia_prima_a_productos.
 
 
 class TipoProveedor(models.Model):
@@ -355,12 +230,13 @@ class Proveedor(TenantModel):
         verbose_name='Tipo de proveedor'
     )
 
-    # Tipos de materia prima que maneja (M2M dinámico)
-    tipos_materia_prima = models.ManyToManyField(
-        TipoMateriaPrima,
+    # Productos que suministra — source-of-truth en catalogo_productos (CT)
+    productos_suministrados = models.ManyToManyField(
+        'catalogo_productos.Producto',
         blank=True,
         related_name='proveedores',
-        verbose_name='Tipos de materia prima'
+        verbose_name='Productos que suministra',
+        help_text='Productos del catálogo maestro que el proveedor suministra',
     )
 
     # Modalidad logística (dinámico)
@@ -613,23 +489,14 @@ class PrecioMateriaPrima(TenantModel):
         related_name='precios_materia_prima',
         verbose_name='Proveedor'
     )
-    tipo_materia = models.ForeignKey(
-        TipoMateriaPrima,
-        on_delete=models.PROTECT,
-        related_name='precios',
-        null=True,
-        blank=True,
-        verbose_name='Tipo de materia prima (legado)',
-        help_text='FK legada. Coexiste con producto del catálogo maestro.',
-    )
     producto = models.ForeignKey(
         'catalogo_productos.Producto',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name='precios_proveedor',
         verbose_name='Producto del catálogo',
-        help_text='Referencia al catálogo maestro. Coexiste con tipo_materia.',
+        help_text='Producto maestro del catalogo_productos (tipo=MATERIA_PRIMA)',
     )
     precio_kg = models.DecimalField(
         max_digits=10,
@@ -643,38 +510,24 @@ class PrecioMateriaPrima(TenantModel):
         verbose_name_plural = 'Precios de Materias Primas'
         ordering = ['proveedor']
         indexes = [
-            models.Index(fields=['proveedor', 'tipo_materia']),
             models.Index(fields=['proveedor', 'producto']),
-            models.Index(fields=['tipo_materia']),
             models.Index(fields=['producto']),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=['proveedor', 'tipo_materia'],
-                condition=Q(tipo_materia__isnull=False, is_deleted=False),
-                name='uq_precio_proveedor_tipo_materia_active',
-            ),
-            models.UniqueConstraint(
                 fields=['proveedor', 'producto'],
-                condition=Q(producto__isnull=False, is_deleted=False),
+                condition=Q(is_deleted=False),
                 name='uq_precio_proveedor_producto_active',
             ),
         ]
 
     def __str__(self):
-        item = self.producto.nombre if self.producto else (
-            self.tipo_materia.nombre if self.tipo_materia else 'sin ítem'
-        )
-        return f"{self.proveedor.nombre_comercial} - {item}: ${self.precio_kg}/kg"
+        return f"{self.proveedor.nombre_comercial} - {self.producto.nombre}: ${self.precio_kg}/kg"
 
     def clean(self):
         super().clean()
         if self.precio_kg is not None and self.precio_kg < 0:
             raise ValidationError({'precio_kg': 'El precio no puede ser negativo'})
-        if self.tipo_materia is None and self.producto is None:
-            raise ValidationError(
-                'Debe especificar al menos uno: tipo_materia (legado) o producto (catálogo).'
-            )
 
 
 class HistorialPrecioProveedor(TimeStampedModel):
@@ -691,14 +544,6 @@ class HistorialPrecioProveedor(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name='historial_precios',
         verbose_name='Proveedor'
-    )
-    tipo_materia = models.ForeignKey(
-        TipoMateriaPrima,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='historial_precios',
-        verbose_name='Tipo de materia prima (legado)'
     )
     producto = models.ForeignKey(
         'catalogo_productos.Producto',
@@ -744,9 +589,7 @@ class HistorialPrecioProveedor(TimeStampedModel):
         ]
 
     def __str__(self):
-        item = self.producto.nombre if self.producto else (
-            self.tipo_materia.nombre if self.tipo_materia else 'N/A'
-        )
+        item = self.producto.nombre if self.producto else 'N/A'
         return f"{self.proveedor.nombre_comercial} - {item}: {self.precio_anterior} -> {self.precio_nuevo}"
 
     def save(self, *args, **kwargs):

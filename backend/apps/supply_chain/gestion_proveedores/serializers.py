@@ -12,15 +12,13 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 
 from .models import (
-    # Catálogos dinámicos (los propios de Supply Chain)
-    CategoriaMateriaPrima,
-    TipoMateriaPrima,
+    # Catálogos dinámicos (propios de Supply Chain — sin MateriaPrima, que vive en catalogo_productos)
     TipoProveedor,
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
     # Modelos principales
-    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
+    # NOTA: UnidadNegocio → Fundación. MP → catalogo_productos.Producto (CT).
     Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
@@ -38,40 +36,8 @@ from apps.core.serializers_datos_maestros import (
 
 
 # ==============================================================================
-# SERIALIZERS DE CATÁLOGOS DINÁMICOS
+# SERIALIZERS DE CATÁLOGOS DINÁMICOS (MateriaPrima migrada a catalogo_productos)
 # ==============================================================================
-
-class CategoriaMateriaPrimaSerializer(serializers.ModelSerializer):
-    """Serializer para categorías de materia prima."""
-
-    class Meta:
-        model = CategoriaMateriaPrima
-        fields = ['id', 'codigo', 'nombre', 'descripcion', 'orden', 'is_active']
-        read_only_fields = ['id']
-
-
-class TipoMateriaPrimaSerializer(serializers.ModelSerializer):
-    """Serializer para tipos de materia prima."""
-
-    categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
-
-    class Meta:
-        model = TipoMateriaPrima
-        fields = [
-            'id', 'categoria', 'categoria_nombre', 'codigo', 'nombre',
-            'descripcion', 'acidez_min', 'acidez_max', 'codigo_legacy',
-            'orden', 'is_active'
-        ]
-        read_only_fields = ['id']
-
-
-class TipoMateriaPrimaListSerializer(serializers.ModelSerializer):
-    """Serializer resumido para listas."""
-
-    class Meta:
-        model = TipoMateriaPrima
-        fields = ['id', 'codigo', 'nombre']
-
 
 class TipoProveedorSerializer(serializers.ModelSerializer):
     """Serializer para tipos de proveedor."""
@@ -127,21 +93,18 @@ class TipoCuentaBancariaSerializer(serializers.ModelSerializer):
 # ==============================================================================
 
 class PrecioMateriaPrimaSerializer(serializers.ModelSerializer):
-    """Serializer para precios de materia prima (coexistencia tipo_materia + producto)."""
+    """Serializer para precios de materia prima (catalogo_productos canonico)."""
 
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True, allow_null=True)
-    tipo_materia_codigo = serializers.CharField(source='tipo_materia.codigo', read_only=True, allow_null=True)
-    categoria_nombre = serializers.CharField(source='tipo_materia.categoria.nombre', read_only=True, allow_null=True)
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True, allow_null=True)
     producto_codigo = serializers.CharField(source='producto.codigo', read_only=True, allow_null=True)
+    categoria_nombre = serializers.CharField(source='producto.categoria.nombre', read_only=True, allow_null=True)
     updated_by_nombre = serializers.CharField(source='updated_by.get_full_name', read_only=True, allow_null=True)
 
     class Meta:
         model = PrecioMateriaPrima
         fields = [
             'id', 'proveedor',
-            'tipo_materia', 'tipo_materia_nombre', 'tipo_materia_codigo', 'categoria_nombre',
-            'producto', 'producto_nombre', 'producto_codigo',
+            'producto', 'producto_nombre', 'producto_codigo', 'categoria_nombre',
             'precio_kg',
             'updated_by', 'updated_by_nombre', 'updated_at',
             'created_at',
@@ -169,8 +132,8 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     es_proveedor_materia_prima = serializers.BooleanField(read_only=True)
     created_by_nombre = serializers.CharField(source='created_by.get_full_name', read_only=True)
 
-    # Tipos de materia prima (M2M)
-    tipos_materia_prima_display = serializers.SerializerMethodField()
+    # Productos que suministra (M2M a catalogo_productos)
+    productos_suministrados_display = serializers.SerializerMethodField()
 
     # Formas de pago (M2M)
     formas_pago_display = serializers.SerializerMethodField()
@@ -186,7 +149,8 @@ class ProveedorListSerializer(serializers.ModelSerializer):
         model = Proveedor
         fields = [
             'id', 'codigo_interno', 'tipo_proveedor', 'tipo_proveedor_nombre',
-            'tipo_proveedor_codigo', 'tipos_materia_prima', 'tipos_materia_prima_display',
+            'tipo_proveedor_codigo',
+            'productos_suministrados', 'productos_suministrados_display',
             'modalidad_logistica', 'modalidad_logistica_nombre',
             'nombre_comercial', 'razon_social', 'tipo_documento', 'tipo_documento_nombre',
             'numero_documento', 'nit', 'telefono', 'email', 'direccion', 'ciudad',
@@ -211,9 +175,9 @@ class ProveedorListSerializer(serializers.ModelSerializer):
         User = get_user_model()
         return User.objects.filter(proveedor_id_ext=obj.pk, is_active=True).exists()
 
-    def get_tipos_materia_prima_display(self, obj):
-        """Retorna nombres de tipos de materia prima."""
-        return [t.nombre for t in obj.tipos_materia_prima.all()]
+    def get_productos_suministrados_display(self, obj):
+        """Retorna nombres de productos que suministra (desde catalogo_productos)."""
+        return [p.nombre for p in obj.productos_suministrados.all()]
 
     def get_formas_pago_display(self, obj):
         """Retorna nombres de formas de pago."""
@@ -224,9 +188,7 @@ class ProveedorDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalle completo de proveedor."""
 
     tipo_proveedor_data = TipoProveedorSerializer(source='tipo_proveedor', read_only=True)
-    tipos_materia_prima_data = TipoMateriaPrimaListSerializer(
-        source='tipos_materia_prima', many=True, read_only=True
-    )
+    productos_suministrados_data = serializers.SerializerMethodField()
     modalidad_logistica_data = ModalidadLogisticaSerializer(
         source='modalidad_logistica', read_only=True
     )
@@ -246,16 +208,30 @@ class ProveedorDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'codigo_interno', 'created_at', 'updated_at', 'deleted_at']
 
+    def get_productos_suministrados_data(self, obj):
+        """Productos que suministra con data basica del catalogo maestro."""
+        return [
+            {
+                'id': p.id,
+                'codigo': p.codigo,
+                'nombre': p.nombre,
+                'tipo': p.tipo,
+                'unidad_medida': p.unidad_medida.abreviatura if p.unidad_medida else None,
+                'categoria': p.categoria.nombre if p.categoria else None,
+            }
+            for p in obj.productos_suministrados.all()
+        ]
+
 
 class ProveedorCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear proveedores con validaciones dinámicas."""
 
-    # Campo write-only para recibir precios por tipo de materia prima
+    # Campo write-only para recibir precios por producto (catalogo canonico)
     precios = serializers.ListField(
         child=serializers.DictField(),
         write_only=True,
         required=False,
-        help_text='Lista de precios: [{"tipo_materia_id": 1, "precio_kg": "5000.00"}, ...]'
+        help_text='Lista de precios: [{"producto_id": 1, "precio_kg": "5000.00"}, ...]'
     )
 
     # Campos opcionales explícitos (evitar 400 por strings vacíos)
@@ -272,7 +248,7 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proveedor
         fields = [
-            'tipo_proveedor', 'tipos_materia_prima', 'modalidad_logistica',
+            'tipo_proveedor', 'productos_suministrados', 'modalidad_logistica',
             'nombre_comercial', 'razon_social', 'tipo_documento', 'numero_documento', 'nit',
             'telefono', 'email', 'direccion', 'ciudad', 'departamento',
             'unidad_negocio_id', 'unidad_negocio_nombre', 'formas_pago', 'dias_plazo_pago',
@@ -343,20 +319,24 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_precios(self, value):
-        """Validar lista de precios."""
+        """Validar lista de precios (por producto del catalogo canonico)."""
         if not value:
             return value
 
+        from apps.catalogo_productos.models import Producto
+
         for precio_data in value:
-            if 'tipo_materia_id' not in precio_data:
-                raise serializers.ValidationError('Cada precio debe tener "tipo_materia_id"')
+            if 'producto_id' not in precio_data:
+                raise serializers.ValidationError('Cada precio debe tener "producto_id"')
             if 'precio_kg' not in precio_data:
                 raise serializers.ValidationError('Cada precio debe tener "precio_kg"')
 
-            # Validar que tipo_materia existe
-            tipo_id = precio_data['tipo_materia_id']
-            if not TipoMateriaPrima.objects.filter(id=tipo_id, is_active=True).exists():
-                raise serializers.ValidationError(f'Tipo de materia prima {tipo_id} no existe o no está activo')
+            # Validar que producto existe en catalogo canonico
+            producto_id = precio_data['producto_id']
+            if not Producto.objects.filter(id=producto_id, is_deleted=False).exists():
+                raise serializers.ValidationError(
+                    f'Producto {producto_id} no existe o fue eliminado'
+                )
 
             # Validar precio positivo
             try:
@@ -379,12 +359,12 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
                     'modalidad_logistica': 'Este tipo de proveedor requiere modalidad logística'
                 })
 
-            # Validar tipos de materia prima si es requerido
+            # Validar productos suministrados si el tipo de proveedor requiere MP
             if tipo_proveedor.requiere_materia_prima:
-                tipos_mp = attrs.get('tipos_materia_prima', [])
-                if not tipos_mp:
+                productos = attrs.get('productos_suministrados', [])
+                if not productos:
                     raise serializers.ValidationError({
-                        'tipos_materia_prima': 'Este tipo de proveedor requiere especificar tipos de materia prima'
+                        'productos_suministrados': 'Este tipo de proveedor requiere especificar productos suministrados (catálogo maestro)'
                     })
 
         return attrs
@@ -395,8 +375,10 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
         Crear proveedor con M2M y precios iniciales.
         Transacción atómica: si falla cualquier paso, se revierte todo.
         """
+        from apps.catalogo_productos.models import Producto
+
         precios_data = validated_data.pop('precios', [])
-        tipos_mp = validated_data.pop('tipos_materia_prima', [])
+        productos = validated_data.pop('productos_suministrados', [])
         formas_pago = validated_data.pop('formas_pago', [])
 
         request = self.context.get('request')
@@ -405,22 +387,22 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
 
         proveedor = Proveedor.objects.create(**validated_data)
 
-        # Agregar tipos de materia prima (M2M)
-        if tipos_mp:
-            proveedor.tipos_materia_prima.set(tipos_mp)
+        # Agregar productos suministrados (M2M a catalogo_productos.Producto)
+        if productos:
+            proveedor.productos_suministrados.set(productos)
 
         # Agregar formas de pago (M2M)
         if formas_pago:
             proveedor.formas_pago.set(formas_pago)
 
-        # Crear precios de materia prima
+        # Crear precios iniciales por producto
         if precios_data and proveedor.es_proveedor_materia_prima:
             usuario = request.user if request and hasattr(request, 'user') else None
             for precio_info in precios_data:
-                tipo_materia = TipoMateriaPrima.objects.get(id=precio_info['tipo_materia_id'])
+                producto = Producto.objects.get(id=precio_info['producto_id'])
                 PrecioMateriaPrima.objects.create(
                     proveedor=proveedor,
-                    tipo_materia=tipo_materia,
+                    producto=producto,
                     precio_kg=Decimal(str(precio_info['precio_kg'])),
                     created_by=usuario,
                     updated_by=usuario,
@@ -430,11 +412,11 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
                 if usuario:
                     HistorialPrecioProveedor.objects.create(
                         proveedor=proveedor,
-                        tipo_materia=tipo_materia,
+                        producto=producto,
                         precio_anterior=None,
                         precio_nuevo=Decimal(str(precio_info['precio_kg'])),
                         modificado_por=usuario,
-                        motivo=f'Precio inicial de {tipo_materia.nombre} al crear proveedor'
+                        motivo=f'Precio inicial de {producto.nombre} al crear proveedor'
                     )
 
         return proveedor
@@ -443,7 +425,7 @@ class ProveedorCreateSerializer(serializers.ModelSerializer):
 class ProveedorUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer para actualizar proveedores (SIN modificar precio ni tipo_proveedor).
-    Incluye M2M: tipos_materia_prima, formas_pago, modalidad_logistica.
+    Incluye M2M: productos_suministrados, formas_pago, modalidad_logistica.
     """
 
     # Campos opcionales explícitos (evitar 400 por strings vacíos)
@@ -462,7 +444,7 @@ class ProveedorUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'nombre_comercial', 'razon_social', 'nit', 'telefono', 'email',
             'direccion', 'ciudad', 'departamento',
-            'tipos_materia_prima', 'modalidad_logistica',
+            'productos_suministrados', 'modalidad_logistica',
             'unidad_negocio_id', 'unidad_negocio_nombre',
             'formas_pago', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
@@ -506,9 +488,9 @@ class CambiarPrecioSerializer(serializers.Serializer):
     SOLO Gerente puede usar esta acción.
     """
 
-    tipo_materia_id = serializers.IntegerField(
+    producto_id = serializers.IntegerField(
         required=True,
-        help_text='ID del tipo de materia prima'
+        help_text='ID del producto (catalogo_productos canonico)'
     )
     precio_nuevo = serializers.DecimalField(
         max_digits=10,
@@ -531,29 +513,32 @@ class CambiarPrecioSerializer(serializers.Serializer):
             raise serializers.ValidationError('Debe proporcionar una justificación del cambio')
         return value
 
-    def validate_tipo_materia_id(self, value):
-        if not TipoMateriaPrima.objects.filter(id=value, is_active=True).exists():
-            raise serializers.ValidationError('Tipo de materia prima no existe o no está activo')
+    def validate_producto_id(self, value):
+        from apps.catalogo_productos.models import Producto
+        if not Producto.objects.filter(id=value, is_deleted=False).exists():
+            raise serializers.ValidationError('Producto no existe en el catálogo')
         return value
 
     def validate(self, attrs):
+        from apps.catalogo_productos.models import Producto
+
         proveedor = self.context.get('proveedor')
-        tipo_materia_id = attrs.get('tipo_materia_id')
+        producto_id = attrs.get('producto_id')
         precio_nuevo = attrs.get('precio_nuevo')
 
-        # Validar que el proveedor maneja ese tipo de materia
+        # Validar que el proveedor suministra ese producto
         if proveedor:
-            tipo_materia = TipoMateriaPrima.objects.get(id=tipo_materia_id)
-            if not proveedor.tipos_materia_prima.filter(id=tipo_materia_id).exists():
+            producto = Producto.objects.get(id=producto_id)
+            if not proveedor.productos_suministrados.filter(id=producto_id).exists():
                 raise serializers.ValidationError({
-                    'tipo_materia_id': f'El proveedor no maneja {tipo_materia.nombre}'
+                    'producto_id': f'El proveedor no suministra {producto.nombre}'
                 })
 
             # Verificar si el precio es diferente al actual
             try:
                 precio_actual = PrecioMateriaPrima.objects.get(
                     proveedor=proveedor,
-                    tipo_materia_id=tipo_materia_id
+                    producto_id=producto_id,
                 )
                 if precio_actual.precio_kg == precio_nuevo:
                     raise serializers.ValidationError({
@@ -565,17 +550,19 @@ class CambiarPrecioSerializer(serializers.Serializer):
         return attrs
 
     def save(self):
+        from apps.catalogo_productos.models import Producto
+
         proveedor = self.context.get('proveedor')
         usuario = self.context.get('usuario')
-        tipo_materia_id = self.validated_data['tipo_materia_id']
+        producto_id = self.validated_data['producto_id']
         precio_nuevo = self.validated_data['precio_nuevo']
         motivo = self.validated_data['motivo']
 
-        tipo_materia = TipoMateriaPrima.objects.get(id=tipo_materia_id)
+        producto = Producto.objects.get(id=producto_id)
 
         precio_obj, created = PrecioMateriaPrima.objects.get_or_create(
             proveedor=proveedor,
-            tipo_materia=tipo_materia,
+            producto=producto,
             defaults={
                 'precio_kg': precio_nuevo,
                 'created_by': usuario,
@@ -592,7 +579,7 @@ class CambiarPrecioSerializer(serializers.Serializer):
 
         HistorialPrecioProveedor.objects.create(
             proveedor=proveedor,
-            tipo_materia=tipo_materia,
+            producto=producto,
             precio_anterior=precio_anterior,
             precio_nuevo=precio_nuevo,
             modificado_por=usuario,
@@ -651,7 +638,6 @@ class HistorialPrecioSerializer(serializers.ModelSerializer):
     """Serializer para historial de precios (append-only)."""
 
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    tipo_materia_nombre = serializers.CharField(source='tipo_materia.nombre', read_only=True, allow_null=True)
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True, allow_null=True)
     modificado_por_nombre = serializers.CharField(source='modificado_por.get_full_name', read_only=True, allow_null=True)
     variacion_precio = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
@@ -661,7 +647,6 @@ class HistorialPrecioSerializer(serializers.ModelSerializer):
         model = HistorialPrecioProveedor
         fields = [
             'id', 'proveedor', 'proveedor_nombre',
-            'tipo_materia', 'tipo_materia_nombre',
             'producto', 'producto_nombre',
             'precio_anterior', 'precio_nuevo', 'variacion_precio', 'tipo_cambio',
             'modificado_por', 'modificado_por_nombre', 'motivo',

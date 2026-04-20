@@ -37,7 +37,7 @@ const proveedorSchema = z.object({
   tipo_documento: z.number().min(1, 'Seleccione un tipo de documento'),
   numero_documento: z.string().min(1, 'El número de documento es obligatorio'),
   nit: z.string().optional().default(''),
-  tipos_materia_prima: z.array(z.number()).optional().default([]),
+  productos_suministrados: z.array(z.number()).optional().default([]),
   modalidad_logistica: z.number().optional().default(0),
   unidad_negocio: z.number().optional().default(0),
   telefono: z.string().optional().default(''),
@@ -73,7 +73,7 @@ const DEFAULT_VALUES: ProveedorFormValues = {
   tipo_documento: 0,
   numero_documento: '',
   nit: '',
-  tipos_materia_prima: [],
+  productos_suministrados: [],
   modalidad_logistica: 0,
   unidad_negocio: 0,
   telefono: '',
@@ -174,7 +174,7 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
       reset({
         tipo_proveedor: proveedor.tipo_proveedor,
         unidad_negocio: proveedor.unidad_negocio || 0,
-        tipos_materia_prima: proveedor.tipos_materia_prima || [],
+        productos_suministrados: proveedor.productos_suministrados || [],
         modalidad_logistica: proveedor.modalidad_logistica || 0,
         razon_social: proveedor.razon_social || '',
         nombre_comercial: proveedor.nombre_comercial || '',
@@ -207,7 +207,10 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
 
   // ==================== HANDLERS ====================
 
-  const handleMultiSelectToggle = (field: 'tipos_materia_prima' | 'formas_pago', value: number) => {
+  const handleMultiSelectToggle = (
+    field: 'productos_suministrados' | 'formas_pago',
+    value: number
+  ) => {
     const currentValues = watch(field) || [];
     const newValues = currentValues.includes(value)
       ? currentValues.filter((v) => v !== value)
@@ -409,8 +412,8 @@ export function ProveedorForm({ proveedor, isOpen, onClose }: ProveedorFormProps
                   <Checkbox
                     key={tipo.id}
                     label={tipo.nombre}
-                    checked={watch('tipos_materia_prima')?.includes(tipo.id) || false}
-                    onChange={() => handleMultiSelectToggle('tipos_materia_prima', tipo.id)}
+                    checked={watch('productos_suministrados')?.includes(tipo.id) || false}
+                    onChange={() => handleMultiSelectToggle('productos_suministrados', tipo.id)}
                   />
                 ))}
               </div>

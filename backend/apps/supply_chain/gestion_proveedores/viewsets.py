@@ -22,15 +22,11 @@ from django.conf import settings
 from apps.core.utils.impersonation import get_effective_user
 
 from .models import (
-    # Catálogos dinámicos (propios de Supply Chain)
-    CategoriaMateriaPrima,
-    TipoMateriaPrima,
+    # Catálogos dinámicos (MP migrada a catalogo_productos.Producto canonico)
     TipoProveedor,
     ModalidadLogistica,
     FormaPago,
     TipoCuentaBancaria,
-    # NOTA: TipoDocumentoIdentidad, Departamento, Ciudad → migrados a Core (C0)
-    # NOTA: UnidadNegocio → Migrado a Fundación (configuracion)
     # Modelos principales
     Proveedor,
     PrecioMateriaPrima,
@@ -43,9 +39,6 @@ from .models import (
 )
 from .serializers import (
     # Catálogos
-    CategoriaMateriaPrimaSerializer,
-    TipoMateriaPrimaSerializer,
-    TipoMateriaPrimaListSerializer,
     TipoProveedorSerializer,
     ModalidadLogisticaSerializer,
     FormaPagoSerializer,
@@ -108,100 +101,10 @@ class CatalogoBaseViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class CategoriaMateriaPrimaViewSet(CatalogoBaseViewSet):
-    """
-    ViewSet para Categorías de Materia Prima (dinámico).
-
-    Endpoints:
-    - GET /api/supply-chain/categorias-materia-prima/
-    - POST /api/supply-chain/categorias-materia-prima/
-    - GET /api/supply-chain/categorias-materia-prima/{id}/
-    - PUT/PATCH /api/supply-chain/categorias-materia-prima/{id}/
-    - DELETE /api/supply-chain/categorias-materia-prima/{id}/
-    - GET /api/supply-chain/categorias-materia-prima/{id}/tipos/ - Tipos de esta categoría
-    """
-
-    queryset = CategoriaMateriaPrima.objects.all()
-    serializer_class = CategoriaMateriaPrimaSerializer
-    search_fields = ['codigo', 'nombre']
-    filterset_fields = ['is_active']
-    ordering_fields = ['orden', 'nombre', 'codigo']
-
-    @action(detail=True, methods=['get'])
-    def tipos(self, request, pk=None):
-        """Listar tipos de materia prima de esta categoría."""
-        categoria = self.get_object()
-        tipos = categoria.tipos.filter(is_active=True).order_by('orden', 'nombre')
-        serializer = TipoMateriaPrimaListSerializer(tipos, many=True)
-        return Response({
-            'categoria': categoria.nombre,
-            'tipos': serializer.data
-        })
-
-
-class TipoMateriaPrimaViewSet(CatalogoBaseViewSet):
-    """
-    ViewSet para Tipos de Materia Prima (dinámico).
-
-    Endpoints:
-    - GET /api/supply-chain/tipos-materia-prima/
-    - POST /api/supply-chain/tipos-materia-prima/
-    - GET /api/supply-chain/tipos-materia-prima/{id}/
-    - PUT/PATCH /api/supply-chain/tipos-materia-prima/{id}/
-    - DELETE /api/supply-chain/tipos-materia-prima/{id}/
-    - GET /api/supply-chain/tipos-materia-prima/por-acidez/?valor=X - Buscar por acidez
-    """
-
-    queryset = TipoMateriaPrima.objects.all()
-    serializer_class = TipoMateriaPrimaSerializer
-    search_fields = ['codigo', 'nombre']
-    filterset_fields = ['categoria', 'is_active']
-    ordering_fields = ['orden', 'nombre', 'categoria__orden']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.select_related('categoria')
-
-    @action(detail=False, methods=['get'], url_path='por-acidez')
-    def por_acidez(self, request):
-        """
-        Obtener tipo de materia prima por valor de acidez.
-        Útil para determinar la calidad de sebo procesado.
-
-        GET /api/supply-chain/tipos-materia-prima/por-acidez/?valor=4.5
-        """
-        valor = request.query_params.get('valor')
-
-        if not valor:
-            return Response(
-                {'detail': 'Debe proporcionar el parámetro "valor"'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            valor_acidez = float(valor)
-        except ValueError:
-            return Response(
-                {'detail': 'El valor de acidez debe ser un número'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        tipo = TipoMateriaPrima.obtener_por_acidez(valor_acidez)
-
-        if tipo:
-            serializer = TipoMateriaPrimaSerializer(tipo)
-            return Response({
-                'valor_acidez': valor_acidez,
-                'tipo_materia': serializer.data,
-                'encontrado': True
-            })
-        else:
-            return Response({
-                'valor_acidez': valor_acidez,
-                'tipo_materia': None,
-                'encontrado': False,
-                'mensaje': 'No se encontró tipo de materia prima para este valor de acidez'
-            })
+# CategoriaMateriaPrimaViewSet y TipoMateriaPrimaViewSet eliminados
+# post-S7: el catalogo unico vive en /api/catalogo-productos/
+#   - Categorias: GET /api/catalogo-productos/categorias/
+#   - Productos MP: GET /api/catalogo-productos/productos/?tipo=MATERIA_PRIMA
 
 
 class TipoProveedorViewSet(CatalogoBaseViewSet):
@@ -369,10 +272,12 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
             'tipo_cuenta',
             'created_by'
         ).prefetch_related(
-            'tipos_materia_prima',
+            'productos_suministrados',
+            'productos_suministrados__categoria',
+            'productos_suministrados__unidad_medida',
             'formas_pago',
             'precios_materia_prima',
-            'precios_materia_prima__tipo_materia',
+            'precios_materia_prima__producto',
         ).annotate(
             usuarios_vinculados_count=Coalesce(
                 Subquery(user_count_sq, output_field=IntegerField()),
@@ -409,13 +314,13 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
     )
     def cambiar_precio(self, request, pk=None):
         """
-        Cambiar precio de proveedor de materia prima por tipo.
+        Cambiar precio de proveedor de materia prima por producto.
 
         SOLO Gerente o SuperAdmin pueden ejecutar esta acción.
 
         Body:
         {
-            "tipo_materia_id": 1,
+            "producto_id": 1,
             "precio_nuevo": 3500.00,
             "motivo": "Ajuste por inflación"
         }
@@ -441,8 +346,6 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
 
         return Response({
             'detail': 'Precio actualizado exitosamente',
-            'tipo_materia': precio_obj.tipo_materia.nombre if precio_obj.tipo_materia else None,
-            'tipo_materia_id': precio_obj.tipo_materia.id if precio_obj.tipo_materia else None,
             'producto': precio_obj.producto.nombre if precio_obj.producto else None,
             'producto_id': precio_obj.producto.id if precio_obj.producto else None,
             'precio_nuevo': str(precio_obj.precio_kg),
@@ -465,15 +368,15 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Obtener precios actuales por tipo de materia
+        # Obtener precios actuales por producto (catalogo canonico)
         precios_actuales = PrecioMateriaPrima.objects.filter(
             proveedor=proveedor
-        ).select_related('tipo_materia', 'tipo_materia__categoria', 'producto', 'updated_by')
+        ).select_related('producto', 'producto__categoria', 'updated_by')
 
         # Obtener historial
         historial = HistorialPrecioProveedor.objects.filter(
             proveedor=proveedor
-        ).select_related('tipo_materia', 'producto', 'modificado_por').order_by('-created_at')
+        ).select_related('producto', 'modificado_por').order_by('-created_at')
 
         return Response({
             'proveedor': proveedor.nombre_comercial,
@@ -956,8 +859,8 @@ class ProveedorViewSet(ResumenRevisionMixin, viewsets.ModelViewSet):
         precios = PrecioMateriaPrima.objects.filter(
             proveedor=proveedor
         ).select_related(
-            'tipo_materia__categoria', 'modificado_por'
-        ).order_by('tipo_materia__categoria__orden', 'tipo_materia__orden')
+            'producto__categoria', 'updated_by'
+        ).order_by('producto__categoria__orden', 'producto__nombre')
 
         serializer = PrecioMateriaPrimaSerializer(precios, many=True)
         return Response(serializer.data)
@@ -1311,13 +1214,13 @@ class HistorialPrecioViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = HistorialPrecioSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['proveedor', 'tipo_materia', 'producto', 'modificado_por']
+    filterset_fields = ['proveedor', 'producto', 'modificado_por']
     ordering_fields = ['created_at']
     ordering = ['-created_at']
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return queryset.select_related('proveedor', 'tipo_materia', 'producto', 'modificado_por')
+        return queryset.select_related('proveedor', 'producto', 'modificado_por')
 
 
 class CondicionComercialViewSet(viewsets.ModelViewSet):

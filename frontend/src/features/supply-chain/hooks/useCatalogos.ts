@@ -116,23 +116,21 @@ export function useDeleteCategoriaMateriaPrima() {
   });
 }
 
-// ==================== TIPOS MATERIA PRIMA ====================
+// ==================== PRODUCTOS (MATERIA PRIMA) ====================
+// Post-S7: fuente unica en catalogo_productos. Este hook mantiene el nombre
+// legacy `useTiposMateriaPrima` para no romper callers existentes, pero ya
+// consume el catalogo maestro (Producto con tipo='MATERIA_PRIMA').
 
-export function useTiposMateriaPrima(params?: { categoria?: number; is_active?: boolean }) {
+export function useTiposMateriaPrima(_params?: { categoria?: number; is_active?: boolean }) {
   return useQuery({
-    queryKey: params?.categoria
-      ? catalogosKeys.tiposPorCategoria(params.categoria)
-      : params?.is_active
-        ? catalogosKeys.tiposActivos()
-        : catalogosKeys.tipos(),
+    queryKey: ['catalogo-productos', 'productos', 'materia-prima'],
     queryFn: async () => {
-      if (params?.categoria) {
-        return catalogosApi.tipoMateriaPrima.porCategoria(params.categoria);
-      }
-      if (params?.is_active) {
-        return catalogosApi.tipoMateriaPrima.getActivos();
-      }
-      return catalogosApi.tipoMateriaPrima.getAll();
+      const { productoApi } =
+        await import('@/features/catalogo-productos/api/catalogoProductos.api');
+      const response = await productoApi.getAll({ page_size: 1000 });
+      // Filter tipo=MATERIA_PRIMA client-side (backend aun no tiene filter server-side)
+      const all = Array.isArray(response) ? response : (response?.results ?? []);
+      return all.filter((p) => p.tipo === 'MATERIA_PRIMA');
     },
   });
 }

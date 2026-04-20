@@ -1,5 +1,5 @@
 /**
- * Tab Catálogos - Gestión CRUD de 9 catálogos dinámicos (Tipo B — tabla con selector)
+ * Tab Catálogos - Gestión CRUD de catálogos dinámicos (Tipo B — tabla con selector)
  * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
@@ -20,14 +20,6 @@ import { Textarea } from '@/components/forms/Textarea';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import {
-  useCategoriasMateriaPrima,
-  useCreateCategoriaMateriaPrima,
-  useUpdateCategoriaMateriaPrima,
-  useDeleteCategoriaMateriaPrima,
-  useTiposMateriaPrima,
-  useCreateTipoMateriaPrima,
-  useUpdateTipoMateriaPrima,
-  useDeleteTipoMateriaPrima,
   useTiposProveedor,
   useCreateTipoProveedor,
   useModalidadesLogistica,
@@ -57,10 +49,6 @@ interface CatalogItem {
   nombre: string;
   descripcion?: string;
   is_active: boolean;
-  categoria?: number;
-  categoria_nombre?: string;
-  acidez_min?: string | number | null;
-  acidez_max?: string | number | null;
   requiere_materia_prima?: boolean;
   requiere_modalidad_logistica?: boolean;
   departamento_nombre?: string;
@@ -69,15 +57,9 @@ interface CatalogItem {
 // ==================== CONFIGURACIÓN DE CATÁLOGOS ====================
 
 // Formas de Pago y Tipos de Documento se administran en Configuración → Catálogos.
+// Materias Primas (categorías + tipos) viven en Catálogo de Productos.
 // Aquí solo viven catálogos específicos de supply chain.
 const CATALOGS: CatalogConfig[] = [
-  { key: 'categorias-mp', label: 'Categorías de Materia Prima', group: 'Materias Primas' },
-  {
-    key: 'tipos-mp',
-    label: 'Tipos de Materia Prima',
-    group: 'Materias Primas',
-    hasExtraFields: true,
-  },
   {
     key: 'tipos-proveedor',
     label: 'Tipos de Proveedor',
@@ -97,7 +79,7 @@ export function CatalogosTab() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.CATALOGOS_SC, 'create');
 
-  const [selectedCatalog, setSelectedCatalog] = useState('categorias-mp');
+  const [selectedCatalog, setSelectedCatalog] = useState('tipos-proveedor');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<CatalogItem | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
@@ -105,8 +87,6 @@ export function CatalogosTab() {
   const catalogConfig = CATALOGS.find((c) => c.key === selectedCatalog)!;
 
   // Queries para todos los catálogos (solo se activa el seleccionado)
-  const { data: categoriasData, isLoading: l1 } = useCategoriasMateriaPrima();
-  const { data: tiposMpData, isLoading: l2 } = useTiposMateriaPrima();
   const { data: tiposProvData, isLoading: l3 } = useTiposProveedor();
   const { data: modalidadesData, isLoading: l4 } = useModalidadesLogistica();
   const { data: tiposCuentaData, isLoading: l6 } = useTiposCuentaBancaria();
@@ -115,12 +95,6 @@ export function CatalogosTab() {
   const { data: tiposAlmacenData, isLoading: l10 } = useTiposAlmacen();
 
   // Mutations para catálogos base
-  const createCategoria = useCreateCategoriaMateriaPrima();
-  const updateCategoria = useUpdateCategoriaMateriaPrima();
-  const deleteCategoria = useDeleteCategoriaMateriaPrima();
-  const createTipoMp = useCreateTipoMateriaPrima();
-  const updateTipoMp = useUpdateTipoMateriaPrima();
-  const deleteTipoMp = useDeleteTipoMateriaPrima();
   const createTipoProv = useCreateTipoProveedor();
   const createTipoAlm = useCreateTipoAlmacen();
   const updateTipoAlm = useUpdateTipoAlmacen();
@@ -131,10 +105,6 @@ export function CatalogosTab() {
     const normalize = (d: unknown): CatalogItem[] =>
       Array.isArray(d) ? d : ((d as Record<string, unknown>)?.results as CatalogItem[]) || [];
     switch (selectedCatalog) {
-      case 'categorias-mp':
-        return { items: normalize(categoriasData), isLoading: l1 };
-      case 'tipos-mp':
-        return { items: normalize(tiposMpData), isLoading: l2 };
       case 'tipos-proveedor':
         return { items: normalize(tiposProvData), isLoading: l3 };
       case 'modalidades':
@@ -169,28 +139,6 @@ export function CatalogosTab() {
 
     try {
       switch (selectedCatalog) {
-        case 'categorias-mp':
-          if (editItem) {
-            await updateCategoria.mutateAsync({ id: editItem.id, data: baseData });
-          } else {
-            await createCategoria.mutateAsync(baseData);
-          }
-          break;
-        case 'tipos-mp':
-          {
-            const mpData = {
-              ...baseData,
-              categoria: Number(fd.get('categoria')),
-              acidez_min: fd.get('acidez_min') ? Number(fd.get('acidez_min')) : undefined,
-              acidez_max: fd.get('acidez_max') ? Number(fd.get('acidez_max')) : undefined,
-            };
-            if (editItem) {
-              await updateTipoMp.mutateAsync({ id: editItem.id, data: mpData });
-            } else {
-              await createTipoMp.mutateAsync(mpData);
-            }
-          }
-          break;
         case 'tipos-proveedor':
           {
             const provData = {
@@ -198,11 +146,7 @@ export function CatalogosTab() {
               requiere_materia_prima: fd.get('requiere_materia_prima') === 'true',
               requiere_modalidad_logistica: fd.get('requiere_modalidad_logistica') === 'true',
             };
-            if (editItem) {
-              await createTipoProv.mutateAsync(provData);
-            } else {
-              await createTipoProv.mutateAsync(provData);
-            }
+            await createTipoProv.mutateAsync(provData);
           }
           break;
         case 'tipos-almacen':
@@ -213,11 +157,6 @@ export function CatalogosTab() {
           }
           break;
         default:
-          if (editItem) {
-            await updateCategoria.mutateAsync({ id: editItem.id, data: baseData });
-          } else {
-            await createCategoria.mutateAsync(baseData);
-          }
           break;
       }
       setShowForm(false);
@@ -231,17 +170,10 @@ export function CatalogosTab() {
     if (!deleteItemId) return;
     try {
       switch (selectedCatalog) {
-        case 'categorias-mp':
-          await deleteCategoria.mutateAsync(deleteItemId);
-          break;
-        case 'tipos-mp':
-          await deleteTipoMp.mutateAsync(deleteItemId);
-          break;
         case 'tipos-almacen':
           await deleteTipoAlm.mutateAsync(deleteItemId);
           break;
         default:
-          await deleteCategoria.mutateAsync(deleteItemId);
           break;
       }
     } catch {
@@ -249,11 +181,6 @@ export function CatalogosTab() {
     }
     setDeleteItemId(null);
   };
-
-  // Datos auxiliares para formularios (categorías para tipos MP)
-  const categorias: CatalogItem[] = Array.isArray(categoriasData)
-    ? categoriasData
-    : ((categoriasData as Record<string, unknown>)?.results as CatalogItem[]) || [];
 
   // ==================== RENDER ====================
 
@@ -337,16 +264,6 @@ export function CatalogosTab() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Descripción
                   </th>
-                  {selectedCatalog === 'tipos-mp' && (
-                    <>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Categoría
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Rango Acidez
-                      </th>
-                    </>
-                  )}
                   {selectedCatalog === 'tipos-proveedor' && (
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Req. Materia Prima
@@ -377,18 +294,6 @@ export function CatalogosTab() {
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                       {item.descripcion || '-'}
                     </td>
-                    {selectedCatalog === 'tipos-mp' && (
-                      <>
-                        <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                          {item.categoria_nombre || '-'}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-center text-gray-600 dark:text-gray-300">
-                          {item.acidez_min != null && item.acidez_max != null
-                            ? `${Number(item.acidez_min).toFixed(1)}% - ${Number(item.acidez_max).toFixed(1)}%`
-                            : '-'}
-                        </td>
-                      </>
-                    )}
                     {selectedCatalog === 'tipos-proveedor' && (
                       <td className="px-6 py-3 text-center">
                         {item.requiere_materia_prima ? (
@@ -484,39 +389,6 @@ export function CatalogosTab() {
             rows={2}
             defaultValue={editItem?.descripcion || ''}
           />
-
-          {/* Campos extra: Tipos de Materia Prima */}
-          {selectedCatalog === 'tipos-mp' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Select
-                label="Categoría *"
-                name="categoria"
-                required
-                defaultValue={editItem?.categoria || ''}
-              >
-                <option value="">Seleccione...</option>
-                {categorias.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.nombre}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                label="Acidez Mín. (%)"
-                type="number"
-                name="acidez_min"
-                step="0.01"
-                defaultValue={editItem?.acidez_min ?? ''}
-              />
-              <Input
-                label="Acidez Máx. (%)"
-                type="number"
-                name="acidez_max"
-                step="0.01"
-                defaultValue={editItem?.acidez_max ?? ''}
-              />
-            </div>
-          )}
 
           {/* Campos extra: Tipos de Proveedor */}
           {selectedCatalog === 'tipos-proveedor' && (

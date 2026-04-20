@@ -6,28 +6,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import catalogosApi from '../api/catalogos.api';
 import { getApiErrorMessage } from '@/utils/errorUtils';
-import type {
-  CreateCategoriaMateriaPrimaDTO,
-  UpdateCategoriaMateriaPrimaDTO,
-  CreateTipoMateriaPrimaDTO,
-  UpdateTipoMateriaPrimaDTO,
-  CreateTipoProveedorDTO,
-} from '../types';
+import type { CreateTipoProveedorDTO } from '../types';
 
 // ==================== QUERY KEYS ====================
 
 export const catalogosKeys = {
   all: ['supply-chain', 'catalogos'] as const,
-
-  // Categorías de Materia Prima
-  categorias: () => [...catalogosKeys.all, 'categorias-materia-prima'] as const,
-  categoriasActivas: () => [...catalogosKeys.categorias(), 'activas'] as const,
-
-  // Tipos de Materia Prima
-  tipos: () => [...catalogosKeys.all, 'tipos-materia-prima'] as const,
-  tiposActivos: () => [...catalogosKeys.tipos(), 'activos'] as const,
-  tiposPorCategoria: (categoriaId: number) =>
-    [...catalogosKeys.tipos(), 'categoria', categoriaId] as const,
 
   // Tipos de Proveedor
   tiposProveedor: () => [...catalogosKeys.all, 'tipos-proveedor'] as const,
@@ -51,7 +35,7 @@ export const catalogosKeys = {
 
   // Departamentos
   departamentos: () => [...catalogosKeys.all, 'departamentos'] as const,
-  departamentosActivos: () => [...catalogosKeys.departamentos(), 'activos'] as const,
+  departamentosActivos: () => [...catalogosKeys.departamentos(), 'activas'] as const,
 
   // Ciudades
   ciudades: () => [...catalogosKeys.all, 'ciudades'] as const,
@@ -60,66 +44,8 @@ export const catalogosKeys = {
     [...catalogosKeys.ciudades(), 'departamento', deptoId] as const,
 };
 
-// ==================== CATEGORÍAS MATERIA PRIMA ====================
-
-export function useCategoriasMateriaPrima(params?: { is_active?: boolean }) {
-  return useQuery({
-    queryKey: params?.is_active ? catalogosKeys.categoriasActivas() : catalogosKeys.categorias(),
-    queryFn: () =>
-      params?.is_active
-        ? catalogosApi.categoriaMateriaPrima.getActivos()
-        : catalogosApi.categoriaMateriaPrima.getAll(),
-  });
-}
-
-export function useCreateCategoriaMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateCategoriaMateriaPrimaDTO) =>
-      catalogosApi.categoriaMateriaPrima.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
-      toast.success('Categoría creada exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear categoría'));
-    },
-  });
-}
-
-export function useUpdateCategoriaMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCategoriaMateriaPrimaDTO }) =>
-      catalogosApi.categoriaMateriaPrima.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
-      toast.success('Categoría actualizada exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar categoría'));
-    },
-  });
-}
-
-export function useDeleteCategoriaMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => catalogosApi.categoriaMateriaPrima.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.categorias() });
-      toast.success('Categoría eliminada exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar categoría'));
-    },
-  });
-}
-
 // ==================== PRODUCTOS (MATERIA PRIMA) ====================
-// Post-S7: fuente unica en catalogo_productos. Este hook mantiene el nombre
-// legacy `useTiposMateriaPrima` para no romper callers existentes, pero ya
-// consume el catalogo maestro (Producto con tipo='MATERIA_PRIMA').
+// Fuente unica: catalogo_productos.Producto con tipo='MATERIA_PRIMA'.
 
 export function useTiposMateriaPrima(_params?: { categoria?: number; is_active?: boolean }) {
   return useQuery({
@@ -131,49 +57,6 @@ export function useTiposMateriaPrima(_params?: { categoria?: number; is_active?:
       // Filter tipo=MATERIA_PRIMA client-side (backend aun no tiene filter server-side)
       const all = Array.isArray(response) ? response : (response?.results ?? []);
       return all.filter((p) => p.tipo === 'MATERIA_PRIMA');
-    },
-  });
-}
-
-export function useCreateTipoMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateTipoMateriaPrimaDTO) => catalogosApi.tipoMateriaPrima.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
-      toast.success('Tipo de materia prima creado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al crear tipo de materia prima'));
-    },
-  });
-}
-
-export function useUpdateTipoMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTipoMateriaPrimaDTO }) =>
-      catalogosApi.tipoMateriaPrima.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
-      toast.success('Tipo de materia prima actualizado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al actualizar tipo de materia prima'));
-    },
-  });
-}
-
-export function useDeleteTipoMateriaPrima() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => catalogosApi.tipoMateriaPrima.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: catalogosKeys.tipos() });
-      toast.success('Tipo de materia prima eliminado exitosamente');
-    },
-    onError: (error: unknown) => {
-      toast.error(getApiErrorMessage(error, 'Error al eliminar tipo de materia prima'));
     },
   });
 }

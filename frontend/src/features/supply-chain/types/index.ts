@@ -17,8 +17,6 @@ export type {
   BaseCatalogo,
 
   // Catálogos
-  CategoriaMateriaPrima,
-  TipoMateriaPrima,
   TipoProveedor,
   ModalidadLogistica,
   FormaPago,
@@ -28,10 +26,6 @@ export type {
   Ciudad,
 
   // DTOs Catálogos
-  CreateCategoriaMateriaPrimaDTO,
-  UpdateCategoriaMateriaPrimaDTO,
-  CreateTipoMateriaPrimaDTO,
-  UpdateTipoMateriaPrimaDTO,
   CreateTipoProveedorDTO,
   UpdateTipoProveedorDTO,
   CreateModalidadLogisticaDTO,

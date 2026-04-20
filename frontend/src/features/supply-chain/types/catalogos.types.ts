@@ -2,7 +2,7 @@
  * Tipos para Catálogos Dinámicos - Gestión de Proveedores
  * Backend: backend/apps/supply_chain/gestion_proveedores/models.py
  *
- * 9 Catálogos dinámicos configurables desde base de datos
+ * Catálogos dinámicos configurables desde base de datos.
  */
 
 // ==================== TIPOS BASE ====================
@@ -22,24 +22,6 @@ export interface BaseCatalogo extends BaseTimestamped {
 }
 
 // ==================== CATÁLOGOS ====================
-
-/**
- * Categoría de Materia Prima
- * Ejemplos: HUESO, SEBO_CRUDO, SEBO_PROCESADO, OTROS
- */
-export type CategoriaMateriaPrima = BaseCatalogo;
-
-/**
- * Tipo de Materia Prima (relacionado con CategoriaMateriaPrima)
- * Ejemplos: HUESO_CRUDO, SEBO_PROCESADO_A, SEBO_PROCESADO_B, ACU
- */
-export interface TipoMateriaPrima extends BaseCatalogo {
-  categoria: number;
-  categoria_nombre?: string;
-  acidez_min?: number;
-  acidez_max?: number;
-  codigo_legacy?: string;
-}
 
 /**
  * Tipo de Proveedor
@@ -91,26 +73,6 @@ export interface Ciudad extends BaseCatalogo {
 }
 
 // ==================== DTOs PARA CREATE/UPDATE ====================
-
-export interface CreateCategoriaMateriaPrimaDTO {
-  codigo: string;
-  nombre: string;
-  descripcion?: string;
-  orden?: number;
-  is_active?: boolean;
-}
-
-export interface CreateTipoMateriaPrimaDTO {
-  categoria: number;
-  codigo: string;
-  nombre: string;
-  descripcion?: string;
-  acidez_min?: number;
-  acidez_max?: number;
-  codigo_legacy?: string;
-  orden?: number;
-  is_active?: boolean;
-}
 
 export interface CreateTipoProveedorDTO {
   codigo: string;
@@ -175,8 +137,6 @@ export interface CreateCiudadDTO {
 
 // ==================== TIPOS AUXILIARES ====================
 
-export type UpdateCategoriaMateriaPrimaDTO = Partial<CreateCategoriaMateriaPrimaDTO>;
-export type UpdateTipoMateriaPrimaDTO = Partial<CreateTipoMateriaPrimaDTO>;
 export type UpdateTipoProveedorDTO = Partial<CreateTipoProveedorDTO>;
 export type UpdateModalidadLogisticaDTO = Partial<CreateModalidadLogisticaDTO>;
 export type UpdateFormaPagoDTO = Partial<CreateFormaPagoDTO>;

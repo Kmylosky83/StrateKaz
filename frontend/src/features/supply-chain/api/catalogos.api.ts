@@ -4,8 +4,6 @@
  */
 import { apiClient } from '@/lib/api-client';
 import type {
-  CategoriaMateriaPrima,
-  TipoMateriaPrima,
   TipoProveedor,
   ModalidadLogistica,
   FormaPago,
@@ -13,10 +11,6 @@ import type {
   TipoDocumentoIdentidad,
   Departamento,
   Ciudad,
-  CreateCategoriaMateriaPrimaDTO,
-  UpdateCategoriaMateriaPrimaDTO,
-  CreateTipoMateriaPrimaDTO,
-  UpdateTipoMateriaPrimaDTO,
   CreateTipoProveedorDTO,
   UpdateTipoProveedorDTO,
   CreateModalidadLogisticaDTO,
@@ -99,44 +93,6 @@ function createCatalogoApiWithBase<T, CreateDTO, UpdateDTO>(baseUrl: string, end
 
 // ==================== CATÁLOGOS ESPECÍFICOS ====================
 
-export const categoriaMateriaPrimaApi = createCatalogoApi<
-  CategoriaMateriaPrima,
-  CreateCategoriaMateriaPrimaDTO,
-  UpdateCategoriaMateriaPrimaDTO
->('categorias-materia-prima');
-
-export const tipoMateriaPrimaApi = {
-  ...createCatalogoApi<TipoMateriaPrima, CreateTipoMateriaPrimaDTO, UpdateTipoMateriaPrimaDTO>(
-    'tipos-materia-prima'
-  ),
-
-  /**
-   * Obtener tipos por categoría
-   */
-  porCategoria: async (categoriaId: number): Promise<TipoMateriaPrima[]> => {
-    const response = await apiClient.get<PaginatedResponse<TipoMateriaPrima>>(
-      `${BASE_URL}/tipos-materia-prima/`,
-      {
-        params: { categoria: categoriaId, is_active: true, page_size: 1000 },
-      }
-    );
-    return response.data.results;
-  },
-
-  /**
-   * Obtener tipo por acidez (para sebo procesado)
-   */
-  porAcidez: async (valorAcidez: number): Promise<TipoMateriaPrima | null> => {
-    const response = await apiClient.get<TipoMateriaPrima[]>(
-      `${BASE_URL}/tipos-materia-prima/por-acidez/`,
-      {
-        params: { valor_acidez: valorAcidez },
-      }
-    );
-    return response.data[0] || null;
-  },
-};
-
 export const tipoProveedorApi = createCatalogoApi<
   TipoProveedor,
   CreateTipoProveedorDTO,
@@ -191,8 +147,6 @@ export const ciudadApi = {
 // ==================== EXPORT DEFAULT ====================
 
 export default {
-  categoriaMateriaPrima: categoriaMateriaPrimaApi,
-  tipoMateriaPrima: tipoMateriaPrimaApi,
   tipoProveedor: tipoProveedorApi,
   modalidadLogistica: modalidadLogisticaApi,
   formaPago: formaPagoApi,

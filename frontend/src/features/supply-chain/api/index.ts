@@ -6,8 +6,6 @@
 // ==================== CATÁLOGOS ====================
 export { default as catalogosApi } from './catalogos.api';
 export {
-  categoriaMateriaPrimaApi,
-  tipoMateriaPrimaApi,
   tipoProveedorApi,
   modalidadLogisticaApi,
   formaPagoApi,

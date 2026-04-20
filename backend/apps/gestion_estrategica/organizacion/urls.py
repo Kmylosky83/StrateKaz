@@ -18,7 +18,7 @@ from .views import (
     OrganigramaNodePositionView,
 )
 from .viewsets_consecutivos import ConsecutivoConfigViewSet
-from .viewsets_unidades import UnidadMedidaViewSet
+# UnidadMedidaViewSet: source-of-truth unico en catalogo_productos (CT-layer).
 
 # Partes Interesadas — modelos en contexto/, URLs montadas aquí (REORG-B3)
 from apps.gestion_estrategica.contexto.views import (
@@ -33,7 +33,6 @@ router = DefaultRouter()
 router.register(r'areas', AreaViewSet, basename='area')
 router.register(r'caracterizaciones', CaracterizacionProcesoViewSet, basename='caracterizacion')
 router.register(r'consecutivos', ConsecutivoConfigViewSet, basename='consecutivo')
-router.register(r'unidades-medida', UnidadMedidaViewSet, basename='unidad-medida')
 
 # Partes Interesadas (ISO 9001:2015 §4.2)
 router.register(r'grupos-parte-interesada', GrupoParteInteresadaViewSet, basename='grupo-parte-interesada')

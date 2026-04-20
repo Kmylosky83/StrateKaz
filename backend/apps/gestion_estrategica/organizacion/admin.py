@@ -6,7 +6,6 @@ from django.contrib import admin
 from .models import Area
 from .models_caracterizacion import CaracterizacionProceso
 from .models_consecutivos import ConsecutivoConfig
-from .models_unidades import UnidadMedida
 
 
 @admin.register(CaracterizacionProceso)
@@ -73,27 +72,5 @@ class ConsecutivoConfigAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(UnidadMedida)
-class UnidadMedidaAdmin(admin.ModelAdmin):
-    """Admin para unidades de medida"""
-    list_display = ['codigo', 'nombre', 'simbolo', 'categoria', 'unidad_base', 'factor_conversion', 'es_sistema', 'is_active', 'orden_display']
-    list_filter = ['categoria', 'es_sistema', 'is_active']
-    search_fields = ['codigo', 'nombre', 'simbolo', 'descripcion']
-    ordering = ['categoria', 'orden_display', 'nombre']
-    list_editable = ['orden_display', 'is_active']
-    raw_id_fields = ['unidad_base']
-
-    fieldsets = (
-        ('Identificación', {
-            'fields': ('codigo', 'nombre', 'nombre_plural', 'simbolo', 'categoria')
-        }),
-        ('Conversión', {
-            'fields': ('unidad_base', 'factor_conversion')
-        }),
-        ('Presentación', {
-            'fields': ('decimales_display', 'prefiere_notacion_cientifica', 'usar_separador_miles', 'orden_display')
-        }),
-        ('Metadatos', {
-            'fields': ('descripcion', 'es_sistema', 'is_active')
-        }),
-    )
+# UnidadMedidaAdmin: administrado exclusivamente desde catalogo_productos
+# (source-of-truth unico CT-layer post-consolidacion S7).

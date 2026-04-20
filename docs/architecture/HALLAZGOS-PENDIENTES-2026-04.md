@@ -497,27 +497,122 @@ S6 promovió supply_chain a LIVE, el seed no fue actualizado.
 2026-04-19 (S6 activación supply_chain)
 
 ### Severidad
-**BAJA** — No bloquea funcionalidad. Dos rutas exponen el mismo modelo canónico
-(`catalogo_productos.UnidadMedida`).
+**BAJA** → ⚠️ PARCIAL tras S7-consolidacion.
 
-### Síntoma
-Tras eliminar el `UnidadMedida` legacy de `supply_chain/catalogos`, quedó un
-wrapper `UnidadMedidaViewSet` en `supply_chain/almacenamiento/views.py:125` que
-sirve el modelo canónico vía ruta `/supply-chain/almacenamiento/unidades-medida/`.
-El canónico sigue en `/catalogo-productos/unidades-medida/`.
+### Estado: ⚠️ PARCIAL (wrapper supply_chain aún vivo)
 
-El wrapper se preserva porque `MovimientoInventarioFormModal.tsx` del frontend
-consume la ruta vía `useUnidadesMedidaAlmacenamiento` hook.
+**S7 (2026-04-19 noche)** resolvió la duplicación GRANDE:
+`organizacion.UnidadMedida` legacy fue eliminado completamente (modelo,
+viewset, tabla, FK `SedeEmpresa.unidad_capacidad` reapuntada). Ahora el
+**source-of-truth único** es `catalogo_productos.UnidadMedida` (CT-layer).
 
-### Solución futura
+Lo que **sigue pendiente** (menor):
+- Wrapper `UnidadMedidaViewSet` en `supply_chain/almacenamiento/views.py:125`
+  sigue sirviendo el canónico vía `/supply-chain/almacenamiento/unidades-medida/`
+- `MovimientoInventarioFormModal.tsx` consume esa ruta
+- Cierre total requiere migrar el hook FE al endpoint canónico
+
+### Solución futura (cerrar wrapper)
 1. Cambiar `frontend/src/features/supply-chain/hooks/useAlmacenamiento.ts` para
    que `useUnidadesMedidaAlmacenamiento` apunte a `/catalogo-productos/unidades-medida/`
 2. Eliminar `UnidadMedidaViewSet` de `supply_chain/almacenamiento/views.py`
-3. Eliminar el register en `supply_chain/almacenamiento/urls.py:29`
+3. Eliminar el register en `supply_chain/almacenamiento/urls.py`
 4. Verificar que `MovimientoInventarioFormModal.tsx` sigue funcionando
 
 ### Trigger
 Sprint de refactor frontend de supply-chain (sin urgencia).
+
+---
+
+## H-S7-geo-catalog-location — Departamentos/Ciudades en Supply Chain vs Configuración
+
+### Detectado
+2026-04-19 (S7 consolidación catálogos)
+
+### Severidad
+**BAJA** — UX. No bloquea funcionalidad.
+
+### Síntoma
+Departamentos y Ciudades (33 deptos + 81 ciudades) son datos geográficos
+nacionales (Core C0, `apps.core.models`). Actualmente aparecen en sidebar
+bajo **Supply Chain → Catálogos** junto con catálogos específicos del módulo.
+
+Evaluación pendiente: ¿mover a Configuración → Catálogos → General (junto
+con Tipos Contrato y Tipos Documento)? Eso sería más coherente con el
+principio de source-of-truth único por audiencia (transversal vs específico).
+
+### Trigger
+Sprint dedicado de UX sidebar (sin urgencia).
+
+---
+
+## H-S7-unidad-base-conflicto — Inconsistencias en jerarquía VOLUMEN post-merge
+
+### Detectado
+2026-04-19 (S7 consolidación catálogos)
+
+### Severidad
+**BAJA** — No rompe runtime, pero cálculos de conversión en VOLUMEN quedan matemáticamente inconsistentes.
+
+### Síntoma
+Tras consolidar legacy + canónico en `catalogo_productos.UnidadMedida`:
+- **Canónico pre-merge**: Litro base=True factor=1.0, Metro cúbico base=False factor=1000
+- **Legacy pre-merge**: M3 base=True factor=1.0, LT factor=0.001 apuntando a M3
+
+Post-merge, el Pass 2 asignó `unidad_base=Metro cúbico` a Litro (copiando
+jerarquía legacy), pero el `factor_conversion` de Litro se mantuvo en 1.0 (el
+del canónico). Jerarquía inconsistente: Litro no es base pero tampoco tiene
+factor correcto para convertir a m³.
+
+### Impacto
+Conversiones kg↔L, L↔m³ pueden dar resultados incorrectos si algún módulo
+usa los métodos `convertir_a_base()` o `convertir_a()`. Actualmente ningún
+módulo LIVE las usa (VOLUMEN solo aparece en capacidades de sede, no en
+cálculos de negocio).
+
+### Solución
+Normalizar manualmente la jerarquía de VOLUMEN desde
+`/catalogo-productos/unidades-medida/`:
+- Opción A: Litro es base (factor=1, unidad_base=NULL); Metro cúbico factor=1000
+- Opción B: Metro cúbico es base (factor=1, unidad_base=NULL); Litro factor=0.001
+
+Criterio: cuál es más común en contexto colombiano/agroindustrial. Sugerido: **Opción A** (Litro como base, coherente con tanques y alimentos).
+
+### Trigger
+Cuando Production Ops o HSEQ activen cálculos de conversión de VOLUMEN.
+
+---
+
+## H-S7-supply-chain-tabla-unidad-medida-huerfana
+
+### Detectado
+2026-04-19 (verificación post-RemoveModel en S7)
+
+### Severidad
+**BAJA** — Tabla DB sin modelo Django (huérfana por migración anterior incompleta).
+
+### Síntoma
+`SELECT tablename FROM pg_tables WHERE tablename LIKE '%unidad_medida%'`
+muestra en tenant_demo y test: `supply_chain_unidad_medida`. Esta tabla
+corresponde al modelo legacy `supply_chain.catalogos.UnidadMedida` que fue
+eliminado del código en S6 (2026-04-19 noche, `43800b1f`) pero cuya migración
+de DROP TABLE no se ejecutó (o se omitió).
+
+### Impacto
+Cero funcional. La tabla existe sin modelo Django que la use. Ocupa espacio
+mínimo (vacía). No genera FK dangling porque ningún modelo vivo le apunta.
+
+### Solución
+Migración manual en `supply_chain.catalogos`:
+```python
+migrations.RunSQL(
+    sql="DROP TABLE IF EXISTS supply_chain_unidad_medida CASCADE;",
+    reverse_sql=migrations.RunSQL.noop,
+)
+```
+
+### Trigger
+Sprint de limpieza DB (sin urgencia).
 
 ---
 

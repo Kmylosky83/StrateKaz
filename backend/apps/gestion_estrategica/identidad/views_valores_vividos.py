@@ -10,6 +10,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from apps.core.permissions import GranularActionPermission
 from django.shortcuts import get_object_or_404
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
@@ -67,7 +68,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
     """
 
     queryset = ValorVivido.objects.activos()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'valores'
     filterset_fields = [
         'valor', 'categoria_accion', 'tipo_vinculo', 'impacto', 'verificado', 'area'
     ]
@@ -497,7 +499,8 @@ class ConfiguracionMetricaValorViewSet(viewsets.ModelViewSet):
 
     queryset = ConfiguracionMetricaValor.objects.all()
     serializer_class = ConfiguracionMetricaValorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'valores'
 
     def get_queryset(self):
         """Filtrar por empresa del tenant actual."""

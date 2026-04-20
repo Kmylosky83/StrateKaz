@@ -86,7 +86,7 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     queryset = Permiso.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['modulo', 'accion', 'alcance', 'is_active']
     search_fields = ['code', 'name', 'description']
@@ -195,7 +195,7 @@ class RoleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Role.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'is_system']
     search_fields = ['code', 'name', 'description']
@@ -1149,7 +1149,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Group.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['code', 'name', 'description']
@@ -1323,7 +1323,7 @@ class MenuViewSet(viewsets.ModelViewSet):
     """
 
     queryset = MenuItem.objects.filter(parent__isnull=True)
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [filters.OrderingFilter]
     ordering = ['orden']
 
@@ -1395,7 +1395,7 @@ class RBACStatsViewSet(viewsets.ViewSet):
     - GET /api/core/rbac/stats/ - Estadisticas generales
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -1447,7 +1447,7 @@ class RiesgoOcupacionalViewSet(viewsets.ModelViewSet):
 
     queryset = RiesgoOcupacional.objects.all()
     serializer_class = RiesgoOcupacionalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['clasificacion', 'nivel_riesgo', 'is_active']
     search_fields = ['code', 'name', 'descripcion', 'fuente']
@@ -1527,7 +1527,7 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
     """
 
     queryset = RolAdicional.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['tipo', 'is_system', 'is_active', 'requiere_certificacion']
     search_fields = ['code', 'nombre', 'descripcion', 'justificacion_legal']
@@ -1679,7 +1679,7 @@ class UserRolesAdicionalesViewSet(viewsets.ViewSet):
     - GET /api/users/{user_id}/certificaciones-por-vencer/ - Certificaciones próximas a vencer
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
 
     @action(detail=True, methods=['get'], url_path='roles-adicionales')
     def roles_adicionales(self, request, pk=None):

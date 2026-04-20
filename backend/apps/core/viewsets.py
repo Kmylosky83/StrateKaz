@@ -28,7 +28,7 @@ from .serializers import (
     PermisoSerializer,
     CargoPermisoSerializer,
 )
-from .permissions import CanManageUsers, GranularActionPermission
+from .permissions import CanManageUsers, GranularActionPermission, IsSuperAdmin
 
 
 class CargoCatalogoPagination(PageNumberPagination):
@@ -876,7 +876,7 @@ class PermisoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Permiso.objects.all()
     serializer_class = PermisoSerializer
-    permission_classes = [IsAuthenticated, CanManageUsers]
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['modulo', 'accion', 'alcance', 'is_active']
     search_fields = ['code', 'name', 'description']

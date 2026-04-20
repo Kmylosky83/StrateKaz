@@ -1,25 +1,35 @@
 """
 Seed Command: seed_supply_chain_catalogs
-Sistema StrateKaz - Catálogos para Supply Chain / Gestión de Proveedores
+Sistema StrateKaz - Catálogos ESTRUCTURALES UNIVERSALES para Supply Chain.
 
-Crea los catálogos base necesarios para el funcionamiento del módulo:
+Doctrina: este seed SOLO contiene data aplicable a cualquier industria
+(B2B genérico colombiano). Data específica de industria (tipos de
+materia prima concretos tipo "Sebo Bovino", "Aceite Vegetal", etc.)
+NO va aquí — va en seeds dedicados por industria o en data demo.
+
+Contenido universal:
 - Tipos de Documento de Identidad (CC, NIT, CE, etc.)
 - Tipos de Proveedor (Materia Prima, Productos/Servicios, etc.)
 - Formas de Pago (Contado, Transferencia, Crédito, etc.)
 - Tipos de Cuenta Bancaria (Ahorros, Corriente)
 - Modalidades Logísticas (Entrega en planta, etc.)
-- Categorías de Materia Prima (genéricas industria)
-- Tipos de Materia Prima (ejemplos genéricos por categoría)
 - Tipos de Almacén (bodega, silo, tanque, etc.)
 - Departamentos de Colombia (33 departamentos)
 - Ciudades principales por departamento
 
+NO incluido (el admin del tenant lo crea desde UI o via seed dedicado):
+- Categorías de Materia Prima — depende de industria
+- Tipos de Materia Prima concretos — depende de industria
+
 Uso:
     python manage.py seed_supply_chain_catalogs
     python manage.py seed_supply_chain_catalogs --dry-run
-    python manage.py seed_supply_chain_catalogs --skip-geo  (omite departamentos y ciudades)
+    python manage.py seed_supply_chain_catalogs --skip-geo  (omite geo)
 
-Este comando es idempotente - puede ejecutarse múltiples veces sin duplicar datos.
+Para cargar data demo de industria rendering/agroindustria en tenant_demo:
+    python manage.py seed_supply_chain_demo_data
+
+Este comando es idempotente - puede ejecutarse múltiples veces sin duplicar.
 """
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -76,22 +86,16 @@ class Command(BaseCommand):
         total_created += c
         total_updated += u
 
-        # 6. Categorías de Materia Prima
-        c, u = self._seed_categoria_materia_prima(dry_run)
-        total_created += c
-        total_updated += u
-
-        # 7. Tipos de Materia Prima (requiere categorías del paso anterior)
-        c, u = self._seed_tipo_materia_prima(dry_run)
-        total_created += c
-        total_updated += u
-
-        # 8. Tipos de Almacén
+        # 6. Tipos de Almacén (universal — tipos físicos de almacenamiento)
         c, u = self._seed_tipo_almacen(dry_run)
         total_created += c
         total_updated += u
 
-        # 9. Departamentos y Ciudades
+        # NOTA: CategoriaMateriaPrima y TipoMateriaPrima NO se siembran aquí.
+        # Son específicos de industria. Se cargan vía seed_supply_chain_demo_data
+        # para tenant_demo, o el admin los crea desde /supply-chain/catalogos.
+
+        # 7. Departamentos y Ciudades
         if not skip_geo:
             c, u = self._seed_departamentos(dry_run)
             total_created += c
@@ -228,79 +232,6 @@ class Command(BaseCommand):
             {'codigo': 'CORRIENTE', 'nombre': 'Cuenta Corriente', 'orden': 2},
         ]
         return self._seed_model(TipoCuentaBancaria, data, 'Tipos de Cuenta Bancaria', dry_run)
-
-    def _seed_categoria_materia_prima(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import CategoriaMateriaPrima
-        data = [
-            {'codigo': 'GRASAS_ACEITES', 'nombre': 'Grasas y Aceites', 'descripcion': 'Grasas animales, aceites vegetales, derivados lipídicos', 'orden': 1},
-            {'codigo': 'HUESOS_SUBPRODUCTOS', 'nombre': 'Huesos y Subproductos', 'descripcion': 'Huesos, harina de hueso, calcio y subproductos óseos', 'orden': 2},
-            {'codigo': 'PIELES_CUEROS', 'nombre': 'Pieles y Cueros', 'descripcion': 'Pieles crudas, cueros en proceso, subproductos dérmicos', 'orden': 3},
-            {'codigo': 'QUIMICOS_INSUMOS', 'nombre': 'Químicos e Insumos', 'descripcion': 'Productos químicos industriales, insumos de proceso', 'orden': 4},
-            {'codigo': 'EMPAQUES', 'nombre': 'Empaques', 'descripcion': 'Material de empaque, envases, etiquetas', 'orden': 5},
-            {'codigo': 'OTROS', 'nombre': 'Otros', 'descripcion': 'Otras categorías no clasificadas', 'orden': 99},
-        ]
-        return self._seed_model(CategoriaMateriaPrima, data, 'Categorías de Materia Prima', dry_run)
-
-    def _seed_tipo_materia_prima(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import TipoMateriaPrima, CategoriaMateriaPrima
-
-        self.stdout.write('\n--- Tipos de Materia Prima ---')
-        created = 0
-        updated = 0
-
-        # Mapear categorías por código
-        try:
-            cats = {c.codigo: c for c in CategoriaMateriaPrima.objects.all()}
-        except Exception:
-            cats = {}
-
-        data = [
-            ('SEBO_BOVINO_CRUDO', 'Sebo Bovino Crudo', 'GRASAS_ACEITES', 1),
-            ('SEBO_PORCINO', 'Sebo Porcino', 'GRASAS_ACEITES', 2),
-            ('GRASA_AVE', 'Grasa de Ave', 'GRASAS_ACEITES', 3),
-            ('ACEITE_VEGETAL', 'Aceite Vegetal', 'GRASAS_ACEITES', 4),
-            ('HUESO_BOVINO', 'Hueso Bovino', 'HUESOS_SUBPRODUCTOS', 5),
-            ('HUESO_PORCINO', 'Hueso Porcino', 'HUESOS_SUBPRODUCTOS', 6),
-            ('HARINA_HUESO', 'Harina de Hueso', 'HUESOS_SUBPRODUCTOS', 7),
-            ('CUERO_CRUDO', 'Cuero Crudo', 'PIELES_CUEROS', 8),
-            ('PIEL_PORCINA', 'Piel Porcina', 'PIELES_CUEROS', 9),
-            ('SODA_CAUSTICA', 'Soda Cáustica', 'QUIMICOS_INSUMOS', 10),
-            ('CAJA_CARTON', 'Caja de Cartón', 'EMPAQUES', 11),
-            ('TAMBOR_PLASTICO', 'Tambor Plástico', 'EMPAQUES', 12),
-        ]
-
-        for codigo, nombre, cat_codigo, orden in data:
-            categoria = cats.get(cat_codigo)
-            if categoria is None and not dry_run:
-                self.stdout.write(self.style.WARNING(
-                    f'   [!] Categoría {cat_codigo} no encontrada, omitiendo {codigo}'
-                ))
-                continue
-
-            defaults = {
-                'nombre': nombre,
-                'categoria': categoria,
-                'orden': orden,
-                'is_active': True,
-            }
-            if not dry_run:
-                _, was_created = TipoMateriaPrima.objects.update_or_create(
-                    codigo=codigo,
-                    defaults=defaults,
-                )
-                if was_created:
-                    created += 1
-                else:
-                    updated += 1
-            else:
-                exists = TipoMateriaPrima.objects.filter(codigo=codigo).exists()
-                if exists:
-                    updated += 1
-                else:
-                    created += 1
-
-        self.stdout.write(self.style.SUCCESS(f'   Creados: {created} | Actualizados: {updated}'))
-        return created, updated
 
     def _seed_tipo_almacen(self, dry_run):
         from apps.supply_chain.catalogos.models import TipoAlmacen

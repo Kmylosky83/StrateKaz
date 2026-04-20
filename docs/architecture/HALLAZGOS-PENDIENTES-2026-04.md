@@ -667,6 +667,57 @@ Esperar a Sales CRM o HSEQ multiplica el trabajo del refactor.
 
 ---
 
+## H-S7-seed-industrias-templates — Wizard UI de plantillas por industria
+
+### Detectado
+2026-04-19 (S7 — feedback de Camilo tras ver materias primas específicas
+de rendering en modal de proveedor de un tenant genérico)
+
+### Severidad
+**BAJA** — UX, no bloquea funcionalidad. Ya mitigado parcialmente en
+commit posterior (sacar data específica de industria del seed universal).
+
+### Síntoma
+Al crear proveedor tipo MP en cualquier tenant nuevo, el modal mostraba
+12 tipos específicos de industria rendering (Sebo Bovino, Aceite Vegetal,
+Hueso Bovino, etc.). Esos tipos SÍ aplican a grasas_y_huesos pero NO a
+manufactura electrónica, retail, servicios, farmacéutica, etc.
+
+### Mitigación ya aplicada
+1. Sacar `CategoriaMateriaPrima` y `TipoMateriaPrima` del seed universal
+   (`seed_supply_chain_catalogs`). Tenants nuevos arrancan sin data
+   específica; el admin los crea desde `/supply-chain/catalogos`.
+2. Crear seed dedicado `seed_supply_chain_demo_data` con los 6 cats +
+   12 tipos de rendering, para ejecutar manual solo en `tenant_demo` o
+   tenants reales de industria rendering.
+
+### Solución definitiva (pendiente)
+Wizard UI en `/supply-chain/catalogos` con botón "Cargar plantilla por
+industria". Opciones sugeridas:
+
+| Industria | Categorías sugeridas | Tipos MP ejemplo |
+|---|---|---|
+| Rendering / Agroindustria | Grasas, Huesos, Pieles, Químicos, Empaques | Sebo, Aceite, Cuero, Soda Cáustica |
+| Manufactura electrónica | Componentes, Metales, Plásticos, Empaques | Resistores, Cobre, ABS, Cajas |
+| Retail / Distribución | Productos terminados, Empaques, Limpieza | Por SKU proveedor |
+| Servicios profesionales | Papelería, Software, Equipos | Licencias, Suscripciones |
+| Farmacéutica | API, Excipientes, Empaques primarios | Principios activos, Excipientes |
+
+El admin elige una industria, preview de lo que se cargará, confirma.
+Registro en `TenantSeedRegistry` (consistente con patrón de cargos).
+
+### Complejidad
+- Backend: ~3-5 seeds por industria (1-2 días)
+- FE: componente wizard + preview (1-2 días)
+- Total: 3-5 días de un dev enfocado.
+
+### Trigger
+Cuando el onboarding de clientes reales muestre fricción (clientes
+complain de "modal vacío") o cuando 5+ clientes de la misma industria
+pidan la misma plantilla.
+
+---
+
 ## Orden de ataque sugerido
 
 | # | Hallazgo | Estado | Razón del orden |

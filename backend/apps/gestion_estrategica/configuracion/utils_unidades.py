@@ -39,8 +39,8 @@ def formatear_capacidad(
         >>> formatear_capacidad(1200, 'M3', locale_config={'separador_miles': '.'})
         '1.200 m³'
     """
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
 
     if valor is None:
         return ''
@@ -84,8 +84,8 @@ def formatear_capacidad_auto(
         >>> formatear_capacidad_auto(500, 'GR')
         '0.5 kg'
     """
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
 
     if valor is None:
         return ''
@@ -98,8 +98,8 @@ def formatear_capacidad_auto(
     if not auto_escalar:
         return unidad_base.formatear(valor, True, locale_config)
 
-    # Obtener todas las unidades de la misma categoría
-    unidades = UnidadMedida.obtener_por_categoria(unidad_base.categoria)
+    # Obtener todas las unidades del mismo tipo (mapeado desde categoria legacy)
+    unidades = UnidadMedida.obtener_por_tipo(unidad_base.tipo)
 
     # Convertir a valor base
     if not isinstance(valor, Decimal):
@@ -169,8 +169,8 @@ def convertir_capacidad(
         >>> convertir_capacidad(1000, 'GR', 'KG')
         Decimal('1')
     """
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
 
     unidad_origen = UnidadMedida.obtener_por_codigo(unidad_origen_codigo)
     unidad_destino = UnidadMedida.obtener_por_codigo(unidad_destino_codigo)
@@ -221,8 +221,8 @@ def obtener_unidad_capacidad_default():
         return empresa.unidad_capacidad_default
 
     # Fallback: intentar obtener KG
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
     return UnidadMedida.obtener_por_codigo('KG')
 
 
@@ -269,8 +269,8 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
                 ]
             }
     """
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
     from decimal import Decimal
     from collections import defaultdict
 
@@ -279,7 +279,7 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
 
     for sede in sedes_queryset:
         if sede.capacidad_almacenamiento and sede.unidad_capacidad:
-            key = sede.unidad_capacidad.codigo
+            key = sede.unidad_capacidad.abreviatura
             capacidades_por_unidad[key]['total'] += sede.capacidad_almacenamiento
             capacidades_por_unidad[key]['sedes'] += 1
             capacidades_por_unidad[key]['unidad'] = sede.unidad_capacidad
@@ -319,8 +319,8 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
             'cantidad_sedes': data['sedes']
         })
 
-    # Ordenar por categoría y orden
-    por_unidad.sort(key=lambda x: (x['unidad'].categoria, x['unidad'].orden_display))
+    # Ordenar por tipo y orden
+    por_unidad.sort(key=lambda x: (x['unidad'].tipo, x['unidad'].orden))
 
     return {
         'total_global': total_global,

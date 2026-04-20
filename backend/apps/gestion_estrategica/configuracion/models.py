@@ -23,7 +23,7 @@ import re
 from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel, BaseCompanyModel, OrderedModel
 
 # Modelos migrados a organizacion - importar desde allí para backward compatibility
-from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+from apps.catalogo_productos.models import UnidadMedida
 from apps.gestion_estrategica.organizacion.models_consecutivos import (
     ConsecutivoConfig, CATEGORIA_CONSECUTIVO_CHOICES, CONSECUTIVOS_SISTEMA
 )
@@ -718,7 +718,7 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         help_text='Capacidad máxima de almacenamiento (cantidad numérica)'
     )
     unidad_capacidad = models.ForeignKey(
-        'organizacion.UnidadMedida',
+        'catalogo_productos.UnidadMedida',
         on_delete=models.PROTECT,
         null=True,
         blank=True,

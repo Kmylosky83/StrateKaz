@@ -1,11 +1,14 @@
 /**
  * Sub-tab General de Catálogos Maestros
  *
- * Contiene: Unidades de Medida, Tipos de Contrato, Tipos de Documento de Identidad.
- * Navegación interna via PageTabs pills.
+ * Contiene: Tipos de Contrato, Tipos de Documento de Identidad.
+ *
+ * Unidades de Medida se administran exclusivamente en
+ * Infraestructura → Catálogo de Productos → Unidades de Medida
+ * (source-of-truth unico post-consolidacion S7).
  */
 import { useState, useMemo } from 'react';
-import { Ruler, FileText, CreditCard, Pencil, Trash2 } from 'lucide-react';
+import { FileText, CreditCard, Pencil, Trash2 } from 'lucide-react';
 import { PageTabs } from '@/components/layout/PageTabs';
 import { SectionToolbar } from '@/components/common/SectionToolbar';
 import { ResponsiveTable, type ColumnDef } from '@/components/common/ResponsiveTable';
@@ -17,10 +20,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import {
-  useUnidadesMedidaConfig,
-  useDeleteUnidadMedida,
-  useCreateUnidadMedida,
-  useUpdateUnidadMedida,
   useTiposContratoConfig,
   useDeleteTipoContrato,
   useCreateTipoContrato,
@@ -32,7 +31,6 @@ import {
 } from '../../hooks/useConfigAdmin';
 import { CatalogFormModal, type CatalogType } from './CatalogFormModal';
 import type {
-  UnidadMedida,
   TipoContrato,
   TipoDocumentoIdentidad,
   SimpleCatalogItem,
@@ -45,7 +43,7 @@ interface CatalogGeneralTabProps {
 }
 
 export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
-  const [activeTab, setActiveTab] = useState('unidades');
+  const [activeTab, setActiveTab] = useState('contratos');
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.CONFIGURACION_PLATAFORMA, Sections.CATALOGOS, 'create');
   const canEdit = canDo(Modules.CONFIGURACION_PLATAFORMA, Sections.CATALOGOS, 'edit');
@@ -55,13 +53,7 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<SimpleCatalogItem | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [activeCatalogType, setActiveCatalogType] = useState<CatalogType>('unidad_medida');
-
-  // Hooks — Unidades de Medida
-  const { data: unidades, isLoading: loadingUnidades } = useUnidadesMedidaConfig();
-  const createUnidad = useCreateUnidadMedida();
-  const updateUnidad = useUpdateUnidadMedida();
-  const deleteUnidad = useDeleteUnidadMedida();
+  const [activeCatalogType, setActiveCatalogType] = useState<CatalogType>('tipo_contrato');
 
   // Hooks — Tipos de Contrato
   const { data: contratos, isLoading: loadingContratos } = useTiposContratoConfig();
@@ -76,7 +68,6 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
   const deleteDocumento = useDeleteTipoDocumento();
 
   const tabs = [
-    { id: 'unidades', label: 'Unidades de Medida' },
     { id: 'contratos', label: 'Tipos de Contrato' },
     { id: 'documentos', label: 'Tipos de Documento' },
   ];
@@ -95,109 +86,36 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
 
   const getDeleteMutation = () => {
     switch (activeTab) {
-      case 'unidades':
-        return deleteUnidad;
       case 'contratos':
         return deleteContrato;
       case 'documentos':
         return deleteDocumento;
       default:
-        return deleteUnidad;
+        return deleteContrato;
     }
   };
 
   const getCreateMutation = () => {
     switch (activeCatalogType) {
-      case 'unidad_medida':
-        return createUnidad;
       case 'tipo_contrato':
         return createContrato;
       case 'tipo_documento_identidad':
         return createDocumento;
       default:
-        return createUnidad;
+        return createContrato;
     }
   };
 
   const getUpdateMutation = () => {
     switch (activeCatalogType) {
-      case 'unidad_medida':
-        return updateUnidad;
       case 'tipo_contrato':
         return updateContrato;
       case 'tipo_documento_identidad':
         return updateDocumento;
       default:
-        return updateUnidad;
+        return updateContrato;
     }
   };
-
-  // ── Unidades de Medida ──
-  const unidadesItems = useMemo(() => {
-    const raw = unidades;
-    return Array.isArray(raw) ? raw : ((raw as { results?: UnidadMedida[] })?.results ?? []);
-  }, [unidades]);
-
-  const unidadesColumns: ColumnDef<UnidadMedida>[] = useMemo(
-    () => [
-      {
-        id: 'abreviatura',
-        header: 'Abreviatura',
-        accessorKey: 'abreviatura',
-        cell: (row) => <span className="font-mono font-medium">{row.abreviatura}</span>,
-      },
-      { id: 'nombre', header: 'Nombre', accessorKey: 'nombre' },
-      {
-        id: 'categoria',
-        header: 'Categoría',
-        accessorKey: 'categoria',
-        cell: (row) => (
-          <Badge variant="gray" size="sm">
-            {row.categoria}
-          </Badge>
-        ),
-      },
-      {
-        id: 'estado',
-        header: 'Estado',
-        accessorKey: 'is_active',
-        cell: (row) => (
-          <Badge variant={row.is_active ? 'success' : 'default'} size="sm">
-            {row.is_active ? 'Activo' : 'Inactivo'}
-          </Badge>
-        ),
-      },
-      {
-        id: 'acciones',
-        header: '',
-        cell: (row) => (
-          <div className="flex items-center gap-1 justify-end">
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="sm"
-                title="Editar"
-                onClick={() => openEdit('unidad_medida', row as unknown as SimpleCatalogItem)}
-              >
-                <Pencil size={14} />
-              </Button>
-            )}
-            {canDelete && (
-              <Button
-                variant="ghost"
-                size="sm"
-                title="Eliminar"
-                onClick={() => setDeleteId(row.id)}
-              >
-                <Trash2 size={14} className="text-red-500" />
-              </Button>
-            )}
-          </div>
-        ),
-      },
-    ],
-    [canEdit, canDelete]
-  );
 
   // ── Tipos de Contrato ──
   const contratosItems = useMemo(() => {
@@ -326,28 +244,6 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
 
   const renderTable = () => {
     switch (activeTab) {
-      case 'unidades':
-        if (loadingUnidades)
-          return (
-            <div className="flex justify-center py-8">
-              <Spinner size="lg" />
-            </div>
-          );
-        return unidadesItems.length > 0 ? (
-          <ResponsiveTable data={unidadesItems} columns={unidadesColumns} />
-        ) : (
-          <EmptyState
-            icon={<Ruler size={40} />}
-            title="Sin unidades de medida"
-            description="Configura las unidades que usará el sistema."
-            action={
-              canCreate
-                ? { label: 'Crear Unidad', onClick: () => openCreate('unidad_medida') }
-                : undefined
-            }
-          />
-        );
-
       case 'contratos':
         if (loadingContratos)
           return (
@@ -399,21 +295,17 @@ export const CatalogGeneralTab = ({ moduleColor }: CatalogGeneralTabProps) => {
 
   const getCurrentCatalogType = (): CatalogType => {
     switch (activeTab) {
-      case 'unidades':
-        return 'unidad_medida';
       case 'contratos':
         return 'tipo_contrato';
       case 'documentos':
         return 'tipo_documento_identidad';
       default:
-        return 'unidad_medida';
+        return 'tipo_contrato';
     }
   };
 
   const getTabTitle = () => {
     switch (activeTab) {
-      case 'unidades':
-        return 'Unidades de Medida';
       case 'contratos':
         return 'Tipos de Contrato';
       case 'documentos':

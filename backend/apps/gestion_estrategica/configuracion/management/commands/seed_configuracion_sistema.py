@@ -17,14 +17,14 @@ Uso:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from django.core.management import call_command
+
 from apps.gestion_estrategica.configuracion.models import (
     TipoSede,
     TipoServicioIntegracion,
     ProveedorIntegracion,
     IconRegistry,
 )
-# Modelo migrado a organizacion
-from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
 
 class Command(BaseCommand):
@@ -109,14 +109,10 @@ class Command(BaseCommand):
         return creados
 
     def _cargar_unidades(self):
-        """Carga unidades de medida del sistema"""
-        self.stdout.write('Cargando unidades de medida...')
-        creados = UnidadMedida.cargar_unidades_sistema()
-        total = UnidadMedida.objects.filter(es_sistema=True).count()
-        self.stdout.write(self.style.SUCCESS(
-            f'  + {creados} nuevas unidades de medida ({total} total del sistema)'
-        ))
-        return creados
+        """Delega al seed canonico CT-layer post-consolidacion S7."""
+        self.stdout.write('Cargando unidades de medida (delegando a catalogo_productos)...')
+        call_command('seed_catalogo_productos_base')
+        return 0
 
     def _cargar_iconos(self):
         """Carga iconos del sistema (Lucide) para IconPicker"""

@@ -581,11 +581,11 @@ def _calculate_fundacion_steps():
 
 def calculate_unidades_medida_stats():
     """Calcula estadisticas de la seccion Unidades de Medida"""
-    # Modelo migrado a organizacion
-    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+    # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+    from apps.catalogo_productos.models import UnidadMedida
 
     stats = []
-    unidades = UnidadMedida.objects.filter(deleted_at__isnull=True)
+    unidades = UnidadMedida.objects.filter(is_deleted=False)
 
     # Total de unidades
     total = unidades.count()
@@ -597,8 +597,8 @@ def calculate_unidades_medida_stats():
         'iconColor': 'primary',
     })
 
-    # Activas
-    activas = unidades.filter(is_active=True).count()
+    # Activas (no hay is_active en canonico; total == activas)
+    activas = total
     stats.append({
         'key': 'activas',
         'label': 'Activas',

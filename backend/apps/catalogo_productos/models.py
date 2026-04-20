@@ -261,19 +261,86 @@ class UnidadMedida(TenantModel):
         valor_base = self.convertir_a_base(valor)
         return unidad_destino.convertir_desde_base(valor_base)
 
+    # ──────────────────────────────────────────────────────────────
+    # Formateo
+    # ──────────────────────────────────────────────────────────────
+
+    def formatear(self, valor, incluir_simbolo=True, locale_config=None):
+        """Formatea un valor numérico según la configuración de la unidad."""
+        if valor is None:
+            return ''
+        if not isinstance(valor, Decimal):
+            valor = Decimal(str(valor))
+
+        if self.prefiere_notacion_cientifica:
+            if abs(valor) >= Decimal('1e6') or (abs(valor) < Decimal('1e-3') and valor != 0):
+                texto = f'{valor:.{self.decimales_display}e}'
+                return f'{texto} {self.simbolo or self.abreviatura}' if incluir_simbolo else texto
+
+        valor_redondeado = round(valor, self.decimales_display)
+        partes = str(valor_redondeado).split('.')
+        parte_entera = int(partes[0])
+        parte_decimal = partes[1] if len(partes) > 1 else None
+
+        if self.usar_separador_miles and locale_config:
+            sep_miles = locale_config.get('separador_miles', ',')
+            texto_entero = f'{parte_entera:,}'.replace(',', sep_miles)
+        elif self.usar_separador_miles:
+            texto_entero = f'{parte_entera:,}'
+        else:
+            texto_entero = str(parte_entera)
+
+        if self.decimales_display > 0 and parte_decimal:
+            parte_decimal = parte_decimal.ljust(self.decimales_display, '0')[:self.decimales_display]
+            sep_dec = (locale_config or {}).get('separador_decimales', '.')
+            texto = f'{texto_entero}{sep_dec}{parte_decimal}'
+        else:
+            texto = texto_entero
+
+        if incluir_simbolo:
+            sufijo = self.nombre if valor == 1 else (self.nombre_plural or self.simbolo or self.abreviatura)
+            return f'{texto} {sufijo}'
+        return texto
+
+    # ──────────────────────────────────────────────────────────────
+    # Lookups
+    # ──────────────────────────────────────────────────────────────
+
+    # Mapeo de categorías legacy (MASA/CANTIDAD) a tipos canónicos (PESO/UNIDAD).
+    # Preserva compatibilidad con callers que pasan la categoría legacy.
+    _LEGACY_CATEGORIA_MAP = {
+        'MASA': 'PESO',
+        'CANTIDAD': 'UNIDAD',
+    }
+
     @classmethod
     def obtener_por_tipo(cls, tipo, activas_only=True):
         qs = cls.objects.filter(tipo=tipo, is_deleted=False)
-        if activas_only:
-            qs = qs.filter(is_active=True)
         return qs.order_by('orden', 'nombre')
 
     @classmethod
-    def obtener_por_codigo(cls, nombre):
-        try:
-            return cls.objects.get(nombre__iexact=nombre, is_deleted=False, is_active=True)
-        except cls.DoesNotExist:
+    def obtener_por_categoria(cls, categoria, activas_only=True):
+        """Alias para compatibilidad con callers legacy (MASA → PESO, etc.)."""
+        tipo = cls._LEGACY_CATEGORIA_MAP.get(categoria, categoria)
+        return cls.obtener_por_tipo(tipo, activas_only=activas_only)
+
+    @classmethod
+    def obtener_por_codigo(cls, codigo):
+        """Busca flexible en abreviatura / simbolo / nombre (case-insensitive).
+
+        Soporta callers legacy que pasan 'KG', 'TON', 'M3', etc.
+        """
+        if not codigo:
             return None
+        codigo_str = str(codigo).strip()
+        qs = cls.objects.filter(is_deleted=False)
+        # Match por abreviatura, simbolo o nombre (case-insensitive)
+        from django.db.models import Q
+        return qs.filter(
+            Q(abreviatura__iexact=codigo_str)
+            | Q(simbolo__iexact=codigo_str)
+            | Q(nombre__iexact=codigo_str)
+        ).first()
 
 
 class Producto(TenantModel):

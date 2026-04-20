@@ -22,8 +22,8 @@ from .models import (
     DEPARTAMENTOS_COLOMBIA,
     ICON_CATEGORY_CHOICES,
 )
-# Modelo migrado a organizacion
-from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+# Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
+from apps.catalogo_productos.models import UnidadMedida
 
 
 # ==============================================================================
@@ -362,21 +362,20 @@ class SedeEmpresaChoicesSerializer(serializers.Serializer):
         return [{'value': code, 'label': name} for code, name in DEPARTAMENTOS_COLOMBIA]
 
     def get_unidades_capacidad(self, obj):
-        """Retorna las unidades de medida disponibles para capacidad (MASA, VOLUMEN, CONTENEDOR)"""
+        """Retorna las unidades de medida disponibles para capacidad (PESO, VOLUMEN, CONTENEDOR)."""
         try:
-            categorias_capacidad = ['MASA', 'VOLUMEN', 'CONTENEDOR']
+            tipos_capacidad = ['PESO', 'VOLUMEN', 'CONTENEDOR']
             unidades = UnidadMedida.objects.filter(
-                categoria__in=categorias_capacidad,
-                is_active=True,
-                deleted_at__isnull=True
-            ).order_by('categoria', 'orden_display', 'nombre')
+                tipo__in=tipos_capacidad,
+                is_deleted=False,
+            ).order_by('tipo', 'orden', 'nombre')
 
             return [
                 {
                     'value': u.id,
-                    'label': f"{u.nombre} ({u.simbolo})",
-                    'simbolo': u.simbolo,
-                    'categoria': u.categoria,
+                    'label': f"{u.nombre} ({u.simbolo or u.abreviatura})",
+                    'simbolo': u.simbolo or u.abreviatura,
+                    'categoria': u.tipo,  # Alias legacy para compat FE
                 }
                 for u in unidades
             ]

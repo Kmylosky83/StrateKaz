@@ -74,11 +74,12 @@ const consecutivosApi = createApiClient<
   UpdateConsecutivoDTO
 >('/gestion-estrategica/organizacion', 'consecutivos');
 
+// Post-consolidacion S7: source-of-truth es catalogo_productos (CT-layer).
 const unidadesMedidaApi = createApiClient<
   UnidadMedida,
   CreateUnidadMedidaDTO,
   UpdateUnidadMedidaDTO
->('/gestion-estrategica/organizacion', 'unidades-medida');
+>('/catalogo-productos', 'unidades-medida');
 
 const tiposContratoApi = createApiClient<
   TipoContrato,

@@ -12,7 +12,7 @@ from .models import (
     EvaluacionCotizacion, OrdenCompra, DetalleOrdenCompra,
     Contrato,
 )
-from apps.supply_chain.gestion_proveedores.models import Proveedor
+from apps.catalogo_productos.models import Proveedor
 from apps.gestion_estrategica.configuracion.models import EmpresaConfig, SedeEmpresa
 
 

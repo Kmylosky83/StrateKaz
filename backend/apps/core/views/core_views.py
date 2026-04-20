@@ -231,7 +231,7 @@ def current_user(request):
     if user.proveedor_id_ext:
         try:
             from django.apps import apps as django_apps
-            Proveedor = django_apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor = django_apps.get_model('catalogo_productos', 'Proveedor')
             prov = Proveedor.objects.filter(pk=user.proveedor_id_ext).first()
             proveedor_nombre = prov.nombre_comercial if prov else None
         except (LookupError, Exception):

@@ -19,14 +19,12 @@ import { Textarea } from '@/components/forms/Textarea';
 
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
+import { useModalidadesLogistica, useDepartamentos, useCiudades } from '../hooks/useCatalogos';
+// TipoProveedor vive en CT post refactor 2026-04-21
 import {
   useTiposProveedor,
   useCreateTipoProveedor,
-  useModalidadesLogistica,
-  useTiposCuentaBancaria,
-  useDepartamentos,
-  useCiudades,
-} from '../hooks/useCatalogos';
+} from '@/features/catalogo-productos/hooks/useProveedores';
 import {
   useTiposAlmacen,
   useCreateTipoAlmacen,
@@ -67,7 +65,6 @@ const CATALOGS: CatalogConfig[] = [
     hasExtraFields: true,
   },
   { key: 'modalidades', label: 'Modalidades Logísticas', group: 'Proveedores' },
-  { key: 'tipos-cuenta', label: 'Tipos de Cuenta Bancaria', group: 'Financiero' },
   { key: 'tipos-almacen', label: 'Tipos de Almacén', group: 'Almacenamiento' },
   { key: 'departamentos', label: 'Departamentos', group: 'Ubicación' },
   { key: 'ciudades', label: 'Ciudades', group: 'Ubicación', hasExtraFields: true },
@@ -89,7 +86,6 @@ export function CatalogosTab() {
   // Queries para todos los catálogos (solo se activa el seleccionado)
   const { data: tiposProvData, isLoading: l3 } = useTiposProveedor();
   const { data: modalidadesData, isLoading: l4 } = useModalidadesLogistica();
-  const { data: tiposCuentaData, isLoading: l6 } = useTiposCuentaBancaria();
   const { data: departamentosData, isLoading: l8 } = useDepartamentos();
   const { data: ciudadesData, isLoading: l9 } = useCiudades();
   const { data: tiposAlmacenData, isLoading: l10 } = useTiposAlmacen();
@@ -109,8 +105,6 @@ export function CatalogosTab() {
         return { items: normalize(tiposProvData), isLoading: l3 };
       case 'modalidades':
         return { items: normalize(modalidadesData), isLoading: l4 };
-      case 'tipos-cuenta':
-        return { items: normalize(tiposCuentaData), isLoading: l6 };
       case 'departamentos':
         return { items: normalize(departamentosData), isLoading: l8 };
       case 'ciudades':

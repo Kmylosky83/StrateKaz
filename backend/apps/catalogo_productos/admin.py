@@ -3,6 +3,8 @@ from django.contrib import admin
 
 from .extensiones.espec_calidad import ProductoEspecCalidad
 from .models import CategoriaProducto, Producto, UnidadMedida
+# Registro de admin de Proveedores (vía import con side-effects).
+from .proveedores import admin as _proveedores_admin  # noqa: F401
 
 
 @admin.register(CategoriaProducto)

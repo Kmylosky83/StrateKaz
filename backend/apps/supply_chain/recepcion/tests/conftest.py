@@ -9,11 +9,8 @@ from apps.catalogo_productos.models import CategoriaProducto, Producto, UnidadMe
 from apps.core.models import TipoDocumentoIdentidad
 from apps.gestion_estrategica.configuracion.models import EmpresaConfig, SedeEmpresa
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
-from apps.supply_chain.gestion_proveedores.models import (
-    PrecioMateriaPrima,
-    Proveedor,
-    TipoProveedor,
-)
+from apps.catalogo_productos.models import Proveedor, TipoProveedor
+from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
 
 User = get_user_model()
 

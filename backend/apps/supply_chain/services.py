@@ -17,11 +17,11 @@ class SupplyChainService:
     @staticmethod
     def get_proveedor(proveedor_id: int):
         """Obtiene un proveedor por ID (lazy import)."""
-        Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+        Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
         return Proveedor.objects.filter(id=proveedor_id, is_deleted=False).first()
 
     @staticmethod
     def get_proveedores_activos():
         """Lista de proveedores activos."""
-        Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+        Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
         return Proveedor.objects.filter(is_active=True, is_deleted=False)

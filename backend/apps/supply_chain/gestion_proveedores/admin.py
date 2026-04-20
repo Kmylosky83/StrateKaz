@@ -1,36 +1,29 @@
 """
-Admin para Gestión de Proveedores - Supply Chain
-Sistema de Gestión StrateKaz
+Admin para Gestión de Proveedores - Supply Chain.
 
-100% DINÁMICO: Admin configurado para modelos de catálogo dinámicos.
+Post refactor 2026-04-21 (Proveedor → CT):
+  Solo se gestionan desde este admin los modelos que siguen viviendo en SC:
+    - ModalidadLogistica (catálogo dinámico de SC)
+    - PrecioMateriaPrima (FK ahora a catalogo_productos.Proveedor)
+    - HistorialPrecioProveedor (FK ahora a catalogo_productos.Proveedor)
+
+  Proveedor, TipoProveedor y el catálogo de proveedor → /admin/catalogo_productos/
+  FormaPago, TipoCuentaBancaria, CondicionComercial, CriterioEvaluacion,
+  EvaluacionProveedor, DetalleEvaluacion → ELIMINADOS (fuera de SC, scope
+  Admin/Compras cuando esos módulos entren a LIVE).
 """
 from django.contrib import admin
 from django.utils.html import format_html
 
 from .models import (
-    # Catálogos dinámicos (MP migrada a catalogo_productos)
-    TipoProveedor,
     ModalidadLogistica,
-    FormaPago,
-    TipoCuentaBancaria,
-    # Modelos principales
-    Proveedor,
     PrecioMateriaPrima,
     HistorialPrecioProveedor,
-    CondicionComercialProveedor,
-    # Evaluación
-    CriterioEvaluacion,
-    EvaluacionProveedor,
-    DetalleEvaluacion,
 )
 
 
-# ==============================================================================
-# ADMIN PARA CATÁLOGOS DINÁMICOS
-# ==============================================================================
-
-class CatalogoBaseAdmin(admin.ModelAdmin):
-    """Admin base para catálogos dinámicos."""
+@admin.register(ModalidadLogistica)
+class ModalidadLogisticaAdmin(admin.ModelAdmin):
     list_display = ['codigo', 'nombre', 'orden', 'is_active', 'created_at']
     list_filter = ['is_active']
     search_fields = ['codigo', 'nombre']
@@ -38,119 +31,9 @@ class CatalogoBaseAdmin(admin.ModelAdmin):
     list_editable = ['orden', 'is_active']
 
 
-# CategoriaMateriaPrimaAdmin y TipoMateriaPrimaAdmin eliminados post-S7.
-# Catalogo unico en catalogo_productos (CT-layer). Ver /admin/catalogo_productos/
-
-
-@admin.register(TipoProveedor)
-class TipoProveedorAdmin(CatalogoBaseAdmin):
-    """Admin para Tipos de Proveedor."""
-    list_display = [
-        'codigo', 'nombre', 'requiere_materia_prima',
-        'requiere_modalidad_logistica', 'orden', 'is_active'
-    ]
-    list_filter = ['is_active', 'requiere_materia_prima', 'requiere_modalidad_logistica']
-    list_editable = ['requiere_materia_prima', 'requiere_modalidad_logistica', 'orden', 'is_active']
-
-
-@admin.register(ModalidadLogistica)
-class ModalidadLogisticaAdmin(CatalogoBaseAdmin):
-    """Admin para Modalidades Logísticas."""
-    pass
-
-
-@admin.register(FormaPago)
-class FormaPagoAdmin(CatalogoBaseAdmin):
-    """Admin para Formas de Pago."""
-    pass
-
-
-@admin.register(TipoCuentaBancaria)
-class TipoCuentaBancariaAdmin(CatalogoBaseAdmin):
-    """Admin para Tipos de Cuenta Bancaria."""
-    list_display = ['codigo', 'nombre', 'orden', 'is_active']
-
-
-# ==============================================================================
-# ADMIN PARA MODELOS PRINCIPALES
-# ==============================================================================
-
-# NOTA: UnidadNegocioAdmin → Migrado a Fundación (configuracion)
-
-
-class PrecioMateriaPrimaInline(admin.TabularInline):
-    """Inline para precios de materia prima en Proveedor."""
-    model = PrecioMateriaPrima
-    extra = 0
-    readonly_fields = ['updated_by', 'updated_at', 'created_at']
-    raw_id_fields = ['producto']
-
-
-@admin.register(Proveedor)
-class ProveedorAdmin(admin.ModelAdmin):
-    """Admin para Proveedores."""
-    list_display = [
-        'codigo_interno', 'nombre_comercial', 'tipo_entidad', 'tipo_proveedor',
-        'numero_documento', 'ciudad', 'is_active', 'is_deleted_display'
-    ]
-    list_filter = [
-        'tipo_entidad', 'tipo_proveedor', 'modalidad_logistica',
-        'departamento', 'is_active', 'is_deleted',
-    ]
-    search_fields = ['codigo_interno', 'nombre_comercial', 'razon_social', 'numero_documento', 'nit']
-    ordering = ['nombre_comercial']
-    raw_id_fields = [
-        'tipo_proveedor', 'tipo_documento', 'modalidad_logistica',
-        'departamento', 'tipo_cuenta', 'created_by', 'updated_by', 'deleted_by',
-    ]
-    filter_horizontal = ['productos_suministrados', 'formas_pago']
-    readonly_fields = [
-        'codigo_interno', 'created_at', 'updated_at', 'deleted_at',
-        'created_by', 'updated_by', 'deleted_by',
-    ]
-    inlines = [PrecioMateriaPrimaInline]
-
-    fieldsets = (
-        ('Identificación', {
-            'fields': (
-                'codigo_interno', 'tipo_entidad', 'tipo_proveedor',
-                'productos_suministrados', 'modalidad_logistica',
-            )
-        }),
-        ('Datos Básicos', {
-            'fields': ('nombre_comercial', 'razon_social', 'tipo_documento', 'numero_documento', 'nit')
-        }),
-        ('Contacto', {
-            'fields': ('telefono', 'email', 'direccion', 'ciudad', 'departamento')
-        }),
-        ('Relaciones', {
-            'fields': ('unidad_negocio_id', 'unidad_negocio_nombre')
-        }),
-        ('Información Financiera', {
-            'fields': ('formas_pago', 'dias_plazo_pago', 'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta')
-        }),
-        ('Observaciones', {
-            'fields': ('observaciones',)
-        }),
-        ('Estado', {
-            'fields': ('is_active', 'is_deleted', 'deleted_at', 'deleted_by')
-        }),
-        ('Auditoría', {
-            'fields': ('created_by', 'created_at', 'updated_by', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def is_deleted_display(self, obj):
-        if obj.is_deleted:
-            return format_html('<span style="color: red;">Eliminado</span>')
-        return format_html('<span style="color: green;">Activo</span>')
-    is_deleted_display.short_description = 'Estado'
-
-
 @admin.register(PrecioMateriaPrima)
 class PrecioMateriaPrimaAdmin(admin.ModelAdmin):
-    """Admin para Precios de Materia Prima."""
+    """Precio vigente proveedor × producto."""
     list_display = [
         'proveedor', 'producto', 'precio_kg',
         'updated_by', 'updated_at',
@@ -165,7 +48,7 @@ class PrecioMateriaPrimaAdmin(admin.ModelAdmin):
 
 @admin.register(HistorialPrecioProveedor)
 class HistorialPrecioProveedorAdmin(admin.ModelAdmin):
-    """Admin para Historial de Precios (append-only, solo lectura)."""
+    """Historial de precios (append-only, solo lectura)."""
     list_display = [
         'proveedor', 'producto', 'precio_anterior', 'precio_nuevo',
         'variacion_display', 'modificado_por', 'created_at',
@@ -196,88 +79,3 @@ class HistorialPrecioProveedorAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
-
-
-@admin.register(CondicionComercialProveedor)
-class CondicionComercialProveedorAdmin(admin.ModelAdmin):
-    """Admin para Condiciones Comerciales."""
-    list_display = [
-        'proveedor', 'descripcion', 'vigencia_desde',
-        'vigencia_hasta', 'esta_vigente_display', 'created_by',
-    ]
-    list_filter = ['proveedor__tipo_proveedor', 'is_deleted']
-    search_fields = ['proveedor__nombre_comercial', 'descripcion']
-    ordering = ['-vigencia_desde']
-    raw_id_fields = ['proveedor', 'created_by', 'updated_by', 'deleted_by']
-    readonly_fields = [
-        'created_by', 'updated_by', 'deleted_by',
-        'created_at', 'updated_at', 'deleted_at',
-    ]
-
-    def esta_vigente_display(self, obj):
-        if obj.esta_vigente:
-            return format_html('<span style="color: green;">Vigente</span>')
-        return format_html('<span style="color: red;">Vencida</span>')
-    esta_vigente_display.short_description = 'Estado'
-
-
-# ==============================================================================
-# ADMIN PARA EVALUACIÓN DE PROVEEDORES
-# ==============================================================================
-
-@admin.register(CriterioEvaluacion)
-class CriterioEvaluacionAdmin(admin.ModelAdmin):
-    """Admin para Criterios de Evaluación."""
-    list_display = ['codigo', 'nombre', 'peso', 'orden', 'is_active']
-    list_filter = ['is_active', 'aplica_a_tipo']
-    search_fields = ['codigo', 'nombre']
-    ordering = ['orden', 'nombre']
-    list_editable = ['peso', 'orden', 'is_active']
-    filter_horizontal = ['aplica_a_tipo']
-
-
-class DetalleEvaluacionInline(admin.TabularInline):
-    """Inline para detalles de evaluación."""
-    model = DetalleEvaluacion
-    extra = 0
-    raw_id_fields = ['criterio']
-
-
-@admin.register(EvaluacionProveedor)
-class EvaluacionProveedorAdmin(admin.ModelAdmin):
-    """Admin para Evaluaciones de Proveedores."""
-    list_display = [
-        'proveedor', 'periodo', 'fecha_evaluacion',
-        'estado', 'calificacion_total', 'evaluado_por'
-    ]
-    list_filter = ['estado', 'proveedor__tipo_proveedor']
-    search_fields = ['proveedor__nombre_comercial', 'periodo']
-    ordering = ['-fecha_evaluacion']
-    raw_id_fields = ['proveedor', 'evaluado_por', 'aprobado_por']
-    readonly_fields = ['calificacion_total', 'fecha_aprobacion', 'created_at', 'updated_at']
-    inlines = [DetalleEvaluacionInline]
-
-    fieldsets = (
-        ('Evaluación', {
-            'fields': ('proveedor', 'periodo', 'fecha_evaluacion', 'estado')
-        }),
-        ('Resultados', {
-            'fields': ('calificacion_total', 'observaciones')
-        }),
-        ('Aprobación', {
-            'fields': ('evaluado_por', 'aprobado_por', 'fecha_aprobacion')
-        }),
-        ('Auditoría', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
-@admin.register(DetalleEvaluacion)
-class DetalleEvaluacionAdmin(admin.ModelAdmin):
-    """Admin para Detalles de Evaluación."""
-    list_display = ['evaluacion', 'criterio', 'calificacion', 'observaciones']
-    list_filter = ['criterio', 'evaluacion__estado']
-    search_fields = ['evaluacion__proveedor__nombre_comercial', 'criterio__nombre']
-    raw_id_fields = ['evaluacion', 'criterio']

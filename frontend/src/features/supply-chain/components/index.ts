@@ -1,19 +1,14 @@
 /**
- * Índice de componentes de Supply Chain
+ * Índice de componentes de Supply Chain.
+ *
+ * Post refactor 2026-04-21 (Proveedor → CT):
+ *   ELIMINADOS: ProveedoresTab/Table/Form, ImportProveedoresModal,
+ *   EvaluacionesTab, EvaluacionProveedorForm.
+ *   Proveedores ahora vive en @/features/catalogo-productos/components/.
  */
 
-// Proveedores
-export { ProveedoresTable } from './ProveedoresTable';
-export { ProveedorForm } from './ProveedorForm';
-export { default as ImportProveedoresModal } from './ImportProveedoresModal';
-
-// Evaluaciones
-export { EvaluacionProveedorForm } from './EvaluacionProveedorForm';
-
-// Tabs
-export { default as ProveedoresTab } from './ProveedoresTab';
+// Tabs LIVE
 export { PreciosTab } from './PreciosTab';
-export { EvaluacionesTab } from './EvaluacionesTab';
 export { CatalogosTab } from './CatalogosTab';
 export { default as ComprasTab } from './ComprasTab';
 export { default as AlmacenamientoTab } from './AlmacenamientoTab';

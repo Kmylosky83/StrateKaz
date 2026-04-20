@@ -28,5 +28,9 @@ export const catalogoProductosRoutes = (
       path="/catalogo-productos/unidades-medida"
       element={withFullGuard(CatalogoProductosPage, 'catalogo_productos', 'unidades-medida')}
     />
+    <Route
+      path="/catalogo-productos/proveedores"
+      element={withFullGuard(CatalogoProductosPage, 'catalogo_productos', 'proveedores')}
+    />
   </>
 );

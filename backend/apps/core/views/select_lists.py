@@ -94,7 +94,7 @@ def select_proveedores(request):
     Lista de proveedores activos para dropdowns.
     Usado por: Admin Finance (pagos), Production Ops (recepcion)
     """
-    Proveedor = _safe_get_model('gestion_proveedores', 'Proveedor')
+    Proveedor = _safe_get_model('catalogo_productos', 'Proveedor')
     if not Proveedor:
         return Response([])
 

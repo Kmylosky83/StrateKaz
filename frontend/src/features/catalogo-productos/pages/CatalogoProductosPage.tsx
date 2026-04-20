@@ -10,13 +10,13 @@
  * 3. Unidades    — kg, L, und, etc.        (/catalogo-productos/unidades-medida)
  */
 import { useLocation } from 'react-router-dom';
-import { Package, FolderTree, Ruler } from 'lucide-react';
+import { Package, FolderTree, Ruler, Users } from 'lucide-react';
 
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 
-import { ProductosTab, CategoriasTab, UnidadesMedidaTab } from '../components';
+import { ProductosTab, CategoriasTab, UnidadesMedidaTab, ProveedoresTab } from '../components';
 
 interface SectionMeta {
   title: string;
@@ -43,6 +43,13 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Unidades estándar: kg, litros, unidades, metros y más',
     icon: <Ruler className="w-5 h-5" />,
     component: UnidadesMedidaTab,
+  },
+  proveedores: {
+    title: 'Proveedores',
+    description:
+      'Dato maestro de proveedores (identificación + contacto + productos que suministra)',
+    icon: <Users className="w-5 h-5" />,
+    component: ProveedoresTab,
   },
 };
 

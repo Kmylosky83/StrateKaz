@@ -283,7 +283,7 @@ class ContratoServicioSerializer(serializers.ModelSerializer):
             return None
         try:
             from django.apps import apps
-            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
             return Proveedor.objects.filter(
                 id=obj.proveedor_id
             ).values_list('nit', flat=True).first()

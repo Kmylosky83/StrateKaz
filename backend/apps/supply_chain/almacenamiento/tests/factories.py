@@ -22,7 +22,7 @@ from apps.supply_chain.almacenamiento.models import (
     TipoMovimientoInventario,
 )
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
-from apps.supply_chain.gestion_proveedores.models import Proveedor, TipoProveedor
+from apps.catalogo_productos.models import Proveedor, TipoProveedor
 from apps.supply_chain.recepcion.models import VoucherRecepcion
 
 

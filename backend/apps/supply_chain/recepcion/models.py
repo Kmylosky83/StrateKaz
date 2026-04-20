@@ -46,7 +46,7 @@ class VoucherRecepcion(TenantModel):
 
     # ─── Partes ────────────────────────────────────────────────────────
     proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
+        'catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='vouchers_recepcion',
         verbose_name='Proveedor',

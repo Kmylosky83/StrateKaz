@@ -66,22 +66,12 @@ class Command(BaseCommand):
         total_created += c
         total_updated += u
 
-        # 2. Tipos de Proveedor
+        # 2. Tipos de Proveedor (vive en catalogo_productos desde 2026-04-21)
         c, u = self._seed_tipo_proveedor(dry_run)
         total_created += c
         total_updated += u
 
-        # 3. Formas de Pago
-        c, u = self._seed_forma_pago(dry_run)
-        total_created += c
-        total_updated += u
-
-        # 4. Tipos de Cuenta Bancaria
-        c, u = self._seed_tipo_cuenta(dry_run)
-        total_created += c
-        total_updated += u
-
-        # 5. Modalidades Logísticas
+        # 3. Modalidades Logísticas (se queda en SC)
         c, u = self._seed_modalidad_logistica(dry_run)
         total_created += c
         total_updated += u
@@ -158,7 +148,7 @@ class Command(BaseCommand):
         return self._seed_model(TipoDocumentoIdentidad, data, 'Tipos de Documento de Identidad', dry_run)
 
     def _seed_tipo_proveedor(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import TipoProveedor
+        from apps.catalogo_productos.models import TipoProveedor
         data = [
             {
                 'codigo': 'MATERIA_PRIMA',
@@ -211,27 +201,8 @@ class Command(BaseCommand):
         ]
         return self._seed_model(TipoProveedor, data, 'Tipos de Proveedor', dry_run)
 
-    def _seed_forma_pago(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import FormaPago
-        data = [
-            {'codigo': 'CONTADO', 'nombre': 'Contado', 'descripcion': 'Pago al momento de la entrega', 'orden': 1},
-            {'codigo': 'TRANSFERENCIA', 'nombre': 'Transferencia Bancaria', 'descripcion': 'Pago por transferencia electrónica', 'orden': 2},
-            {'codigo': 'CHEQUE', 'nombre': 'Cheque', 'descripcion': 'Pago con cheque', 'orden': 3},
-            {'codigo': 'CREDITO_15', 'nombre': 'Crédito 15 días', 'descripcion': 'Pago a 15 días', 'orden': 4},
-            {'codigo': 'CREDITO_30', 'nombre': 'Crédito 30 días', 'descripcion': 'Pago a 30 días', 'orden': 5},
-            {'codigo': 'CREDITO_60', 'nombre': 'Crédito 60 días', 'descripcion': 'Pago a 60 días', 'orden': 6},
-            {'codigo': 'CREDITO_90', 'nombre': 'Crédito 90 días', 'descripcion': 'Pago a 90 días', 'orden': 7},
-            {'codigo': 'CONSIGNACION', 'nombre': 'Consignación', 'descripcion': 'Pago por consignación bancaria', 'orden': 8},
-        ]
-        return self._seed_model(FormaPago, data, 'Formas de Pago', dry_run)
-
-    def _seed_tipo_cuenta(self, dry_run):
-        from apps.supply_chain.gestion_proveedores.models import TipoCuentaBancaria
-        data = [
-            {'codigo': 'AHORROS', 'nombre': 'Cuenta de Ahorros', 'orden': 1},
-            {'codigo': 'CORRIENTE', 'nombre': 'Cuenta Corriente', 'orden': 2},
-        ]
-        return self._seed_model(TipoCuentaBancaria, data, 'Tipos de Cuenta Bancaria', dry_run)
+    # FormaPago y TipoCuentaBancaria eliminados (refactor 2026-04-21).
+    # Cuando Admin/Compras entre a LIVE re-implementarán estos catálogos.
 
     def _seed_tipo_almacen(self, dry_run):
         from apps.supply_chain.catalogos.models import TipoAlmacen

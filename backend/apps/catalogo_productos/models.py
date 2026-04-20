@@ -449,3 +449,7 @@ class Producto(TenantModel):
 # Registrar extensiones para que Django las descubra en el app registry.
 # Patrón: docs/01-arquitectura/modular-tenancy.md sección 3.
 from apps.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad  # noqa: E402, F401
+
+# Sub-paquete Proveedores (CT-layer, 2026-04-21).
+# Vive en el mismo app_label='catalogo_productos' — ver Meta en los modelos.
+from apps.catalogo_productos.proveedores.models import Proveedor, TipoProveedor  # noqa: E402, F401

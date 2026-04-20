@@ -1,12 +1,13 @@
 /**
  * Rutas: Supply Chain (Cadena de Suministro)
- * Capa 2 — Módulo de Negocio
+ * Capa 2 — Módulo de Negocio.
  *
- * Secciones (flujo de negocio):
- * proveedores → precios → recepcion → liquidaciones → almacenamiento →
- * evaluaciones → catálogos
+ * Secciones LIVE post refactor 2026-04-21 (Proveedor → CT):
+ *   precios → recepcion → liquidaciones → almacenamiento → catálogos
  *
- * Compras dormida (tabla existe pero sin UI/URLs). programacion eliminada en S6.
+ * REDIRECT: /supply-chain/proveedores → /catalogo-productos/proveedores
+ * ELIMINADO: evaluaciones (scope Admin/Compras futuro)
+ * Compras dormida (tabla existe sin UI activa).
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -18,10 +19,11 @@ const SupplyChainPage = lazy(() =>
 
 export const supplyChainRoutes = (
   <>
-    <Route path="/supply-chain" element={<Navigate to="/supply-chain/proveedores" replace />} />
+    <Route path="/supply-chain" element={<Navigate to="/supply-chain/precios" replace />} />
+    {/* Redirect legacy path — modelo Proveedor movido a CT (2026-04-21). */}
     <Route
       path="/supply-chain/proveedores"
-      element={withFullGuard(SupplyChainPage, 'supply_chain', 'proveedores')}
+      element={<Navigate to="/catalogo-productos/proveedores" replace />}
     />
     <Route
       path="/supply-chain/precios"
@@ -38,10 +40,6 @@ export const supplyChainRoutes = (
     <Route
       path="/supply-chain/almacenamiento"
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'almacenamiento')}
-    />
-    <Route
-      path="/supply-chain/evaluaciones"
-      element={withFullGuard(SupplyChainPage, 'supply_chain', 'evaluaciones')}
     />
     <Route
       path="/supply-chain/catalogos"

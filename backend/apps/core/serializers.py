@@ -269,7 +269,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             return None
         try:
             from django.apps import apps
-            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
             prov = Proveedor.objects.filter(pk=obj.proveedor_id_ext).first()
             return prov.nombre_comercial if prov else None
         except LookupError:
@@ -387,7 +387,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             return None
         try:
             from django.apps import apps
-            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
             Proveedor.objects.get(id=value, is_active=True)
             return value
         except LookupError:

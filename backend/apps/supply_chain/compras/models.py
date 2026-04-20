@@ -677,7 +677,7 @@ class Cotizacion(models.Model):
         verbose_name='Requisición'
     )
     proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
+        'catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='cotizaciones_compras',
         verbose_name='Proveedor'
@@ -907,7 +907,7 @@ class OrdenCompra(models.Model):
         verbose_name='Cotización'
     )
     proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
+        'catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='ordenes_compra',
         verbose_name='Proveedor'
@@ -1177,7 +1177,7 @@ class Contrato(models.Model):
         verbose_name='Empresa'
     )
     proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
+        'catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='contratos',
         verbose_name='Proveedor'

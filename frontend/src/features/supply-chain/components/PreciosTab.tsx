@@ -14,7 +14,8 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 
-import { useProveedores, useCambiarPrecio, useHistorialPrecio } from '../hooks/useProveedores';
+import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useCambiarPrecio, useHistorialPrecio } from '../hooks/useProveedores';
 import type { PrecioMateriaPrima, HistorialPrecioProveedor } from '../types';
 
 // ==================== TIPOS ====================

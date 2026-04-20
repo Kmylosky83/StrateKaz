@@ -873,7 +873,7 @@ class PruebaAcidezViewSet(viewsets.ModelViewSet):
     def por_proveedor(self, request, proveedor_id=None):
         from django.apps import apps
         try:
-            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
             proveedor = Proveedor.objects.get(pk=proveedor_id)
         except Exception:
             return Response(

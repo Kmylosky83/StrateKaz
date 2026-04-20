@@ -1005,6 +1005,9 @@ C2 (no C2 heredando mixin de C2).
 | 20 | **H-S8-proveedores-ubicacion-incorrecta** | 🔲 PENDIENTE | gestion_proveedores conceptualmente es CT, vive en C2 por pragmatismo. Mudanza S10-S12 al activar segundo consumidor. |
 | 21 | **H-S7-supply-chain-tabla-unidad-medida-huerfana** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 con migración `catalogos.0002_drop_unidad_medida_huerfana`. |
 | 22 | **H-S8-revision-direccion-coupling-eliminado** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 commit `e51f8b56`. Sin acoplamiento LIVE → NO-LIVE. |
+| 23 | **H-S8-rbac-botones-sin-check** | 🔲 PENDIENTE | **CRÍTICA — BLOQUEANTE PRE-DEPLOY**. Frontend renderiza botones sin consultar permisos. S8.5 sesión dedicada. |
+| 24 | **H-S8-modal-proveedor-ux-rota** | 🔲 PENDIENTE | **ALTA — BLOQUEANTE PRE-DEPLOY**. 5 problemas UX + bug funcional de submit. S8.6 sesión dedicada. |
+| 25 | **H-S8-dependabot-45-vulns** | 🔲 PENDIENTE | **ALTA POST-DEPLOY**. 45 vulns acumuladas (1 crítica Django CVE-2025-64459). Triage antes de S10. |
 
 **Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones), H-S8-sidebar-db-driven (2-4 días), H-S8-catalogos-financieros (2 días).
 
@@ -1024,3 +1027,204 @@ C2 (no C2 heredando mixin de C2).
 - Documentación de excepción analytics en L0-INDEX.md
 - Snapshot de emergencia de auto-memory (commit `445f1210`)
 - Este documento de hallazgos pendientes
+
+---
+
+## H-S8-rbac-botones-sin-check — Botones de acción no chequean permisos RBAC
+
+### Detectado
+2026-04-20, validación manual en browser post-push S8.
+
+### Módulo
+Supply Chain / Catálogo de Productos (confirmado). **Probable sistémico en todos los módulos LIVE**.
+
+### Severidad
+**CRÍTICA** — Bloqueante de deploy MP. Viola el modelo de seguridad RBAC.
+
+### Síntoma
+Los botones de acción (eliminar, editar, crear) en el frontend NO chequean permisos
+del usuario antes de renderizarse. Reproducción:
+
+1. Super admin desmarca permiso `delete` para un Cargo X en `/usuarios/rbac/`.
+2. Usuario con Cargo X hace logout + hard refresh + login.
+3. Entra a `/catalogo-productos/productos` y el botón "Eliminar" sigue visible y
+   funcional — ejecuta la acción exitosamente.
+
+Backend correctamente rechaza la acción si se llama al endpoint directamente (RBAC
+middleware OK). El fallo es puramente del frontend: renderiza UI sin consultar
+permisos.
+
+### Impacto
+- Usuario ve acciones que no debería — confusión UX.
+- Si la acción logra iniciarse, espera response del backend; si backend falla por RBAC,
+  surge error que debió prevenirse en UI.
+- Viola principio least-privilege UI: mostrar solo lo autorizado.
+- Cualquier decisión de "desactivar feature por RBAC" se anula si el botón no
+  respeta el permiso.
+
+### Causa raíz (hipótesis)
+No existe patrón estandarizado de consulta de permisos en componentes de acción.
+Cada módulo implementa (o no) su propio chequeo, sin enforcement. El hook
+`compute_user_rbac` del backend expone `permission_codes` en `/api/core/users/me/`
+pero no hay wrapper frontend que lo consuma uniformemente.
+
+### Propuesta de fix
+Refactor sistémico:
+
+1. Crear componente `<PermissionButton>` en `frontend/src/components/common/`:
+   ```tsx
+   <PermissionButton
+     permission="catalogo_productos.productos.delete"
+     onClick={handleDelete}
+   >
+     Eliminar
+   </PermissionButton>
+   ```
+   Oculta el botón si el usuario no tiene el permission_code.
+
+2. Alternativa/complemento: hook `usePermission()`:
+   ```tsx
+   const canDelete = usePermission('catalogo_productos.productos.delete');
+   return canDelete ? <Button onClick={...}>Eliminar</Button> : null;
+   ```
+
+3. Audit global de todos los botones de acción en módulos LIVE y migrarlos.
+
+4. Tests: cada módulo debe tener test E2E con usuario de cargo restringido.
+
+### Trigger
+**BLOQUEANTE pre-deploy MP.** Próxima sesión dedicada (S8.5).
+
+### Estado
+🔲 Abierto
+
+---
+
+## H-S8-modal-proveedor-ux-rota — Modal crear proveedor con UX y bug funcional
+
+### Detectado
+2026-04-20, validación manual en browser post-push S8.
+
+### Módulo
+Supply Chain / Proveedores / Modal `ProveedorForm.tsx`.
+
+### Severidad
+**ALTA** — Bloquea 33% del objetivo operativo S8: "crear proveedores en producción".
+
+### Síntomas (5 problemas descubiertos)
+
+1. **Checkboxes planos no escalables**: tipos de MP renderizados como grid de
+   checkboxes en contenedor `max-h-48 overflow-y-auto`. Con >10 ítems se satura,
+   sin búsqueda, sin chips de seleccionados.
+2. **Catálogo stale**: si el usuario crea una MP nueva en otra pantalla
+   (`/catalogo-productos/productos`) y vuelve al modal, la lista no refleja
+   el nuevo ítem. No hay re-fetch al abrir el modal.
+3. **Multi-select no visible**: el backend soporta M2M
+   (`productos_suministrados`) pero el modal no muestra claramente que permite
+   múltiples selecciones simultáneas.
+4. **No dinámico por tipo de proveedor**: un proveedor Transportista ve campos
+   irrelevantes de MP. Debería renderizar solo las secciones aplicables al
+   `TipoProveedor` seleccionado (hoy hay flag `requiere_materia_prima` pero
+   el FE no la consume para ocultar secciones).
+5. **🚨 Bug funcional — submit no crea proveedor**: el botón "Crear" ejecuta el
+   POST pero la creación falla. Validación backend rechaza o el payload del
+   FE es inválido. No se crea el proveedor → **objetivo de deploy bloqueado**.
+
+### Impacto
+- Usuario no puede completar la operación más básica de Supply Chain.
+- 33% del deploy MP inutilizable (crear proveedor + asignar MP + asignar precio).
+- UX por debajo del estándar de mercado (Linear, Vercel, Stripe, Notion).
+
+### Propuesta de fix
+Sesión dedicada (S8.6):
+
+1. **Auditoría del payload actual**: inspeccionar Network tab del POST
+   `/api/supply-chain/proveedores/` y compararlo con `ProveedorCreateSerializer`
+   del backend. Identificar field mismatch o validación bloqueante.
+2. **Rediseño del modal** con patrón mercado:
+   - `Combobox` multi-select con búsqueda integrada + chips visibles.
+   - Agrupación de productos por `CategoriaProducto` (catálogo canónico).
+   - Re-fetch de catálogos al abrir modal (`staleTime: 0` para ese query).
+   - Secciones dinámicas condicionales al `tipo_proveedor`:
+     - `requiere_materia_prima` → muestra sección productos/precios.
+     - `requiere_modalidad_logistica` → muestra sección logística.
+     - `codigo == 'CONSULTOR'` → muestra flag `es_independiente`.
+   - Validación inline (Zod + RHF) en lugar de solo al submit.
+   - Botón Crear disabled hasta que los requeridos estén completos.
+   - Empty state educativo si no hay productos en catálogo.
+3. **Eliminar campo `nit` redundante**: ver H-S8-nit-redundante (pendiente de
+   abrir si se confirma).
+
+### Trigger
+**BLOQUEANTE pre-deploy MP.** Sesión dedicada (S8.6), después de S8.5 RBAC.
+
+### Estado
+🔲 Abierto
+
+---
+
+## H-S8-dependabot-45-vulns — 45 vulnerabilidades acumuladas, 1 crítica
+
+### Detectado
+2026-04-20, push de S8 a GitHub.
+
+### Módulo
+Dependencias globales del repo (pip + npm).
+
+### Severidad
+**ALTA** — Deuda de seguridad. No bloquea funcionalidad LIVE pero expone
+superficie de ataque.
+
+### Breakdown
+| Severidad | Cantidad |
+|-----------|----------|
+| Critical  | 1 |
+| High      | 14 |
+| Moderate  | 26 |
+| Low       | 4 |
+| **Total** | **45** |
+
+### Vulnerabilidad crítica identificada
+
+- **Paquete**: `django` (pip, `backend/requirements.txt`)
+- **Versión afectada**: `>= 5.0a1, < 5.1.14` (local: Django **5.0.14** → afectada)
+- **Parche**: **5.1.14** (upgrade minor 5.0 → 5.1)
+- **CVE**: [CVE-2025-64459](https://github.com/advisories/GHSA-frmv-pr5f-9mcr)
+  (GHSA-frmv-pr5f-9mcr) — **CVSS 9.1 Critical**
+- **Advisory**: SQL injection en `QuerySet.filter()`, `QuerySet.exclude()`,
+  `QuerySet.get()` y `Q()` cuando se usa `_connector` como key en dict-expansion
+  (`**kwargs`).
+- **Tipo**: Runtime dependency (producción).
+- **Exposición real en StrateKaz**: bajo. Requiere código que haga
+  `Q(**user_controlled_dict)` donde el dict incluya `_connector` — patrón no
+  presente en el código LIVE verificado.
+- **Nota operativa**: Dependabot intentó PR #70 que fue cerrado (probable
+  incompatibilidad con `django-tenants` u otros pinns). Upgrade manual
+  requiere evaluación de compat.
+
+### Impacto
+- 1 vuln crítica explotable si código downstream introduce dict-expansion
+  con `_connector` user-controlled.
+- 14 high pendientes de triage individual.
+- El repo `security/dependabot` crece sin triage sistemático.
+
+### Propuesta de fix
+Sesión dedicada post-deploy MP (pre-S10):
+
+1. **Triage automatizado** (30 min):
+   - Listar las 15 críticas + high por paquete y ecosystem.
+   - Clasificar en: (a) upgrade directo compat, (b) requiere breaking change,
+     (c) no afecta superficie pública.
+2. **Upgrade en bloque** (1-2 días):
+   - Django 5.0.14 → 5.1.14 (validar django-tenants 3.10 compat).
+   - axios, picomatch, lodash, follow-redirects (high frecuentes).
+   - Tests de regresión post-upgrade.
+3. **Setup Dependabot auto-merge** para parches security low/moderate
+   (configurar `.github/dependabot.yml`).
+4. **Política**: revisar alertas cada sprint, no esperar acumulación.
+
+### Trigger
+**ALTA post-deploy MP.** Antes de Sprint S10.
+
+### Estado
+🔲 Abierto

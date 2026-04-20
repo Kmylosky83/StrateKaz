@@ -15,10 +15,15 @@ class CategoriaProductoAdmin(admin.ModelAdmin):
 
 @admin.register(UnidadMedida)
 class UnidadMedidaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'abreviatura', 'tipo', 'es_base', 'orden', 'is_deleted']
-    list_filter = ['tipo', 'es_base', 'is_deleted']
-    search_fields = ['nombre', 'abreviatura']
+    list_display = ['nombre', 'abreviatura', 'simbolo', 'tipo', 'unidad_base', 'factor_conversion', 'es_base', 'es_sistema_display', 'orden']
+    list_filter = ['tipo', 'es_base', 'is_system', 'is_deleted']
+    search_fields = ['nombre', 'abreviatura', 'simbolo']
     ordering = ['tipo', 'orden', 'nombre']
+    raw_id_fields = ['unidad_base']
+
+    @admin.display(boolean=True, description='Sistema')
+    def es_sistema_display(self, obj):
+        return obj.is_system
 
 
 @admin.register(Producto)

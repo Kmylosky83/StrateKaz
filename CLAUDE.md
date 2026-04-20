@@ -216,22 +216,19 @@ PORTALES (solo UI, sin logica propia)
 - **C3 lee de C2 y CT** — via API endpoints, nunca escribe en tablas de C2 ni CT.
 - **audit_system ≠ Auditoria Interna** — audit_system (C0) = logs/alertas. Auditoria Interna (C2) = auditorias ISO.
 
-### 12 Grupos Visuales — Sidebar PHVA (Planear-Hacer-Verificar-Actuar)
+### 7 Grupos Visuales — Sidebar LIVE (L0-L20 + supply_chain)
 
-Las 6 capas arquitectónicas se mapean a 12 grupos de sidebar bajo modelo PHVA:
+Post-cleanup 2026-04-20: `SIDEBAR_LAYERS` solo contiene capas con módulos
+LIVE (principio "LIVE es la verdad"). Cada activación de módulo C2 re-agrega
+su capa. Roadmap: migrar `SIDEBAR_LAYERS` a DB (hallazgo `H-S8-sidebar-db-driven`).
 
 | Grupo | Code | Módulos | Color | Capa |
 |-------|------|---------|-------|------|
 | Fundación | NIVEL_FUNDACION | fundacion | `#3B82F6` | C1 |
-| Infraestructura | NIVEL_INFRAESTRUCTURA | gestion_documental | `#6366F1` | CT |
+| Infraestructura | NIVEL_INFRAESTRUCTURA | gestion_documental, catalogo_productos | `#6366F1` | CT |
 | Gestión de Personas | NIVEL_EQUIPO | mi_equipo | `#0EA5E9` | C2 |
-| Planificación | NIVEL_PLANIFICACION | planificacion_operativa, planeacion_estrategica | `#6366F1` | C2 |
-| Protección y Cumplimiento | NIVEL_PROTECCION | proteccion_cumplimiento | `#F59E0B` | C2 |
-| Gestión Integral | NIVEL_HSEQ | gestion_integral | `#10B981` | C2 |
-| Cadena de Valor | NIVEL_CADENA | supply_chain, production_ops, logistics_fleet, sales_crm | `#10B981` | C2 |
-| Gestión del Talento | NIVEL_TALENTO | talent_hub | `#8B5CF6` | C2 |
-| Soporte | NIVEL_SOPORTE | administracion, tesoreria, accounting | `#F59E0B` | C2 |
-| Inteligencia | NIVEL_INTELIGENCIA | analytics, revision_direccion, acciones_mejora, audit_system | `#8B5CF6` | C3 |
+| Cadena de Valor | NIVEL_CADENA | supply_chain | `#10B981` | C2 |
+| Inteligencia | NIVEL_INTELIGENCIA | audit_system | `#8B5CF6` | C0 |
 | Flujos de Trabajo | NIVEL_WORKFLOWS | workflow_engine | `#0891B2` | CT |
 | Configuración | NIVEL_CONFIG | configuracion_plataforma | `#64748B` | C0 |
 

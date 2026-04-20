@@ -583,7 +583,10 @@ Cuando Production Ops o HSEQ activen cálculos de conversión de VOLUMEN.
 
 ---
 
-## H-S7-supply-chain-tabla-unidad-medida-huerfana
+## H-S7-supply-chain-tabla-unidad-medida-huerfana — ✅ RESUELTO (2026-04-20)
+
+Cerrado en S8 con migración `supply_chain.catalogos.0002_drop_unidad_medida_huerfana`.
+DROP TABLE IF EXISTS + RemoveModel aplicados. Cero consumidores verificados.
 
 ### Detectado
 2026-04-19 (verificación post-RemoveModel en S7)
@@ -718,6 +721,263 @@ pidan la misma plantilla.
 
 ---
 
+## H-S8-sidebar-db-driven — Mover SIDEBAR_LAYERS a base de datos
+
+### Detectado
+2026-04-20 (buenos-dias + cleanup post-S7 — `SIDEBAR_LAYERS` reducido
+de 12 a 7 capas para reflejar LIVE real).
+
+### Severidad
+**MEDIA** — No bloquea L20 ni L25, pero cada activación de módulo C2
+requerirá tocar el hardcode Python + redeploy. No escala a multi-tenant
+con sidebars personalizables por cliente.
+
+### Síntoma
+`SIDEBAR_LAYERS` vive como constante Python en
+`apps/core/viewsets_config.py:55-169`. Cualquier cambio de estructura
+del sidebar (agregar capa, mover módulo entre capas, renombrar) exige:
+- Editar código Python
+- Commit + push + CI
+- Deploy VPS
+- Sin posibilidad de que admin global personalice por tenant
+
+Patrón mercado moderno (SAP Fiori Launchpad, Salesforce App Launcher,
+Dynamics 365, Odoo): navegación en DB, configurable por role/tenant.
+
+### Solución propuesta
+
+Modelo nuevo `SidebarLayer` en `apps.core`:
+
+```python
+class SidebarLayer(SharedModel):
+    code = CharField(unique=True)       # 'NIVEL_FUNDACION'
+    name = CharField()                  # 'Fundación'
+    icon = CharField()                  # 'Landmark' (Lucide)
+    color = CharField()                 # '#3B82F6'
+    phase = CharField(choices=PHASES)   # 'PLANEAR'
+    orden = PositiveIntegerField()
+    is_active = BooleanField(default=True)
+
+# SystemModule ya existe — agregar FK:
+class SystemModule(...):
+    sidebar_layer = ForeignKey(SidebarLayer, null=True, on_delete=SET_NULL)
+```
+
+Endpoint `_get_layers_config()` pasa de iterar constante a:
+```python
+SidebarLayer.objects.filter(
+    is_active=True,
+    systemmodule__is_enabled=True,  # solo capas con al menos 1 mod LIVE
+).distinct().order_by('orden')
+```
+
+Admin global UI en `/admin/sidebar-layers/` para CRUD.
+
+### Complejidad
+- 1 model + migration + 1 seed (capas actuales) + admin UI: 1-2 días
+- Migrar `SIDEBAR_LAYERS` → DB (data migration): 1 día
+- Testing + QA browseable: 1 día
+- **Total:** 2-4 días
+
+### Trigger
+- Antes de activar primer módulo C2 post-supply_chain (production_ops, sales_crm)
+- O si un cliente pide sidebar personalizado
+
+### Mitigación actual
+`SIDEBAR_LAYERS` en Python funciona perfectamente para L0-L20 + supply_chain
+(7 capas). No urgente hasta Sprint S8+ (siguiente activación C2).
+
+---
+
+## H-S8-catalogos-financieros-a-configuracion — Mover FormaPago y TipoCuentaBancaria a C1
+
+### Detectado
+2026-04-20 (auditoría de catálogos post-S7 — usuario pidió "no catálogos
+redundantes en supply_chain").
+
+### Severidad
+**BAJA** — No es redundante hoy (no hay otro consumidor LIVE). Se vuelve
+redundante cuando se activen `accounting`, `sales_crm`, `admin_finance`.
+
+### Síntoma
+`apps.supply_chain.gestion_proveedores` define dos catálogos financieros:
+- `FormaPago` (CONTADO, CHEQUE, TRANSFERENCIA, CREDITO, ...)
+- `TipoCuentaBancaria` (AHORROS, CORRIENTE, ...)
+
+Estos son **transversales al dominio financiero**, no específicos de
+proveedores. Cuando se active `sales_crm` (facturación a clientes) o
+`accounting` (movimientos bancarios) o `tesoreria` (cuentas propias),
+cada uno necesitará los mismos enums — duplicación inevitable.
+
+### Solución propuesta
+Mover los dos modelos a `apps.gestion_estrategica.configuracion` (C1):
+
+- `gestion_estrategica.configuracion.FormaPago`
+- `gestion_estrategica.configuracion.TipoCuentaBancaria`
+
+Refactor equivalente al de `UnidadMedida` en S7:
+- Crear los modelos nuevos en configuracion
+- Data migration RunPython: copiar registros, crear FK temporal
+- Reapuntar `Proveedor.formas_pago` y `Proveedor.tipo_cuenta`
+- Eliminar modelos viejos de supply_chain
+- Actualizar serializers/viewsets/FE hooks
+
+### Complejidad
+- Data migration cross-app: 1 día (patrón ya aplicado en S7 UnidadMedida)
+- Refactor FE hooks + consumidores: 0.5 día
+- Testing: 0.5 día
+- **Total:** 2 días
+
+### Trigger
+Cuando se active el PRIMER consumidor adicional (`sales_crm` para facturas,
+`accounting` para bancos, `admin_finance.tesoreria` para cuentas propias).
+Se hará en la sesión de activación de ese módulo, no aislado.
+
+### Mitigación actual
+Ninguna necesaria. Los modelos funcionan en supply_chain; solo registra
+la decisión de ubicación futura para no multiplicar catálogos cuando
+crezca.
+
+---
+
+## H-S8-ct-disperso — Capa CT físicamente fragmentada
+
+### Detectado
+2026-04-20 (inventario arquitectónico para rehidratación Claude Web).
+
+### Severidad
+**MEDIA** — No bloquea deploy pero crea fricción cognitiva. Sin regla
+estructural, futuras activaciones de CT no sabrán dónde ubicarse.
+
+### Síntoma
+La capa CT LIVE vive en ubicaciones dispersas en `backend/apps/`:
+- `apps.catalogo_productos` — app plana en raíz (suelto).
+- `apps.workflow_engine.{disenador_flujos, ejecucion, monitoreo, firma_digital}` — paraguas propio.
+- `apps.gestion_estrategica.gestion_documental` — dentro de paraguas mixto `gestion_estrategica/`
+  que también contiene C1 (configuracion, organizacion, identidad, contexto, encuestas)
+  y C2 (planeacion, gestion_proyectos, planificacion_sistema, revision_direccion).
+
+No existe paraguas `apps/infraestructura/`, `apps/shared/`, `apps/platform/`
+ni `apps/ct/` que dé hogar unificado. El único candidato cercano es
+`apps/shared_library/` pero es SHARED_APP public (biblioteca de plantillas
+multi-tenant), distinta de CT.
+
+### Impacto
+- Cualquier desarrollador nuevo debe aprender memorizando dónde vive cada CT.
+- Decisiones futuras ("¿este módulo nuevo es CT o C2?") no tienen criterio estructural, solo doc.
+- `gestion_estrategica/` como paraguas mixto viola el principio "1 paraguas = 1 capa".
+
+### Solución propuesta
+Cuando se active el primer CT hoy comentado (workflow_engine sub-apps adicionales
+o gestion_documental mudado), evaluar mover todos los CT a un paraguas común:
+
+```
+apps/infraestructura/
+├── catalogo_productos/
+├── gestion_documental/      # extraído de gestion_estrategica/
+└── workflow_engine/
+    ├── disenador_flujos/
+    ├── ejecucion/
+    ├── monitoreo/
+    └── firma_digital/
+```
+
+Revisar también si `catalogo_productos` se muda (rompe ~15 imports, data
+migration del `label` Django no necesaria si se mantiene mismo `label=catalogo_productos`).
+
+### Trigger
+Antes de activar el siguiente CT comentado (hoy ninguno está previsto).
+Alternativa: aprovechar Sprint S10+ cuando toque activar motor_cumplimiento/motor_riesgos.
+
+### Estado
+🔲 Abierto. Prioridad: decidir al activar el primer CT comentado.
+
+---
+
+## H-S8-proveedores-ubicacion-incorrecta — Proveedor es CT, no C2
+
+### Detectado
+2026-04-20 (auditoría pre-deploy S8, rehidratación Claude Web).
+
+### Severidad
+**MEDIA-ALTA** — Bloquea limpieza arquitectónica futura. No bloquea deploy MP
+porque ya funciona operativamente.
+
+### Síntoma
+`apps.supply_chain.gestion_proveedores` vive físicamente bajo el paraguas
+`supply_chain/` (C2), pero conceptualmente es un dato maestro transversal:
+
+| Consumidor futuro | App | Capa | ¿Necesita Proveedor? |
+|---|---|---|---|
+| Supply Chain (hoy) | supply_chain.compras, recepcion, liquidaciones | C2 | Sí |
+| Admin Finance | administracion.presupuesto, tesoreria.tesoreria | C2 | Sí (pagos a proveedores) |
+| Logistics & Fleet | logistics_fleet.gestion_transporte | C2 | Sí (transportistas) |
+| Accounting | accounting.movimientos | C2 | Sí (terceros) |
+| HSEQ | hseq_management.gestion_comites | C2 | Parcial (contratistas) |
+
+Cuando el segundo C2 necesite consumirlo, Django obliga a `apps.get_model()` + IntegerField
+(patrón cross-C2 del CLAUDE.md), lo que pierde el grafo de relaciones y obliga a manejar
+integridad referencial a mano.
+
+La ubicación correcta según principio de capa: CT (Infraestructura transversal), al mismo
+nivel que `catalogo_productos`.
+
+### Solución propuesta (refactor planeado)
+Mover `supply_chain.gestion_proveedores/` → `catalogo_productos/proveedores/` o
+`apps/proveedores/` (raíz CT).
+
+Mudanza requiere:
+- Renombrar label Django en `apps.py` (`gestion_proveedores` → `proveedores` o mantener).
+- Data migration para actualizar `django_migrations.app` si cambia label.
+- Actualizar imports en consumidores internos (4 archivos en `supply_chain/`).
+- Actualizar imports en frontend si usa paths absolutos.
+- Actualizar `SIDEBAR_LAYERS`, `urls.py` del config, y `INSTALLED_APPS`.
+
+Rompe ~40 referencias; tests rescriben `apps.get_model('gestion_proveedores', ...)`.
+
+### Estado
+🔲 Abierto. Prioridad: S10-S12 (cuando se active el segundo C2 que consuma Proveedor,
+típicamente `administracion.tesoreria` o `logistics_fleet.gestion_transporte`).
+
+### Deuda interina (S8)
+Se conserva la ubicación actual por pragmatismo — el deploy MP no puede
+esperar la mudanza. Registrado aquí para no perder el contexto.
+
+---
+
+## H-S8-revision-direccion-coupling-eliminado — ✅ RESUELTO (2026-04-20)
+
+Cerrado en S8 commit `e51f8b56`.
+
+### Problema original
+`apps.supply_chain.gestion_proveedores.viewsets:66` importaba
+`ResumenRevisionMixin` desde `apps.gestion_estrategica.revision_direccion`
+(módulo comentado en `base.py:144`, NO-LIVE). `ProveedorViewSet` heredaba
+el mixin y sobrescribía `get_resumen_data()` — exponiendo un endpoint
+`GET /api/supply-chain/proveedores/resumen-revision/` que alimentaba al
+módulo futuro no-LIVE.
+
+Violaba la regla operativa "LIVE es la única verdad": código LIVE acoplado
+a app borrador. Además era cross-C2 conceptual (gestion_proveedores C2
+importando de revision_direccion C2), doble infracción.
+
+### Resolución
+Eliminados:
+- Import `ResumenRevisionMixin` en `viewsets.py:66`
+- Herencia del mixin en `class ProveedorViewSet` línea 174
+- Atributos `resumen_date_field`, `resumen_modulo_nombre` (líneas 198-200)
+- Método `get_resumen_data()` (líneas 202-237, 36 LOC)
+
+Verificado: cero consumidores del endpoint `resumen-revision` en backend
+y frontend (greps limpios).
+
+### Plan futuro
+Cuando `revision_direccion` se active (roadmap C3), el mecanismo de resumen
+se replantea desde el módulo correcto: C3 consumiendo vía API REST a los
+C2 (no C2 heredando mixin de C2).
+
+---
+
 ## Orden de ataque sugerido
 
 | # | Hallazgo | Estado | Razón del orden |
@@ -739,8 +999,14 @@ pidan la misma plantilla.
 | 14 | **H22 — Idempotencia Fase B** | ✅ RESUELTO (2026-04-10) | Pre-check validate_invariant antes de CREATE SCHEMA. |
 | 15 | **H23 — testing.py lee DB_NAME del env** | 🔲 PENDIENTE | Config frágil: test DB name depende de .env en vez de ser independiente. |
 | 16 | **H-S5-pwa-branding-unificado** | 🔲 PENDIENTE | Sin workaround por política. Scheduled para sprint Branding v2 post-S6 Supply Chain. |
+| 17 | **H-S8-sidebar-db-driven** | 🔲 PENDIENTE | Escalabilidad: SIDEBAR_LAYERS hardcoded en Python no escala. Trigger: antes de activar primer C2 post-supply_chain. |
+| 18 | **H-S8-catalogos-financieros-a-configuracion** | 🔲 PENDIENTE | Mover FormaPago + TipoCuentaBancaria a C1 cuando se active primer consumidor adicional (sales_crm/accounting/tesoreria). |
+| 19 | **H-S8-ct-disperso** | 🔲 PENDIENTE | Capa CT fragmentada en 3 ubicaciones. Decidir paraguas único `apps/infraestructura/` al activar el siguiente CT. |
+| 20 | **H-S8-proveedores-ubicacion-incorrecta** | 🔲 PENDIENTE | gestion_proveedores conceptualmente es CT, vive en C2 por pragmatismo. Mudanza S10-S12 al activar segundo consumidor. |
+| 21 | **H-S7-supply-chain-tabla-unidad-medida-huerfana** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 con migración `catalogos.0002_drop_unidad_medida_huerfana`. |
+| 22 | **H-S8-revision-direccion-coupling-eliminado** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 commit `e51f8b56`. Sin acoplamiento LIVE → NO-LIVE. |
 
-**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones).
+**Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones), H-S8-sidebar-db-driven (2-4 días), H-S8-catalogos-financieros (2 días).
 
 ---
 

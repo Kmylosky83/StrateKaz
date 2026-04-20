@@ -93,6 +93,31 @@ def compute_user_rbac(user):
         _collect_section_access(group_accesses, section_ids, permission_codes)
 
     # ---------------------------------------------------------------
+    # 4. Tab-level permission codes (derivados de sections autorizadas)
+    # ---------------------------------------------------------------
+    # Los guards de rutas FE (withFullGuard) pueden pasar tab_code como
+    # sectionCode — ej: withFullGuard(..., 'supply_chain', 'proveedores')
+    # donde 'proveedores' es un tab que contiene varias sub-sections.
+    #
+    # Si el user tiene al menos UNA sub-section del tab con can_view=True,
+    # damos acceso tab-level. Esto alinea la doctrina FE con el sidebar
+    # backend (que muestra el tab si cualquier sub-section es accesible).
+    if section_ids:
+        from apps.core.models import TabSection
+        tabs_authorized = TabSection.objects.filter(
+            id__in=section_ids,
+            is_enabled=True,
+        ).select_related('tab__module').values_list(
+            'tab__code', 'tab__module__code'
+        ).distinct()
+
+        for tab_code, module_code in tabs_authorized:
+            if tab_code and module_code:
+                permission_codes.add(
+                    f"{module_code.lower()}.{tab_code.lower()}.view"
+                )
+
+    # ---------------------------------------------------------------
     # Retornar como listas (compatible con API existente)
     # ---------------------------------------------------------------
     if not section_ids and not permission_codes:

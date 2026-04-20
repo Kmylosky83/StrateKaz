@@ -45,7 +45,7 @@ from .serializers_config import (
 
 
 # =============================================================================
-# SIDEBAR: Cascada V2 — 11 capas visuales (14 niveles lógicos)
+# SIDEBAR: Cascada V2 — 7 capas visuales LIVE (L0-L20, StrateKaz Core)
 # Orden = lógica de empresa colombiana (Planear → Hacer → Verificar → Actuar)
 # Frontend Sidebar.tsx renderiza en el orden recibido del backend.
 # Capas con 1 módulo → render directo (sin wrapper).
@@ -54,7 +54,7 @@ from .serializers_config import (
 # =============================================================================
 SIDEBAR_LAYERS = [
     # ═══════════════════════════════════════════════════════════════
-    # PLANEAR (P) — Constituir, documentar, vincular, planificar
+    # PLANEAR (P) — Constituir, documentar, vincular
     # ═══════════════════════════════════════════════════════════════
     {
         'code': 'NIVEL_FUNDACION',
@@ -81,60 +81,16 @@ SIDEBAR_LAYERS = [
         'phase': 'PLANEAR',
         'module_codes': ['mi_equipo'],
     },
-    {
-        # Planificación Operativa + Planeación Estratégica
-        'code': 'NIVEL_PLANIFICACION',
-        'name': 'Planificación',
-        'icon': 'Target',
-        'color': '#6366F1',
-        'phase': 'PLANEAR',
-        'module_codes': ['planificacion_operativa', 'planeacion_estrategica'],
-    },
     # ═══════════════════════════════════════════════════════════════
-    # HACER (H) — Proteger, operar, gestionar talento, soportar
+    # HACER (H) — Operar cadena de valor
     # ═══════════════════════════════════════════════════════════════
-    {
-        'code': 'NIVEL_PROTECCION',
-        'name': 'Protección y Cumplimiento',
-        'icon': 'ShieldCheck',
-        'color': '#F59E0B',
-        'phase': 'HACER',
-        'module_codes': ['proteccion_cumplimiento'],
-    },
-    {
-        'code': 'NIVEL_HSEQ',
-        'name': 'Gestión Integral',
-        'icon': 'Shield',
-        'color': '#10B981',
-        'phase': 'HACER',
-        'module_codes': ['gestion_integral'],
-    },
     {
         'code': 'NIVEL_CADENA',
         'name': 'Cadena de Valor',
         'icon': 'Package',
         'color': '#10B981',
         'phase': 'HACER',
-        'module_codes': [
-            'supply_chain', 'production_ops',
-            'logistics_fleet', 'sales_crm',
-        ],
-    },
-    {
-        'code': 'NIVEL_TALENTO',
-        'name': 'Gestión del Talento',
-        'icon': 'GraduationCap',
-        'color': '#8B5CF6',
-        'phase': 'HACER',
-        'module_codes': ['talent_hub'],
-    },
-    {
-        'code': 'NIVEL_SOPORTE',
-        'name': 'Soporte',
-        'icon': 'Building2',
-        'color': '#F59E0B',
-        'phase': 'HACER',
-        'module_codes': ['administracion', 'tesoreria', 'accounting'],
+        'module_codes': ['supply_chain'],
     },
     # ═══════════════════════════════════════════════════════════════
     # VERIFICAR + ACTUAR (V/A) — Medir, revisar, mejorar
@@ -145,7 +101,7 @@ SIDEBAR_LAYERS = [
         'icon': 'BarChart3',
         'color': '#8B5CF6',
         'phase': 'VERIFICAR_ACTUAR',
-        'module_codes': ['analytics', 'revision_direccion', 'acciones_mejora', 'audit_system'],
+        'module_codes': ['audit_system'],
     },
     # ═══════════════════════════════════════════════════════════════
     # TRANSVERSAL — Workflows (motor de ejecución) + Configuración

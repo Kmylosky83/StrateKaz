@@ -616,6 +616,57 @@ Sprint de limpieza DB (sin urgencia).
 
 ---
 
+## H-S7-rbac-v5-refactor — Separar Navigation de Permissions + Permission Templates
+
+### Detectado
+2026-04-19 (S7 — análisis arquitectónico tras bug de tab_code vs section_code)
+
+### Severidad
+**MEDIA-ALTA** — No bloquea funcionalidad actual (fix táctico `7d81d63f`
+aplicado) pero acumula deuda cada vez que se libera un módulo nuevo.
+
+### Síntoma
+El modelo RBAC v4.1 acopla 3 conceptos que el mercado profesional separa:
+1. **Permission unit = Menu node** (`TabSection`): cambiar UX del sidebar
+   afecta permisos
+2. **Nivel jerárquico → permisos default**: metadata organizacional
+   decide authorization (un OPERATIVO no puede crear aunque el negocio
+   lo requiera)
+3. **Sin `PermissionTemplate` reutilizable**: 10 cargos con mismos
+   permisos = 10 configuraciones individuales
+
+### Evidencia
+- Bug en rutas FE `supply-chain.routes.tsx`: pasaban tab_code como
+  sectionCode → `compute_user_rbac` no generaba tab-level codes →
+  usuarios con RBAC completo veían "Sin acceso"
+- Fix táctico (commit `7d81d63f`): enriquecer `permission_codes` con
+  tab-level codes. Desbloqueó la situación pero no resuelve el
+  acoplamiento subyacente.
+- Camilo observación (2026-04-19): *"el nivel del cargo no debería
+  solapar el control RBAC, eso es innecesario y confuso"*
+
+### Solución (v5.0)
+Implementar arquitectura **Hybrid RBAC + Permission Templates + Nav
+Separation** inspirada en Salesforce/Odoo/Workday:
+- `Permission`: capability flat (`supply_chain.proveedor.create`)
+- `PermissionTemplate`: role reutilizable (N cargos : 1 template)
+- `Cargo`: estructura organizacional + FK a template
+- `nivel_jerarquico`: metadata PURA (organigrama, reporting, nómina)
+- Navigation layout en archivo config separado (YAML/JSON),
+  independiente de permissions
+
+**Ver plan detallado:** [docs/architecture/RBAC-V5-ROADMAP.md](RBAC-V5-ROADMAP.md)
+
+### Duración estimada
+4-5 días de un dev enfocado (5 fases A-E).
+
+### Trigger
+**CRÍTICO:** ejecutar antes del Sprint S8 (activación Production Ops).
+Cada módulo C2 liberado bajo v4.1 acumula deuda arquitectónica.
+Esperar a Sales CRM o HSEQ multiplica el trabajo del refactor.
+
+---
+
 ## Orden de ataque sugerido
 
 | # | Hallazgo | Estado | Razón del orden |

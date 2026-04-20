@@ -477,11 +477,11 @@ class Proveedor(TenantModel):
 
 class PrecioMateriaPrima(TenantModel):
     """
-    Precio vigente por Proveedor × (Materia Prima legacy / Producto catálogo).
+    Precio vigente por Proveedor × Producto (catalogo_productos canónico).
 
-    Coexistencia (D3): el registro puede apuntar a TipoMateriaPrima (legado)
-    y/o a Producto del catálogo maestro. Al menos uno debe estar presente.
-    Los cambios históricos se registran en HistorialPrecioProveedor.
+    Cada proveedor de materia prima tiene exactamente un registro de precio
+    por producto que suministra. Los cambios históricos se registran en
+    HistorialPrecioProveedor.
     """
     proveedor = models.ForeignKey(
         Proveedor,
@@ -492,8 +492,6 @@ class PrecioMateriaPrima(TenantModel):
     producto = models.ForeignKey(
         'catalogo_productos.Producto',
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name='precios_proveedor',
         verbose_name='Producto del catálogo',
         help_text='Producto maestro del catalogo_productos (tipo=MATERIA_PRIMA)',

@@ -8,6 +8,9 @@ Crea los catálogos base necesarios para el funcionamiento del módulo:
 - Formas de Pago (Contado, Transferencia, Crédito, etc.)
 - Tipos de Cuenta Bancaria (Ahorros, Corriente)
 - Modalidades Logísticas (Entrega en planta, etc.)
+- Categorías de Materia Prima (genéricas industria)
+- Tipos de Materia Prima (ejemplos genéricos por categoría)
+- Tipos de Almacén (bodega, silo, tanque, etc.)
 - Departamentos de Colombia (33 departamentos)
 - Ciudades principales por departamento
 
@@ -73,7 +76,22 @@ class Command(BaseCommand):
         total_created += c
         total_updated += u
 
-        # 6. Departamentos y Ciudades
+        # 6. Categorías de Materia Prima
+        c, u = self._seed_categoria_materia_prima(dry_run)
+        total_created += c
+        total_updated += u
+
+        # 7. Tipos de Materia Prima (requiere categorías del paso anterior)
+        c, u = self._seed_tipo_materia_prima(dry_run)
+        total_created += c
+        total_updated += u
+
+        # 8. Tipos de Almacén
+        c, u = self._seed_tipo_almacen(dry_run)
+        total_created += c
+        total_updated += u
+
+        # 9. Departamentos y Ciudades
         if not skip_geo:
             c, u = self._seed_departamentos(dry_run)
             total_created += c
@@ -210,6 +228,90 @@ class Command(BaseCommand):
             {'codigo': 'CORRIENTE', 'nombre': 'Cuenta Corriente', 'orden': 2},
         ]
         return self._seed_model(TipoCuentaBancaria, data, 'Tipos de Cuenta Bancaria', dry_run)
+
+    def _seed_categoria_materia_prima(self, dry_run):
+        from apps.supply_chain.gestion_proveedores.models import CategoriaMateriaPrima
+        data = [
+            {'codigo': 'GRASAS_ACEITES', 'nombre': 'Grasas y Aceites', 'descripcion': 'Grasas animales, aceites vegetales, derivados lipídicos', 'orden': 1},
+            {'codigo': 'HUESOS_SUBPRODUCTOS', 'nombre': 'Huesos y Subproductos', 'descripcion': 'Huesos, harina de hueso, calcio y subproductos óseos', 'orden': 2},
+            {'codigo': 'PIELES_CUEROS', 'nombre': 'Pieles y Cueros', 'descripcion': 'Pieles crudas, cueros en proceso, subproductos dérmicos', 'orden': 3},
+            {'codigo': 'QUIMICOS_INSUMOS', 'nombre': 'Químicos e Insumos', 'descripcion': 'Productos químicos industriales, insumos de proceso', 'orden': 4},
+            {'codigo': 'EMPAQUES', 'nombre': 'Empaques', 'descripcion': 'Material de empaque, envases, etiquetas', 'orden': 5},
+            {'codigo': 'OTROS', 'nombre': 'Otros', 'descripcion': 'Otras categorías no clasificadas', 'orden': 99},
+        ]
+        return self._seed_model(CategoriaMateriaPrima, data, 'Categorías de Materia Prima', dry_run)
+
+    def _seed_tipo_materia_prima(self, dry_run):
+        from apps.supply_chain.gestion_proveedores.models import TipoMateriaPrima, CategoriaMateriaPrima
+
+        self.stdout.write('\n--- Tipos de Materia Prima ---')
+        created = 0
+        updated = 0
+
+        # Mapear categorías por código
+        try:
+            cats = {c.codigo: c for c in CategoriaMateriaPrima.objects.all()}
+        except Exception:
+            cats = {}
+
+        data = [
+            ('SEBO_BOVINO_CRUDO', 'Sebo Bovino Crudo', 'GRASAS_ACEITES', 1),
+            ('SEBO_PORCINO', 'Sebo Porcino', 'GRASAS_ACEITES', 2),
+            ('GRASA_AVE', 'Grasa de Ave', 'GRASAS_ACEITES', 3),
+            ('ACEITE_VEGETAL', 'Aceite Vegetal', 'GRASAS_ACEITES', 4),
+            ('HUESO_BOVINO', 'Hueso Bovino', 'HUESOS_SUBPRODUCTOS', 5),
+            ('HUESO_PORCINO', 'Hueso Porcino', 'HUESOS_SUBPRODUCTOS', 6),
+            ('HARINA_HUESO', 'Harina de Hueso', 'HUESOS_SUBPRODUCTOS', 7),
+            ('CUERO_CRUDO', 'Cuero Crudo', 'PIELES_CUEROS', 8),
+            ('PIEL_PORCINA', 'Piel Porcina', 'PIELES_CUEROS', 9),
+            ('SODA_CAUSTICA', 'Soda Cáustica', 'QUIMICOS_INSUMOS', 10),
+            ('CAJA_CARTON', 'Caja de Cartón', 'EMPAQUES', 11),
+            ('TAMBOR_PLASTICO', 'Tambor Plástico', 'EMPAQUES', 12),
+        ]
+
+        for codigo, nombre, cat_codigo, orden in data:
+            categoria = cats.get(cat_codigo)
+            if categoria is None and not dry_run:
+                self.stdout.write(self.style.WARNING(
+                    f'   [!] Categoría {cat_codigo} no encontrada, omitiendo {codigo}'
+                ))
+                continue
+
+            defaults = {
+                'nombre': nombre,
+                'categoria': categoria,
+                'orden': orden,
+                'is_active': True,
+            }
+            if not dry_run:
+                _, was_created = TipoMateriaPrima.objects.update_or_create(
+                    codigo=codigo,
+                    defaults=defaults,
+                )
+                if was_created:
+                    created += 1
+                else:
+                    updated += 1
+            else:
+                exists = TipoMateriaPrima.objects.filter(codigo=codigo).exists()
+                if exists:
+                    updated += 1
+                else:
+                    created += 1
+
+        self.stdout.write(self.style.SUCCESS(f'   Creados: {created} | Actualizados: {updated}'))
+        return created, updated
+
+    def _seed_tipo_almacen(self, dry_run):
+        from apps.supply_chain.catalogos.models import TipoAlmacen
+        data = [
+            {'codigo': 'BODEGA', 'nombre': 'Bodega', 'descripcion': 'Bodega cerrada de uso general', 'icono': 'Warehouse', 'orden': 1},
+            {'codigo': 'TANQUE', 'nombre': 'Tanque', 'descripcion': 'Tanque para almacenamiento de líquidos', 'icono': 'Cylinder', 'orden': 2},
+            {'codigo': 'SILO', 'nombre': 'Silo', 'descripcion': 'Silo para material a granel', 'icono': 'Container', 'orden': 3},
+            {'codigo': 'PATIO', 'nombre': 'Patio de Acopio', 'descripcion': 'Área al aire libre para acopio', 'icono': 'Square', 'orden': 4},
+            {'codigo': 'CONTENEDOR', 'nombre': 'Contenedor', 'descripcion': 'Contenedor cerrado trasladable', 'icono': 'Box', 'orden': 5},
+        ]
+        return self._seed_model(TipoAlmacen, data, 'Tipos de Almacén', dry_run)
 
     def _seed_modalidad_logistica(self, dry_run):
         from apps.supply_chain.gestion_proveedores.models import ModalidadLogistica

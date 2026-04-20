@@ -694,8 +694,12 @@ class ProveedorViewSet(viewsets.ModelViewSet):
             calificacion_total__isnull=False,
         ).aggregate(promedio=Avg('calificacion_total'))['promedio']
 
-        # Total materias primas únicas
-        total_materias = TipoMateriaPrima.objects.filter(is_active=True).count()
+        # Total materias primas (canonico: catalogo_productos.Producto con tipo=MATERIA_PRIMA)
+        from apps.catalogo_productos.models import Producto
+        total_materias = Producto.objects.filter(
+            tipo='MATERIA_PRIMA',
+            is_deleted=False,
+        ).count()
 
         return Response({
             'total_proveedores': total,

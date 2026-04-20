@@ -405,8 +405,18 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """
-        Soft delete (is_active=False) — el cargo desaparece de listados
-        pero permanece en BD para que el seed no lo recree.
+        Hard delete — el cargo se elimina permanentemente de la BD.
+
+        Seguro con doctrina "tenant soberano post-setup": el seed de cargos
+        ya no corre en el pipeline automatico (deploy_seeds_all_tenants),
+        por lo que eliminar un cargo NO lo recrea en el proximo deploy.
+
+        Bloqueos de integridad:
+        - Si tiene usuarios activos asignados -> bloquear con error.
+        - Si tiene vacantes activas sin candidatos -> cancelar en cascade.
+
+        Para "desactivar sin eliminar" usar el endpoint /toggle/ que
+        cambia is_active sin borrar el registro.
         """
         # Verificar si tiene usuarios asignados
         users_count = instance.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
@@ -433,9 +443,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
 
-        # Soft delete — desaparece de listados, seed no lo recrea
-        instance.is_active = False
-        instance.save(update_fields=['is_active'])
+        # Hard delete — borra permanentemente de la BD.
+        # CargoSectionAccess y demas FKs cascadean segun on_delete del modelo.
+        instance.delete()
 
     @action(detail=False, methods=['post'])
     @transaction.atomic

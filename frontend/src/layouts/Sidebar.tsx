@@ -7,7 +7,7 @@
  * - Colores neutros base con acento sutil en estado activo
  * - Control granular: desactivar módulo/tab en Config → desaparece del sidebar
  */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { DEFAULT_TENANT_COLORS } from '@/constants/defaults';
@@ -59,13 +59,19 @@ const getIconComponent = (iconName?: string | null): React.ElementType => {
 /**
  * Componente recursivo para renderizar items de navegación.
  * Diseño profesional: colores neutros, acento primary en activo.
+ *
+ * Performance (2026-04-21):
+ *   - Recibe `pathname: string` en lugar de `location` (objeto) para que
+ *     React.memo compare solo el string, no la identidad del objeto.
+ *   - Envuelto en React.memo para evitar re-renders cuando la ruta no
+ *     afecta a esta rama del árbol.
  */
 interface NavItemComponentProps {
   item: SidebarModule;
   isCollapsed: boolean;
   expandedItems: string[];
   toggleExpanded: (code: string) => void;
-  location: ReturnType<typeof useLocation>;
+  pathname: string;
   depth?: number;
 }
 
@@ -75,12 +81,12 @@ const CollapsedTooltip = ({ name }: { name: string }) => (
   </div>
 );
 
-const NavItemComponent = ({
+const NavItemComponentInner = ({
   item,
   isCollapsed,
   expandedItems,
   toggleExpanded,
-  location,
+  pathname,
   depth = 0,
 }: NavItemComponentProps) => {
   const Icon = getIconComponent(item.icon);
@@ -90,12 +96,12 @@ const NavItemComponent = ({
   const isActive = useMemo(() => {
     const matchesRoute = (route: string | undefined | null) => {
       if (!route) return false;
-      return location.pathname === route || location.pathname.startsWith(route + '/');
+      return pathname === route || pathname.startsWith(route + '/');
     };
     if (item.route && matchesRoute(item.route)) return true;
     if (item.children) return item.children.some((child) => matchesRoute(child.route));
     return false;
-  }, [item, location.pathname]);
+  }, [item, pathname]);
 
   // ── Categoría (grupo de módulos) — TIER 0: label estructural ──
   // Patrón: Material Design / Atlassian / Fluent UI
@@ -138,7 +144,7 @@ const NavItemComponent = ({
                 isCollapsed={isCollapsed}
                 expandedItems={expandedItems}
                 toggleExpanded={toggleExpanded}
-                location={location}
+                pathname={pathname}
                 depth={depth + 1}
               />
             ))}
@@ -193,7 +199,7 @@ const NavItemComponent = ({
                 isCollapsed={isCollapsed}
                 expandedItems={expandedItems}
                 toggleExpanded={toggleExpanded}
-                location={location}
+                pathname={pathname}
                 depth={depth + 1}
               />
             ))}
@@ -205,8 +211,7 @@ const NavItemComponent = ({
 
   // ── Item simple (hoja) — Link navegable ──
   const isItemActive =
-    item.route &&
-    (location.pathname === item.route || location.pathname.startsWith(item.route + '/'));
+    item.route && (pathname === item.route || pathname.startsWith(item.route + '/'));
 
   return (
     <Link
@@ -233,6 +238,10 @@ const NavItemComponent = ({
   );
 };
 
+// React.memo con comparación shallow — evita re-render de toda la rama del
+// sidebar cuando el único cambio es pathname en una rama no activa.
+const NavItemComponent = memo(NavItemComponentInner);
+
 export const Sidebar = ({
   isCollapsed,
   isMobile = false,
@@ -241,6 +250,7 @@ export const Sidebar = ({
   impersonationOffset = false,
 }: SidebarProps) => {
   const location = useLocation();
+  const pathname = location.pathname;
   const navigate = useNavigate();
   // Consolidado en 2 suscripciones (en vez de 8) para reducir useSyncExternalStore subscribers
   const { user, currentTenantId, currentTenant, accessibleTenants, isSuperadmin } = useAuthStore(
@@ -296,41 +306,42 @@ export const Sidebar = ({
   // Estado para items expandidos - inicializar dinámicamente
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Expandir automáticamente el módulo activo al cargar
+  // Expandir automáticamente el módulo activo al cargar.
+  // Optimización 2026-04-21: solo setear estado si realmente hay un nuevo código
+  // a agregar, para evitar re-renders innecesarios en cada navegación.
   useEffect(() => {
-    if (sidebarModules && location.pathname) {
-      const activeModules: string[] = [];
+    if (!sidebarModules || !pathname) return;
+    const activeModules: string[] = [];
 
-      const findActiveParents = (items: SidebarModule[], parents: string[] = []) => {
-        for (const item of items) {
-          const currentPath = [...parents, item.code];
-
-          // Match exacto o con subruta (evita falsos positivos)
-          if (
-            item.route &&
-            (location.pathname === item.route || location.pathname.startsWith(item.route + '/'))
-          ) {
-            activeModules.push(...parents);
-          }
-
-          if (item.children) {
-            findActiveParents(item.children, currentPath);
-          }
+    const findActiveParents = (items: SidebarModule[], parents: string[] = []) => {
+      for (const item of items) {
+        const currentPath = [...parents, item.code];
+        if (item.route && (pathname === item.route || pathname.startsWith(item.route + '/'))) {
+          activeModules.push(...parents);
         }
-      };
-
-      findActiveParents(sidebarModules);
-      if (activeModules.length > 0) {
-        setExpandedItems((prev) => [...new Set([...prev, ...activeModules])]);
+        if (item.children) findActiveParents(item.children, currentPath);
       }
-    }
-  }, [sidebarModules, location.pathname]);
+    };
 
-  const toggleExpanded = (code: string) => {
+    findActiveParents(sidebarModules);
+    if (activeModules.length === 0) return;
+
+    setExpandedItems((prev) => {
+      // Solo actualizar si hay codes nuevos que no estén ya expandidos
+      const prevSet = new Set(prev);
+      const missing = activeModules.filter((c) => !prevSet.has(c));
+      if (missing.length === 0) return prev; // referencia idéntica → no re-render
+      return [...prev, ...missing];
+    });
+  }, [sidebarModules, pathname]);
+
+  // useCallback para mantener referencia estable → React.memo en NavItemComponent
+  // no se invalida por este prop en cada render del Sidebar.
+  const toggleExpanded = useCallback((code: string) => {
     setExpandedItems((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
     );
-  };
+  }, []);
 
   // Sidebar siempre neutro: blanco en light, gris oscuro en dark
   const sidebarBaseClasses = cn(
@@ -611,7 +622,7 @@ export const Sidebar = ({
                 isCollapsed={effectiveCollapsed}
                 expandedItems={expandedItems}
                 toggleExpanded={toggleExpanded}
-                location={location}
+                pathname={pathname}
               />
             ))}
 

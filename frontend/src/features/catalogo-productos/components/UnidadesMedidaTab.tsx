@@ -12,6 +12,9 @@ import { FormModal } from '@/components/modals/FormModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 
+import { useSectionPermissions } from '@/components/common/ProtectedAction';
+import { Modules, Sections } from '@/constants/permissions';
+
 import {
   useUnidadesMedida,
   useCreateUnidadMedida,
@@ -30,6 +33,12 @@ export default function UnidadesMedidaTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<UnidadMedida | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // RBAC granular
+  const { canCreate, canEdit, canDelete } = useSectionPermissions(
+    Modules.CATALOGO_PRODUCTOS,
+    Sections.GESTION_UNIDADES
+  );
 
   const { data: unidades = [], isLoading } = useUnidadesMedida();
   const createMutation = useCreateUnidadMedida();
@@ -94,10 +103,12 @@ export default function UnidadesMedidaTab() {
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          Nueva unidad
-        </Button>
+        {canCreate && (
+          <Button onClick={openCreate} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            Nueva unidad
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -154,10 +165,12 @@ export default function UnidadesMedidaTab() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {!u.is_system && (
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && !u.is_system && (
                           <Button variant="ghost" size="sm" onClick={() => setDeletingId(u.id)}>
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>

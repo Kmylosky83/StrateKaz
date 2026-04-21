@@ -192,6 +192,11 @@ export const Sections = {
   CATALOGOS_SC: 'catalogos_sc',
   PROVEEDORES: 'proveedores',
 
+  // ── CATÁLOGO DE PRODUCTOS (CT) ──
+  GESTION_PRODUCTOS: 'gestion_productos',
+  GESTION_CATEGORIAS: 'gestion_categorias',
+  GESTION_UNIDADES: 'gestion_unidades',
+
   // ── PRODUCTION OPS ──
   RECEPCION_MP: 'recepcion_mp',
   ORDENES_PRODUCCION: 'ordenes_produccion',

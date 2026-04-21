@@ -13,6 +13,9 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 
+import { useSectionPermissions } from '@/components/common/ProtectedAction';
+import { Modules, Sections } from '@/constants/permissions';
+
 import {
   useProductos,
   useCreateProducto,
@@ -42,6 +45,12 @@ export default function ProductosTab() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [codigoManual, setCodigoManual] = useState(false);
   const [showOpcionales, setShowOpcionales] = useState(false);
+
+  // RBAC granular
+  const { canCreate, canEdit, canDelete } = useSectionPermissions(
+    Modules.CATALOGO_PRODUCTOS,
+    Sections.GESTION_PRODUCTOS
+  );
 
   const { data: productos = [], isLoading } = useProductos();
   const { data: categorias = [] } = useCategorias();
@@ -125,10 +134,12 @@ export default function ProductosTab() {
   return (
     <>
       <div className="flex justify-end mb-4">
-        <Button onClick={openCreate} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          Nuevo producto
-        </Button>
+        {canCreate && (
+          <Button onClick={openCreate} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            Nuevo producto
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -187,12 +198,16 @@ export default function ProductosTab() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeletingId(p.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => setDeletingId(p.id)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

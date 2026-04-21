@@ -6,6 +6,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.permissions import GranularActionPermission
+
 from .filters import CategoriaProductoFilter, UnidadMedidaFilter, ProductoFilter
 from .models import CategoriaProducto, UnidadMedida, Producto
 from .serializers import (
@@ -27,7 +29,8 @@ class CategoriaProductoViewSet(viewsets.ModelViewSet):
     """CRUD de categorías de productos."""
 
     serializer_class = CategoriaProductoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'gestion_categorias'
     filterset_class = CategoriaProductoFilter
     search_fields = ['nombre', 'codigo']
     ordering_fields = ['nombre', 'orden', 'created_at']
@@ -52,7 +55,8 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
     """CRUD de unidades de medida."""
 
     serializer_class = UnidadMedidaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'gestion_unidades'
     filterset_class = UnidadMedidaFilter
     search_fields = ['nombre', 'abreviatura']
     ordering_fields = ['nombre', 'tipo', 'orden']
@@ -77,7 +81,9 @@ class ProductoViewSet(viewsets.ModelViewSet):
     """CRUD de productos maestros."""
 
     serializer_class = ProductoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'gestion_productos'
+    granular_action_map = {'estadisticas': 'can_view'}
     filterset_class = ProductoFilter
     search_fields = ['nombre', 'codigo', 'sku']
     ordering_fields = ['nombre', 'codigo', 'tipo', 'created_at']

@@ -17,6 +17,6 @@ django-extensions==4.1
 # Testing
 factory-boy>=3.3,<4
 Faker>=22,<50
-pytest>=9,<10
+pytest>=9.0.3,<10
 pytest-cov>=6,<7
 pytest-django>=4.7,<5

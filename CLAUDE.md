@@ -30,7 +30,7 @@ StrateKaz es una **Plataforma de Gestion Empresarial 360°** multi-tenant + Cons
 
 **Dominio:** stratekaz.com | **App:** app.stratekaz.com
 **Hosting:** VPS Hostinger (Nginx + Gunicorn + PostgreSQL + Redis + Celery)
-**Versiones:** 5.1.0 (frontend) | 3.7.1 (root package) | API 4.0.0 (drf-spectacular)
+**Versiones:** 5.9.0 (frontend) | 5.4.0 (API) | 3.7.1 (root package)
 **Idioma del sistema:** Espanol (es-co)
 
 ---
@@ -112,66 +112,33 @@ Contexto completo del cambio de estrategia esta en la seccion "Estrategia actual
 
 ## Stack Tecnologico
 
+Quick-ref versiones clave para generacion de codigo:
+
 | Capa | Tecnologia | Version |
 |------|-----------|---------|
 | Backend | Django + DRF | 5.0.9 / 3.14.0 |
-| Frontend | React + TypeScript | 18.2 / 5.3 |
-| Build Tool | Vite | 5.x |
-| CSS | Tailwind CSS | 3.4 |
-| State (server) | TanStack React Query | 5.14 |
-| State (client) | Zustand | 4.4.7 |
-| Forms | React Hook Form + Zod | 7.49 / 3.22 |
-| Charts | ECharts + Recharts | 6.0 / 2.15 |
-| Icons | Lucide React | 0.468+ |
-| Tables | TanStack React Table | 8.21 |
-| Rich Text | TipTap | 3.15 |
-| Animations | Framer Motion | 12.23 |
-| DB | PostgreSQL (django-tenants) | 15 |
-| Cache/Broker | Redis | 7.x |
-| Task Queue | Celery + Beat | 5.3.6 |
-| Monitoring | Flower, Sentry | 2.0.1 / 2.20 |
-| API Docs | drf-spectacular (OpenAPI) | 0.27 |
-| Testing | pytest + Vitest | 9.x / 1.x |
-| Linting | Black + Ruff / ESLint + Prettier | - |
-| Auth | JWT (SimpleJWT) | 5.3.0 |
 | Multi-tenant | django-tenants | 3.10.0 |
-| PDF | WeasyPrint + jsPDF | 60.1 / 2.5 |
-| 3D | Three.js + React Three Fiber | 0.170 / 8.17 |
-| Diagrams | @xyflow/react | 12.10 |
-| PWA | vite-plugin-pwa | 1.2 |
+| Auth | JWT (SimpleJWT) | 5.3.0 |
+| Frontend | React + TypeScript | 18.2 / 5.3 |
+| Build | Vite | 5.x |
+| CSS + Icons | Tailwind CSS + Lucide React | 3.4 / 0.468+ |
+| State | TanStack Query v5 + Zustand | 5.14 / 4.4.7 |
+| Forms | React Hook Form + Zod | 7.49 / 3.22 |
+| PDF | WeasyPrint + jsPDF | **60.1** / 2.5 ← PINNEADO, no actualizar |
+| DB / Cache | PostgreSQL + Redis | 15 / 7.x |
+
+Versiones completas de todas las dependencias: `docs/01-arquitectura/stack.md`
 
 ---
 
 ## Estructura del Proyecto
 
-```
-StrateKaz/
-├── backend/                  # Django REST API
-│   ├── config/              # Settings modulares (base/development/production/testing)
-│   ├── apps/                # 16 modulos Django (~84 apps) — ver Arquitectura abajo
-│   ├── utils/               # Base models, logging, cache, validators
-│   └── requirements.txt     # Python dependencies
-├── frontend/                # React SPA
-│   ├── src/
-│   │   ├── api/             # API clients (axios-config, auth, tenant, users)
-│   │   ├── components/      # Shared components (100+ en common/forms/layout/modals)
-│   │   ├── constants/       # modules, permissions, brand, ui-labels
-│   │   ├── features/        # 22 feature modules (642+ files)
-│   │   ├── hooks/           # 19 custom hooks
-│   │   ├── layouts/         # DashboardLayout, Sidebar, Header
-│   │   ├── lib/             # API factory, CRUD hooks factory, query-keys, animations
-│   │   ├── pages/           # Login, Dashboard, Error, NotFound
-│   │   ├── routes/          # React Router config
-│   │   ├── store/           # Zustand (authStore, themeStore)
-│   │   ├── types/           # TypeScript type definitions
-│   │   └── utils/           # formatters, dateUtils, cn
-│   └── vite.config.ts       # PWA, proxy, path aliases
-├── marketing_site/          # Landing page (standalone React app)
-├── docs/                    # Documentacion exhaustiva (47 archivos)
-├── scripts/                 # Deploy, backup, verification scripts
-├── docker-compose.yml       # Dev environment
-└── Makefile                 # Development commands
-```
+- `backend/` — Django REST API: `apps/` (~84 apps), `config/settings/`, `utils/` (base models)
+- `frontend/src/` — React SPA: `features/` (22 módulos), `components/` (Design System), `lib/` (factories), `api/`, `hooks/`, `store/`
+- `docs/` — Documentación técnica completa (ver `docs/01-arquitectura/INDEX.md`)
+- `scripts/` — Deploy, backup, verificación
+
+Árbol completo del repositorio: `docs/01-arquitectura/estructura.md`
 
 ---
 
@@ -238,27 +205,7 @@ su capa. Roadmap: migrar `SIDEBAR_LAYERS` a DB (hallazgo `H-S8-sidebar-db-driven
 
 ### Apps Django por modulo backend
 
-| Capa | Modulo Django | Sub-apps |
-|------|--------------|----------|
-| C0 | core | users, rbac, menu, middleware, permissions |
-| C0 | tenant | schemas, domains, plans |
-| C0 | audit_system | logs_sistema, config_alertas, centro_notificaciones, tareas_recordatorios |
-| C1 | gestion_estrategica | configuracion, organizacion, identidad, contexto |
-| CT | gestion_estrategica | gestion_documental (7 modelos, 8 fases) |
-| CT | workflow_engine | disenador_flujos, ejecucion, monitoreo, firma_digital |
-| C2 | gestion_estrategica | planeacion, encuestas, gestion_proyectos, planificacion_sistema |
-| C2 | gestion_estrategica | revision_direccion (UI en C3) |
-| C2 | motor_cumplimiento | matriz_legal, requisitos_legales, reglamentos_internos, evidencias |
-| C2 | motor_riesgos | riesgos_procesos, ipevr, aspectos_ambientales, riesgos_viales, seguridad_informacion, sagrilaft_ptee |
-| C2 | hseq_management | accidentalidad, seguridad_industrial, higiene_industrial, medicina_laboral, emergencias, gestion_ambiental, gestion_comites |
-| C2 | supply_chain | catalogos, gestion_proveedores, compras, almacenamiento, programacion_abastecimiento |
-| C2 | production_ops | recepcion, procesamiento, producto_terminado, mantenimiento |
-| C2 | logistics_fleet | gestion_flota, gestion_transporte |
-| C2 | sales_crm | gestion_clientes, pipeline_ventas, pedidos_facturacion, servicio_cliente |
-| C2 | talent_hub | estructura_cargos, seleccion_contratacion, colaboradores, onboarding_induccion, formacion_reinduccion, desempeno, control_tiempo, novedades, proceso_disciplinario, nomina, off_boarding |
-| C2 | admin_finance | presupuesto, tesoreria, activos_fijos, servicios_generales |
-| C2 | accounting | config_contable, movimientos, informes_contables, integracion |
-| C3 | analytics | config_indicadores, indicadores_area, acciones_indicador, dashboard_gerencial, generador_informes, analisis_tendencias, exportacion_integracion |
+Inventario completo capa → módulo → sub-apps: `docs/01-arquitectura/apps-django.md`
 
 ---
 
@@ -500,15 +447,8 @@ en bloque.
 
 ## Documentacion
 
-```
-docs/
-├── 01-arquitectura/       # INDEX, estructura, capas, stack, multi-tenant, rbac-sistema, base-de-datos, source-of-truth, perimetro-live, hallazgos-pendientes y más. Ver INDEX.md.
-├── 02-desarrollo/         # API endpoints, auth, convenciones, testing, logging, snippets
-│   ├── backend/           # Branding dinamico, integraciones, workflows/firmas
-│   └── frontend/          # Design system, hooks, layout, iconos, React Query, navegacion
-├── 03-modulos/            # Guias por modulo (planeacion, riesgos, talent-hub)
-└── 04-devops/             # Docker, GitHub Actions, Celery/Redis, deploy checklist
-```
+Ver `docs/01-arquitectura/INDEX.md` para el mapa de entrada a la arquitectura.
+Estructura completa de `docs/`: `docs/01-arquitectura/estructura.md` (sección docs/).
 
 ---
 
@@ -658,13 +598,14 @@ vivir solo ahi.
 | Tipo | Destino | Ejemplo |
 |------|---------|---------|
 | Arquitectura, decisiones, patrones | `docs/01-arquitectura/` | seguridad.md |
+| Hallazgos arquitectónicos (H-XX) | `docs/01-arquitectura/hallazgos-pendientes.md` | entrada H-XX |
 | Convenciones de desarrollo | `docs/02-desarrollo/` | coding-standards.md |
 | Conocimiento por modulo | `docs/03-modulos/<modulo>/` | plantillas-sgi.md |
 | Deploy, operaciones, capacidad | `docs/04-devops/` | deploy.md, capacity-planning.md |
-| Auditorias historicas | `docs/auditorias/` | audit-lifecycle-2026-03-26.md |
 | Conocimiento de negocio | `docs/05-negocio/` | brand-identity.md, pricing-plans.md |
 | Historial de sprints, pitfalls | `docs/history/` | sprint-history.md, pitfalls.md |
-| Hallazgos arquitectonicos | `docs/01-arquitectura/` | hallazgos-pendientes.md |
+| **Logs de sesión de desarrollo** | **`docs/auditorias/history/`** | 2026-04-20-titulo.md |
+| Auditorias tecnicas puntuales | `docs/auditorias/YYYY-MM/` | audit-lifecycle-2026-03-26.md |
 | Inventario L0-L20 | `docs/auditorias/2026-04/inventory/` | L0-INDEX.md |
 
 ### Que se queda en auto-memory (scratch pad)
@@ -677,10 +618,13 @@ vivir solo ahi.
 ### Regla al cierre de sesion
 
 Si durante una sesion se creo conocimiento nuevo:
-1. Decisiones/arquitectura → crear directamente en `docs/`
-2. Leccion aprendida → agregar a `docs/history/pitfalls.md`
-3. Sprint cerrado → agregar a `docs/history/sprint-history.md`
-4. Instruccion para Claude → se queda en auto-memory
+1. Log de sesion → crear en `docs/auditorias/history/YYYY-MM-DD-titulo.md`
+2. Decisiones/arquitectura → crear directamente en el directorio correcto de `docs/`
+3. Leccion aprendida → agregar a `docs/history/pitfalls.md`
+4. Sprint cerrado → agregar a `docs/history/sprint-history.md`
+5. Instruccion para Claude → se queda en auto-memory
+
+Protocolo completo de cierre: `.claude/commands/cerrar-sesion.md` (incluye tabla de routing documental).
 
 **NUNCA crear archivos de conocimiento durable en auto-memory.**
 Crearlos directamente en `docs/` desde el inicio.

@@ -1,6 +1,94 @@
-# Perímetro LIVE — Estado al 2026-04-19 (post-S6)
+# Perímetro LIVE — StrateKaz
+**Última actualización:** 2026-04-20
+**Fuente de verdad:** `backend/config/settings/base.py` TENANT_APPS
 
-## Principio rector
+---
+
+## Definición de "módulo"
+
+En este proyecto coexisten dos definiciones:
+
+1. **App Django** — cualquier entrada en `TENANT_APPS` (granular, a nivel de sub-app).
+   Ejemplo: `apps.supply_chain.gestion_proveedores` es una app Django, no "supply_chain".
+
+2. **Módulo de negocio / SystemModule** — entidad registrada en la tabla `core.SystemModule`
+   via seed, con un `code` único (ej: `supply_chain`, `mi_equipo`). Es la unidad que el
+   sidebar, el licensing comercial y el RBAC usan para control de acceso.
+
+El inventario de este archivo usa "módulo" en el sentido de SystemModule (negocio),
+no de app Django individual.
+
+## Resumen
+- Total módulos de negocio LIVE: 5 (fundacion, gestion_documental, catalogo_productos, mi_equipo, supply_chain)
+- Total apps Django activas en TENANT_APPS: ~28
+- Total apps Django dormidas (comentadas): ~55
+- Nivel máximo activo (cascada lineal): L20
+- Módulos C2 activos fuera de cascada: supply_chain (feature-flag 2026-04-20)
+
+---
+
+## Módulos LIVE (activos en base.py TENANT_APPS)
+
+| Módulo | Capa | Apps Django incluidas | Nivel |
+|--------|------|-----------------------|-------|
+| core (auth/RBAC) | C0 | core, ia, tenant, shared_library | L0 |
+| audit_system | C0 | logs_sistema, config_alertas, centro_notificaciones, tareas_recordatorios | L12 |
+| fundacion | C1 | configuracion, organizacion, identidad, contexto, encuestas | L10 |
+| workflow_engine | CT | disenador_flujos, ejecucion, monitoreo, firma_digital | L12 |
+| gestion_documental | CT | gestion_documental | L15 |
+| catalogo_productos | CT | catalogo_productos | L15 |
+| mi_equipo | C2 | mi_equipo, estructura_cargos, seleccion_contratacion, colaboradores, onboarding_induccion | L20 |
+| supply_chain | C2 | catalogos, gestion_proveedores, recepcion, liquidaciones, almacenamiento, compras* | Feature-flag 2026-04-20 |
+| analytics (parcial) | C3 | config_indicadores, exportacion_integracion | Excepción temprana |
+
+\* `compras` en TENANT_APPS solo para integridad referencial del FK `VoucherRecepcion.orden_compra`.
+URLs NO montadas. Funcionalidad dormida.
+
+## Módulos DORMIDOS (comentados en base.py TENANT_APPS)
+
+| Módulo | Razón del comentario | Nivel que lo activa |
+|--------|---------------------|---------------------|
+| gestion_estrategica.planeacion | Espera estabilización L15 | L20 (cascada) |
+| gestion_estrategica.gestion_proyectos | Espera estabilización L15 | L20 (cascada) |
+| gestion_estrategica.planificacion_sistema | Espera estabilización L15 | L20 (cascada) |
+| gestion_estrategica.revision_direccion | Espera estabilización L15 | L20 (cascada) |
+| motor_cumplimiento (4 sub) | Espera L20 (Planeación) | L25 (cascada) |
+| motor_riesgos (6 sub) | Espera L20 (Planeación) | L25 (cascada) |
+| hseq_management (9 sub) | Espera L25 (Cumplimiento+Riesgos) | L30 (cascada) |
+| production_ops (4 sub) | Espera estabilización C2 previos | L35 (feature-flag) |
+| logistics_fleet (2 sub) | Espera estabilización C2 previos | L35 (feature-flag) |
+| sales_crm (4 sub) | Espera estabilización C2 previos | L35 (feature-flag) |
+| talent_hub (8 sub) | Espera L53 (Cadena de Valor) | L60 (cascada) |
+| administracion (3 sub) | Espera L40 (Talento Humano) | L45 (cascada) |
+| tesoreria.tesoreria | Espera L40 (Talento Humano) | L45 (cascada) |
+| accounting (4 sub) | Espera L40 (Talento Humano) | L45 (cascada) |
+| analytics resto (5 sub) | Espera TODOS los C2 | L50 (cascada) |
+| gamificacion.juego_sst | Pendiente refactor completo | INDEFINIDO |
+
+## Nota sobre mi_portal
+
+`apps.mi_portal` tiene `apps.py` con `AppConfig` en `backend/apps/mi_portal/`.
+**Sin embargo, NO está en TENANT_APPS en `base.py`.**
+
+Situación contradictoria:
+- El frontend tiene `features/mi-portal/` con feature completo funcional
+- El sidebar expone "Mi Portal" al usuario
+- Los endpoints de mi_portal tienen URLs montadas y respondiendo
+- La app NO está registrada en `TENANT_APPS`
+
+Hipótesis: los modelos de mi_portal (si los tiene) están en otro app (probablemente
+`core`), y mi_portal es solo una capa de views/URLs sin modelos propios, por lo que
+no necesita estar en TENANT_APPS.
+
+Estado: INCIERTO — pendiente verificación en sesión de inventario.
+
+---
+
+# Historial (estado original pre-actualización 2026-04-20)
+
+## Estado al 2026-04-19 (post-S6)
+
+### Principio rector
 El repo no es la verdad. Lo LIVE es la verdad.
 Solo el código activo en TENANT_APPS se mantiene. El resto es borrador.
 
@@ -150,3 +238,16 @@ que no tocan modelos tenant.
 Cuando podamos correr la suite completa de las 21 apps LIVE en menos
 de 5 minutos, con >80% pasando, y los 3 agujeros sin tests cerrados.
 Recién ahí tiene sentido pensar en activar L25.
+
+---
+
+## Regla de mantenimiento
+
+Este documento es fuente de verdad para el perímetro LIVE del proyecto.
+Debe actualizarse en el mismo PR cada vez que cambie:
+- Se comente o descomente una app en `base.py` TENANT_APPS
+- Se active un módulo nuevo (sprint de activación)
+- Cambie el número de modelos o migraciones en una app LIVE
+
+Última actualización: 2026-04-20
+Responsable: quien abre el PR que dispara el cambio.

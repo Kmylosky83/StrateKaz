@@ -394,7 +394,7 @@ Documentacion detallada en `docs/` (versionada en el repo):
 - **NUNCA escribir datos de empleado directamente en User** — escribir en Colaborador y dejar que el signal sincronice
 - **Creacion de User NO crea Colaborador** — `/api/core/users/` crea SOLO User + TenantUser. Colaboradores se crean exclusivamente desde Mi Equipo > Colaboradores
 - **proveedor_id_ext / cliente_id_ext son IntegerField** (NO FK) — almacenan IDs de referencia sin relacion directa
-- Ver `docs/01-arquitectura/SOURCE_OF_TRUTH.md` para detalle completo
+- Ver `docs/01-arquitectura/source-of-truth.md` para detalle completo
 
 ### Superadmin — Reglas de Identidad
 
@@ -502,7 +502,7 @@ en bloque.
 
 ```
 docs/
-├── 01-arquitectura/       # ADMIN-GLOBAL, ARQUITECTURA-DINAMICA, DATABASE, MULTI-TENANT, RBAC, SOURCE_OF_TRUTH
+├── 01-arquitectura/       # INDEX, estructura, capas, stack, multi-tenant, rbac-sistema, base-de-datos, source-of-truth, perimetro-live, hallazgos-pendientes y más. Ver INDEX.md.
 ├── 02-desarrollo/         # API endpoints, auth, convenciones, testing, logging, snippets
 │   ├── backend/           # Branding dinamico, integraciones, workflows/firmas
 │   └── frontend/          # Design system, hooks, layout, iconos, React Query, navegacion
@@ -657,14 +657,14 @@ vivir solo ahi.
 
 | Tipo | Destino | Ejemplo |
 |------|---------|---------|
-| Arquitectura, decisiones, patrones | `docs/01-arquitectura/` | security-2fa.md |
+| Arquitectura, decisiones, patrones | `docs/01-arquitectura/` | seguridad.md |
 | Convenciones de desarrollo | `docs/02-desarrollo/` | coding-standards.md |
 | Conocimiento por modulo | `docs/03-modulos/<modulo>/` | plantillas-sgi.md |
 | Deploy, operaciones, capacidad | `docs/04-devops/` | deploy.md, capacity-planning.md |
 | Auditorias historicas | `docs/auditorias/` | audit-lifecycle-2026-03-26.md |
 | Conocimiento de negocio | `docs/business/` | brand-identity.md, pricing-plans.md |
 | Historial de sprints, pitfalls | `docs/history/` | sprint-history.md, pitfalls.md |
-| Hallazgos arquitectonicos | `docs/architecture/` | HALLAZGOS-PENDIENTES-2026-04.md |
+| Hallazgos arquitectonicos | `docs/01-arquitectura/` | hallazgos-pendientes.md |
 | Inventario L0-L20 | `docs/inventory/` | L0-INDEX.md |
 
 ### Que se queda en auto-memory (scratch pad)

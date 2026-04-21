@@ -1,65 +1,42 @@
 /**
- * Tab Precios — Precios vigentes Proveedor × Producto (MP) + modalidad logística.
+ * Tab Precios — Vista MASIVA por proveedor.
  *
- * Post refactor 2026-04-21:
- *   - Proveedor vive en CT (catalogo_productos)
- *   - Producto con tipo=MATERIA_PRIMA del catálogo
- *   - Modalidad logística por (proveedor, producto), no global por proveedor
- *   - Al editar precio_kg, backend crea HistorialPrecio automático via perform_update
+ * Post refactor 2026-04-21 (Opción A separación estricta):
+ *   Esta vista es el único lugar para gestionar precios. Se separa de CT:
+ *   el modal de Proveedor (CT) NO gestiona precios.
  *
- * Obligatoria modalidad en UI solo si TipoProveedor.requiere_modalidad_logistica=True
- * (backend responde `tipo_proveedor_requiere_modalidad` en cada precio).
+ * Flujo:
+ *   1. Selector de proveedor (combobox o dropdown)
+ *   2. Tabla con TODAS las MPs que el proveedor suministra:
+ *      - Filas con precio asignado → inputs pre-llenados
+ *      - Filas pendientes (sin precio) → inputs vacíos con badge
+ *   3. Usuario edita, agrega o limpia filas; al "Guardar" se envía batch al BE
+ *   4. Backend audita en HistorialPrecioProveedor los cambios de precio_kg
+ *
+ * Query param `?proveedor=N` pre-selecciona el proveedor (útil cuando se
+ * navega desde el modal de crear proveedor en CT).
  */
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { DollarSign, Edit, Plus, Trash2, Truck } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DollarSign, Save, History, AlertTriangle, Truck } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
-import { ConfirmDialog } from '@/components/common/ConfirmDialog';
-import { FormModal } from '@/components/modals/FormModal';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Select } from '@/components/forms';
 
 import { useSectionPermissions } from '@/components/common/ProtectedAction';
 import { Modules, Sections } from '@/constants/permissions';
 
-import { useProveedores, useProveedor } from '@/features/catalogo-productos/hooks/useProveedores';
-import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
-import {
-  usePreciosMP,
-  useCreatePrecioMP,
-  useUpdatePrecioMP,
-  useDeletePrecioMP,
-  useModalidadesLogistica,
-} from '../hooks/usePrecios';
-import type { PrecioMP } from '../types/precio.types';
-
-// ─── Schema ────────────────────────────────────────────────────────────────
-
-const createSchema = z.object({
-  proveedor: z.number().min(1, 'Seleccione un proveedor'),
-  producto: z.number().min(1, 'Seleccione un producto'),
-  precio_kg: z
-    .union([z.string(), z.number()])
-    .refine((v) => Number(v) >= 0, 'El precio no puede ser negativo'),
-  modalidad_logistica: z.number().nullable().optional(),
-});
-
-const updateSchema = z.object({
-  precio_kg: z
-    .union([z.string(), z.number()])
-    .refine((v) => Number(v) >= 0, 'El precio no puede ser negativo'),
-  modalidad_logistica: z.number().nullable().optional(),
-  motivo: z.string().optional().default(''),
-});
-
-type CreateValues = z.infer<typeof createSchema>;
-type UpdateValues = z.infer<typeof updateSchema>;
+import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useModalidadesLogistica } from '../hooks/usePrecios';
+import { getPreciosPorProveedor, guardarPreciosPorProveedor } from '../api/precios.api';
+import type { PrecioMPPorProveedorRow, BatchPrecioItem } from '../types/precio.types';
+import { getApiErrorMessage } from '@/utils/errorUtils';
 
 // ─── Utilidades ────────────────────────────────────────────────────────────
 
@@ -72,156 +49,171 @@ const formatCurrency = (value: number | string) => {
   }).format(num);
 };
 
+interface RowState {
+  precio_kg: string;
+  modalidad_logistica: number | null;
+  dirty: boolean;
+}
+
 // ─── Componente ────────────────────────────────────────────────────────────
 
 export function PreciosTab() {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<PrecioMP | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // RBAC granular v4.1
-  const { canCreate, canEdit, canDelete } = useSectionPermissions(
-    Modules.SUPPLY_CHAIN,
-    Sections.PRECIOS_MATERIA_PRIMA
-  );
+  // RBAC
+  const { canEdit } = useSectionPermissions(Modules.SUPPLY_CHAIN, Sections.PRECIOS_MATERIA_PRIMA);
+
+  // Proveedor seleccionado (inicial desde ?proveedor=N)
+  const initialProveedor = Number(searchParams.get('proveedor') || 0) || null;
+  const [proveedorId, setProveedorId] = useState<number | null>(initialProveedor);
+
+  // Estado local de la tabla (edit-mode)
+  const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
 
   // ─── Queries ───
-  const { data: precios = [], isLoading } = usePreciosMP();
   const { data: proveedores = [] } = useProveedores();
-  const { data: productos = [] } = useProductos();
   const { data: modalidades = [] } = useModalidadesLogistica();
-
-  // Proveedores activos + productos MP
   const proveedoresActivos = useMemo(
     () => (Array.isArray(proveedores) ? proveedores.filter((p) => p.is_active) : []),
     [proveedores]
   );
-  const productosMP = useMemo(
-    () => (Array.isArray(productos) ? productos.filter((p) => p.tipo === 'MATERIA_PRIMA') : []),
-    [productos]
-  );
 
-  // ─── Mutations ───
-  const createMutation = useCreatePrecioMP();
-  const updateMutation = useUpdatePrecioMP();
-  const deleteMutation = useDeletePrecioMP();
-
-  // ─── Forms ───
-  const createForm = useForm<CreateValues>({
-    resolver: zodResolver(createSchema),
-    defaultValues: { proveedor: 0, producto: 0, precio_kg: '', modalidad_logistica: null },
-  });
-  const updateForm = useForm<UpdateValues>({
-    resolver: zodResolver(updateSchema),
-    defaultValues: { precio_kg: '', modalidad_logistica: null, motivo: '' },
+  const {
+    data: filas = [],
+    isLoading: isLoadingFilas,
+    refetch: refetchFilas,
+  } = useQuery<PrecioMPPorProveedorRow[]>({
+    queryKey: ['sc-precios-por-proveedor', proveedorId],
+    queryFn: () => getPreciosPorProveedor(proveedorId!),
+    enabled: !!proveedorId,
   });
 
-  const form = editing ? updateForm : createForm;
+  // Inicializar estado local de cada fila cuando cambia la data
+  useEffect(() => {
+    const next: Record<number, RowState> = {};
+    for (const f of filas) {
+      next[f.producto] = {
+        precio_kg: f.precio_kg ?? '',
+        modalidad_logistica: f.modalidad_logistica,
+        dirty: false,
+      };
+    }
+    setRowStates(next);
+  }, [filas]);
 
-  // Filtrado dinámico: productos disponibles para el proveedor seleccionado.
-  // En create — cargar detalle del proveedor para leer productos_suministrados.
-  // Excluye productos que ya tienen PrecioMP activo (evita violar unique_constraint).
-  const proveedorSelId = createForm.watch('proveedor');
-  const { data: proveedorDetail } = useProveedor(proveedorSelId || 0, {
-    enabled: !editing && !!proveedorSelId && proveedorSelId > 0,
-  } as never);
-
-  const productosDisponibles = useMemo(() => {
-    if (editing) return productosMP; // en edit no aplica (FK fija)
-    if (!proveedorSelId || proveedorSelId === 0) return [];
-
-    const detail = proveedorDetail as { productos_suministrados?: number[] } | undefined;
-    const suministrados = new Set(detail?.productos_suministrados ?? []);
-
-    // IDs de productos que ya tienen precio activo con este proveedor
-    const yaConPrecio = new Set(
-      precios.filter((p) => p.proveedor === proveedorSelId).map((p) => p.producto)
-    );
-
-    return productosMP.filter((p) => suministrados.has(p.id) && !yaConPrecio.has(p.id));
-  }, [editing, proveedorSelId, proveedorDetail, productosMP, precios]);
+  // ─── Mutation batch ───
+  const saveMutation = useMutation({
+    mutationFn: guardarPreciosPorProveedor,
+    onSuccess: (resp) => {
+      const total = resp.creados.length + resp.actualizados.length;
+      if (resp.errores.length > 0) {
+        toast.warning(`${total} precio(s) guardado(s), ${resp.errores.length} error(es).`);
+      } else {
+        toast.success(`${total} precio(s) guardado(s).`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['sc-precios-mp'] });
+      queryClient.invalidateQueries({ queryKey: ['sc-precios-por-proveedor', proveedorId] });
+      queryClient.invalidateQueries({ queryKey: ['sc-historial-precios'] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al guardar precios'));
+    },
+  });
 
   // ─── Handlers ───
-  const handleOpenCreate = () => {
-    setEditing(null);
-    createForm.reset({ proveedor: 0, producto: 0, precio_kg: '', modalidad_logistica: null });
-    setModalOpen(true);
-  };
-
-  const handleOpenEdit = (precio: PrecioMP) => {
-    setEditing(precio);
-    updateForm.reset({
-      precio_kg: precio.precio_kg,
-      modalidad_logistica: precio.modalidad_logistica ?? null,
-      motivo: '',
-    });
-    setModalOpen(true);
-  };
-
-  const handleClose = () => {
-    setEditing(null);
-    setModalOpen(false);
-  };
-
-  const handleSubmit = async (values: CreateValues | UpdateValues) => {
-    try {
-      if (editing) {
-        await updateMutation.mutateAsync({
-          id: editing.id,
-          data: {
-            precio_kg: Number((values as UpdateValues).precio_kg),
-            modalidad_logistica: (values as UpdateValues).modalidad_logistica ?? null,
-            motivo: (values as UpdateValues).motivo || 'Ajuste de precio',
-          },
-        });
-      } else {
-        const v = values as CreateValues;
-        await createMutation.mutateAsync({
-          proveedor: v.proveedor,
-          producto: v.producto,
-          precio_kg: Number(v.precio_kg),
-          modalidad_logistica: v.modalidad_logistica ?? null,
-        });
-      }
-      handleClose();
-    } catch {
-      /* toast mostrado por mutation */
+  const handleProveedorChange = (id: number | null) => {
+    setProveedorId(id);
+    if (id) {
+      setSearchParams({ proveedor: String(id) });
+    } else {
+      setSearchParams({});
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!deletingId) return;
-    await deleteMutation.mutateAsync(deletingId);
-    setDeletingId(null);
+  const updateRow = (productoId: number, patch: Partial<RowState>) => {
+    setRowStates((prev) => ({
+      ...prev,
+      [productoId]: {
+        precio_kg: prev[productoId]?.precio_kg ?? '',
+        modalidad_logistica: prev[productoId]?.modalidad_logistica ?? null,
+        ...patch,
+        dirty: true,
+      },
+    }));
+  };
+
+  const dirtyCount = Object.values(rowStates).filter((r) => r.dirty).length;
+
+  const handleSave = () => {
+    if (!proveedorId) return;
+    const items: BatchPrecioItem[] = Object.entries(rowStates)
+      .filter(([, r]) => r.dirty)
+      .map(([productoId, r]) => ({
+        producto: Number(productoId),
+        precio_kg: r.precio_kg === '' ? null : r.precio_kg,
+        modalidad_logistica: r.modalidad_logistica,
+      }));
+
+    if (items.length === 0) {
+      toast.info('No hay cambios para guardar.');
+      return;
+    }
+
+    saveMutation.mutate({ proveedor: proveedorId, precios: items });
   };
 
   // ─── Render ───
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
-
-  const precioEdit = editing;
+  const proveedorSeleccionado = proveedoresActivos.find((p) => p.id === proveedorId);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Precio vigente por proveedor × materia prima. Al editar, el historial se registra
-          automáticamente.
-        </p>
-        {canCreate && (
-          <Button variant="primary" onClick={handleOpenCreate}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Precio
-          </Button>
-        )}
-      </div>
+      {/* Selector de proveedor */}
+      <Card variant="bordered" padding="md">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="flex-1">
+            <Select
+              label="Proveedor"
+              value={proveedorId ?? ''}
+              onChange={(e) =>
+                handleProveedorChange(e.target.value ? Number(e.target.value) : null)
+              }
+              helperText="Seleccione un proveedor para ver y editar sus precios por MP."
+            >
+              <option value="">— Seleccionar proveedor —</option>
+              {proveedoresActivos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre_comercial} ({p.codigo_interno})
+                </option>
+              ))}
+            </Select>
+          </div>
+          {proveedorId && (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => refetchFilas()} disabled={isLoadingFilas}>
+                <History className="w-4 h-4 mr-1" />
+                Recargar
+              </Button>
+              {canEdit && (
+                <Button
+                  variant="primary"
+                  onClick={handleSave}
+                  disabled={dirtyCount === 0 || saveMutation.isPending}
+                >
+                  <Save className="w-4 h-4 mr-1" />
+                  {saveMutation.isPending
+                    ? 'Guardando...'
+                    : `Guardar ${dirtyCount > 0 ? `(${dirtyCount})` : ''}`}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
 
-      {precios.length === 0 ? (
+      {/* Tabla editable */}
+      {!proveedorId ? (
         <Card className="p-8">
           <EmptyState
             icon={
@@ -229,210 +221,143 @@ export function PreciosTab() {
                 <DollarSign className="w-5 h-5" />
               </div>
             }
-            title="Sin precios registrados"
-            description="Cree el primer precio con el botón de arriba. Requiere al menos un proveedor y un producto tipo MP en el catálogo."
+            title="Seleccione un proveedor"
+            description="Los precios se gestionan por proveedor. Elija uno arriba para ver y editar sus MPs."
+          />
+        </Card>
+      ) : isLoadingFilas ? (
+        <div className="flex justify-center py-8">
+          <Spinner size="lg" />
+        </div>
+      ) : filas.length === 0 ? (
+        <Card className="p-8">
+          <EmptyState
+            icon={<AlertTriangle className="w-5 h-5 text-amber-500" />}
+            title="El proveedor no tiene materias primas asignadas"
+            description="Asigne MPs desde Catálogo de Productos → Proveedores (editar proveedor y marcar las MPs)."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/catalogo-productos/proveedores?edit=${proveedorId}`)}
+              >
+                Ir a editar proveedor
+              </Button>
+            }
           />
         </Card>
       ) : (
         <Card>
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 flex items-center justify-between text-sm">
+            <span className="text-gray-700 dark:text-gray-300">
+              <strong>{proveedorSeleccionado?.nombre_comercial}</strong> · {filas.length} MP(s) ·{' '}
+              {filas.filter((f) => !f.es_pendiente).length} con precio ·{' '}
+              {filas.filter((f) => f.es_pendiente).length} pendiente(s)
+            </span>
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                    Proveedor
+                  <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300">
+                    Materia Prima
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                    Producto
+                  <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300">
+                    Estado
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                    Precio
+                  <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-48">
+                    Precio/kg (COP)
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                    Modalidad
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                    Acciones
+                  <th className="px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-56">
+                    Modalidad Logística
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {precios.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {p.proveedor_nombre}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                        {p.proveedor_codigo}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {p.producto_nombre}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                        {p.producto_codigo}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(p.precio_kg)}
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        por {p.unidad_medida || 'kg'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {p.modalidad_logistica_nombre ? (
-                        <Badge variant="info">
-                          <Truck className="w-3 h-3 mr-1 inline" />
-                          {p.modalidad_logistica_nombre}
-                        </Badge>
-                      ) : p.tipo_proveedor_requiere_modalidad ? (
-                        <Badge variant="warning">⚠ Falta asignar</Badge>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        {canEdit && (
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                {filas.map((fila) => {
+                  const row = rowStates[fila.producto] ?? {
+                    precio_kg: '',
+                    modalidad_logistica: null,
+                    dirty: false,
+                  };
+                  return (
+                    <tr
+                      key={fila.producto}
+                      className={
+                        row.dirty
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }
+                    >
+                      <td className="px-4 py-2 font-medium text-gray-900 dark:text-white">
+                        {fila.producto_nombre}
+                        <div className="text-xs text-gray-500 font-mono">
+                          {fila.producto_codigo}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        {fila.es_pendiente ? (
+                          <Badge variant="warning">
+                            <AlertTriangle className="w-3 h-3 mr-1 inline" />
+                            Pendiente
+                          </Badge>
+                        ) : (
+                          <Badge variant="success">
+                            Con precio: {formatCurrency(fila.precio_kg ?? 0)}
+                          </Badge>
                         )}
-                        {canDelete && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeletingId(p.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          placeholder="0"
+                          disabled={!canEdit}
+                          value={row.precio_kg}
+                          onChange={(e) => updateRow(fila.producto, { precio_kg: e.target.value })}
+                          className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          por {fila.unidad_medida || 'kg'}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <select
+                          disabled={!canEdit}
+                          value={row.modalidad_logistica ?? ''}
+                          onChange={(e) =>
+                            updateRow(fila.producto, {
+                              modalidad_logistica: e.target.value ? Number(e.target.value) : null,
+                            })
+                          }
+                          className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
+                        >
+                          <option value="">
+                            <Truck className="w-3 h-3" /> Sin modalidad
+                          </option>
+                          {modalidades.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
+            Cambios de precio se registran automáticamente en el historial (audit log).
+            {dirtyCount > 0 && (
+              <span className="ml-2 font-medium text-amber-700 dark:text-amber-300">
+                · {dirtyCount} fila(s) modificada(s) sin guardar
+              </span>
+            )}
+          </div>
         </Card>
       )}
-
-      {/* Modal: Crear o Editar */}
-      <FormModal
-        isOpen={modalOpen}
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        form={form as never}
-        title={precioEdit ? 'Editar Precio' : 'Nuevo Precio'}
-        subtitle={
-          precioEdit
-            ? `${precioEdit.proveedor_nombre} × ${precioEdit.producto_nombre}`
-            : 'Asigne precio y modalidad logística'
-        }
-        size="md"
-        isLoading={createMutation.isPending || updateMutation.isPending}
-        submitLabel={precioEdit ? 'Guardar cambios' : 'Crear Precio'}
-        warnUnsavedChanges
-      >
-        {!precioEdit && (
-          <>
-            <Select
-              label="Proveedor"
-              value={createForm.watch('proveedor') || ''}
-              onChange={(e) =>
-                createForm.setValue('proveedor', Number(e.target.value), { shouldDirty: true })
-              }
-              required
-              error={createForm.formState.errors.proveedor?.message}
-            >
-              <option value="">Seleccionar...</option>
-              {proveedoresActivos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre_comercial} ({p.codigo_interno})
-                </option>
-              ))}
-            </Select>
-            <Select
-              label="Producto (Materia Prima)"
-              value={createForm.watch('producto') || ''}
-              onChange={(e) =>
-                createForm.setValue('producto', Number(e.target.value), { shouldDirty: true })
-              }
-              required
-              disabled={!proveedorSelId || proveedorSelId === 0}
-              error={createForm.formState.errors.producto?.message}
-              helperText={
-                !proveedorSelId
-                  ? 'Seleccione primero un proveedor'
-                  : productosDisponibles.length === 0
-                    ? 'Este proveedor no tiene MPs disponibles sin precio asignado'
-                    : `Solo MPs que el proveedor suministra (${productosDisponibles.length} disponibles)`
-              }
-            >
-              <option value="">Seleccionar...</option>
-              {productosDisponibles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre} ({p.codigo})
-                </option>
-              ))}
-            </Select>
-          </>
-        )}
-
-        <Input
-          label="Precio por kg (COP)"
-          type="number"
-          step="0.01"
-          min={0}
-          {...form.register('precio_kg' as never)}
-          required
-          error={form.formState.errors.precio_kg?.message as string | undefined}
-        />
-
-        <Select
-          label="Modalidad logística"
-          value={form.watch('modalidad_logistica' as never) ?? ''}
-          onChange={(e) => {
-            const v = e.target.value ? Number(e.target.value) : null;
-            form.setValue('modalidad_logistica' as never, v as never, { shouldDirty: true });
-          }}
-          helperText={
-            precioEdit?.tipo_proveedor_requiere_modalidad
-              ? 'Este proveedor exige modalidad logística.'
-              : 'Opcional (entrega en planta / recolección en punto / etc.)'
-          }
-        >
-          <option value="">Sin modalidad</option>
-          {modalidades.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nombre}
-            </option>
-          ))}
-        </Select>
-
-        {precioEdit && (
-          <Textarea
-            label="Motivo del cambio"
-            {...updateForm.register('motivo')}
-            rows={2}
-            placeholder="Ej: Ajuste por inflación, nuevo contrato..."
-            helperText="Se registra en el historial de precios"
-          />
-        )}
-      </FormModal>
-
-      <ConfirmDialog
-        isOpen={deletingId !== null}
-        title="Eliminar precio"
-        message="¿Está seguro? El precio quedará marcado como inactivo (soft delete)."
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeletingId(null)}
-        confirmText="Eliminar"
-        isLoading={deleteMutation.isPending}
-      />
     </div>
   );
 }

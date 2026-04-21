@@ -59,3 +59,38 @@ export interface ModalidadLogistica {
   orden: number;
   is_active: boolean;
 }
+
+/** Row devuelto por /precios-mp/por-proveedor/{id}/ — incluye pendientes. */
+export interface PrecioMPPorProveedorRow {
+  id: number | null; // null si es pendiente (aún sin precio asignado)
+  proveedor: number;
+  producto: number;
+  producto_nombre: string;
+  producto_codigo: string;
+  unidad_medida: string;
+  precio_kg: string | null;
+  modalidad_logistica: number | null;
+  modalidad_logistica_nombre: string | null;
+  es_pendiente: boolean;
+  updated_at: string | null;
+}
+
+export interface BatchPrecioItem {
+  producto: number;
+  precio_kg: number | string | null;
+  modalidad_logistica: number | null;
+  motivo?: string;
+}
+
+export interface BatchPorProveedorPayload {
+  proveedor: number;
+  precios: BatchPrecioItem[];
+}
+
+export interface BatchPorProveedorResponse {
+  proveedor_id: number;
+  creados: number[];
+  actualizados: number[];
+  omitidos: number[];
+  errores: Array<{ index: number; error: string }>;
+}

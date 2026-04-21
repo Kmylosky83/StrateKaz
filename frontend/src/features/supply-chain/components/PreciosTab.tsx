@@ -10,7 +10,6 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { DollarSign, Search, AlertTriangle, Edit3 } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';

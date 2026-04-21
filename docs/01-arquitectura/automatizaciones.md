@@ -1,5 +1,10 @@
 # Tecnología: Automatizaciones & Workflows (aprobado 2026-03-10)
 
+> **ESTADO: ROADMAP CONGELADO — No ejecutado.**
+> Se activa en el sprint de L30+ (Production Ops / HSEQ / Sales CRM).
+> El diseño está aprobado; ninguna línea de código fue escrita aún.
+> No consume ni modifica código LIVE hoy.
+
 ## Stack de automatización
 
 ### 1. django-fsm (State Machine)

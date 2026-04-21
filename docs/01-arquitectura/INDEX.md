@@ -53,15 +53,15 @@ Convención: nombres en `kebab-case.md`. Sin números en archivos — el orden d
 ### 4. Patrones de extensión (¿cómo extender el sistema?)
 | Documento | Propósito |
 |-----------|-----------|
-| [`config-admin.md`](config-admin.md) | Módulo Config Plataforma + Cascada V2.1 |
-| [`automatizaciones.md`](automatizaciones.md) | EventBus + django-fsm planificado para L30+ |
+| [`config-admin.md`](config-admin.md) | Módulo Config Plataforma + Cascada V2.1 ⚠️ *bugs activos en UI* |
+| [`automatizaciones.md`](automatizaciones.md) | EventBus + django-fsm — ⏸ *roadmap congelado, activa en L30+* |
 
 ### 5. Estado activo y backlog (¿qué hay hoy y qué viene?)
 | Documento | Propósito |
 |-----------|-----------|
 | [`perimetro-live.md`](perimetro-live.md) | Módulos LIVE vs DORMIDOS — estado real del deploy |
 | [`hallazgos-pendientes.md`](hallazgos-pendientes.md) | Decisiones arquitectónicas abiertas (H1–H23) |
-| [`rbac-v5-roadmap.md`](rbac-v5-roadmap.md) | Roadmap RBAC v5: Hybrid + Permission Templates + Nav Separation |
+| [`rbac-v5-roadmap.md`](rbac-v5-roadmap.md) | Roadmap RBAC v5 — 🔲 *planificado, no ejecutado. Ver rbac-sistema.md para v4 actual* |
 
 ---
 

@@ -4,6 +4,12 @@ description: Módulo Configuración de Plataforma + decisión arquitectónica Ca
 type: project
 ---
 
+> **ESTADO: BUGS ACTIVOS EN UI**
+> - Tab `general`: crash React #31 (object as React child) — viene de `vendor-dnd` chunk
+> - Tabs `catalogos` y `conexiones`: renderizan `ModulosSection` del tab `general` en vez de sus propias secciones
+> - Backend 100% OK (tree API, BD, seeds verificados). El bug es exclusivamente de frontend.
+> - No deploy a producción hasta resolver. Hallazgo registrado en `hallazgos-pendientes.md`.
+
 ## Módulo Configuración de Plataforma (`configuracion_plataforma`)
 
 **Estado: v5.3.0 DEPLOYED** — 3 tabs (general, catalogos, conexiones) — BUG ACTIVO en general tab

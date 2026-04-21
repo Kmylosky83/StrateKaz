@@ -409,3 +409,15 @@ Para mas detalles del sistema multi-tenant, ver [MULTI-TENANT.md](./MULTI-TENANT
 | 2.0.1 | 2026-02-06 | Fix: rutas de archivos backend, RolAdicionalPermiso/RolePermiso usan Permiso legacy (no section), method name check_section_permission |
 | 2.0.0 | 2026-02-06 | Reescritura: 4 capas, seeds, signals, jerarquia modulos |
 | 1.0.0 | 2025-01-31 | Documento inicial RBAC |
+
+---
+
+## 15. Evolución futura — RBAC v5
+
+Este documento describe **RBAC v4.1** (estado actual en producción).
+
+El diseño propuesto para **RBAC v5** (Permission flat + PermissionTemplate + Nav Separation)
+está documentado en [`rbac-v5-roadmap.md`](rbac-v5-roadmap.md).
+
+v5 se activa cuando se incorporen módulos C2 de mayor volumen (Production Ops, HSEQ, Sales CRM)
+donde el modelo de permisos por cargo se vuelve insuficiente para la granularidad requerida.

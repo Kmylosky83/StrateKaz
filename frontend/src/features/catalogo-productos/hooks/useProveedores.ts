@@ -22,6 +22,7 @@ const hooks = createCrudHooks<Proveedor, CreateProveedorDTO, UpdateProveedorDTO>
 );
 
 export const useProveedores = hooks.useList;
+/** Detalle de un proveedor (incluye productos_suministrados M2M). */
 export const useProveedor = hooks.useDetail;
 export const useCreateProveedor = hooks.useCreate;
 export const useUpdateProveedor = hooks.useUpdate;

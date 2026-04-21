@@ -1,4 +1,5 @@
 """ViewSets para Proveedores (CT-layer)."""
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -85,3 +86,106 @@ class ProveedorViewSet(viewsets.ModelViewSet):
             'inactivos': total - activos,
             'por_tipo_persona': por_tipo_persona,
         })
+
+    @action(detail=True, methods=['post'], url_path='asignar-precios')
+    def asignar_precios(self, request, pk=None):
+        """
+        Batch upsert de precios por (proveedor, producto).
+
+        Payload esperado:
+          {
+            "precios": [
+              {"producto": <id>, "precio_kg": <decimal>, "modalidad_logistica": <id|null>},
+              ...
+            ]
+          }
+
+        Trazabilidad:
+          - PrecioMateriaPrima nuevo → created_by = request.user
+          - Cambio de precio_kg existente → HistorialPrecioProveedor append-only
+            (se dispara en perform_update del PrecioMateriaPrimaViewSet, pero aquí
+            creamos el historial manualmente porque usamos update_or_create).
+
+        Permisos: requiere can_edit en proveedores (el proveedor ya existe).
+        """
+        proveedor = self.get_object()
+        precios_data = request.data.get('precios', [])
+        if not isinstance(precios_data, list):
+            return Response(
+                {'error': '"precios" debe ser una lista.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Lazy import — PrecioMateriaPrima vive en supply_chain (C2 consume de CT).
+        from apps.supply_chain.gestion_proveedores.models import (
+            PrecioMateriaPrima,
+            HistorialPrecioProveedor,
+        )
+
+        creados, actualizados = [], []
+        errores = []
+
+        with transaction.atomic():
+            for idx, item in enumerate(precios_data):
+                producto_id = item.get('producto')
+                precio_kg = item.get('precio_kg')
+                modalidad_id = item.get('modalidad_logistica')
+
+                if not producto_id or precio_kg is None:
+                    errores.append({
+                        'index': idx,
+                        'error': 'producto y precio_kg son requeridos.',
+                    })
+                    continue
+
+                try:
+                    precio_kg = float(precio_kg)
+                except (TypeError, ValueError):
+                    errores.append({'index': idx, 'error': 'precio_kg inválido.'})
+                    continue
+                if precio_kg < 0:
+                    errores.append({'index': idx, 'error': 'precio_kg no puede ser negativo.'})
+                    continue
+
+                existing = PrecioMateriaPrima.objects.filter(
+                    proveedor=proveedor,
+                    producto_id=producto_id,
+                    is_deleted=False,
+                ).first()
+
+                if existing:
+                    precio_anterior = existing.precio_kg
+                    if float(precio_anterior) != precio_kg:
+                        # Registrar en historial append-only
+                        HistorialPrecioProveedor.objects.create(
+                            proveedor=proveedor,
+                            producto_id=producto_id,
+                            precio_anterior=precio_anterior,
+                            precio_nuevo=precio_kg,
+                            modificado_por=request.user,
+                            motivo=item.get('motivo') or 'Asignación inline',
+                        )
+                    existing.precio_kg = precio_kg
+                    existing.modalidad_logistica_id = modalidad_id
+                    existing.updated_by = request.user
+                    existing.save(update_fields=[
+                        'precio_kg', 'modalidad_logistica', 'updated_by', 'updated_at',
+                    ])
+                    actualizados.append(existing.id)
+                else:
+                    precio = PrecioMateriaPrima.objects.create(
+                        proveedor=proveedor,
+                        producto_id=producto_id,
+                        precio_kg=precio_kg,
+                        modalidad_logistica_id=modalidad_id,
+                        created_by=request.user,
+                        updated_by=request.user,
+                    )
+                    creados.append(precio.id)
+
+        return Response({
+            'proveedor_id': proveedor.id,
+            'creados': creados,
+            'actualizados': actualizados,
+            'errores': errores,
+        }, status=status.HTTP_200_OK if not errores else status.HTTP_207_MULTI_STATUS)

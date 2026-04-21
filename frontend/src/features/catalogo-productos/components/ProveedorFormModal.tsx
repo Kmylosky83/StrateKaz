@@ -22,6 +22,8 @@ import { Switch } from '@/components/forms';
 
 import { useSelectDepartamentos, useSelectTiposDocumento } from '@/hooks/useSelectLists';
 import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
+import { useModalidadesLogistica } from '@/features/supply-chain/hooks/usePrecios';
+import axiosInstance from '@/api/axios-config';
 
 import { useProductos } from '../hooks/useProductos';
 import { useTiposProveedor, useCreateProveedor, useUpdateProveedor } from '../hooks/useProveedores';
@@ -32,6 +34,12 @@ import type {
   UpdateProveedorDTO,
   TipoPersona,
 } from '../types/proveedor.types';
+
+/** Fila inline de precio por MP dentro del modal de proveedor. */
+interface PrecioInline {
+  precio_kg: string;
+  modalidad_logistica: number | null;
+}
 
 // ─── Schema Zod ────────────────────────────────────────────────────────────
 
@@ -102,6 +110,7 @@ export default function ProveedorFormModal({
   const { data: departamentos = [] } = useSelectDepartamentos();
   const { data: tiposProveedor = [] } = useTiposProveedor();
   const { data: productos = [] } = useProductos();
+  const { data: modalidades = [] } = useModalidadesLogistica();
 
   // Solo productos tipo MATERIA_PRIMA son suministrables
   const productosMP = useMemo(
@@ -112,11 +121,15 @@ export default function ProveedorFormModal({
   // ─── Mutations ───
   const createMutation = useCreateProveedor();
   const updateMutation = useUpdateProveedor();
-  const isLoading = createMutation.isPending || updateMutation.isPending;
+  const [asignandoPrecios, setAsignandoPrecios] = useState(false);
+  const isLoading = createMutation.isPending || updateMutation.isPending || asignandoPrecios;
 
   // ─── Vínculo PI ───
   const [piId, setPiId] = useState<number | null>(null);
   const [piNombre, setPiNombre] = useState('');
+
+  // ─── Precios inline por MP seleccionada ───
+  const [preciosInline, setPreciosInline] = useState<Record<number, PrecioInline>>({});
 
   // ─── Effect: reset form al abrir/editar ───
   useEffect(() => {
@@ -140,12 +153,27 @@ export default function ProveedorFormModal({
       });
       setPiId(detailed.parte_interesada_id ?? null);
       setPiNombre(detailed.parte_interesada_nombre ?? '');
+      setPreciosInline({}); // al editar no pre-llenamos precios (ya están en PreciosTab)
     } else if (!proveedor && isOpen) {
       reset(DEFAULT_VALUES);
       setPiId(null);
       setPiNombre('');
+      setPreciosInline({});
     }
   }, [proveedor, isOpen, reset]);
+
+  // Sincronizar preciosInline cuando el usuario (des)selecciona MPs del combobox.
+  // Mantener filas existentes; agregar nuevas; eliminar deseleccionadas.
+  const productosSeleccionados = watch('productos_suministrados') || [];
+  useEffect(() => {
+    setPreciosInline((prev) => {
+      const next: Record<number, PrecioInline> = {};
+      for (const id of productosSeleccionados) {
+        next[id] = prev[id] ?? { precio_kg: '', modalidad_logistica: null };
+      }
+      return next;
+    });
+  }, [productosSeleccionados.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tipoPersona = watch('tipo_persona');
   const esEmpresa = tipoPersona === 'empresa';
@@ -183,11 +211,37 @@ export default function ProveedorFormModal({
     };
 
     try {
+      // 1. Crear/actualizar proveedor
+      let proveedorId: number;
       if (isEdit && proveedor) {
         await updateMutation.mutateAsync({ id: proveedor.id, data: payload as UpdateProveedorDTO });
+        proveedorId = proveedor.id;
       } else {
-        await createMutation.mutateAsync(payload);
+        const created = await createMutation.mutateAsync(payload);
+        proveedorId = (created as { id: number }).id;
       }
+
+      // 2. Asignar precios (batch) — solo los que tienen precio_kg ingresado
+      const preciosBatch = Object.entries(preciosInline)
+        .filter(([, p]) => p.precio_kg !== '' && !isNaN(Number(p.precio_kg)))
+        .map(([productoId, p]) => ({
+          producto: Number(productoId),
+          precio_kg: Number(p.precio_kg),
+          modalidad_logistica: p.modalidad_logistica,
+        }));
+
+      if (preciosBatch.length > 0) {
+        setAsignandoPrecios(true);
+        try {
+          await axiosInstance.post(
+            `/catalogo-productos/proveedores/${proveedorId}/asignar-precios/`,
+            { precios: preciosBatch }
+          );
+        } finally {
+          setAsignandoPrecios(false);
+        }
+      }
+
       onClose();
     } catch {
       /* toast mostrado por el mutation hook */
@@ -343,10 +397,10 @@ export default function ProveedorFormModal({
         </div>
       </Card>
 
-      {/* 3. PRODUCTOS SUMINISTRADOS */}
+      {/* 3. PRODUCTOS SUMINISTRADOS + PRECIOS INLINE */}
       <Card variant="bordered" padding="md">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-          Productos suministrados (opcional)
+          Productos suministrados y precios
         </h3>
         {productosMP.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -354,17 +408,109 @@ export default function ProveedorFormModal({
             Catálogo y regresar aquí.
           </p>
         ) : (
-          <MultiSelectCombobox
-            label="Materias primas que suministra"
-            placeholder="Seleccionar productos..."
-            emptyMessage="Sin resultados. Pruebe con otra búsqueda."
-            options={productosOptions}
-            value={(watch('productos_suministrados') || []) as number[]}
-            onChange={(vals) =>
-              setValue('productos_suministrados', vals as number[], { shouldDirty: true })
-            }
-            helperText="Solo productos del catálogo con tipo Materia Prima."
-          />
+          <>
+            <MultiSelectCombobox
+              label="Materias primas que suministra"
+              placeholder="Seleccionar productos..."
+              emptyMessage="Sin resultados. Pruebe con otra búsqueda."
+              options={productosOptions}
+              value={(watch('productos_suministrados') || []) as number[]}
+              onChange={(vals) =>
+                setValue('productos_suministrados', vals as number[], { shouldDirty: true })
+              }
+              helperText="Solo productos del catálogo con tipo Materia Prima."
+            />
+
+            {productosSeleccionados.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Precios por materia prima (opcional — se puede dejar vacío y asignar después)
+                </p>
+                <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                          Materia prima
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 w-36">
+                          Precio/kg (COP)
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 w-48">
+                          Modalidad logística
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {productosSeleccionados.map((productoId) => {
+                        const producto = productosMP.find((p) => p.id === productoId);
+                        if (!producto) return null;
+                        const inline = preciosInline[productoId] ?? {
+                          precio_kg: '',
+                          modalidad_logistica: null,
+                        };
+                        return (
+                          <tr key={productoId}>
+                            <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                              {producto.nombre}
+                              {producto.codigo && (
+                                <div className="text-xs text-gray-500 font-mono">
+                                  {producto.codigo}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-2 py-2">
+                              <input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                placeholder="0"
+                                value={inline.precio_kg}
+                                onChange={(e) =>
+                                  setPreciosInline((prev) => ({
+                                    ...prev,
+                                    [productoId]: { ...inline, precio_kg: e.target.value },
+                                  }))
+                                }
+                                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-2 py-2">
+                              <select
+                                value={inline.modalidad_logistica ?? ''}
+                                onChange={(e) =>
+                                  setPreciosInline((prev) => ({
+                                    ...prev,
+                                    [productoId]: {
+                                      ...inline,
+                                      modalidad_logistica: e.target.value
+                                        ? Number(e.target.value)
+                                        : null,
+                                    },
+                                  }))
+                                }
+                                className="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              >
+                                <option value="">Sin modalidad</option>
+                                {modalidades.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.nombre}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  Cambios en precios existentes se registran automáticamente en el historial.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </Card>
 

@@ -28,7 +28,7 @@ import { Input, Select, Textarea } from '@/components/forms';
 import { useSectionPermissions } from '@/components/common/ProtectedAction';
 import { Modules, Sections } from '@/constants/permissions';
 
-import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useProveedores, useProveedor } from '@/features/catalogo-productos/hooks/useProveedores';
 import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
 import {
   usePreciosMP,
@@ -101,15 +101,6 @@ export function PreciosTab() {
     [productos]
   );
 
-  // Para saber si la modalidad es obligatoria según el proveedor seleccionado
-  const proveedoresMap = useMemo(() => {
-    const map = new Map<number, { requiereModalidad: boolean }>();
-    proveedoresActivos.forEach((p) => {
-      map.set(p.id, { requiereModalidad: false });
-    });
-    return map;
-  }, [proveedoresActivos]);
-
   // ─── Mutations ───
   const createMutation = useCreatePrecioMP();
   const updateMutation = useUpdatePrecioMP();
@@ -126,6 +117,29 @@ export function PreciosTab() {
   });
 
   const form = editing ? updateForm : createForm;
+
+  // Filtrado dinámico: productos disponibles para el proveedor seleccionado.
+  // En create — cargar detalle del proveedor para leer productos_suministrados.
+  // Excluye productos que ya tienen PrecioMP activo (evita violar unique_constraint).
+  const proveedorSelId = createForm.watch('proveedor');
+  const { data: proveedorDetail } = useProveedor(proveedorSelId || 0, {
+    enabled: !editing && !!proveedorSelId && proveedorSelId > 0,
+  } as never);
+
+  const productosDisponibles = useMemo(() => {
+    if (editing) return productosMP; // en edit no aplica (FK fija)
+    if (!proveedorSelId || proveedorSelId === 0) return [];
+
+    const detail = proveedorDetail as { productos_suministrados?: number[] } | undefined;
+    const suministrados = new Set(detail?.productos_suministrados ?? []);
+
+    // IDs de productos que ya tienen precio activo con este proveedor
+    const yaConPrecio = new Set(
+      precios.filter((p) => p.proveedor === proveedorSelId).map((p) => p.producto)
+    );
+
+    return productosMP.filter((p) => suministrados.has(p.id) && !yaConPrecio.has(p.id));
+  }, [editing, proveedorSelId, proveedorDetail, productosMP, precios]);
 
   // ─── Handlers ───
   const handleOpenCreate = () => {
@@ -348,10 +362,18 @@ export function PreciosTab() {
                 createForm.setValue('producto', Number(e.target.value), { shouldDirty: true })
               }
               required
+              disabled={!proveedorSelId || proveedorSelId === 0}
               error={createForm.formState.errors.producto?.message}
+              helperText={
+                !proveedorSelId
+                  ? 'Seleccione primero un proveedor'
+                  : productosDisponibles.length === 0
+                    ? 'Este proveedor no tiene MPs disponibles sin precio asignado'
+                    : `Solo MPs que el proveedor suministra (${productosDisponibles.length} disponibles)`
+              }
             >
               <option value="">Seleccionar...</option>
-              {productosMP.map((p) => (
+              {productosDisponibles.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre} ({p.codigo})
                 </option>

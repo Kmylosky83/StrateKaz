@@ -491,7 +491,7 @@ configurados como GitHub Actions services.
 ### Tests legacy y migracion progresiva
 
 Hay 143 tests legacy skipped en `apps/core/tests/`. Cada uno tiene una
-entrada en `docs/testing-debt.md` con categoria y plan de migracion. La
+entrada en `docs/02-desarrollo/testing-debt.md` con categoria y plan de migracion. La
 politica es: cuando se inventaria un sub-bloque y se tocan tests legacy
 asociados, se migran al patron nuevo en esa misma sesion. NO migracion
 en bloque.
@@ -662,10 +662,10 @@ vivir solo ahi.
 | Conocimiento por modulo | `docs/03-modulos/<modulo>/` | plantillas-sgi.md |
 | Deploy, operaciones, capacidad | `docs/04-devops/` | deploy.md, capacity-planning.md |
 | Auditorias historicas | `docs/auditorias/` | audit-lifecycle-2026-03-26.md |
-| Conocimiento de negocio | `docs/business/` | brand-identity.md, pricing-plans.md |
+| Conocimiento de negocio | `docs/05-negocio/` | brand-identity.md, pricing-plans.md |
 | Historial de sprints, pitfalls | `docs/history/` | sprint-history.md, pitfalls.md |
 | Hallazgos arquitectonicos | `docs/01-arquitectura/` | hallazgos-pendientes.md |
-| Inventario L0-L20 | `docs/inventory/` | L0-INDEX.md |
+| Inventario L0-L20 | `docs/auditorias/2026-04/inventory/` | L0-INDEX.md |
 
 ### Que se queda en auto-memory (scratch pad)
 

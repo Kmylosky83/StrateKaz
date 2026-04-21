@@ -435,14 +435,22 @@ class Producto(TenantModel):
     def __str__(self):
         return f'[{self.codigo}] {self.nombre}'
 
-    @staticmethod
-    def generar_codigo():
+    _CONSECUTIVO_POR_TIPO = {
+        'MATERIA_PRIMA': 'PRODUCTO_MP',
+        'INSUMO': 'PRODUCTO_INS',
+        'PRODUCTO_TERMINADO': 'PRODUCTO_PT',
+        'SERVICIO': 'PRODUCTO_SV',
+    }
+
+    @classmethod
+    def generar_codigo(cls, tipo='MATERIA_PRIMA'):
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('PRODUCTO')
+        codigo = cls._CONSECUTIVO_POR_TIPO.get(tipo, 'PRODUCTO_MP')
+        return ConsecutivoConfig.obtener_siguiente_consecutivo(codigo)
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo:
-            self.codigo = self.generar_codigo()
+            self.codigo = self.generar_codigo(tipo=self.tipo)
         super().save(*args, **kwargs)
 
 

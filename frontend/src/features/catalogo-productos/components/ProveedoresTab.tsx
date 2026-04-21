@@ -12,6 +12,9 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Badge } from '@/components/common/Badge';
 
+import { useSectionPermissions } from '@/components/common/ProtectedAction';
+import { Modules, Sections } from '@/constants/permissions';
+
 import { useProveedores, useDeleteProveedor } from '../hooks/useProveedores';
 import type { Proveedor } from '../types/proveedor.types';
 import ProveedorFormModal from './ProveedorFormModal';
@@ -26,6 +29,12 @@ export default function ProveedoresTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Proveedor | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // RBAC granular v4.1 — patrón canónico EntrevistasTab
+  const { canCreate, canEdit, canDelete } = useSectionPermissions(
+    Modules.CATALOGO_PRODUCTOS,
+    Sections.PROVEEDORES
+  );
 
   const { data: proveedores = [], isLoading } = useProveedores();
   const deleteMutation = useDeleteProveedor();
@@ -65,10 +74,12 @@ export default function ProveedoresTab() {
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Dato maestro multi-industria. Tributario y bancario se gestionan en Administración.
         </p>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Proveedor
-        </Button>
+        {canCreate && (
+          <Button variant="primary" onClick={handleOpenCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Proveedor
+          </Button>
+        )}
       </div>
 
       {proveedores.length === 0 ? (
@@ -142,17 +153,21 @@ export default function ProveedoresTab() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingId(p.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingId(p.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

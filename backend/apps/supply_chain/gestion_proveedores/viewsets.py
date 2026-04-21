@@ -32,7 +32,7 @@ class ModalidadLogisticaViewSet(viewsets.ModelViewSet):
     queryset = ModalidadLogistica.objects.all()
     serializer_class = ModalidadLogisticaSerializer
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios'
+    section_code = 'precios_materia_prima'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
@@ -46,7 +46,7 @@ class PrecioMateriaPrimaViewSet(viewsets.ModelViewSet):
 
     serializer_class = PrecioMateriaPrimaSerializer
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios'
+    section_code = 'precios_materia_prima'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['proveedor', 'producto']
@@ -90,7 +90,7 @@ class HistorialPrecioViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HistorialPrecioProveedor.objects.all()
     serializer_class = HistorialPrecioSerializer
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios'
+    section_code = 'precios_materia_prima'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = HistorialPrecioFilter

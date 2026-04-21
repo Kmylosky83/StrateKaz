@@ -25,6 +25,9 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { FormModal } from '@/components/modals/FormModal';
 import { Input, Select, Textarea } from '@/components/forms';
 
+import { useSectionPermissions } from '@/components/common/ProtectedAction';
+import { Modules, Sections } from '@/constants/permissions';
+
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
 import {
@@ -75,6 +78,12 @@ export function PreciosTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PrecioMP | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // RBAC granular v4.1
+  const { canCreate, canEdit, canDelete } = useSectionPermissions(
+    Modules.SUPPLY_CHAIN,
+    Sections.PRECIOS_MATERIA_PRIMA
+  );
 
   // ─── Queries ───
   const { data: precios = [], isLoading } = usePreciosMP();
@@ -190,10 +199,12 @@ export function PreciosTab() {
           Precio vigente por proveedor × materia prima. Al editar, el historial se registra
           automáticamente.
         </p>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Precio
-        </Button>
+        {canCreate && (
+          <Button variant="primary" onClick={handleOpenCreate}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nuevo Precio
+          </Button>
+        )}
       </div>
 
       {precios.length === 0 ? (
@@ -270,17 +281,21 @@ export function PreciosTab() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingId(p.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingId(p.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

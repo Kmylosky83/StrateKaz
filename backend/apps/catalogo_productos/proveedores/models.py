@@ -94,7 +94,6 @@ class Proveedor(TenantModel):
     class TipoPersona(models.TextChoices):
         NATURAL = 'natural', 'Persona Natural'
         EMPRESA = 'empresa', 'Empresa'
-        CON_CEDULA = 'con_cedula', 'Persona con Cédula (sin NIT)'
 
     # --- Identificación ---
     codigo_interno = models.CharField(

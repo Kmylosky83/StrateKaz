@@ -30,15 +30,17 @@ from django.db import migrations
 
 
 def infer_tipo_persona(tipo_documento):
-    """Infiere tipo_persona desde el código del tipo de documento."""
+    """Infiere tipo_persona desde el código del tipo de documento.
+
+    Solo 2 valores posibles post 2026-04-21: 'natural' | 'empresa'.
+    """
     if tipo_documento is None:
         return 'empresa'
     codigo = (getattr(tipo_documento, 'codigo', '') or '').upper()
-    if codigo == 'CC':
-        return 'natural'
     if codigo == 'NIT':
         return 'empresa'
-    return 'con_cedula'
+    # CC, CE, PA, TI, PEP, PPT, RC, NUIP → persona natural
+    return 'natural'
 
 
 def copy_proveedor_data(apps, schema_editor):

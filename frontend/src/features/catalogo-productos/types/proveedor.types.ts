@@ -9,7 +9,7 @@
  *   Tributario, bancario, contratos, evaluaciones → fuera (Admin/Compras).
  */
 
-export type TipoPersona = 'natural' | 'empresa' | 'con_cedula';
+export type TipoPersona = 'natural' | 'empresa';
 
 export interface TipoProveedor {
   id: number;
@@ -89,5 +89,5 @@ export interface EstadisticasProveedores {
   total: number;
   activos: number;
   inactivos: number;
-  por_tipo_persona: Record<TipoPersona, number>;
+  por_tipo_persona: Partial<Record<TipoPersona, number>>;
 }

@@ -1,34 +1,64 @@
 /**
- * Tab Precios - Gestión de precios de materias primas por proveedor (Tipo B — tabla)
- * SectionToolbar + Card+Table + BaseModal
+ * Tab Precios — Precios vigentes Proveedor × Producto (MP) + modalidad logística.
+ *
+ * Post refactor 2026-04-21:
+ *   - Proveedor vive en CT (catalogo_productos)
+ *   - Producto con tipo=MATERIA_PRIMA del catálogo
+ *   - Modalidad logística por (proveedor, producto), no global por proveedor
+ *   - Al editar precio_kg, backend crea HistorialPrecio automático via perform_update
+ *
+ * Obligatoria modalidad en UI solo si TipoProveedor.requiere_modalidad_logistica=True
+ * (backend responde `tipo_proveedor_requiere_modalidad` en cada precio).
  */
-import { useState } from 'react';
-import { DollarSign, History, TrendingUp, TrendingDown, Minus, Edit } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { DollarSign, Edit, Plus, Trash2, Truck } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
+import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
-import { SectionToolbar } from '@/components/common/SectionToolbar';
-import { BaseModal } from '@/components/modals/BaseModal';
-import { Input } from '@/components/forms/Input';
-import { Textarea } from '@/components/forms/Textarea';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { FormModal } from '@/components/modals/FormModal';
+import { Input, Select, Textarea } from '@/components/forms';
 
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
-import { useCambiarPrecio, useHistorialPrecio } from '../hooks/useProveedores';
-import type { PrecioMateriaPrima, HistorialPrecioProveedor } from '../types';
+import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
+import {
+  usePreciosMP,
+  useCreatePrecioMP,
+  useUpdatePrecioMP,
+  useDeletePrecioMP,
+  useModalidadesLogistica,
+} from '../hooks/usePrecios';
+import type { PrecioMP } from '../types/precio.types';
 
-// ==================== TIPOS ====================
+// ─── Schema ────────────────────────────────────────────────────────────────
 
-interface ProveedorConPrecios {
-  id: number;
-  razon_social: string;
-  nombre_comercial: string;
-  numero_documento: string;
-  precios_materia_prima: PrecioMateriaPrima[];
-}
+const createSchema = z.object({
+  proveedor: z.number().min(1, 'Seleccione un proveedor'),
+  producto: z.number().min(1, 'Seleccione un producto'),
+  precio_kg: z
+    .union([z.string(), z.number()])
+    .refine((v) => Number(v) >= 0, 'El precio no puede ser negativo'),
+  modalidad_logistica: z.number().nullable().optional(),
+});
 
-// ==================== UTILIDADES ====================
+const updateSchema = z.object({
+  precio_kg: z
+    .union([z.string(), z.number()])
+    .refine((v) => Number(v) >= 0, 'El precio no puede ser negativo'),
+  modalidad_logistica: z.number().nullable().optional(),
+  motivo: z.string().optional().default(''),
+});
+
+type CreateValues = z.infer<typeof createSchema>;
+type UpdateValues = z.infer<typeof updateSchema>;
+
+// ─── Utilidades ────────────────────────────────────────────────────────────
 
 const formatCurrency = (value: number | string) => {
   const num = typeof value === 'string' ? Number(value) : value;
@@ -39,81 +69,110 @@ const formatCurrency = (value: number | string) => {
   }).format(num);
 };
 
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString('es-CO', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-
-// ==================== COMPONENTE ====================
+// ─── Componente ────────────────────────────────────────────────────────────
 
 export function PreciosTab() {
-  const [selectedProveedorId, setSelectedProveedorId] = useState<number | null>(null);
-  const [selectedProveedorNombre, setSelectedProveedorNombre] = useState('');
-  const [showCambiarPrecio, setShowCambiarPrecio] = useState(false);
-  const [showHistorial, setShowHistorial] = useState(false);
-  const [precioSeleccionado, setPrecioSeleccionado] = useState<PrecioMateriaPrima | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<PrecioMP | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Query proveedores activos (includes precios_materia_prima nested)
-  const { data: proveedoresData, isLoading } = useProveedores({ is_active: true });
-  const proveedores = Array.isArray(proveedoresData)
-    ? proveedoresData
-    : proveedoresData?.results || [];
+  // ─── Queries ───
+  const { data: precios = [], isLoading } = usePreciosMP();
+  const { data: proveedores = [] } = useProveedores();
+  const { data: productos = [] } = useProductos();
+  const { data: modalidades = [] } = useModalidadesLogistica();
 
-  // Filtrar solo proveedores que tienen precios
-  const proveedoresConPrecios = proveedores.filter(
-    (p: ProveedorConPrecios) => p.precios_materia_prima && p.precios_materia_prima.length > 0
-  ) as ProveedorConPrecios[];
-
-  // Mutations
-  const cambiarPrecioMutation = useCambiarPrecio();
-
-  // Historial (endpoint retorna { proveedor, proveedor_id, precios_actuales, historial })
-  const { data: historialResponse, isLoading: isLoadingHistorial } = useHistorialPrecio(
-    selectedProveedorId || 0
+  // Proveedores activos + productos MP
+  const proveedoresActivos = useMemo(
+    () => (Array.isArray(proveedores) ? proveedores.filter((p) => p.is_active) : []),
+    [proveedores]
   );
-  const historial: HistorialPrecioProveedor[] = historialResponse?.historial || [];
+  const productosMP = useMemo(
+    () => (Array.isArray(productos) ? productos.filter((p) => p.tipo === 'MATERIA_PRIMA') : []),
+    [productos]
+  );
 
-  // ==================== HANDLERS ====================
-
-  const handleCambiarPrecio = (
-    proveedorId: number,
-    proveedorNombre: string,
-    precio: PrecioMateriaPrima
-  ) => {
-    setSelectedProveedorId(proveedorId);
-    setSelectedProveedorNombre(proveedorNombre);
-    setPrecioSeleccionado(precio);
-    setShowCambiarPrecio(true);
-  };
-
-  const handleVerHistorial = (proveedorId: number, proveedorNombre: string) => {
-    setSelectedProveedorId(proveedorId);
-    setSelectedProveedorNombre(proveedorNombre);
-    setShowHistorial(true);
-  };
-
-  const handleSubmitCambio = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedProveedorId || !precioSeleccionado) return;
-
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    await cambiarPrecioMutation.mutateAsync({
-      id: selectedProveedorId,
-      data: {
-        tipo_materia_id: precioSeleccionado.tipo_materia,
-        precio_nuevo: Number(formData.get('precio_nuevo')),
-        motivo: String(formData.get('motivo') || ''),
-      },
+  // Para saber si la modalidad es obligatoria según el proveedor seleccionado
+  const proveedoresMap = useMemo(() => {
+    const map = new Map<number, { requiereModalidad: boolean }>();
+    proveedoresActivos.forEach((p) => {
+      map.set(p.id, { requiereModalidad: false });
     });
-    setShowCambiarPrecio(false);
-    setPrecioSeleccionado(null);
+    return map;
+  }, [proveedoresActivos]);
+
+  // ─── Mutations ───
+  const createMutation = useCreatePrecioMP();
+  const updateMutation = useUpdatePrecioMP();
+  const deleteMutation = useDeletePrecioMP();
+
+  // ─── Forms ───
+  const createForm = useForm<CreateValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: { proveedor: 0, producto: 0, precio_kg: '', modalidad_logistica: null },
+  });
+  const updateForm = useForm<UpdateValues>({
+    resolver: zodResolver(updateSchema),
+    defaultValues: { precio_kg: '', modalidad_logistica: null, motivo: '' },
+  });
+
+  const form = editing ? updateForm : createForm;
+
+  // ─── Handlers ───
+  const handleOpenCreate = () => {
+    setEditing(null);
+    createForm.reset({ proveedor: 0, producto: 0, precio_kg: '', modalidad_logistica: null });
+    setModalOpen(true);
   };
 
-  // ==================== RENDER ====================
+  const handleOpenEdit = (precio: PrecioMP) => {
+    setEditing(precio);
+    updateForm.reset({
+      precio_kg: precio.precio_kg,
+      modalidad_logistica: precio.modalidad_logistica ?? null,
+      motivo: '',
+    });
+    setModalOpen(true);
+  };
 
+  const handleClose = () => {
+    setEditing(null);
+    setModalOpen(false);
+  };
+
+  const handleSubmit = async (values: CreateValues | UpdateValues) => {
+    try {
+      if (editing) {
+        await updateMutation.mutateAsync({
+          id: editing.id,
+          data: {
+            precio_kg: Number((values as UpdateValues).precio_kg),
+            modalidad_logistica: (values as UpdateValues).modalidad_logistica ?? null,
+            motivo: (values as UpdateValues).motivo || 'Ajuste de precio',
+          },
+        });
+      } else {
+        const v = values as CreateValues;
+        await createMutation.mutateAsync({
+          proveedor: v.proveedor,
+          producto: v.producto,
+          precio_kg: Number(v.precio_kg),
+          modalidad_logistica: v.modalidad_logistica ?? null,
+        });
+      }
+      handleClose();
+    } catch {
+      /* toast mostrado por mutation */
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingId) return;
+    await deleteMutation.mutateAsync(deletingId);
+    setDeletingId(null);
+  };
+
+  // ─── Render ───
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -122,244 +181,221 @@ export function PreciosTab() {
     );
   }
 
-  if (proveedoresConPrecios.length === 0) {
-    return (
-      <EmptyState
-        icon={<DollarSign className="w-16 h-16" />}
-        title="No hay precios registrados"
-        description="Los precios se crean al registrar un proveedor de materia prima con precios por tipo"
-      />
-    );
-  }
+  const precioEdit = editing;
 
   return (
     <div className="space-y-4">
-      <SectionToolbar title="Precios por Proveedor" count={proveedoresConPrecios.length} />
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Precio vigente por proveedor × materia prima. Al editar, el historial se registra
+          automáticamente.
+        </p>
+        <Button variant="primary" onClick={handleOpenCreate}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Precio
+        </Button>
+      </div>
 
-      {/* Tabla de precios */}
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Proveedor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tipo Materia Prima
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Precio/Kg
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {proveedoresConPrecios.map((prov) =>
-                prov.precios_materia_prima.map((precio: PrecioMateriaPrima, idx: number) => (
-                  <tr
-                    key={`${prov.id}-${precio.id}`}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  >
-                    {idx === 0 && (
-                      <td
-                        className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white"
-                        rowSpan={prov.precios_materia_prima.length}
-                      >
-                        <div>
-                          <p>{prov.razon_social || prov.nombre_comercial}</p>
-                          <p className="text-xs text-gray-500">{prov.numero_documento}</p>
-                        </div>
-                      </td>
-                    )}
-                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {precio.tipo_materia_nombre || `MP #${precio.tipo_materia}`}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(precio.precio_kg)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCambiarPrecio(prov.id, prov.razon_social, precio)}
-                          title="Cambiar precio"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        {idx === 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleVerHistorial(prov.id, prov.razon_social)}
-                            title="Ver historial de precios"
-                          >
-                            <History className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Modal Cambiar Precio */}
-      <BaseModal
-        isOpen={showCambiarPrecio}
-        onClose={() => {
-          setShowCambiarPrecio(false);
-          setPrecioSeleccionado(null);
-        }}
-        title="Cambiar Precio"
-        size="md"
-        footer={
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => setShowCambiarPrecio(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              disabled={cambiarPrecioMutation.isPending}
-              onClick={() => {
-                const form = document.getElementById('cambiar-precio-form') as HTMLFormElement;
-                form?.requestSubmit();
-              }}
-            >
-              {cambiarPrecioMutation.isPending ? 'Guardando...' : 'Cambiar Precio'}
-            </Button>
-          </div>
-        }
-      >
-        <form id="cambiar-precio-form" onSubmit={handleSubmitCambio} className="space-y-4">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <p>
-              Proveedor: <strong>{selectedProveedorNombre}</strong>
-            </p>
-            <p>
-              Materia prima: <strong>{precioSeleccionado?.tipo_materia_prima_nombre}</strong>
-            </p>
-            <p>
-              Precio actual:{' '}
-              <strong>
-                {precioSeleccionado ? formatCurrency(precioSeleccionado.precio_unitario) : '-'}
-              </strong>
-            </p>
-          </div>
-
-          <Input
-            label="Nuevo Precio (COP/Kg) *"
-            type="number"
-            name="precio_nuevo"
-            step="0.01"
-            min="0"
-            required
-            placeholder="0.00"
+      {precios.length === 0 ? (
+        <Card className="p-8">
+          <EmptyState
+            icon={
+              <div className="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            }
+            title="Sin precios registrados"
+            description="Cree el primer precio con el botón de arriba. Requiere al menos un proveedor y un producto tipo MP en el catálogo."
           />
-
-          <Textarea
-            label="Motivo del Cambio"
-            name="motivo_cambio"
-            rows={2}
-            placeholder="Ej: Ajuste por inflación, nuevo contrato..."
-          />
-        </form>
-      </BaseModal>
-
-      {/* Modal Historial de Precios */}
-      <BaseModal
-        isOpen={showHistorial}
-        onClose={() => setShowHistorial(false)}
-        title={`Historial de Precios \u2014 ${selectedProveedorNombre}`}
-        size="lg"
-      >
-        {isLoadingHistorial ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
-          </div>
-        ) : historial.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No hay historial de cambios de precio</p>
-        ) : (
+        </Card>
+      ) : (
+        <Card>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                    Fecha
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Proveedor
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                    Materia Prima
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Producto
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                    Anterior
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Precio
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                    Nuevo
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Modalidad
                   </th>
-                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                    Variación
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                    Motivo
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {historial.map((h) => {
-                  const variacion = Number(h.porcentaje_variacion);
-                  return (
-                    <tr key={h.id}>
-                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">
-                        {formatDate(h.fecha_cambio)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">
-                        {h.tipo_materia_prima_nombre}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-right text-gray-600 dark:text-gray-300">
-                        {formatCurrency(h.precio_anterior)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(h.precio_nuevo)}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-center">
-                        <span
-                          className={`inline-flex items-center gap-1 ${
-                            variacion > 0
-                              ? 'text-danger-600'
-                              : variacion < 0
-                                ? 'text-success-600'
-                                : 'text-gray-500'
-                          }`}
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                {precios.map((p) => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-3 text-sm">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {p.proveedor_nombre}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                        {p.proveedor_codigo}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {p.producto_nombre}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                        {p.producto_codigo}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold text-gray-900 dark:text-white">
+                      {formatCurrency(p.precio_kg)}
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        por {p.unidad_medida || 'kg'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {p.modalidad_logistica_nombre ? (
+                        <Badge variant="info">
+                          <Truck className="w-3 h-3 mr-1 inline" />
+                          {p.modalidad_logistica_nombre}
+                        </Badge>
+                      ) : p.tipo_proveedor_requiere_modalidad ? (
+                        <Badge variant="warning">⚠ Falta asignar</Badge>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(p)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingId(p.id)}
+                          className="text-red-600 hover:text-red-700"
                         >
-                          {variacion > 0 ? (
-                            <TrendingUp className="w-3 h-3" />
-                          ) : variacion < 0 ? (
-                            <TrendingDown className="w-3 h-3" />
-                          ) : (
-                            <Minus className="w-3 h-3" />
-                          )}
-                          {variacion > 0 ? '+' : ''}
-                          {variacion.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">
-                        {h.motivo_cambio || '-'}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+        </Card>
+      )}
+
+      {/* Modal: Crear o Editar */}
+      <FormModal
+        isOpen={modalOpen}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        form={form as never}
+        title={precioEdit ? 'Editar Precio' : 'Nuevo Precio'}
+        subtitle={
+          precioEdit
+            ? `${precioEdit.proveedor_nombre} × ${precioEdit.producto_nombre}`
+            : 'Asigne precio y modalidad logística'
+        }
+        size="md"
+        isLoading={createMutation.isPending || updateMutation.isPending}
+        submitLabel={precioEdit ? 'Guardar cambios' : 'Crear Precio'}
+        warnUnsavedChanges
+      >
+        {!precioEdit && (
+          <>
+            <Select
+              label="Proveedor"
+              value={createForm.watch('proveedor') || ''}
+              onChange={(e) =>
+                createForm.setValue('proveedor', Number(e.target.value), { shouldDirty: true })
+              }
+              required
+              error={createForm.formState.errors.proveedor?.message}
+            >
+              <option value="">Seleccionar...</option>
+              {proveedoresActivos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre_comercial} ({p.codigo_interno})
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Producto (Materia Prima)"
+              value={createForm.watch('producto') || ''}
+              onChange={(e) =>
+                createForm.setValue('producto', Number(e.target.value), { shouldDirty: true })
+              }
+              required
+              error={createForm.formState.errors.producto?.message}
+            >
+              <option value="">Seleccionar...</option>
+              {productosMP.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre} ({p.codigo})
+                </option>
+              ))}
+            </Select>
+          </>
         )}
-      </BaseModal>
+
+        <Input
+          label="Precio por kg (COP)"
+          type="number"
+          step="0.01"
+          min={0}
+          {...form.register('precio_kg' as never)}
+          required
+          error={form.formState.errors.precio_kg?.message as string | undefined}
+        />
+
+        <Select
+          label="Modalidad logística"
+          value={form.watch('modalidad_logistica' as never) ?? ''}
+          onChange={(e) => {
+            const v = e.target.value ? Number(e.target.value) : null;
+            form.setValue('modalidad_logistica' as never, v as never, { shouldDirty: true });
+          }}
+          helperText={
+            precioEdit?.tipo_proveedor_requiere_modalidad
+              ? 'Este proveedor exige modalidad logística.'
+              : 'Opcional (entrega en planta / recolección en punto / etc.)'
+          }
+        >
+          <option value="">Sin modalidad</option>
+          {modalidades.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nombre}
+            </option>
+          ))}
+        </Select>
+
+        {precioEdit && (
+          <Textarea
+            label="Motivo del cambio"
+            {...updateForm.register('motivo')}
+            rows={2}
+            placeholder="Ej: Ajuste por inflación, nuevo contrato..."
+            helperText="Se registra en el historial de precios"
+          />
+        )}
+      </FormModal>
+
+      <ConfirmDialog
+        isOpen={deletingId !== null}
+        title="Eliminar precio"
+        message="¿Está seguro? El precio quedará marcado como inactivo (soft delete)."
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeletingId(null)}
+        confirmText="Eliminar"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

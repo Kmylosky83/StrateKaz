@@ -62,6 +62,9 @@ export type { RichTextEditorProps, RichTextEditorRef } from './RichTextEditor';
 export { SignaturePad } from './SignaturePad';
 export type { SignaturePadProps, SignaturePadRef } from './SignaturePad';
 
+export { MultiSelectCombobox } from './MultiSelectCombobox';
+export type { MultiSelectOption } from './MultiSelectCombobox';
+
 // Re-export SignatureModal from modals for convenience
 export { SignatureModal } from '../modals/SignatureModal';
 export type { SignatureModalProps, SignatureData } from '../modals/SignatureModal';

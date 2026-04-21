@@ -17,7 +17,7 @@ import { z } from 'zod';
 
 import { FormModal } from '@/components/modals';
 import { Card } from '@/components/common/Card';
-import { Input, Select, Textarea, Checkbox } from '@/components/forms';
+import { Input, Select, Textarea, MultiSelectCombobox } from '@/components/forms';
 import { Switch } from '@/components/forms';
 
 import { useSelectDepartamentos, useSelectTiposDocumento } from '@/hooks/useSelectLists';
@@ -38,11 +38,10 @@ import type {
 const TIPO_PERSONA_OPTIONS: { value: TipoPersona; label: string }[] = [
   { value: 'natural', label: 'Persona Natural' },
   { value: 'empresa', label: 'Empresa' },
-  { value: 'con_cedula', label: 'Persona con Cédula (sin NIT)' },
 ];
 
 const proveedorSchema = z.object({
-  tipo_persona: z.enum(['natural', 'empresa', 'con_cedula']),
+  tipo_persona: z.enum(['natural', 'empresa']),
   tipo_proveedor: z.number().nullable().optional(),
   razon_social: z.string().min(1, 'La razón social es obligatoria'),
   nombre_comercial: z.string().min(1, 'El nombre comercial es obligatorio'),
@@ -151,14 +150,16 @@ export default function ProveedorFormModal({
   const tipoPersona = watch('tipo_persona');
   const esEmpresa = tipoPersona === 'empresa';
 
-  // ─── Toggle producto suministrado ───
-  const handleToggleProducto = (productoId: number) => {
-    const current = watch('productos_suministrados') || [];
-    const next = current.includes(productoId)
-      ? current.filter((id) => id !== productoId)
-      : [...current, productoId];
-    setValue('productos_suministrados', next, { shouldDirty: true });
-  };
+  // Opciones para el combobox de productos MP
+  const productosOptions = useMemo(
+    () =>
+      productosMP.map((p) => ({
+        value: p.id,
+        label: p.nombre,
+        description: p.codigo ? `Código: ${p.codigo}` : undefined,
+      })),
+    [productosMP]
+  );
 
   // ─── Submit ───
   const handleSubmit = async (data: ProveedorFormValues) => {
@@ -353,16 +354,17 @@ export default function ProveedorFormModal({
             Catálogo y regresar aquí.
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-            {productosMP.map((p) => (
-              <Checkbox
-                key={p.id}
-                label={p.nombre}
-                checked={watch('productos_suministrados')?.includes(p.id) || false}
-                onChange={() => handleToggleProducto(p.id)}
-              />
-            ))}
-          </div>
+          <MultiSelectCombobox
+            label="Materias primas que suministra"
+            placeholder="Seleccionar productos..."
+            emptyMessage="Sin resultados. Pruebe con otra búsqueda."
+            options={productosOptions}
+            value={(watch('productos_suministrados') || []) as number[]}
+            onChange={(vals) =>
+              setValue('productos_suministrados', vals as number[], { shouldDirty: true })
+            }
+            helperText="Solo productos del catálogo con tipo Materia Prima."
+          />
         )}
       </Card>
 

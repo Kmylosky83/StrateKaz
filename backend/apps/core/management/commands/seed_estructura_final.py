@@ -156,6 +156,7 @@ class Command(BaseCommand):
     # Secciones del módulo catalogo_productos cuyo acceso se restringe.
     CATALOGO_PRODUCTOS_SECTIONS = [
         'gestion_productos', 'gestion_categorias', 'gestion_unidades',
+        'proveedores',
     ]
 
     # Cargos autorizados a gestionar catalogo_productos (dato maestro).
@@ -697,6 +698,12 @@ class Command(BaseCommand):
                     {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
                         {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
                     ]},
+                    # Proveedores movido a CT 2026-04-21 (refactor Opción A).
+                    # Tab code + section code = 'proveedores' para coincidir con
+                    # ProveedorViewSet.section_code y FE useSectionPermissions.
+                    {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 4, 'sections': [
+                        {'code': 'proveedores', 'name': 'Gestión de Proveedores', 'icon': 'Users', 'orden': 1, 'description': 'Dato maestro multi-industria: identificación + contacto + productos suministrados'},
+                    ]},
                 ]
             },
 
@@ -960,29 +967,27 @@ class Command(BaseCommand):
                 'is_enabled': True,  # S6 LIVE — módulo universal post-deploy
                 'orden': 50,
                 'tabs': [
-                    {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 1, 'sections': [
-                        {'code': 'registro_proveedores', 'name': 'Registro', 'icon': 'Users', 'orden': 1, 'description': 'Consume de Partes Interesadas (Fundación). Enriquece con datos comerciales'},
-                        {'code': 'importacion_proveedores', 'name': 'Importación', 'icon': 'Upload', 'orden': 2, 'description': 'Importación masiva de proveedores'},
-                    ]},
-                    {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 2, 'sections': [
+                    # Tab Proveedores eliminado 2026-04-21 — modelo movido a CT.
+                    # Ver /catalogo-productos/proveedores (tab 'proveedores' en
+                    # módulo catalogo_productos).
+                    {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 1, 'sections': [
                         {'code': 'precios_materia_prima', 'name': 'Precios Materia Prima', 'icon': 'DollarSign', 'orden': 1, 'description': 'Control de precios por tipo de materia prima'},
                     ]},
                     # Tab Compras: NO expuesta en sidebar. App compras registrada en
                     # TENANT_APPS solo para integridad referencial del FK
                     # VoucherRecepcion.orden_compra. Reescritura futura.
-                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 3, 'sections': [
+                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 2, 'sections': [
                         {'code': 'recepcion_mp_sc', 'name': 'Vouchers de Recepción', 'icon': 'Scale', 'orden': 1, 'description': 'Vouchers de báscula, QC opcional, ingreso a inventario'},
                     ]},
-                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 4, 'sections': [
+                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 3, 'sections': [
                         {'code': 'liquidaciones_sc', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'orden': 1, 'description': 'Cálculo y aprobación de pagos a proveedores por recepciones'},
                     ]},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5, 'sections': [
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 4, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
-                    {'code': 'evaluaciones', 'name': 'Evaluaciones', 'icon': 'ClipboardCheck', 'route': 'evaluaciones', 'orden': 6, 'sections': [
-                        {'code': 'evaluaciones_prov', 'name': 'Evaluación Proveedores', 'icon': 'ClipboardCheck', 'orden': 1, 'description': 'Evaluación periódica de proveedores'},
-                    ]},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 7, 'sections': [
+                    # Tab Evaluaciones eliminado 2026-04-21 — modelos EvaluacionProveedor
+                    # y CriterioEvaluacion eliminados (scope Admin/Compras futuro).
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 5, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

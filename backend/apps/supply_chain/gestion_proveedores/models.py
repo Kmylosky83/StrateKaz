@@ -91,6 +91,18 @@ class PrecioMateriaPrima(TenantModel):
         decimal_places=2,
         verbose_name='Precio por kg',
     )
+    # Modalidad logística por (proveedor, MP) — doctrina 2026-04-21:
+    # el modelo logístico vive en el flujo de precio SC, no en Proveedor CT.
+    modalidad_logistica = models.ForeignKey(
+        ModalidadLogistica,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='precios_mp',
+        verbose_name='Modalidad logística',
+        help_text='Entrega en planta / recolección en punto / transporte propio / etc. '
+                  'Obligatoria en UI si TipoProveedor.requiere_modalidad_logistica=True.',
+    )
 
     class Meta:
         db_table = 'supply_chain_precio_materia_prima'

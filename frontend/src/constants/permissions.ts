@@ -42,6 +42,7 @@ export const Modules = {
 
   // ── INFRAESTRUCTURA ──
   CONFIGURACION_PLATAFORMA: 'configuracion_plataforma',
+  CATALOGO_PRODUCTOS: 'catalogo_productos',
 
   // ── Legacy aliases (V1 → V2, para compatibilidad durante migración) ──
   /** @deprecated Use GESTION_INTEGRAL */

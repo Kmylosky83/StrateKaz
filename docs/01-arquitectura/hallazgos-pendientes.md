@@ -1228,3 +1228,95 @@ Sesión dedicada post-deploy MP (pre-S10):
 
 ### Estado
 🔲 Abierto
+
+---
+
+## H-S9-modal-mount-condicional — Modales se montan aunque estén cerrados
+
+### Detectado
+2026-04-21, navegando a `/supply-chain/precios` (browser console warning
+"Maximum update depth exceeded" en `PreciosProveedorModal.tsx:87`).
+
+### Módulo
+Supply Chain (`features/supply-chain/components/PreciosProveedorModal.tsx`)
+y, por extensión, el patrón general de modales en el frontend.
+
+### Severidad
+**MEDIA** — No bloquea funcionalidad post-fix, pero es un patrón
+arquitectónico que amplifica cualquier bug de render loop en un modal.
+
+### Síntoma observable
+`PreciosTab` renderiza `<PreciosProveedorModal isOpen={modalOpen} ... />`
+**siempre**, incluso con `modalOpen=false`. Esto implica que:
+
+1. El modal se monta al cargar el tab (antes de que el usuario haga click).
+2. `useQuery` se registra en React Query aunque `enabled=false` (el hook
+   corre, solo no dispara el request).
+3. `useEffect([data])` corre al menos 1 vez con `data=undefined`.
+4. Cualquier dependencia inestable en hooks del modal se amplifica aunque
+   el usuario nunca lo abra.
+
+El bug del loop infinito (deps `[filas]` con default `[]` creando nueva
+referencia cada render) existía hace semanas pero quedaba invisible
+porque el modal solo se renderiza con `isOpen=false` hasta que el
+usuario clickea un proveedor. El fix actual (`[data]` + guard `!data`)
+elimina el síntoma, pero el patrón de montaje permanente sigue ahí.
+
+### Causa raíz
+Patrón copiado de `BaseModal` legacy donde el modal controla su
+visibilidad internamente con CSS (display:none / opacity:0) en lugar de
+unmount. Útil para animaciones de apertura/cierre, pero caro en:
+
+- Effects corriendo en vacío
+- Subscripciones a React Query sin utilidad
+- Estado residual entre aperturas (si se abre modal A, se cierra y se
+  abre modal B del mismo componente, rowStates puede contener datos
+  stale de A hasta que React Query resuelva B)
+
+### Alcance del patrón en el repo
+Grep pendiente confirmar, pero al menos estos modales heredan el patrón:
+- `PreciosProveedorModal` (supply-chain)
+- `HistorialPrecioDialog` (supply-chain)
+- Probablemente modales de `mi_equipo`, `catalogo_productos`,
+  `gestion_documental`.
+
+### Impacto
+- **Performance:** effects y queries innecesarias en cada tab con modales.
+- **Bugs latentes:** un loop infinito en cualquier modal se dispara en
+  carga de página, no cuando el usuario lo abre.
+- **Estado residual:** modales reutilizados pueden mostrar datos stale
+  entre aperturas.
+
+### Propuesta de fix
+**Patrón recomendado:** montaje condicional explícito.
+
+```tsx
+{modalOpen && (
+  <PreciosProveedorModal
+    isOpen={modalOpen}
+    onClose={handleClose}
+    proveedorId={selectedId}
+    ...
+  />
+)}
+```
+
+Alternativas a evaluar en sesión dedicada:
+1. Montaje condicional manual (patrón arriba) — simple, sin animaciones
+   de cierre.
+2. `AnimatePresence` de framer-motion si se quiere animación de salida
+   con unmount real.
+3. Refactor de `BaseModal` para aceptar prop `unmountOnClose` (default
+   `true`) — fix sistémico en un solo lugar.
+
+**Migración sugerida:** opción 3 (BaseModal con `unmountOnClose`) porque:
+- Fix centralizado.
+- Default seguro (unmount) preserva invariantes actuales.
+- Callers con animación específica pueden opt-out.
+
+### Trigger
+**MEDIA post-deploy MP.** No bloqueante. Entrar cuando se toque
+`BaseModal` o cuando aparezca otro bug de render loop en modales.
+
+### Estado
+🔲 Abierto

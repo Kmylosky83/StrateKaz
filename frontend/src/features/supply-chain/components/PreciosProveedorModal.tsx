@@ -65,19 +65,18 @@ export default function PreciosProveedorModal({
 
   const { data: modalidades = [] } = useModalidadesLogistica();
 
-  const {
-    data: filas = [],
-    isLoading,
-    refetch,
-  } = useQuery<PrecioMPPorProveedorRow[]>({
+  const { data, isLoading, refetch } = useQuery<PrecioMPPorProveedorRow[]>({
     queryKey: ['sc-precios-por-proveedor', proveedorId],
     queryFn: () => getPreciosPorProveedor(proveedorId!),
     enabled: !!proveedorId && isOpen,
   });
 
+  const filas = data ?? [];
+
   useEffect(() => {
+    if (!data) return;
     const next: Record<number, RowState> = {};
-    for (const f of filas) {
+    for (const f of data) {
       next[f.producto] = {
         precio_kg: f.precio_kg ?? '',
         modalidad_logistica: f.modalidad_logistica,
@@ -85,7 +84,7 @@ export default function PreciosProveedorModal({
       };
     }
     setRowStates(next);
-  }, [filas]);
+  }, [data]);
 
   const saveMutation = useMutation({
     mutationFn: guardarPreciosPorProveedor,

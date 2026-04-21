@@ -219,8 +219,15 @@ if [ "$DO_BACKEND" = true ]; then
     # -------------------------------------------------------------------------
     log_step "PASO 3c: Sync Seeds (todas las tenants)"
 
+    # sync_tenant_seeds solo corre estructura + RBAC.
     run_cmd "DJANGO_SETTINGS_MODULE=$SETTINGS python manage.py sync_tenant_seeds --all"
-    log_info "Seeds sincronizados en todas las tenants"
+    log_info "Seeds criticos sincronizados (estructura + RBAC)"
+
+    # deploy_seeds_all_tenants corre el pipeline completo idempotente:
+    # consecutivos, catalogo_productos, supply_chain, procesos, tipos DOFA/PESTEL, etc.
+    # Sin esto, seeds nuevos agregados al codigo NO llegan a tenants existentes.
+    run_cmd "DJANGO_SETTINGS_MODULE=$SETTINGS python manage.py deploy_seeds_all_tenants"
+    log_info "Pipeline completo de seeds aplicado (consecutivos, catalogos, etc.)"
 
     # -------------------------------------------------------------------------
     # 3d: Collectstatic

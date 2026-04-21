@@ -214,9 +214,9 @@ export function PreciosTab() {
                           e.stopPropagation();
                           handleRowClick(p.id);
                         }}
+                        title="Gestionar precios"
                       >
-                        <Edit3 className="w-4 h-4 mr-1" />
-                        Gestionar precios
+                        <Edit3 className="w-4 h-4" />
                       </Button>
                     </td>
                   </tr>

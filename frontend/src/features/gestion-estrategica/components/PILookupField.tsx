@@ -4,11 +4,13 @@
  * Cross-module: usado por Supply Chain (Proveedor), Sales CRM (Cliente),
  * Talent Hub (Colaborador) para vincular con PI de Fundación.
  *
- * REORG-B7: Componente reutilizable.
+ * Doctrina 2026-04-21: vincular una PI NO requiere permiso de gestión sobre
+ * fundacion.partes_interesadas. Usa el endpoint ligero /core/select-lists/
+ * que solo exige estar autenticado. La gestión completa sigue restringida.
  */
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Link2, X, Search, AlertTriangle } from 'lucide-react';
-import { usePartesInteresadas } from '../hooks/usePartesInteresadas';
+import { useSelectPartesInteresadas } from '@/hooks/useSelectLists';
 
 interface PILookupFieldProps {
   value: number | null | undefined;
@@ -27,22 +29,17 @@ export const PILookupField = ({
   const [search, setSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: piData, isLoading, isError, error } = usePartesInteresadas();
+  const { data: piData = [], isLoading, isError } = useSelectPartesInteresadas();
   const items = useMemo(() => {
-    const all = Array.isArray(piData) ? piData : (piData?.results ?? []);
-    if (!search) return all.slice(0, 20);
+    if (!search) return piData.slice(0, 50);
     const lower = search.toLowerCase();
-    return all
-      .filter(
-        (pi) =>
-          pi.nombre.toLowerCase().includes(lower) || pi.tipo_nombre?.toLowerCase().includes(lower)
-      )
-      .slice(0, 20);
+    return piData
+      .filter((pi) => {
+        const tipoNombre = String(pi.extra?.tipo_nombre ?? '');
+        return pi.label.toLowerCase().includes(lower) || tipoNombre.toLowerCase().includes(lower);
+      })
+      .slice(0, 50);
   }, [piData, search]);
-
-  // Detectar 403 (sin permiso para ver partes interesadas)
-  const httpStatus = (error as { response?: { status?: number } } | null)?.response?.status;
-  const sinPermiso = isError && httpStatus === 403;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -114,19 +111,10 @@ export const PILookupField = ({
               <li className="px-3 py-4 text-sm text-gray-500 italic text-center">
                 Cargando partes interesadas...
               </li>
-            ) : sinPermiso ? (
-              <li className="px-3 py-4 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong>Sin permiso para ver Partes Interesadas.</strong>
-                  <br />
-                  Pida al administrador acceso a la sección{' '}
-                  <code className="font-mono">fundacion.partes_interesadas</code> (can_view).
-                </div>
-              </li>
             ) : isError ? (
-              <li className="px-3 py-4 text-sm text-red-600 italic text-center">
-                Error al cargar partes interesadas
+              <li className="px-3 py-4 text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>Error al cargar partes interesadas</span>
               </li>
             ) : items.length === 0 ? (
               <li className="px-3 py-2 text-sm text-gray-500 italic">
@@ -138,12 +126,13 @@ export const PILookupField = ({
               items.map((pi) => (
                 <li
                   key={pi.id}
-                  onMouseDown={() => handleSelect(pi.id, pi.nombre)}
+                  onMouseDown={() => handleSelect(pi.id, pi.label)}
                   className="px-3 py-2 text-sm cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20"
                 >
-                  <p className="font-medium text-gray-900 dark:text-white">{pi.nombre}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{pi.label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {pi.tipo_nombre} · {pi.grupo_nombre}
+                    {pi.extra?.tipo_nombre}
+                    {pi.extra?.grupo_nombre ? ` · ${pi.extra.grupo_nombre}` : ''}
                   </p>
                 </li>
               ))

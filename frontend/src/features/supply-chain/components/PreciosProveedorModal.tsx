@@ -24,6 +24,7 @@ import { useModalidadesLogistica } from '../hooks/usePrecios';
 import { getPreciosPorProveedor, guardarPreciosPorProveedor } from '../api/precios.api';
 import type { PrecioMPPorProveedorRow, BatchPrecioItem } from '../types/precio.types';
 import { getApiErrorMessage } from '@/utils/errorUtils';
+import HistorialPrecioDialog from './HistorialPrecioDialog';
 
 const formatCurrency = (value: number | string) => {
   const num = typeof value === 'string' ? Number(value) : value;
@@ -57,6 +58,10 @@ export default function PreciosProveedorModal({
 }: PreciosProveedorModalProps) {
   const queryClient = useQueryClient();
   const [rowStates, setRowStates] = useState<Record<number, RowState>>({});
+  const [historialFor, setHistorialFor] = useState<{
+    productoId: number;
+    productoNombre: string;
+  } | null>(null);
 
   const { data: modalidades = [] } = useModalidadesLogistica();
 
@@ -208,6 +213,9 @@ export default function PreciosProveedorModal({
                 <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-48">
                   Modalidad
                 </th>
+                <th className="px-3 py-2 text-right font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-24">
+                  Historial
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -274,6 +282,23 @@ export default function PreciosProveedorModal({
                         ))}
                       </select>
                     </td>
+                    <td className="px-2 py-2 text-right">
+                      {!fila.es_pendiente && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setHistorialFor({
+                              productoId: fila.producto,
+                              productoNombre: fila.producto_nombre,
+                            })
+                          }
+                          title="Ver historial de cambios de precio"
+                        >
+                          <History className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -281,6 +306,15 @@ export default function PreciosProveedorModal({
           </table>
         </div>
       )}
+
+      {/* Sub-modal: historial del precio seleccionado */}
+      <HistorialPrecioDialog
+        isOpen={!!historialFor}
+        onClose={() => setHistorialFor(null)}
+        proveedorId={proveedorId}
+        productoId={historialFor?.productoId ?? null}
+        productoNombre={historialFor?.productoNombre}
+      />
     </BaseModal>
   );
 }

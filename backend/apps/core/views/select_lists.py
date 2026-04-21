@@ -338,6 +338,49 @@ def select_tipos_materia_prima(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def select_partes_interesadas(request):
+    """
+    Lista ligera de Partes Interesadas para lookup / vinculación.
+
+    Doctrina: VINCULAR una PI a un proveedor NO requiere permiso de gestión
+    completa sobre el módulo Contexto. Este endpoint solo requiere estar
+    autenticado y devuelve el mínimo necesario para un dropdown.
+
+    Para gestión completa (crear/editar/eliminar PIs), usar
+    /api/gestion-estrategica/partes-interesadas/ que sí requiere RBAC
+    granular (fundacion.partes_interesadas).
+    """
+    ParteInteresada = _safe_get_model('gestion_estrategica_contexto', 'ParteInteresada')
+    if not ParteInteresada:
+        return Response([])
+
+    try:
+        qs = (
+            ParteInteresada.objects.filter(is_active=True)
+            .select_related('tipo', 'tipo__grupo')
+            .values(
+                'id', 'nombre',
+                'tipo__nombre', 'tipo__grupo__nombre',
+            )
+            .order_by('nombre')[:500]
+        )
+        return Response([
+            {
+                'id': pi['id'],
+                'label': pi['nombre'],
+                'extra': {
+                    'tipo_nombre': pi.get('tipo__nombre') or '',
+                    'grupo_nombre': pi.get('tipo__grupo__nombre') or '',
+                },
+            }
+            for pi in qs
+        ])
+    except Exception:
+        return Response([])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def select_tipos_documento(request):
     """
     Lista de tipos de documento de identidad activos para dropdowns.

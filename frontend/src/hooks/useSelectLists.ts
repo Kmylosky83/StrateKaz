@@ -31,6 +31,7 @@ export const selectListKeys = {
   tiposEPP: () => [...selectListKeys.all, 'tipos-epp'] as const,
   unidadesNegocio: () => [...selectListKeys.all, 'unidades-negocio'] as const,
   indicadores: () => [...selectListKeys.all, 'indicadores'] as const,
+  partesInteresadas: () => [...selectListKeys.all, 'partes-interesadas'] as const,
 };
 
 // ============================================================================
@@ -172,6 +173,23 @@ export const useSelectIndicadores = (enabled = true) => {
   return useQuery<SelectListItem[]>({
     queryKey: selectListKeys.indicadores(),
     queryFn: selectListsAPI.getIndicadores,
+    staleTime: 1000 * 60 * 5,
+    enabled,
+  });
+};
+
+/**
+ * Partes Interesadas — lista ligera para VINCULAR (no requiere permiso granular).
+ *
+ * Doctrina: vincular un proveedor a una PI no es lo mismo que gestionar PIs.
+ * Este hook consume el endpoint ligero en core que solo requiere IsAuthenticated.
+ * Para gestión completa (crear/editar), usar usePartesInteresadas del módulo
+ * gestion-estrategica (requiere fundacion.partes_interesadas).
+ */
+export const useSelectPartesInteresadas = (enabled = true) => {
+  return useQuery<SelectListItem[]>({
+    queryKey: selectListKeys.partesInteresadas(),
+    queryFn: selectListsAPI.getPartesInteresadas,
     staleTime: 1000 * 60 * 5,
     enabled,
   });

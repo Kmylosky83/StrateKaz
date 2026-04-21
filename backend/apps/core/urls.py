@@ -74,6 +74,7 @@ from .views.select_lists import (
     select_tipos_epp,
     select_unidades_negocio,
     select_indicadores,
+    select_partes_interesadas,
 )
 # Datos Maestros Compartidos (C0) — Departamentos, Ciudades, Tipos Documento
 from .viewsets_datos_maestros import (
@@ -186,6 +187,7 @@ urlpatterns = [
     path('select-lists/tipos-epp/', select_tipos_epp, name='select-tipos-epp'),
     path('select-lists/unidades-negocio/', select_unidades_negocio, name='select-unidades-negocio'),
     path('select-lists/indicadores/', select_indicadores, name='select-indicadores'),
+    path('select-lists/partes-interesadas/', select_partes_interesadas, name='select-partes-interesadas'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

@@ -89,4 +89,10 @@ export const selectListsAPI = {
     const response = await apiClient.get<SelectListItem[]>(`${BASE}/indicadores/`);
     return response.data;
   },
+
+  /** Partes Interesadas (lista ligera para vincular — no requiere permiso granular). */
+  getPartesInteresadas: async (): Promise<SelectListItem[]> => {
+    const response = await apiClient.get<SelectListItem[]>(`${BASE}/partes-interesadas/`);
+    return response.data;
+  },
 };

@@ -353,7 +353,8 @@ def select_tipos_documento(request):
     return Response([
         {
             'id': t['id'],
-            'label': f"{t['codigo']} - {t['nombre']}",
+            # Solo nombre amigable. El codigo va en extra si se necesita.
+            'label': t['nombre'],
             'extra': {'codigo': t.get('codigo', '')}
         }
         for t in qs

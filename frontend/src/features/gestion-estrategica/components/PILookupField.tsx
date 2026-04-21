@@ -7,7 +7,7 @@
  * REORG-B7: Componente reutilizable.
  */
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Link2, X, Search } from 'lucide-react';
+import { Link2, X, Search, AlertTriangle } from 'lucide-react';
 import { usePartesInteresadas } from '../hooks/usePartesInteresadas';
 
 interface PILookupFieldProps {
@@ -27,7 +27,7 @@ export const PILookupField = ({
   const [search, setSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: piData } = usePartesInteresadas();
+  const { data: piData, isLoading, isError, error } = usePartesInteresadas();
   const items = useMemo(() => {
     const all = Array.isArray(piData) ? piData : (piData?.results ?? []);
     if (!search) return all.slice(0, 20);
@@ -39,6 +39,10 @@ export const PILookupField = ({
       )
       .slice(0, 20);
   }, [piData, search]);
+
+  // Detectar 403 (sin permiso para ver partes interesadas)
+  const httpStatus = (error as { response?: { status?: number } } | null)?.response?.status;
+  const sinPermiso = isError && httpStatus === 403;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -106,8 +110,30 @@ export const PILookupField = ({
             />
           </div>
           <ul className="overflow-y-auto max-h-48">
-            {items.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-gray-500 italic">Sin resultados</li>
+            {isLoading ? (
+              <li className="px-3 py-4 text-sm text-gray-500 italic text-center">
+                Cargando partes interesadas...
+              </li>
+            ) : sinPermiso ? (
+              <li className="px-3 py-4 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong>Sin permiso para ver Partes Interesadas.</strong>
+                  <br />
+                  Pida al administrador acceso a la sección{' '}
+                  <code className="font-mono">fundacion.partes_interesadas</code> (can_view).
+                </div>
+              </li>
+            ) : isError ? (
+              <li className="px-3 py-4 text-sm text-red-600 italic text-center">
+                Error al cargar partes interesadas
+              </li>
+            ) : items.length === 0 ? (
+              <li className="px-3 py-2 text-sm text-gray-500 italic">
+                {search
+                  ? 'Sin resultados. Pruebe con otra búsqueda.'
+                  : 'No hay partes interesadas registradas. Cree una en Fundación → Contexto.'}
+              </li>
             ) : (
               items.map((pi) => (
                 <li

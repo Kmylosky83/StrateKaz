@@ -44,22 +44,52 @@ const TIPO_PERSONA_OPTIONS: { value: TipoPersona; label: string }[] = [
   { value: 'empresa', label: 'Empresa' },
 ];
 
-const proveedorSchema = z.object({
-  tipo_persona: z.enum(['natural', 'empresa']),
-  tipo_proveedor: z.number().nullable().optional(),
-  razon_social: z.string().min(1, 'La razón social es obligatoria'),
-  nombre_comercial: z.string().min(1, 'El nombre comercial es obligatorio'),
-  tipo_documento: z.number().min(1, 'Seleccione un tipo de documento'),
-  numero_documento: z.string().min(1, 'El número de documento es obligatorio'),
-  nit: z.string().optional().default(''),
-  telefono: z.string().optional().default(''),
-  email: z.string().email('Email inválido').or(z.literal('')).optional(),
-  departamento: z.number().nullable().optional(),
-  ciudad: z.string().optional().default(''),
-  direccion: z.string().optional().default(''),
-  productos_suministrados: z.array(z.number()).optional().default([]),
-  is_active: z.boolean().default(true),
-});
+const proveedorSchema = z
+  .object({
+    tipo_persona: z.enum(['natural', 'empresa']),
+    tipo_proveedor: z.number().nullable().optional(),
+    razon_social: z.string().min(1, 'La razón social es obligatoria'),
+    nombre_comercial: z.string().min(1, 'El nombre comercial es obligatorio'),
+    // Para empresa: se auto-rellena desde nit. Para natural: el usuario lo selecciona.
+    tipo_documento: z.number().optional().default(0),
+    numero_documento: z.string().optional().default(''),
+    nit: z.string().optional().default(''),
+    telefono: z.string().optional().default(''),
+    email: z.string().email('Email inválido').or(z.literal('')).optional(),
+    departamento: z.number().nullable().optional(),
+    ciudad: z.string().optional().default(''),
+    direccion: z.string().optional().default(''),
+    productos_suministrados: z.array(z.number()).optional().default([]),
+    is_active: z.boolean().default(true),
+  })
+  .superRefine((data, ctx) => {
+    // Validación condicional según tipo_persona
+    if (data.tipo_persona === 'empresa') {
+      if (!data.nit || data.nit.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['nit'],
+          message: 'El NIT es obligatorio para empresas',
+        });
+      }
+    } else {
+      // natural
+      if (!data.tipo_documento || data.tipo_documento === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['tipo_documento'],
+          message: 'Seleccione un tipo de documento',
+        });
+      }
+      if (!data.numero_documento || data.numero_documento.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['numero_documento'],
+          message: 'El número de documento es obligatorio',
+        });
+      }
+    }
+  });
 
 type ProveedorFormValues = z.infer<typeof proveedorSchema>;
 
@@ -116,6 +146,23 @@ export default function ProveedorFormModal({
     [productos]
   );
 
+  // Identificar ID de tipo_documento 'NIT' para auto-setear en empresas
+  const nitTipoDocId = useMemo(() => {
+    const item = tiposDocumento.find(
+      (td) => (td as { extra?: { codigo?: string } }).extra?.codigo === 'NIT'
+    );
+    return item?.id ?? null;
+  }, [tiposDocumento]);
+
+  // Tipos de documento SIN NIT (para persona natural)
+  const tiposDocumentoNatural = useMemo(
+    () =>
+      tiposDocumento.filter(
+        (td) => (td as { extra?: { codigo?: string } }).extra?.codigo !== 'NIT'
+      ),
+    [tiposDocumento]
+  );
+
   // ─── Mutations ───
   const createMutation = useCreateProveedor();
   const updateMutation = useUpdateProveedor();
@@ -157,6 +204,13 @@ export default function ProveedorFormModal({
   const tipoPersona = watch('tipo_persona');
   const esEmpresa = tipoPersona === 'empresa';
 
+  // Auto-setear tipo_documento=NIT cuando se cambia a empresa
+  useEffect(() => {
+    if (esEmpresa && nitTipoDocId && watch('tipo_documento') !== nitTipoDocId) {
+      setValue('tipo_documento', nitTipoDocId, { shouldDirty: true });
+    }
+  }, [esEmpresa, nitTipoDocId, setValue, watch]);
+
   // Opciones para el combobox de productos MP
   const productosOptions = useMemo(
     () =>
@@ -170,14 +224,19 @@ export default function ProveedorFormModal({
 
   // ─── Submit ───
   const handleSubmit = async (data: ProveedorFormValues) => {
+    // Para empresa: el NIT es el documento → auto-rellenar tipo_documento + numero_documento
+    const isEmpresa = data.tipo_persona === 'empresa';
+    const tipoDocFinal = isEmpresa && nitTipoDocId ? nitTipoDocId : data.tipo_documento;
+    const numeroDocFinal = isEmpresa ? data.nit || '' : data.numero_documento;
+
     const payload: CreateProveedorDTO = {
       tipo_persona: data.tipo_persona,
       tipo_proveedor: data.tipo_proveedor ?? null,
       razon_social: data.razon_social,
       nombre_comercial: data.nombre_comercial,
-      tipo_documento: data.tipo_documento,
-      numero_documento: data.numero_documento,
-      nit: data.nit || undefined,
+      tipo_documento: tipoDocFinal,
+      numero_documento: numeroDocFinal,
+      nit: isEmpresa ? data.nit || undefined : undefined,
       telefono: data.telefono || undefined,
       email: data.email || undefined,
       departamento: data.departamento ?? null,
@@ -288,37 +347,44 @@ export default function ProveedorFormModal({
             error={form.formState.errors.nombre_comercial?.message}
           />
 
-          <Select
-            label="Tipo de documento"
-            value={watch('tipo_documento') || ''}
-            onChange={(e) =>
-              setValue('tipo_documento', Number(e.target.value), { shouldDirty: true })
-            }
-            required
-            error={form.formState.errors.tipo_documento?.message}
-          >
-            <option value="">Seleccionar...</option>
-            {tiposDocumento.map((td) => (
-              <option key={td.id} value={td.id}>
-                {td.label}
-              </option>
-            ))}
-          </Select>
-
-          <Input
-            label="Número de documento"
-            {...form.register('numero_documento')}
-            required
-            error={form.formState.errors.numero_documento?.message}
-          />
-
-          {esEmpresa && (
-            <Input
-              label="NIT"
-              {...form.register('nit')}
-              placeholder="Ej: 900123456-7"
-              helperText="Solo para personas jurídicas"
-            />
+          {esEmpresa ? (
+            /* EMPRESA → solo NIT (tipo_documento se auto-setea a NIT) */
+            <div className="md:col-span-2">
+              <Input
+                label="NIT"
+                {...form.register('nit')}
+                required
+                placeholder="Ej: 900123456-7"
+                helperText="Número de identificación tributaria de la empresa"
+                error={form.formState.errors.nit?.message}
+              />
+            </div>
+          ) : (
+            /* PERSONA NATURAL → tipo de documento (CC/CE/PA/etc.) + número */
+            <>
+              <Select
+                label="Tipo de documento"
+                value={watch('tipo_documento') || ''}
+                onChange={(e) =>
+                  setValue('tipo_documento', Number(e.target.value), { shouldDirty: true })
+                }
+                required
+                error={form.formState.errors.tipo_documento?.message}
+              >
+                <option value="">Seleccionar...</option>
+                {tiposDocumentoNatural.map((td) => (
+                  <option key={td.id} value={td.id}>
+                    {td.label}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                label="Número de documento"
+                {...form.register('numero_documento')}
+                required
+                error={form.formState.errors.numero_documento?.message}
+              />
+            </>
           )}
         </div>
       </Card>

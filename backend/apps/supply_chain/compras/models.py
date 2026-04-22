@@ -543,9 +543,15 @@ class Requisicion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de requisición desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('REQUISICION_COMPRA')
+        """Genera código único de requisición RC-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            RequisicionCompra.objects.all(),
+            campo_codigo='codigo',
+            prefix='RC',
+            padding=5,
+            include_year=True,
+        )
 
     @property
     def is_deleted(self):
@@ -1005,24 +1011,15 @@ class OrdenCompra(models.Model):
 
     @staticmethod
     def generar_numero_orden():
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('ORDEN_COMPRA')
-        except ConsecutivoConfig.DoesNotExist:
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"OC-{hoy.strftime('%Y%m%d')}-"
-            ultimo = OrdenCompra.objects.filter(
-                numero_orden__startswith=prefijo
-            ).order_by('-numero_orden').first()
-            if ultimo:
-                try:
-                    numero = int(ultimo.numero_orden.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-            return f"{prefijo}{numero:04d}"
+        """Genera número OC-YYYY-NNNNN (Sistema A, reset anual implícito)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            OrdenCompra.objects.all(),
+            campo_codigo='numero_orden',
+            prefix='OC',
+            padding=5,
+            include_year=True,
+        )
 
     @property
     def is_deleted(self):

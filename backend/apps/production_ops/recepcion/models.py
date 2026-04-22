@@ -423,12 +423,15 @@ class Recepcion(BaseCompanyModel):
         return f"{self.codigo} - {self.proveedor_nombre or 'N/A'} - {self.fecha}"
 
     @staticmethod
-    def generar_codigo(empresa_id):
-        """Genera código único de recepción desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo(
-            'RECEPCION_MP',
-            empresa_id=empresa_id
+    def generar_codigo(empresa_id=None):
+        """Genera código REC-YYYY-NNNNN (Sistema A). empresa_id legacy, ignorado."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            Recepcion.objects.all(),
+            campo_codigo='codigo',
+            prefix='REC',
+            padding=5,
+            include_year=True,
         )
 
     @property
@@ -1020,24 +1023,15 @@ class PruebaAcidez(models.Model):
 
     @classmethod
     def generar_codigo_voucher(cls):
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('PRUEBA_ACIDEZ')
-        except ConsecutivoConfig.DoesNotExist:
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"ACID-{hoy.strftime('%Y%m%d')}-"
-            ultimo = cls.objects.filter(
-                codigo_voucher__startswith=prefijo
-            ).order_by('-codigo_voucher').first()
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-            return f"{prefijo}{numero:04d}"
+        """Genera código voucher ACID-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            cls.objects.all(),
+            campo_codigo='codigo_voucher',
+            prefix='ACID',
+            padding=5,
+            include_year=True,
+        )
 
     def soft_delete(self):
         self.deleted_at = timezone.now()

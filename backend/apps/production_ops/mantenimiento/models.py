@@ -354,9 +354,14 @@ class ActivoProduccion(BaseCompanyModel, OrderedModel):
         super().save(*args, **kwargs)
 
     def generar_codigo(self):
-        """Generar código único para el activo desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('ACTIVO_PRODUCCION')
+        """Genera código AP-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            type(self).objects.all(),
+            campo_codigo='codigo',
+            prefix='AP',
+            padding=5,
+        )
 
     def calcular_valor_actual(self):
         """
@@ -542,9 +547,14 @@ class EquipoMedicion(BaseCompanyModel):
         super().save(*args, **kwargs)
 
     def generar_codigo(self):
-        """Generar código único para el equipo desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('EQUIPO_MEDICION')
+        """Genera código EM-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            type(self).objects.all(),
+            campo_codigo='codigo',
+            prefix='EM',
+            padding=5,
+        )
 
     def requiere_calibracion_urgente(self):
         """Verificar si requiere calibración urgente (próximos 30 días)."""
@@ -909,9 +919,15 @@ class OrdenTrabajo(BaseCompanyModel):
                 self.activo.save(update_fields=['estado', 'fecha_ultima_revision'])
 
     def generar_codigo(self):
-        """Generar código único para la orden de trabajo desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('ORDEN_TRABAJO')
+        """Genera código OT-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            type(self).objects.all(),
+            campo_codigo='codigo',
+            prefix='OT',
+            padding=5,
+            include_year=True,
+        )
 
     def clean(self):
         """Validaciones del modelo."""

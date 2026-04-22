@@ -238,42 +238,30 @@ class ContratoDocumentoService:
         return cls._generar_contenido_basico(variables)
 
     @classmethod
-    def _generar_codigo_documento(cls, tipo_doc, empresa_id) -> str:
+    def _generar_codigo_documento(cls, tipo_doc, empresa_id=None) -> str:
         """
-        Genera código único para documento de contrato.
+        Genera código único para documento de contrato (Sistema A, scan).
 
-        Intenta usar ConsecutivoConfig (C1 — thread-safe).
-        Fallback: contador artesanal basado en prefijo del tipo.
+        empresa_id es legacy (pre-django-tenants). Multi-tenant hoy se
+        maneja via `schema_context`; el queryset filtra por schema activo.
         """
         Documento = apps.get_model('gestion_documental', 'Documento')
-        try:
-            ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
-            return ConsecutivoConfig.obtener_siguiente_consecutivo(
-                'DOC_CONTRATO_LABORAL', empresa_id=empresa_id
-            )
-        except Exception as e:
-            logger.warning(
-                'ConsecutivoConfig no disponible para contratos (empresa=%s): %s. '
-                'Usando generación artesanal.',
-                empresa_id, e
-            )
-            # Fallback artesanal
-            prefijo = tipo_doc.prefijo_codigo or f'{tipo_doc.codigo}-'
-            ultimo = Documento.objects.filter(
-                empresa_id=empresa_id,
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    ultimo_num = int(ultimo.codigo.replace(prefijo, ''))
-                    nuevo_num = ultimo_num + 1
-                except (ValueError, IndexError):
-                    nuevo_num = 1
-            else:
+        prefijo = tipo_doc.prefijo_codigo or f'{tipo_doc.codigo}-'
+        # Normalizar separator: el prefijo del tipo ya incluye '-', así que
+        # pasamos separator='' y un prefix terminado en '-' para preservarlo.
+        # En su defecto, usamos el helper estándar con separator='-'.
+        ultimo = Documento.objects.filter(
+            codigo__startswith=prefijo
+        ).order_by('-codigo').first()
+        if ultimo:
+            try:
+                ultimo_num = int(ultimo.codigo.replace(prefijo, ''))
+                nuevo_num = ultimo_num + 1
+            except (ValueError, IndexError):
                 nuevo_num = 1
-
-            return f'{prefijo}{nuevo_num:04d}'
+        else:
+            nuevo_num = 1
+        return f'{prefijo}{nuevo_num:04d}'
 
     @classmethod
     def _generar_contenido_basico(cls, variables) -> str:

@@ -76,8 +76,13 @@ class CategoriaProducto(TenantModel):
 
     @staticmethod
     def generar_codigo():
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('CATEGORIA_PRODUCTO')
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            CategoriaProducto.objects.all(),
+            campo_codigo='codigo',
+            prefix='CAT',
+            padding=3,
+        )
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo:
@@ -435,18 +440,25 @@ class Producto(TenantModel):
     def __str__(self):
         return f'[{self.codigo}] {self.nombre}'
 
-    _CONSECUTIVO_POR_TIPO = {
-        'MATERIA_PRIMA': 'PRODUCTO_MP',
-        'INSUMO': 'PRODUCTO_INS',
-        'PRODUCTO_TERMINADO': 'PRODUCTO_PT',
-        'SERVICIO': 'PRODUCTO_SV',
+    # Prefijo del consecutivo por tipo de producto (Sistema A).
+    # Los códigos resultan: MP-00001, INS-00001, PT-00001, SV-00001.
+    _PREFIX_POR_TIPO = {
+        'MATERIA_PRIMA': 'MP',
+        'INSUMO': 'INS',
+        'PRODUCTO_TERMINADO': 'PT',
+        'SERVICIO': 'SV',
     }
 
     @classmethod
     def generar_codigo(cls, tipo='MATERIA_PRIMA'):
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        codigo = cls._CONSECUTIVO_POR_TIPO.get(tipo, 'PRODUCTO_MP')
-        return ConsecutivoConfig.obtener_siguiente_consecutivo(codigo)
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        prefix = cls._PREFIX_POR_TIPO.get(tipo, 'MP')
+        return siguiente_consecutivo_scan(
+            cls.objects.all(),
+            campo_codigo='codigo',
+            prefix=prefix,
+            padding=5,
+        )
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo:

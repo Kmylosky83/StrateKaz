@@ -370,8 +370,15 @@ class MovimientoInventario(TenantModel):
 
     @staticmethod
     def generar_codigo():
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('MOVIMIENTO_INV')
+        """Genera código MOV-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            MovimientoInventario.objects.all(),
+            campo_codigo='codigo',
+            prefix='MOV',
+            padding=5,
+            include_year=True,
+        )
 
     def calcular_costo_total(self):
         self.costo_total = self.cantidad * self.costo_unitario

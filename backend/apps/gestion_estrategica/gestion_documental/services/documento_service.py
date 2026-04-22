@@ -147,58 +147,28 @@ class DocumentoService:
     @classmethod
     def generar_codigo(cls, tipo_documento, proceso=None):
         """
-        Genera código TIPO-PROCESO-NNN (ej: PR-SST-001).
+        Genera código TIPO-PROCESO-NNN (ej: PR-SST-001). Sistema A.
 
-        Motor unificado (Sprint 2 — Arquitectura GD v5 §7):
-        - Usa ConsecutivoConfig con código compuesto "PR-SST"
-        - Auto-crea la config si no existe (get_or_create)
-        - Thread-safe via select_for_update()
-        - Si no hay proceso, genera TIPO-NNN (ej: PR-001)
-
-        empresa_id se obtiene internamente desde EmpresaConfig (requerido
-        por ConsecutivoConfig, que aún usa empresa_id).
+        Refactor 2026-04-22: eliminada dependencia de `ConsecutivoConfig`
+        (Sistema B). Ahora usa el helper compartido `siguiente_consecutivo_scan`
+        que escanea Documento por prefijo. Multi-tenant se maneja via
+        schema_context (sin empresa_id explícito).
         """
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
 
-        ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
-
-        empresa = EmpresaConfig.objects.first()
-        empresa_id = empresa.id if empresa else 0
+        Documento = apps.get_model('gestion_documental', 'Documento')
 
         tipo_code = tipo_documento.codigo
-
         if proceso:
-            consecutivo_codigo = f'{tipo_code}-{proceso.code}'
             prefix = f'{tipo_code}-{proceso.code}'
         else:
-            consecutivo_codigo = tipo_code
             prefix = tipo_code
 
-        # Auto-crear ConsecutivoConfig si no existe para esta combinación
-        config, created = ConsecutivoConfig.objects.get_or_create(
-            codigo=consecutivo_codigo,
-            empresa_id=empresa_id,
-            defaults={
-                'nombre': f'{tipo_documento.nombre} — {proceso.name if proceso else "General"}',
-                'categoria': 'DOCUMENTOS',
-                'prefix': prefix,
-                'separator': '-',
-                'padding': 3,
-                'include_year': False,
-                'reset_yearly': False,
-                'es_sistema': True,
-                'is_active': True,
-            },
-        )
-
-        if created:
-            logger.info(
-                '[generar_codigo] ConsecutivoConfig creado: %s',
-                consecutivo_codigo,
-            )
-
-        return ConsecutivoConfig.obtener_siguiente_consecutivo(
-            consecutivo_codigo, empresa_id=empresa_id
+        return siguiente_consecutivo_scan(
+            Documento.objects.all(),
+            campo_codigo='codigo',
+            prefix=prefix,
+            padding=3,
         )
 
     # =========================================================================

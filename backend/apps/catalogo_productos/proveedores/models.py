@@ -227,30 +227,14 @@ class Proveedor(TenantModel):
 
     @staticmethod
     def generar_codigo_interno():
-        """
-        Genera código interno con prefijo unificado PROV-NNNNN.
-
-        Usa ConsecutivoConfig si está disponible; si no, calcula el siguiente
-        número por scan del máximo existente.
-        """
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('PROVEEDOR')
-        except ConsecutivoConfig.DoesNotExist:
-            ultimo = Proveedor.objects.filter(
-                codigo_interno__startswith='PROV-',
-            ).order_by('-codigo_interno').first()
-
-            if ultimo and ultimo.codigo_interno:
-                try:
-                    numero = int(ultimo.codigo_interno.split('-')[1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f'PROV-{numero:05d}'
+        """Genera código interno PROV-NNNNN via scan helper (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            Proveedor.objects.all(),
+            campo_codigo='codigo_interno',
+            prefix='PROV',
+            padding=5,
+        )
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo_interno:

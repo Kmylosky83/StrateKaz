@@ -491,9 +491,15 @@ class PQRS(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de PQRS desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('PQRS')
+        """Genera código PQRS-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            PQRS.objects.all(),
+            campo_codigo='codigo',
+            prefix='PQRS',
+            padding=5,
+            include_year=True,
+        )
 
     @property
     def is_deleted(self):
@@ -812,9 +818,15 @@ class EncuestaSatisfaccion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de encuesta desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('ENCUESTA_SATISFACCION')
+        """Genera código ENC-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            EncuestaSatisfaccion.objects.all(),
+            campo_codigo='codigo',
+            prefix='ENC',
+            padding=5,
+            include_year=True,
+        )
 
     @property
     def is_deleted(self):

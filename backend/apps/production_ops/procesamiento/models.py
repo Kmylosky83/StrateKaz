@@ -409,12 +409,16 @@ class OrdenProduccion(BaseCompanyModel):
         return f"{self.codigo} - {self.tipo_proceso.nombre} - {self.fecha_programada}"
 
     @staticmethod
-    def generar_codigo(empresa_id):
-        """Genera código único de orden de producción desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo(
-            'ORDEN_PRODUCCION',
-            empresa_id=empresa_id
+    def generar_codigo(empresa_id=None):
+        """Genera código OP-YYYY-NNNNN (Sistema A). empresa_id legacy, ignorado."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        # empresa_id ya no aplica — multi-tenant se maneja via schema_context
+        return siguiente_consecutivo_scan(
+            OrdenProduccion.objects.all(),
+            campo_codigo='codigo',
+            prefix='OP',
+            padding=5,
+            include_year=True,
         )
 
     @property
@@ -656,9 +660,15 @@ class LoteProduccion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de lote de producción desde gestión documental."""
-        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        return ConsecutivoConfig.obtener_siguiente_consecutivo('LOTE_PRODUCCION')
+        """Genera código LP-YYYY-NNNNN (Sistema A)."""
+        from apps.core.utils.consecutivos import siguiente_consecutivo_scan
+        return siguiente_consecutivo_scan(
+            LoteProduccion.objects.all(),
+            campo_codigo='codigo',
+            prefix='LP',
+            padding=5,
+            include_year=True,
+        )
 
     @property
     def duracion_produccion_horas(self):

@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 from utils.models import TenantModel
 
 # Datos Maestros Compartidos — importados de Core (C0)
-from apps.core.models import TipoDocumentoIdentidad, Departamento
+from apps.core.models import TipoDocumentoIdentidad, Departamento, Ciudad
 
 
 # ==============================================================================
@@ -150,7 +150,17 @@ class Proveedor(TenantModel):
     # --- Contacto ---
     telefono = models.CharField(max_length=20, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
-    ciudad = models.CharField(max_length=100, blank=True, default='')
+    # FK canónica a catálogo Ciudad (C0). Migrado desde CharField el 2026-04-22
+    # (H-CAT-05). Registros históricos con string no mapeables quedan NULL y
+    # deben corregirse manualmente desde la UI.
+    ciudad = models.ForeignKey(
+        Ciudad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='proveedores_ct',
+        verbose_name='Ciudad',
+    )
     departamento = models.ForeignKey(
         Departamento,
         on_delete=models.PROTECT,

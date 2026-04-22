@@ -39,6 +39,13 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     departamento_nombre = serializers.CharField(
         source='departamento.nombre', read_only=True, default=None,
     )
+    # 2026-04-22: ciudad es FK al catálogo canónico Ciudad (H-CAT-05 cerrado).
+    # Se expone el nombre como campo legible sin romper el contrato del API
+    # (clientes que leían `ciudad` como string reciben el nombre; al crear/editar
+    # deben enviar el id numérico).
+    ciudad_nombre = serializers.CharField(
+        source='ciudad.nombre', read_only=True, default=None,
+    )
 
     class Meta:
         model = Proveedor
@@ -51,7 +58,8 @@ class ProveedorListSerializer(serializers.ModelSerializer):
             'tipo_documento', 'tipo_documento_nombre',
             'numero_documento', 'nit',
             'telefono', 'email',
-            'ciudad', 'departamento', 'departamento_nombre',
+            'ciudad', 'ciudad_nombre',
+            'departamento', 'departamento_nombre',
             'is_active',
             'created_at', 'updated_at',
         ]

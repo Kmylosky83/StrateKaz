@@ -49,7 +49,9 @@ export interface Proveedor {
   nit: string | null;
   telefono: string | null;
   email: string | null;
-  ciudad: string;
+  // 2026-04-22: ciudad es FK al catálogo Ciudad (antes CharField).
+  ciudad: number | null;
+  ciudad_nombre: string | null;
   departamento: number | null;
   departamento_nombre: string | null;
   is_active: boolean;
@@ -75,7 +77,8 @@ export interface CreateProveedorDTO {
   nit?: string;
   telefono?: string;
   email?: string;
-  ciudad?: string;
+  // 2026-04-22: FK a Ciudad (null si no seleccionado).
+  ciudad?: number | null;
   departamento?: number | null;
   direccion?: string;
   productos_suministrados?: number[];

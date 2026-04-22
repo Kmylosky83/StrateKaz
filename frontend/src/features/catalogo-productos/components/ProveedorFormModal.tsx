@@ -24,7 +24,11 @@ import { Card } from '@/components/common/Card';
 import { Input, Select, Textarea, MultiSelectCombobox } from '@/components/forms';
 import { Switch } from '@/components/forms';
 
-import { useSelectDepartamentos, useSelectTiposDocumento } from '@/hooks/useSelectLists';
+import {
+  useSelectCiudades,
+  useSelectDepartamentos,
+  useSelectTiposDocumento,
+} from '@/hooks/useSelectLists';
 import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 
 import { useProductos } from '../hooks/useProductos';
@@ -57,7 +61,7 @@ const proveedorSchema = z
     telefono: z.string().optional().default(''),
     email: z.string().email('Email inválido').or(z.literal('')).optional(),
     departamento: z.number().nullable().optional(),
-    ciudad: z.string().optional().default(''),
+    ciudad: z.number().nullable().optional(),
     direccion: z.string().optional().default(''),
     productos_suministrados: z.array(z.number()).optional().default([]),
     is_active: z.boolean().default(true),
@@ -104,7 +108,7 @@ const DEFAULT_VALUES: ProveedorFormValues = {
   telefono: '',
   email: '',
   departamento: null,
-  ciudad: '',
+  ciudad: null,
   direccion: '',
   productos_suministrados: [],
   is_active: true,
@@ -139,6 +143,13 @@ export default function ProveedorFormModal({
   const { data: departamentos = [] } = useSelectDepartamentos();
   const { data: tiposProveedor = [] } = useTiposProveedor();
   const { data: productos = [] } = useProductos();
+
+  // Ciudad filtrada por departamento — solo fetch cuando hay depto seleccionado.
+  const departamentoSeleccionado = watch('departamento');
+  const { data: ciudades = [] } = useSelectCiudades(
+    departamentoSeleccionado ?? undefined,
+    departamentoSeleccionado !== null && departamentoSeleccionado !== undefined
+  );
 
   // Solo productos tipo MATERIA_PRIMA son suministrables
   const productosMP = useMemo(
@@ -187,7 +198,7 @@ export default function ProveedorFormModal({
         telefono: proveedor.telefono ?? '',
         email: proveedor.email ?? '',
         departamento: proveedor.departamento,
-        ciudad: proveedor.ciudad ?? '',
+        ciudad: proveedor.ciudad ?? null,
         direccion: detailed.direccion ?? '',
         productos_suministrados: detailed.productos_suministrados ?? [],
         is_active: proveedor.is_active,
@@ -240,7 +251,7 @@ export default function ProveedorFormModal({
       telefono: data.telefono || undefined,
       email: data.email || undefined,
       departamento: data.departamento ?? null,
-      ciudad: data.ciudad || undefined,
+      ciudad: data.ciudad ?? null,
       direccion: data.direccion || undefined,
       productos_suministrados: data.productos_suministrados || [],
       parte_interesada_id: piId,
@@ -411,6 +422,8 @@ export default function ProveedorFormModal({
             onChange={(e) => {
               const v = e.target.value ? Number(e.target.value) : null;
               setValue('departamento', v, { shouldDirty: true });
+              // Al cambiar departamento, reset la ciudad (evita ciudad huérfana de otro depto)
+              setValue('ciudad', null, { shouldDirty: true });
             }}
           >
             <option value="">Seleccionar...</option>
@@ -420,7 +433,25 @@ export default function ProveedorFormModal({
               </option>
             ))}
           </Select>
-          <Input label="Ciudad" {...form.register('ciudad')} placeholder="Ej: Bogotá" />
+          <Select
+            label="Ciudad"
+            value={watch('ciudad') ?? ''}
+            onChange={(e) => {
+              const v = e.target.value ? Number(e.target.value) : null;
+              setValue('ciudad', v, { shouldDirty: true });
+            }}
+            disabled={!departamentoSeleccionado}
+            helperText={
+              !departamentoSeleccionado ? 'Seleccione primero un departamento' : undefined
+            }
+          >
+            <option value="">{departamentoSeleccionado ? 'Seleccionar ciudad...' : '—'}</option>
+            {ciudades.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </Select>
           <div className="md:col-span-2">
             <Textarea
               label="Dirección"

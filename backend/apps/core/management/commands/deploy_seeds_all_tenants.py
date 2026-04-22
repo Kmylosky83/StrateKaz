@@ -35,8 +35,11 @@ class Command(BaseCommand):
         ('documentos_sgi', 'seed_tipos_documento_sgi', [], 'Tipos de Documento estándar SGI (12 tipos ISO)'),
         ('plantillas_sgi', 'seed_plantillas_sgi', [], 'Plantillas SGI desde Biblioteca Maestra (public → tenant)'),
         ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
+        # Geografía DIVIPOLA Core (debe correr ANTES de supply_chain y de cualquier
+        # migración que mapee CharField→FK hacia Ciudad/Departamento).
+        ('geografia', 'seed_geografia_colombia', [], 'Geografía Colombia DIVIPOLA (33 deptos + 1,104 municipios oficiales DANE)'),
         ('catalogo_productos', 'seed_catalogo_productos_base', [], 'Catálogo de Productos base (12 unidades + 4 categorías raíz)'),
-        ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
+        ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, modalidad, almacén)'),
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),
         ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
         ('procesos', 'seed_procesos_base', [], 'Catálogo base de procesos organizacionales (17 procesos ISO)'),

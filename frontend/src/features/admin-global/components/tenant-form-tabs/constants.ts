@@ -13,6 +13,7 @@ import {
   HeartPulse,
   Workflow,
   Settings,
+  Package,
 } from 'lucide-react';
 import { createElement } from 'react';
 
@@ -58,6 +59,10 @@ export const CATEGORY_LABELS: Record<string, { label: string; icon: React.ReactN
   NIVEL_INFRAESTRUCTURA: {
     label: 'Gestión Documental',
     icon: createElement(FileText, { className: 'h-4 w-4 text-cyan-500' }),
+  },
+  NIVEL_CATALOGOS_MAESTROS: {
+    label: 'Catálogos Maestros',
+    icon: createElement(Package, { className: 'h-4 w-4 text-indigo-500' }),
   },
   NIVEL_EQUIPO: {
     label: 'Mi Equipo',

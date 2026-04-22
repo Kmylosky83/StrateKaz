@@ -65,23 +65,25 @@ export const CURRENT_DEPLOY_LEVEL = 20;
 export const isModuleDeployed = (code: string): boolean => DEPLOYED_MODULES.includes(code);
 
 /**
- * Categorías alineadas con SIDEBAR_LAYERS V2 del backend.
- * NIVEL_FUNDACION      → Fundación (C1)
- * NIVEL_INFRAESTRUCTURA → Gestión Documental + Catálogo de Productos (CT-layer)
- * NIVEL_EQUIPO         → Mi Equipo
- * NIVEL_PLANIFICACION  → Planificación Operativa + Planeación Estratégica
- * NIVEL_PROTECCION     → Protección y Cumplimiento
- * NIVEL_HSEQ           → Gestión Integral HSEQ
- * NIVEL_CADENA         → Supply Chain + Production + Logistics + Sales CRM
- * NIVEL_TALENTO        → Talent Hub
- * NIVEL_SOPORTE        → Administración + Tesorería + Contabilidad
- * NIVEL_INTELIGENCIA   → Analytics + Revisión Dirección + Acciones Mejora + Audit System
- * NIVEL_WORKFLOWS      → Flujos de Trabajo (motor de ejecución transversal)
- * NIVEL_CONFIG         → Configuración de Plataforma
+ * Categorías alineadas con SIDEBAR_LAYERS V3 del backend.
+ * NIVEL_FUNDACION          → Fundación (C1)
+ * NIVEL_INFRAESTRUCTURA    → Gestión Documental (CT)
+ * NIVEL_CATALOGOS_MAESTROS → Catálogo de Productos (CT, maestros transversales)
+ * NIVEL_WORKFLOWS          → Flujos de Trabajo + Firma Digital (CT)
+ * NIVEL_EQUIPO             → "Gente" (Mi Equipo + Talent Hub futuro)
+ * NIVEL_PLANIFICACION      → Planificación Operativa + Planeación Estratégica
+ * NIVEL_PROTECCION         → Protección y Cumplimiento
+ * NIVEL_HSEQ               → Gestión Integral HSEQ
+ * NIVEL_CADENA             → "Operación Comercial" (Supply Chain + Production + Logistics + Sales CRM)
+ * NIVEL_TALENTO            → Talent Hub
+ * NIVEL_SOPORTE            → Administración + Tesorería + Contabilidad
+ * NIVEL_INTELIGENCIA       → "Centro de Control" (audit_system)
+ * NIVEL_CONFIG             → Configuración de Plataforma
  */
 export type ModuleCategory =
   | 'NIVEL_FUNDACION'
   | 'NIVEL_INFRAESTRUCTURA'
+  | 'NIVEL_CATALOGOS_MAESTROS'
   | 'NIVEL_EQUIPO'
   | 'NIVEL_PLANIFICACION'
   | 'NIVEL_PROTECCION'
@@ -104,18 +106,20 @@ export const AVAILABLE_MODULES: SystemModule[] = [
   // NIVEL_FUNDACION — Fundación (C1)
   { code: 'fundacion', name: 'Fundación', category: 'NIVEL_FUNDACION', deployLevel: 10 },
 
-  // NIVEL_INFRAESTRUCTURA — CT-layer transversal (dato maestro + documentos)
+  // NIVEL_INFRAESTRUCTURA — Gestión Documental (CT-layer transversal)
   {
     code: 'gestion_documental',
     name: 'Gestión Documental',
     category: 'NIVEL_INFRAESTRUCTURA',
     deployLevel: 15,
   },
+
+  // NIVEL_CATALOGOS_MAESTROS — Datos maestros transversales (CT-layer)
   {
     code: 'catalogo_productos',
-    name: 'Catálogo de Productos',
-    category: 'NIVEL_INFRAESTRUCTURA',
-    deployLevel: 15,
+    name: 'Catálogos Maestros',
+    category: 'NIVEL_CATALOGOS_MAESTROS',
+    deployLevel: 16,
   },
 
   // NIVEL_EQUIPO — Mi Equipo

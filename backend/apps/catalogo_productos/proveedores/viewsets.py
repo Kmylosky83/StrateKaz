@@ -24,12 +24,18 @@ from .serializers import (
 
 
 class TipoProveedorViewSet(viewsets.ModelViewSet):
-    """CRUD del catálogo dinámico de tipos de proveedor."""
+    """CRUD del catálogo dinámico de tipos de proveedor.
+
+    section_code='tipos_proveedor' (separado de 'proveedores' desde 2026-04-22
+    al promover Tipos de Proveedor a tab propio en el sidebar V3). RBAC
+    independiente: admin puede dar acceso a gestionar el catálogo sin dar
+    acceso al CRUD de Proveedor.
+    """
 
     queryset = TipoProveedor.objects.all()
     serializer_class = TipoProveedorSerializer
     permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'proveedores'
+    section_code = 'tipos_proveedor'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
@@ -52,7 +58,7 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Proveedor.objects.filter(is_deleted=False).select_related(
-            'tipo_proveedor', 'tipo_documento', 'departamento',
+            'tipo_proveedor', 'tipo_documento', 'departamento', 'ciudad',
         )
         # Optimizar list: evitar prefetch M2M pesado
         if self.action == 'list':

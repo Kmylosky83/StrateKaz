@@ -674,13 +674,15 @@ class Command(BaseCommand):
                 ]
             },
 
-            # ─── Nivel 2B: CATÁLOGO DE PRODUCTOS (CT-layer, transversal) ─
+            # ─── Nivel 2B: CATÁLOGOS MAESTROS (CT-layer, transversal) ─
             # Dato maestro universal consumido por Supply Chain, Production Ops,
-            # Sales CRM. Ubicado en INFRAESTRUCTURA junto a Gestión Documental.
+            # Sales CRM. Capa independiente del sidebar V3 junto a Gestión Documental
+            # y Flujos de Trabajo. Contiene Productos, Categorías, Unidades de Medida
+            # y Proveedores (refactor Opción A 2026-04-21).
             {
                 'code': 'catalogo_productos',
-                'name': 'Catálogo de Productos',
-                'description': 'Dato maestro de productos, categorías y unidades de medida',
+                'name': 'Catálogos Maestros',
+                'description': 'Datos maestros transversales: productos, categorías, unidades de medida y proveedores',
                 'category': 'INFRASTRUCTURE',
                 'color': 'indigo',
                 'icon': 'Package',
@@ -698,10 +700,16 @@ class Command(BaseCommand):
                     {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
                         {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},
                     ]},
+                    # Tipos de Proveedor movido desde Supply Chain → CT (2026-04-22, V3).
+                    # Catálogo clasificador que debe definirse ANTES de crear proveedores.
+                    # Mismo patrón de cascada Categorías → Productos.
+                    {'code': 'tipos_proveedor', 'name': 'Tipos de Proveedor', 'icon': 'Tags', 'route': 'tipos-proveedor', 'orden': 4, 'sections': [
+                        {'code': 'tipos_proveedor', 'name': 'Gestión de Tipos de Proveedor', 'icon': 'Tags', 'orden': 1, 'description': 'Catálogo clasificador dinámico: fabricante, distribuidor, transportista, etc. Flags operativos condicionan el formulario de Proveedor.'},
+                    ]},
                     # Proveedores movido a CT 2026-04-21 (refactor Opción A).
                     # Tab code + section code = 'proveedores' para coincidir con
                     # ProveedorViewSet.section_code y FE useSectionPermissions.
-                    {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 4, 'sections': [
+                    {'code': 'proveedores', 'name': 'Proveedores', 'icon': 'Users', 'route': 'proveedores', 'orden': 5, 'sections': [
                         {'code': 'proveedores', 'name': 'Gestión de Proveedores', 'icon': 'Users', 'orden': 1, 'description': 'Dato maestro multi-industria: identificación + contacto + productos suministrados'},
                     ]},
                 ]

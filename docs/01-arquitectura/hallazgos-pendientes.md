@@ -1931,3 +1931,219 @@ Antes de descomentar `sales_crm.gestion_clientes` en `base.py`.
 
 ### Estado
 🔲 Abierto. Prioridad: **preventiva — leer antes de activar sales_crm**.
+
+---
+
+## H-CAT-01 — UI de `NormaISO` duplicada en Configuración → Organizacional
+
+### Detectado
+2026-04-22 (inventario canónico de catálogos — Sidebar V3 Fase 2)
+
+### Severidad
+**MEDIA** — confusión de UX. Genera dos puntos de verdad para administrar normas ISO.
+
+### Síntoma
+- Existe un solo modelo: `apps.gestion_estrategica.configuracion.NormaISO`
+- La app `configuracion` es sub-app del módulo LIVE **Fundación** → el modelo YA vive en Fundación
+- La UI natural de administración es **Fundación → Contexto → Partes Interesadas** (donde se declaran normas aplicables a la empresa como M2M)
+- Paralelamente existe UI redundante en `configuracion-admin/components/catalogs/CatalogOrganizacionalTab.tsx` (Config → Catálogos → Organizacional) que expone un CRUD duplicado
+
+### Impacto
+- Admin del tenant no sabe dónde administrar normas (Fundación o Configuración)
+- Riesgo de estados inconsistentes si un lado crea/desactiva y el otro no refresca
+- Ensucia el sidebar y obliga a mantener dos UIs
+
+### Acción propuesta
+1. Eliminar `CatalogOrganizacionalTab.tsx` (era el único contenido del sub-tab Organizacional de Config → Catálogos)
+2. Validar que la UI de Fundación → Contexto → Partes Interesadas cubre todos los casos de uso (crear, editar, activar/desactivar)
+3. Si falta algo, completar la UI de Fundación antes de eliminar la duplicada
+
+### Dependencia
+Ninguna — se puede ejecutar de inmediato en cualquier sesión.
+
+### Trigger
+Fase 2C del Sidebar V3 (eliminación tab `catalogos` en Configuración).
+
+### Estado
+🔲 Abierto.
+
+---
+
+## H-CAT-02 — `TipoEPP` debe promoverse a CT cuando activen consumidores transversales
+
+### Detectado
+2026-04-22 (inventario canónico de catálogos — Sidebar V3 Fase 2)
+
+### Severidad
+**BAJA** hoy (HSEQ OFF), **ALTA** el día que HSEQ o Supply-inventario activen.
+
+### Síntoma
+- Modelo `TipoEPP` vive en `apps.hseq_management.seguridad_industrial` (app OFF)
+- Consumidores LIVE hoy:
+  - `mi_equipo.cargos` → EPP requerido por perfil de cargo (`core/serializers_rbac.py` usa `tipo_epp_id` opcional, pero cae a CharField si no hay modelo)
+  - `mi_equipo.onboarding_induccion.EntregaEPP` → campo `tipo_epp` es CharField hardcoded (NO FK)
+  - `mi_equipo.offboarding → paz_salvo` → devolución EPP al inventario
+- Consumidores futuros (al activar):
+  - Supply Chain → almacenamiento (inventario físico EPP)
+  - Administración → compras EPP a proveedores
+  - HSEQ → trazabilidad EPP por colaborador
+
+### Impacto
+- Hoy hay inconsistencia: el serializer RBAC permite `tipo_epp_id` (FK a HSEQ OFF) y `nombre` libre — ambos caminos coexisten
+- Cuando HSEQ o Supply-inventario activen, habrá que migrar el CharField de `EntregaEPP` a FK → migración de datos no trivial
+
+### Acción propuesta
+Cuando el primer módulo LIVE (aparte de Mi Equipo) necesite FK real a `TipoEPP`:
+1. Promover `TipoEPP` a CT — ubicación candidata: `apps.catalogo_productos.epp/` (co-ubicación con proveedores) o app CT dedicada
+2. Migrar `EntregaEPP.tipo_epp` CharField → FK
+3. Consolidar definiciones en `core/serializers_rbac.py` (decidir si `tipo_epp_id` es la única vía)
+
+### Dependencia
+- Activación de HSEQ (L40) o Supply-inventario (L50 extensión)
+
+### Trigger
+Antes de descomentar `hseq_management.seguridad_industrial` o activar inventario EPP en Supply.
+
+### Estado
+🔲 Abierto. Prioridad: **preventiva — revalidar antes de activar HSEQ**.
+
+---
+
+## H-CAT-04 — Colaborador/Candidato `tipo_documento` como CharField hardcoded
+
+### Detectado
+2026-04-22 (auditoría pre-deploy catálogos C0)
+
+### Severidad
+**MEDIA** — el modelo no consume el catálogo canónico `TipoDocumentoIdentidad` de Core.
+
+### Síntoma
+Los modelos `apps.mi_equipo.colaboradores.Colaborador.tipo_documento` y
+`apps.mi_equipo.seleccion_contratacion.Candidato.tipo_documento` son
+`CharField` con choices hardcoded en el modelo (`CC`, `CE`, `TI`, `PA`, `PEP`, `PPT`).
+
+Paralelamente:
+- `apps.core.TipoDocumentoIdentidad` existe como catálogo C0 canónico.
+- `apps.catalogo_productos.proveedores.Proveedor.tipo_documento` sí es FK
+  a `TipoDocumentoIdentidad` ✅ (referencia correcta).
+
+Los formularios del frontend (`ColaboradorFormModal.tsx`) también usan
+`TIPO_DOCUMENTO_OPTIONS` hardcoded, no el hook canónico
+`useSelectTiposDocumento()`.
+
+### Impacto
+- Un tenant que agregue un nuevo tipo de documento al catálogo C0 no lo ve
+  disponible al crear un Colaborador o Candidato.
+- Inconsistencia: Proveedor usa FK pero Colaborador no — mismo concepto,
+  dos implementaciones.
+
+### Acción propuesta
+1. Migración: `Colaborador.tipo_documento` CharField → FK a `TipoDocumentoIdentidad`
+2. Data migration: mapear los códigos hardcoded ('CC', 'CE', etc.) a los
+   IDs del catálogo canónico (los códigos ya coinciden — solo falta el JOIN).
+3. Mismo para `Candidato.tipo_documento`.
+4. Frontend: reemplazar `TIPO_DOCUMENTO_OPTIONS` por `useSelectTiposDocumento()`.
+
+### Dependencia
+Ninguna — pero requiere sesión dedicada de migración con data migration y
+tests de regresión de `ColaboradorFormModal` y `CandidatoFormModal`.
+
+### Trigger
+Próxima sesión post-deploy que toque mi_equipo.
+
+### Estado
+🔲 Abierto. **Deuda consciente — no bloquea deploy** (los datos se guardan
+como strings, el backend acepta los valores, los formularios funcionan).
+
+---
+
+## H-CAT-05 — `Tenant.departamento` y `SedeEmpresa.departamento` como CharField con choices hardcoded
+
+> **Actualización 2026-04-22:** `Proveedor.ciudad` **resuelto** via migración
+> `CharField → ForeignKey(Ciudad)` + seed DIVIPOLA completo (33 deptos + 1,104
+> municipios). Pendientes: `Tenant.departamento`, `SedeEmpresa.departamento`,
+> `Colaborador.ciudad` y campo `ciudad` como CharField en Tenant/Sede.
+> Ver "Bitácora" en `catalogos-maestros.md`.
+
+### Detectado
+2026-04-22 (auditoría pre-deploy catálogos C0)
+
+### Severidad
+**MEDIA** — no bloquea producción pero impide agregar departamentos dinámicos.
+
+### Síntoma
+- `apps.tenant.Tenant.departamento` es `CharField(choices=DEPARTAMENTOS_COLOMBIA)`.
+  La constante `DEPARTAMENTOS_COLOMBIA` está hardcoded en `apps.tenant.models`
+  (tuple de 33 pares code/name).
+- `apps.gestion_estrategica.configuracion.SedeEmpresa.departamento` es
+  `CharField` similar. El `SedeEmpresaChoicesSerializer.get_departamentos`
+  también usa `DEPARTAMENTOS_COLOMBIA` hardcoded en vez de consultar el
+  catálogo canónico `apps.core.Departamento`.
+- `Tenant.ciudad` y `SedeEmpresa.ciudad` son `CharField` sin catálogo.
+
+Paralelamente existe el catálogo canónico `apps.core.Departamento` y
+`apps.core.Ciudad` que sí está siendo consumido correctamente por
+`Proveedor.departamento` (FK).
+
+### Impacto
+- Si se agrega un nuevo departamento al catálogo canónico (aunque improbable),
+  no aparece disponible para crear Tenants o Sedes.
+- Si en el futuro se normaliza el catálogo (ej: agregar código DANE a
+  Cundinamarca), el dato de Tenant/Sede queda desacoplado.
+- `TenantFormModal.TabContacto` no puede migrarse a
+  `useSelectDepartamentos()` porque el backend espera el code ('ANTIOQUIA')
+  no el label ('Antioquia'), y el hook canónico devuelve `{id, label}`.
+
+### Acción propuesta
+**Sesión dedicada de migración:**
+1. Migrar `Tenant.departamento` CharField → FK a `Departamento`.
+2. Data migration: mapear los códigos ('ANTIOQUIA', 'CUNDINAMARCA', etc.) a
+   los IDs del catálogo canónico via join por `Departamento.codigo`.
+3. Mismo para `SedeEmpresa.departamento`.
+4. Eliminar constante `DEPARTAMENTOS_COLOMBIA` de `apps.tenant.models`.
+5. Actualizar `SedeEmpresaChoicesSerializer.get_departamentos` para consultar
+   el catálogo.
+6. Actualizar `TabContacto.tsx` a `useSelectDepartamentos()`.
+7. Actualizar `SedeFormModal.tsx` a Select de Ciudades filtrado por departamento.
+
+### Dependencia
+Ninguna.
+
+### Trigger
+Sesión post-deploy que migre Tenant/SedeEmpresa o limpieza de duplicaciones C0.
+
+### Estado
+🔲 Abierto. **Deuda consciente** — no bloquea deploy.
+
+---
+
+## H-CAT-03 — `RolFirmante` y `EstadoFirma` mal ubicados en `identidad`
+
+### Detectado
+2026-04-22 (inventario canónico de catálogos — Sidebar V3 Fase 2)
+
+### Severidad
+**BAJA** — ubicación sub-óptima, no afecta funcionalidad.
+
+### Síntoma
+- Modelos `RolFirmante` y `EstadoFirma` viven en `apps.gestion_estrategica.identidad`
+- Pero son consumidos 100% por `FirmaDigital` del módulo `workflow_engine` (CT)
+- Semánticamente pertenecen al **motor de firma digital**, no a la identidad corporativa
+
+### Impacto
+- Acoplamiento innecesario: cualquier cambio al catálogo de roles/estados de firma toca `identidad` aunque el dominio sea workflow
+- Cuando se documente el módulo `workflow_engine`, hay que explicar por qué dos de sus catálogos clave viven en otra app
+
+### Acción propuesta
+1. Mover `RolFirmante` y `EstadoFirma` de `apps.gestion_estrategica.identidad` a `apps.workflow_engine.firma_digital`
+2. Migrar FKs en `FirmaDigital` y cualquier otro consumidor
+3. Actualizar seeds
+
+### Dependencia
+Ninguna crítica.
+
+### Trigger
+Sesión dedicada a refactor de `workflow_engine` o a consolidación de catálogos de firma.
+
+### Estado
+🔲 Abierto. Prioridad: **baja — deferible hasta que se toque workflow_engine**.

@@ -3,7 +3,7 @@
  * SectionToolbar + Card+Table + BaseModal + ConfirmDialog
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Settings, Check, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Settings } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -20,11 +20,9 @@ import { Textarea } from '@/components/forms/Textarea';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { useModalidadesLogistica, useDepartamentos, useCiudades } from '../hooks/useCatalogos';
-// TipoProveedor vive en CT post refactor 2026-04-21
-import {
-  useTiposProveedor,
-  useCreateTipoProveedor,
-} from '@/features/catalogo-productos/hooks/useProveedores';
+// NOTA (2026-04-22, V3): Tipos de Proveedor migrado a Catálogos Maestros
+// (CT). UI oficial: /catalogo-productos/tipos-proveedor. Aquí permanecen
+// solo catálogos específicos de supply_chain.
 import {
   useTiposAlmacen,
   useCreateTipoAlmacen,
@@ -47,23 +45,16 @@ interface CatalogItem {
   nombre: string;
   descripcion?: string;
   is_active: boolean;
-  requiere_materia_prima?: boolean;
-  requiere_modalidad_logistica?: boolean;
   departamento_nombre?: string;
 }
 
 // ==================== CONFIGURACIÓN DE CATÁLOGOS ====================
 
 // Formas de Pago y Tipos de Documento se administran en Configuración → Catálogos.
-// Materias Primas (categorías + tipos) viven en Catálogo de Productos.
-// Aquí solo viven catálogos específicos de supply chain.
+// Materias Primas (categorías + tipos) viven en Catálogos Maestros (CT).
+// Tipos de Proveedor → /catalogo-productos/tipos-proveedor (migrado 2026-04-22).
+// Aquí solo viven catálogos específicos de supply_chain.
 const CATALOGS: CatalogConfig[] = [
-  {
-    key: 'tipos-proveedor',
-    label: 'Tipos de Proveedor',
-    group: 'Proveedores',
-    hasExtraFields: true,
-  },
   { key: 'modalidades', label: 'Modalidades Logísticas', group: 'Proveedores' },
   { key: 'tipos-almacen', label: 'Tipos de Almacén', group: 'Almacenamiento' },
   { key: 'departamentos', label: 'Departamentos', group: 'Ubicación' },
@@ -76,7 +67,7 @@ export function CatalogosTab() {
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.SUPPLY_CHAIN, Sections.CATALOGOS_SC, 'create');
 
-  const [selectedCatalog, setSelectedCatalog] = useState('tipos-proveedor');
+  const [selectedCatalog, setSelectedCatalog] = useState('modalidades');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<CatalogItem | null>(null);
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null);
@@ -84,14 +75,12 @@ export function CatalogosTab() {
   const catalogConfig = CATALOGS.find((c) => c.key === selectedCatalog)!;
 
   // Queries para todos los catálogos (solo se activa el seleccionado)
-  const { data: tiposProvData, isLoading: l3 } = useTiposProveedor();
   const { data: modalidadesData, isLoading: l4 } = useModalidadesLogistica();
   const { data: departamentosData, isLoading: l8 } = useDepartamentos();
   const { data: ciudadesData, isLoading: l9 } = useCiudades();
   const { data: tiposAlmacenData, isLoading: l10 } = useTiposAlmacen();
 
   // Mutations para catálogos base
-  const createTipoProv = useCreateTipoProveedor();
   const createTipoAlm = useCreateTipoAlmacen();
   const updateTipoAlm = useUpdateTipoAlmacen();
   const deleteTipoAlm = useDeleteTipoAlmacen();
@@ -101,8 +90,6 @@ export function CatalogosTab() {
     const normalize = (d: unknown): CatalogItem[] =>
       Array.isArray(d) ? d : ((d as Record<string, unknown>)?.results as CatalogItem[]) || [];
     switch (selectedCatalog) {
-      case 'tipos-proveedor':
-        return { items: normalize(tiposProvData), isLoading: l3 };
       case 'modalidades':
         return { items: normalize(modalidadesData), isLoading: l4 };
       case 'departamentos':
@@ -133,16 +120,6 @@ export function CatalogosTab() {
 
     try {
       switch (selectedCatalog) {
-        case 'tipos-proveedor':
-          {
-            const provData = {
-              ...baseData,
-              requiere_materia_prima: fd.get('requiere_materia_prima') === 'true',
-              requiere_modalidad_logistica: fd.get('requiere_modalidad_logistica') === 'true',
-            };
-            await createTipoProv.mutateAsync(provData);
-          }
-          break;
         case 'tipos-almacen':
           if (editItem) {
             await updateTipoAlm.mutateAsync({ id: editItem.id, data: baseData });
@@ -258,11 +235,6 @@ export function CatalogosTab() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Descripción
                   </th>
-                  {selectedCatalog === 'tipos-proveedor' && (
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Req. Materia Prima
-                    </th>
-                  )}
                   {selectedCatalog === 'ciudades' && (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Departamento
@@ -288,15 +260,6 @@ export function CatalogosTab() {
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                       {item.descripcion || '-'}
                     </td>
-                    {selectedCatalog === 'tipos-proveedor' && (
-                      <td className="px-6 py-3 text-center">
-                        {item.requiere_materia_prima ? (
-                          <Check className="w-4 h-4 text-success-600 mx-auto" />
-                        ) : (
-                          <X className="w-4 h-4 text-gray-400 mx-auto" />
-                        )}
-                      </td>
-                    )}
                     {selectedCatalog === 'ciudades' && (
                       <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
                         {item.departamento_nombre || '-'}
@@ -383,28 +346,6 @@ export function CatalogosTab() {
             rows={2}
             defaultValue={editItem?.descripcion || ''}
           />
-
-          {/* Campos extra: Tipos de Proveedor */}
-          {selectedCatalog === 'tipos-proveedor' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Select
-                label="Requiere Materia Prima"
-                name="requiere_materia_prima"
-                defaultValue={editItem?.requiere_materia_prima ? 'true' : 'false'}
-              >
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </Select>
-              <Select
-                label="Requiere Modalidad Logística"
-                name="requiere_modalidad_logistica"
-                defaultValue={editItem?.requiere_modalidad_logistica ? 'true' : 'false'}
-              >
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </Select>
-            </div>
-          )}
         </form>
       </BaseModal>
 

@@ -1,5 +1,11 @@
 /**
  * Tab Contacto - Direccion, telefonos, email, sitio web.
+ *
+ * DEUDA (H-CAT-05 2026-04-22): `Tenant.departamento` es CharField con
+ * choices hardcoded DEPARTAMENTOS_COLOMBIA (tuples code/label). Por eso
+ * este tab sigue usando DEPARTAMENTOS_OPTIONS hardcoded — migrar a FK
+ * hacia apps.core.Departamento requiere migración de datos + cambio de
+ * modelo. Aplazado a sesión dedicada de migración pre-producción.
  */
 import { Phone, Globe } from 'lucide-react';
 import { Input } from '@/components/forms/Input';

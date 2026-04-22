@@ -18,6 +18,7 @@ Convención: nombres en `kebab-case.md`. Sin números en archivos — el orden d
 | Cómo funciona el multi-tenant | [`multi-tenant.md`](multi-tenant.md) |
 | Cómo funciona el control de acceso | [`rbac-sistema.md`](rbac-sistema.md) |
 | Quién es dueño de cada dato | [`source-of-truth.md`](source-of-truth.md) |
+| Qué catálogos existen y dónde deben vivir | [`catalogos-maestros.md`](catalogos-maestros.md) |
 | Qué decisiones arquitectónicas están abiertas | [`hallazgos-pendientes.md`](hallazgos-pendientes.md) |
 
 ---

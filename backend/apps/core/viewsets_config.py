@@ -45,16 +45,19 @@ from .serializers_config import (
 
 
 # =============================================================================
-# SIDEBAR: Cascada V2 — 7 capas visuales LIVE (L0-L20, StrateKaz Core)
-# Orden = lógica de empresa colombiana (Planear → Hacer → Verificar → Actuar)
+# SIDEBAR: V3 — Narrativa del empresario (LIVE L0-L20 + supply_chain)
+# Orden: Fundación → CT (GD · Catálogos · Flujos) → C2 (Gente · Operación) →
+#        Configuración · Centro de Control
 # Frontend Sidebar.tsx renderiza en el orden recibido del backend.
-# Capas con 1 módulo → render directo (sin wrapper).
-# Capas con 2+ módulos → is_category: True (grupo expandible).
-# Fuente de verdad: docs/01-arquitectura/ARQUITECTURA-CASCADA-V2.md
+# Capas con 1 módulo LIVE → render directo (sin wrapper).
+# Capas con 2+ módulos LIVE → is_category: True (sub-separador expandible).
+# Los bloques C2 (Gente/Operación) ya incluyen módulos futuros en module_codes;
+# hoy muestran 1 solo LIVE, pero cuando se active un segundo se auto-agrupan.
+# Fuente de verdad V3: docs/01-arquitectura/arquitectura-cascada.md (Apéndice V3).
 # =============================================================================
 SIDEBAR_LAYERS = [
     # ═══════════════════════════════════════════════════════════════
-    # PLANEAR (P) — Constituir, documentar, vincular
+    # C1 — FUNDACIÓN (constituir la organización)
     # ═══════════════════════════════════════════════════════════════
     {
         'code': 'NIVEL_FUNDACION',
@@ -64,49 +67,30 @@ SIDEBAR_LAYERS = [
         'phase': 'PLANEAR',
         'module_codes': ['fundacion'],
     },
+    # ═══════════════════════════════════════════════════════════════
+    # CT — INFRAESTRUCTURA TRANSVERSAL (3 módulos independientes,
+    #      renderizan al mismo nivel sin wrapper "Infraestructura")
+    # ═══════════════════════════════════════════════════════════════
     {
-        # Gestión Documental = infraestructura transversal
+        # Documentos (maestros documentales)
         'code': 'NIVEL_INFRAESTRUCTURA',
-        'name': 'Infraestructura',
+        'name': 'Gestión Documental',
         'icon': 'FileText',
         'color': '#6366F1',
         'phase': 'PLANEAR',
-        'module_codes': ['gestion_documental', 'catalogo_productos'],
+        'module_codes': ['gestion_documental'],
     },
     {
-        'code': 'NIVEL_EQUIPO',
-        'name': 'Gestión de Personas',
-        'icon': 'UserPlus',
-        'color': '#0EA5E9',
-        'phase': 'PLANEAR',
-        'module_codes': ['mi_equipo'],
-    },
-    # ═══════════════════════════════════════════════════════════════
-    # HACER (H) — Operar cadena de valor
-    # ═══════════════════════════════════════════════════════════════
-    {
-        'code': 'NIVEL_CADENA',
-        'name': 'Cadena de Valor',
+        # Datos maestros transversales (productos, unidades, proveedores)
+        'code': 'NIVEL_CATALOGOS_MAESTROS',
+        'name': 'Catálogos Maestros',
         'icon': 'Package',
-        'color': '#10B981',
-        'phase': 'HACER',
-        'module_codes': ['supply_chain'],
+        'color': '#6366F1',
+        'phase': 'PLANEAR',
+        'module_codes': ['catalogo_productos'],
     },
-    # ═══════════════════════════════════════════════════════════════
-    # VERIFICAR + ACTUAR (V/A) — Medir, revisar, mejorar
-    # ═══════════════════════════════════════════════════════════════
     {
-        'code': 'NIVEL_INTELIGENCIA',
-        'name': 'Inteligencia',
-        'icon': 'BarChart3',
-        'color': '#8B5CF6',
-        'phase': 'VERIFICAR_ACTUAR',
-        'module_codes': ['audit_system'],
-    },
-    # ═══════════════════════════════════════════════════════════════
-    # TRANSVERSAL — Workflows (motor de ejecución) + Configuración
-    # ═══════════════════════════════════════════════════════════════
-    {
+        # Motor de flujos + Firma Digital (tab interna del módulo)
         'code': 'NIVEL_WORKFLOWS',
         'name': 'Flujos de Trabajo',
         'icon': 'Workflow',
@@ -114,6 +98,33 @@ SIDEBAR_LAYERS = [
         'phase': 'TRANSVERSAL',
         'module_codes': ['workflow_engine'],
     },
+    # ═══════════════════════════════════════════════════════════════
+    # C2 — NARRATIVA DEL EMPRESARIO
+    # Orden: Gente → Planeación → Riesgo → Operación → Finanzas
+    # Bloques sin módulos LIVE hoy (Planeación, Riesgo, Finanzas) se
+    # agregan cuando se active su primer módulo.
+    # ═══════════════════════════════════════════════════════════════
+    {
+        # Gente: Mi Equipo (LIVE) + Talent Hub (futuro)
+        'code': 'NIVEL_EQUIPO',
+        'name': 'Gente',
+        'icon': 'UserPlus',
+        'color': '#0EA5E9',
+        'phase': 'HACER',
+        'module_codes': ['mi_equipo', 'talent_hub'],
+    },
+    {
+        # Operación Comercial: Supply Chain (LIVE) + Production + Logistics + Sales CRM (futuros)
+        'code': 'NIVEL_CADENA',
+        'name': 'Operación Comercial',
+        'icon': 'Package',
+        'color': '#10B981',
+        'phase': 'HACER',
+        'module_codes': ['supply_chain', 'production_ops', 'logistics_fleet', 'sales_crm'],
+    },
+    # ═══════════════════════════════════════════════════════════════
+    # C0 — CONFIGURACIÓN + CENTRO DE CONTROL (al final)
+    # ═══════════════════════════════════════════════════════════════
     {
         'code': 'NIVEL_CONFIG',
         'name': 'Configuración',
@@ -121,6 +132,15 @@ SIDEBAR_LAYERS = [
         'color': '#64748B',
         'phase': 'TRANSVERSAL',
         'module_codes': ['configuracion_plataforma'],
+    },
+    {
+        # Centro de Control: audit_system (logs, notificaciones, alertas, tareas)
+        'code': 'NIVEL_INTELIGENCIA',
+        'name': 'Centro de Control',
+        'icon': 'Shield',
+        'color': '#8B5CF6',
+        'phase': 'VERIFICAR_ACTUAR',
+        'module_codes': ['audit_system'],
     },
 ]
 

@@ -204,7 +204,7 @@ describe('Sistema Documental - API Tests', () => {
       expect(apiClient.get).toHaveBeenCalledWith(
         '/gestion-estrategica/gestion-documental/documentos/',
         {
-          params: { tipo: 1 },
+          params: { tipo: 1, ordering: '-created_at' },
         }
       );
       expect(result.current.data).toEqual(mockDocumentos);
@@ -225,7 +225,7 @@ describe('Sistema Documental - API Tests', () => {
       expect(apiClient.get).toHaveBeenCalledWith(
         '/gestion-estrategica/gestion-documental/documentos/',
         {
-          params: { estado: 'APROBADO' },
+          params: { estado: 'APROBADO', ordering: '-created_at' },
         }
       );
       expect(result.current.data?.[0].estado).toBe('APROBADO');

@@ -12,9 +12,6 @@ import { createQueryKeys } from '@/lib/query-keys';
 import { apiClient } from '@/lib/api-client';
 import type {
   SystemModuleItem,
-  ConsecutivoConfig,
-  CreateConsecutivoDTO,
-  UpdateConsecutivoDTO,
   UnidadMedida,
   CreateUnidadMedidaDTO,
   UpdateUnidadMedidaDTO,
@@ -45,6 +42,12 @@ import type {
   FormaPago,
   CreateFormaPagoDTO,
   UpdateFormaPagoDTO,
+  Departamento,
+  CreateDepartamentoDTO,
+  UpdateDepartamentoDTO,
+  Ciudad,
+  CreateCiudadDTO,
+  UpdateCiudadDTO,
 } from '../types/config-admin.types';
 
 // ══════════════════════════════════════════════════════════════
@@ -52,7 +55,6 @@ import type {
 // ══════════════════════════════════════════════════════════════
 
 const systemModulesKeys = createQueryKeys('system-modules');
-const consecutivosKeys = createQueryKeys('consecutivos-config');
 const unidadesMedidaKeys = createQueryKeys('unidades-medida-config');
 const tiposContratoKeys = createQueryKeys('tipos-contrato-config');
 const integracionesKeys = createQueryKeys('integraciones-config');
@@ -63,16 +65,13 @@ const tiposExamenKeys = createQueryKeys('tipos-examen-config');
 const tiposInspeccionKeys = createQueryKeys('tipos-inspeccion-config');
 const tiposResiduoKeys = createQueryKeys('tipos-residuo-config');
 const formasPagoKeys = createQueryKeys('formas-pago-config');
+// Catálogos de Plataforma (C0) — geografía DIVIPOLA
+const departamentosKeys = createQueryKeys('departamentos-config');
+const ciudadesKeys = createQueryKeys('ciudades-config');
 
 // ══════════════════════════════════════════════════════════════
 // API Clients
 // ══════════════════════════════════════════════════════════════
-
-const consecutivosApi = createApiClient<
-  ConsecutivoConfig,
-  CreateConsecutivoDTO,
-  UpdateConsecutivoDTO
->('/gestion-estrategica/organizacion', 'consecutivos');
 
 // Post-consolidacion S7: source-of-truth es catalogo_productos (CT-layer).
 const unidadesMedidaApi = createApiClient<
@@ -131,11 +130,20 @@ const formasPagoApi = createApiClient<FormaPago, CreateFormaPagoDTO, UpdateForma
   'formas-pago'
 );
 
+// Catálogos de Plataforma (C0) — geografía DIVIPOLA canónica (apps.core).
+const departamentosApi = createApiClient<
+  Departamento,
+  CreateDepartamentoDTO,
+  UpdateDepartamentoDTO
+>('/core', 'departamentos');
+const ciudadesApi = createApiClient<Ciudad, CreateCiudadDTO, UpdateCiudadDTO>('/core', 'ciudades');
+
 // ══════════════════════════════════════════════════════════════
 // CRUD Hooks via Factory
 // ══════════════════════════════════════════════════════════════
 
-const consecutivosHooks = createCrudHooks(consecutivosApi, consecutivosKeys, 'Consecutivo');
+// consecutivosHooks eliminado 2026-04-22 — UI tenant removida. Códigos se
+// autogeneran en cada modelo via apps/core/utils/consecutivos.py (Sistema A).
 const unidadesMedidaHooks = createCrudHooks(
   unidadesMedidaApi,
   unidadesMedidaKeys,
@@ -166,16 +174,10 @@ const tiposResiduoHooks = createCrudHooks(tiposResiduoApi, tiposResiduoKeys, 'Ti
 const formasPagoHooks = createCrudHooks(formasPagoApi, formasPagoKeys, 'Forma de pago', {
   isFeminine: true,
 });
+const departamentosHooks = createCrudHooks(departamentosApi, departamentosKeys, 'Departamento');
+const ciudadesHooks = createCrudHooks(ciudadesApi, ciudadesKeys, 'Ciudad', { isFeminine: true });
 
-// ══════════════════════════════════════════════════════════════
-// Exports: Consecutivos
-// ══════════════════════════════════════════════════════════════
-
-export const useConsecutivosConfig = consecutivosHooks.useList;
-export const useConsecutivoConfig = consecutivosHooks.useDetail;
-export const useCreateConsecutivo = consecutivosHooks.useCreate;
-export const useUpdateConsecutivo = consecutivosHooks.useUpdate;
-export const useDeleteConsecutivo = consecutivosHooks.useDelete;
+// Exports de Consecutivos eliminados 2026-04-22 — ver nota arriba.
 
 // ══════════════════════════════════════════════════════════════
 // Exports: Unidades de Medida
@@ -276,6 +278,26 @@ export const useFormaPagoConfig = formasPagoHooks.useDetail;
 export const useCreateFormaPago = formasPagoHooks.useCreate;
 export const useUpdateFormaPago = formasPagoHooks.useUpdate;
 export const useDeleteFormaPago = formasPagoHooks.useDelete;
+
+// ══════════════════════════════════════════════════════════════
+// Exports: Departamentos (Plataforma C0 — geografía DIVIPOLA)
+// ══════════════════════════════════════════════════════════════
+
+export const useDepartamentosConfig = departamentosHooks.useList;
+export const useDepartamentoConfig = departamentosHooks.useDetail;
+export const useCreateDepartamento = departamentosHooks.useCreate;
+export const useUpdateDepartamento = departamentosHooks.useUpdate;
+export const useDeleteDepartamento = departamentosHooks.useDelete;
+
+// ══════════════════════════════════════════════════════════════
+// Exports: Ciudades (Plataforma C0 — geografía DIVIPOLA)
+// ══════════════════════════════════════════════════════════════
+
+export const useCiudadesConfig = ciudadesHooks.useList;
+export const useCiudadConfig = ciudadesHooks.useDetail;
+export const useCreateCiudad = ciudadesHooks.useCreate;
+export const useUpdateCiudad = ciudadesHooks.useUpdate;
+export const useDeleteCiudad = ciudadesHooks.useDelete;
 
 // ══════════════════════════════════════════════════════════════
 // System Modules — NOTA: useModulesTree, useToggleModule,

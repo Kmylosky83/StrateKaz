@@ -354,6 +354,53 @@ export interface CreateFormaPagoDTO {
 
 export type UpdateFormaPagoDTO = Partial<CreateFormaPagoDTO>;
 
+// ══════════════════════════════════════════════════════════════
+// Catálogos de Plataforma (C0) — Departamento + Ciudad DIVIPOLA
+// ══════════════════════════════════════════════════════════════
+
+export interface Departamento {
+  id: number;
+  codigo: string; // DIVIPOLA 2 dígitos (ej: "05" Antioquia)
+  nombre: string;
+  codigo_dane: string | null;
+  orden: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateDepartamentoDTO {
+  codigo: string;
+  nombre: string;
+  codigo_dane?: string;
+  orden?: number;
+  is_active?: boolean;
+}
+export type UpdateDepartamentoDTO = Partial<CreateDepartamentoDTO>;
+
+export interface Ciudad {
+  id: number;
+  codigo: string;
+  nombre: string;
+  departamento: number;
+  departamento_nombre?: string;
+  codigo_dane: string | null;
+  es_capital: boolean;
+  orden: number;
+  is_active: boolean;
+}
+
+export interface CreateCiudadDTO {
+  codigo: string;
+  nombre: string;
+  departamento: number;
+  codigo_dane?: string;
+  es_capital?: boolean;
+  orden?: number;
+  is_active?: boolean;
+}
+export type UpdateCiudadDTO = Partial<CreateCiudadDTO>;
+
 // ── Tipo genérico para catálogos simples (código + nombre + activo) ──
 
 export interface SimpleCatalogItem {

@@ -1786,49 +1786,49 @@ Reactiva — cuando se trabaje Fundación o GD. No bloquea nada hoy.
 
 ---
 
-## H-UI-05 — `ConsecutivoConfig` (Sistema B) infrautilizado, candidato a eliminar
+## H-UI-05 — `ConsecutivoConfig` (Sistema B) — 🟡 CERRADO PARCIAL (2026-04-22)
 
 ### Detectado
 2026-04-22 (análisis de configuración C0).
 
 ### Severidad
-**BAJA** — No causa bugs. Es **deuda de diseño** (infra dormida).
+**BAJA** — No causa bugs. Era **deuda de diseño** (infra dormida).
 
-### Síntoma
-Existen DOS sistemas de consecutivos en el código:
+### Acciones aplicadas (2026-04-22)
+1. **Refactor a Sistema A en 9 modelos** (LIVE + OFF) — ahora NO dependen de `ConsecutivoConfig`:
+   - `catalogo_productos.Producto.generar_codigo()` (MP/INS/PT/SV, padding 5)
+   - `catalogo_productos.CategoriaProducto.generar_codigo()` (CAT, padding 3)
+   - `catalogo_productos.proveedores.Proveedor.generar_codigo_interno()` (PROV, padding 5)
+   - `supply_chain.compras.OrdenCompra.generar_numero_orden()` (OC-YYYY, padding 5)
+   - `supply_chain.compras.RequisicionCompra.generar_codigo()` (RC-YYYY, padding 5)
+   - `supply_chain.almacenamiento.MovimientoInventario.generar_codigo()` (MOV-YYYY, padding 5)
+   - `production_ops.mantenimiento.*` (ActivoProduccion, EquipoMedicion, OrdenTrabajo)
+   - `production_ops.procesamiento.*` (OrdenProduccion, LoteProduccion)
+   - `production_ops.recepcion.*` (Recepcion, PruebaAcidez voucher)
+   - `sales_crm.servicio_cliente.*` (PQRS, EncuestaSatisfaccion)
+   - `talent_hub.services.contrato_documento_service._generar_codigo_documento`
+   - `gestion_estrategica.gestion_documental.services.documento_service.generar_codigo` (TIPO-PROCESO-NNN)
+2. **Creado helper compartido** `apps.core.utils.consecutivos.siguiente_consecutivo_scan()` — scan-and-increment reutilizable con soporte para `include_year`.
+3. **Eliminada UI tenant**: `ModulosSection.tsx`, `ConsecutivosSection.tsx`, `ConsecutivoFormModal.tsx`.
+4. **Eliminado tab `general` del seed** `configuracion_plataforma` (cleanup_obsolete_tabs lo borra en ambos tenants automáticamente).
+5. **Limpiados hooks** `useConsecutivos*` del `useConfigAdmin.ts`.
+6. **Módulos del Sistema** (tenant UI) eliminado — gestión ahora vive 100% en Admin Global (TenantFormModal → TabModulos).
 
-**Sistema A — Autogeneración en modelo (LIVE)**
-- `catalogo_productos.Producto.generar_codigo()` → MP-001, INS-001, PT-001, SV-001
-- `catalogo_productos.proveedores.Proveedor.generar_codigo_interno()` → PROV-001
-- Hardcoded en `save()` del modelo, corre automático
+### Pendiente (deuda residual — por qué NO se eliminó el modelo del backend)
+Algunos consumidores **legacy** aún importan `ConsecutivoConfig` directamente:
+- `gestion_estrategica.configuracion.serializers.py` (genera código de `Sede`)
+- `gestion_estrategica.configuracion.stats_views.py` (conteo dashboard)
+- `gestion_estrategica.configuracion.serializers_consecutivos.py` (serializers legacy)
+- `gestion_estrategica.viewsets_strategic.py` (conteo)
+- `supply_chain.almacenamiento.tests.factories.py` (test factory)
 
-**Sistema B — `ConsecutivoConfig` (dormido)**
-- Modelo configurable, viewsets, serializers, filters, seed command
-- Endpoint `/consecutivos/` montado
-- **Único consumidor real:** `talent_hub.services.contrato_documento_service` (línea 245)
-- `talent_hub` está DORMIDO (L60) — el Sistema B no tiene usuarios reales LIVE
+El modelo + endpoints + seed `seed_consecutivos_sistema` **se conservan** hasta refactorizar estos 5 puntos. Cuando se refactoricen → eliminar el modelo + migración DeleteModel + retirar seed del pipeline.
 
-### Propuesta
-**Eliminar Sistema B** (decidido por Camilo 2026-04-22) por:
-1. Hoy no se usa en nada LIVE
-2. Sistema A (autogeneración hardcoded) ya cubre los casos reales
-3. Si un cliente pide prefijos custom (BOG/MED/CAL), se reconstruye sobre demanda — no vale la pena mantener infra dormida "por si acaso"
-
-Antes de eliminar:
-- Verificar que `talent_hub.contrato_documento_service` no se active primero
-- Crear migración que elimine tablas `ConsecutivoConfig` + relacionadas
-- Eliminar: viewsets, serializers, filters, urls, seed command, tests
-- Validar que no hay data real en producción (si hay, migrar a Sistema A o archivar)
-
-### Dependencia
-- Confirmar que no se active `talent_hub` antes que este cleanup.
-- Si se activa primero, migrar `contrato_documento_service` a Sistema A.
-
-### Trigger
-Próximo sprint de cleanup LIVE.
+### Trigger del cierre total
+Refactor de `SedeEmpresa.codigo` + eliminación de serializers legacy no usados en UI.
 
 ### Estado
-🔲 Abierto. Prioridad: MEDIA (cleanup, no bloqueante).
+🟡 **Cerrado parcial.** Sistema A ya cubre 100% de modelos LIVE + OFF. Modelo `ConsecutivoConfig` queda como backend-only (sin UI) hasta completar el cleanup residual.
 
 ---
 

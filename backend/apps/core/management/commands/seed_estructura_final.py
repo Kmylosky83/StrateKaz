@@ -1331,15 +1331,17 @@ class Command(BaseCommand):
                 'is_core': True,
                 'is_enabled': True,
                 'orden': 97,
+                # 2026-04-22: Tab "general" eliminado (seguía V3 "Config = solo Integraciones").
+                # - `modulos` (activar/desactivar módulos): gestión movida a Admin Global
+                #   → TenantFormModal → TabModulos (control de plataforma).
+                # - `consecutivos` (Sistema B ConsecutivoConfig UI): eliminada. Códigos
+                #   se autogeneran via apps/core/utils/consecutivos.py (Sistema A).
+                # `cleanup_obsolete_tabs` borra automáticamente los tabs legacy de DB.
                 'tabs': [
-                    {'code': 'general', 'name': 'General', 'icon': 'Settings', 'route': 'general', 'orden': 1, 'sections': [
-                        {'code': 'modulos', 'name': 'Módulos del Sistema', 'icon': 'Blocks', 'orden': 1, 'description': 'Activar y desactivar módulos, tabs y secciones del sistema'},
-                        {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 2, 'description': 'Configuración de numeración automática por tipo de documento'},
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'Library', 'route': 'catalogos', 'orden': 1, 'sections': [
+                        {'code': 'catalogos', 'name': 'Catálogos Maestros', 'icon': 'Library', 'orden': 1, 'description': 'Tablas maestras: plataforma (geografía DIVIPOLA), general, HSEQ, logística.'},
                     ]},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'Library', 'route': 'catalogos', 'orden': 2, 'sections': [
-                        {'code': 'catalogos', 'name': 'Catálogos Maestros', 'icon': 'Library', 'orden': 1, 'description': 'Tablas maestras transversales: unidades de medida, tipos de contrato, EPP, normas y más'},
-                    ]},
-                    {'code': 'conexiones', 'name': 'Conexiones', 'icon': 'Plug', 'route': 'conexiones', 'orden': 3, 'sections': [
+                    {'code': 'conexiones', 'name': 'Conexiones', 'icon': 'Plug', 'route': 'conexiones', 'orden': 2, 'sections': [
                         {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 1, 'description': 'Conexiones con sistemas externos (contabilidad, nómina, ERP)'},
                     ]},
                 ]

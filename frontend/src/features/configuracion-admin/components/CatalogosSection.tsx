@@ -15,7 +15,12 @@ import { useState, useMemo } from 'react';
 import { PageTabs, type TabItem } from '@/components/layout/PageTabs';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { useModuleEnabled } from '@/hooks/useModules';
-import { CatalogGeneralTab, CatalogHSEQTab, CatalogLogisticaTab } from './catalogs';
+import {
+  CatalogGeneralTab,
+  CatalogHSEQTab,
+  CatalogLogisticaTab,
+  CatalogPlataformaTab,
+} from './catalogs';
 
 export const CatalogosSection = () => {
   const { color: moduleColor } = useModuleColor('configuracion_plataforma');
@@ -23,16 +28,20 @@ export const CatalogosSection = () => {
   const { isEnabled: supplyEnabled } = useModuleEnabled('supply_chain');
 
   const tabs = useMemo<TabItem[]>(() => {
-    const list: TabItem[] = [{ id: 'general', label: 'General' }];
+    // Plataforma (deptos + ciudades DIVIPOLA) va primero — catálogo universal.
+    const list: TabItem[] = [
+      { id: 'plataforma', label: 'Plataforma' },
+      { id: 'general', label: 'General' },
+    ];
     if (hseqEnabled) list.push({ id: 'hseq', label: 'HSEQ' });
     if (supplyEnabled) list.push({ id: 'logistica', label: 'Logística' });
     return list;
   }, [hseqEnabled, supplyEnabled]);
 
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('plataforma');
 
-  // If active tab got hidden (module disabled), fallback to general
-  const safeTab = tabs.find((t) => t.id === activeTab) ? activeTab : 'general';
+  // If active tab got hidden (module disabled), fallback a plataforma
+  const safeTab = tabs.find((t) => t.id === activeTab) ? activeTab : 'plataforma';
 
   return (
     <div className="space-y-4">
@@ -45,6 +54,7 @@ export const CatalogosSection = () => {
         size="sm"
       />
 
+      {safeTab === 'plataforma' && <CatalogPlataformaTab moduleColor={moduleColor} />}
       {safeTab === 'general' && <CatalogGeneralTab moduleColor={moduleColor} />}
       {safeTab === 'hseq' && <CatalogHSEQTab moduleColor={moduleColor} />}
       {safeTab === 'logistica' && <CatalogLogisticaTab moduleColor={moduleColor} />}

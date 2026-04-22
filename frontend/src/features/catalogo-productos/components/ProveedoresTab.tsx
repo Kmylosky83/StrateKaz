@@ -155,7 +155,7 @@ export default function ProveedoresTab() {
                       {p.tipo_documento_nombre}: {p.numero_documento}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {p.ciudad || '—'}
+                      {p.ciudad_nombre || '—'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <Badge variant={p.is_active ? 'success' : 'default'}>

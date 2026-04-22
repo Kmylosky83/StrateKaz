@@ -15,7 +15,7 @@
  * Creado 2026-04-22 — primera UI oficial para administrar estos catálogos.
  * Antes se editaban desde `supply-chain/CatalogosTab` (legacy, retirado V3).
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { MapPin, Building2, Pencil, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -131,17 +131,20 @@ export const CatalogPlataformaTab = ({ moduleColor }: CatalogPlataformaTabProps)
     setDeptoModalOpen(true);
   };
 
-  const openEditDepto = (d: Departamento) => {
-    setEditDepto(d);
-    deptoForm.reset({
-      codigo: d.codigo,
-      nombre: d.nombre,
-      codigo_dane: d.codigo_dane ?? '',
-      orden: d.orden,
-      is_active: d.is_active,
-    });
-    setDeptoModalOpen(true);
-  };
+  const openEditDepto = useCallback(
+    (d: Departamento) => {
+      setEditDepto(d);
+      deptoForm.reset({
+        codigo: d.codigo,
+        nombre: d.nombre,
+        codigo_dane: d.codigo_dane ?? '',
+        orden: d.orden,
+        is_active: d.is_active,
+      });
+      setDeptoModalOpen(true);
+    },
+    [deptoForm]
+  );
 
   const submitDepto = (data: CreateDepartamentoDTO) => {
     const onSuccess = () => setDeptoModalOpen(false);
@@ -179,19 +182,22 @@ export const CatalogPlataformaTab = ({ moduleColor }: CatalogPlataformaTabProps)
     setCiudadModalOpen(true);
   };
 
-  const openEditCiudad = (c: Ciudad) => {
-    setEditCiudad(c);
-    ciudadForm.reset({
-      codigo: c.codigo,
-      nombre: c.nombre,
-      departamento: c.departamento,
-      codigo_dane: c.codigo_dane ?? '',
-      es_capital: c.es_capital,
-      orden: c.orden,
-      is_active: c.is_active,
-    });
-    setCiudadModalOpen(true);
-  };
+  const openEditCiudad = useCallback(
+    (c: Ciudad) => {
+      setEditCiudad(c);
+      ciudadForm.reset({
+        codigo: c.codigo,
+        nombre: c.nombre,
+        departamento: c.departamento,
+        codigo_dane: c.codigo_dane ?? '',
+        es_capital: c.es_capital,
+        orden: c.orden,
+        is_active: c.is_active,
+      });
+      setCiudadModalOpen(true);
+    },
+    [ciudadForm]
+  );
 
   const submitCiudad = (data: CreateCiudadDTO) => {
     const onSuccess = () => setCiudadModalOpen(false);
@@ -256,7 +262,7 @@ export const CatalogPlataformaTab = ({ moduleColor }: CatalogPlataformaTabProps)
         ),
       },
     ],
-    [canEdit, canDelete]
+    [canEdit, canDelete, openEditDepto]
   );
 
   const ciudadColumns: ColumnDef<Ciudad>[] = useMemo(
@@ -318,7 +324,7 @@ export const CatalogPlataformaTab = ({ moduleColor }: CatalogPlataformaTabProps)
         ),
       },
     ],
-    [canEdit, canDelete, deptoById]
+    [canEdit, canDelete, deptoById, openEditCiudad]
   );
 
   const tabs = [

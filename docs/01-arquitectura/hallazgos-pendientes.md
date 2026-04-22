@@ -1320,3 +1320,614 @@ Alternativas a evaluar en sesión dedicada:
 
 ### Estado
 🔲 Abierto
+
+---
+
+## H-C1-01 — Admin de plataforma mezclado con Fundación (C1)
+
+### Detectado
+2026-04-22 (análisis de composición C1 para preparar refactor hacia microservicios).
+
+### Severidad
+**MEDIA-ALTA** — No bloquea operación, pero ensucia el bounded context de C1.
+Si mañana extraemos `fundacion-service` como microservicio, nos llevamos por
+accidente infraestructura técnica que pertenece a la plataforma (C0).
+
+### Síntoma
+El paraguas `apps.gestion_estrategica.configuracion` (C1) aloja 4 modelos
+cuya naturaleza es **admin técnico de plataforma**, no "identidad fundacional
+de la empresa":
+
+| Modelo | Archivo | Naturaleza real |
+|---|---|---|
+| `IntegracionExterna` + `ProveedorIntegracion` + `TipoServicioIntegracion` | `configuracion/models.py` L916-1775 | Conexiones con sistemas externos (API, webhook, ERP). Es admin de plataforma |
+| `CertificadoDigital` | `configuracion/models.py` L1776 | Infraestructura criptográfica PKI. Pertenece a `workflow_engine/firma_digital` (CT) o a un C0 de seguridad |
+| `IconRegistry` | `configuracion/models.py` L2241 | Registro de íconos Lucide disponibles. Metadata UI pura — C0 (`shared_library` o similar) |
+| `ConsecutivoConfig` | `organizacion/models_consecutivos.py` | Numeración automática de documentos por tipo. Es admin técnico transversal |
+
+El propio doc `arquitectura-cascada.md` §13 "Secciones que se mueven" ya declaró
+que `Integraciones` y `Consecutivos` deben migrar de Fundación a
+`configuracion_plataforma`. Pendiente de ejecutar + descubrir adicionalmente
+`CertificadoDigital` e `IconRegistry`.
+
+### Impacto
+- **Microservicios:** un servicio "Fundación" separado debería poder arrancar
+  sin depender de certificados digitales, catálogo de íconos, ni proveedores
+  de integración externa. Hoy no puede.
+- **Cognitivo:** un dev nuevo busca "dónde se configura una integración
+  con SAP" y encuentra la sección dentro de "Fundación" — inconsistente con
+  el modelo mental de capas.
+- **Seeds/permisos RBAC:** los section codes de C1 se mezclan con los de
+  admin técnico; la matriz de permisos es más pesada de lo necesario.
+
+### Solución propuesta
+Crear app `apps.configuracion_plataforma` (ya referenciada en `SIDEBAR_LAYERS`
+bajo `NIVEL_CONFIG` pero sin implementación real) y migrar:
+
+```
+apps.configuracion_plataforma/
+├── integraciones/       # desde configuracion/ → IntegracionExterna + ProveedorIntegracion + TipoServicioIntegracion
+├── consecutivos/        # desde organizacion/models_consecutivos.py
+├── certificados/        # desde configuracion/ → CertificadoDigital (o mover a CT/firma_digital)
+└── iconos/              # desde configuracion/ → IconRegistry (o mover a shared_library C0)
+```
+
+Alternativa más conservadora para `CertificadoDigital` e `IconRegistry`:
+no los muevo a `configuracion_plataforma`, los mando a CT/C0 directo según
+su naturaleza real (firma digital / shared UI).
+
+Migración requiere:
+- Data migration preservando IDs (foreign keys desde otros modelos).
+- Actualizar `label` en `apps.py` y `django_migrations.app`.
+- Actualizar `INSTALLED_APPS`, `SIDEBAR_LAYERS`, `urls.py`, seeds de
+  `SystemModule`/`ModuleTab`/`TabSection`.
+- Mover serializers, viewsets, frontend pages.
+
+### Trigger
+Antes de promover StrateKaz a "Core 1.0" o antes del primer split en
+microservicios. No antes de consolidar L0-L20 estable (criterio del proyecto).
+
+### Estado
+🔲 Abierto. Prioridad: **S10+** (después de cerrar S8.7 y consolidar supply_chain).
+
+---
+
+## H-C1-02 — Zonas grises entre C1, CT y C2 sin decisión explícita
+
+### Detectado
+2026-04-22 (análisis de composición C1 para preparar refactor hacia microservicios).
+
+### Severidad
+**MEDIA** — No rompe nada hoy. Pero el día que se dividan las capas en
+servicios independientes, sin decisión previa cada modelo gris se va a
+colar al servicio equivocado.
+
+### Síntoma
+Cuatro modelos de C1 tienen naturaleza dual C1/CT o C1/C2 que nunca se
+resolvió formalmente:
+
+| Modelo | Ubicación actual | Tensión | Argumento C1 | Argumento CT / C2 |
+|---|---|---|---|---|
+| `EstrategiaTOWS` | `contexto/models.py` L262 | Nace del análisis DOFA pero es planeación | Contexto la genera | Planeación Estratégica (C2) la ejecuta. Ya hay comentario en el código sobre dependencia circular contexto→planeación |
+| `MatrizComunicacion` | `contexto/models.py` L1133 | Define comunicaciones periódicas con PI (ISO 7.4) | Es config declarativa de stakeholders | Es infraestructura operativa transversal — se ejecuta continuamente, se audita |
+| `encuestas` (app entera) | `gestion_estrategica/encuestas/` | Hoy solo alimenta DOFA/PESTEL | App acoplada a contexto (FK directo a `AnalisisDOFA`) | Si evoluciona a evaluación desempeño/clima/satisfacción → motor transversal (CT) |
+| `AlcanceSistema` (campos de certificación) | `identidad/models.py` L184 | Alcance declarativo del SIG + datos vigentes de certificación ISO | El alcance es declarativo C1 | `expiry_date`, `next_audit_date`, `certificate_file` son operación → C2 Auditoría Interna o CT |
+
+### Impacto
+- **Microservicios:** si se extrae `contexto-service`, se lleva la matriz
+  de comunicaciones (que debería ser transversal) y las estrategias TOWS
+  (que deberían vivir en `planeacion-service`).
+- **Reglas de independencia frágiles:** la regla "CT no importa de C2"
+  está documentada, pero si `MatrizComunicacion` (hoy C1) en el futuro
+  necesita pull desde varios C2 (auditorías, proyectos), la decisión se
+  tomará caliente y sin marco.
+- **Duplicación futura:** si se crea un motor genérico de encuestas para
+  desempeño (talent_hub) sin mover el actual, habrá dos motores de
+  encuestas desalineados.
+
+### Solución propuesta
+**Sesión dedicada de decisión arquitectónica** que produzca, para cada uno
+de los 4 items:
+
+1. Capa final declarada (C1 / CT / C2).
+2. Fecha tentativa de mudanza (ej: "cuando se active talent_hub.desempeno").
+3. Cualquier `IntegerField` de referencia cross-capa necesario para
+   desacoplar, anotado explícitamente.
+
+Decisión preliminar sugerida (para discusión):
+- `EstrategiaTOWS` → mudar a `planeacion` (C2) cuando planeación se active.
+  La DOFA la origina pero la ejecución es planeación.
+- `MatrizComunicacion` → CT (servicio transversal de comunicaciones con PI).
+  Requiere que Partes Interesadas siga siendo maestro en C1.
+- `encuestas` → permanece C1 hoy. Promover a CT cuando primer C2
+  no-contexto la consuma (ver H-C1-03).
+- `AlcanceSistema` campos operativos → extraer a C2 Auditoría Interna
+  cuando se active. Alcance declarativo permanece en `identidad`.
+
+### Trigger
+Sesión de auditoría cross-capa, antes de la activación de:
+- `planeacion_estrategica` (mueve `EstrategiaTOWS`).
+- `talent_hub.desempeno` (dispara H-C1-03 encuestas).
+- `auditoria_interna` (mueve campos operativos de `AlcanceSistema`).
+
+### Estado
+🔲 Abierto. Prioridad: **S12+** (después de H-C1-01).
+
+---
+
+## H-C1-03 — `encuestas` candidata a promoción a CT cuando primer C2 no-contexto la consuma
+
+### Detectado
+2026-04-22 (análisis de composición C1).
+
+### Severidad
+**BAJA-MEDIA** — No hay bug hoy. Es deuda *anticipada*: si el primer C2
+que necesite encuestas fuera de contexto las re-implementa, habrá doble
+motor desde el día 1.
+
+### Síntoma
+`apps.gestion_estrategica.encuestas` está hoy 100% acoplada a contexto:
+- `EncuestaDofa` tiene FK directa a `AnalisisDOFA` + `AnalisisPESTEL`.
+- El banco de preguntas (`PreguntaContexto`) es específico PCI-POAM.
+- Las tablas viven bajo `db_table='encuestas_*'` pero sus foreign keys
+  apuntan solo a contexto.
+
+Sin embargo, la arquitectura natural de encuestas es **transversal**:
+
+| Módulo futuro | Uso de encuestas |
+|---|---|
+| `talent_hub.desempeno` (L60) | Evaluación de desempeño 360°, autoevaluaciones |
+| `talent_hub.control_tiempo` (L60) | Encuesta de clima laboral anual |
+| `sales_crm.servicio_cliente` (L35) | NPS, satisfacción de cliente |
+| `supply_chain.evaluaciones` (LIVE) | Evaluación periódica de proveedores |
+| `hseq_management.gestion_comites` (L30) | Encuestas de percepción SST |
+| `revision_direccion` (L85) | Encuesta pre-revisión gerencial |
+
+El día que el primer C2 de arriba quiera encuestas, si `encuestas` sigue
+acoplada a contexto, el dev tendrá dos caminos:
+1. Re-implementar encuestas dentro del C2 → **duplicación**.
+2. Forzar una FK de contexto desde el C2 → **inversión de dependencia**
+   (CT importando de C2 está prohibido).
+
+### Solución propuesta
+Promover `encuestas` a CT en un refactor progresivo:
+
+**Fase 1** (cuando activa el primer C2 consumidor):
+- Renombrar `EncuestaDofa` → `Encuesta` (genérica).
+- Quitar FK a `AnalisisDOFA`/`AnalisisPESTEL`; cambiar por `contexto_type`
+  + `contexto_id` (generic FK o IntegerField cross-capa).
+- Mover `PreguntaContexto` y el banco PCI-POAM a `apps.gestion_estrategica.contexto/models_preguntas_contexto.py`
+  (específico de contexto).
+- Dejar en `encuestas` solo: `Encuesta`, `TemaEncuesta`, `ParticipanteEncuesta`,
+  `RespuestaEncuesta` como motor puro.
+- Mover físicamente `apps/gestion_estrategica/encuestas/` → `apps/infraestructura/encuestas/`
+  (en línea con H-S8-ct-disperso).
+
+**Fase 2**:
+- Cada C2 consumidor implementa su propia "fuente" de encuestas
+  (`evaluacion_desempeno`, `clima_laboral`, `nps_cliente`, etc.) que crea
+  `Encuesta` y lee `RespuestaEncuesta` sin duplicar el motor.
+
+### Trigger
+Cuando el primer C2 no-contexto declare necesidad de encuestas. El
+candidato más probable por roadmap es `talent_hub.desempeno` (L60) o
+`supply_chain.evaluaciones` (ya LIVE pero aún no implementa encuestas).
+
+### Dependencia
+- Depende de H-C1-02 (decisión formal de capa).
+- Independiente de H-C1-01.
+
+### Estado
+🔲 Abierto. Prioridad: reactiva — se atiende cuando llegue el trigger.
+
+---
+
+## H-C1-05 — `TipoContrato` duplica Gestor Documental (aplicar patrón v4.0 de políticas)
+
+### Detectado
+2026-04-22 (análisis de composición C1).
+
+### Severidad
+**BAJA-MEDIA** — No hay bug hoy. Es **inconsistencia arquitectónica** con
+el patrón ya validado en `identidad` v4.0 (eliminación de `PoliticaEspecifica`).
+
+### Síntoma
+`TipoContrato` vive hoy en `apps.gestion_estrategica.configuracion`
+(`models.py` L2423) como modelo propio con sus campos (nombre, tipo de
+contrato, cláusulas, etc.).
+
+Esto **reproduce el anti-patrón** que ya fue corregido en `identidad` v4.0:
+
+| Modelo | Antes | Después |
+|---|---|---|
+| `PoliticaEspecifica` (políticas) | Modelo propio en `identidad` con contenido + flujo | **ELIMINADO**. Políticas viven en GD con `tipo_documento=POL`. `identidad` solo referencia read-only |
+| `TipoContrato` (contratos) | Modelo propio en `configuracion` con contenido + campos | ⚠️ **Aún duplicado**. Debería ser documento en GD con `tipo_documento=PLANTILLA_CONTRATO_*` |
+
+Comentario textual en `identidad/models.py` L302-307:
+
+> **NOTA v4.0:** `PoliticaEspecifica` ELIMINADA. Las políticas se gestionan
+> exclusivamente desde Gestión Documental (tipo_documento=POL). Identidad
+> Corporativa solo muestra políticas vigentes como referencia read-only.
+
+El patrón correcto (ya demostrado en producción para políticas) no fue
+propagado a contratos.
+
+### Impacto
+- **Doble fuente de verdad:** si un consultor edita la plantilla desde
+  Fundación → toca `TipoContrato`. Si alguien la actualiza desde GD →
+  toca `Documento`. Pueden quedar desalineados.
+- **No hereda features de GD:** versionado (Borrador→Vigente→Obsoleto),
+  control de cambios, flujo de aprobación, asignación a cargos, firma
+  gerencial. `TipoContrato` tendría que re-implementar todo esto si se
+  quieren esas features.
+- **Cuando Mi Equipo instancia un contrato** (contrata a Juan), hoy debe
+  consumir `TipoContrato` como dato maestro. Si se migrara a GD, pediría
+  a GD "dame la plantilla vigente de término fijo" y recibiría el
+  `Documento` con historial, firma, etc.
+
+### Solución propuesta (replicar patrón políticas v4.0)
+1. Crear `tipo_documento=PLANTILLA_CONTRATO_TERMINO_FIJO`, `PLANTILLA_CONTRATO_INDEFINIDO`,
+   etc. en catálogo de tipos de documento GD.
+2. Migrar datos de `TipoContrato` a `Documento` con nuevos tipos.
+3. En Fundación Tab 4, sección "Contratos Tipo" → queda como **vista
+   read-only** que lista plantillas vigentes (como hoy lo hace con
+   políticas).
+4. En Mi Equipo → Colaboradores → al contratar, consumir plantilla desde
+   GD vía `apps.get_model('gestion_documental', 'Documento')` +
+   filtro por `tipo_documento__code__startswith='PLANTILLA_CONTRATO_'`.
+5. Eliminar `TipoContrato` modelo.
+
+### Trigger
+**Reactivo** — se atiende cuando:
+- Se active `talent_hub.novedades` o se necesite versionar plantillas con
+  firma (ambos hoy fuera de LIVE).
+- Se haga otra pasada a `identidad` / `configuracion` para limpieza C1.
+- O proactivamente junto con H-C1-01 (limpieza de admin de plataforma
+  en C1) — son el mismo esfuerzo de reorganización.
+
+### Dependencia
+- Independiente de H-C1-01, H-C1-02, H-C1-03.
+- Precedente validado: v4.0 de `identidad` (PoliticaEspecifica eliminada).
+
+### Estado
+🔲 Abierto. Prioridad: **reactiva o junto con H-C1-01**.
+
+---
+
+## H-UI-01 — Sidebar V3: reorganización completa (capas invisibles, historia visible)
+
+### Detectado
+2026-04-22 (sesión de análisis Frente A del sidebar con Camilo).
+
+### Severidad
+**MEDIA-ALTA** — El sidebar actual no cuenta historia coherente. Los módulos
+LIVE están ordenados por accidente de activación, no por lógica de uso.
+
+### Síntoma
+Sidebar actual (orden):
+```
+Dashboard / Mi Portal
+Fundación / INFRAESTRUCTURA (wrapper) / Gestión de Personas
+Cadena de Suministro / Centro de Control / Flujos de Trabajo / Configuración
+```
+
+Problemas:
+- "INFRAESTRUCTURA" es la única categoría UPPERCASE — rompe visualmente
+- Workflows (CT) aparece al final, separado de otros CT
+- "Centro de Control" (C0 admin) se confunde con módulos de negocio
+- Orden no refleja flujo narrativo del empresario
+
+### Estructura V3 acordada
+```
+Dashboard / Mi Portal / Mi Muro                    ← landings personales
+─── sep ───
+Fundación                                           ← C1
+─── sep ───
+Gestión Documental                                  ← CT (sin wrapper)
+Catálogos Maestros
+Flujos de Trabajo
+Firma Digital
+─── sep ───
+═══ Gente ═══                                       ← C2 con sub-separadores B
+Mi Equipo
+Talent Hub (futuro)
+═══ Planeación ═══
+Planificación Operativa (futuro)
+Planeación Estratégica (futuro)
+═══ Riesgo ═══
+Protección y Cumplimiento (futuro)
+Gestión Integral HSEQ (futuro)
+═══ Operación Comercial ═══
+Cadena de Suministro (LIVE)
+Producción / Logística / Sales CRM (futuro)
+═══ Finanzas ═══
+Administración / Tesorería / Contabilidad (futuro)
+─── sep ───
+Configuración                                       ← C0 admin tenant (1 tab: Integraciones)
+Centro de Control                                   ← C0 (sin tocar esta pasada)
+```
+
+### Decisiones clave
+1. Eliminar wrapper "INFRAESTRUCTURA" — los 4 CT se muestran al mismo nivel entre 2 separadores
+2. Orden C2: Gente → Planeación → Riesgo → Operación → Finanzas (lógica del empresario: "primero gente, luego qué hacen, luego riesgos, luego ejecuto, luego dinero")
+3. Usar sub-separadores uppercase muted (patrón GitHub/Atlassian/Notion) — Odoo NO es buen referente
+4. Mi Muro como nueva entidad (ver H-UI-06)
+5. Cadena al final de operación, NO al final del sidebar total
+
+### Impacto
+- Requiere reordenar `SIDEBAR_LAYERS` en `viewsets_config.py`
+- Requiere introducir concepto de sub-separadores (hoy solo existen capas con/sin wrapper)
+- No rompe RBAC — el filtrado granular por cargo sigue igual
+
+### Trigger
+Próxima pasada post-documentación. Es la base para el trabajo de organización LIVE.
+
+### Estado
+🔲 Abierto. Prioridad: **ALTA — siguiente sprint de reorganización LIVE**.
+
+---
+
+## H-UI-02 — Redistribuir UI de `audit_system` (diferido)
+
+### Detectado
+2026-04-22.
+
+### Severidad
+**BAJA** (esta pasada) — Se conserva intacto hasta sesión dedicada.
+
+### Síntoma
+`audit_system` aparece como módulo "Centro de Control" en el sidebar del
+tenant con 4 sub-apps (Logs, Config. Alertas, Notificaciones, Tareas).
+Pero su naturaleza es C0 infraestructura — expone al usuario final cosas
+técnicas que no le corresponden.
+
+### Decisión en esta sesión
+**NO tocar en esta pasada.** Se conserva `audit_system` intacto junto a
+Configuración al final del sidebar.
+
+### Propuesta futura (próxima pasada dedicada)
+El **motor** de audit_system se queda (modelos + API + middleware — es
+compliance ISO 9001/27001). Solo se **redistribuye la UI**:
+
+| Sub-app | UI futura propuesta |
+|---|---|
+| `logs_sistema` (trazabilidad `LogCambio`) | Admin Global (superadmin global) + tab "Auditoría" en Configuración del tenant (admins del tenant) + botón "Ver historial" inline en cada modelo |
+| `config_alertas` | Inline en cada módulo (vencimiento docs en GD, etc.) o tab en Configuración |
+| `centro_notificaciones` | Campana del header + inbox de notificaciones |
+| `tareas_recordatorios` | Mi Portal (tab "Mis Tareas") |
+
+### Dependencia
+- Depende de que Mi Portal tenga tabs (H-UI-06 Mi Muro relacionado).
+- Depende de que Configuración del tenant exista como hogar consolidado.
+
+### Trigger
+Sesión dedicada posterior a la reorganización LIVE del sidebar.
+
+### Estado
+🔲 Abierto. Prioridad: **diferida — próxima pasada del sidebar**.
+
+---
+
+## H-UI-03 — Naming inconsistente: 3 "Catálogos" + "Catálogo de Productos" engañoso
+
+### Detectado
+2026-04-22.
+
+### Severidad
+**MEDIA** — Genera confusión real al usuario: el mismo label apunta a 3
+datos distintos y el nombre principal miente sobre el contenido.
+
+### Síntoma
+El word "Catálogos" aparece en 3 ubicaciones distintas del sidebar:
+
+| Ubicación | Qué contiene | App |
+|---|---|---|
+| INFRAESTRUCTURA → Catálogo de Productos | Productos, Categorías, UM, Proveedores | `catalogo_productos` (CT) |
+| Cadena de Suministro → Catálogos | MP, tipos almacén, etc. | `supply_chain.catalogos` (C2) |
+| Configuración → Catálogos | (vacío / placeholder) | `configuracion_plataforma` |
+
+Además, "**Catálogo de Productos**" como nombre **miente** — contiene:
+- Productos ✓
+- Categorías ✓ (de producto)
+- Unidades de Medida ❌ (es transversal, no solo productos)
+- Proveedores ❌ (no son productos)
+
+### Propuesta
+1. Renombrar `catalogo_productos` → **"Catálogos Maestros"** (nombre honesto).
+2. Eliminar "Catálogos" de Configuración (redundante, no tiene contenido real).
+3. Mantener `supply_chain.catalogos` pero renombrar a algo específico ("Catálogos SC" o fusionar con Catálogos Maestros cuando se consolide CT).
+
+### Trigger
+Junto con H-UI-01 (reorganización LIVE del sidebar).
+
+### Estado
+🔲 Abierto. Prioridad: ALTA (bloquea claridad del sidebar V3).
+
+---
+
+## H-UI-04 — Fundación Tab 4 "Políticas y Reglamentos" faltante
+
+### Detectado
+2026-04-22.
+
+### Severidad
+**MEDIA** — El doc Cascada V2 declara 4 tabs para Fundación; solo hay 3 en LIVE.
+
+### Síntoma
+Hoy en Fundación se ven 3 tabs:
+- Mi Empresa
+- Mi Contexto e Identidad
+- Mi Organización
+
+Falta el Tab 4 declarado en Cascada V2 §3 Nivel 1:
+- **Mis Políticas y Reglamentos** (políticas obligatorias + reglamento interno + contratos tipo)
+
+### Causa
+Las políticas se migraron a GD en v4.0 (patrón correcto) pero no se
+creó la vista read-only en Fundación que lista las políticas vigentes.
+Los contratos tipo siguen mal ubicados en `configuracion` (H-C1-05).
+
+### Propuesta
+Crear Tab 4 en Fundación como **vista read-only** que consume:
+- Políticas de GD (`tipo_documento=POL`) — ya migradas
+- Plantillas de contrato de GD (`tipo_documento=PLANTILLA_CONTRATO_*`) — cuando H-C1-05 se ejecute
+- Reglamento Interno de GD (`tipo_documento=REG_INTERNO`)
+
+No tiene lógica propia — es vista. El contenido y flujos viven en GD.
+
+### Dependencia
+- H-C1-05 (migrar `TipoContrato` a GD).
+
+### Trigger
+Reactiva — cuando se trabaje Fundación o GD. No bloquea nada hoy.
+
+### Estado
+🔲 Abierto. Prioridad: MEDIA.
+
+---
+
+## H-UI-05 — `ConsecutivoConfig` (Sistema B) infrautilizado, candidato a eliminar
+
+### Detectado
+2026-04-22 (análisis de configuración C0).
+
+### Severidad
+**BAJA** — No causa bugs. Es **deuda de diseño** (infra dormida).
+
+### Síntoma
+Existen DOS sistemas de consecutivos en el código:
+
+**Sistema A — Autogeneración en modelo (LIVE)**
+- `catalogo_productos.Producto.generar_codigo()` → MP-001, INS-001, PT-001, SV-001
+- `catalogo_productos.proveedores.Proveedor.generar_codigo_interno()` → PROV-001
+- Hardcoded en `save()` del modelo, corre automático
+
+**Sistema B — `ConsecutivoConfig` (dormido)**
+- Modelo configurable, viewsets, serializers, filters, seed command
+- Endpoint `/consecutivos/` montado
+- **Único consumidor real:** `talent_hub.services.contrato_documento_service` (línea 245)
+- `talent_hub` está DORMIDO (L60) — el Sistema B no tiene usuarios reales LIVE
+
+### Propuesta
+**Eliminar Sistema B** (decidido por Camilo 2026-04-22) por:
+1. Hoy no se usa en nada LIVE
+2. Sistema A (autogeneración hardcoded) ya cubre los casos reales
+3. Si un cliente pide prefijos custom (BOG/MED/CAL), se reconstruye sobre demanda — no vale la pena mantener infra dormida "por si acaso"
+
+Antes de eliminar:
+- Verificar que `talent_hub.contrato_documento_service` no se active primero
+- Crear migración que elimine tablas `ConsecutivoConfig` + relacionadas
+- Eliminar: viewsets, serializers, filters, urls, seed command, tests
+- Validar que no hay data real en producción (si hay, migrar a Sistema A o archivar)
+
+### Dependencia
+- Confirmar que no se active `talent_hub` antes que este cleanup.
+- Si se activa primero, migrar `contrato_documento_service` a Sistema A.
+
+### Trigger
+Próximo sprint de cleanup LIVE.
+
+### Estado
+🔲 Abierto. Prioridad: MEDIA (cleanup, no bloqueante).
+
+---
+
+## H-UI-06 — Mi Muro como nueva entidad de landing (feature nueva)
+
+### Detectado
+2026-04-22 (sesión de definición de estructura del sidebar).
+
+### Severidad
+**BAJA-MEDIA** — Feature nueva, no es bug. Pero es parte integral del
+modelo narrativo del sidebar V3 acordado.
+
+### Síntoma (ausencia)
+Hoy el tenant tiene 2 landings universales: **Dashboard** (métricas) y
+**Mi Portal** (lo mío). Falta un tercer espacio para **comunicación
+corporativa al empleado**: políticas vigentes, reglamentos, noticias,
+anuncios, misión/visión/valores.
+
+Si esta info se mete en Mi Portal → satura su propósito (lo mío).
+Si se mete en Fundación → el empleado no tiene por qué editar ni ver el detrás.
+
+### Propuesta
+Crear **Mi Muro** como tercera landing universal:
+
+```
+Dashboard    ← métricas: "qué está pasando"
+Mi Portal    ← mis cosas: "lo que me toca hacer"
+Mi Muro      ← cartelera: "lo que la empresa me comunica"
+```
+
+**Qué vive en Mi Muro (read-only para empleados):**
+- Políticas vigentes (pulled de GD)
+- Reglamento Interno (pulled de GD)
+- Misión, Visión, Valores (pulled de identidad)
+- Organigrama (read-only, pulled de organizacion)
+- Anuncios / noticias corporativas (motor de publicaciones, nuevo)
+- Calendario de eventos corporativos
+
+**Quién publica:**
+- Admin del tenant / Comunicaciones internas
+- Flujo de aprobación (via workflow_engine si aplica)
+
+### Implicación técnica
+- Nuevo módulo `mi_muro` o extensión de `mi_portal` con tab
+- Motor de publicaciones con versionado + vigencia
+- RBAC por cargo (políticas específicas por rol vs. generales)
+- Integración read-only con GD + identidad
+
+### Trigger
+No bloquea. Se construye cuando haya decisión estratégica de hacerlo.
+Alternativa: arrancar con Mi Portal con sección "Información Corporativa"
+y promover a Mi Muro cuando el uso lo justifique.
+
+### Estado
+🔲 Abierto. Prioridad: BAJA — feature futura. Declarada en estructura V3.
+
+---
+
+## H-UI-07 — Clientes deben vivir en CT (preventivo, antes de activar sales_crm)
+
+### Detectado
+2026-04-22 (análisis predictivo — no hay código de cliente aún).
+
+### Severidad
+**BAJA** (preventiva) — No hay bug hoy porque `sales_crm` está DORMIDO.
+Pero si se activa sin esta decisión previa, repite el anti-patrón que se
+corrigió con Proveedor (H-S8-proveedores-ubicacion-incorrecta).
+
+### Síntoma anticipado
+Cliente es dato maestro transversal — igual que Proveedor. Será consumido por:
+- `sales_crm.pipeline_ventas` (C2)
+- `sales_crm.pedidos_facturacion` (C2)
+- `sales_crm.servicio_cliente` (C2 - PQRS)
+- `accounting.movimientos` (C2 - terceros)
+- `tesoreria.tesoreria` (C2 - cobros)
+- Portal Cliente (capa Portales)
+
+Si Cliente se crea dentro de `sales_crm.gestion_clientes` (C2), los
+demás C2 tendrán que usar `apps.get_model()` + `IntegerField` — mismo
+problema que tuvo Proveedor antes del refactor Opción A (2026-04-21).
+
+### Propuesta preventiva
+**Cuando se active `sales_crm`, crear Cliente directamente en CT**:
+- Opción A: `apps/catalogo_productos/clientes/` (co-ubicado con proveedores)
+- Opción B: `apps/catalogo_maestros/clientes/` (si se renombra el paraguas)
+- Opción C: `apps/clientes/` (app raíz CT, al nivel de proveedores)
+
+Decisión exacta cuando se active. Lo importante hoy: **dejar registrado
+que no debe caer en `sales_crm.gestion_clientes` (C2)**.
+
+### Precedente
+Refactor Opción A de Proveedor (sesión 2026-04-21): movimiento de C2 →
+CT con éxito, 11 commits, deploy estable.
+
+### Dependencia
+- Activación de `sales_crm` (L35).
+
+### Trigger
+Antes de descomentar `sales_crm.gestion_clientes` en `base.py`.
+
+### Estado
+🔲 Abierto. Prioridad: **preventiva — leer antes de activar sales_crm**.

@@ -1169,3 +1169,148 @@ La migración se ejecuta en 6 sprints incrementales. Cada sprint es desplegable 
 - **Cada sprint se despliega independiente** — el sistema funciona con la estructura parcialmente migrada
 - **RBAC**: cada sprint actualiza `permissions.ts` + seeds de CargoSectionAccess
 - **Orden recomendado**: S1 → S2 → S3 → S4 → S5 → S6 (pero S4 y S5 podrían paralelizarse)
+
+---
+
+## Apéndice — Sidebar V3 (decisión UI — 2026-04-22)
+
+**Estado:** Acordado en sesión de análisis Frente A. Pendiente de implementar en LIVE.
+**Origen:** Análisis conjunto Camilo + Claude del sidebar actual vs. cómo debería
+verse para contar una historia coherente al usuario empresario.
+**Relación con Cascada V2:** La Cascada V2 (narrativa PHVA de este doc) sigue siendo
+la **referencia conceptual** de cómo se ordena el negocio. **Sidebar V3** es la
+decisión de **cómo se presenta visualmente al usuario** — puede o no coincidir con
+la cascada en cada detalle. La cascada es sugerencia; el sidebar es implementación.
+
+### Principios del Sidebar V3
+
+1. **Capas arquitectónicas son INVISIBLES al usuario.** El usuario no debe percibir
+   C0/C1/CT/C2/C3. Solo ve una historia narrativa.
+2. **Historia narrativa del empresario**, no del arquitecto. Orden basado en
+   flujo de uso diario, no en dependencias técnicas.
+3. **Separadores visuales > labels técnicos.** La posición + espaciado cuentan la
+   historia mejor que wrappers uppercase.
+4. **Sub-separadores por naturaleza** dentro de C2 (patrón GitHub/Atlassian/Notion),
+   no por capa arquitectónica.
+5. **RBAC granular por cargo** sigue funcionando igual — solo cambia orden y agrupación.
+
+### Estructura Sidebar V3
+
+```
+┌─ Landings universales (todos los usuarios) ────────────┐
+│  Dashboard                                              │
+│  Mi Portal                                              │
+│  Mi Muro (futuro — H-UI-06)                            │
+├─ Identidad empresa (C1) ───────────────────────────────┤
+│  Fundación                                              │
+│    ├─ Mi Empresa                                        │
+│    ├─ Mi Contexto e Identidad                          │
+│    ├─ Mi Organización                                   │
+│    └─ Mis Políticas y Reglamentos (futuro — H-UI-04)   │
+├─ Servicios transversales (CT) ─────────────────────────┤
+│  Gestión Documental                                     │
+│  Catálogos Maestros (renombrar — H-UI-03)              │
+│    ├─ Categorías                                        │
+│    ├─ Tipos de MP                                       │
+│    ├─ Unidades de Medida                                │
+│    ├─ Tipos de Proveedor                                │
+│    └─ Proveedores                                       │
+│  Flujos de Trabajo                                      │
+│  Firma Digital                                          │
+├─ Operación del negocio (C2 con sub-separadores) ───────┤
+│  ═══ Gente ═══                                          │
+│    Mi Equipo                                            │
+│    Talent Hub (futuro)                                  │
+│  ═══ Planeación ═══                                     │
+│    Planificación Operativa (futuro)                     │
+│    Planeación Estratégica (futuro)                      │
+│  ═══ Riesgo ═══                                         │
+│    Protección y Cumplimiento (futuro)                   │
+│    Gestión Integral HSEQ (futuro)                       │
+│  ═══ Operación Comercial ═══                            │
+│    Cadena de Suministro (LIVE)                          │
+│    Producción (futuro)                                  │
+│    Logística y Flota (futuro)                           │
+│    Sales CRM (futuro)                                   │
+│  ═══ Finanzas ═══                                       │
+│    Administración (futuro)                              │
+│    Tesorería (futuro)                                   │
+│    Contabilidad (futuro)                                │
+├─ Admin del tenant (C0) ────────────────────────────────┤
+│  Configuración (1 tab: Integraciones)                   │
+│  Centro de Control (sin tocar esta pasada — H-UI-02)    │
+└─────────────────────────────────────────────────────────┘
+
+Header: campana de Notificaciones (desde audit_system.centro_notificaciones)
+        - diferido a próxima pasada (H-UI-02)
+Admin Global: solo superadmin, fuera del sidebar del tenant
+```
+
+### Diferencias con Cascada V2 (narrativa técnica)
+
+| Aspecto | Cascada V2 | Sidebar V3 | Motivo |
+|---|---|---|---|
+| Orden de niveles | Lineal 1-14 PHVA | Narrativa del empresario con bloques | Usuario no percibe PHVA |
+| Posición Workflows | Nivel 3 (justo después de GD) | Dentro de "Servicios Transversales" (CT) | Coherencia: todos los CT juntos |
+| Posición "Mi Equipo" | Nivel 4 | Primer item de C2 (bloque "Gente") | Inicio natural de operación |
+| Posición Cadena | Nivel 9 | Último item de "Operación Comercial", antes de Finanzas | Liberación comercial temprana + lógica "ejecutar antes de cobrar" |
+| Posición Finanzas | Niveles 11A-C (Soporte) | Último bloque C2 ("primero ejecuto, después me pagan") | Dinero entra/sale en función de operación ejecutada |
+| Infraestructura oculta | Notas al margen ("no en sidebar") | Capa C0 expuesta **solo** para admin del tenant | Explicitar audiencia |
+| Label "INFRAESTRUCTURA" | Implícito como capa técnica | **Eliminado** — posición + separador hablan | Consistencia visual |
+
+### Lógica narrativa del empresario (voz Camilo, 2026-04-22)
+
+> *"Ya tengo el personal (Gente), ahora qué van a hacer (Planeación), cuáles son
+> mis riesgos (Riesgo), luego ejecuto mi operación (Operación Comercial), y después
+> me pagan (Finanzas)."*
+
+Esta frase es la fuente de verdad del orden de C2. Cualquier módulo C2 nuevo
+debe encajar en uno de estos 5 bloques narrativos.
+
+### CT en Sidebar V3
+
+Los 4 servicios transversales (GD, Catálogos Maestros, Flujos de Trabajo, Firma
+Digital) se muestran **sin wrapper** entre 2 separadores. El label "Infraestructura"
+desaparece — la posición cuenta la historia.
+
+Naming "Catálogos Maestros" (no "Catálogo de Productos") porque el módulo contiene
+también Proveedores, Unidades de Medida y Categorías — no solo productos.
+
+### C0 en Sidebar V3 (admin del tenant)
+
+Al final del sidebar, separado con sep, quedan:
+- **Configuración** (1 tab: Integraciones; futuro: consecutivos si se reactivan, auditoría del tenant)
+- **Centro de Control** (sin tocar esta pasada)
+
+Se mantienen como 2 módulos separados pero pegados visualmente. En próxima pasada:
+- Redistribuir UI de `audit_system` (H-UI-02) — logs a Admin Global, notif a header, tareas a Mi Portal
+- Evaluar fusión de los 2 módulos C0 en uno solo
+
+### Lo que NO cambia
+
+- **Apps Django, modelos, API endpoints:** se quedan en su capa arquitectónica correcta
+- **Reglas de independencia:** CT no importa C2, C2 no importa C2 (vía `apps.get_model`)
+- **RBAC granular:** sigue funcionando por cargo → sección
+- **Cascada V2 como guía conceptual:** sigue siendo fuente de verdad para
+  orden de activación de módulos dormidos
+
+### Hallazgos que cubren esta reorganización
+
+| Hallazgo | Cubre |
+|---|---|
+| H-UI-01 | Reorganización completa del sidebar (este apéndice) |
+| H-UI-02 | Redistribución UI `audit_system` (diferida) |
+| H-UI-03 | Renombrar "Catálogo de Productos" → "Catálogos Maestros" + eliminar 3ra "Catálogos" redundante |
+| H-UI-04 | Tab 4 "Políticas y Reglamentos" en Fundación |
+| H-UI-05 | Eliminar `ConsecutivoConfig` (Sistema B dormido) |
+| H-UI-06 | Mi Muro como tercera landing |
+| H-UI-07 | Clientes a CT (preventivo antes de activar `sales_crm`) |
+| H-S8-ct-disperso | Consolidar físicamente CT en `apps/infraestructura/` |
+| H-C1-01 a H-C1-05 | Limpieza C1 (admin de plataforma fuera de Fundación, contratos a GD, etc.) |
+
+### Próximos pasos (no cambia nada de Cascada V2 de este doc)
+
+1. Documentar hallazgos (ya hecho)
+2. Reorganizar lo LIVE según Sidebar V3 (próximo sprint)
+3. Analizar construcción técnica del sidebar (Frente B)
+4. Iterar con sesiones dedicadas a los hallazgos aplazados

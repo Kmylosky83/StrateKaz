@@ -167,5 +167,34 @@ Debe actualizarse en el mismo PR cada vez que cambie:
 - Cambien las reglas de independencia
 - Se modifique `SIDEBAR_LAYERS` en `viewsets_config.py`
 
-Última actualización: 2026-04-20
+Última actualización: 2026-04-22
 Responsable: quien abre el PR que dispara el cambio.
+
+---
+
+## Nota — Decisiones 2026-04-22
+
+### Sidebar V3 vs. capas arquitectónicas
+Las capas arquitectónicas (C0/C1/CT/C2/C3/Portales) son **invisibles al
+usuario final**. El sidebar V3 (ver `arquitectura-cascada.md` §Apéndice)
+reorganiza módulos con narrativa de negocio, no con etiquetas técnicas.
+Las capas se respetan en código (imports, reglas de independencia), no en UI.
+
+### Datos maestros transversales → CT
+Reafirmado en sesión 2026-04-22:
+- **Proveedor** vive en CT (`apps.catalogo_productos.proveedores`) — migrado 2026-04-21
+- **Cliente** DEBE vivir en CT cuando se active `sales_crm` (ver H-UI-07) —
+  no repetir el anti-patrón de crearlo dentro de C2
+- **Colaborador** sigue en `mi_equipo.colaboradores` (C2) por decisión operativa
+  actual — tensión documentada, posible migración a CT en el futuro si se
+  confirma que múltiples C2 lo consumen activamente
+
+### Decisiones pendientes (ver `hallazgos-pendientes.md`)
+- H-UI-01: Reorganización Sidebar V3 (orden + sub-separadores)
+- H-UI-02: Redistribución UI de `audit_system` (diferido)
+- H-UI-03: Rename "Catálogo de Productos" → "Catálogos Maestros"
+- H-UI-04: Tab 4 Fundación "Políticas y Reglamentos"
+- H-UI-05: Eliminar `ConsecutivoConfig` (Sistema B dormido)
+- H-UI-06: Mi Muro (tercera landing)
+- H-UI-07: Clientes a CT (preventivo)
+- H-C1-01 a H-C1-05: Limpieza C1

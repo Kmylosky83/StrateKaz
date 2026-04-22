@@ -22,6 +22,10 @@ export interface VoucherRecepcionList {
   almacen_nombre?: string;
   estado: EstadoVoucher;
   estado_display?: string;
+  /** H-SC-03: el producto exige control de calidad antes de aprobar. */
+  requiere_qc?: boolean;
+  /** H-SC-03: ya existe un RecepcionCalidad registrado para este voucher. */
+  tiene_qc?: boolean;
   created_at: string;
 }
 
@@ -67,7 +71,33 @@ export interface RecepcionCalidad {
   analista_nombre?: string;
   fecha_analisis: string;
   observaciones?: string;
+  /**
+   * H-SC-03: diff entre parametros_medidos y specs del producto.
+   * Key = nombre_parametro. Populado por serializer (get_cumplimiento_specs).
+   */
+  cumplimiento_specs?: Record<
+    string,
+    {
+      medido: string | null;
+      rango: [string, string];
+      cumple: boolean;
+      es_critico: boolean;
+      unidad: string;
+      faltante?: boolean;
+    }
+  >;
   created_at: string;
+}
+
+/**
+ * H-SC-03: payload para POST /vouchers/{id}/registrar-qc/
+ */
+export interface RegistrarQCDTO {
+  parametros_medidos: Record<string, number | string>;
+  resultado: ResultadoQC;
+  analista?: number;
+  fecha_analisis?: string;
+  observaciones?: string;
 }
 
 export interface CreateRecepcionCalidadDTO {

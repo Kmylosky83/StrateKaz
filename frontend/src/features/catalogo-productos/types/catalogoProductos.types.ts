@@ -91,6 +91,8 @@ export interface Producto {
   precio_referencia: string | null;
   sku: string;
   notas: string;
+  /** H-SC-03: si true, voucher de recepción no aprobable sin RecepcionCalidad. */
+  requiere_qc_recepcion: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -105,6 +107,42 @@ export interface CreateProductoDTO {
   precio_referencia?: string | null;
   sku?: string;
   notas?: string;
+  requiere_qc_recepcion?: boolean;
 }
 
 export type UpdateProductoDTO = Partial<CreateProductoDTO>;
+
+// ==================== ESPECIFICACIÓN DE CALIDAD (H-SC-03) ====================
+
+export interface ProductoEspecCalidadParametro {
+  id: number;
+  espec_calidad: number;
+  nombre_parametro: string;
+  descripcion: string;
+  unidad: string;
+  valor_min: string;
+  valor_max: string;
+  es_critico: boolean;
+  orden: number;
+}
+
+export interface CreateProductoEspecCalidadParametroDTO {
+  espec_calidad?: number;
+  nombre_parametro: string;
+  descripcion?: string;
+  unidad: string;
+  valor_min: string | number;
+  valor_max: string | number;
+  es_critico?: boolean;
+  orden?: number;
+}
+
+export interface ProductoEspecCalidad {
+  id: number;
+  producto: number;
+  acidez_min: string;
+  acidez_max: string;
+  requiere_prueba_acidez: boolean;
+  parametros_adicionales: Record<string, unknown>;
+  parametros: ProductoEspecCalidadParametro[];
+}

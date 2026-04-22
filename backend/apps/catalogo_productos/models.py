@@ -432,6 +432,21 @@ class Producto(TenantModel):
         verbose_name='Notas',
     )
 
+    # ─── Control de calidad en recepción (H-SC-03) ─────────────────────
+    # Flag universal: si True, los vouchers de recepción de este producto
+    # no pueden transicionar a APROBADO sin un RecepcionCalidad registrado.
+    # Ver apps.supply_chain.recepcion.models.VoucherRecepcion.aprobar().
+    # Las especificaciones concretas viven en ProductoEspecCalidad (OneToOne).
+    requiere_qc_recepcion = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name='Requiere QC en recepción',
+        help_text=(
+            'Si está marcado, el voucher de recepción no puede aprobarse sin '
+            'registrar un control de calidad (RecepcionCalidad) previo.'
+        ),
+    )
+
     class Meta:
         verbose_name = 'Producto'
         verbose_name_plural = 'Productos'
@@ -469,6 +484,7 @@ class Producto(TenantModel):
 # Registrar extensiones para que Django las descubra en el app registry.
 # Patrón: docs/01-arquitectura/modular-tenancy.md sección 3.
 from apps.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad  # noqa: E402, F401
+from apps.catalogo_productos.extensiones.espec_calidad_parametro import ProductoEspecCalidadParametro  # noqa: E402, F401
 
 # Sub-paquete Proveedores (CT-layer, 2026-04-21).
 # Vive en el mismo app_label='catalogo_productos' — ver Meta en los modelos.

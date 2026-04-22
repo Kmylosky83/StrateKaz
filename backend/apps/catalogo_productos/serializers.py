@@ -58,6 +58,8 @@ class ProductoSerializer(serializers.ModelSerializer):
             'categoria', 'categoria_nombre',
             'unidad_medida', 'unidad_medida_nombre', 'unidad_medida_abreviatura',
             'tipo', 'precio_referencia', 'sku', 'notas',
+            # H-SC-03: flag QC obligatorio
+            'requiere_qc_recepcion',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

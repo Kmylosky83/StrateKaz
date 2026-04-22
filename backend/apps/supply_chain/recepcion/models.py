@@ -214,6 +214,19 @@ class VoucherRecepcion(TenantModel):
             Decimal('0.01')
         )
 
+    # ─── Properties QC (H-SC-03) ───────────────────────────────────────
+    @property
+    def requiere_qc(self) -> bool:
+        """True si el producto de este voucher requiere QC en recepción."""
+        return bool(
+            self.producto_id and getattr(self.producto, 'requiere_qc_recepcion', False)
+        )
+
+    @property
+    def tiene_qc(self) -> bool:
+        """True si ya existe un RecepcionCalidad asociado al voucher."""
+        return hasattr(self, 'calidad') and self.calidad is not None
+
     # ─── Transiciones de estado ────────────────────────────────────────
     def aprobar(self):
         """
@@ -222,6 +235,11 @@ class VoucherRecepcion(TenantModel):
         Idempotente: si ya está APROBADO no hace nada.
         Dispara el signal post_save que crea MovimientoInventario + Inventario
         en almacen_destino (ver apps.supply_chain.recepcion.signals).
+
+        H-SC-03: Bloquea la aprobación si el producto tiene
+        `requiere_qc_recepcion=True` y aún no existe RecepcionCalidad.
+        El QC debe ser registrado antes mediante el endpoint dedicado
+        `POST /api/supply-chain/vouchers/{id}/registrar-qc/`.
         """
         if self.estado == self.EstadoVoucher.APROBADO:
             return
@@ -229,6 +247,21 @@ class VoucherRecepcion(TenantModel):
             raise ValidationError(
                 f"No se puede aprobar un voucher en estado "
                 f"{self.get_estado_display()}."
+            )
+        # H-SC-03: validación bloqueante de QC obligatorio
+        if self.requiere_qc and not self.tiene_qc:
+            raise ValidationError(
+                "Este producto requiere control de calidad en recepción. "
+                "Registre el RecepcionCalidad antes de aprobar el voucher."
+            )
+        # H-SC-03: si hay QC con resultado RECHAZADO, no se puede aprobar
+        if (
+            self.tiene_qc
+            and self.calidad.resultado == 'RECHAZADO'
+        ):
+            raise ValidationError(
+                "El control de calidad fue RECHAZADO. No se puede aprobar "
+                "el voucher — use la transición rechazar() si corresponde."
             )
         self.estado = self.EstadoVoucher.APROBADO
         self.save(update_fields=['estado', 'updated_at'])

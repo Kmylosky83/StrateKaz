@@ -11,6 +11,7 @@ import recepcionApi from '../api/recepcionApi';
 import type {
   CreateRecepcionCalidadDTO,
   CreateVoucherRecepcionDTO,
+  RegistrarQCDTO,
   UpdateVoucherRecepcionDTO,
 } from '../types/recepcion.types';
 
@@ -93,6 +94,62 @@ export function useDeleteVoucher() {
     },
     onError: (error: AxiosError<ApiError>) => {
       toast.error(getApiErrorMessage(error, 'Error al eliminar voucher'));
+    },
+  });
+}
+
+// ──────── H-SC-03: transiciones de estado ────────
+export function useAprobarVoucher() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await recepcionApi.voucher.aprobar(id);
+      return response.data;
+    },
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: recepcionKeys.vouchers() });
+      qc.invalidateQueries({ queryKey: recepcionKeys.voucher(id) });
+      toast.success('Voucher aprobado');
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      toast.error(getApiErrorMessage(error, 'No se pudo aprobar el voucher'));
+    },
+  });
+}
+
+export function useRechazarVoucher() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, motivo }: { id: number; motivo?: string }) => {
+      const response = await recepcionApi.voucher.rechazar(id, motivo);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: recepcionKeys.vouchers() });
+      qc.invalidateQueries({ queryKey: recepcionKeys.voucher(id) });
+      toast.success('Voucher rechazado');
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      toast.error(getApiErrorMessage(error, 'No se pudo rechazar el voucher'));
+    },
+  });
+}
+
+export function useRegistrarQC() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: RegistrarQCDTO }) => {
+      const response = await recepcionApi.voucher.registrarQC(id, data);
+      return response.data;
+    },
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: recepcionKeys.vouchers() });
+      qc.invalidateQueries({ queryKey: recepcionKeys.voucher(id) });
+      qc.invalidateQueries({ queryKey: recepcionKeys.calidad() });
+      toast.success('Control de calidad registrado');
+    },
+    onError: (error: AxiosError<ApiError>) => {
+      toast.error(getApiErrorMessage(error, 'No se pudo registrar el QC'));
     },
   });
 }

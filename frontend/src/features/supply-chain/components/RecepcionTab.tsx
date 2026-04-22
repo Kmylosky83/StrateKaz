@@ -7,6 +7,7 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
+  Beaker,
   CheckCircle,
   Edit,
   Eye,
@@ -31,8 +32,9 @@ import { Spinner } from '@/components/common/Spinner';
 import { Modules, Sections } from '@/constants/permissions';
 import { usePermissions } from '@/hooks/usePermissions';
 
-import { useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
+import { useAprobarVoucher, useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
 import type { EstadoVoucher, VoucherRecepcionList } from '../types/recepcion.types';
+import RegistrarQCModal from './RegistrarQCModal';
 
 // ==================== UTILITIES ====================
 
@@ -78,6 +80,8 @@ export default function RecepcionTab() {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVoucher | ''>('');
+  const [qcModalVoucher, setQcModalVoucher] = useState<VoucherRecepcionList | null>(null);
+  const aprobarMut = useAprobarVoucher();
 
   const queryParams = useMemo(
     () => (estadoFilter ? { estado: estadoFilter } : undefined),
@@ -224,6 +228,9 @@ export default function RecepcionTab() {
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Estado
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    QC
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Acciones
                   </th>
@@ -263,11 +270,53 @@ export default function RecepcionTab() {
                         {v.estado_display || v.estado}
                       </Badge>
                     </td>
+                    <td className="px-6 py-3 text-center">
+                      {v.requiere_qc ? (
+                        v.tiene_qc ? (
+                          <Badge variant="success" size="sm">
+                            Registrado
+                          </Badge>
+                        ) : (
+                          <Badge variant="warning" size="sm">
+                            Pendiente
+                          </Badge>
+                        )
+                      ) : (
+                        <span className="text-slate-400 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="sm" title="Ver detalle">
                           <Eye className="w-4 h-4" />
                         </Button>
+                        {/* H-SC-03: registrar QC */}
+                        {v.estado === 'PENDIENTE_QC' && v.requiere_qc && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={v.tiene_qc ? 'Editar QC' : 'Registrar QC'}
+                            onClick={() => setQcModalVoucher(v)}
+                          >
+                            <Beaker className="w-4 h-4 text-amber-600" />
+                          </Button>
+                        )}
+                        {/* H-SC-03: aprobar voucher */}
+                        {v.estado === 'PENDIENTE_QC' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title={
+                              v.requiere_qc && !v.tiene_qc
+                                ? 'Requiere registrar QC antes de aprobar'
+                                : 'Aprobar voucher'
+                            }
+                            disabled={(v.requiere_qc && !v.tiene_qc) || aprobarMut.isPending}
+                            onClick={() => aprobarMut.mutate(v.id)}
+                          >
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" title="Editar">
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -300,6 +349,13 @@ export default function RecepcionTab() {
         confirmText="Eliminar"
         onConfirm={handleConfirmDelete}
         onClose={() => setDeleteId(null)}
+      />
+
+      {/* H-SC-03: Registrar QC */}
+      <RegistrarQCModal
+        isOpen={!!qcModalVoucher}
+        voucher={qcModalVoucher}
+        onClose={() => setQcModalVoucher(null)}
       />
     </div>
   );

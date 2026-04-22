@@ -7,6 +7,7 @@ import type {
   CreateRecepcionCalidadDTO,
   CreateVoucherRecepcionDTO,
   RecepcionCalidad,
+  RegistrarQCDTO,
   UpdateVoucherRecepcionDTO,
   VoucherRecepcion,
   VoucherRecepcionList,
@@ -23,6 +24,12 @@ export const voucherRecepcionApi = {
   update: (id: number, data: UpdateVoucherRecepcionDTO) =>
     apiClient.patch<VoucherRecepcion>(`${BASE}/vouchers/${id}/`, data),
   delete: (id: number) => apiClient.delete(`${BASE}/vouchers/${id}/`),
+  // H-SC-03: transiciones de estado + QC
+  aprobar: (id: number) => apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/aprobar/`),
+  rechazar: (id: number, motivo?: string) =>
+    apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/rechazar/`, { motivo }),
+  registrarQC: (id: number, data: RegistrarQCDTO) =>
+    apiClient.post<RecepcionCalidad>(`${BASE}/vouchers/${id}/registrar-qc/`, data),
 };
 
 export const recepcionCalidadApi = {

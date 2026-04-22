@@ -171,6 +171,9 @@ export default function ProductosTab() {
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">
                     Unidad
                   </th>
+                  <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400 text-center">
+                    QC
+                  </th>
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400 text-right">
                     Acciones
                   </th>
@@ -195,6 +198,15 @@ export default function ProductosTab() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400 text-xs">
                       {p.unidad_medida_nombre} ({p.unidad_medida_abreviatura})
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {p.requiere_qc_recepcion ? (
+                        <Badge variant="warning" size="sm">
+                          Requiere
+                        </Badge>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
@@ -308,6 +320,25 @@ export default function ProductosTab() {
               />
             </div>
             <Textarea label="Notas" rows={2} {...register('notas')} />
+
+            {/* H-SC-03: Control de calidad en recepción */}
+            <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/10 p-3 space-y-2">
+              <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded mt-0.5"
+                  {...register('requiere_qc_recepcion')}
+                />
+                <span>
+                  <span className="font-medium">Requiere control de calidad en recepción</span>
+                  <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Si está marcado, el voucher de recepción no podrá aprobarse sin registrar el QC
+                    (análisis fisicoquímico). Las especificaciones por parámetro se configuran
+                    aparte.
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
         )}
       </FormModal>

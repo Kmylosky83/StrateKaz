@@ -691,11 +691,14 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 16,
                 'tabs': [
-                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 1, 'sections': [
-                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
-                    ]},
-                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 2, 'sections': [
+                    # Cascada narrativa: primero defines CATEGORÍAS, luego
+                    # creas PRODUCTOS dentro de ellas (mismo patrón Categorías
+                    # → Productos que Tipos de Proveedor → Proveedores).
+                    {'code': 'categorias', 'name': 'Categorías', 'icon': 'FolderTree', 'route': 'categorias', 'orden': 1, 'sections': [
                         {'code': 'gestion_categorias', 'name': 'Gestión de Categorías', 'icon': 'FolderTree', 'orden': 1, 'description': 'Categorías jerárquicas de productos'},
+                    ]},
+                    {'code': 'productos', 'name': 'Productos', 'icon': 'Package', 'route': 'productos', 'orden': 2, 'sections': [
+                        {'code': 'gestion_productos', 'name': 'Gestión de Productos', 'icon': 'Package', 'orden': 1, 'description': 'CRUD de productos maestros'},
                     ]},
                     {'code': 'unidades_medida', 'name': 'Unidades de Medida', 'icon': 'Ruler', 'route': 'unidades-medida', 'orden': 3, 'sections': [
                         {'code': 'gestion_unidades', 'name': 'Gestión de Unidades', 'icon': 'Ruler', 'orden': 1, 'description': 'Unidades de medida estándar (kg, L, und)'},

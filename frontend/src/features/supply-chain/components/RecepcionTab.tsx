@@ -31,10 +31,12 @@ import { Spinner } from '@/components/common/Spinner';
 
 import { Modules, Sections } from '@/constants/permissions';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuthStore } from '@/store/authStore';
 
 import { useAprobarVoucher, useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
 import type { EstadoVoucher, VoucherRecepcionList } from '../types/recepcion.types';
 import RegistrarQCModal from './RegistrarQCModal';
+import VoucherFormModal from './VoucherFormModal';
 
 // ==================== UTILITIES ====================
 
@@ -81,7 +83,9 @@ export default function RecepcionTab() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVoucher | ''>('');
   const [qcModalVoucher, setQcModalVoucher] = useState<VoucherRecepcionList | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const aprobarMut = useAprobarVoucher();
+  const currentUserId = useAuthStore((s) => s.user?.id ?? 0);
 
   const queryParams = useMemo(
     () => (estadoFilter ? { estado: estadoFilter } : undefined),
@@ -165,12 +169,7 @@ export default function RecepcionTab() {
           canCreate
             ? {
                 label: 'Nuevo Voucher',
-                onClick: () => {
-                  // TODO: implementar VoucherFormModal completo con RHF + Zod (sesión dedicada post-S4)
-                  window.alert(
-                    'Formulario de creación pendiente — se implementa en siguiente iteración con RHF/Zod.'
-                  );
-                },
+                onClick: () => setCreateModalOpen(true),
               }
             : undefined
         }
@@ -190,9 +189,7 @@ export default function RecepcionTab() {
             canCreate
               ? {
                   label: 'Nuevo Voucher',
-                  onClick: () => {
-                    window.alert('Formulario pendiente.');
-                  },
+                  onClick: () => setCreateModalOpen(true),
                   icon: <Plus className="w-4 h-4" />,
                 }
               : undefined
@@ -356,6 +353,13 @@ export default function RecepcionTab() {
         isOpen={!!qcModalVoucher}
         voucher={qcModalVoucher}
         onClose={() => setQcModalVoucher(null)}
+      />
+
+      {/* H-SC-03 F8: Crear voucher */}
+      <VoucherFormModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        currentUserId={currentUserId}
       />
     </div>
   );

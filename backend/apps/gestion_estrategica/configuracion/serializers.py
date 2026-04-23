@@ -54,17 +54,15 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
 
     # Display names - tipo_sede ahora es ForeignKey
     tipo_sede_display = serializers.SerializerMethodField()
-    departamento_display = serializers.CharField(
-        source='get_departamento_display',
-        read_only=True
-    )
+    # H-SC-10: departamento ya no es CharField choices — es property derivada
+    # de ciudad.departamento.nombre.
+    departamento = serializers.CharField(read_only=True)
+    departamento_display = serializers.CharField(source='departamento', read_only=True)
+    ciudad_nombre = serializers.CharField(source='ciudad.nombre', read_only=True)
 
     # Información del responsable
     responsable_name = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
-
-    # Roles - display
-    tipo_unidad_display = serializers.CharField(source='get_tipo_unidad_display', read_only=True)
 
     # Unidad de capacidad - display
     unidad_capacidad_display = serializers.SerializerMethodField()
@@ -84,6 +82,7 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'direccion',
             'direccion_completa',
             'ciudad',
+            'ciudad_nombre',
             'departamento',
             'departamento_display',
             'codigo_postal',
@@ -100,12 +99,9 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'es_sede_principal',
             'fecha_apertura',
             'fecha_cierre',
-            # Roles (unificación con UnidadNegocio)
-            'tipo_unidad',
-            'tipo_unidad_display',
+            # Roles (H-SC-10: tipo_unidad y es_proveedor_interno eliminados)
             'es_unidad_negocio',
             'es_centro_acopio',
-            'es_proveedor_interno',
             # Capacidad - Sistema dinámico multi-industria
             'capacidad_almacenamiento',
             'unidad_capacidad',
@@ -283,13 +279,9 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
     Serializer simplificado para listados de sedes
     """
     tipo_sede_display = serializers.SerializerMethodField()
-    tipo_unidad_display = serializers.CharField(
-        source='get_tipo_unidad_display', read_only=True
-    )
-    departamento_display = serializers.CharField(
-        source='get_departamento_display',
-        read_only=True
-    )
+    # H-SC-10: departamento es property derivada de ciudad.departamento.
+    departamento_display = serializers.CharField(source='departamento', read_only=True)
+    ciudad_nombre = serializers.CharField(source='ciudad.nombre', read_only=True)
     responsable_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -300,16 +292,14 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
             'nombre',
             'tipo_sede',
             'tipo_sede_display',
-            'tipo_unidad',
-            'tipo_unidad_display',
             'ciudad',
+            'ciudad_nombre',
             'departamento_display',
             'responsable',
             'responsable_name',
             'es_sede_principal',
             'es_unidad_negocio',
             'es_centro_acopio',
-            'es_proveedor_interno',
             'is_active',
         ]
 

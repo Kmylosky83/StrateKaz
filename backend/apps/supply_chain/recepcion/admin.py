@@ -22,7 +22,7 @@ class VoucherRecepcionAdmin(admin.ModelAdmin):
     list_filter = ['estado', 'modalidad_entrega', 'fecha_viaje', 'almacen_destino']
     search_fields = ['proveedor__nombre_comercial', 'observaciones']
     readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
-    autocomplete_fields = ['proveedor', 'uneg_transportista', 'almacen_destino']
+    autocomplete_fields = ['proveedor', 'ruta_recoleccion', 'almacen_destino']
     inlines = [VoucherLineaMPInline]
 
 

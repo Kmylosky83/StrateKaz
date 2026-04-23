@@ -57,7 +57,15 @@ class SedeEmpresaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'sedes'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['tipo_sede', 'departamento', 'is_active', 'es_sede_principal']
+    # H-SC-10: departamento ya no es filter de modelo (es property derivada).
+    # Para filtrar por depto usar ?ciudad__departamento=<id>.
+    filterset_fields = {
+        'tipo_sede': ['exact'],
+        'ciudad': ['exact'],
+        'ciudad__departamento': ['exact'],
+        'is_active': ['exact'],
+        'es_sede_principal': ['exact'],
+    }
     search_fields = ['codigo', 'nombre', 'ciudad', 'direccion']
     ordering_fields = ['nombre', 'created_at', 'codigo']
     ordering = ['-es_sede_principal', 'nombre']

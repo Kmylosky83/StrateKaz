@@ -119,15 +119,15 @@ class TestModalidadEntrega:
 
     def test_recoleccion_sin_transportista_rechazada(self, voucher_base_kwargs):
         voucher_base_kwargs['modalidad_entrega'] = 'RECOLECCION'
-        voucher_base_kwargs['uneg_transportista'] = None
+        voucher_base_kwargs['ruta_recoleccion'] = None
         v = VoucherRecepcion(**voucher_base_kwargs)
         with pytest.raises(ValidationError) as exc:
             v.full_clean()
-        assert 'uneg_transportista' in exc.value.error_dict
+        assert 'ruta_recoleccion' in exc.value.error_dict
 
     def test_recoleccion_con_transportista_ok(self, voucher_base_kwargs, uneg_recolectora):
         voucher_base_kwargs['modalidad_entrega'] = 'RECOLECCION'
-        voucher_base_kwargs['uneg_transportista'] = uneg_recolectora
+        voucher_base_kwargs['ruta_recoleccion'] = uneg_recolectora
         v = VoucherRecepcion(**voucher_base_kwargs)
         v.full_clean()
 

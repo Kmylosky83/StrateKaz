@@ -29,6 +29,7 @@ import apiClient from '@/api/axios-config';
 import { useCreateVoucher } from '../hooks/useRecepcion';
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
+import { useRutas } from '../hooks/useRutas';
 import type { ModalidadEntrega } from '../types/recepcion.types';
 
 // ─── Schemas Zod ───
@@ -48,7 +49,7 @@ const voucherSchema = z
   .object({
     proveedor: z.coerce.number().int().min(1, 'Selecciona un proveedor'),
     modalidad_entrega: z.enum(['DIRECTO', 'TRANSPORTE_INTERNO', 'RECOLECCION']),
-    uneg_transportista: z.coerce.number().int().nullable().optional(),
+    ruta_recoleccion: z.coerce.number().int().nullable().optional(),
     fecha_viaje: z.string().min(1, 'La fecha es obligatoria'),
     almacen_destino: z.coerce.number().int().min(1, 'Selecciona un almacén'),
     operador_bascula: z.coerce.number().int().positive(),
@@ -56,11 +57,11 @@ const voucherSchema = z
     lineas: z.array(lineaSchema).min(1, 'Agrega al menos un producto'),
   })
   .superRefine((data, ctx) => {
-    if (data.modalidad_entrega === 'RECOLECCION' && !data.uneg_transportista) {
+    if (data.modalidad_entrega === 'RECOLECCION' && !data.ruta_recoleccion) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ['uneg_transportista'],
-        message: 'RECOLECCION requiere UNeg transportista',
+        path: ['ruta_recoleccion'],
+        message: 'RECOLECCION requiere ruta de recolección',
       });
     }
   });
@@ -88,12 +89,6 @@ interface AlmacenListItem {
   sede?: number | null;
   /** H-SC-07: nombre legible de la sede, expuesto por el serializer */
   sede_nombre?: string | null;
-}
-
-interface SedeListItem {
-  id: number;
-  nombre: string;
-  tipo_unidad: string;
 }
 
 interface ProductoMini {
@@ -135,18 +130,6 @@ function useAlmacenesRecepcion({ paraRecepcion = true }: { paraRecepcion?: boole
   });
 }
 
-function useSedesEmpresa() {
-  return useQuery({
-    queryKey: ['sedes-empresa'],
-    queryFn: async () => {
-      const resp = await apiClient.get<SedeListItem[] | { results: SedeListItem[] }>(
-        '/gestion-estrategica/configuracion/sedes/'
-      );
-      return Array.isArray(resp.data) ? resp.data : (resp.data.results ?? []);
-    },
-  });
-}
-
 // ─── Props ───
 
 interface VoucherFormModalProps {
@@ -169,7 +152,8 @@ export default function VoucherFormModal({
   const { data: almacenes = [], isLoading: almacenesLoading } = useAlmacenesRecepcion({
     paraRecepcion: true,
   });
-  const { data: sedes = [] } = useSedesEmpresa();
+  // H-SC-10: rutas activas (reemplaza el dropdown de Sedes como "UNeg transportista")
+  const { data: rutas = [] } = useRutas({ is_active: true });
 
   const proveedores = useMemo(
     () =>
@@ -192,7 +176,7 @@ export default function VoucherFormModal({
     defaultValues: {
       proveedor: 0,
       modalidad_entrega: 'DIRECTO',
-      uneg_transportista: null,
+      ruta_recoleccion: null,
       fecha_viaje: new Date().toISOString().slice(0, 10),
       almacen_destino: 0,
       operador_bascula: currentUserId,
@@ -244,7 +228,7 @@ export default function VoucherFormModal({
     await createMut.mutateAsync({
       proveedor: data.proveedor,
       modalidad_entrega: data.modalidad_entrega,
-      uneg_transportista: data.uneg_transportista ?? null,
+      ruta_recoleccion: data.ruta_recoleccion ?? null,
       fecha_viaje: data.fecha_viaje,
       almacen_destino: data.almacen_destino,
       operador_bascula: data.operador_bascula,
@@ -314,19 +298,19 @@ export default function VoucherFormModal({
           {modalidadSel === 'RECOLECCION' && (
             <Controller
               control={control}
-              name="uneg_transportista"
+              name="ruta_recoleccion"
               render={({ field }) => (
                 <Select
-                  label="UNeg transportista"
+                  label="Ruta de Recolección"
                   required
-                  error={formState.errors.uneg_transportista?.message}
+                  error={formState.errors.ruta_recoleccion?.message}
                   value={field.value ?? ''}
                   onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                 >
                   <option value="">Seleccionar...</option>
-                  {sedes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
+                  {rutas.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.codigo} — {r.nombre}
                     </option>
                   ))}
                 </Select>

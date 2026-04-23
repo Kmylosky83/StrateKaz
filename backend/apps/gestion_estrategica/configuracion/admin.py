@@ -15,11 +15,11 @@ from .models import (
 class SedeEmpresaAdmin(admin.ModelAdmin):
     """Admin para sedes de la empresa"""
     list_display = ['codigo', 'nombre', 'tipo_sede', 'ciudad', 'es_sede_principal', 'is_active']
-    list_filter = ['tipo_sede', 'departamento', 'is_active', 'es_sede_principal']
-    search_fields = ['codigo', 'nombre', 'direccion', 'ciudad']
+    list_filter = ['tipo_sede', 'is_active', 'es_sede_principal']
+    search_fields = ['codigo', 'nombre', 'direccion', 'ciudad__nombre']
     ordering = ['-es_sede_principal', 'nombre']
     list_editable = ['is_active']
-    raw_id_fields = ['responsable', 'created_by', 'updated_by']
+    raw_id_fields = ['responsable', 'ciudad', 'created_by', 'updated_by']
     readonly_fields = ['created_at', 'updated_at', 'deleted_at']
 
     fieldsets = (
@@ -27,7 +27,8 @@ class SedeEmpresaAdmin(admin.ModelAdmin):
             'fields': ('codigo', 'nombre', 'tipo_sede', 'descripcion', 'es_sede_principal')
         }),
         ('Ubicación', {
-            'fields': ('direccion', 'ciudad', 'departamento', 'codigo_postal',
+            # H-SC-10: departamento se deriva de ciudad.departamento.
+            'fields': ('direccion', 'ciudad', 'codigo_postal',
                       'latitud', 'longitud')
         }),
         ('Administración', {

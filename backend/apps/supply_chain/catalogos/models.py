@@ -8,6 +8,63 @@ from django.db.models import Q
 from utils.models import TenantModel
 
 
+class RutaRecoleccion(TenantModel):
+    """
+    Ruta de recolección de materia prima (H-SC-10).
+
+    Representa un recorrido logístico propio de la empresa que recolecta
+    MP desde productores/proveedores externos. Conceptualmente pertenece
+    a Supply Chain (no a Fundación): es un recurso operativo, no una sede
+    física con dirección.
+
+    Migrado desde `SedeEmpresa` con `tipo_unidad='RUTA_RECOLECCION'` (H-SC-10).
+    Las rutas típicamente actúan como proveedor interno: el signal
+    `sincronizar_proveedor_espejo_ruta` crea un `Proveedor` espejo para que
+    aparezcan como transportador en vouchers de recepción.
+    """
+
+    codigo = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        verbose_name='Código',
+        help_text='Código único de la ruta (ej: RUTA-001)',
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre descriptivo de la ruta',
+    )
+    descripcion = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Descripción',
+    )
+    es_proveedor_interno = models.BooleanField(
+        default=True,
+        verbose_name='Es proveedor interno',
+        help_text=(
+            'Si es True, se crea automáticamente un Proveedor espejo en '
+            'catalogo_productos para que la ruta pueda operar como '
+            'transportador en vouchers de recepción.'
+        ),
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name='Activo',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_ruta_recoleccion'
+        verbose_name = 'Ruta de Recolección'
+        verbose_name_plural = 'Rutas de Recolección'
+        ordering = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
+
+
 class TipoAlmacen(models.Model):
     """
     Tipo de almacenamiento físico (catálogo universal, no tenant).

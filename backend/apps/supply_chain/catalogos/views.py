@@ -6,8 +6,31 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Almacen, TipoAlmacen
-from .serializers import AlmacenSerializer, TipoAlmacenSerializer
+from .models import Almacen, RutaRecoleccion, TipoAlmacen
+from .serializers import (
+    AlmacenSerializer,
+    RutaRecoleccionSerializer,
+    TipoAlmacenSerializer,
+)
+
+
+class RutaRecoleccionViewSet(viewsets.ModelViewSet):
+    """CRUD de Rutas de Recolección (H-SC-10)."""
+
+    queryset = RutaRecoleccion.objects.all()
+    serializer_class = RutaRecoleccionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'es_proveedor_interno']
+    search_fields = ['codigo', 'nombre', 'descripcion']
+    ordering_fields = ['codigo', 'nombre', 'created_at']
+    ordering = ['codigo']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 
 class TipoAlmacenViewSet(viewsets.ModelViewSet):

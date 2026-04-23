@@ -274,6 +274,25 @@ class TipoSede(TimestampedModel, SoftDeleteModel):
         help_text='Tipos precargados del sistema (no eliminables)'
     )
 
+    # H-SC-10: rol operacional (fusión con ex-tipo_unidad de SedeEmpresa).
+    ROL_OPERACIONAL_CHOICES = [
+        ('OFICINA', 'Oficina Administrativa'),
+        ('PLANTA', 'Planta'),
+        ('CENTRO_ACOPIO', 'Centro de Acopio'),
+        ('BODEGA', 'Bodega'),
+        ('OTRO', 'Otro'),
+    ]
+    rol_operacional = models.CharField(
+        max_length=20,
+        choices=ROL_OPERACIONAL_CHOICES,
+        default='OTRO',
+        verbose_name='Rol operacional',
+        help_text=(
+            'Rol operativo del tipo de sede. Reemplaza el campo '
+            'SedeEmpresa.tipo_unidad (H-SC-10).'
+        ),
+    )
+
     class Meta:
         db_table = 'configuracion_tipo_sede'
         verbose_name = 'Tipo de Sede'
@@ -585,14 +604,15 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         verbose_name='Dirección',
         help_text='Dirección física de la sede (opcional para rutas de recolección)',
     )
-    ciudad = models.CharField(
-        max_length=100,
-        verbose_name='Ciudad'
-    )
-    departamento = models.CharField(
-        max_length=50,
-        choices=DEPARTAMENTOS_COLOMBIA,
-        verbose_name='Departamento'
+    # H-SC-10: FK canónica a catálogo core.Ciudad (antes CharField).
+    # El departamento se deriva de self.ciudad.departamento (property).
+    ciudad = models.ForeignKey(
+        'core.Ciudad',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='sedes',
+        verbose_name='Ciudad',
     )
     codigo_postal = models.CharField(
         max_length=10,
@@ -672,26 +692,11 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     )
 
     # =========================================================================
-    # ROLES DE LA SEDE (unificación con UnidadNegocio)
+    # ROLES DE LA SEDE
     # =========================================================================
-
-    TIPO_UNIDAD_CHOICES = [
-        ('SEDE', 'Sede Administrativa'),
-        ('SUCURSAL', 'Sucursal'),
-        ('PLANTA', 'Planta de Producción'),
-        ('CENTRO_ACOPIO', 'Centro de Acopio'),
-        ('ALMACEN', 'Almacén'),
-        ('RUTA_RECOLECCION', 'Ruta de Recolección'),
-        ('OTRO', 'Otro'),
-    ]
-
-    tipo_unidad = models.CharField(
-        max_length=20,
-        choices=TIPO_UNIDAD_CHOICES,
-        default='SEDE',
-        verbose_name='Tipo de unidad',
-        help_text='Rol operativo de esta sede'
-    )
+    # H-SC-10: tipo_unidad (CharField con RUTA_RECOLECCION) y es_proveedor_interno
+    # fueron ELIMINADOS. El rol operativo ahora vive en TipoSede.rol_operacional.
+    # El concepto de "ruta de recolección" se movió a supply_chain.catalogos.RutaRecoleccion.
     es_unidad_negocio = models.BooleanField(
         default=True,
         verbose_name='Es unidad de negocio',
@@ -701,11 +706,6 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         default=False,
         verbose_name='Es centro de acopio',
         help_text='Recibe materia prima de proveedores'
-    )
-    es_proveedor_interno = models.BooleanField(
-        default=False,
-        verbose_name='Es proveedor interno',
-        help_text='Provee productos o servicios a otras sedes de la empresa'
     )
 
     # =========================================================================
@@ -745,9 +745,9 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         indexes = [
             models.Index(fields=['codigo']),
             models.Index(fields=['is_active', 'tipo_sede']),
-            models.Index(fields=['departamento', 'ciudad']),
+            models.Index(fields=['ciudad']),
             models.Index(fields=['deleted_at']),
-            models.Index(fields=['tipo_unidad', 'es_unidad_negocio']),
+            models.Index(fields=['es_unidad_negocio']),
         ]
 
     def __str__(self):
@@ -779,16 +779,27 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         return self.latitud is not None and self.longitud is not None
 
     @property
+    def departamento(self):
+        """
+        Nombre del departamento de la ciudad (read-only, derivado).
+
+        H-SC-10: reemplaza el CharField departamento eliminado. La fuente
+        de verdad es `ciudad.departamento.nombre`.
+        """
+        if self.ciudad and self.ciudad.departamento:
+            return self.ciudad.departamento.nombre
+        return ''
+
+    @property
     def direccion_completa(self):
         """Retorna la dirección completa formateada."""
-        partes = [self.direccion]
+        partes = []
+        if self.direccion:
+            partes.append(self.direccion)
         if self.ciudad:
-            partes.append(self.ciudad)
-        if self.departamento:
-            for code, name in DEPARTAMENTOS_COLOMBIA:
-                if code == self.departamento:
-                    partes.append(name)
-                    break
+            partes.append(self.ciudad.nombre)
+            if self.ciudad.departamento:
+                partes.append(self.ciudad.departamento.nombre)
         return ', '.join(partes)
 
     @property

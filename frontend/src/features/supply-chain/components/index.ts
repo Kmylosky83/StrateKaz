@@ -14,6 +14,7 @@ export { default as ComprasTab } from './ComprasTab';
 export { default as AlmacenamientoTab } from './AlmacenamientoTab';
 export { default as RecepcionTab } from './RecepcionTab';
 export { default as LiquidacionesTab } from './LiquidacionesTab';
+export { default as RutasRecoleccionTab } from './RutasRecoleccionTab';
 
 // Modales CRUD
 export { default as RequisicionFormModal } from './RequisicionFormModal';

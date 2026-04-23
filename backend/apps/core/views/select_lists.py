@@ -416,22 +416,22 @@ def select_unidades_negocio(request):
     if not SedeEmpresa:
         return Response([])
 
+    # H-SC-10: tipo_unidad eliminado — el rol operacional vive en TipoSede.
+    # ciudad ahora es FK; traemos el nombre denormalizado.
     qs = SedeEmpresa.objects.filter(
         is_active=True,
         deleted_at__isnull=True,
         es_unidad_negocio=True,
-    ).values(
-        'id', 'codigo', 'nombre', 'tipo_unidad', 'ciudad'
-    ).order_by('nombre')[:200]
+    ).select_related('ciudad', 'tipo_sede').order_by('nombre')[:200]
 
     return Response([
         {
-            'id': u['id'],
-            'label': f"{u['nombre']} ({u['codigo']})",
+            'id': u.id,
+            'label': f"{u.nombre} ({u.codigo})",
             'extra': {
-                'codigo': u.get('codigo', ''),
-                'tipo': u.get('tipo_unidad', ''),
-                'ciudad': u.get('ciudad', ''),
+                'codigo': u.codigo or '',
+                'tipo': u.tipo_sede.rol_operacional if u.tipo_sede else '',
+                'ciudad': u.ciudad.nombre if u.ciudad else '',
             }
         }
         for u in qs

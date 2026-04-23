@@ -21,16 +21,8 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
-import {
-  useCreateAlmacen,
-  useUpdateAlmacen,
-  useTiposAlmacen,
-} from '@/features/supply-chain/hooks';
-import type {
-  Almacen,
-  CreateAlmacenDTO,
-  UpdateAlmacenDTO,
-} from '@/features/supply-chain/types';
+import { useCreateAlmacen, useUpdateAlmacen, useTiposAlmacen } from '@/features/supply-chain/hooks';
+import type { Almacen, CreateAlmacenDTO, UpdateAlmacenDTO } from '@/features/supply-chain/types';
 import type { SedeEmpresaList } from '../../types/strategic.types';
 
 interface AlmacenFormModalProps {
@@ -66,12 +58,7 @@ const defaultFormData: FormData = {
   is_active: true,
 };
 
-export const AlmacenFormModal = ({
-  sede,
-  almacen,
-  isOpen,
-  onClose,
-}: AlmacenFormModalProps) => {
+export const AlmacenFormModal = ({ sede, almacen, isOpen, onClose }: AlmacenFormModalProps) => {
   const isEditing = almacen !== null;
   const [formData, setFormData] = useState<FormData>(defaultFormData);
 
@@ -123,9 +110,7 @@ export const AlmacenFormModal = ({
       descripcion: formData.descripcion || undefined,
       direccion: formData.direccion || undefined,
       tipo_almacen: formData.tipo_almacen ? parseInt(formData.tipo_almacen) : null,
-      capacidad_maxima: formData.capacidad_maxima
-        ? parseFloat(formData.capacidad_maxima)
-        : null,
+      capacidad_maxima: formData.capacidad_maxima ? parseFloat(formData.capacidad_maxima) : null,
       es_principal: formData.es_principal,
       permite_recepcion: formData.permite_recepcion,
       permite_despacho: formData.permite_despacho,
@@ -274,9 +259,7 @@ export const AlmacenFormModal = ({
             type="number"
             step="0.01"
             value={formData.capacidad_maxima}
-            onChange={(e) =>
-              setFormData({ ...formData, capacidad_maxima: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, capacidad_maxima: e.target.value })}
             placeholder="10000.00"
             helperText="Cantidad numérica — la unidad depende del tipo de almacén"
           />
@@ -327,26 +310,20 @@ export const AlmacenFormModal = ({
               </div>
               <Switch
                 checked={formData.es_principal}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, es_principal: checked })
-                }
+                onCheckedChange={(checked) => setFormData({ ...formData, es_principal: checked })}
               />
             </div>
 
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Activo
-                </p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Desactivar para ocultar sin eliminar
                 </p>
               </div>
               <Switch
                 checked={formData.is_active}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, is_active: checked })
-                }
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
             </div>
           </div>

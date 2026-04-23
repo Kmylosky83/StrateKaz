@@ -45,5 +45,10 @@ export const supplyChainRoutes = (
       path="/supply-chain/catalogos"
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'catalogos')}
     />
+    {/* H-SC-10: catálogo de rutas de recolección (reemplaza dropdown UNeg en vouchers) */}
+    <Route
+      path="/supply-chain/rutas-recoleccion"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'catalogos_sc')}
+    />
   </>
 );

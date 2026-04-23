@@ -23,8 +23,7 @@ import { getApiErrorMessage } from '@/utils/errorUtils';
 
 export const almacenesKeys = {
   all: ['supply-chain', 'almacenes'] as const,
-  list: (filters?: AlmacenesFilterParams) =>
-    [...almacenesKeys.all, 'list', filters ?? {}] as const,
+  list: (filters?: AlmacenesFilterParams) => [...almacenesKeys.all, 'list', filters ?? {}] as const,
   detail: (id: number) => [...almacenesKeys.all, 'detail', id] as const,
 };
 

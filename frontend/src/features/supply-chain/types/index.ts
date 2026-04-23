@@ -145,6 +145,16 @@ export type {
   AlmacenesFilterParams,
 } from './almacenes.types';
 
+// ==================== RUTAS DE RECOLECCIÓN (catálogo CT, H-SC-10) ====================
+
+export type {
+  RutaRecoleccion,
+  RutaRecoleccionList,
+  CreateRutaDTO,
+  UpdateRutaDTO,
+  RutasFilterParams,
+} from './rutas.types';
+
 // ==================== ALMACENAMIENTO ====================
 
 export type {

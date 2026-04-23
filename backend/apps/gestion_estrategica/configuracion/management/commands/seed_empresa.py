@@ -86,14 +86,13 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f'  Ya existen {count} sedes'))
             return 0
 
+        # H-SC-10: ciudad es FK (nullable), departamento CharField eliminado.
+        # Dejamos ciudad NULL y que el admin la asigne desde UI.
         sedes = [
             {
                 'codigo': 'SEDE-PRINCIPAL',
                 'nombre': 'Sede Principal StrateKaz',
-                'tipo_sede': 'SEDE_PRINCIPAL',
                 'direccion': 'Por definir',
-                'ciudad': 'Bogotá',
-                'departamento': 'CUNDINAMARCA',
                 'es_sede_principal': True,
             },
         ]

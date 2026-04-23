@@ -224,18 +224,23 @@ class Proveedor(TenantModel):
         verbose_name='Nombre Parte Interesada (cache)',
     )
 
-    # --- Vínculo con SedeEmpresa (H-SC-05) ---
-    # Cuando es_proveedor_interno=True en SedeEmpresa, un signal crea
+    # --- Vínculo con RutaRecoleccion (H-SC-10) ---
+    # Cuando es_proveedor_interno=True en RutaRecoleccion, un signal crea
     # automáticamente un Proveedor espejo apuntando aquí.
-    # Una sede solo puede tener un Proveedor espejo (unique=True + null=True).
-    sede_empresa_origen = models.OneToOneField(
-        'configuracion.SedeEmpresa',
+    # Una ruta solo puede tener un Proveedor espejo (unique=True + null=True).
+    # Reemplaza sede_empresa_origen (H-SC-05) al mover rutas de recolección
+    # desde configuracion a supply_chain.catalogos.
+    ruta_origen = models.OneToOneField(
+        'catalogos.RutaRecoleccion',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='proveedor_espejo',
-        verbose_name='Sede de origen',
-        help_text='Sede interna que origina este proveedor espejo (H-SC-05). Gestionado automáticamente.',
+        verbose_name='Ruta de origen',
+        help_text=(
+            'Ruta interna que origina este proveedor espejo (H-SC-10). '
+            'Gestionado automáticamente por signal.'
+        ),
     )
 
     # --- Estado operativo ---

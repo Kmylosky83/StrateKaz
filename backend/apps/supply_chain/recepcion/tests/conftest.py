@@ -59,25 +59,24 @@ def empresa(db):
 
 @pytest.fixture
 def uneg_planta(db, empresa):
+    # H-SC-10: tipo_unidad eliminado; ciudad ahora es FK (nullable).
     return SedeEmpresa.objects.create(
         nombre='Planta Principal',
-        tipo_unidad='PLANTA',
         es_sede_principal=True,
         direccion='Cra 1 # 1-1',
-        ciudad='Bogotá',
-        departamento='CUNDINAMARCA',
     )
 
 
 @pytest.fixture
 def uneg_recolectora(db, empresa):
-    return SedeEmpresa.objects.create(
+    # H-SC-10: rutas de recolección migraron a supply_chain.catalogos.RutaRecoleccion.
+    # Este fixture ahora crea una RutaRecoleccion con es_proveedor_interno=True
+    # para poder ser usada como ruta_recoleccion en VoucherRecepcion.
+    from apps.supply_chain.catalogos.models import RutaRecoleccion
+    return RutaRecoleccion.objects.create(
+        codigo='RUTA-NORTE',
         nombre='Ruta Recolección Norte',
-        tipo_unidad='CENTRO_ACOPIO',
         es_proveedor_interno=True,
-        direccion='Km 5 vía Norte',
-        ciudad='Bogotá',
-        departamento='CUNDINAMARCA',
     )
 
 

@@ -59,14 +59,17 @@ class VoucherRecepcion(TenantModel):
         choices=ModalidadEntrega.choices,
         verbose_name='Modalidad de entrega',
     )
-    uneg_transportista = models.ForeignKey(
-        'configuracion.SedeEmpresa',
+    ruta_recoleccion = models.ForeignKey(
+        'catalogos.RutaRecoleccion',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='vouchers_transportados',
-        verbose_name='UNeg transportista',
-        help_text='Unidad de negocio que trajo el producto (si aplica)',
+        related_name='vouchers_recoleccion',
+        verbose_name='Ruta de recolección',
+        help_text=(
+            'Ruta de recolección usada para traer la materia prima. '
+            'Obligatorio cuando modalidad_entrega=RECOLECCION.'
+        ),
     )
     fecha_viaje = models.DateField(
         verbose_name='Fecha del viaje / entrega',
@@ -133,11 +136,11 @@ class VoucherRecepcion(TenantModel):
         super().clean()
         if (
             self.modalidad_entrega == self.ModalidadEntrega.RECOLECCION
-            and not self.uneg_transportista
+            and not self.ruta_recoleccion
         ):
             raise ValidationError({
-                'uneg_transportista': (
-                    'Modalidad RECOLECCION requiere especificar UNeg transportista.'
+                'ruta_recoleccion': (
+                    'Modalidad RECOLECCION requiere especificar una ruta de recolección.'
                 )
             })
 

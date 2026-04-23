@@ -64,4 +64,3 @@ export interface AlmacenesFilterParams {
   page?: number;
   page_size?: number;
 }
-

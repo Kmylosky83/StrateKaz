@@ -52,8 +52,9 @@ export interface VoucherRecepcionList {
 }
 
 export interface VoucherRecepcion extends VoucherRecepcionList {
-  uneg_transportista?: number | null;
-  uneg_transportista_nombre?: string;
+  /** H-SC-10: FK a RutaRecoleccion (antes uneg_transportista → SedeEmpresa) */
+  ruta_recoleccion?: number | null;
+  ruta_recoleccion_nombre?: string;
   orden_compra?: number | null;
   operador_bascula: number;
   operador_nombre?: string;
@@ -64,7 +65,8 @@ export interface VoucherRecepcion extends VoucherRecepcionList {
 export interface CreateVoucherRecepcionDTO {
   proveedor: number;
   modalidad_entrega: ModalidadEntrega;
-  uneg_transportista?: number | null;
+  /** H-SC-10: FK a RutaRecoleccion (requerido cuando modalidad=RECOLECCION) */
+  ruta_recoleccion?: number | null;
   fecha_viaje: string;
   orden_compra?: number | null;
   almacen_destino: number;

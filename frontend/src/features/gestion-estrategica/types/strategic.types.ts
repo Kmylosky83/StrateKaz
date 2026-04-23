@@ -636,6 +636,22 @@ export interface UpdateTenantUISettingsDTO {
 // Se mantiene compatibilidad con strings legacy para migración
 export type TipoSede = number | string;
 
+/**
+ * Rol operacional de un Tipo de Sede.
+ * Viene del TipoSede seleccionado — determina qué secciones/campos aplican.
+ */
+export type RolOperacionalSede = 'OFICINA' | 'PLANTA' | 'CENTRO_ACOPIO' | 'BODEGA' | 'OTRO';
+
+/**
+ * Choice de Tipo de Sede (H-SC-10: ahora incluye rol_operacional).
+ * Endpoint: GET /api/configuracion/tipos-sede/
+ */
+export interface TipoSedeChoice {
+  id: number;
+  nombre: string;
+  rol_operacional: RolOperacionalSede;
+}
+
 export interface SedeEmpresa {
   id: number;
   // Identificación
@@ -643,13 +659,15 @@ export interface SedeEmpresa {
   nombre: string;
   tipo_sede: TipoSede;
   tipo_sede_display?: string;
+  /** Rol operacional derivado del TipoSede — viene del serializer */
+  rol_operacional?: RolOperacionalSede;
   descripcion?: string | null;
-  // Ubicación
+  // Ubicación (H-SC-10: ciudad ahora es FK; departamento se elimina, solo *_nombre)
   direccion: string;
   direccion_completa?: string;
-  ciudad: string;
-  departamento: string;
-  departamento_display?: string;
+  ciudad: number | null;
+  ciudad_nombre?: string | null;
+  departamento_nombre?: string | null;
   codigo_postal?: string | null;
   // Geolocalización
   latitud?: number | null;
@@ -660,12 +678,9 @@ export interface SedeEmpresa {
   responsable_name?: string | null;
   telefono?: string | null;
   email?: string | null;
-  // Roles (unificación Sede + Unidad de Negocio v5.2.0)
-  tipo_unidad?: string;
-  tipo_unidad_display?: string;
+  // Roles residuales (H-SC-10: tipo_unidad y es_proveedor_interno eliminados)
   es_unidad_negocio: boolean;
   es_centro_acopio: boolean;
-  es_proveedor_interno: boolean;
   // Control
   es_sede_principal: boolean;
   fecha_apertura?: string | null;
@@ -691,16 +706,15 @@ export interface SedeEmpresaList {
   nombre: string;
   tipo_sede: TipoSede;
   tipo_sede_display?: string;
-  tipo_unidad?: string;
-  tipo_unidad_display?: string;
-  ciudad: string;
-  departamento_display?: string;
+  rol_operacional?: RolOperacionalSede;
+  ciudad: number | null;
+  ciudad_nombre?: string | null;
+  departamento_nombre?: string | null;
   responsable?: number | null;
   responsable_name?: string | null;
   es_sede_principal: boolean;
   es_unidad_negocio: boolean;
   es_centro_acopio: boolean;
-  es_proveedor_interno: boolean;
   is_active: boolean;
 }
 
@@ -708,20 +722,18 @@ export interface CreateSedeEmpresaDTO {
   codigo?: string; // Auto-generado por el backend vía ConsecutivoConfig (SEDE-0001...)
   nombre: string;
   tipo_sede: TipoSede;
+  tipo_sede_nuevo?: string; // Para crear nuevo tipo inline
   descripcion?: string;
   direccion: string;
-  ciudad: string;
-  departamento: string;
+  ciudad?: number | null;
   codigo_postal?: string;
   latitud?: number;
   longitud?: number;
   responsable?: number;
   telefono?: string;
   email?: string;
-  tipo_unidad?: string;
   es_unidad_negocio?: boolean;
   es_centro_acopio?: boolean;
-  es_proveedor_interno?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string;
   fecha_cierre?: string;
@@ -734,20 +746,18 @@ export interface UpdateSedeEmpresaDTO {
   codigo?: string;
   nombre?: string;
   tipo_sede?: TipoSede;
+  tipo_sede_nuevo?: string;
   descripcion?: string;
   direccion?: string;
-  ciudad?: string;
-  departamento?: string;
+  ciudad?: number | null;
   codigo_postal?: string;
   latitud?: number | null;
   longitud?: number | null;
   responsable?: number | null;
   telefono?: string;
   email?: string;
-  tipo_unidad?: string;
   es_unidad_negocio?: boolean;
   es_centro_acopio?: boolean;
-  es_proveedor_interno?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string | null;
   fecha_cierre?: string | null;
@@ -767,7 +777,7 @@ export interface UnidadCapacidad {
 
 export interface SedeFilters {
   tipo_sede?: TipoSede;
-  departamento?: string;
+  ciudad?: number;
   is_active?: boolean;
   es_sede_principal?: boolean;
   search?: string;

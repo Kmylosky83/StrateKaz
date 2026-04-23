@@ -19,9 +19,7 @@ import type {
 const BASE = '/supply-chain/catalogos/almacenes';
 
 export const almacenesApi = {
-  getAll: async (
-    params?: AlmacenesFilterParams
-  ): Promise<PaginatedResponse<AlmacenList>> => {
+  getAll: async (params?: AlmacenesFilterParams): Promise<PaginatedResponse<AlmacenList>> => {
     const response = await apiClient.get(`${BASE}/`, { params });
     const data = response.data;
     // El ViewSet usa paginación por defecto, pero algunos casos retornan arreglo.

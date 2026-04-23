@@ -65,8 +65,8 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
 class VoucherRecepcionSerializer(serializers.ModelSerializer):
     """Serializer completo para detalle / create / update."""
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    uneg_transportista_nombre = serializers.CharField(
-        source='uneg_transportista.nombre', read_only=True
+    ruta_recoleccion_nombre = serializers.CharField(
+        source='ruta_recoleccion.nombre', read_only=True
     )
     almacen_nombre = serializers.CharField(source='almacen_destino.nombre', read_only=True)
     operador_nombre = serializers.CharField(source='operador_bascula.get_full_name', read_only=True)
@@ -89,7 +89,7 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             'proveedor', 'proveedor_nombre',
             # Logística
             'modalidad_entrega', 'modalidad_entrega_display',
-            'uneg_transportista', 'uneg_transportista_nombre',
+            'ruta_recoleccion', 'ruta_recoleccion_nombre',
             'fecha_viaje',
             # OC opcional
             'orden_compra',
@@ -143,16 +143,16 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        # Validar el header (modalidad vs uneg_transportista)
+        # Validar el header (modalidad vs ruta_recoleccion)
         modalidad = attrs.get('modalidad_entrega')
-        uneg = attrs.get('uneg_transportista')
+        ruta = attrs.get('ruta_recoleccion')
         if (
             modalidad == VoucherRecepcion.ModalidadEntrega.RECOLECCION
-            and not uneg
+            and not ruta
         ):
             raise serializers.ValidationError({
-                'uneg_transportista': (
-                    'Modalidad RECOLECCION requiere especificar UNeg transportista.'
+                'ruta_recoleccion': (
+                    'Modalidad RECOLECCION requiere especificar una ruta de recolección.'
                 )
             })
         return attrs

@@ -30,7 +30,7 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     """
 
     queryset = VoucherRecepcion.objects.select_related(
-        'proveedor', 'uneg_transportista',
+        'proveedor', 'ruta_recoleccion',
         'almacen_destino', 'operador_bascula', 'orden_compra',
     ).prefetch_related(
         'lineas__producto',
@@ -40,7 +40,7 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     filterset_fields = [
         'proveedor', 'almacen_destino',
         'modalidad_entrega', 'estado', 'fecha_viaje',
-        'uneg_transportista', 'orden_compra',
+        'ruta_recoleccion', 'orden_compra',
     ]
     search_fields = [
         'proveedor__nombre_comercial',

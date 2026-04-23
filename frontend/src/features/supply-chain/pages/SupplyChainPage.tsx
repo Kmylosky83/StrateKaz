@@ -18,7 +18,15 @@ import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
-import { DollarSign, ShoppingCart, Package, FolderOpen, Scale, FileCheck } from 'lucide-react';
+import {
+  DollarSign,
+  ShoppingCart,
+  Package,
+  FolderOpen,
+  Scale,
+  FileCheck,
+  Route,
+} from 'lucide-react';
 import {
   PreciosTab,
   ComprasTab,
@@ -26,6 +34,7 @@ import {
   CatalogosTab,
   RecepcionTab,
   LiquidacionesTab,
+  RutasRecoleccionTab,
 } from '../components';
 
 interface SectionMeta {
@@ -71,6 +80,12 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Modalidad logística y otros catálogos de SC',
     icon: <FolderOpen className="w-5 h-5" />,
     component: CatalogosTab,
+  },
+  'rutas-recoleccion': {
+    title: 'Rutas de Recolección',
+    description: 'Circuitos de recolección de MP (H-SC-10)',
+    icon: <Route className="w-5 h-5" />,
+    component: RutasRecoleccionTab,
   },
 };
 

@@ -31,3 +31,6 @@ export * from './useTiposAlmacen';
 
 // ==================== ALMACENES (H-SC-07 — almacenes físicos por sede) ====================
 export * from './useAlmacenes';
+
+// ==================== RUTAS DE RECOLECCIÓN (H-SC-10) ====================
+export * from './useRutas';

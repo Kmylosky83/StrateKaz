@@ -2,7 +2,18 @@
 Admin para catalogos - supply_chain
 """
 from django.contrib import admin
-from .models import Almacen, TipoAlmacen
+from .models import Almacen, RutaRecoleccion, TipoAlmacen
+
+
+@admin.register(RutaRecoleccion)
+class RutaRecoleccionAdmin(admin.ModelAdmin):
+    """Admin para Rutas de Recolección (H-SC-10)."""
+    list_display = [
+        'codigo', 'nombre', 'es_proveedor_interno', 'is_active', 'is_deleted',
+    ]
+    list_filter = ['es_proveedor_interno', 'is_active', 'is_deleted']
+    search_fields = ['codigo', 'nombre', 'descripcion']
+    ordering = ['codigo']
 
 
 class CatalogoBaseAdmin(admin.ModelAdmin):

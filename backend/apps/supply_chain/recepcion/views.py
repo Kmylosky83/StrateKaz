@@ -2,6 +2,8 @@
 ViewSets para Recepción — Supply Chain S3
 """
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import connection
+from django.http import HttpResponse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -159,6 +161,151 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             out.data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+    # ─── Impresión térmica 58mm (H-SC-03) ─────────────────────────────
+    @action(detail=True, methods=['get'], url_path='print-58mm')
+    def print_58mm(self, request, pk=None):
+        """
+        Retorna HTML optimizado para impresora térmica de 58mm.
+
+        El HTML incluye auto-print via window.onload para facilitar
+        la impresión directa desde el navegador.
+        """
+        voucher = self.get_object()
+
+        # ── Nombre de la empresa (tenant actual) ──────────────────────
+        tenant = getattr(connection, 'tenant', None)
+        if tenant is not None:
+            empresa = getattr(tenant, 'nombre_comercial', None) or getattr(tenant, 'name', None) or 'StrateKaz'
+        else:
+            empresa = 'StrateKaz'
+
+        # ── Helpers de formato ────────────────────────────────────────
+        def fmt_kg(value):
+            try:
+                return f"{float(value):.3f}"
+            except (TypeError, ValueError):
+                return '0.000'
+
+        def fmt_cop(value):
+            try:
+                return f"${int(value):,}".replace(",", ".")
+            except (TypeError, ValueError):
+                return '$0'
+
+        # ── Datos del voucher ─────────────────────────────────────────
+        fecha_viaje = voucher.fecha_viaje.strftime('%d-%m-%Y') if voucher.fecha_viaje else '—'
+
+        created_at_local = timezone.localtime(voucher.created_at)
+        emision = created_at_local.strftime('%d-%m-%Y %H:%M')
+
+        proveedor_nombre = getattr(voucher.proveedor, 'nombre_comercial', str(voucher.proveedor))
+        producto_nombre = getattr(voucher.producto, 'nombre', str(voucher.producto))
+        almacen_nombre = getattr(voucher.almacen_destino, 'nombre', str(voucher.almacen_destino))
+        modalidad = voucher.get_modalidad_entrega_display()
+        estado = voucher.get_estado_display()
+
+        try:
+            full_name = voucher.operador_bascula.get_full_name() or str(voucher.operador_bascula)
+        except AttributeError:
+            full_name = '—'
+
+        try:
+            qc_resultado = voucher.calidad.get_resultado_display()
+        except AttributeError:
+            qc_resultado = 'No aplica'
+
+        valor_fmt = fmt_cop(voucher.valor_total_estimado)
+        precio_fmt = f"${fmt_cop(voucher.precio_kg_snapshot)[1:]}/kg"
+
+        SEP = '-' * 32
+
+        # ── Bloque de observaciones (condicional) ─────────────────────
+        obs_block = ''
+        if voucher.observaciones and voucher.observaciones.strip():
+            obs_text = voucher.observaciones.strip().replace('<', '&lt;').replace('>', '&gt;')
+            obs_block = f'<div class="obs">{obs_text}</div><div class="sep">{SEP}</div>'
+
+        # ── HTML ──────────────────────────────────────────────────────
+        html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voucher #{voucher.pk:04d}</title>
+<style>
+  @page {{
+    size: 58mm auto;
+    margin: 2mm 3mm;
+  }}
+  * {{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }}
+  body {{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 9pt;
+    width: 52mm;
+    color: #000;
+    background: #fff;
+  }}
+  .center {{ text-align: center; }}
+  .bold {{ font-weight: bold; }}
+  .sep {{ letter-spacing: 0; white-space: pre; }}
+  .row {{ display: flex; justify-content: space-between; }}
+  .label {{ white-space: nowrap; }}
+  .val {{ text-align: right; }}
+  .indent {{ padding-left: 4mm; }}
+  .obs {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
+  .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
+  @media print {{
+    body {{ width: 52mm; }}
+    @page {{ size: 58mm auto; margin: 2mm 3mm; }}
+  }}
+</style>
+</head>
+<body>
+<div class="sep">{SEP}</div>
+<div class="center bold">{empresa}</div>
+<div class="sep">{SEP}</div>
+<div class="center bold">VOUCHER RECEPCION MP</div>
+<div class="sep">{SEP}</div>
+<div># VOUCHER: {voucher.pk:04d}</div>
+<div>FECHA:    {fecha_viaje}</div>
+<div>EMISION:  {emision}</div>
+<div class="sep">{SEP}</div>
+<div>PROVEEDOR:</div>
+<div class="indent">{proveedor_nombre}</div>
+<div>PRODUCTO:</div>
+<div class="indent">{producto_nombre}</div>
+<div class="sep">{SEP}</div>
+<div class="bold">PESAJE:</div>
+<div class="row indent"><span class="label">BRUTO:</span><span class="val">{fmt_kg(voucher.peso_bruto_kg)} kg</span></div>
+<div class="row indent"><span class="label">TARA:</span><span class="val">{fmt_kg(voucher.peso_tara_kg)} kg</span></div>
+<div class="row indent"><span class="label">NETO:</span><span class="val">{fmt_kg(voucher.peso_neto_kg)} kg</span></div>
+<div class="sep">{SEP}</div>
+<div class="row"><span class="label">PRECIO:</span><span class="val">{precio_fmt}</span></div>
+<div class="row"><span class="label">VALOR:</span><span class="val">{valor_fmt}</span></div>
+<div class="sep">{SEP}</div>
+<div>ALMACEN:</div>
+<div class="indent">{almacen_nombre}</div>
+<div>MODALIDAD:</div>
+<div class="indent">{modalidad}</div>
+<div>OPERADOR:</div>
+<div class="indent">{full_name}</div>
+<div class="sep">{SEP}</div>
+<div class="row"><span class="label">ESTADO:</span><span class="val">{estado}</span></div>
+<div class="row"><span class="label">QC:</span><span class="val">{qc_resultado}</span></div>
+<div class="sep">{SEP}</div>
+{obs_block}
+<div class="footer">Powered by StrateKaz</div>
+<div class="sep">{SEP}</div>
+</body>
+<script>window.onload = function(){{ window.print(); }};</script>
+</html>"""
+
+        return HttpResponse(html, content_type='text/html; charset=utf-8')
 
 
 class RecepcionCalidadViewSet(viewsets.ModelViewSet):

@@ -14,6 +14,7 @@ import {
   FileText,
   Package,
   Plus,
+  Printer,
   Scale,
   Trash2,
   Truck,
@@ -33,6 +34,7 @@ import { Modules, Sections } from '@/constants/permissions';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuthStore } from '@/store/authStore';
 
+import { voucherRecepcionApi } from '../api/recepcionApi';
 import { useAprobarVoucher, useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
 import type { EstadoVoucher, VoucherRecepcionList } from '../types/recepcion.types';
 import RegistrarQCModal from './RegistrarQCModal';
@@ -108,6 +110,21 @@ export default function RecepcionTab() {
     const pesoTotal = vouchers.reduce((acc, v) => acc + parseFloat(v.peso_neto_kg || '0'), 0);
     return { total, pendientes, aprobados, pesoTotal };
   }, [vouchers]);
+
+  const handlePrint = async (id: number) => {
+    try {
+      const response = await voucherRecepcionApi.getPrint58mm(id);
+      const html = response.data as unknown as string;
+      const win = window.open('', '_blank', 'width=420,height=650,scrollbars=yes');
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+      }
+    } catch {
+      // silencioso: el usuario verá que no pasó nada
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (!deleteId) return;
@@ -312,6 +329,16 @@ export default function RecepcionTab() {
                             onClick={() => aprobarMut.mutate(v.id)}
                           >
                             <CheckCircle className="w-4 h-4 text-green-600" />
+                          </Button>
+                        )}
+                        {(v.estado === 'APROBADO' || v.estado === 'LIQUIDADO') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Imprimir voucher (58mm)"
+                            onClick={() => handlePrint(v.id)}
+                          >
+                            <Printer className="w-4 h-4 text-blue-600" />
                           </Button>
                         )}
                         <Button variant="ghost" size="sm" title="Editar">

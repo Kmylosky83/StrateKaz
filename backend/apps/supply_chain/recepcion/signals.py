@@ -98,3 +98,60 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
             )
             inventario.cantidad_disponible += instance.peso_neto_kg
             inventario.save()
+
+
+@receiver(post_save, sender=VoucherRecepcion)
+def crear_liquidacion_al_aprobar(sender, instance, **kwargs):
+    """
+    Post-save handler: si el voucher está APROBADO y no existe una
+    Liquidacion asociada, la crea via Liquidacion.desde_voucher().
+
+    Idempotente: el filtro por voucher=instance garantiza que aprobar
+    dos veces no duplique. Si el QC dio CONDICIONAL se añade una nota
+    en observaciones; el ajuste porcentual lo fija el usuario manualmente
+    desde LiquidacionesTab.
+    """
+    if instance.estado != VoucherRecepcion.EstadoVoucher.APROBADO:
+        return
+
+    # Import tardío para evitar circular imports al cargar apps.ready()
+    from apps.supply_chain.liquidaciones.models import Liquidacion
+
+    # Idempotencia: una sola Liquidacion por Voucher (OneToOne)
+    if Liquidacion.objects.filter(voucher=instance).exists():
+        return
+
+    # Detectar QC CONDICIONAL para agregar nota en observaciones
+    observaciones = ''
+    try:
+        tiene_qc_condicional = (
+            instance.tiene_qc
+            and hasattr(instance, 'calidad')
+            and instance.calidad.resultado == 'CONDICIONAL'
+        )
+    except Exception:
+        tiene_qc_condicional = False
+
+    if tiene_qc_condicional:
+        observaciones = (
+            'QC CONDICIONAL: revisar ajuste de precio antes de aprobar.'
+        )
+
+    try:
+        with transaction.atomic():
+            liq = Liquidacion.desde_voucher(
+                voucher=instance,
+                ajuste_calidad_pct=0,
+                observaciones=observaciones,
+            )
+            logger.info(
+                'Liquidacion %s creada para voucher %s',
+                liq.pk,
+                instance.pk,
+            )
+    except Exception:
+        logger.error(
+            'No se pudo crear Liquidacion para VoucherRecepcion %s.',
+            instance.pk,
+            exc_info=True,
+        )

@@ -30,6 +30,8 @@ export const voucherRecepcionApi = {
     apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/rechazar/`, { motivo }),
   registrarQC: (id: number, data: RegistrarQCDTO) =>
     apiClient.post<RecepcionCalidad>(`${BASE}/vouchers/${id}/registrar-qc/`, data),
+  getPrint58mm: (id: number) =>
+    apiClient.get<string>(`${BASE}/vouchers/${id}/print-58mm/`, { responseType: 'text' }),
 };
 
 export const recepcionCalidadApi = {

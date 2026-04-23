@@ -13,7 +13,7 @@
  * @see docs/desarrollo/CATALOGO_VISTAS_UI.md
  */
 import { useState } from 'react';
-import { Plus, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
+import { Plus, MapPin, Building2, Star, CheckCircle2, Warehouse } from 'lucide-react';
 import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -21,6 +21,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { useSedes, useDeleteSede, useSetSedePrincipal } from '../hooks/useStrategic';
 import { SedeFormModal } from './modals/SedeFormModal';
+import { AlmacenesPorSedeModal } from './modals/AlmacenesPorSedeModal';
 import type { SedeEmpresaList } from '../types/strategic.types';
 
 export const SedesSection = () => {
@@ -33,6 +34,15 @@ export const SedesSection = () => {
   const [selectedSede, setSelectedSede] = useState<SedeEmpresaList | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [sedeToDelete, setSedeToDelete] = useState<SedeEmpresaList | null>(null);
+  const [showAlmacenesModal, setShowAlmacenesModal] = useState(false);
+  const [sedeForAlmacenes, setSedeForAlmacenes] = useState<SedeEmpresaList | null>(
+    null
+  );
+
+  const handleManageAlmacenes = (sede: SedeEmpresaList) => {
+    setSedeForAlmacenes(sede);
+    setShowAlmacenesModal(true);
+  };
 
   const sedes = Array.isArray(sedesData) ? sedesData : [];
 
@@ -187,8 +197,14 @@ export const SedesSection = () => {
                               !sede.es_sede_principal ? () => handleDeleteClick(sede) : undefined
                             }
                             size="sm"
-                            customActions={
-                              !sede.es_sede_principal && sede.is_active
+                            customActions={[
+                              {
+                                key: 'almacenes',
+                                label: 'Gestionar almacenes',
+                                icon: <Warehouse className="h-4 w-4" />,
+                                onClick: () => handleManageAlmacenes(sede),
+                              },
+                              ...(!sede.es_sede_principal && sede.is_active
                                 ? [
                                     {
                                       key: 'set-principal',
@@ -197,8 +213,8 @@ export const SedesSection = () => {
                                       onClick: () => handleSetPrincipal(sede),
                                     },
                                   ]
-                                : []
-                            }
+                                : []),
+                            ]}
                           />
                         </div>
                       </td>
@@ -255,6 +271,16 @@ export const SedesSection = () => {
         confirmText="Eliminar"
         variant="danger"
         isLoading={deleteMutation.isPending}
+      />
+
+      {/* Modal: Almacenes por Sede (H-SC-07) */}
+      <AlmacenesPorSedeModal
+        sede={sedeForAlmacenes}
+        isOpen={showAlmacenesModal}
+        onClose={() => {
+          setShowAlmacenesModal(false);
+          setSedeForAlmacenes(null);
+        }}
       />
     </>
   );

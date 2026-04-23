@@ -135,6 +135,16 @@ export type {
 export * from './recepcion.types';
 export * from './liquidaciones.types';
 
+// ==================== ALMACENES (catálogo CT, H-SC-07) ====================
+
+export type {
+  Almacen,
+  AlmacenList,
+  CreateAlmacenDTO,
+  UpdateAlmacenDTO,
+  AlmacenesFilterParams,
+} from './almacenes.types';
+
 // ==================== ALMACENAMIENTO ====================
 
 export type {

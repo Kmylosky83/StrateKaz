@@ -110,6 +110,15 @@ class Almacen(TenantModel):
         verbose_name='Tipo de almacén',
         help_text='Clasificación de cómo se almacena (silo / contenedor / pallet / piso)'
     )
+    sede = models.ForeignKey(
+        'configuracion.SedeEmpresa',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='almacenes',
+        verbose_name='Sede',
+        help_text='Sede física donde vive este almacén',
+    )
     capacidad_maxima = models.DecimalField(
         max_digits=12,
         decimal_places=2,

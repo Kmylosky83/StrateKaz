@@ -28,3 +28,6 @@ export * from './useLiquidaciones';
 
 // ==================== TIPOS ALMACÉN (S3 — catálogo silo/contenedor/pallet/piso) ====================
 export * from './useTiposAlmacen';
+
+// ==================== ALMACENES (H-SC-07 — almacenes físicos por sede) ====================
+export * from './useAlmacenes';

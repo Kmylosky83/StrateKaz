@@ -25,13 +25,14 @@ class TipoAlmacenAdmin(CatalogoBaseAdmin):
 class AlmacenAdmin(admin.ModelAdmin):
     """Admin para Almacenes."""
     list_display = [
-        'codigo', 'nombre', 'tipo_almacen', 'es_principal',
+        'codigo', 'nombre', 'sede', 'tipo_almacen', 'es_principal',
         'permite_recepcion', 'permite_despacho', 'is_deleted',
     ]
     list_filter = [
-        'tipo_almacen', 'es_principal',
+        'sede', 'tipo_almacen', 'es_principal',
         'permite_recepcion', 'permite_despacho', 'is_deleted',
     ]
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['codigo']
+    raw_id_fields = ['sede']
     autocomplete_fields = ['tipo_almacen']

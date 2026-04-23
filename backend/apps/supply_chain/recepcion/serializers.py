@@ -118,6 +118,30 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
         total = sum((l.peso_neto_kg for l in obj.lineas.all()), Decimal('0.000'))
         return str(total)
 
+    def validate_almacen_destino(self, value):
+        """
+        H-SC-07: valida que el almacén destino pertenezca a la sede del
+        operador (request.user.sede_asignada) si ambos tienen sede.
+
+        Soft: si el almacén no tiene sede asignada (data vieja) o el user
+        no tiene sede_asignada, la validación no aplica.
+        """
+        if value is None:
+            return value
+
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        sede_usuario = getattr(user, 'sede_asignada', None)
+        sede_almacen = getattr(value, 'sede', None)
+
+        if sede_usuario is not None and sede_almacen is not None:
+            if sede_almacen_id := getattr(sede_almacen, 'pk', None):
+                if sede_almacen_id != sede_usuario.pk:
+                    raise serializers.ValidationError(
+                        'El almacén pertenece a otra sede distinta a la tuya.'
+                    )
+        return value
+
     def validate(self, attrs):
         # Validar el header (modalidad vs uneg_transportista)
         modalidad = attrs.get('modalidad_entrega')

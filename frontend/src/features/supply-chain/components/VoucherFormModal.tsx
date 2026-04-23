@@ -84,6 +84,10 @@ interface AlmacenListItem {
   codigo: string;
   nombre: string;
   permite_recepcion: boolean;
+  /** H-SC-07: sede a la que pertenece el almacén (FK id) */
+  sede?: number | null;
+  /** H-SC-07: nombre legible de la sede, expuesto por el serializer */
+  sede_nombre?: string | null;
 }
 
 interface SedeListItem {
@@ -101,16 +105,32 @@ interface ProductoMini {
 
 // ─── Queries auxiliares (inline) ───
 
-function useAlmacenesRecepcion() {
+/**
+ * H-SC-07: hook de almacenes disponibles para recepción de MP.
+ *
+ * Cuando `paraRecepcion=true` (default) pasa `?para_recepcion=1` al backend,
+ * que filtra por la sede asignada al operador (`request.user.sede_asignada`) y
+ * exige `permite_recepcion=True`. Así el operador no puede elegir un almacén
+ * de otra sede por error.
+ *
+ * Mantener `paraRecepcion=false` deja el comportamiento legacy (lista global
+ * filtrada solo por `permite_recepcion`).
+ */
+function useAlmacenesRecepcion({ paraRecepcion = true }: { paraRecepcion?: boolean } = {}) {
   return useQuery({
-    queryKey: ['sc-almacenes-recepcion'],
+    queryKey: ['sc-almacenes-recepcion', { paraRecepcion }],
     queryFn: async () => {
+      const params: Record<string, unknown> = paraRecepcion
+        ? { para_recepcion: 1 }
+        : { permite_recepcion: true };
       const resp = await apiClient.get<AlmacenListItem[] | { results: AlmacenListItem[] }>(
         '/supply-chain/catalogos/almacenes/',
-        { params: { permite_recepcion: true } }
+        { params }
       );
       const all = Array.isArray(resp.data) ? resp.data : (resp.data.results ?? []);
-      return all.filter((a) => a.permite_recepcion);
+      // El filtro server-side ya garantiza permite_recepcion cuando paraRecepcion=true,
+      // pero en modo legacy (paraRecepcion=false) replicamos el filtro client-side.
+      return paraRecepcion ? all : all.filter((a) => a.permite_recepcion);
     },
   });
 }
@@ -145,7 +165,10 @@ export default function VoucherFormModal({
   const createMut = useCreateVoucher();
   const { data: proveedoresRaw } = useProveedores();
   const { data: preciosMPRaw } = usePreciosMP();
-  const { data: almacenes = [] } = useAlmacenesRecepcion();
+  // H-SC-07: el backend filtra por sede_asignada del operador (para_recepcion=1).
+  const { data: almacenes = [], isLoading: almacenesLoading } = useAlmacenesRecepcion({
+    paraRecepcion: true,
+  });
   const { data: sedes = [] } = useSedesEmpresa();
 
   const proveedores = useMemo(
@@ -461,9 +484,21 @@ export default function VoucherFormModal({
           {almacenes.map((a) => (
             <option key={a.id} value={a.id}>
               {a.codigo} — {a.nombre}
+              {a.sede_nombre ? ` (${a.sede_nombre})` : ''}
             </option>
           ))}
         </Select>
+        {/* H-SC-07: feedback sobre filtro por sede asignada */}
+        {!almacenesLoading && almacenes.length === 0 ? (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+            No hay almacenes disponibles para recepción. Verifica que tu usuario tenga una sede
+            asignada y que la sede tenga almacenes configurados.
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Mostrando almacenes de tu sede asignada
+          </p>
+        )}
       </Card>
 
       <Textarea

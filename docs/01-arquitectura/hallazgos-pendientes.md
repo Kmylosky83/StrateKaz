@@ -2147,3 +2147,247 @@ Sesión dedicada a refactor de `workflow_engine` o a consolidación de catálogo
 
 ### Estado
 🔲 Abierto. Prioridad: **baja — deferible hasta que se toque workflow_engine**.
+
+---
+
+## Roadmap Supply Chain — Recepción MP end-to-end
+
+Identificados durante sesión 2026-04-22 (tarde): al completar H-SC-03 (QC
+obligatorio) quedó mapeado el camino hasta recibir MP de punta a punta.
+Orden propuesto de ejecución: H-SC-05 → H-SC-02 → H-SC-04 → H-SC-06 →
+H-SC-01. Cada uno es sesión dedicada propia.
+
+---
+
+## H-SC-05 — Sincronización Fundación ↔ Proveedores (próximo paso)
+
+### Origen
+Sesión 2026-04-22 (tarde). Camilo identificó que las Unidades de Negocio
+propias (recolectoras, centros de acopio) se crean hoy en Fundación
+(`SedeEmpresa.es_proveedor_interno=True`) pero no aparecen automáticamente
+en el catálogo de Proveedores. Obliga a crear el mismo ente en dos lugares,
+con riesgo de datos divergentes. La fuente de verdad **debe ser Fundación**.
+
+### Propuesta técnica
+
+#### Backend
+- Nuevo campo `Proveedor.sede_empresa_origen: FK(SedeEmpresa, null, unique)`
+- Signal `post_save` en `SedeEmpresa`:
+  - Si `es_proveedor_interno=True` y no existe Proveedor vinculado → crear
+    Proveedor espejo con código especial (`PROV-UN-xxx`), tipo de proveedor
+    "Unidad de Negocio", datos mínimos sincronizados desde SedeEmpresa
+  - Si se desmarca → desactivar el Proveedor espejo (soft delete, no eliminar)
+  - Si se edita el nombre/documento en SedeEmpresa → propagar al Proveedor espejo
+- Validación: proveedor con `sede_empresa_origen != null` **NO es editable**
+  vía `/api/catalogo-productos/proveedores/{id}/` (redirige a editar la
+  SedeEmpresa). Sí es editable la modalidad logística y tipos productos
+  permitidos (datos operativos puros de Supply Chain).
+
+#### Frontend
+- Listado `/catalogo-productos/proveedores`:
+  - Badge "🏢 Unidad interna" en los proveedores espejo
+  - Click en Editar → redirige a Fundación si es UNeg
+- ProveedorFormModal: deshabilita campos de identificación si `sede_empresa_origen`
+  está seteado (muestra banner "Gestionado en Fundación")
+
+#### Datos existentes
+- Migración de backfill: por cada `SedeEmpresa` con `es_proveedor_interno=True`
+  que no tenga Proveedor vinculado → crear uno. Política: usar razón social
+  de la empresa + tipo_unidad como nombre comercial.
+
+### Bloquea / desbloquea
+- **Bloquea**: `H-SC-04` (voucher consolidado) necesita que el recolector sea un
+  Proveedor "interno" para poder consolidar los recibos de ruta.
+- **Desbloquea**: el listado de proveedores mostrará tanto los externos como las
+  UNegs propias, unificado.
+
+### Acción propuesta
+Sesión dedicada. Estimado: 4-5h (backend 2h, frontend 2h, tests + migración 1h).
+
+### Estado
+🔲 Abierto. Prioridad: **alta — next**. Desbloquea H-SC-04.
+
+---
+
+## H-SC-02 — Liquidación sugerida + ajuste de precio trazado
+
+### Origen
+Sesión 2026-04-22 (tarde). Diseño documentado durante planning de los 3
+hallazgos paralelos de recepción MP.
+
+### Propuesta técnica
+Extender el modelo `Liquidacion` (ya existente en `supply_chain/liquidacion`)
+para que al aprobar un `VoucherRecepcion` se cree automáticamente una
+Liquidacion sugerida con estado `SUGERIDA`:
+- `precio_kg_sugerido` = snapshot del voucher
+- `precio_kg_final` = editable con obligación de motivo
+- Tabla append-only `HistorialAjusteLiquidacion` con origen (QC / MANUAL /
+  CORRECCION) y diff de precios
+- Transiciones: SUGERIDA → AJUSTADA → CONFIRMADA → PAGADA
+
+Documentado en detalle en `docs/auditorias/history/` (plan agent H-SC-02
+de la sesión 2026-04-22 tarde). ~17h estimadas.
+
+### Bloquea / desbloquea
+- **Depende de**: H-SC-03 (ya completa) — precio único por proveedor y
+  voucher APROBADO dispara signal.
+- **Desbloquea**: H-SC-06 (liquidación periódica acumulada) requiere el
+  modelo Liquidacion extendido.
+
+### Estado
+🔲 Abierto. Prioridad: **alta — siguiente tras H-SC-05**.
+
+---
+
+## H-SC-04 — Voucher consolidado de recolección con merma
+
+### Origen
+Sesión 2026-04-22 (tarde). Camilo explicó el flujo operativo real del
+acopio de grasas: una Unidad de Negocio sale a recolectar en N puntos,
+trae recibos individuales por proveedor de punto y al llegar a planta
+se pesa el total en báscula.
+
+### Problema operativo que resuelve
+Hoy `VoucherRecepcion` es 1:1 (un proveedor, un voucher). No refleja el
+flujo real cuando una ruta recolecta de múltiples proveedores de punto
+en un solo viaje. La diferencia entre peso en báscula de planta y suma
+de recibos individuales es **merma** (pérdida por humedad, derrame,
+inexactitud de básculas de campo) que la planta absorbe.
+
+### Propuesta técnica
+
+#### Modelo nuevo `VoucherRecoleccionConsolidado`
+```python
+class VoucherRecoleccionConsolidado(TenantModel):
+    recolector = FK(Proveedor)           # la UNeg que trajo (sede_empresa_origen != null)
+    vehiculo = CharField(blank)
+    operador_recolector = FK(User)
+    fecha_viaje = DateField
+    peso_total_bascula_planta = Decimal  # pesaje al llegar
+    estado = choices(PENDIENTE_QC, APROBADO, RECHAZADO, LIQUIDADO)
+    observaciones = Text
+
+    @property
+    def peso_total_recibos(self) -> Decimal:
+        return sum(v.peso_neto_kg for v in self.vouchers_individuales.all())
+
+    @property
+    def merma_kg(self) -> Decimal:
+        return self.peso_total_bascula_planta - self.peso_total_recibos
+
+    @property
+    def merma_porcentaje(self) -> Decimal:
+        if self.peso_total_recibos == 0: return 0
+        return (self.merma_kg / self.peso_total_recibos) * 100
+```
+
+#### Extensión de `VoucherRecepcion`
+- Nuevo FK `voucher_consolidado_padre: FK(self, null)` — si es hijo de una
+  recolección consolidada. Null = voucher independiente (flujo actual).
+
+#### Política de merma
+- La merma la **absorbe la planta**. La liquidación por proveedor de punto
+  usa su peso individual del recibo, no afectado por la merma.
+- La merma queda registrada para análisis de eficiencia de rutas y calidad
+  de básculas de campo.
+
+#### Frontend
+- Nueva página `/supply-chain/recepcion/ruta` o extensión del modal actual
+- Modal "Recepción de Ruta" con:
+  - Header: Recolector (Proveedor UNeg) + Vehículo + Fecha
+  - Input: Peso total en báscula planta
+  - Tabla editable: sub-recibos (Proveedor de punto + peso individual + precio snapshot)
+  - Cálculo en vivo: Σ recibos, Merma kg, Merma %
+  - Al aprobar: dispara signals de cada voucher hijo (inventario + liquidación sugerida)
+
+### Tests mínimos
+- Merma = peso_bascula − Σ recibos (property)
+- Aprobar consolidado aprueba hijos idempotentemente
+- Cada hijo crea su propia Liquidacion sugerida
+- Si se rechaza el consolidado, se rechazan los hijos
+
+### Bloquea / desbloquea
+- **Depende de**: H-SC-05 (sincronización Fundación↔Proveedores, para que
+  el recolector sea un Proveedor válido).
+- **Depende de**: H-SC-02 (modelo Liquidacion extendido, para que cada hijo
+  genere su liquidación sugerida).
+
+### Estado
+🔲 Abierto. Prioridad: **alta — corazón operativo del negocio**.
+
+---
+
+## H-SC-06 — Liquidación periódica por proveedor (semanal/quincenal/mensual)
+
+### Origen
+Sesión 2026-04-22 (tarde). Camilo explicó que a los proveedores de punto
+se les paga acumulado por período (semanal, quincenal, mensual), no por
+cada entrega individual.
+
+### Propuesta técnica
+
+#### Backend
+- Nuevo campo `Proveedor.frecuencia_pago: choices(SEMANAL, QUINCENAL, MENSUAL, POR_ENTREGA)`
+  con default `POR_ENTREGA` (comportamiento actual)
+- Nuevo modelo `LiquidacionPeriodica` (o agregar campos a `Liquidacion`):
+  - `proveedor`, `periodo_inicio`, `periodo_fin`, `frecuencia`
+  - `vouchers_incluidos: M2M(VoucherRecepcion)`
+  - `total_kg`, `total_pagar` (calculados)
+  - estado (BORRADOR → EMITIDA → PAGADA)
+- Celery beat task semanal/mensual: genera borradores de liquidación
+  periódica por proveedor según su frecuencia
+
+#### Frontend
+- Dashboard en `/supply-chain/liquidaciones`:
+  - Tarjetas por proveedor con período acumulado en curso
+  - Total kg recibidos · precio promedio · total a pagar
+  - Lista de vouchers del período (drill-down)
+  - Botón "Emitir liquidación" → consolida vouchers del período en una
+    LiquidacionPeriodica y genera PDF
+- Filtros: por frecuencia de pago, por proveedor, por período
+
+### Relación con H-SC-02
+- H-SC-02 es la liquidación **individual sugerida** (al aprobar voucher)
+- H-SC-06 es la liquidación **periódica acumulada** (para pago efectivo)
+- Un mismo VoucherRecepcion puede tener Liquidacion individual (trazabilidad
+  operativa) y ser referenciado por una LiquidacionPeriodica (pago real)
+
+### Bloquea / desbloquea
+- **Depende de**: H-SC-02 (modelo Liquidacion extendido), H-SC-04 (para que
+  vouchers de ruta puedan acumularse por proveedor de punto).
+- **Bloquea**: integración con Tesorería/Bancos (pago efectivo).
+
+### Estado
+🔲 Abierto. Prioridad: **alta — cierra el ciclo operativo de pago a proveedores**.
+
+---
+
+## H-SC-01 — Voucher PDF con branding + archivo GD + impresora térmica 58mm
+
+### Origen
+Sesión 2026-04-22 (tarde). Planificado como uno de los 3 hallazgos
+paralelos del próximo gran paso recepción MP.
+
+### Propuesta técnica
+- Servicio `VoucherPDFService` con WeasyPrint 60.2 + template HTML/CSS 58mm
+  (monospace, inline-block, ESC/POS-ready). Template paralelo 80mm como
+  iteración 2.
+- Archivado automático en Gestión Documental como tipo `VOU` (inmutable
+  al aprobar)
+- Modelo nuevo `ImpresoraTermica` (CT-layer, `catalogo_productos/impresoras/`)
+  con tipo_conexion (BLUETOOTH / USB / TCP_IP / PDF_FALLBACK), ancho_mm,
+  ubicación por SedeEmpresa
+- Hook FE `useThermalPrinter` con Web Bluetooth API + WebUSB + PDF fallback
+- Endpoint `POST /vouchers/{id}/imprimir/` retorna comandos ESC/POS codificados
+  o URL del PDF según tipo de conexión
+
+Documentado en detalle en plan agent H-SC-01 (sesión 2026-04-22 tarde).
+~80-90h estimadas.
+
+### Bloquea / desbloquea
+- Independiente de otros H-SC. Se puede construir en paralelo con los demás.
+- Aplica a VoucherRecepcion individual Y a VoucherRecoleccionConsolidado
+  (mismo PDF pattern, distinto template).
+
+### Estado
+🔲 Abierto. Prioridad: **media — puede esperar tras H-SC-05/02/04/06**.

@@ -16,8 +16,27 @@ class TipoProveedorSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'codigo', 'nombre', 'descripcion',
             'requiere_materia_prima', 'requiere_modalidad_logistica',
+            'tipos_productos_permitidos',
             'orden', 'is_active',
         ]
+
+    def validate_tipos_productos_permitidos(self, value):
+        """
+        Valida que todos los valores sean tipos válidos de Producto.
+        """
+        if not isinstance(value, list):
+            raise serializers.ValidationError(
+                'Debe ser una lista de tipos de producto.'
+            )
+        from apps.catalogo_productos.models import Producto
+        valid_tipos = {choice[0] for choice in Producto.TIPO_CHOICES}
+        invalid = [t for t in value if t not in valid_tipos]
+        if invalid:
+            raise serializers.ValidationError(
+                f'Tipos inválidos: {", ".join(invalid)}. '
+                f'Válidos: {", ".join(sorted(valid_tipos))}.'
+            )
+        return value
 
 
 # ==============================================================================
@@ -46,6 +65,9 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     ciudad_nombre = serializers.CharField(
         source='ciudad.nombre', read_only=True, default=None,
     )
+    modalidad_logistica_nombre = serializers.CharField(
+        source='modalidad_logistica.nombre', read_only=True, default=None,
+    )
 
     class Meta:
         model = Proveedor
@@ -60,6 +82,7 @@ class ProveedorListSerializer(serializers.ModelSerializer):
             'telefono', 'email',
             'ciudad', 'ciudad_nombre',
             'departamento', 'departamento_nombre',
+            'modalidad_logistica', 'modalidad_logistica_nombre',
             'is_active',
             'created_at', 'updated_at',
         ]
@@ -103,6 +126,7 @@ class ProveedorCreateUpdateSerializer(serializers.ModelSerializer):
             'tipo_documento', 'numero_documento', 'nit',
             'telefono', 'email',
             'ciudad', 'departamento', 'direccion',
+            'modalidad_logistica',
             'productos_suministrados',
             'parte_interesada_id', 'parte_interesada_nombre',
             'is_active',

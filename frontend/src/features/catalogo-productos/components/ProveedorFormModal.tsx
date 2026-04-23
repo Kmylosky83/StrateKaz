@@ -31,8 +31,14 @@ import {
 } from '@/hooks/useSelectLists';
 import { PILookupField } from '@/features/gestion-estrategica/components/PILookupField';
 
+import { useModalidadesLogistica } from '@/features/supply-chain/hooks/usePrecios';
 import { useProductos } from '../hooks/useProductos';
-import { useTiposProveedor, useCreateProveedor, useUpdateProveedor } from '../hooks/useProveedores';
+import {
+  useTiposProveedor,
+  useCreateProveedor,
+  useUpdateProveedor,
+  useProveedor,
+} from '../hooks/useProveedores';
 import type {
   Proveedor,
   ProveedorDetail,
@@ -40,6 +46,7 @@ import type {
   UpdateProveedorDTO,
   TipoPersona,
 } from '../types/proveedor.types';
+import { PRODUCTO_TIPO_LABELS } from '../types/catalogoProductos.types';
 
 // ─── Schema Zod ────────────────────────────────────────────────────────────
 
@@ -63,6 +70,7 @@ const proveedorSchema = z
     departamento: z.number().nullable().optional(),
     ciudad: z.number().nullable().optional(),
     direccion: z.string().optional().default(''),
+    modalidad_logistica: z.number().nullable().optional(),
     productos_suministrados: z.array(z.number()).optional().default([]),
     is_active: z.boolean().default(true),
   })
@@ -110,6 +118,7 @@ const DEFAULT_VALUES: ProveedorFormValues = {
   departamento: null,
   ciudad: null,
   direccion: '',
+  modalidad_logistica: null,
   productos_suministrados: [],
   is_active: true,
 };
@@ -143,6 +152,7 @@ export default function ProveedorFormModal({
   const { data: departamentos = [] } = useSelectDepartamentos();
   const { data: tiposProveedor = [] } = useTiposProveedor();
   const { data: productos = [] } = useProductos();
+  const { data: modalidadesLogistica = [] } = useModalidadesLogistica();
 
   // Ciudad filtrada por departamento — solo fetch cuando hay depto seleccionado.
   const departamentoSeleccionado = watch('departamento');
@@ -151,11 +161,23 @@ export default function ProveedorFormModal({
     departamentoSeleccionado !== null && departamentoSeleccionado !== undefined
   );
 
-  // Solo productos tipo MATERIA_PRIMA son suministrables
-  const productosMP = useMemo(
-    () => (Array.isArray(productos) ? productos.filter((p) => p.tipo === 'MATERIA_PRIMA') : []),
-    [productos]
-  );
+  // Filtro dinámico: qué tipos de productos suministra este tipo de proveedor.
+  // Si `tipos_productos_permitidos` está vacío o undefined → se permiten todos.
+  // Si tiene valores (["MATERIA_PRIMA", "SERVICIO", ...]) → solo esos tipos.
+  const tipoProveedorSeleccionado = watch('tipo_proveedor');
+  const tiposPermitidos = useMemo(() => {
+    if (!tipoProveedorSeleccionado) return null; // null = sin filtrar
+    const tp = tiposProveedor.find((t) => t.id === Number(tipoProveedorSeleccionado));
+    const lista = tp?.tipos_productos_permitidos ?? [];
+    return lista.length > 0 ? lista : null;
+  }, [tipoProveedorSeleccionado, tiposProveedor]);
+
+  // Productos suministrables por el tipo de proveedor actual
+  const productosSuministrables = useMemo(() => {
+    const base = Array.isArray(productos) ? productos : [];
+    if (!tiposPermitidos) return base; // sin filtro
+    return base.filter((p) => tiposPermitidos.includes(p.tipo));
+  }, [productos, tiposPermitidos]);
 
   // Identificar ID de tipo_documento 'NIT' para auto-setear en empresas
   const nitTipoDocId = useMemo(() => {
@@ -183,34 +205,64 @@ export default function ProveedorFormModal({
   const [piId, setPiId] = useState<number | null>(null);
   const [piNombre, setPiNombre] = useState('');
 
+  // ─── Fetch detail completo al editar ───
+  // El `proveedor` que recibe el modal es un ProveedorList (serializer liviano)
+  // sin productos_suministrados, parte_interesada_id/nombre, ni direccion.
+  // Hacemos fetch explícito del detail cuando hay proveedor + modal abierto.
+  //
+  // `staleTime: 0` + `refetchOnMount: 'always'` fuerzan re-fetch cada vez que
+  // se abre el modal, para evitar que el cache de React Query devuelva data
+  // desactualizada después de ediciones (useUpdateProveedor solo invalida
+  // el cache de list, no de detail).
+  const { data: proveedorDetail } = useProveedor(isEdit && isOpen ? (proveedor!.id as number) : 0, {
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
   // ─── Effect: reset form al abrir/editar ───
+  // EDIT: esperar a que `proveedorDetail` llegue (tiene M2M + PI). Si hacemos
+  // reset con el list item inicial + otro reset con el detail después, se
+  // produce un flicker que puede sobreescribir valores que el usuario ya
+  // tocó (por ejemplo una PI recién seleccionada).
+  //
+  // CREATE: reset a DEFAULT_VALUES solo cuando el modal se abre por primera
+  // vez, identificando la transición isOpen:false→true (no en cada render).
   useEffect(() => {
-    if (proveedor && isOpen) {
-      const detailed = proveedor as ProveedorDetail;
+    if (!isOpen) return;
+
+    if (proveedor) {
+      // EDIT: solo resetear cuando el detail está disponible
+      if (!proveedorDetail) return;
+      const detailed = proveedorDetail;
       reset({
-        tipo_persona: proveedor.tipo_persona,
-        tipo_proveedor: proveedor.tipo_proveedor,
-        razon_social: proveedor.razon_social,
-        nombre_comercial: proveedor.nombre_comercial,
-        tipo_documento: proveedor.tipo_documento,
-        numero_documento: proveedor.numero_documento,
-        nit: proveedor.nit ?? '',
-        telefono: proveedor.telefono ?? '',
-        email: proveedor.email ?? '',
-        departamento: proveedor.departamento,
-        ciudad: proveedor.ciudad ?? null,
+        tipo_persona: detailed.tipo_persona,
+        tipo_proveedor: detailed.tipo_proveedor,
+        razon_social: detailed.razon_social,
+        nombre_comercial: detailed.nombre_comercial,
+        tipo_documento: detailed.tipo_documento,
+        numero_documento: detailed.numero_documento,
+        nit: detailed.nit ?? '',
+        telefono: detailed.telefono ?? '',
+        email: detailed.email ?? '',
+        departamento: detailed.departamento,
+        ciudad: detailed.ciudad ?? null,
         direccion: detailed.direccion ?? '',
+        modalidad_logistica: detailed.modalidad_logistica ?? null,
         productos_suministrados: detailed.productos_suministrados ?? [],
-        is_active: proveedor.is_active,
+        is_active: detailed.is_active,
       });
       setPiId(detailed.parte_interesada_id ?? null);
       setPiNombre(detailed.parte_interesada_nombre ?? '');
-    } else if (!proveedor && isOpen) {
+    } else {
+      // CREATE: reset una sola vez al abrir (isOpen va de false→true)
       reset(DEFAULT_VALUES);
       setPiId(null);
       setPiNombre('');
     }
-  }, [proveedor, isOpen, reset]);
+    // Intencionalmente NO incluimos `reset` — usamos ref estable de RHF.
+    // Incluir `reset` dispara el efecto en cada render cuando el form cambia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proveedor, proveedorDetail, isOpen]);
 
   const tipoPersona = watch('tipo_persona');
   const esEmpresa = tipoPersona === 'empresa';
@@ -222,15 +274,15 @@ export default function ProveedorFormModal({
     }
   }, [esEmpresa, nitTipoDocId, setValue, watch]);
 
-  // Opciones para el combobox de productos MP
+  // Opciones para el combobox de productos/servicios suministrables
   const productosOptions = useMemo(
     () =>
-      productosMP.map((p) => ({
+      productosSuministrables.map((p) => ({
         value: p.id,
         label: p.nombre,
-        description: p.codigo ? `Código: ${p.codigo}` : undefined,
+        description: p.codigo ? `${p.codigo} · ${PRODUCTO_TIPO_LABELS[p.tipo]}` : undefined,
       })),
-    [productosMP]
+    [productosSuministrables]
   );
 
   // ─── Submit ───
@@ -253,6 +305,7 @@ export default function ProveedorFormModal({
       departamento: data.departamento ?? null,
       ciudad: data.ciudad ?? null,
       direccion: data.direccion || undefined,
+      modalidad_logistica: data.modalidad_logistica ?? null,
       productos_suministrados: data.productos_suministrados || [],
       parte_interesada_id: piId,
       parte_interesada_nombre: piNombre || undefined,
@@ -460,23 +513,55 @@ export default function ProveedorFormModal({
               placeholder="Ej: Calle 123 #45-67"
             />
           </div>
+          {/* Fase 1 modalidad: se define al crear el proveedor y aplica a todas sus MPs */}
+          <div className="md:col-span-2">
+            <Select
+              label="Modalidad logística"
+              value={watch('modalidad_logistica') ?? ''}
+              onChange={(e) => {
+                const v = e.target.value ? Number(e.target.value) : null;
+                setValue('modalidad_logistica', v, { shouldDirty: true });
+              }}
+              helperText="Define cómo llega la materia prima desde este proveedor. Se aplica a todas sus MPs."
+            >
+              <option value="">Sin modalidad definida</option>
+              {modalidadesLogistica.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       </Card>
 
-      {/* 3. PRODUCTOS SUMINISTRADOS */}
+      {/* 3. PRODUCTOS / SERVICIOS SUMINISTRADOS */}
       <Card variant="bordered" padding="md">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
-          Productos suministrados
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+          Productos / Servicios suministrados
         </h3>
-        {productosMP.length === 0 ? (
+        {tipoProveedorSeleccionado && tiposPermitidos && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            Según el tipo de proveedor seleccionado, se filtran:{' '}
+            <span className="font-medium">
+              {tiposPermitidos.map((t) => PRODUCTO_TIPO_LABELS[t]).join(', ')}
+            </span>
+          </p>
+        )}
+        {!tipoProveedorSeleccionado ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            No hay productos tipo Materia Prima registrados. Puede agregar productos desde el
-            Catálogo y regresar aquí.
+            Selecciona primero el <strong>Tipo de proveedor</strong> arriba para filtrar qué puede
+            suministrar.
+          </p>
+        ) : productosSuministrables.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No hay productos/servicios del tipo requerido. Crea uno en el Catálogo de Productos y
+            regresa aquí.
           </p>
         ) : (
           <MultiSelectCombobox
-            label="Materias primas que suministra"
-            placeholder="Seleccionar productos..."
+            label="Productos/servicios que suministra"
+            placeholder="Seleccionar..."
             emptyMessage="Sin resultados. Pruebe con otra búsqueda."
             options={productosOptions}
             value={(watch('productos_suministrados') || []) as number[]}

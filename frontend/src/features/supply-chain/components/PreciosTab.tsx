@@ -32,6 +32,7 @@ interface ResumenProveedor {
   codigo_interno: string;
   nombre_comercial: string;
   razon_social: string;
+  modalidad_logistica_nombre: string | null;
   total_mps: number;
   con_precio: number;
   pendientes: number;
@@ -72,6 +73,7 @@ export function PreciosTab() {
       codigo_interno: p.codigo_interno,
       nombre_comercial: p.nombre_comercial,
       razon_social: p.razon_social,
+      modalidad_logistica_nombre: p.modalidad_logistica_nombre ?? null,
       total_mps: 0, // se detalla al abrir modal
       con_precio: preciosPorProv.get(p.id) ?? 0,
       pendientes: 0, // se detalla al abrir modal
@@ -170,6 +172,9 @@ export function PreciosTab() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                     Proveedor
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    Modalidad
+                  </th>
                   <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                     Precios asignados
                   </th>
@@ -195,6 +200,13 @@ export function PreciosTab() {
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {p.razon_social}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {p.modalidad_logistica_nombre ? (
+                        <Badge variant="info">{p.modalidad_logistica_nombre}</Badge>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm">
                       {p.con_precio > 0 ? (

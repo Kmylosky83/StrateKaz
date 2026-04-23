@@ -29,7 +29,17 @@ import {
   useUpdateTipoProveedor,
   useDeleteTipoProveedor,
 } from '../hooks/useProveedores';
-import type { TipoProveedor, CreateTipoProveedorDTO } from '../types/proveedor.types';
+import type {
+  TipoProveedor,
+  CreateTipoProveedorDTO,
+  TipoProductoPermitido,
+} from '../types/proveedor.types';
+import { TIPO_PRODUCTO_PERMITIDO_LABELS } from '../types/proveedor.types';
+
+const TIPO_PRODUCTO_OPTIONS = Object.entries(TIPO_PRODUCTO_PERMITIDO_LABELS) as [
+  TipoProductoPermitido,
+  string,
+][];
 
 export default function TiposProveedorTab() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -53,6 +63,7 @@ export default function TiposProveedorTab() {
       descripcion: '',
       requiere_materia_prima: false,
       requiere_modalidad_logistica: false,
+      tipos_productos_permitidos: [],
       orden: 0,
       is_active: true,
     },
@@ -60,8 +71,18 @@ export default function TiposProveedorTab() {
   const {
     register,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = form;
+
+  const tiposSeleccionados = watch('tipos_productos_permitidos') ?? [];
+
+  const toggleTipoProducto = (tipo: TipoProductoPermitido) => {
+    const current = tiposSeleccionados;
+    const next = current.includes(tipo) ? current.filter((t) => t !== tipo) : [...current, tipo];
+    setValue('tipos_productos_permitidos', next, { shouldDirty: true });
+  };
 
   function openCreate() {
     setEditing(null);
@@ -71,6 +92,7 @@ export default function TiposProveedorTab() {
       descripcion: '',
       requiere_materia_prima: false,
       requiere_modalidad_logistica: false,
+      tipos_productos_permitidos: [],
       orden: 0,
       is_active: true,
     });
@@ -85,6 +107,7 @@ export default function TiposProveedorTab() {
       descripcion: t.descripcion ?? '',
       requiere_materia_prima: t.requiere_materia_prima,
       requiere_modalidad_logistica: t.requiere_modalidad_logistica,
+      tipos_productos_permitidos: t.tipos_productos_permitidos ?? [],
       orden: t.orden,
       is_active: t.is_active,
     });
@@ -243,11 +266,43 @@ export default function TiposProveedorTab() {
           placeholder="Breve descripción del tipo (opcional)"
           {...register('descripcion')}
         />
-        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-          <input type="checkbox" {...register('requiere_materia_prima')} className="rounded" />
-          Requiere productos suministrados
-          <span className="text-xs text-slate-400">(Ej: Fabricante de materias primas)</span>
-        </label>
+
+        {/* Tipos de productos permitidos — configuración dinámica */}
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+          <div>
+            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              ¿Qué puede suministrar este tipo de proveedor?
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Filtra qué productos/servicios aparecen al crear un proveedor de este tipo. Si no
+              seleccionas ninguno, se permiten todos.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {TIPO_PRODUCTO_OPTIONS.map(([value, label]) => {
+              const selected = tiposSeleccionados.includes(value);
+              return (
+                <label
+                  key={value}
+                  className={`flex items-center gap-2 text-sm rounded-md border px-3 py-2 cursor-pointer transition-colors ${
+                    selected
+                      ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => toggleTipoProducto(value)}
+                    className="rounded"
+                  />
+                  {label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
         <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
           <input
             type="checkbox"

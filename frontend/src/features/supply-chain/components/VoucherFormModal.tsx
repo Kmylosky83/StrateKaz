@@ -27,7 +27,10 @@ import { Badge } from '@/components/common/Badge';
 import apiClient from '@/api/axios-config';
 
 import { useCreateVoucher } from '../hooks/useRecepcion';
-import { useProveedores } from '../hooks/useProveedores';
+// H-SC-03 F8: Proveedor vive en catalogo_productos (CT layer) desde 2026-04-21
+// (Opción A). El hook legacy en supply-chain/hooks apunta al endpoint viejo
+// que ya no lista proveedores nuevos.
+import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
 import type { ModalidadEntrega } from '../types/recepcion.types';
 

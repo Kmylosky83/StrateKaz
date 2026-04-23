@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Edit, Trash2, Package, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 
@@ -11,7 +11,9 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { FormModal } from '@/components/modals/FormModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Switch } from '@/components/forms/Switch';
 import { Textarea } from '@/components/forms/Textarea';
+import { PageTabs } from '@/components/layout/PageTabs';
 
 import { useSectionPermissions } from '@/components/common/ProtectedAction';
 import { Modules, Sections } from '@/constants/permissions';
@@ -39,12 +41,22 @@ const TIPO_BADGE_VARIANT: Record<ProductoTipo, 'default' | 'success' | 'warning'
   SERVICIO: 'default',
 };
 
+type TipoFiltro = 'TODOS' | ProductoTipo;
+
+const TABS_TIPO: { id: TipoFiltro; label: string }[] = [
+  { id: 'TODOS', label: 'Todos' },
+  { id: 'MATERIA_PRIMA', label: 'Materia prima' },
+  { id: 'INSUMO', label: 'Insumos' },
+  { id: 'PRODUCTO_TERMINADO', label: 'Prod. terminados' },
+  { id: 'SERVICIO', label: 'Servicios' },
+];
+
 export default function ProductosTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Producto | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [codigoManual, setCodigoManual] = useState(false);
-  const [showOpcionales, setShowOpcionales] = useState(false);
+  const [tipoFiltro, setTipoFiltro] = useState<TipoFiltro>('TODOS');
 
   // RBAC granular
   const { canCreate, canEdit, canDelete } = useSectionPermissions(
@@ -56,16 +68,24 @@ export default function ProductosTab() {
   const { data: categorias = [] } = useCategorias();
   const { data: unidades = [] } = useUnidadesMedida();
 
+  // Productos filtrados según el tab activo
+  const productosFiltrados = useMemo(
+    () => (tipoFiltro === 'TODOS' ? productos : productos.filter((p) => p.tipo === tipoFiltro)),
+    [productos, tipoFiltro]
+  );
+
   const createMutation = useCreateProducto();
   const updateMutation = useUpdateProducto();
   const deleteMutation = useDeleteProducto();
 
   const form = useForm<CreateProductoDTO>({
-    defaultValues: { tipo: 'MATERIA_PRIMA' },
+    defaultValues: { tipo: 'MATERIA_PRIMA', requiere_qc_recepcion: false },
   });
   const {
     register,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = form;
 
@@ -82,15 +102,22 @@ export default function ProductosTab() {
   function openCreate() {
     setEditing(null);
     setCodigoManual(false);
-    setShowOpcionales(false);
-    reset({ codigo: '', nombre: '', descripcion: '', tipo: 'MATERIA_PRIMA', sku: '', notas: '' });
+    // Pre-selecciona el tipo del tab activo (si no es TODOS)
+    const tipoDefault: ProductoTipo = tipoFiltro === 'TODOS' ? 'MATERIA_PRIMA' : tipoFiltro;
+    reset({
+      codigo: '',
+      nombre: '',
+      descripcion: '',
+      tipo: tipoDefault,
+      notas: '',
+      requiere_qc_recepcion: false,
+    });
     setModalOpen(true);
   }
 
   function openEdit(p: Producto) {
     setEditing(p);
     setCodigoManual(true);
-    setShowOpcionales(!!(p.precio_referencia || p.sku || p.notas));
     reset({
       codigo: p.codigo,
       nombre: p.nombre,
@@ -98,9 +125,8 @@ export default function ProductosTab() {
       categoria: p.categoria ?? undefined,
       unidad_medida: p.unidad_medida,
       tipo: p.tipo,
-      precio_referencia: p.precio_referencia ?? undefined,
-      sku: p.sku,
       notas: p.notas,
+      requiere_qc_recepcion: p.requiere_qc_recepcion,
     });
     setModalOpen(true);
   }
@@ -115,7 +141,6 @@ export default function ProductosTab() {
       codigo: codigoManual || editing ? raw.codigo || undefined : undefined,
       categoria: raw.categoria ? Number(raw.categoria) : null,
       unidad_medida: Number(raw.unidad_medida),
-      precio_referencia: raw.precio_referencia || null,
     };
     if (editing) {
       updateMutation.mutate({ id: editing.id, data }, { onSuccess: closeModal });
@@ -133,11 +158,19 @@ export default function ProductosTab() {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
+      {/* Tabs por tipo + acción crear */}
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+        <PageTabs
+          tabs={TABS_TIPO}
+          activeTab={tipoFiltro}
+          onTabChange={(t) => setTipoFiltro(t as TipoFiltro)}
+          variant="underline"
+          size="sm"
+        />
         {canCreate && (
           <Button onClick={openCreate} size="sm">
             <Plus className="w-4 h-4 mr-1" />
-            Nuevo producto
+            Nuevo {tipoFiltro === 'SERVICIO' ? 'servicio' : 'producto'}
           </Button>
         )}
       </div>
@@ -147,10 +180,10 @@ export default function ProductosTab() {
           <div className="flex justify-center py-12">
             <Spinner />
           </div>
-        ) : productos.length === 0 ? (
+        ) : productosFiltrados.length === 0 ? (
           <EmptyState
             icon={<Package className="w-8 h-8 text-slate-400" />}
-            title="Sin productos"
+            title={`Sin ${tipoFiltro === 'TODOS' ? 'productos' : PRODUCTO_TIPO_LABELS[tipoFiltro].toLowerCase()}`}
             description="Crea el primer producto del catálogo maestro"
           />
         ) : (
@@ -161,6 +194,7 @@ export default function ProductosTab() {
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">
                     Código
                   </th>
+                  <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">SKU</th>
                   <th className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400">
                     Nombre
                   </th>
@@ -180,10 +214,13 @@ export default function ProductosTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {productos.map((p) => (
+                {productosFiltrados.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">
                       {p.codigo}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-500">
+                      {p.sku || '—'}
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                       {p.nombre}
@@ -293,54 +330,33 @@ export default function ProductosTab() {
 
         <Textarea label="Descripción" rows={2} {...register('descripcion')} />
 
-        <button
-          type="button"
-          onClick={() => setShowOpcionales((v) => !v)}
-          className="text-xs text-primary hover:underline self-start"
-        >
-          {showOpcionales ? '− Ocultar' : '+ Mostrar'} información opcional
-        </button>
+        <Textarea
+          label="Notas"
+          rows={2}
+          placeholder="Información adicional (opcional)"
+          {...register('notas')}
+        />
 
-        {showOpcionales && (
-          <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-700">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="SKU / Código externo"
-                placeholder="7702001234567"
-                helperText="Código de barras, referencia del proveedor o ERP (EAN-13, SAP, INVIMA)"
-                {...register('sku')}
-              />
-              <Input
-                label="Precio estimado (referencia)"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                helperText="Valor estimado para presupuesto. El precio real se define por proveedor en Supply Chain."
-                {...register('precio_referencia')}
-              />
-            </div>
-            <Textarea label="Notas" rows={2} {...register('notas')} />
-
-            {/* H-SC-03: Control de calidad en recepción */}
-            <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/10 p-3 space-y-2">
-              <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="rounded mt-0.5"
-                  {...register('requiere_qc_recepcion')}
-                />
-                <span>
-                  <span className="font-medium">Requiere control de calidad en recepción</span>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Si está marcado, el voucher de recepción no podrá aprobarse sin registrar el QC
-                    (análisis fisicoquímico). Las especificaciones por parámetro se configuran
-                    aparte.
-                  </span>
-                </span>
-              </label>
+        {/* H-SC-03: Control de calidad en recepción */}
+        <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-900/10 p-3 space-y-2">
+          <div className="flex items-start gap-3">
+            <Switch
+              checked={watch('requiere_qc_recepcion') ?? false}
+              onCheckedChange={(checked) =>
+                setValue('requiere_qc_recepcion', checked, { shouldDirty: true })
+              }
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                Requiere control de calidad en recepción
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Si está activado, el voucher de recepción no podrá aprobarse sin registrar el QC.
+                Las especificaciones por parámetro se configuran aparte.
+              </p>
             </div>
           </div>
-        )}
+        </div>
       </FormModal>
 
       <ConfirmDialog

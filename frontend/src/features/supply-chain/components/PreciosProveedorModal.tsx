@@ -20,7 +20,10 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 
-import { useModalidadesLogistica } from '../hooks/usePrecios';
+// Fase 1 modalidad: la modalidad ahora es atributo del proveedor, no del
+// precio. Se conservan los campos modalidad_logistica en el payload batch
+// como no-op para compatibilidad con el endpoint actual — enviados como
+// null. La modalidad se muestra como contexto en PreciosTab.
 import { getPreciosPorProveedor, guardarPreciosPorProveedor } from '../api/precios.api';
 import type { PrecioMPPorProveedorRow, BatchPrecioItem } from '../types/precio.types';
 import { getApiErrorMessage } from '@/utils/errorUtils';
@@ -62,8 +65,6 @@ export default function PreciosProveedorModal({
     productoId: number;
     productoNombre: string;
   } | null>(null);
-
-  const { data: modalidades = [] } = useModalidadesLogistica();
 
   const { data, isLoading, refetch } = useQuery<PrecioMPPorProveedorRow[]>({
     queryKey: ['sc-precios-por-proveedor', proveedorId],
@@ -209,9 +210,6 @@ export default function PreciosProveedorModal({
                 <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-40">
                   Precio/kg (COP)
                 </th>
-                <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-48">
-                  Modalidad
-                </th>
                 <th className="px-3 py-2 text-right font-semibold uppercase tracking-wider text-xs text-gray-600 dark:text-gray-300 w-24">
                   Historial
                 </th>
@@ -261,25 +259,6 @@ export default function PreciosProveedorModal({
                       <div className="text-xs text-gray-500 mt-0.5">
                         por {fila.unidad_medida || 'kg'}
                       </div>
-                    </td>
-                    <td className="px-2 py-2">
-                      <select
-                        disabled={!canEdit}
-                        value={row.modalidad_logistica ?? ''}
-                        onChange={(e) =>
-                          updateRow(fila.producto, {
-                            modalidad_logistica: e.target.value ? Number(e.target.value) : null,
-                          })
-                        }
-                        className="w-full px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
-                      >
-                        <option value="">Sin modalidad</option>
-                        {modalidades.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nombre}
-                          </option>
-                        ))}
-                      </select>
                     </td>
                     <td className="px-2 py-2 text-right">
                       {!fila.es_pendiente && (

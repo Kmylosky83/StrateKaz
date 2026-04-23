@@ -59,6 +59,23 @@ class TipoProveedor(models.Model):
         verbose_name='Requiere modalidad logística',
         help_text='Si es True, al asignar un precio se solicita la modalidad (entrega en planta / recolección).',
     )
+    # Configuración dinámica: qué tipos de productos puede suministrar este tipo de proveedor.
+    # Ejemplos:
+    #   "Proveedor MP"     → ["MATERIA_PRIMA"]
+    #   "Transportista"    → ["SERVICIO"]
+    #   "Consultor"        → ["SERVICIO"]
+    #   "Distribuidor"     → ["PRODUCTO_TERMINADO", "INSUMO"]
+    # Se valida contra Producto.TIPO_CHOICES.
+    tipos_productos_permitidos = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Tipos de productos/servicios permitidos',
+        help_text=(
+            'Lista de tipos de producto que este tipo de proveedor puede suministrar. '
+            'Valores válidos: MATERIA_PRIMA, INSUMO, PRODUCTO_TERMINADO, SERVICIO. '
+            'Vacío = se permiten todos.'
+        ),
+    )
     orden = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -170,6 +187,20 @@ class Proveedor(TenantModel):
         verbose_name='Departamento',
     )
     direccion = models.TextField(blank=True, default='', verbose_name='Dirección')
+
+    # --- Modalidad logística (cómo llega la MP desde este proveedor) ---
+    # Define si el proveedor entrega en planta o si la empresa lo recolecta.
+    # Se establece al crear el proveedor y aplica a todas sus MPs.
+    # Reemplaza el campo deprecated PrecioMateriaPrima.modalidad_logistica.
+    modalidad_logistica = models.ForeignKey(
+        'gestion_proveedores.ModalidadLogistica',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='proveedores_ct',
+        verbose_name='Modalidad logística',
+        help_text='Forma de entrega habitual del proveedor (entrega en planta / recolección en punto).',
+    )
 
     # --- Productos suministrados (M2M al catálogo maestro de la misma app) ---
     productos_suministrados = models.ManyToManyField(

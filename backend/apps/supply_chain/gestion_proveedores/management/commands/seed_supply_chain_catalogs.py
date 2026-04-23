@@ -137,6 +137,7 @@ class Command(BaseCommand):
                 'descripcion': 'Suministra materias primas para producción',
                 'requiere_materia_prima': True,
                 'requiere_modalidad_logistica': True,
+                'tipos_productos_permitidos': ['MATERIA_PRIMA'],
                 'orden': 1,
             },
             {
@@ -145,6 +146,7 @@ class Command(BaseCommand):
                 'descripcion': 'Suministra productos terminados o servicios profesionales',
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': False,
+                'tipos_productos_permitidos': ['PRODUCTO_TERMINADO', 'INSUMO', 'SERVICIO'],
                 'orden': 2,
             },
             {
@@ -153,6 +155,7 @@ class Command(BaseCommand):
                 'descripcion': 'Proveedor que es una unidad de negocio propia o filial',
                 'requiere_materia_prima': True,
                 'requiere_modalidad_logistica': True,
+                'tipos_productos_permitidos': ['MATERIA_PRIMA', 'PRODUCTO_TERMINADO'],
                 'orden': 3,
             },
             {
@@ -161,6 +164,7 @@ class Command(BaseCommand):
                 'descripcion': 'Proveedor de servicios de transporte y logística',
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': True,
+                'tipos_productos_permitidos': ['SERVICIO'],
                 'orden': 4,
             },
             {
@@ -169,6 +173,7 @@ class Command(BaseCommand):
                 'descripcion': 'Proveedor de servicios de consultoría, auditoría o asesoría',
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': False,
+                'tipos_productos_permitidos': ['SERVICIO'],
                 'orden': 5,
             },
             {
@@ -177,6 +182,7 @@ class Command(BaseCommand):
                 'descripcion': 'Proveedor de obras civiles, mantenimiento u otros contratos',
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': False,
+                'tipos_productos_permitidos': ['SERVICIO'],
                 'orden': 6,
             },
         ]

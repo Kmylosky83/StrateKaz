@@ -478,6 +478,11 @@ class Producto(TenantModel):
     def save(self, *args, **kwargs):
         if not self.pk and not self.codigo:
             self.codigo = self.generar_codigo(tipo=self.tipo)
+        # Auto-generar SKU a partir del código interno si no se proporciona.
+        # El tenant puede sobrescribirlo con un código externo real (EAN-13,
+        # SKU de proveedor, etc.) mediante API/admin si lo necesita.
+        if not self.sku:
+            self.sku = self.codigo
         super().save(*args, **kwargs)
 
 

@@ -11,6 +11,16 @@
 
 export type TipoPersona = 'natural' | 'empresa';
 
+/** Los 4 tipos de producto que un TipoProveedor puede suministrar. */
+export type TipoProductoPermitido = 'MATERIA_PRIMA' | 'INSUMO' | 'PRODUCTO_TERMINADO' | 'SERVICIO';
+
+export const TIPO_PRODUCTO_PERMITIDO_LABELS: Record<TipoProductoPermitido, string> = {
+  MATERIA_PRIMA: 'Materia prima',
+  INSUMO: 'Insumo',
+  PRODUCTO_TERMINADO: 'Producto terminado',
+  SERVICIO: 'Servicio',
+};
+
 export interface TipoProveedor {
   id: number;
   codigo: string;
@@ -18,6 +28,11 @@ export interface TipoProveedor {
   descripcion: string | null;
   requiere_materia_prima: boolean;
   requiere_modalidad_logistica: boolean;
+  /**
+   * Qué tipos de productos/servicios puede suministrar este tipo de proveedor.
+   * Vacío = permite todos. El FormModal filtra productos según esta lista.
+   */
+  tipos_productos_permitidos: TipoProductoPermitido[];
   orden: number;
   is_active: boolean;
 }
@@ -28,6 +43,7 @@ export interface CreateTipoProveedorDTO {
   descripcion?: string;
   requiere_materia_prima?: boolean;
   requiere_modalidad_logistica?: boolean;
+  tipos_productos_permitidos?: TipoProductoPermitido[];
   orden?: number;
   is_active?: boolean;
 }
@@ -54,6 +70,9 @@ export interface Proveedor {
   ciudad_nombre: string | null;
   departamento: number | null;
   departamento_nombre: string | null;
+  // Fase 1 modalidad: modalidad logística del proveedor (entrega planta / recolección).
+  modalidad_logistica: number | null;
+  modalidad_logistica_nombre: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -81,6 +100,7 @@ export interface CreateProveedorDTO {
   ciudad?: number | null;
   departamento?: number | null;
   direccion?: string;
+  modalidad_logistica?: number | null;
   productos_suministrados?: number[];
   parte_interesada_id?: number | null;
   parte_interesada_nombre?: string;

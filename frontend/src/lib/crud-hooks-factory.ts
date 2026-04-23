@@ -136,8 +136,12 @@ export function createCrudHooks<T, CreateDTO = Partial<T>, UpdateDTO = Partial<T
       const queryClient = useQueryClient();
       return useMutation({
         mutationFn: ({ id, data }: { id: number; data: UpdateDTO }) => api.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, { id }) => {
           queryClient.invalidateQueries({ queryKey: keys.lists() });
+          // Invalida también el detail del recurso actualizado para que los
+          // modales de edición vean los cambios al reabrir (ej: productos M2M,
+          // vínculos a otras entidades).
+          queryClient.invalidateQueries({ queryKey: keys.detail(id) });
           toast.success(`${entityName} ${suffix.updated} exitosamente`);
         },
         onError: (error) => {

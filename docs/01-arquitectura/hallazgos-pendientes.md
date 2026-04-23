@@ -2391,3 +2391,188 @@ Documentado en detalle en plan agent H-SC-01 (sesión 2026-04-22 tarde).
 
 ### Estado
 🔲 Abierto. Prioridad: **media — puede esperar tras H-SC-05/02/04/06**.
+
+---
+
+## H-PROD-01 — ConsecutivoConfig 'PRODUCTO_MP' DoesNotExist (Sentry, 5 events)
+
+### Origen
+Sentry `PYTHON-DJANGO-3K`. Detectado 2026-04-23 en auditoría de issues.
+Primero visto: 2026-04-21. Último: 2026-04-21.
+
+### Síntoma
+`ConsecutivoConfig.DoesNotExist: No existe configuración de consecutivo para el código 'PRODUCTO_MP'`
+en `POST /api/catalogo-productos/productos/`.
+Stack: `models_consecutivos.py:380 obtener_siguiente_consecutivo` con `empresa_id=None`.
+
+### Estado actual del código
+El modelo `Producto.generar_codigo()` **ya usa `siguiente_consecutivo_scan`** (scan local),
+NO llama a `ConsecutivoConfig`. Los 5 eventos son de releases `99a9909d47b27` y `ab26877a7c55`
+(período de transición), y el usuario confirmó que productos MP se crean correctamente hoy.
+
+### Hipótesis
+Los eventos son artefactos de la transición (versión anterior del código aún desplegada
+en workers Gunicorn durante el rolling restart). La instancia en producción ya funciona.
+
+### Acción pendiente
+1. Verificar en VPS que `Producto.generar_codigo()` actual usa `siguiente_consecutivo_scan`
+2. Si se confirma, marcar issue en Sentry como **Resuelto**
+3. Si todavía existe alguna ruta que llame a `ConsecutivoConfig` con `PRODUCTO_MP`,
+   migrarla a `siguiente_consecutivo_scan`
+
+### Estado
+🔲 Abierto. Prioridad: **media — verificación < 15 min en VPS**.
+
+---
+
+## H-PROD-02 — InterfaceError: DB connection closed en Celery Beat (Sentry)
+
+### Origen
+Sentry `PYTHON-DJANGO-34`. Detectado 2026-04-23.
+`celery.beat` proceso en estado **Ongoing** (recurrente).
+
+### Síntoma
+`InterfaceError: connection already closed` en
+`django.db.models.sql.compiler.execute_sql` desde `celery.beat`.
+El beat mantiene una conexión de larga duración que PostgreSQL cierra
+por timeout antes de que Django la detecte.
+
+### Causa raíz probable
+`CONN_MAX_AGE` no está configurado (o está en `None` — persistente), lo que
+puede causar que conexiones idle sean cerradas por PostgreSQL (parámetro
+`tcp_keepalives_idle` del servidor) antes de que Django lo note.
+Django no tiene health-check automático en conexiones persistentes < 4.1.
+
+### Opciones de fix
+**Opción A (rápida):** `CONN_MAX_AGE = 0` en `base.py` — desactiva conexiones
+persistentes en Celery. Overhead mínimo, seguro para beat.
+
+**Opción B (elegante):** `CONN_MAX_AGE = 60` + `CONN_HEALTH_CHECKS = True`
+(Django 4.1+). Re-conecta antes de cada query si la conexión está muerta.
+
+**Opción C (infraestructura):** Configurar `pgbouncer` como connection pooler
+entre Celery Beat y PostgreSQL. Overkill para el VPS actual.
+
+### Restricción
+CONN_MAX_AGE aplica globalmente → verificar que no rompa Gunicorn (que sí
+puede beneficiarse de conexiones persistentes). Usar `DATABASES` con
+overrides por proceso si es necesario.
+
+### Estado
+🔲 Abierto. Prioridad: **media — no bloquea pero genera noise en Sentry**.
+
+---
+
+## H-PROD-03 — AppRegistryNotReady: django-tenants carga DB backend antes que app registry
+
+### Origen
+Sentry `PYTHON-DJANGO-3M`. Detectado 2026-04-23. Estado: **New**, 1 evento.
+Ocurrió durante deploy del 2026-04-21 (release `ab26877a7c55`).
+
+### Síntoma
+`AppRegistryNotReady: Apps aren't loaded yet.` en
+`<frozen importlib._bootstrap>:488 __call_with_frames_removed`.
+Crash en `django_tenants/postgresql_backend/base.py` line 1 — al importar
+el backend de DB antes que `django.setup()` complete.
+
+### Causa raíz
+`django-tenants` usa `DATABASES.ENGINE = django_tenants.postgresql_backend`.
+Durante un rolling restart o cuando un worker Gunicorn arranca, hay una
+ventana donde el backend de DB se importa (al leer `settings.py`) antes que
+el app registry esté disponible. Ocurre en deployments, no en operación normal.
+
+Seer Autofix lo confirma: *"initialization order is likely incorrect, possibly
+due to django-tenants loading a database backend before Django's app registry
+is fully ready."*
+
+### Acción pendiente
+Investigar si es un bug conocido de `django-tenants 3.10.0` con Python 3.12.
+Posibles mitigaciones:
+- Verificar `DJANGO_SETTINGS_MODULE` antes del startup en Gunicorn
+- `--preload` flag en Gunicorn para cargar app ANTES de fork de workers
+- Actualizar `django-tenants` si hay fix disponible (verificar compatibility)
+
+### Estado
+🔲 Abierto. Prioridad: **baja — ocurre solo en deploy, se auto-resuelve**.
+
+---
+
+## H-PROD-04 — Chunks JS obsoletos post-deploy (stale assets en /login y /dashboard)
+
+### Origen
+Sentry `APPSTRATEKAZ-V` y `APPSTRATEKAZ-P`. Detectados 2026-04-23.
+Ambos en estado **Ongoing** (recurrentes en cada deploy).
+
+### Síntoma
+- `TypeError: Failed to fetch dynamically imported module: .../NetworkBackground-Cr676EUx.js` en `/login`
+- `TypeError: Importing a module script failed.` en `/dashboard`
+
+Ocurre cuando un usuario tiene la app cargada en memoria (SPA) y se hace un
+deploy nuevo. El HTML de la SPA sigue referenciando chunks con hashes del
+build anterior, que ya no existen en el servidor.
+
+### Causa raíz
+Vite genera chunks con content-hash. Al deploy, los archivos viejos se borran.
+Usuarios con sesión activa durante el deploy intentan cargar chunks inexistentes → `TypeError`.
+No hay mecanismo de detección de "nueva versión disponible" que fuerce reload.
+
+### Opciones de solución
+**Opción A (mínima):** Retener chunks del build anterior en el servidor por
+24h post-deploy (`--keep-previous-build` o carpeta `/assets/previous/`).
+No resuelve el problema, solo lo atenúa.
+
+**Opción B (correcta):** Detectar "nueva versión" en el frontend y hacer
+reload automático cuando un chunk falla:
+```ts
+// vite.config.ts — chunk error handler
+window.addEventListener('vite:preloadError', () => window.location.reload())
+```
+Vite 5.x expone `vite:preloadError` cuando un dynamic import falla.
+
+**Opción C (proactiva):** Polling de versión: `GET /api/version/` cada 5 min,
+comparar con versión del build actual, mostrar banner "Nueva versión disponible".
+
+### Restricción
+Opción B es la más simple y estándar para Vite. Requiere 1 línea en `main.tsx`.
+
+### Estado
+🔲 Abierto. Prioridad: **baja — UX molesta pero no bloquea; fix es trivial (Opción B)**.
+
+---
+
+## H-PROD-05 — ✅ RESUELTO (2026-04-23) — activo→is_deleted en TablaRetencionDocumental
+
+### Origen
+Sentry `PYTHON-DJANGO-3J`. Tarea Celery `documental.procesar_retencion_documentos`.
+
+### Síntoma resuelto
+`FieldError: Cannot resolve keyword 'activo' into field` en
+`gestion_documental/services/documento_service.py:65`.
+El refactor `TenantModel` (S17) renombró `activo` → `is_deleted` pero
+`resolver_retencion()` seguía usando `.filter(activo=True)`.
+
+### Fix aplicado
+`activo=True` → `is_deleted=False` en
+`apps/gestion_estrategica/gestion_documental/services/documento_service.py:65`.
+
+### Estado
+✅ Resuelto. Commit: pendiente de push junto al fix de motor_cumplimiento routes.
+
+---
+
+## H-PROD-06 — ✅ RESUELTO (2026-04-23) — motor_cumplimiento routes activas con app desinstalada
+
+### Origen
+Sentry `PYTHON-DJANGO-2`. `KeyError: apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas`
+en `celery.worker.consumer`.
+
+### Síntoma resuelto
+`task_routes` en `config/celery.py` tenía 6 rutas de `motor_cumplimiento` activas
+aunque el beat_schedule ya estaba comentado. Celery Worker las registraba al arrancar
+e intentaba importar módulos no instalados → KeyError en `on_task_received`.
+
+### Fix aplicado
+Comentadas las 6 entradas de `motor_cumplimiento` en `task_routes` de `config/celery.py`.
+
+### Estado
+✅ Resuelto. Commit: pendiente de push.

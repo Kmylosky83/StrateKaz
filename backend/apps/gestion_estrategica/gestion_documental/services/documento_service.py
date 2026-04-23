@@ -62,7 +62,7 @@ class DocumentoService:
             trd = TablaRetencionDocumental.objects.filter(
                 tipo_documento=documento.tipo_documento,
                 proceso_id=documento.proceso_id,
-                activo=True,
+                is_deleted=False,
             ).first()
 
         if trd:

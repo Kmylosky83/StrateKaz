@@ -457,12 +457,12 @@ app.conf.task_routes = {
     'apps.tenant.tasks.check_tenant_expirations': {'queue': 'tenant_ops'},
     'apps.tenant.tasks.check_tenant_schema_integrity': {'queue': 'monitoring'},
 
-    # Motor de Cumplimiento tasks
-    'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},
-    'apps.motor_cumplimiento.tasks.check_license_expirations': {'queue': 'compliance'},
-    'apps.motor_cumplimiento.tasks.send_expiration_notifications': {'queue': 'notifications'},
-    'apps.motor_cumplimiento.tasks.generate_compliance_report': {'queue': 'reports'},
-    'apps.motor_cumplimiento.tasks.update_requisito_status': {'queue': 'compliance'},
+    # Motor de Cumplimiento tasks — DESACTIVADO L20 (app no instalada)
+    # 'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},
+    # 'apps.motor_cumplimiento.tasks.check_license_expirations': {'queue': 'compliance'},
+    # 'apps.motor_cumplimiento.tasks.send_expiration_notifications': {'queue': 'notifications'},
+    # 'apps.motor_cumplimiento.tasks.generate_compliance_report': {'queue': 'reports'},
+    # 'apps.motor_cumplimiento.tasks.update_requisito_status': {'queue': 'compliance'},
 
     # Talent Hub tasks
     'apps.talent_hub.tasks.check_contratos_por_vencer': {'queue': 'notifications'},
@@ -496,8 +496,8 @@ app.conf.task_routes = {
     # 'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos': {'queue': 'compliance'},
     # 'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision': {'queue': 'notifications'},
 
-    # Evidencias Centralizadas tasks
-    'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas': {'queue': 'compliance'},
+    # Evidencias Centralizadas tasks — DESACTIVADO L20 (app no instalada)
+    # 'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas': {'queue': 'compliance'},
 
     # Gestion Documental tasks
     'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},

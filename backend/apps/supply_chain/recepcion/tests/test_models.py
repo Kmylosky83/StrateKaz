@@ -1,15 +1,19 @@
 """
 Tests de modelos de Recepción — Supply Chain S3
 
-Cubre VoucherRecepcion + RecepcionCalidad:
+Cubre VoucherRecepcion (header) + VoucherLineaMP + RecepcionCalidad:
 - Herencia TenantModel (soft_delete, timestamps, audit)
-- Cálculo automático peso_neto
-- Validaciones (pesos, precio, modalidad RECOLECCION)
-- Snapshot inmutable de precio
+- Cálculo automático peso_neto en VoucherLineaMP
+- Validaciones (pesos, modalidad RECOLECCION)
+- Peso neto total del voucher (suma de líneas)
 - OneToOne RecepcionCalidad con CASCADE
 - TextChoices
+
+NOTA: estos tests usan pytest.mark.django_db (patrón legacy). Son
+informativos en CI, no bloqueantes. Los tests bloqueantes están en
+test_qc_bloqueante.py con BaseTenantTestCase.
 """
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -17,8 +21,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
-from apps.supply_chain.recepcion.models import RecepcionCalidad, VoucherRecepcion
+from apps.supply_chain.recepcion.models import RecepcionCalidad, VoucherLineaMP, VoucherRecepcion
 
 pytestmark = pytest.mark.django_db
 
@@ -44,68 +47,59 @@ class TestVoucherTenantModel:
 
 
 # ==============================================================================
-# VoucherRecepcion — Cálculo peso_neto
+# VoucherLineaMP — Cálculo peso_neto
 # ==============================================================================
 
-class TestPesoNeto:
-    def test_calculo_automatico_en_save(self, voucher_base_kwargs):
-        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        assert v.peso_neto_kg == Decimal('1000.000')
+class TestPesoNetoLinea:
+    def test_calculo_automatico_en_save(self, voucher_con_linea):
+        linea = voucher_con_linea.lineas.first()
+        assert linea.peso_neto_kg == Decimal('1000.000')
 
-    def test_peso_tara_cero_ok(self, voucher_base_kwargs):
-        voucher_base_kwargs['peso_bruto_kg'] = Decimal('500.000')
-        voucher_base_kwargs['peso_tara_kg'] = Decimal('0.000')
+    def test_peso_tara_cero_ok(self, voucher_base_kwargs, producto_sebo):
         v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        assert v.peso_neto_kg == Decimal('500.000')
+        linea = VoucherLineaMP.objects.create(
+            voucher=v,
+            producto=producto_sebo,
+            peso_bruto_kg=Decimal('500.000'),
+            peso_tara_kg=Decimal('0.000'),
+        )
+        assert linea.peso_neto_kg == Decimal('500.000')
 
-    def test_peso_bruto_cero_rechazado(self, voucher_base_kwargs):
-        voucher_base_kwargs['peso_bruto_kg'] = Decimal('0.000')
-        v = VoucherRecepcion(**voucher_base_kwargs)
+    def test_peso_bruto_cero_rechazado(self, voucher_base_kwargs, producto_sebo):
+        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
+        linea = VoucherLineaMP(
+            voucher=v,
+            producto=producto_sebo,
+            peso_bruto_kg=Decimal('0.000'),
+            peso_tara_kg=Decimal('0.000'),
+        )
         with pytest.raises(ValidationError) as exc:
-            v.full_clean()
+            linea.full_clean()
         assert 'peso_bruto_kg' in exc.value.error_dict
 
-    def test_peso_tara_negativa_rechazada(self, voucher_base_kwargs):
-        voucher_base_kwargs['peso_tara_kg'] = Decimal('-1.000')
-        v = VoucherRecepcion(**voucher_base_kwargs)
+    def test_peso_tara_negativa_rechazada(self, voucher_base_kwargs, producto_sebo):
+        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
+        linea = VoucherLineaMP(
+            voucher=v,
+            producto=producto_sebo,
+            peso_bruto_kg=Decimal('500.000'),
+            peso_tara_kg=Decimal('-1.000'),
+        )
         with pytest.raises(ValidationError) as exc:
-            v.full_clean()
+            linea.full_clean()
         assert 'peso_tara_kg' in exc.value.error_dict
 
-    def test_tara_mayor_que_bruto_rechazada(self, voucher_base_kwargs):
-        voucher_base_kwargs['peso_bruto_kg'] = Decimal('100.000')
-        voucher_base_kwargs['peso_tara_kg'] = Decimal('200.000')
-        v = VoucherRecepcion(**voucher_base_kwargs)
+    def test_tara_mayor_que_bruto_rechazada(self, voucher_base_kwargs, producto_sebo):
+        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
+        linea = VoucherLineaMP(
+            voucher=v,
+            producto=producto_sebo,
+            peso_bruto_kg=Decimal('100.000'),
+            peso_tara_kg=Decimal('200.000'),
+        )
         with pytest.raises(ValidationError) as exc:
-            v.full_clean()
+            linea.full_clean()
         assert 'peso_tara_kg' in exc.value.error_dict
-
-
-# ==============================================================================
-# VoucherRecepcion — Precio snapshot inmutable
-# ==============================================================================
-
-class TestPrecioSnapshot:
-    def test_snapshot_se_captura(self, voucher_base_kwargs, precio_sebo):
-        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        assert v.precio_kg_snapshot == Decimal('3500.00')
-
-    def test_cambio_precio_maestro_no_afecta_voucher_existente(
-        self, voucher_base_kwargs, precio_sebo
-    ):
-        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        # Cambiar el precio maestro después
-        precio_sebo.precio_kg = Decimal('5000.00')
-        precio_sebo.save()
-        v.refresh_from_db()
-        assert v.precio_kg_snapshot == Decimal('3500.00')  # inmutable
-
-    def test_precio_negativo_rechazado(self, voucher_base_kwargs):
-        voucher_base_kwargs['precio_kg_snapshot'] = Decimal('-1.00')
-        v = VoucherRecepcion(**voucher_base_kwargs)
-        with pytest.raises(ValidationError) as exc:
-            v.full_clean()
-        assert 'precio_kg_snapshot' in exc.value.error_dict
 
 
 # ==============================================================================
@@ -151,19 +145,31 @@ class TestOCNullable:
 
 
 # ==============================================================================
-# VoucherRecepcion — Propiedades
+# VoucherRecepcion — Propiedades multi-línea
 # ==============================================================================
 
 class TestPropiedades:
-    def test_valor_total_estimado(self, voucher_base_kwargs):
-        v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        # 1000 kg × 3500 = 3.500.000
-        assert v.valor_total_estimado == Decimal('3500000.00')
+    def test_peso_neto_total(self, voucher_con_linea, producto_sebo):
+        # voucher_con_linea ya tiene una línea de 1050-50=1000 kg
+        assert voucher_con_linea.peso_neto_total == Decimal('1000.000')
 
-    def test_str(self, voucher_base_kwargs):
+    def test_peso_neto_total_multiples_lineas(self, voucher_base_kwargs, producto_sebo):
         v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
-        assert 'Finca El Prado' in str(v)
-        assert '1000' in str(v)
+        VoucherLineaMP.objects.create(
+            voucher=v, producto=producto_sebo,
+            peso_bruto_kg=Decimal('500.000'), peso_tara_kg=Decimal('50.000'),
+        )
+        VoucherLineaMP.objects.create(
+            voucher=v, producto=producto_sebo,
+            peso_bruto_kg=Decimal('300.000'), peso_tara_kg=Decimal('20.000'),
+        )
+        # 450 + 280 = 730
+        assert v.peso_neto_total == Decimal('730.000')
+
+    def test_str(self, voucher_con_linea):
+        s = str(voucher_con_linea)
+        assert 'Finca El Prado' in s
+        assert '1000' in s
 
 
 # ==============================================================================

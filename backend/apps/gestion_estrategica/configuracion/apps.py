@@ -6,3 +6,6 @@ class ConfiguracionConfig(AppConfig):
     name = 'apps.gestion_estrategica.configuracion'
     label = 'configuracion'
     verbose_name = 'Configuración del Sistema'
+
+    def ready(self):
+        import apps.gestion_estrategica.configuracion.signals  # noqa: F401

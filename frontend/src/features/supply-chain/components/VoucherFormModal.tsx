@@ -1,22 +1,21 @@
 /**
- * VoucherFormModal — Crear/editar VoucherRecepcion (H-SC-03 smoke)
+ * VoucherFormModal — Crear VoucherRecepcion (header + líneas)
  *
- * Formulario mínimo funcional para registrar un voucher de recepción
- * de MP. Auto-llena `precio_kg_snapshot` a partir del PrecioMP vigente
- * del proveedor + producto seleccionados.
+ * Un voucher agrupa N materias primas de un mismo proveedor en un solo
+ * viaje/pesaje. El precio NO se registra aquí (solo en Liquidacion).
  *
  * Flujo:
- *   1. Operador selecciona proveedor → se cargan productos MP suministrados
- *   2. Al seleccionar producto, se carga PrecioMP.precio_kg como snapshot
- *   3. Si el producto tiene `requiere_qc_recepcion=True`, el voucher nace
- *      PENDIENTE_QC y NO puede aprobarse hasta registrar QC (ver H-SC-03).
+ *   1. Operador selecciona proveedor → se cargan productos MP disponibles
+ *   2. Agrega una o más líneas: producto + peso bruto + peso tara
+ *   3. El peso neto se calcula en tiempo real por línea
+ *   4. Si algún producto tiene requiere_qc_recepcion=True, badge informativo
  */
 import { useEffect, useMemo } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Beaker, Package, Scale, Warehouse } from 'lucide-react';
+import { Beaker, Package, Plus, Scale, Trash2, Warehouse } from 'lucide-react';
 
 import { FormModal } from '@/components/modals/FormModal';
 import { Card } from '@/components/common/Card';
@@ -24,39 +23,39 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Badge } from '@/components/common/Badge';
+import { Button } from '@/components/common/Button';
 import apiClient from '@/api/axios-config';
 
 import { useCreateVoucher } from '../hooks/useRecepcion';
-// H-SC-03 F8: Proveedor vive en catalogo_productos (CT layer) desde 2026-04-21
-// (Opción A). El hook legacy en supply-chain/hooks apunta al endpoint viejo
-// que ya no lista proveedores nuevos.
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
 import type { ModalidadEntrega } from '../types/recepcion.types';
 
-// ─── Schema de validación ───
+// ─── Schemas Zod ───
+
+const lineaSchema = z
+  .object({
+    producto: z.coerce.number().int().min(1, 'Selecciona un producto'),
+    peso_bruto_kg: z.coerce.number().positive('El bruto debe ser mayor a cero'),
+    peso_tara_kg: z.coerce.number().min(0, 'La tara no puede ser negativa'),
+  })
+  .refine((d) => d.peso_tara_kg <= d.peso_bruto_kg, {
+    message: 'La tara no puede ser mayor que el bruto',
+    path: ['peso_tara_kg'],
+  });
+
 const voucherSchema = z
   .object({
-    proveedor: z.coerce.number().int().positive('Selecciona un proveedor'),
-    producto: z.coerce.number().int().positive('Selecciona un producto'),
+    proveedor: z.coerce.number().int().min(1, 'Selecciona un proveedor'),
     modalidad_entrega: z.enum(['DIRECTO', 'TRANSPORTE_INTERNO', 'RECOLECCION']),
     uneg_transportista: z.coerce.number().int().nullable().optional(),
     fecha_viaje: z.string().min(1, 'La fecha es obligatoria'),
-    peso_bruto_kg: z.coerce.number().positive('El peso bruto debe ser mayor a cero'),
-    peso_tara_kg: z.coerce.number().min(0, 'La tara no puede ser negativa'),
-    precio_kg_snapshot: z.coerce.number().nonnegative('El precio no puede ser negativo'),
-    almacen_destino: z.coerce.number().int().positive('Selecciona un almacén'),
+    almacen_destino: z.coerce.number().int().min(1, 'Selecciona un almacén'),
     operador_bascula: z.coerce.number().int().positive(),
     observaciones: z.string().optional(),
+    lineas: z.array(lineaSchema).min(1, 'Agrega al menos un producto'),
   })
   .superRefine((data, ctx) => {
-    if (data.peso_tara_kg > data.peso_bruto_kg) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['peso_tara_kg'],
-        message: 'La tara no puede ser mayor que el peso bruto',
-      });
-    }
     if (data.modalidad_entrega === 'RECOLECCION' && !data.uneg_transportista) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -68,36 +67,39 @@ const voucherSchema = z
 
 type VoucherFormValues = z.infer<typeof voucherSchema>;
 
+// ─── Constantes ───
+
 const MODALIDAD_OPTIONS: { value: ModalidadEntrega; label: string }[] = [
   { value: 'DIRECTO', label: 'Entrega directa del proveedor' },
   { value: 'TRANSPORTE_INTERNO', label: 'Transporte interno de la empresa' },
   { value: 'RECOLECCION', label: 'Recolección por la empresa' },
 ];
 
-interface VoucherFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentUserId: number;
-}
+const LINEA_VACIA = { producto: 0, peso_bruto_kg: 0, peso_tara_kg: 0 } as const;
 
-// ─── Queries auxiliares (inline) ───
+// ─── Interfaces auxiliares ───
+
 interface AlmacenListItem {
   id: number;
   codigo: string;
   nombre: string;
   permite_recepcion: boolean;
 }
+
 interface SedeListItem {
   id: number;
   nombre: string;
   tipo_unidad: string;
 }
+
 interface ProductoMini {
   id: number;
   codigo: string;
   nombre: string;
   requiere_qc_recepcion?: boolean;
 }
+
+// ─── Queries auxiliares (inline) ───
 
 function useAlmacenesRecepcion() {
   return useQuery({
@@ -125,18 +127,16 @@ function useSedesEmpresa() {
   });
 }
 
-function useProductoById(id: number | null | undefined) {
-  return useQuery({
-    queryKey: ['producto', id],
-    queryFn: async () => {
-      const resp = await apiClient.get<ProductoMini>(`/catalogo-productos/productos/${id}/`);
-      return resp.data;
-    },
-    enabled: !!id,
-  });
+// ─── Props ───
+
+interface VoucherFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentUserId: number;
 }
 
 // ─── Componente ───
+
 export default function VoucherFormModal({
   isOpen,
   onClose,
@@ -155,6 +155,7 @@ export default function VoucherFormModal({
         : ((proveedoresRaw as { results?: typeof proveedoresRaw })?.results ?? []),
     [proveedoresRaw]
   );
+
   const precios = useMemo(
     () =>
       Array.isArray(preciosMPRaw)
@@ -167,58 +168,49 @@ export default function VoucherFormModal({
     resolver: zodResolver(voucherSchema),
     defaultValues: {
       proveedor: 0,
-      producto: 0,
       modalidad_entrega: 'DIRECTO',
       uneg_transportista: null,
       fecha_viaje: new Date().toISOString().slice(0, 10),
-      peso_bruto_kg: 0,
-      peso_tara_kg: 0,
-      precio_kg_snapshot: 0,
       almacen_destino: 0,
       operador_bascula: currentUserId,
       observaciones: '',
+      lineas: [{ ...LINEA_VACIA }],
     },
   });
-  const { register, watch, setValue, formState, reset } = form;
+
+  const { register, watch, control, formState, reset } = form;
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'lineas',
+  });
 
   const proveedorSel = watch('proveedor');
-  const productoSel = watch('producto');
   const modalidadSel = watch('modalidad_entrega');
-  const pesoBruto = Number(watch('peso_bruto_kg') ?? 0);
-  const pesoTara = Number(watch('peso_tara_kg') ?? 0);
-  const pesoNeto = Math.max(pesoBruto - pesoTara, 0);
 
-  // Productos disponibles del proveedor (desde PrecioMP)
-  const productosDelProveedor = useMemo(() => {
-    if (!proveedorSel) return [];
-    const map = new Map<number, { id: number; nombre: string; codigo: string; precio: string }>();
+  // Productos disponibles del proveedor (deduplicados desde PrecioMP)
+  const productosDelProveedor = useMemo((): ProductoMini[] => {
+    if (!proveedorSel || Number(proveedorSel) === 0) return [];
+    const map = new Map<number, ProductoMini>();
     for (const p of precios) {
-      if (p.proveedor === Number(proveedorSel)) {
+      if (p.proveedor === Number(proveedorSel) && !map.has(p.producto)) {
         map.set(p.producto, {
           id: p.producto,
-          nombre: p.producto_nombre,
           codigo: p.producto_codigo,
-          precio: p.precio_kg,
+          nombre: p.producto_nombre,
+          // requiere_qc_recepcion no viene en PrecioMP — se omite aquí
         });
       }
     }
     return Array.from(map.values());
   }, [proveedorSel, precios]);
 
-  // Auto-fill precio cuando cambia producto
+  // Limpiar líneas cuando cambia el proveedor
   useEffect(() => {
-    if (!productoSel) return;
-    const item = productosDelProveedor.find((x) => x.id === Number(productoSel));
-    if (item) {
-      setValue('precio_kg_snapshot', Number(item.precio), { shouldDirty: true });
-    }
-  }, [productoSel, productosDelProveedor, setValue]);
+    form.setValue('lineas', [{ ...LINEA_VACIA }]);
+  }, [proveedorSel, form]);
 
-  // Cargar detalle del producto para mostrar badge QC
-  const { data: productoDetalle } = useProductoById(Number(productoSel) || null);
-  const requiereQC = productoDetalle?.requiere_qc_recepcion === true;
-
-  // Reset al abrir/cerrar
+  // Reset al cerrar modal
   useEffect(() => {
     if (!isOpen) {
       reset();
@@ -228,16 +220,17 @@ export default function VoucherFormModal({
   const handleSubmit = async (data: VoucherFormValues) => {
     await createMut.mutateAsync({
       proveedor: data.proveedor,
-      producto: data.producto,
       modalidad_entrega: data.modalidad_entrega,
       uneg_transportista: data.uneg_transportista ?? null,
       fecha_viaje: data.fecha_viaje,
-      peso_bruto_kg: data.peso_bruto_kg,
-      peso_tara_kg: data.peso_tara_kg,
-      precio_kg_snapshot: data.precio_kg_snapshot,
       almacen_destino: data.almacen_destino,
       operador_bascula: data.operador_bascula,
-      observaciones: data.observaciones || undefined,
+      observaciones: data.observaciones || '',
+      lineas: data.lineas.map((l) => ({
+        producto: l.producto,
+        peso_bruto_kg: l.peso_bruto_kg,
+        peso_tara_kg: l.peso_tara_kg,
+      })),
     });
     onClose();
   };
@@ -254,10 +247,10 @@ export default function VoucherFormModal({
       isLoading={createMut.isPending}
       size="xl"
     >
-      {/* PARTES */}
+      {/* ── LOGÍSTICA ── */}
       <Card variant="bordered" padding="md">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Package className="w-4 h-4" /> Partes
+          <Package className="w-4 h-4" /> Logística
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
@@ -273,46 +266,7 @@ export default function VoucherFormModal({
               </option>
             ))}
           </Select>
-          <Select
-            label="Producto (Materia Prima)"
-            required
-            helperText={
-              !proveedorSel
-                ? 'Primero selecciona un proveedor'
-                : productosDelProveedor.length === 0
-                  ? 'Este proveedor no tiene productos con precio vigente'
-                  : undefined
-            }
-            error={formState.errors.producto?.message}
-            disabled={!proveedorSel || productosDelProveedor.length === 0}
-            {...register('producto')}
-          >
-            <option value={0}>Seleccionar...</option>
-            {productosDelProveedor.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre} ({p.codigo})
-              </option>
-            ))}
-          </Select>
-        </div>
-        {requiereQC && (
-          <div className="mt-2 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-            <Beaker className="w-4 h-4" />
-            <Badge variant="warning" size="sm">
-              Requiere QC
-            </Badge>
-            <span className="text-xs">
-              El voucher se creará en estado PENDIENTE_QC y no podrá aprobarse sin registrar control
-              de calidad.
-            </span>
-          </div>
-        )}
-      </Card>
 
-      {/* LOGÍSTICA */}
-      <Card variant="bordered" padding="md">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Logística</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Modalidad de entrega"
             required
@@ -325,6 +279,7 @@ export default function VoucherFormModal({
               </option>
             ))}
           </Select>
+
           <Input
             label="Fecha del viaje"
             type="date"
@@ -332,9 +287,10 @@ export default function VoucherFormModal({
             error={formState.errors.fecha_viaje?.message}
             {...register('fecha_viaje')}
           />
+
           {modalidadSel === 'RECOLECCION' && (
             <Controller
-              control={form.control}
+              control={control}
               name="uneg_transportista"
               render={({ field }) => (
                 <Select
@@ -357,66 +313,140 @@ export default function VoucherFormModal({
         </div>
       </Card>
 
-      {/* PESAJE */}
+      {/* ── MATERIAS PRIMAS (líneas) ── */}
       <Card variant="bordered" padding="md">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Scale className="w-4 h-4" /> Pesaje (báscula)
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            label="Peso bruto (kg)"
-            type="number"
-            step="0.001"
-            required
-            error={formState.errors.peso_bruto_kg?.message}
-            {...register('peso_bruto_kg')}
-          />
-          <Input
-            label="Peso tara (kg)"
-            type="number"
-            step="0.001"
-            error={formState.errors.peso_tara_kg?.message}
-            {...register('peso_tara_kg')}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Peso neto (calc.)
-            </label>
-            <div className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-sm">
-              {pesoNeto.toLocaleString('es-CO', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 3,
-              })}{' '}
-              kg
-            </div>
-          </div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <Scale className="w-4 h-4" /> Materias Primas
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ ...LINEA_VACIA })}
+            disabled={!proveedorSel || Number(proveedorSel) === 0}
+          >
+            <Plus className="w-4 h-4 mr-1" /> Agregar producto
+          </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-          <Input
-            label="Precio por kg (snapshot)"
-            type="number"
-            step="0.01"
-            required
-            helperText="Se auto-llena con el precio vigente del proveedor. Editable si hay un acuerdo puntual."
-            error={formState.errors.precio_kg_snapshot?.message}
-            {...register('precio_kg_snapshot')}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Valor estimado (COP)
-            </label>
-            <div className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-sm">
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                maximumFractionDigits: 0,
-              }).format(pesoNeto * Number(watch('precio_kg_snapshot') || 0))}
-            </div>
+
+        {/* Error global de líneas */}
+        {formState.errors.lineas?.root?.message && (
+          <p className="text-xs text-danger-600 mb-2">{formState.errors.lineas.root.message}</p>
+        )}
+        {typeof formState.errors.lineas?.message === 'string' && (
+          <p className="text-xs text-danger-600 mb-2">{formState.errors.lineas.message}</p>
+        )}
+
+        {fields.length === 0 || Number(proveedorSel) === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+            Selecciona un proveedor y agrega al menos un producto.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {fields.map((field, index) => {
+              const pesoBruto = Number(watch(`lineas.${index}.peso_bruto_kg`) ?? 0);
+              const pesoTara = Number(watch(`lineas.${index}.peso_tara_kg`) ?? 0);
+              const pesoNeto = Math.max(pesoBruto - pesoTara, 0);
+
+              return (
+                <div
+                  key={field.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-3"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Línea {index + 1}
+                    </span>
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(index)}
+                        title="Eliminar línea"
+                      >
+                        <Trash2 className="w-3 h-3 text-danger-600" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    {/* Producto */}
+                    <div className="md:col-span-1">
+                      <Select
+                        label="Producto"
+                        required
+                        error={formState.errors.lineas?.[index]?.producto?.message}
+                        {...register(`lineas.${index}.producto`)}
+                      >
+                        <option value={0}>Seleccionar...</option>
+                        {productosDelProveedor.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre} ({p.codigo})
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+
+                    {/* Peso bruto */}
+                    <Input
+                      label="Bruto (kg)"
+                      type="number"
+                      step="0.001"
+                      required
+                      error={formState.errors.lineas?.[index]?.peso_bruto_kg?.message}
+                      {...register(`lineas.${index}.peso_bruto_kg`)}
+                    />
+
+                    {/* Peso tara */}
+                    <Input
+                      label="Tara (kg)"
+                      type="number"
+                      step="0.001"
+                      error={formState.errors.lineas?.[index]?.peso_tara_kg?.message}
+                      {...register(`lineas.${index}.peso_tara_kg`)}
+                    />
+
+                    {/* Peso neto (calculado) */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Neto (kg)
+                      </label>
+                      <div className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-sm">
+                        {pesoNeto.toLocaleString('es-CO', {
+                          minimumFractionDigits: 3,
+                          maximumFractionDigits: 3,
+                        })}{' '}
+                        kg
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Badge QC informativo (cuando el producto lo requiera) */}
+                  {(() => {
+                    const prodId = Number(watch(`lineas.${index}.producto`));
+                    const prod = productosDelProveedor.find((p) => p.id === prodId);
+                    return prod?.requiere_qc_recepcion ? (
+                      <div className="mt-2 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                        <Beaker className="w-4 h-4" />
+                        <Badge variant="warning" size="sm">
+                          Requiere QC
+                        </Badge>
+                        <span className="text-xs">
+                          Este producto exige control de calidad antes de aprobar el voucher.
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </Card>
 
-      {/* DESTINO */}
+      {/* ── DESTINO ── */}
       <Card variant="bordered" padding="md">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
           <Warehouse className="w-4 h-4" /> Destino

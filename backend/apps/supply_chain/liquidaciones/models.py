@@ -4,8 +4,9 @@ Modelo de Liquidación — Supply Chain S3
 Sesión 3 del Roadmap Supply Chain. Ver:
 docs/03-modulos/supply-chain/ROADMAP.md
 
-Liquidacion es OneToOne a VoucherRecepcion: registra el cálculo
-económico final de la recepción (peso × precio × ajustes de calidad).
+Liquidacion es OneToOne a VoucherLineaMP: registra el cálculo
+económico final de cada línea de recepción (peso × precio × ajustes).
+El precio se toma de PrecioMateriaPrima vigente al momento de liquidar.
 """
 from decimal import Decimal
 
@@ -17,12 +18,12 @@ from utils.models import TenantModel
 
 class Liquidacion(TenantModel):
     """
-    Liquidación económica de un VoucherRecepcion.
+    Liquidación económica de una VoucherLineaMP.
 
-    OneToOne con Voucher: una recepción aprobada genera exactamente una
-    liquidación. El cálculo congela el peso neto y el precio snapshot del
-    voucher, más ajustes opcionales por resultado de calidad (CONDICIONAL
-    puede aplicar descuento porcentual).
+    OneToOne con línea: una línea aprobada genera exactamente una
+    liquidación. El cálculo congela el peso neto de la línea y el precio
+    vigente de PrecioMateriaPrima, más ajustes opcionales por resultado
+    de calidad (CONDICIONAL puede aplicar descuento porcentual).
 
     Estados:
     - PENDIENTE: generada, aún no aprobada por contabilidad
@@ -36,11 +37,11 @@ class Liquidacion(TenantModel):
         PAGADA = 'PAGADA', 'Pagada'
         ANULADA = 'ANULADA', 'Anulada'
 
-    voucher = models.OneToOneField(
-        'sc_recepcion.VoucherRecepcion',
+    linea = models.OneToOneField(
+        'sc_recepcion.VoucherLineaMP',
         on_delete=models.PROTECT,
         related_name='liquidacion',
-        verbose_name='Voucher de recepción',
+        verbose_name='Línea de voucher de recepción',
     )
 
     # ─── Valores congelados al momento de liquidar ────────────────────
@@ -48,13 +49,13 @@ class Liquidacion(TenantModel):
         max_digits=10,
         decimal_places=2,
         verbose_name='Precio por kg aplicado',
-        help_text='Copia de VoucherRecepcion.precio_kg_snapshot',
+        help_text='Copia de PrecioMateriaPrima.precio_kg al momento de crear la liquidación.',
     )
     peso_neto_kg = models.DecimalField(
         max_digits=12,
         decimal_places=3,
         verbose_name='Peso neto (kg)',
-        help_text='Copia de VoucherRecepcion.peso_neto_kg',
+        help_text='Copia de VoucherLineaMP.peso_neto_kg',
     )
     subtotal = models.DecimalField(
         max_digits=14,
@@ -114,11 +115,11 @@ class Liquidacion(TenantModel):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['estado', '-created_at']),
-            models.Index(fields=['voucher']),
+            models.Index(fields=['linea']),
         ]
 
     def __str__(self):
-        return f"Liquidación #{self.pk} — Voucher #{self.voucher_id} ({self.total_liquidado})"
+        return f"Liquidación #{self.pk} — Línea #{self.linea_id} ({self.total_liquidado})"
 
     # ─── Cálculos ──────────────────────────────────────────────────────
     def calcular_valores(self):
@@ -151,17 +152,32 @@ class Liquidacion(TenantModel):
 
     # ─── Factory ───────────────────────────────────────────────────────
     @classmethod
-    def desde_voucher(cls, voucher, ajuste_calidad_pct=Decimal('0.00'), observaciones=''):
+    def desde_linea(cls, linea, ajuste_calidad_pct=Decimal('0.00'), observaciones=''):
         """
-        Factory para crear una liquidación a partir de un voucher aprobado.
+        Factory: crea Liquidacion desde una VoucherLineaMP aprobada.
 
-        Congela precio y peso del voucher. Aplica ajuste de calidad si
-        el QC del voucher resultó CONDICIONAL (el caller decide el %).
+        El precio se toma de PrecioMateriaPrima vigente al momento de liquidar.
+        Levanta ValidationError si no hay precio configurado para el par
+        proveedor × producto.
         """
+        from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
+        try:
+            precio_mp = PrecioMateriaPrima.objects.get(
+                proveedor=linea.voucher.proveedor,
+                producto=linea.producto,
+                is_deleted=False,
+            )
+            precio = precio_mp.precio_kg
+        except PrecioMateriaPrima.DoesNotExist:
+            raise ValidationError(
+                f"No hay precio configurado para '{linea.producto.nombre}' "
+                f"del proveedor '{linea.voucher.proveedor.nombre_comercial}'. "
+                f"Configúrelo en Precios de Supply Chain antes de aprobar."
+            )
         liq = cls(
-            voucher=voucher,
-            precio_kg_aplicado=voucher.precio_kg_snapshot,
-            peso_neto_kg=voucher.peso_neto_kg,
+            linea=linea,
+            precio_kg_aplicado=precio,
+            peso_neto_kg=linea.peso_neto_kg,
             ajuste_calidad_pct=ajuste_calidad_pct,
             observaciones=observaciones,
         )

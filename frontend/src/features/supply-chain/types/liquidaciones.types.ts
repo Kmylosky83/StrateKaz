@@ -1,12 +1,17 @@
 /**
  * Types TS para Liquidaciones (S3) — Liquidacion
+ *
+ * Post-refactor: Liquidacion ahora es OneToOne a VoucherLineaMP (no a VoucherRecepcion).
+ * El campo `linea` identifica la línea de MP. Los campos `voucher_proveedor` y
+ * `voucher_producto` se siguen exponiendo (calculados desde linea.voucher).
  */
 
 export type EstadoLiquidacion = 'PENDIENTE' | 'APROBADA' | 'PAGADA' | 'ANULADA';
 
 export interface Liquidacion {
   id: number;
-  voucher: number;
+  /** ID de la VoucherLineaMP asociada */
+  linea: number;
   voucher_proveedor?: string;
   voucher_producto?: string;
   precio_kg_aplicado: string;
@@ -23,7 +28,7 @@ export interface Liquidacion {
 }
 
 export interface CreateLiquidacionDTO {
-  voucher: number;
+  linea: number;
   precio_kg_aplicado: number | string;
   peso_neto_kg: number | string;
   ajuste_calidad_pct?: number | string;

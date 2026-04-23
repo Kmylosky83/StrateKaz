@@ -126,7 +126,7 @@ export default function RegistrarQCModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={`Registrar Control de Calidad — Voucher #${voucher.id}`}
-      subtitle={`${voucher.proveedor_nombre ?? 'Proveedor'} · ${voucher.producto_nombre ?? 'Producto'} · ${voucher.peso_neto_kg} kg`}
+      subtitle={`${voucher.proveedor_nombre ?? 'Proveedor'} · ${voucher.lineas_count ?? voucher.lineas?.length ?? 0} línea(s) · ${voucher.peso_neto_total ?? '0'} kg`}
       size="lg"
       footer={
         <div className="flex justify-end gap-2 w-full">

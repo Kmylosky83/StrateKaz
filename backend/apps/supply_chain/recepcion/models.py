@@ -4,7 +4,8 @@ Modelos para Recepción de Materia Prima — Supply Chain S3
 Sesión 3 del Roadmap Supply Chain (scale-based procurement / acopio).
 Ver: docs/03-modulos/supply-chain/ROADMAP.md
 
-VoucherRecepcion es el documento primario de ingreso de MP.
+VoucherRecepcion es el documento primario de ingreso de MP (header).
+VoucherLineaMP son las líneas de materia prima del voucher (N productos).
 RecepcionCalidad es el resultado opcional de QC aplicado al lote recibido.
 
 OC es nullable en VoucherRecepcion sin validación restrictiva — el uso
@@ -21,12 +22,11 @@ from utils.models import TenantModel
 
 class VoucherRecepcion(TenantModel):
     """
-    Documento primario de recepción de materia prima.
+    Documento primario de recepción de materia prima (header).
 
-    Registro generado al momento del pesaje en báscula. Inmutable después
-    de aprobado: el `precio_kg_snapshot` congela el precio vigente del
-    proveedor al momento de la recepción, garantizando que liquidaciones
-    posteriores usen ese valor aunque el precio maestro cambie.
+    Registro generado al momento del pesaje en báscula. Puede contener
+    N líneas de materia prima (VoucherLineaMP). El precio se obtiene de
+    PrecioMateriaPrima al momento de crear la Liquidacion (una por línea).
 
     Relación con OC: `orden_compra` es FK nullable sin validación rígida.
     Hoy MP típicamente no usa OC (acopio directo), pero el modelo soporta
@@ -51,13 +51,6 @@ class VoucherRecepcion(TenantModel):
         related_name='vouchers_recepcion',
         verbose_name='Proveedor',
         help_text='Proveedor que recibe la liquidación',
-    )
-    producto = models.ForeignKey(
-        'catalogo_productos.Producto',
-        on_delete=models.PROTECT,
-        related_name='vouchers_recepcion',
-        verbose_name='Producto',
-        help_text='Materia prima recibida (catálogo maestro)',
     )
 
     # ─── Logística entrega ─────────────────────────────────────────────
@@ -88,40 +81,6 @@ class VoucherRecepcion(TenantModel):
         related_name='vouchers_recepcion',
         verbose_name='Orden de compra',
         help_text='Opcional: típicamente MP no usa OC. Sin validación a nivel modelo.',
-    )
-
-    # ─── Pesaje ────────────────────────────────────────────────────────
-    peso_bruto_kg = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
-        verbose_name='Peso bruto (kg)',
-        help_text='Peso total incluyendo embalaje / vehículo',
-    )
-    peso_tara_kg = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
-        default=Decimal('0.000'),
-        verbose_name='Peso tara (kg)',
-        help_text='Peso del embalaje / vehículo vacío',
-    )
-    peso_neto_kg = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
-        editable=False,
-        verbose_name='Peso neto (kg)',
-        help_text='Calculado = bruto − tara',
-    )
-
-    # ─── Precio (snapshot inmutable) ───────────────────────────────────
-    precio_kg_snapshot = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Precio por kg (snapshot)',
-        help_text=(
-            'Copia inmutable de PrecioMateriaPrima.precio_kg al momento de '
-            'crear el voucher. Garantiza que liquidaciones no se alteren '
-            'si el precio maestro cambia.'
-        ),
     )
 
     # ─── Destino inventario ────────────────────────────────────────────
@@ -162,16 +121,122 @@ class VoucherRecepcion(TenantModel):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['proveedor', '-created_at']),
-            models.Index(fields=['producto', '-created_at']),
             models.Index(fields=['estado', '-created_at']),
             models.Index(fields=['fecha_viaje']),
             models.Index(fields=['almacen_destino']),
         ]
 
     def __str__(self):
-        return f"Voucher #{self.pk} — {self.proveedor} / {self.producto} ({self.peso_neto_kg} kg)"
+        return f"Voucher #{self.pk} — {self.proveedor} ({self.peso_neto_total} kg)"
 
-    # ─── Cálculos ──────────────────────────────────────────────────────
+    def clean(self):
+        super().clean()
+        if (
+            self.modalidad_entrega == self.ModalidadEntrega.RECOLECCION
+            and not self.uneg_transportista
+        ):
+            raise ValidationError({
+                'uneg_transportista': (
+                    'Modalidad RECOLECCION requiere especificar UNeg transportista.'
+                )
+            })
+
+    # ─── Properties QC (H-SC-03) ───────────────────────────────────────
+    @property
+    def requiere_qc(self) -> bool:
+        """True si alguna línea del voucher requiere QC en recepción."""
+        return self.lineas.filter(producto__requiere_qc_recepcion=True).exists()
+
+    @property
+    def tiene_qc(self) -> bool:
+        """True si ya existe un RecepcionCalidad asociado al voucher."""
+        return hasattr(self, 'calidad') and self.calidad is not None
+
+    # ─── Agregados de líneas ───────────────────────────────────────────
+    @property
+    def peso_neto_total(self):
+        """Suma de peso_neto_kg de todas las líneas."""
+        return sum((l.peso_neto_kg for l in self.lineas.all()), Decimal('0.000'))
+
+    # ─── Transiciones de estado ────────────────────────────────────────
+    def aprobar(self):
+        """
+        Transiciona el voucher a APROBADO.
+
+        Idempotente: si ya está APROBADO no hace nada.
+        Dispara el signal post_save que crea MovimientoInventario + Inventario
+        por cada línea en almacen_destino (ver apps.supply_chain.recepcion.signals).
+
+        H-SC-03: Bloquea la aprobación si alguna línea tiene un producto con
+        `requiere_qc_recepcion=True` y aún no existe RecepcionCalidad.
+        El QC debe ser registrado antes mediante el endpoint dedicado
+        `POST /api/supply-chain/vouchers/{id}/registrar-qc/`.
+        """
+        if self.estado == self.EstadoVoucher.APROBADO:
+            return
+        if self.estado != self.EstadoVoucher.PENDIENTE_QC:
+            raise ValidationError(
+                f"No se puede aprobar un voucher en estado "
+                f"{self.get_estado_display()}."
+            )
+        if not self.lineas.exists():
+            raise ValidationError(
+                "El voucher debe tener al menos una línea de materia prima."
+            )
+        # H-SC-03: validación bloqueante de QC obligatorio
+        if self.requiere_qc and not self.tiene_qc:
+            raise ValidationError(
+                "Este voucher tiene productos que requieren control de calidad. "
+                "Registre el RecepcionCalidad antes de aprobar el voucher."
+            )
+        # H-SC-03: si hay QC con resultado RECHAZADO, no se puede aprobar
+        if self.tiene_qc and self.calidad.resultado == 'RECHAZADO':
+            raise ValidationError(
+                "El control de calidad fue RECHAZADO. No se puede aprobar "
+                "el voucher — use la transición rechazar() si corresponde."
+            )
+        self.estado = self.EstadoVoucher.APROBADO
+        self.save(update_fields=['estado', 'updated_at'])
+
+
+class VoucherLineaMP(TenantModel):
+    """
+    Línea de materia prima en un VoucherRecepcion.
+    Un voucher puede tener N líneas (N productos del mismo proveedor).
+    """
+    voucher = models.ForeignKey(
+        VoucherRecepcion,
+        on_delete=models.CASCADE,
+        related_name='lineas',
+        verbose_name='Voucher de recepción',
+    )
+    producto = models.ForeignKey(
+        'catalogo_productos.Producto',
+        on_delete=models.PROTECT,
+        related_name='lineas_voucher',
+        verbose_name='Producto',
+    )
+    peso_bruto_kg = models.DecimalField(
+        max_digits=12, decimal_places=3, verbose_name='Peso bruto (kg)'
+    )
+    peso_tara_kg = models.DecimalField(
+        max_digits=12, decimal_places=3, default=Decimal('0.000'),
+        verbose_name='Peso tara (kg)'
+    )
+    peso_neto_kg = models.DecimalField(
+        max_digits=12, decimal_places=3, editable=False,
+        verbose_name='Peso neto (kg)',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_voucher_linea_mp'
+        verbose_name = 'Línea de MP en Voucher'
+        verbose_name_plural = 'Líneas de MP en Voucher'
+        ordering = ['id']
+
+    def __str__(self):
+        return f"Línea #{self.pk} — {self.producto} ({self.peso_neto_kg} kg)"
+
     def calcular_peso_neto(self):
         bruto = Decimal(str(self.peso_bruto_kg or 0))
         tara = Decimal(str(self.peso_tara_kg or 0))
@@ -187,84 +252,9 @@ class VoucherRecepcion(TenantModel):
             raise ValidationError({'peso_bruto_kg': 'El peso bruto debe ser mayor a cero.'})
         if self.peso_tara_kg is not None and self.peso_tara_kg < 0:
             raise ValidationError({'peso_tara_kg': 'El peso tara no puede ser negativo.'})
-        if (
-            self.peso_bruto_kg is not None
-            and self.peso_tara_kg is not None
-            and self.peso_tara_kg > self.peso_bruto_kg
-        ):
+        if (self.peso_bruto_kg is not None and self.peso_tara_kg is not None
+                and self.peso_tara_kg > self.peso_bruto_kg):
             raise ValidationError({'peso_tara_kg': 'La tara no puede ser mayor que el bruto.'})
-        if self.precio_kg_snapshot is not None and self.precio_kg_snapshot < 0:
-            raise ValidationError({'precio_kg_snapshot': 'El precio no puede ser negativo.'})
-        if (
-            self.modalidad_entrega == self.ModalidadEntrega.RECOLECCION
-            and not self.uneg_transportista
-        ):
-            raise ValidationError({
-                'uneg_transportista': (
-                    'Modalidad RECOLECCION requiere especificar UNeg transportista.'
-                )
-            })
-
-    @property
-    def valor_total_estimado(self):
-        """Cálculo preliminar. El valor real se congela en Liquidacion."""
-        if self.peso_neto_kg is None or self.precio_kg_snapshot is None:
-            return Decimal('0.00')
-        return (Decimal(str(self.peso_neto_kg)) * Decimal(str(self.precio_kg_snapshot))).quantize(
-            Decimal('0.01')
-        )
-
-    # ─── Properties QC (H-SC-03) ───────────────────────────────────────
-    @property
-    def requiere_qc(self) -> bool:
-        """True si el producto de este voucher requiere QC en recepción."""
-        return bool(
-            self.producto_id and getattr(self.producto, 'requiere_qc_recepcion', False)
-        )
-
-    @property
-    def tiene_qc(self) -> bool:
-        """True si ya existe un RecepcionCalidad asociado al voucher."""
-        return hasattr(self, 'calidad') and self.calidad is not None
-
-    # ─── Transiciones de estado ────────────────────────────────────────
-    def aprobar(self):
-        """
-        Transiciona el voucher a APROBADO.
-
-        Idempotente: si ya está APROBADO no hace nada.
-        Dispara el signal post_save que crea MovimientoInventario + Inventario
-        en almacen_destino (ver apps.supply_chain.recepcion.signals).
-
-        H-SC-03: Bloquea la aprobación si el producto tiene
-        `requiere_qc_recepcion=True` y aún no existe RecepcionCalidad.
-        El QC debe ser registrado antes mediante el endpoint dedicado
-        `POST /api/supply-chain/vouchers/{id}/registrar-qc/`.
-        """
-        if self.estado == self.EstadoVoucher.APROBADO:
-            return
-        if self.estado != self.EstadoVoucher.PENDIENTE_QC:
-            raise ValidationError(
-                f"No se puede aprobar un voucher en estado "
-                f"{self.get_estado_display()}."
-            )
-        # H-SC-03: validación bloqueante de QC obligatorio
-        if self.requiere_qc and not self.tiene_qc:
-            raise ValidationError(
-                "Este producto requiere control de calidad en recepción. "
-                "Registre el RecepcionCalidad antes de aprobar el voucher."
-            )
-        # H-SC-03: si hay QC con resultado RECHAZADO, no se puede aprobar
-        if (
-            self.tiene_qc
-            and self.calidad.resultado == 'RECHAZADO'
-        ):
-            raise ValidationError(
-                "El control de calidad fue RECHAZADO. No se puede aprobar "
-                "el voucher — use la transición rechazar() si corresponde."
-            )
-        self.estado = self.EstadoVoucher.APROBADO
-        self.save(update_fields=['estado', 'updated_at'])
 
 
 class RecepcionCalidad(TenantModel):
@@ -274,6 +264,9 @@ class RecepcionCalidad(TenantModel):
     Opcional: solo se crea si el tenant/producto aplica QC en recepción.
     Los parámetros medidos se comparan contra ProductoEspecCalidad
     (extensión creada en S2), cuyo snapshot se guarda en JSON.
+
+    DEUDA: OneToOne a nivel voucher (header). Pendiente de refactorizar
+    a nivel línea cuando la UI soporte QC por línea de MP.
     """
 
     class ResultadoQC(models.TextChoices):

@@ -1,28 +1,50 @@
 /**
  * Types TS para Recepcion (S3) — VoucherRecepcion + RecepcionCalidad
+ *
+ * Modelo actualizado a header + líneas: un voucher puede tener N materias
+ * primas de un mismo proveedor. El precio NO va en el voucher (solo en
+ * Liquidacion).
  */
 
 export type ModalidadEntrega = 'DIRECTO' | 'TRANSPORTE_INTERNO' | 'RECOLECCION';
 export type EstadoVoucher = 'PENDIENTE_QC' | 'APROBADO' | 'RECHAZADO' | 'LIQUIDADO';
 export type ResultadoQC = 'APROBADO' | 'CONDICIONAL' | 'RECHAZADO';
 
+/** Una línea de materia prima dentro de un VoucherRecepcion */
+export interface VoucherLineaMP {
+  id: number;
+  producto: number;
+  producto_nombre: string;
+  producto_codigo: string;
+  requiere_qc: boolean;
+  peso_bruto_kg: string;
+  peso_tara_kg: string;
+  peso_neto_kg: string;
+}
+
+/** DTO para crear una línea de MP al crear un voucher */
+export interface CreateVoucherLineaMPDTO {
+  producto: number;
+  peso_bruto_kg: number;
+  peso_tara_kg: number;
+}
+
 export interface VoucherRecepcionList {
   id: number;
   proveedor: number;
   proveedor_nombre?: string;
-  producto: number;
-  producto_nombre?: string;
   modalidad_entrega: ModalidadEntrega;
   modalidad_entrega_display?: string;
   fecha_viaje: string;
-  peso_neto_kg: string;
-  precio_kg_snapshot: string;
-  valor_total_estimado?: string;
+  /** Suma del peso neto de todas las líneas */
+  peso_neto_total: string;
+  lineas: VoucherLineaMP[];
+  lineas_count: number;
   almacen_destino: number;
   almacen_nombre?: string;
   estado: EstadoVoucher;
   estado_display?: string;
-  /** H-SC-03: el producto exige control de calidad antes de aprobar. */
+  /** H-SC-03: alguna línea exige QC antes de aprobar. */
   requiere_qc?: boolean;
   /** H-SC-03: ya existe un RecepcionCalidad registrado para este voucher. */
   tiene_qc?: boolean;
@@ -33,8 +55,6 @@ export interface VoucherRecepcion extends VoucherRecepcionList {
   uneg_transportista?: number | null;
   uneg_transportista_nombre?: string;
   orden_compra?: number | null;
-  peso_bruto_kg: string;
-  peso_tara_kg: string;
   operador_bascula: number;
   operador_nombre?: string;
   observaciones?: string;
@@ -43,20 +63,18 @@ export interface VoucherRecepcion extends VoucherRecepcionList {
 
 export interface CreateVoucherRecepcionDTO {
   proveedor: number;
-  producto: number;
   modalidad_entrega: ModalidadEntrega;
   uneg_transportista?: number | null;
   fecha_viaje: string;
   orden_compra?: number | null;
-  peso_bruto_kg: number | string;
-  peso_tara_kg?: number | string;
-  precio_kg_snapshot: number | string;
   almacen_destino: number;
   operador_bascula: number;
   observaciones?: string;
+  /** Mínimo 1 línea de MP */
+  lineas: CreateVoucherLineaMPDTO[];
 }
 
-export type UpdateVoucherRecepcionDTO = Partial<CreateVoucherRecepcionDTO> & {
+export type UpdateVoucherRecepcionDTO = Partial<Omit<CreateVoucherRecepcionDTO, 'lineas'>> & {
   estado?: EstadoVoucher;
 };
 

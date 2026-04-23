@@ -580,8 +580,10 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     # =========================================================================
 
     direccion = models.TextField(
+        blank=True,
+        default='',
         verbose_name='Dirección',
-        help_text='Dirección física de la sede'
+        help_text='Dirección física de la sede (opcional para rutas de recolección)',
     )
     ciudad = models.CharField(
         max_length=100,
@@ -679,6 +681,7 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         ('PLANTA', 'Planta de Producción'),
         ('CENTRO_ACOPIO', 'Centro de Acopio'),
         ('ALMACEN', 'Almacén'),
+        ('RUTA_RECOLECCION', 'Ruta de Recolección'),
         ('OTRO', 'Otro'),
     ]
 

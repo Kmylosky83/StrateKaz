@@ -1,23 +1,41 @@
 """
 Serializers para Recepción — Supply Chain S3
 """
+from decimal import Decimal
+
 from rest_framework import serializers
 
-from .models import RecepcionCalidad, VoucherRecepcion
+from .models import RecepcionCalidad, VoucherLineaMP, VoucherRecepcion
+
+
+class VoucherLineaMPSerializer(serializers.ModelSerializer):
+    """Serializer para líneas de MP dentro de un VoucherRecepcion."""
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
+    requiere_qc = serializers.BooleanField(source='producto.requiere_qc_recepcion', read_only=True)
+
+    class Meta:
+        model = VoucherLineaMP
+        fields = [
+            'id', 'producto', 'producto_nombre', 'producto_codigo',
+            'peso_bruto_kg', 'peso_tara_kg', 'peso_neto_kg', 'requiere_qc',
+        ]
+        read_only_fields = [
+            'id', 'peso_neto_kg', 'producto_nombre', 'producto_codigo', 'requiere_qc',
+        ]
 
 
 class VoucherRecepcionListSerializer(serializers.ModelSerializer):
     """Serializer liviano para listados."""
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     almacen_nombre = serializers.CharField(source='almacen_destino.nombre', read_only=True)
     modalidad_entrega_display = serializers.CharField(
         source='get_modalidad_entrega_display', read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    valor_total_estimado = serializers.DecimalField(
-        max_digits=14, decimal_places=2, read_only=True
-    )
+    lineas = VoucherLineaMPSerializer(many=True, read_only=True)
+    lineas_count = serializers.SerializerMethodField()
+    peso_neto_total = serializers.SerializerMethodField()
     # H-SC-03: flags QC para UI
     requiere_qc = serializers.BooleanField(read_only=True)
     tiene_qc = serializers.BooleanField(read_only=True)
@@ -27,21 +45,26 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'proveedor', 'proveedor_nombre',
-            'producto', 'producto_nombre',
             'modalidad_entrega', 'modalidad_entrega_display',
             'fecha_viaje',
-            'peso_neto_kg', 'precio_kg_snapshot', 'valor_total_estimado',
+            'lineas', 'lineas_count', 'peso_neto_total',
             'almacen_destino', 'almacen_nombre',
             'estado', 'estado_display',
             'requiere_qc', 'tiene_qc',
             'created_at',
         ]
 
+    def get_lineas_count(self, obj):
+        return obj.lineas.count()
+
+    def get_peso_neto_total(self, obj):
+        total = sum((l.peso_neto_kg for l in obj.lineas.all()), Decimal('0.000'))
+        return str(total)
+
 
 class VoucherRecepcionSerializer(serializers.ModelSerializer):
     """Serializer completo para detalle / create / update."""
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
-    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     uneg_transportista_nombre = serializers.CharField(
         source='uneg_transportista.nombre', read_only=True
     )
@@ -51,9 +74,9 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
         source='get_modalidad_entrega_display', read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    valor_total_estimado = serializers.DecimalField(
-        max_digits=14, decimal_places=2, read_only=True
-    )
+    lineas = VoucherLineaMPSerializer(many=True)
+    lineas_count = serializers.SerializerMethodField()
+    peso_neto_total = serializers.SerializerMethodField()
     # H-SC-03: flags QC para UI
     requiere_qc = serializers.BooleanField(read_only=True)
     tiene_qc = serializers.BooleanField(read_only=True)
@@ -64,17 +87,14 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             'id',
             # Partes
             'proveedor', 'proveedor_nombre',
-            'producto', 'producto_nombre',
             # Logística
             'modalidad_entrega', 'modalidad_entrega_display',
             'uneg_transportista', 'uneg_transportista_nombre',
             'fecha_viaje',
             # OC opcional
             'orden_compra',
-            # Pesaje
-            'peso_bruto_kg', 'peso_tara_kg', 'peso_neto_kg',
-            # Precio snapshot
-            'precio_kg_snapshot',
+            # Líneas de MP
+            'lineas', 'lineas_count', 'peso_neto_total',
             # Destino
             'almacen_destino', 'almacen_nombre',
             # Operador
@@ -82,25 +102,56 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             # Estado
             'estado', 'estado_display',
             'observaciones',
-            # Calculado
-            'valor_total_estimado',
             # H-SC-03: flags QC
             'requiere_qc', 'tiene_qc',
             # Auditoría
             'created_at', 'updated_at',
         ]
         read_only_fields = [
-            'peso_neto_kg', 'valor_total_estimado',
             'created_at', 'updated_at',
         ]
 
+    def get_lineas_count(self, obj):
+        return obj.lineas.count()
+
+    def get_peso_neto_total(self, obj):
+        total = sum((l.peso_neto_kg for l in obj.lineas.all()), Decimal('0.000'))
+        return str(total)
+
     def validate(self, attrs):
-        instance = VoucherRecepcion(**{
-            k: v for k, v in attrs.items()
-            if k in {f.name for f in VoucherRecepcion._meta.get_fields() if not f.many_to_many}
-        })
-        instance.clean()
+        # Validar el header (modalidad vs uneg_transportista)
+        modalidad = attrs.get('modalidad_entrega')
+        uneg = attrs.get('uneg_transportista')
+        if (
+            modalidad == VoucherRecepcion.ModalidadEntrega.RECOLECCION
+            and not uneg
+        ):
+            raise serializers.ValidationError({
+                'uneg_transportista': (
+                    'Modalidad RECOLECCION requiere especificar UNeg transportista.'
+                )
+            })
         return attrs
+
+    def create(self, validated_data):
+        lineas_data = validated_data.pop('lineas', [])
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        voucher = VoucherRecepcion.objects.create(**validated_data)
+        for linea_data in lineas_data:
+            VoucherLineaMP.objects.create(
+                voucher=voucher,
+                created_by=user,
+                updated_by=user,
+                **linea_data,
+            )
+        return voucher
+
+    def update(self, instance, validated_data):
+        # Las líneas no se actualizan vía PUT/PATCH del voucher header;
+        # se gestionan con endpoints dedicados de línea cuando se necesite.
+        validated_data.pop('lineas', None)
+        return super().update(instance, validated_data)
 
 
 class RecepcionCalidadSerializer(serializers.ModelSerializer):
@@ -127,7 +178,7 @@ class RecepcionCalidadSerializer(serializers.ModelSerializer):
 
     def get_cumplimiento_specs(self, obj):
         """
-        Compara parametros_medidos contra las specs del producto.
+        Compara parametros_medidos contra las specs del primer producto con specs.
 
         Retorna:
             {
@@ -135,9 +186,14 @@ class RecepcionCalidadSerializer(serializers.ModelSerializer):
                 "humedad": {"medido": 8.5, "rango": [0, 12], "cumple": true, "es_critico": false}
             }
         """
-        from decimal import Decimal
-        producto = obj.voucher.producto
-        if not hasattr(producto, 'espec_calidad'):
+        from decimal import Decimal as D
+        # Buscar la primera línea del voucher que tenga specs de calidad
+        producto = None
+        for linea in obj.voucher.lineas.select_related('producto').all():
+            if hasattr(linea.producto, 'espec_calidad'):
+                producto = linea.producto
+                break
+        if producto is None:
             return {}
 
         parametros_medidos = obj.parametros_medidos or {}
@@ -156,7 +212,7 @@ class RecepcionCalidadSerializer(serializers.ModelSerializer):
                 }
                 continue
             try:
-                medido_dec = Decimal(str(medido))
+                medido_dec = D(str(medido))
                 cumple = param.valor_min <= medido_dec <= param.valor_max
             except (ValueError, TypeError):
                 cumple = False
@@ -199,17 +255,26 @@ class RegistrarQCSerializer(serializers.Serializer):
         """
         Valida que parámetros críticos del producto estén presentes.
         Si resultado=APROBADO, valida además que los críticos estén en rango.
+
+        Multi-línea: valida contra la primera línea que tenga specs de calidad.
         """
         from decimal import Decimal
         voucher = self.context.get('voucher')
         if voucher is None:
             return attrs
 
-        producto = voucher.producto
-        if not hasattr(producto, 'espec_calidad'):
-            # Producto sin specs — no hay nada que validar
+        # Multi-linea: buscar la primera línea con specs de calidad
+        linea_con_specs = None
+        for linea in voucher.lineas.select_related('producto').all():
+            if hasattr(linea.producto, 'espec_calidad'):
+                linea_con_specs = linea
+                break
+
+        if linea_con_specs is None:
+            # Sin specs — no hay nada que validar
             return attrs
 
+        producto = linea_con_specs.producto
         parametros_medidos = attrs.get('parametros_medidos', {})
         parametros_criticos = producto.espec_calidad.parametros.filter(
             is_deleted=False, es_critico=True

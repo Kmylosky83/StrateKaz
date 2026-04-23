@@ -63,18 +63,6 @@ const formatKg = (kg: string | number) => {
     : '-';
 };
 
-const formatCOP = (value?: string | number | null) => {
-  if (value == null) return '-';
-  const n = typeof value === 'string' ? parseFloat(value) : value;
-  return Number.isFinite(n)
-    ? new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        maximumFractionDigits: 0,
-      }).format(n)
-    : '-';
-};
-
 // ==================== COMPONENT ====================
 
 export default function RecepcionTab() {
@@ -107,7 +95,7 @@ export default function RecepcionTab() {
     const total = vouchers.length;
     const pendientes = vouchers.filter((v) => v.estado === 'PENDIENTE_QC').length;
     const aprobados = vouchers.filter((v) => v.estado === 'APROBADO').length;
-    const pesoTotal = vouchers.reduce((acc, v) => acc + parseFloat(v.peso_neto_kg || '0'), 0);
+    const pesoTotal = vouchers.reduce((acc, v) => acc + parseFloat(v.peso_neto_total || '0'), 0);
     return { total, pendientes, aprobados, pesoTotal };
   }, [vouchers]);
 
@@ -228,16 +216,13 @@ export default function RecepcionTab() {
                     Proveedor
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Producto
+                    Producto(s)
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Modalidad
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Peso Neto
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Valor
+                    Peso Neto Total
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                     Estado
@@ -265,7 +250,11 @@ export default function RecepcionTab() {
                       {v.proveedor_nombre || `#${v.proveedor}`}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {v.producto_nombre || `#${v.producto}`}
+                      {v.lineas && v.lineas.length > 0
+                        ? v.lineas.length === 1
+                          ? v.lineas[0].producto_nombre
+                          : `${v.lineas.length} productos`
+                        : `${v.lineas_count ?? 0} producto(s)`}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
                       <div className="flex items-center gap-2">
@@ -274,10 +263,7 @@ export default function RecepcionTab() {
                       </div>
                     </td>
                     <td className="px-6 py-3 text-sm text-right text-gray-900 dark:text-white font-medium">
-                      {formatKg(v.peso_neto_kg)}
-                    </td>
-                    <td className="px-6 py-3 text-sm text-right text-gray-600 dark:text-gray-300">
-                      {formatCOP(v.valor_total_estimado)}
+                      {formatKg(v.peso_neto_total)}
                     </td>
                     <td className="px-6 py-3 text-center">
                       <Badge variant={ESTADO_VARIANT[v.estado] || 'gray'} size="sm">

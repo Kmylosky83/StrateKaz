@@ -1,4 +1,4 @@
-"""Fixtures para tests de Sesión 3 — VoucherRecepcion + RecepcionCalidad."""
+"""Fixtures para tests de Sesión 3 — VoucherRecepcion + VoucherLineaMP + RecepcionCalidad."""
 from datetime import date
 from decimal import Decimal
 
@@ -11,6 +11,7 @@ from apps.gestion_estrategica.configuracion.models import EmpresaConfig, SedeEmp
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
 from apps.catalogo_productos.models import Proveedor, TipoProveedor
 from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
+from apps.supply_chain.recepcion.models import VoucherLineaMP, VoucherRecepcion
 
 User = get_user_model()
 
@@ -159,18 +160,27 @@ def precio_sebo(db, proveedor_mp, producto_sebo):
     )
 
 
-# ─── Voucher base ──────────────────────────────────────────────────────
+# ─── Voucher base (header sin líneas) ──────────────────────────────────
 @pytest.fixture
-def voucher_base_kwargs(proveedor_mp, producto_sebo, almacen_silo, user_operador, precio_sebo):
-    """Datos mínimos reutilizables para crear un VoucherRecepcion."""
+def voucher_base_kwargs(proveedor_mp, almacen_silo, user_operador, precio_sebo):
+    """Datos mínimos reutilizables para crear un VoucherRecepcion (header)."""
     return dict(
         proveedor=proveedor_mp,
-        producto=producto_sebo,
         modalidad_entrega='DIRECTO',
         fecha_viaje=date(2026, 4, 17),
-        peso_bruto_kg=Decimal('1050.000'),
-        peso_tara_kg=Decimal('50.000'),
-        precio_kg_snapshot=precio_sebo.precio_kg,
         almacen_destino=almacen_silo,
         operador_bascula=user_operador,
     )
+
+
+@pytest.fixture
+def voucher_con_linea(db, voucher_base_kwargs, producto_sebo):
+    """VoucherRecepcion con una línea de sebo lista para tests."""
+    v = VoucherRecepcion.objects.create(**voucher_base_kwargs)
+    VoucherLineaMP.objects.create(
+        voucher=v,
+        producto=producto_sebo,
+        peso_bruto_kg=Decimal('1050.000'),
+        peso_tara_kg=Decimal('50.000'),
+    )
+    return v

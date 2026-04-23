@@ -25,27 +25,28 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     """
     CRUD de vouchers de recepción de materia prima.
 
-    Filtros: proveedor, producto, almacen_destino, modalidad_entrega, estado, fecha_viaje.
-    Búsqueda: proveedor__nombre_comercial, producto__nombre, observaciones.
+    Filtros: proveedor, almacen_destino, modalidad_entrega, estado, fecha_viaje.
+    Búsqueda: proveedor__nombre_comercial, observaciones.
     """
 
     queryset = VoucherRecepcion.objects.select_related(
-        'proveedor', 'producto', 'uneg_transportista',
+        'proveedor', 'uneg_transportista',
         'almacen_destino', 'operador_bascula', 'orden_compra',
+    ).prefetch_related(
+        'lineas__producto',
     ).all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'proveedor', 'producto', 'almacen_destino',
+        'proveedor', 'almacen_destino',
         'modalidad_entrega', 'estado', 'fecha_viaje',
         'uneg_transportista', 'orden_compra',
     ]
     search_fields = [
         'proveedor__nombre_comercial',
-        'producto__nombre',
         'observaciones',
     ]
-    ordering_fields = ['fecha_viaje', 'created_at', 'peso_neto_kg']
+    ordering_fields = ['fecha_viaje', 'created_at']
     ordering = ['-created_at']
 
     def get_serializer_class(self):
@@ -65,11 +66,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         """
         Transiciona el voucher a APROBADO.
 
-        Bloquea si el producto tiene `requiere_qc_recepcion=True` y no
-        existe un RecepcionCalidad registrado (o si el QC fue RECHAZADO).
+        Bloquea si alguna línea tiene un producto con `requiere_qc_recepcion=True`
+        y no existe un RecepcionCalidad registrado (o si el QC fue RECHAZADO).
 
         Dispara el signal post_save que crea MovimientoInventario e
-        Inventario en el almacén destino.
+        Inventario por cada línea en el almacén destino.
         """
         voucher = self.get_object()
         try:
@@ -187,12 +188,6 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 return '0.000'
 
-        def fmt_cop(value):
-            try:
-                return f"${int(value):,}".replace(",", ".")
-            except (TypeError, ValueError):
-                return '$0'
-
         # ── Datos del voucher ─────────────────────────────────────────
         fecha_viaje = voucher.fecha_viaje.strftime('%d-%m-%Y') if voucher.fecha_viaje else '—'
 
@@ -200,7 +195,6 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         emision = created_at_local.strftime('%d-%m-%Y %H:%M')
 
         proveedor_nombre = getattr(voucher.proveedor, 'nombre_comercial', str(voucher.proveedor))
-        producto_nombre = getattr(voucher.producto, 'nombre', str(voucher.producto))
         almacen_nombre = getattr(voucher.almacen_destino, 'nombre', str(voucher.almacen_destino))
         modalidad = voucher.get_modalidad_entrega_display()
         estado = voucher.get_estado_display()
@@ -215,8 +209,20 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         except AttributeError:
             qc_resultado = 'No aplica'
 
-        valor_fmt = fmt_cop(voucher.valor_total_estimado)
-        precio_fmt = f"${fmt_cop(voucher.precio_kg_snapshot)[1:]}/kg"
+        # ── Bloque de líneas ──────────────────────────────────────────
+        lineas = list(voucher.lineas.select_related('producto').all())
+        peso_total = voucher.peso_neto_total
+
+        lineas_rows = ''
+        for linea in lineas:
+            prod_nombre = getattr(linea.producto, 'nombre', str(linea.producto))
+            lineas_rows += (
+                f'<div class="indent">{prod_nombre}</div>'
+                f'<div class="row indent">'
+                f'<span class="label">  B:{fmt_kg(linea.peso_bruto_kg)}kg</span>'
+                f'<span class="val">N:{fmt_kg(linea.peso_neto_kg)}kg</span>'
+                f'</div>'
+            )
 
         SEP = '-' * 32
 
@@ -277,16 +283,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <div class="sep">{SEP}</div>
 <div>PROVEEDOR:</div>
 <div class="indent">{proveedor_nombre}</div>
-<div>PRODUCTO:</div>
-<div class="indent">{producto_nombre}</div>
 <div class="sep">{SEP}</div>
-<div class="bold">PESAJE:</div>
-<div class="row indent"><span class="label">BRUTO:</span><span class="val">{fmt_kg(voucher.peso_bruto_kg)} kg</span></div>
-<div class="row indent"><span class="label">TARA:</span><span class="val">{fmt_kg(voucher.peso_tara_kg)} kg</span></div>
-<div class="row indent"><span class="label">NETO:</span><span class="val">{fmt_kg(voucher.peso_neto_kg)} kg</span></div>
+<div class="bold">LINEAS DE MP ({len(lineas)}):</div>
+{lineas_rows}
 <div class="sep">{SEP}</div>
-<div class="row"><span class="label">PRECIO:</span><span class="val">{precio_fmt}</span></div>
-<div class="row"><span class="label">VALOR:</span><span class="val">{valor_fmt}</span></div>
+<div class="row"><span class="label">TOTAL NETO:</span><span class="val">{fmt_kg(peso_total)} kg</span></div>
 <div class="sep">{SEP}</div>
 <div>ALMACEN:</div>
 <div class="indent">{almacen_nombre}</div>

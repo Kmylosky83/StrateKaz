@@ -224,6 +224,20 @@ class Proveedor(TenantModel):
         verbose_name='Nombre Parte Interesada (cache)',
     )
 
+    # --- Vínculo con SedeEmpresa (H-SC-05) ---
+    # Cuando es_proveedor_interno=True en SedeEmpresa, un signal crea
+    # automáticamente un Proveedor espejo apuntando aquí.
+    # Una sede solo puede tener un Proveedor espejo (unique=True + null=True).
+    sede_empresa_origen = models.OneToOneField(
+        'configuracion.SedeEmpresa',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proveedor_espejo',
+        verbose_name='Sede de origen',
+        help_text='Sede interna que origina este proveedor espejo (H-SC-05). Gestionado automáticamente.',
+    )
+
     # --- Estado operativo ---
     # is_active: semántica de negocio (proveedor comercialmente activo),
     # independiente del soft-delete de TenantModel.

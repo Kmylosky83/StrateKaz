@@ -13,12 +13,12 @@ from .serializers import LiquidacionSerializer
 
 class LiquidacionViewSet(viewsets.ModelViewSet):
     queryset = Liquidacion.objects.select_related(
-        'voucher', 'voucher__proveedor', 'voucher__producto'
+        'linea', 'linea__voucher', 'linea__voucher__proveedor', 'linea__producto',
     ).all()
     serializer_class = LiquidacionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['estado', 'voucher']
+    filterset_fields = ['estado', 'linea', 'linea__voucher']
     ordering_fields = ['created_at', 'total_liquidado']
     ordering = ['-created_at']
 

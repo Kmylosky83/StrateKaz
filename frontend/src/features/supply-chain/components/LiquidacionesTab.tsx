@@ -190,7 +190,7 @@ export default function LiquidacionesTab() {
                       #{l.id}
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      #{l.voucher}
+                      Línea #{l.linea}
                       <div className="text-xs text-gray-500">
                         {l.created_at
                           ? format(new Date(l.created_at), 'dd MMM yyyy', { locale: es })

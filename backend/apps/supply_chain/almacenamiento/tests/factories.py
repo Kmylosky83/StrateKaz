@@ -23,7 +23,7 @@ from apps.supply_chain.almacenamiento.models import (
 )
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
 from apps.catalogo_productos.models import Proveedor, TipoProveedor
-from apps.supply_chain.recepcion.models import VoucherRecepcion
+from apps.supply_chain.recepcion.models import VoucherLineaMP, VoucherRecepcion
 
 
 def create_empresa(razon_social='Empresa Test', nit='900000001'):
@@ -124,17 +124,21 @@ def create_voucher(
     precio_kg=Decimal('3500.00'),
     fecha_viaje=None,
 ):
-    return VoucherRecepcion.objects.create(
+    """Crea un VoucherRecepcion header + una VoucherLineaMP con el producto dado."""
+    voucher = VoucherRecepcion.objects.create(
         proveedor=proveedor,
-        producto=producto,
         modalidad_entrega='DIRECTO',
         fecha_viaje=fecha_viaje or date(2026, 4, 17),
-        peso_bruto_kg=peso_bruto,
-        peso_tara_kg=peso_tara,
-        precio_kg_snapshot=precio_kg,
         almacen_destino=almacen_destino,
         operador_bascula=operador,
     )
+    VoucherLineaMP.objects.create(
+        voucher=voucher,
+        producto=producto,
+        peso_bruto_kg=peso_bruto,
+        peso_tara_kg=peso_tara,
+    )
+    return voucher
 
 
 def setup_full_supply_chain(test_case):

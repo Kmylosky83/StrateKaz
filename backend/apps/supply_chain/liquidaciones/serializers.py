@@ -8,10 +8,10 @@ from .models import Liquidacion
 
 class LiquidacionSerializer(serializers.ModelSerializer):
     voucher_proveedor = serializers.CharField(
-        source='voucher.proveedor.nombre_comercial', read_only=True
+        source='linea.voucher.proveedor.nombre_comercial', read_only=True
     )
     voucher_producto = serializers.CharField(
-        source='voucher.producto.nombre', read_only=True
+        source='linea.producto.nombre', read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
@@ -19,7 +19,7 @@ class LiquidacionSerializer(serializers.ModelSerializer):
         model = Liquidacion
         fields = [
             'id',
-            'voucher', 'voucher_proveedor', 'voucher_producto',
+            'linea', 'voucher_proveedor', 'voucher_producto',
             'precio_kg_aplicado', 'peso_neto_kg',
             'subtotal',
             'ajuste_calidad_pct', 'ajuste_calidad_monto',

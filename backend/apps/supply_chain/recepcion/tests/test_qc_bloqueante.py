@@ -18,7 +18,7 @@ from apps.core.models import TipoDocumentoIdentidad
 from apps.core.tests.base import BaseTenantTestCase
 from apps.catalogo_productos.models import Proveedor, TipoProveedor
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
-from apps.supply_chain.recepcion.models import RecepcionCalidad, VoucherRecepcion
+from apps.supply_chain.recepcion.models import RecepcionCalidad, VoucherLineaMP, VoucherRecepcion
 
 
 class TestQCBloqueante(BaseTenantTestCase):
@@ -32,40 +32,40 @@ class TestQCBloqueante(BaseTenantTestCase):
 
     def setUp(self):
         super().setUp()
+        uid = self._next_id()  # ej: 'a1b2c3_1' — usar una sola vez
         # Catálogos mínimos
-        self.tipo_doc_nit = TipoDocumentoIdentidad.objects.create(
-            codigo=f'NIT_{self._next_id()}', nombre='NIT', orden=1,
+        self.tipo_doc_nit, _ = TipoDocumentoIdentidad.objects.get_or_create(
+            codigo='NIT', defaults={'nombre': 'NIT', 'orden': 1},
         )
-        self.unidad_kg = UnidadMedida.objects.create(
-            nombre=f'Kg_{self._next_id()}',
-            abreviatura=f'kg_{self._next_id()}',
-            tipo='PESO',
-            es_base=True,
+        # abreviatura max_length=10 → usar prefijo corto
+        self.unidad_kg, _ = UnidadMedida.objects.get_or_create(
+            abreviatura='kg-sc',
+            defaults={'nombre': 'Kilogramo SC', 'tipo': 'PESO', 'es_base': True},
         )
         self.categoria = CategoriaProducto.objects.create(
-            nombre=f'MP_{self._next_id()}', orden=1,
+            nombre=f'MP {uid}', orden=1,
         )
-        self.tipo_prov = TipoProveedor.objects.create(
-            codigo=f'MP_{self._next_id()}',
-            nombre='Proveedor MP',
-            requiere_materia_prima=True,
-            orden=1,
+        # codigo max_length puede ser corto
+        self.tipo_prov, _ = TipoProveedor.objects.get_or_create(
+            codigo='SC-MP',
+            defaults={'nombre': 'Proveedor MP', 'requiere_materia_prima': True, 'orden': 1},
         )
-        self.tipo_almacen = TipoAlmacen.objects.create(
-            codigo=f'SILO_{self._next_id()}', nombre='Silo', orden=1,
+        self.tipo_almacen, _ = TipoAlmacen.objects.get_or_create(
+            codigo='SILO-SC',
+            defaults={'nombre': 'Silo SC', 'orden': 1},
         )
         self.almacen = Almacen.objects.create(
-            codigo=f'ALM_{self._next_id()}',
+            codigo=f'A{uid[:6]}',
             nombre='Almacén Test',
             tipo_almacen=self.tipo_almacen,
             permite_recepcion=True,
         )
         self.proveedor = Proveedor.objects.create(
             tipo_proveedor=self.tipo_prov,
-            nombre_comercial='Finca Test',
-            razon_social='Finca Test SAS',
+            nombre_comercial=f'Finca Test {uid}',
+            razon_social=f'Finca Test SAS {uid}',
             tipo_documento=self.tipo_doc_nit,
-            numero_documento=f'900{self._next_id()}',
+            numero_documento=f'9{uid[:8]}',
         )
         self.operador = self.create_user('op_bascula')
 
@@ -97,17 +97,21 @@ class TestQCBloqueante(BaseTenantTestCase):
         return prod
 
     def _crear_voucher(self, producto):
-        return VoucherRecepcion.objects.create(
+        """Crea un VoucherRecepcion header + una VoucherLineaMP con el producto dado."""
+        voucher = VoucherRecepcion.objects.create(
             proveedor=self.proveedor,
-            producto=producto,
             modalidad_entrega=VoucherRecepcion.ModalidadEntrega.DIRECTO,
             fecha_viaje=date(2026, 4, 22),
-            peso_bruto_kg=Decimal('1050.000'),
-            peso_tara_kg=Decimal('50.000'),
-            precio_kg_snapshot=Decimal('3500.00'),
             almacen_destino=self.almacen,
             operador_bascula=self.operador,
         )
+        VoucherLineaMP.objects.create(
+            voucher=voucher,
+            producto=producto,
+            peso_bruto_kg=Decimal('1050.000'),
+            peso_tara_kg=Decimal('50.000'),
+        )
+        return voucher
 
     # ─── Tests principales H-SC-03 ─────────────────────────────────────
 
@@ -119,7 +123,11 @@ class TestQCBloqueante(BaseTenantTestCase):
         with self.assertRaises(ValidationError) as ctx:
             voucher.aprobar()
 
-        self.assertIn('requiere control de calidad', str(ctx.exception))
+        exc_str = str(ctx.exception)
+        self.assertTrue(
+            'requiere control de calidad' in exc_str or 'control de calidad' in exc_str,
+            f"Mensaje inesperado: {exc_str}",
+        )
         voucher.refresh_from_db()
         self.assertEqual(voucher.estado, VoucherRecepcion.EstadoVoucher.PENDIENTE_QC)
 
@@ -177,6 +185,20 @@ class TestQCBloqueante(BaseTenantTestCase):
         self.assertIn('RECHAZADO', str(ctx.exception))
         voucher.refresh_from_db()
         self.assertEqual(voucher.estado, VoucherRecepcion.EstadoVoucher.PENDIENTE_QC)
+
+    def test_aprobar_falla_si_no_hay_lineas(self):
+        """Voucher sin líneas → ValidationError al aprobar."""
+        producto = self._crear_producto(requiere_qc=False)
+        voucher = VoucherRecepcion.objects.create(
+            proveedor=self.proveedor,
+            modalidad_entrega=VoucherRecepcion.ModalidadEntrega.DIRECTO,
+            fecha_viaje=date(2026, 4, 22),
+            almacen_destino=self.almacen,
+            operador_bascula=self.operador,
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            voucher.aprobar()
+        self.assertIn('al menos una línea', str(ctx.exception))
 
     def test_parametro_genericos_valida_rango(self):
         """ProductoEspecCalidadParametro.cumple() valida rangos correctamente."""

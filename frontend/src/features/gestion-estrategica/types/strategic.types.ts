@@ -667,6 +667,7 @@ export interface SedeEmpresa {
   direccion_completa?: string;
   ciudad: number | null;
   ciudad_nombre?: string | null;
+  departamento_id?: number | null;
   departamento_nombre?: string | null;
   codigo_postal?: string | null;
   // Geolocalización
@@ -709,6 +710,7 @@ export interface SedeEmpresaList {
   rol_operacional?: RolOperacionalSede;
   ciudad: number | null;
   ciudad_nombre?: string | null;
+  departamento_id?: number | null;
   departamento_nombre?: string | null;
   responsable?: number | null;
   responsable_name?: string | null;

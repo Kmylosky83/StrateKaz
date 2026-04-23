@@ -30,6 +30,14 @@ from apps.catalogo_productos.models import UnidadMedida
 # SERIALIZERS DE SEDE EMPRESA
 # ==============================================================================
 
+class TipoSedeSerializer(serializers.ModelSerializer):
+    """Serializer público para TipoSede — usado por SedeFormModal dropdown (H-SC-10)."""
+
+    class Meta:
+        model = TipoSede
+        fields = ['id', 'code', 'name', 'description', 'icon', 'rol_operacional']
+
+
 class SedeEmpresaSerializer(serializers.ModelSerializer):
     """
     Serializer para SedeEmpresa
@@ -59,6 +67,12 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     departamento = serializers.CharField(read_only=True)
     departamento_display = serializers.CharField(source='departamento', read_only=True)
     ciudad_nombre = serializers.CharField(source='ciudad.nombre', read_only=True)
+    departamento_id = serializers.IntegerField(
+        source='ciudad.departamento_id', read_only=True, allow_null=True
+    )
+    departamento_nombre = serializers.CharField(
+        source='ciudad.departamento.nombre', read_only=True, allow_null=True
+    )
 
     # Información del responsable
     responsable_name = serializers.SerializerMethodField()
@@ -84,6 +98,8 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'ciudad',
             'ciudad_nombre',
             'departamento',
+            'departamento_id',
+            'departamento_nombre',
             'departamento_display',
             'codigo_postal',
             # Geolocalización
@@ -282,6 +298,12 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
     # H-SC-10: departamento es property derivada de ciudad.departamento.
     departamento_display = serializers.CharField(source='departamento', read_only=True)
     ciudad_nombre = serializers.CharField(source='ciudad.nombre', read_only=True)
+    departamento_id = serializers.IntegerField(
+        source='ciudad.departamento_id', read_only=True, allow_null=True
+    )
+    departamento_nombre = serializers.CharField(
+        source='ciudad.departamento.nombre', read_only=True, allow_null=True
+    )
     responsable_name = serializers.SerializerMethodField()
 
     class Meta:

@@ -8,8 +8,8 @@
  *   - OTRO: campos base opcionales
  *
  * Cambios vs versión previa:
- *   - `ciudad` es ahora FK (number) al catálogo Ciudad (DIVIPOLA).
- *   - `departamento` se deriva de la ciudad (readonly).
+ *   - `ciudad` es ahora FK (number) al catálogo Ciudad.
+ *   - Flujo UX: primero se selecciona Departamento, luego se filtran Ciudades.
  *   - `tipo_unidad` eliminado — reemplazado por `tipo_sede.rol_operacional`.
  *   - `es_proveedor_interno` eliminado — migró a RutaRecoleccion en Supply Chain.
  *   - Almacenes se gestionan inline (antes sub-modal AlmacenesPorSedeModal).
@@ -45,7 +45,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { apiClient } from '@/lib/api-client';
 import { useCreateSede, useUpdateSede, useSede, useSedeChoices } from '../../hooks/useStrategic';
-import { useSelectCargos, useSelectCiudades } from '@/hooks/useSelectLists';
+import { useSelectCargos, useSelectCiudades, useSelectDepartamentos } from '@/hooks/useSelectLists';
 import { useAlmacenes, useDeleteAlmacen } from '@/features/supply-chain/hooks';
 import type { Almacen } from '@/features/supply-chain/types';
 import type {
@@ -82,7 +82,8 @@ interface FormData {
   customTipoSede: string;
   descripcion: string;
   direccion: string;
-  ciudad: string; // ID numérico como string
+  departamento_id: string; // ID del departamento — filtra ciudades
+  ciudad: string; // ID numérico como string (FK)
   codigo_postal: string;
   latitud: string;
   longitud: string;
@@ -106,6 +107,7 @@ const defaultFormData: FormData = {
   customTipoSede: '',
   descripcion: '',
   direccion: '',
+  departamento_id: '',
   ciudad: '',
   codigo_postal: '',
   latitud: '',
@@ -230,9 +232,13 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     );
   }, []);
 
-  // Ciudad seleccionada → buscar depto_nombre en la lista de ciudades
+  // Flujo secuencial: primero departamento, luego ciudades filtradas por depto
   const ciudadId = formData.ciudad ? parseInt(formData.ciudad) : null;
-  const { data: ciudades = [] } = useSelectCiudades(undefined, true);
+  const departamentoIdNum = formData.departamento_id
+    ? parseInt(formData.departamento_id)
+    : undefined;
+  const { data: departamentos = [] } = useSelectDepartamentos(true);
+  const { data: ciudades = [] } = useSelectCiudades(departamentoIdNum, !!departamentoIdNum);
   const ciudadSeleccionada = useMemo(
     () => ciudades.find((c) => c.id === ciudadId),
     [ciudades, ciudadId]
@@ -248,6 +254,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       customTipoSede: '',
       descripcion: sedeDetail.descripcion || '',
       direccion: sedeDetail.direccion,
+      departamento_id: sedeDetail.departamento_id?.toString() || '',
       ciudad: sedeDetail.ciudad?.toString() || '',
       codigo_postal: sedeDetail.codigo_postal || '',
       latitud: sedeDetail.latitud?.toString() || '',
@@ -395,6 +402,11 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       value: cargo.id.toString(),
       label: cargo.extra?.rol ? `${cargo.label} — ${cargo.extra.rol}` : cargo.label,
     })) || [];
+
+  const departamentoOptions = departamentos.map((d) => ({
+    value: d.id.toString(),
+    label: d.label,
+  }));
 
   const ciudadOptions = ciudades.map((c) => ({
     value: c.id.toString(),
@@ -598,19 +610,34 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Select
+                label="Departamento"
+                value={formData.departamento_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    departamento_id: e.target.value,
+                    ciudad: '', // resetear ciudad al cambiar depto
+                  })
+                }
+                options={[
+                  { value: '', label: 'Seleccione departamento...' },
+                  ...departamentoOptions,
+                ]}
+              />
+              <Select
                 label="Ciudad"
                 value={formData.ciudad}
                 onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-                options={[{ value: '', label: 'Seleccione ciudad...' }, ...ciudadOptions]}
-                helperText="Catálogo DIVIPOLA"
-              />
-              <Input
-                label="Departamento"
-                value={String(ciudadSeleccionada?.extra?.departamento || '')}
-                readOnly
-                disabled
-                placeholder="Se deriva de la ciudad"
-                helperText="Derivado de la ciudad seleccionada"
+                options={[
+                  {
+                    value: '',
+                    label: formData.departamento_id
+                      ? 'Seleccione ciudad...'
+                      : 'Primero elija un departamento',
+                  },
+                  ...ciudadOptions,
+                ]}
+                disabled={!formData.departamento_id}
               />
               <Input
                 label="Código Postal"
@@ -993,11 +1020,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               </div>
             )}
           </div>
-
-          <Alert
-            variant="info"
-            message="Las sedes pueden asignarse a usuarios, vehículos y equipos para gestión multi-sitio."
-          />
         </form>
       </BaseModal>
 

@@ -19,11 +19,13 @@ from .views import (
     IconRegistryViewSet,
     NormaISOViewSet,
     TipoContratoViewSet,
+    TipoSedeViewSet,
 )
 from .stats_views import config_stats_view, fundacion_progress_view
 
 router = DefaultRouter()
 router.register(r'sedes', SedeEmpresaViewSet, basename='sede')
+router.register(r'tipos-sede', TipoSedeViewSet, basename='tipo-sede')
 router.register(r'integraciones-externas', IntegracionExternaViewSet, basename='integracion-externa')
 router.register(r'icons', IconRegistryViewSet, basename='icon')
 router.register(r'normas-iso', NormaISOViewSet, basename='norma-iso')

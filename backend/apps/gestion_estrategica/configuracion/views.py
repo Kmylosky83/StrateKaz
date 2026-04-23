@@ -16,11 +16,14 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import SedeEmpresa, IconRegistry, NormaISO, TipoContrato, ICON_CATEGORY_CHOICES
+from .models import (
+    SedeEmpresa, IconRegistry, NormaISO, TipoContrato, TipoSede, ICON_CATEGORY_CHOICES
+)
 from .serializers import (
     SedeEmpresaSerializer,
     SedeEmpresaListSerializer,
     SedeEmpresaChoicesSerializer,
+    TipoSedeSerializer,
     IconRegistrySerializer,
     IconRegistryListSerializer,
     IconCategorySerializer,
@@ -32,6 +35,19 @@ from .serializers import (
 from apps.core.permissions import GranularActionPermission
 from apps.core.mixins import StandardViewSetMixin
 from apps.core.base_models.mixins import get_tenant_empresa
+
+
+# ==============================================================================
+# VIEWSET DE TIPO SEDE (read-only público para dropdown)
+# ==============================================================================
+
+class TipoSedeViewSet(viewsets.ReadOnlyModelViewSet):
+    """Lista los tipos de sede disponibles (con rol_operacional) para el dropdown de SedeFormModal."""
+
+    queryset = TipoSede.objects.filter(is_active=True).order_by('name')
+    serializer_class = TipoSedeSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
 
 
 # ==============================================================================

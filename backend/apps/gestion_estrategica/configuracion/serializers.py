@@ -316,6 +316,8 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
             'tipo_sede_display',
             'ciudad',
             'ciudad_nombre',
+            'departamento_id',
+            'departamento_nombre',
             'departamento_display',
             'responsable',
             'responsable_name',

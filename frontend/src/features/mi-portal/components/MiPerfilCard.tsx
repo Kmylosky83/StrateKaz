@@ -20,19 +20,17 @@ import {
   Info,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, Badge, Skeleton, Button } from '@/components/common';
+import { Card, Badge, Skeleton } from '@/components/common';
 import type { ColaboradorESS } from '../types';
 
 interface MiPerfilCardProps {
   perfil: ColaboradorESS | null | undefined;
   isLoading: boolean;
+  /** Abre el modal de edición de datos personales (invocado desde el empty state de contacto emergencia). */
   onEdit: () => void;
-  /** @deprecated onAvatarClick ya vive en el Hero — mantener para compat del type */
-  onAvatarClick?: () => void;
-  primaryColor: string;
 }
 
-export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerfilCardProps) {
+export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
   if (isLoading) {
     return (
       <Card padding="lg">
@@ -78,24 +76,12 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerf
 
   return (
     <Card padding="lg">
-      {/* Action bar — edit button + estado */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <Badge variant={estadoActivo ? 'success' : 'warning'} size="sm">
-            {estadoActivo && <CheckCircle2 className="w-3 h-3 mr-1" />}
-            {perfil.estado}
-          </Badge>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onEdit}
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ color: primaryColor }}
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          Editar datos personales
-        </Button>
+      {/* Badge de estado — único indicador superior (edit global vive en el Hero) */}
+      <div className="mb-6">
+        <Badge variant={estadoActivo ? 'success' : 'warning'} size="sm">
+          {estadoActivo && <CheckCircle2 className="w-3 h-3 mr-1" />}
+          {perfil.estado}
+        </Badge>
       </div>
 
       {/* ──────────────────────────────────────────────────────────────
@@ -119,12 +105,7 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerf
       {/* ──────────────────────────────────────────────────────────────
           CONTACTO — datos editables por el empleado
           ────────────────────────────────────────────────────────────── */}
-      <SectionHeader
-        label="Contacto personal"
-        editable
-        onEdit={onEdit}
-        primaryColor={primaryColor}
-      />
+      <SectionHeader label="Contacto personal" />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <InfoItem
           icon={Mail}
@@ -155,12 +136,7 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerf
       {/* ──────────────────────────────────────────────────────────────
           CONTACTO DE EMERGENCIA — card neutra con acento rojizo sutil
           ────────────────────────────────────────────────────────────── */}
-      <SectionHeader
-        label="Contacto de emergencia"
-        editable
-        onEdit={onEdit}
-        primaryColor={primaryColor}
-      />
+      <SectionHeader label="Contacto de emergencia" />
       {perfil.contacto_emergencia_nombre ? (
         <div className="flex items-start gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -211,36 +187,11 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerf
 // HELPERS
 // ============================================================================
 
-function SectionHeader({
-  label,
-  editable,
-  onEdit,
-  primaryColor,
-}: {
-  label: string;
-  editable?: boolean;
-  onEdit?: () => void;
-  primaryColor?: string;
-}) {
+function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-        {label}
-      </h4>
-      {editable && onEdit && (
-        <button
-          type="button"
-          onClick={onEdit}
-          className="text-xs font-medium transition-colors hover:opacity-80 inline-flex items-center gap-1"
-          style={{ color: primaryColor }}
-          title="Editar"
-          aria-label={`Editar ${label.toLowerCase()}`}
-        >
-          <Pencil className="w-3 h-3" />
-          Editar
-        </button>
-      )}
-    </div>
+    <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+      {label}
+    </h4>
   );
 }
 

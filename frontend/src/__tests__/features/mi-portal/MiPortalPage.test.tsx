@@ -131,7 +131,6 @@ vi.mock('@/features/mi-portal/components', () => ({
   MisEncuestasPendientes: () => <div data-testid="encuestas-tab">Encuestas</div>,
   ResponderEncuestaModal: () => null,
   JefePortalSection: () => <div data-testid="jefe-section">Mi Equipo</div>,
-  ActionBar: () => <div data-testid="action-bar">Pendientes</div>,
   AdminPortalView: () => (
     <div data-testid="admin-portal">
       <h1>Administrador del Sistema</h1>

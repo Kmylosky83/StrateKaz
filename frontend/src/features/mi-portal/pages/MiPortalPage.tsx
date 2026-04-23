@@ -4,9 +4,9 @@
  * Estructura:
  *   1. Hero — identidad + saludo contextual (nombre, cargo, email, fecha)
  *   2. ProfileProgressBar — se auto-oculta al 100%
- *   3. ActionBar — pendientes accionables (firmas, lecturas, encuestas)
- *   4. JefePortalSection — solo si cargo.is_jefatura
- *   5. Tabs con contadores — deep navigation
+ *   3. JefePortalSection — solo si cargo.is_jefatura
+ *   4. Tabs con contadores — deep navigation; badge ámbar por tab indica
+ *      pendientes del empleado (firmas, lecturas, encuestas).
  *
  * Branch de vistas:
  *   - Superadmin sin Colaborador → AdminPortalView
@@ -57,7 +57,6 @@ import {
   MiFirmaDigital,
   JefePortalSection,
   MisEncuestasPendientes,
-  ActionBar,
   AdminPortalView,
   UserPortalView,
 } from '../components';
@@ -325,11 +324,6 @@ export default function MiPortalPage() {
         <ProfileProgressBar />
 
         {/* ================================================================
-            ACTION BAR — pendientes accionables
-            ================================================================ */}
-        <ActionBar />
-
-        {/* ================================================================
             SECCIÓN JEFE (solo si is_jefatura)
             ================================================================ */}
         {isJefatura && <JefePortalSection primaryColor={primaryColor} />}
@@ -357,7 +351,6 @@ export default function MiPortalPage() {
                 perfil={perfil}
                 isLoading={perfilLoading}
                 onEdit={() => setShowEditPerfil(true)}
-                primaryColor={primaryColor}
               />
             )}
 

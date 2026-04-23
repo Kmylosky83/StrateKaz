@@ -5,6 +5,5 @@ export { MiFirmaDigital } from './MiFirmaDigital';
 export { JefePortalSection } from './JefePortalSection';
 export { MisEncuestasPendientes } from './MisEncuestasPendientes';
 export { ResponderEncuestaModal } from './ResponderEncuestaModal';
-export { ActionBar } from './ActionBar';
 export { AdminPortalView } from './AdminPortalView';
 export { UserPortalView } from './UserPortalView';

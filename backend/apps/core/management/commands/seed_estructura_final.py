@@ -996,9 +996,12 @@ class Command(BaseCommand):
                     {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 4, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
+                    {'code': 'rutas_recoleccion', 'name': 'Rutas de Recolección', 'icon': 'Route', 'route': 'rutas-recoleccion', 'orden': 5, 'sections': [
+                        {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas internas de recolección de materia prima — crean Proveedor espejo automáticamente (H-SC-10)'},
+                    ]},
                     # Tab Evaluaciones eliminado 2026-04-21 — modelos EvaluacionProveedor
                     # y CriterioEvaluacion eliminados (scope Admin/Compras futuro).
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 5, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 6, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

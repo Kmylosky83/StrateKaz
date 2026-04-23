@@ -36,13 +36,19 @@ export function MiFirmaDigital() {
     const dataUrl = signatureRef.current.getDataURL();
 
     if (drawMode === 'firma') {
-      guardarMutation.mutate({ firma_guardada: dataUrl }, {
-        onSuccess: () => setDrawMode(null),
-      });
+      guardarMutation.mutate(
+        { firma_guardada: dataUrl },
+        {
+          onSuccess: () => setDrawMode(null),
+        }
+      );
     } else if (drawMode === 'iniciales') {
-      guardarMutation.mutate({ iniciales_guardadas: dataUrl }, {
-        onSuccess: () => setDrawMode(null),
-      });
+      guardarMutation.mutate(
+        { iniciales_guardadas: dataUrl },
+        {
+          onSuccess: () => setDrawMode(null),
+        }
+      );
     }
   }, [drawMode, guardarMutation]);
 
@@ -123,7 +129,7 @@ export function MiFirmaDigital() {
                 variant="primary"
                 size="sm"
                 onClick={handleSave}
-                loading={guardarMutation.isPending}
+                isLoading={guardarMutation.isPending}
                 style={{ backgroundColor: primaryColor }}
               >
                 <Save className="w-4 h-4 mr-1.5" />
@@ -183,7 +189,7 @@ export function MiFirmaDigital() {
                     variant="danger"
                     size="sm"
                     onClick={() => setDeleteConfirm('firma')}
-                    loading={guardarMutation.isPending}
+                    isLoading={guardarMutation.isPending}
                     title="Eliminar firma guardada"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -237,7 +243,7 @@ export function MiFirmaDigital() {
                     variant="danger"
                     size="sm"
                     onClick={() => setDeleteConfirm('iniciales')}
-                    loading={guardarMutation.isPending}
+                    isLoading={guardarMutation.isPending}
                     title="Eliminar iniciales guardadas"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

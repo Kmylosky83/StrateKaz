@@ -4,8 +4,8 @@ Mi Portal — Employee Self-Service (ESS).
 Vistas que permiten al empleado:
 - Ver su perfil y actualizar datos personales
 
-Seguridad: Todas las vistas filtran por request.user,
-nunca aceptan IDs del cliente para acceder a datos de otros.
+Seguridad: Todas las vistas filtran por request.user, nunca aceptan IDs del
+cliente para acceder a datos de otros.
 
 Arquitectura: Mi Portal es un PORTAL (solo UI + API de lectura/escritura
 de datos propios). No tiene modelos propios. Consume de:
@@ -17,7 +17,6 @@ sus endpoints ESS se agregan aquí como nuevas vistas.
 """
 import logging
 
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -70,7 +69,7 @@ class MiPerfilView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        # ── Campos directos en Colaborador ───────────────────────────────────
+        # Campos directos en Colaborador
         colaborador_dirty = False
         if 'celular' in data:
             colaborador.telefono_movil = data['celular']
@@ -85,7 +84,7 @@ class MiPerfilView(APIView):
                 update_fields=['telefono_movil', 'email_personal', 'updated_by', 'updated_at']
             )
 
-        # ── Campos en InfoPersonal (OneToOne via info_personal) ──────────────
+        # Campos en InfoPersonal (OneToOne via info_personal)
         INFO_FIELD_MAP = {
             'telefono': 'telefono_fijo',
             'direccion': 'direccion',
@@ -117,7 +116,6 @@ class MiPerfilView(APIView):
                 update_fields=list(info_updates.keys()) + ['updated_by', 'updated_at']
             )
 
-        # Refrescar desde DB para que los SerializerMethodField lean valores actualizados
         colaborador.refresh_from_db()
         return Response(
             ColaboradorESSSerializer(colaborador, context={'request': request}).data

@@ -266,6 +266,10 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { KpiCard, KpiCardGrid, KpiCardSkeleton } from './KpiCard';
 export type { KpiCardProps, KpiCardGridProps, KpiCardSkeletonProps, KpiCardColor } from './KpiCard';
 
+// Action Card (card accionable para portales y dashboards — "N lecturas pendientes" etc.)
+export { ActionCard } from './ActionCard';
+export type { ActionCardProps, ActionCardTone } from './ActionCard';
+
 // Section Toolbar (replaces toolbar pattern in 20+ sections)
 export { SectionToolbar } from './SectionToolbar';
 export type { SectionToolbarProps, SectionToolbarAction } from './SectionToolbar';

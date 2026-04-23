@@ -27,7 +27,6 @@ import {
   regenerateBackupCodes,
 } from '@/api/twoFactor.api';
 import { useAuthStore } from '@/store/authStore';
-import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 const QUERY_KEY = ['twoFactor', 'status'];
 
@@ -38,7 +37,6 @@ export const use2FA = () => {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   // Query: Obtener estado de 2FA
-  // Deshabilitado para usuarios portal-only (proveedores/clientes) que no usan 2FA
   const {
     data: status,
     isLoading: isLoadingStatus,
@@ -48,7 +46,7 @@ export const use2FA = () => {
     queryKey: QUERY_KEY,
     queryFn: getTwoFactorStatus,
     staleTime: 1000 * 60 * 5, // 5 minutos
-    enabled: !isPortalOnlyUser(user),
+    enabled: !!user,
     retry: 1,
   });
 

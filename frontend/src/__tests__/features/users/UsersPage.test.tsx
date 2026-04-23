@@ -114,10 +114,6 @@ vi.mock('@/store/authStore', () => ({
     }),
 }));
 
-vi.mock('@/utils/portalUtils', () => ({
-  isPortalOnlyUser: () => false,
-}));
-
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), loading: vi.fn(), info: vi.fn() },
 }));

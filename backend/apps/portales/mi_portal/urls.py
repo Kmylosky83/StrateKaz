@@ -1,8 +1,7 @@
 """
 URLs de Mi Portal — Employee Self-Service (ESS).
 
-Todos los endpoints filtran por request.user,
-nunca aceptan IDs del cliente.
+Todos los endpoints filtran por request.user, nunca aceptan IDs del cliente.
 
 Arquitectura: Mi Portal empieza con lo LIVE (mi-perfil).
 Cuando se activen módulos L60+ (novedades, nómina, formación, desempeño),

@@ -1708,9 +1708,18 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
     section_code = 'repositorio'
     http_method_names = ['get', 'post', 'patch']
 
+    # Self-service: acciones personales del empleado en Mi Portal. Cada acción
+    # valida internamente que `aceptacion.usuario == request.user`, por lo que
+    # un empleado solo puede operar sobre SUS propias lecturas sin necesidad
+    # de acceso RBAC al módulo "repositorio" (ese es para admin documental).
+    SELF_SERVICE_ACTIONS = frozenset({
+        'mis_pendientes',       # GET lista personal
+        'registrar_progreso',   # POST avance de scroll/tiempo
+        'aceptar',              # POST marca como leído (cumplimiento ISO)
+    })
+
     def get_permissions(self):
-        """mis_pendientes es self-service (Mi Portal) — solo requiere autenticación."""
-        if self.action == 'mis_pendientes':
+        if self.action in self.SELF_SERVICE_ACTIONS:
             return [IsAuthenticated()]
         return super().get_permissions()
 

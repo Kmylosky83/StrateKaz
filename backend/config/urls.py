@@ -225,11 +225,13 @@ if is_app_installed('apps.mi_equipo'):
     urlpatterns.append(path('api/mi-equipo/', include('apps.mi_equipo.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
-# MI PORTAL — Portal del empleado (ESS), LIVE e independiente
+# CAPA PORTALES — Landings por tipo de audiencia
 # Consume de mi_equipo.colaboradores (L20), core (L0), gestion_documental (L15)
+# Mi Portal (empleado interno) es el único LIVE hoy. Portales externos
+# (proveedores, clientes, vacantes) pendientes — ver H-PORTAL-02.
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.mi_equipo'):
-    urlpatterns.append(path('api/mi-portal/', include('apps.mi_portal.urls')))
+    urlpatterns.append(path('api/mi-portal/', include('apps.portales.mi_portal.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # GAMIFICACIÓN — Módulo independiente (Juego SST)
@@ -241,7 +243,7 @@ if is_app_installed('apps.mi_equipo'):
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL L60: TALENTO — Gestión continua (formación, desempeño, nómina)
 # talent_hub se monta SOLO cuando sus sub-apps L60 estén en INSTALLED_APPS.
-# Mi Portal ya no vive aquí — se movió a apps.mi_portal (LIVE, independiente).
+# (Mi Portal vive en apps.portales.mi_portal — ver arriba /api/mi-portal/)
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.talent_hub.novedades'):
     urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))

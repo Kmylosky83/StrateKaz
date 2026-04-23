@@ -6,6 +6,10 @@ export interface Tab {
   label: string;
   icon?: ReactNode;
   disabled?: boolean;
+  /** Contador opcional. Si > 0 se muestra un badge numérico al lado del label. */
+  count?: number;
+  /** Tono del badge de contador: 'default' (gris), 'attention' (ambar) o 'danger' (rojo). */
+  countTone?: 'default' | 'attention' | 'danger';
 }
 
 export interface TabsProps {
@@ -14,6 +18,39 @@ export interface TabsProps {
   onChange: (tabId: string) => void;
   className?: string;
   variant?: 'underline' | 'pills';
+}
+
+// ============================================================================
+// TAB COUNT BADGE — pill numérico reutilizable por tabs
+// ============================================================================
+
+function TabCountBadge({
+  count,
+  tone = 'default',
+  isActive,
+}: {
+  count: number;
+  tone?: 'default' | 'attention' | 'danger';
+  isActive: boolean;
+}) {
+  const toneClasses = {
+    default: isActive
+      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300'
+      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+    attention: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    danger: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  };
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-semibold rounded-full tabular-nums transition-colors',
+        toneClasses[tone]
+      )}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  );
 }
 
 export const Tabs = ({
@@ -56,6 +93,9 @@ export const Tabs = ({
             >
               {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
               <span>{tab.label}</span>
+              {typeof tab.count === 'number' && tab.count > 0 && (
+                <TabCountBadge count={tab.count} tone={tab.countTone} isActive={isActive} />
+              )}
             </button>
           );
         })}
@@ -74,10 +114,7 @@ export const Tabs = ({
       )}
     >
       <nav
-        className={cn(
-          '-mb-px flex gap-4 md:gap-6',
-          'snap-x snap-mandatory md:snap-none'
-        )}
+        className={cn('-mb-px flex gap-4 md:gap-6', 'snap-x snap-mandatory md:snap-none')}
         aria-label="Tabs"
       >
         {tabs.map((tab) => {
@@ -100,6 +137,9 @@ export const Tabs = ({
             >
               {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
               <span>{tab.label}</span>
+              {typeof tab.count === 'number' && tab.count > 0 && (
+                <TabCountBadge count={tab.count} tone={tab.countTone} isActive={isActive} />
+              )}
             </button>
           );
         })}

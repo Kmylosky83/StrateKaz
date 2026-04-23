@@ -15,7 +15,6 @@ import { Mail, Lock, Key, ShieldCheck } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
 import { authAPI } from '@/api/auth.api';
-import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 
 // Lazy load NetworkBackground for better initial load performance
 const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
@@ -66,13 +65,9 @@ export const LoginPage = () => {
     const hasTokens =
       !!localStorage.getItem('access_token') && !!localStorage.getItem('refresh_token');
     if (hasTokens && isAuthenticated) {
-      const { user: currentUser, isSuperadmin: isSA, currentTenantId } = useAuthStore.getState();
+      const { isSuperadmin: isSA, currentTenantId } = useAuthStore.getState();
       if (isSA && !currentTenantId) {
         navigate('/admin-global', { replace: true });
-      } else if (isClientePortalUser(currentUser)) {
-        navigate('/cliente-portal', { replace: true });
-      } else if (isPortalOnlyUser(currentUser)) {
-        navigate('/proveedor-portal', { replace: true });
       } else {
         navigate('/mi-portal', { replace: true });
       }
@@ -163,14 +158,8 @@ export const LoginPage = () => {
 
     if (accessibleTenants.length === 1) {
       // Solo un tenant - ya fue seleccionado automáticamente en el store
-      const { user: currentUser } = useAuthStore.getState();
-      const landing = isClientePortalUser(currentUser)
-        ? '/cliente-portal'
-        : isPortalOnlyUser(currentUser)
-          ? '/proveedor-portal'
-          : '/mi-portal';
       toast.success(`Bienvenido a ${currentTenant?.name || accessibleTenants[0].tenant.name}!`);
-      navigate(landing);
+      navigate('/mi-portal');
       return;
     }
 
@@ -285,14 +274,8 @@ export const LoginPage = () => {
     try {
       await selectTenant(tenantId);
       const tenant = accessibleTenants.find((t) => t.tenant.id === tenantId);
-      const { user: currentUser } = useAuthStore.getState();
-      const landing = isClientePortalUser(currentUser)
-        ? '/cliente-portal'
-        : isPortalOnlyUser(currentUser)
-          ? '/proveedor-portal'
-          : '/mi-portal';
       toast.success(`Bienvenido a ${tenant?.tenant.name || 'la empresa'}!`);
-      navigate(landing);
+      navigate('/mi-portal');
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'Error al seleccionar empresa. Intenta de nuevo.';

@@ -217,6 +217,14 @@ TENANT_APPS = [
     'apps.mi_equipo.onboarding_induccion',
 
     # ═══════════════════════════════════════════════════════════════════════════
+    # CAPA PORTALES — Landings por tipo de audiencia (H1 resuelto)
+    # Mi Portal es el único portal LIVE hoy (empleado interno).
+    # Portales externos (proveedores, clientes, vacantes) pendientes — ver
+    # H-PORTAL-02 (patrón de acceso externo: magic link / subdomain / login).
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.portales.mi_portal',
+
+    # ═══════════════════════════════════════════════════════════════════════════
     # CASCADA LEVEL 60: TALENTO — Gestión continua del colaborador
     # Descomentar cuando Level 53 (Cadena de Valor) esté estabilizado
     # Los endpoints que referencian estos modelos tienen guards defensivos

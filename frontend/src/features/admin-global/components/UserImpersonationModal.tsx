@@ -27,7 +27,6 @@ import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/api/auth.api';
-import { isPortalOnlyUser, isClientePortalUser } from '@/utils/portalUtils';
 import type { User } from '@/types/auth.types';
 import { usersAPI } from '@/api/users.api';
 import { cn } from '@/utils/cn';
@@ -125,16 +124,8 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
     await startUserImpersonation(userId, impersonationToken);
     queryClient.removeQueries({ queryKey: ['modules'] });
 
-    const portalOnly = isPortalOnlyUser(userItem as User | null | undefined);
-    const isCliente = isClientePortalUser(userItem as User | null | undefined);
-
     handleClose();
-
-    if (portalOnly) {
-      navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
-    } else {
-      navigate('/dashboard');
-    }
+    navigate('/dashboard');
   };
 
   /**
@@ -359,7 +350,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
             </div>
           ) : (
             users.map((user) => {
-              const isExterno = isPortalOnlyUser(user);
+              const isExterno = Boolean(user.proveedor || user.cliente);
               const isItemLoading = loading === user.id;
 
               return (

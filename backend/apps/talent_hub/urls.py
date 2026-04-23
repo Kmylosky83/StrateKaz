@@ -49,11 +49,9 @@ if _is_installed('off_boarding'):
     urlpatterns.append(path('off-boarding/', include('apps.talent_hub.off_boarding.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Portales y servicios transversales
+# Servicios transversales
+# (Mi Portal vive en apps.portales.mi_portal — ver config/urls.py)
 # ═══════════════════════════════════════════════════════════════════════════
-
-# ESS (Mi Portal) — MOVIDO a apps.mi_portal (app LIVE independiente)
-# Ya no se monta aquí. Ver config/urls.py → api/mi-portal/
 
 if _is_installed('consultores_externos'):
     urlpatterns.append(path('consultores-externos/', include('apps.talent_hub.consultores_externos.urls')))

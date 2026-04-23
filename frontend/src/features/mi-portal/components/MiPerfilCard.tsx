@@ -1,53 +1,54 @@
 /**
- * MiPerfilCard - Tarjeta de perfil del empleado (read-only)
- * Muestra informacion laboral y de contacto organizada en subsecciones.
- * Usa colores de branding del tenant (NO hardcoded).
+ * MiPerfilCard — Tab "Mis datos" de Mi Portal.
+ *
+ * Muestra información laboral secundaria (cédula, fecha ingreso, estado) +
+ * datos de contacto editables + contacto de emergencia.
+ *
+ * NO repite nombre/cargo/área: esos viven en el Hero de MiPortalPage.
+ * Usa colores de branding del tenant.
  */
-
 import {
-  User,
   Mail,
   Phone,
   MapPin,
-  Briefcase,
   Calendar,
   AlertCircle,
   Heart,
   Pencil,
-  Camera,
+  IdCard,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
-import { Card, Badge, Avatar, Skeleton, Button } from '@/components/common';
+import type { LucideIcon } from 'lucide-react';
+import { Card, Badge, Skeleton, Button } from '@/components/common';
 import type { ColaboradorESS } from '../types';
 
 interface MiPerfilCardProps {
   perfil: ColaboradorESS | null | undefined;
   isLoading: boolean;
   onEdit: () => void;
-  onAvatarClick: () => void;
-  /** Color primario del branding del tenant. Lo provee el padre para evitar un observer React Query extra. */
+  /** @deprecated onAvatarClick ya vive en el Hero — mantener para compat del type */
+  onAvatarClick?: () => void;
   primaryColor: string;
 }
 
-export function MiPerfilCard({
-  perfil,
-  isLoading,
-  onEdit,
-  onAvatarClick,
-  primaryColor,
-}: MiPerfilCardProps) {
+export function MiPerfilCard({ perfil, isLoading, onEdit, primaryColor }: MiPerfilCardProps) {
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className="flex items-start gap-6">
-          <Skeleton className="w-20 h-20 rounded-full flex-shrink-0" />
-          <div className="flex-1 space-y-3">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-32" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
+      <Card padding="lg">
+        <div className="space-y-6">
+          <Skeleton className="h-4 w-32" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
+          </div>
+          <Skeleton className="h-4 w-40" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
+            <Skeleton className="h-14" />
           </div>
         </div>
       </Card>
@@ -56,16 +57,16 @@ export function MiPerfilCard({
 
   if (!perfil) {
     return (
-      <Card className="p-6">
+      <Card padding="lg">
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          <h3 className="font-heading text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Perfil no vinculado
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
-            Tu cuenta aun no tiene un perfil de colaborador asociado. Contacta al administrador para
+            Tu cuenta aún no tiene un perfil de colaborador asociado. Contacta al administrador para
             vincular tu usuario con un registro de colaborador.
           </p>
         </div>
@@ -73,135 +74,201 @@ export function MiPerfilCard({
     );
   }
 
+  const estadoActivo = perfil.estado === 'activo';
+
   return (
-    <Card className="p-6">
-      {/* Header: Avatar + Nombre + Badge */}
-      <div className="flex flex-col sm:flex-row items-start gap-5">
-        {/* Avatar clickeable para cambiar foto */}
+    <Card padding="lg">
+      {/* Action bar — edit button + estado */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Badge variant={estadoActivo ? 'success' : 'warning'} size="sm">
+            {estadoActivo && <CheckCircle2 className="w-3 h-3 mr-1" />}
+            {perfil.estado}
+          </Badge>
+        </div>
         <Button
           variant="ghost"
-          onClick={onAvatarClick}
-          className="relative group focus:outline-none flex-shrink-0 p-0 h-auto rounded-full hover:bg-transparent"
-          title="Cambiar foto de perfil"
-        >
-          <Avatar src={perfil.foto_url} alt={perfil.nombre_completo} size="xl" />
-          <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
-            <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
-        </Button>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {perfil.nombre_completo}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {perfil.numero_identificacion}
-              </p>
-            </div>
-            <Badge variant={perfil.estado === 'activo' ? 'success' : 'warning'}>
-              {perfil.estado}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* ================================================================
-          INFORMACION LABORAL — ancho completo debajo del header
-          ================================================================ */}
-      <div className="mt-6">
-        <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          Información laboral
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <InfoItem icon={Briefcase} label="Cargo" value={perfil.cargo_nombre} />
-          <InfoItem icon={User} label="Área" value={perfil.area_nombre} />
-          <InfoItem icon={Calendar} label="Fecha de ingreso" value={perfil.fecha_ingreso} />
-        </div>
-      </div>
-
-      {/* ================================================================
-          INFORMACION DE CONTACTO — ancho completo
-          ================================================================ */}
-      <div className="mt-6">
-        <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-          Información de contacto
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InfoItem
-            icon={Mail}
-            label="Email personal"
-            value={perfil.email_personal || 'Sin email personal'}
-          />
-          <InfoItem
-            icon={Phone}
-            label="Celular / Teléfono"
-            value={[perfil.celular, perfil.telefono].filter(Boolean).join(' · ') || 'Sin teléfono'}
-          />
-          <InfoItem icon={MapPin} label="Ciudad" value={perfil.ciudad || 'Sin ciudad'} />
-          <InfoItem icon={MapPin} label="Dirección" value={perfil.direccion || 'Sin dirección'} />
-        </div>
-      </div>
-
-      {/* ================================================================
-          CONTACTO DE EMERGENCIA — ancho completo
-          ================================================================ */}
-      {perfil.contacto_emergencia_nombre && (
-        <div className="mt-6">
-          <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-            Contacto de emergencia
-          </h4>
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
-            <Heart className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium text-gray-900 dark:text-white">
-                {perfil.contacto_emergencia_nombre}
-              </p>
-              <p className="text-gray-500 dark:text-gray-400">
-                {perfil.contacto_emergencia_parentesco} &middot;{' '}
-                {perfil.contacto_emergencia_telefono}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Botón editar con branding color */}
-      <div className="mt-6 flex justify-end">
-        <Button
-          variant="ghost"
+          size="sm"
           onClick={onEdit}
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
+          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
           style={{ color: primaryColor }}
         >
           <Pencil className="w-3.5 h-3.5" />
           Editar datos personales
         </Button>
       </div>
+
+      {/* ──────────────────────────────────────────────────────────────
+          INFORMACIÓN LABORAL (secundaria, no duplica el hero)
+          ────────────────────────────────────────────────────────────── */}
+      <SectionHeader label="Información laboral" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <InfoItem
+          icon={IdCard}
+          label={perfil.tipo_identificacion || 'Documento'}
+          value={perfil.numero_identificacion || 'Sin documento'}
+        />
+        <InfoItem
+          icon={Calendar}
+          label="Fecha de ingreso"
+          value={perfil.fecha_ingreso || 'Sin fecha'}
+        />
+        <InfoItem icon={Info} label="Estado" value={perfil.estado || 'Sin estado'} />
+      </div>
+
+      {/* ──────────────────────────────────────────────────────────────
+          CONTACTO — datos editables por el empleado
+          ────────────────────────────────────────────────────────────── */}
+      <SectionHeader
+        label="Contacto personal"
+        editable
+        onEdit={onEdit}
+        primaryColor={primaryColor}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <InfoItem
+          icon={Mail}
+          label="Email personal"
+          value={perfil.email_personal || 'Sin email personal'}
+          muted={!perfil.email_personal}
+        />
+        <InfoItem
+          icon={Phone}
+          label="Celular / Teléfono"
+          value={[perfil.celular, perfil.telefono].filter(Boolean).join(' · ') || 'Sin teléfono'}
+          muted={!perfil.celular && !perfil.telefono}
+        />
+        <InfoItem
+          icon={MapPin}
+          label="Ciudad"
+          value={perfil.ciudad || 'Sin ciudad'}
+          muted={!perfil.ciudad}
+        />
+        <InfoItem
+          icon={MapPin}
+          label="Dirección"
+          value={perfil.direccion || 'Sin dirección'}
+          muted={!perfil.direccion}
+        />
+      </div>
+
+      {/* ──────────────────────────────────────────────────────────────
+          CONTACTO DE EMERGENCIA — card neutra con acento rojizo sutil
+          ────────────────────────────────────────────────────────────── */}
+      <SectionHeader
+        label="Contacto de emergencia"
+        editable
+        onEdit={onEdit}
+        primaryColor={primaryColor}
+      />
+      {perfil.contacto_emergencia_nombre ? (
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <Heart className="w-5 h-5 text-red-500 dark:text-red-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-gray-900 dark:text-white">
+              {perfil.contacto_emergencia_nombre}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {perfil.contacto_emergencia_parentesco && (
+                <span>{perfil.contacto_emergencia_parentesco}</span>
+              )}
+              {perfil.contacto_emergencia_parentesco && perfil.contacto_emergencia_telefono && (
+                <span className="text-gray-300 dark:text-gray-600 mx-2">·</span>
+              )}
+              {perfil.contacto_emergencia_telefono && (
+                <span className="tabular-nums">{perfil.contacto_emergencia_telefono}</span>
+              )}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="w-full flex items-center gap-3 p-4 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+            <Heart className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-red-400 transition-colors" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Agregar contacto de emergencia
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Persona a contactar en caso de emergencia laboral
+            </p>
+          </div>
+          <Pencil className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+        </button>
+      )}
     </Card>
   );
 }
 
 // ============================================================================
-// HELPER COMPONENT
+// HELPERS
 // ============================================================================
+
+function SectionHeader({
+  label,
+  editable,
+  onEdit,
+  primaryColor,
+}: {
+  label: string;
+  editable?: boolean;
+  onEdit?: () => void;
+  primaryColor?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        {label}
+      </h4>
+      {editable && onEdit && (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-xs font-medium transition-colors hover:opacity-80 inline-flex items-center gap-1"
+          style={{ color: primaryColor }}
+          title="Editar"
+          aria-label={`Editar ${label.toLowerCase()}`}
+        >
+          <Pencil className="w-3 h-3" />
+          Editar
+        </button>
+      )}
+    </div>
+  );
+}
 
 function InfoItem({
   icon: Icon,
   label,
   value,
+  muted,
 }: {
-  icon: typeof Briefcase;
+  icon: LucideIcon;
   label: string;
   value: string;
+  muted?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2">
-      <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
-      <div className="min-w-0">
-        <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
-        <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{value}</p>
+    <div className="flex items-start gap-2.5">
+      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/50 flex-shrink-0 mt-0.5">
+        <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{label}</p>
+        <p
+          className={`text-sm truncate ${
+            muted ? 'text-gray-400 dark:text-gray-500 italic' : 'text-gray-900 dark:text-gray-100'
+          }`}
+        >
+          {value}
+        </p>
       </div>
     </div>
   );

@@ -67,7 +67,7 @@ class ColaboradorESSSerializer(serializers.Serializer):
     def get_celular(self, obj):
         return getattr(obj, 'telefono_movil', '') or ''
 
-    # ── InfoPersonal helpers ─────────────────────────────────────────────────
+    # InfoPersonal helpers
 
     def _get_info(self, obj):
         return getattr(obj, 'info_personal', None)
@@ -102,14 +102,14 @@ class InfoPersonalUpdateESSSerializer(serializers.Serializer):
     Campos que el empleado puede actualizar de su perfil.
 
     Mapeo backend:
-      celular        → Colaborador.telefono_movil
-      email_personal → Colaborador.email_personal
-      telefono       → InfoPersonal.telefono_fijo
-      direccion      → InfoPersonal.direccion
-      ciudad         → InfoPersonal.ciudad
-      contacto_emergencia_nombre    → InfoPersonal.nombre_contacto_emergencia
-      contacto_emergencia_telefono  → InfoPersonal.telefono_contacto_emergencia
-      contacto_emergencia_parentesco→ InfoPersonal.parentesco_contacto_emergencia
+      celular        -> Colaborador.telefono_movil
+      email_personal -> Colaborador.email_personal
+      telefono       -> InfoPersonal.telefono_fijo
+      direccion      -> InfoPersonal.direccion
+      ciudad         -> InfoPersonal.ciudad
+      contacto_emergencia_nombre    -> InfoPersonal.nombre_contacto_emergencia
+      contacto_emergencia_telefono  -> InfoPersonal.telefono_contacto_emergencia
+      contacto_emergencia_parentesco-> InfoPersonal.parentesco_contacto_emergencia
     """
     celular = serializers.CharField(max_length=15, required=False, allow_blank=True)
     email_personal = serializers.EmailField(max_length=254, required=False, allow_blank=True)

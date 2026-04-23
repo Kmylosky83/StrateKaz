@@ -1,27 +1,16 @@
 /**
- * AdaptiveLayout — Selector inteligente de layout según tipo de usuario
+ * AdaptiveLayout — Carga el perfil del User y renderiza DashboardLayout.
  *
- * Determina si el usuario autenticado es "portal-only" y renderiza
- * el layout apropiado:
+ * Carga el perfil (core.User) cuando hay tenant seleccionado pero el perfil
+ * aún no se ha cargado (ej: F5 refresh). Luego delega al DashboardLayout.
  *
- * - Portal proveedor → PortalLayout + redirect a /proveedor-portal
- * - Portal cliente → PortalLayout + redirect a /cliente-portal
- * - Todos los demás → DashboardLayout (sidebar + módulos + header completo)
- *
- * También se encarga de cargar el perfil del User (core.User) cuando hay
- * tenant seleccionado pero el perfil aún no se ha cargado (ej: F5 refresh).
- *
- * REDIRECT PORTAL: Se usa PortalRedirect (navigate imperativo + spinner)
- * en vez de <Navigate> que renderiza null y causa flash negro en dark mode.
- *
- * SEGURIDAD: Los usuarios portal-only son redirigidos forzosamente
- * a su portal correspondiente si intentan acceder a cualquier otra ruta.
+ * Portales externos (proveedores/clientes) son app separada pendiente —
+ * ver H-PORTAL-02 (patrón de acceso externo).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useShallow } from 'zustand/react/shallow';
-import { isPortalOnlyUser } from '@/utils/portalUtils';
 import { DashboardLayout } from './DashboardLayout';
 
 const MAX_PROFILE_RETRIES = 5;
@@ -153,24 +142,5 @@ export const AdaptiveLayout = () => {
     );
   }
 
-  // Determinar si es portal-only
-  const portalOnly = isPortalOnlyUser(user);
-
-  if (portalOnly) {
-    // Portales proveedor/cliente desactivados hasta L50/L53.
-    // Portal-only users se redirigen a /mi-portal que muestra vista informativa.
-    // TODO: Reactivar cuando supply_chain (L50) y sales_crm (L53) se liberen:
-    //   const onPortalRoute =
-    //     location.pathname.startsWith('/proveedor-portal') ||
-    //     location.pathname.startsWith('/cliente-portal');
-    //   if (onPortalRoute) return <PortalLayout />;
-    //   const targetRoute = isClientePortalUser(user) ? '/cliente-portal' : '/proveedor-portal';
-    //   return <PortalRedirect to={targetRoute} />;
-
-    // Mientras tanto: DashboardLayout con acceso a /mi-portal
-    return <DashboardLayout />;
-  }
-
-  // Usuario normal (empleado interno o profesional colocado) → DashboardLayout
   return <DashboardLayout />;
 };

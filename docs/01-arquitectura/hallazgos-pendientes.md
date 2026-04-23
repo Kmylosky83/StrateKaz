@@ -15,8 +15,31 @@ sesión debe decidir orden de ataque.
 
 ## H1 — Capa Portales no definida arquitectónicamente
 
-### Severidad
-**ALTA** — Bloquea activación de talent_hub.novedades, sales_crm,
+### Estado: RESUELTO PARCIAL (2026-04-23)
+
+**Resolución — Capa A (ubicación estructural):**
+- Creada app `apps.portales.mi_portal` como paraguas para la capa de
+  portales. Mi Portal (empleado interno + superadmin) es el único portal
+  LIVE hoy. Agregado a `INSTALLED_APPS` en `base.py` (antes estaba montado
+  por URL sin estar registrado — anomalía latente corregida).
+- Montaje: `config/urls.py` → `/api/mi-portal/` → `apps.portales.mi_portal.urls`.
+- Frontend sin cambios (`features/mi-portal/` sigue consumiendo `/mi-portal/`).
+- Sidebar, branding, guards: intactos.
+- **Dead code eliminado** (~1500 LOC):
+  - Backend: `apps/talent_hub/api/{ess_urls.py, ess_serializers.py, employee_self_service.py}` (MisVacacionesView, SolicitarPermisoView, etc. que importaban modelos OFF).
+  - Frontend features huérfanas: `features/proveedor-portal/` (553 LOC de ProveedorPortalPage + hooks + tabs), `features/cliente-portal/` (559 LOC).
+  - Layout: `layouts/PortalLayout.tsx` (solo servía a portales externos).
+  - Utilities: `utils/portalUtils.ts` (isPortalOnlyUser, CARGO_PORTAL_CODE).
+  - Hooks: `hooks/useHasProveedor.ts`, `useHasCliente.ts`.
+  - Frontend components dead: `mi-portal/components/{PortalProveedorView, PortalClienteView}.tsx` + branches en MiPortalPage.
+- Referencias limpiadas en: LoginPage, UserImpersonationModal, UsersPage, AdaptiveLayout, use2FA, ui-labels, test mocks.
+
+**Pendiente — Capa B (ver H-PORTAL-02):** el patrón de acceso externo para
+proveedores, clientes y candidatos. La Capa A (estructura) solo dejó la
+puerta lista; la Capa B decide *cómo entran* los externos.
+
+### Severidad original
+**ALTA** — Bloqueaba activación de talent_hub.novedades, sales_crm,
 supply_chain, y cualquier módulo futuro que necesite exponerse a portales
 externos (proveedores, clientes).
 
@@ -130,6 +153,227 @@ Razones de la hipótesis:
 endpoints rotos vivos porque no están sangrando alertas Sentry y porque
 parchearlos sería poner curitas a algo que va a ser refactorizado
 completamente cuando se defina la capa Portales.
+
+### Ejecución 2026-04-23
+Refactor ejecutado en sesión con Camilo. Capa A cerrada. Ver sección
+"Estado: RESUELTO PARCIAL" arriba. Código vive ahora en
+`apps/portales/mi_portal/` (backend) + `frontend/src/features/mi-portal/`
+(frontend). Portales externos pendientes → H-PORTAL-02.
+
+---
+
+## H-PORTAL-02 — Patrón de acceso externo para portales no-empleado
+
+### Detectado
+2026-04-23 (cierre Capa A del H1).
+
+### Severidad
+**MEDIA** — No bloquea operación actual (los externos no entran al sistema
+hoy). Pero bloquea la construcción de los portales de proveedores, clientes
+y candidatos cuando se activen sus módulos de origen.
+
+### Contexto
+Con la Capa A resuelta, Mi Portal (empleado interno) vive en
+`apps/portales/mi_portal/`. Los portales externos **no existen todavía** —
+se eliminó código huérfano que los implementaba parcialmente (ver H1
+"Resolución Capa A"). Cuando toque construirlos, **primero hay que decidir
+cómo entran los externos al sistema** porque nunca entraron: el modelo
+`Proveedor` no tiene campo `user`, no hay flujo de invitación, no hay
+creación automática de User con `proveedor_id_ext`.
+
+### Patrones candidatos
+
+| # | Patrón | Ejemplos | Cuándo aplica |
+|---|---|---|---|
+| 1 | **Magic link por email** | DocuSign, Stripe Dashboard Light | Proveedor recibe email "revisa tu OC #123" → URL con token firmado 7d → ve solo su dato, sin password |
+| 2 | **Login simple en subdomain** | Amazon Seller, Shopify Partner | Sí entran, con password. Subdominio separado (`proveedores.stratekaz.com`). Scope limitado. 2FA opcional |
+| 3 | **Token QR read-only** | Factura electrónica DIAN | URL pública con hash en el QR. Solo lectura. Sin estado de sesión |
+| 4 | **Portal de candidatos público** | LinkedIn Easy Apply, Workday Careers | Ya existe parcialmente en talent-hub `/vacantes-publicas` — sin login para postular |
+
+### Entregables de la sesión dedicada
+
+1. `docs/01-arquitectura/portales-externos.md` con el patrón elegido por
+   tipo de audiencia (puede ser distinto: magic link para proveedores,
+   público para candidatos).
+2. Modelo de datos: ¿se crea `User` con `proveedor_id_ext` set, o se crea
+   tabla `ProveedorPortalAccess` separada? Impacto en auth middleware.
+3. Flujo de invitación: endpoint `/api/proveedores/{id}/invitar-portal/`
+   que envía email con token.
+4. Scope de datos: cómo se garantiza que un proveedor **solo** ve sus
+   propias OCs / facturas / documentos y no los de otros.
+5. 2FA: nivel de verificación para acciones críticas (ej: aceptar OC).
+6. Subdomain routing (opcional): si se elige Patrón 2, configurar
+   `proveedores.{tenant}.stratekaz.com` vía `TenantMainMiddleware`.
+
+### Apps a crear cuando toque (bajo `apps/portales/`)
+
+- `apps/portales/portal_proveedores/` — activar con `supply_chain`
+- `apps/portales/portal_clientes/` — activar con `sales_crm`
+- `apps/portales/portal_vacantes/` — activar con `mi_equipo.seleccion_contratacion` (ya LIVE, pero el portal público ya vive en `features/talent-hub/pages/VacantesPublicasPage.tsx` — evaluar mover)
+
+### Lo que bloquea
+- Construcción real de portales para proveedores y clientes.
+- No bloquea nada LIVE hoy.
+
+### Referencia histórica
+Las features huérfanas eliminadas en H1 Capa A (ProveedorPortalPage 553 LOC,
+ClientePortalPage 559 LOC) pueden consultarse en git history antes del
+commit de refactor — contienen ideas sobre tabs de precios y profesionales
+que pueden reutilizarse parcialmente cuando se rediseñen.
+
+### Trigger
+Antes de activar `supply_chain` con acceso externo, o antes de activar
+`sales_crm`. Independiente del roadmap H-SC-* actual.
+
+### Estado
+🔲 Abierto. Prioridad: **diferida — se atiende cuando se requiera acceso externo real.**
+
+---
+
+## H-PORTAL-03 — Modal `LecturasObligatoriasGuard` redundante con ActionBar
+
+### Detectado
+2026-04-23 (sesión rediseño Mi Portal — browsing E2E con Ana García López).
+
+### Severidad
+**BAJA** — UX sub-óptima, no bloquea. Oportunidad de mejora.
+
+### Síntoma
+Al entrar a `/mi-portal` con lecturas obligatorias pendientes, se dispara
+automáticamente un modal bloqueante (`LecturasObligatoriasGuard`) que dice
+*"Tiene N documento(s) de lectura obligatoria pendiente de aceptación"* con
+CTA "Ir a Lecturas Pendientes" + "Recordar después". El modal interrumpe el
+flujo del empleado al aterrizar.
+
+Con el nuevo **ActionBar del rediseño** (2026-04-23), esta información ya
+está visible de forma no-bloqueante:
+- ActionCard ámbar **"1 Lecturas pendientes"** con conteo destacado y CTA click
+- Badge numérico **ámbar en el tab "Lecturas"**
+
+Resultado: el usuario ve la pendiente 2 veces — una bloqueante, otra
+informativa. El modal se vuelve ruido.
+
+### Propuesta
+Opciones (decidir en sesión futura):
+1. **Eliminar el modal guard.** Confiar en ActionBar + tab badge + modal de
+   escalación solo si el empleado ignora N días consecutivos (cumplimiento
+   ISO sigue cubierto con audit log y reportes).
+2. **Convertir a banner dismissible** en el Hero (menos intrusivo).
+3. **Mantener solo en rutas distintas de Mi Portal** — el guard tiene
+   sentido en `/dashboard` o en módulos donde no hay ActionBar.
+
+### Trigger
+Reactiva. Se atiende cuando haya feedback real de usuarios sobre la
+doble-notificación, o en la próxima iteración de Mi Portal.
+
+### Dependencia
+- Ninguna. Independiente del H-SC-* roadmap.
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA — UX polish diferido.**
+
+---
+
+## H-BE-01 — Naming inconsistente de bypass self-service en ViewSets
+
+### Detectado
+2026-04-23 (auditoría durante fix del H-PORTAL-02 bypass en AceptacionDocumentalViewSet).
+
+### Severidad
+**BAJA** — No causa bugs. Es deuda de coherencia.
+
+### Síntoma
+Distintos ViewSets implementan el mismo patrón "saltar RBAC para acciones
+self-service" con nombres diferentes:
+
+| ViewSet | Constante | Ubicación |
+|---|---|---|
+| `UserViewSet` (core) | `SELF_SERVICE_ACTIONS` | core/viewsets.py:110 |
+| `AceptacionDocumentalViewSet` | `SELF_SERVICE_ACTIONS` | gestion_documental/views.py:1715 |
+| `PreferenciaNotificacionViewSet` | `PERSONAL_ACTIONS` | centro_notificaciones/views.py:183 |
+| `HojaVidaViewSet` | *(inline `if action == X`)* | mi_equipo/colaboradores/views.py:635 |
+| Firma digital (`mis_firmas_pendientes`) | *(decorador `@action(permission_classes=[...])`)* | workflow_engine/firma_digital/views.py:852 |
+
+Todos funcionan, pero un code reviewer nuevo ve 3 patrones distintos y no
+sabe cuál es el canónico. También hace más difícil buscar "dónde hay bypass
+RBAC" con grep único.
+
+### Propuesta
+Unificar al patrón canónico de `UserViewSet`:
+```python
+SELF_SERVICE_ACTIONS = frozenset({ ... })  # allowlist explícito
+
+def get_permissions(self):
+    if self.action in self.SELF_SERVICE_ACTIONS:
+        return [IsAuthenticated()]
+    return super().get_permissions()
+```
+
+- Renombrar `PERSONAL_ACTIONS` → `SELF_SERVICE_ACTIONS` en
+  `PreferenciaNotificacionViewSet`.
+- Migrar `HojaVidaViewSet.if action == 'por_colaborador'` al mismo patrón.
+- Dejar el decorador `@action(permission_classes=[IsAuthenticated])` como
+  alternativa válida cuando es UN solo endpoint aislado (no amerita
+  constante de clase).
+
+### Beneficio
+- Grep único: `SELF_SERVICE_ACTIONS = frozenset` encuentra todo el bypass RBAC
+- Code review más rápido
+- Base para generar auditoría automática de endpoints expuestos a empleados
+
+### Trigger
+Reactiva. Se atiende cuando se toque alguno de los ViewSets afectados, o
+proactivamente en una pasada de "coherencia de convenciones".
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA — oportunidad de coherencia.**
+
+---
+
+## H-FE-01 — Prevenir errores `loading` vs `isLoading` en Button DS
+
+### Detectado
+2026-04-23 (fix de warning en MiFirmaDigital: 3 usos de `loading={...}` donde
+Button espera `isLoading={...}`).
+
+### Severidad
+**BAJA** — No causa bugs visibles; solo warning en consola. Pero indica que
+el error es fácil de cometer y puede estar en otros archivos.
+
+### Síntoma
+Button DS expone prop `isLoading`. Si un consumer pasa `loading={...}`, el
+prop se forwardea al DOM como atributo HTML inválido y React tira warning
+"non-boolean attribute `loading`". No rompe nada funcionalmente.
+
+### Propuesta (2 opciones)
+
+**Opción A — ESLint rule custom** (preventivo):
+Regla que detecta JSX `<Button loading={...}>` y sugiere `isLoading`.
+Requiere instalar plugin de ESLint custom o usar
+`no-restricted-syntax`.
+
+**Opción B — Hacer Button más defensivo** (correctivo):
+```typescript
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  isLoading?: boolean;
+  /** @deprecated usar isLoading. Se mapea automáticamente. */
+  loading?: boolean;
+}
+```
+Dentro del componente: `const effectiveLoading = isLoading ?? loading;` y
+NO forwardear `loading` al DOM (destructurar).
+
+Opción B ventaja: no rompe código legacy si quedan usos sin detectar.
+
+### Auditoría rápida
+Grep de `<Button[^>]*loading=` en el repo: solo los 3 casos de
+`MiFirmaDigital.tsx` que ya corregí. No hay otros.
+
+### Trigger
+Reactiva. Si aparece otro caso o se decide hardening del DS.
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA — oportunidad de hardening DS.**
 
 ---
 

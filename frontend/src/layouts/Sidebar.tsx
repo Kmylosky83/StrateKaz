@@ -568,10 +568,6 @@ export const Sidebar = ({
             JefePortalSection se muestra dentro de Mi Portal cuando cargo.is_jefatura=true.
             El módulo RRHH "Gestión de Personas" sigue en el sidebar dinámico. */}
 
-        {/* Portal Proveedor ELIMINADO del sidebar:
-            - Portal-only users usan PortalLayout (sin sidebar)
-            - Profesionales colocados NO necesitan link al portal de la firma */}
-
         {/* Admin Global - Solo visible para superusuarios cuando NO están en contexto de empresa */}
         {showAdminGlobal && (
           <div className="px-2 mb-2">

@@ -218,3 +218,80 @@ export function useAdminStats(enabled = true) {
     enabled,
   });
 }
+
+// ============================================================================
+// HOOKS - RESUMEN DE PENDIENTES (agregador para ActionBar + badges de tabs)
+// ============================================================================
+
+/**
+ * Resumen de conteos de pendientes del empleado.
+ *
+ * Agrega lecturas, firmas y encuestas pendientes. Usado por el ActionBar
+ * del Hero y los badges numéricos en los Tabs.
+ *
+ * Cuando se activen módulos L60+ (nómina, formación, desempeño), sus
+ * conteos se agregan aquí como propiedades adicionales.
+ */
+export interface MiPortalResumen {
+  lecturas: number;
+  firmas: number;
+  encuestas: number;
+  total: number;
+}
+
+export function useMiPortalResumen(enabled = true) {
+  const [lecturas, firmas, encuestas] = [
+    useQuery<{ count: number }>({
+      queryKey: ['mi-portal-resumen', 'lecturas'],
+      queryFn: async () => {
+        const response = await api.get<{ count: number }>(
+          '/gestion-estrategica/gestion-documental/documentos/mis-lecturas-count/'
+        );
+        return response.data;
+      },
+      staleTime: 30 * 1000,
+      enabled,
+      retry: false,
+    }),
+    useQuery<unknown[]>({
+      queryKey: ['mi-portal-resumen', 'firmas'],
+      queryFn: async () => {
+        const response = await api.get<unknown[]>(
+          '/workflows/firma-digital/firmas/mis-firmas-pendientes/',
+          { params: { es_mi_turno: true } }
+        );
+        return response.data;
+      },
+      staleTime: 30 * 1000,
+      enabled,
+      retry: false,
+    }),
+    useQuery<Array<{ ya_respondio: boolean }>>({
+      queryKey: ['mi-portal-resumen', 'encuestas'],
+      queryFn: async () => {
+        const response = await api.get<Array<{ ya_respondio: boolean }>>(
+          '/encuestas-dofa/encuestas/mis-encuestas/'
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      },
+      staleTime: 30 * 1000,
+      enabled,
+      retry: false,
+    }),
+  ];
+
+  const lecturasCount = lecturas.data?.count ?? 0;
+  const firmasCount = firmas.data?.length ?? 0;
+  const encuestasCount = encuestas.data?.filter((e) => !e.ya_respondio).length ?? 0;
+
+  const isLoading = lecturas.isLoading || firmas.isLoading || encuestas.isLoading;
+
+  const resumen: MiPortalResumen = {
+    lecturas: lecturasCount,
+    firmas: firmasCount,
+    encuestas: encuestasCount,
+    total: lecturasCount + firmasCount + encuestasCount,
+  };
+
+  return { resumen, isLoading };
+}

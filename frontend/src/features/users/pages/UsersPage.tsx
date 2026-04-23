@@ -22,7 +22,6 @@ import { ORIGEN_LABELS } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
 import { useAuthStore } from '@/store/authStore';
-import { isPortalOnlyUser } from '@/utils/portalUtils';
 
 export default function UsersPage() {
   const navigate = useNavigate();
@@ -87,14 +86,7 @@ export default function UsersPage() {
     try {
       await startUserImpersonation(userId, token);
       queryClient.removeQueries({ queryKey: ['modules'] });
-      // Buscar usuario para determinar navegación
-      const targetUser = users.find((u) => u.id === userId);
-      if (targetUser && isPortalOnlyUser(targetUser)) {
-        const isCliente = targetUser.cargo?.code === 'CLIENTE_PORTAL';
-        navigate(isCliente ? '/cliente-portal' : '/proveedor-portal');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
       toast.error(err?.response?.data?.error || 'No se pudo impersonar este usuario');

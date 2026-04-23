@@ -79,6 +79,7 @@ const TIPOS_UNIDAD = [
   { value: 'PLANTA', label: 'Planta de Producción' },
   { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
   { value: 'ALMACEN', label: 'Almacén' },
+  { value: 'RUTA_RECOLECCION', label: 'Ruta de Recolección' },
   { value: 'OTRO', label: 'Otro' },
 ];
 
@@ -229,8 +230,12 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     // Nota: codigo NO se valida — el backend lo genera automáticamente.
     const camposFaltantes: string[] = [];
     if (!formData.nombre) camposFaltantes.push('Nombre');
-    if (!formData.direccion) camposFaltantes.push('Dirección');
     if (!isTipoSedeValid) camposFaltantes.push('Tipo de Sede');
+    // Dirección opcional: RUTA_RECOLECCION no tiene dirección física fija.
+    // Para otros tipos se sugiere pero no se bloquea (alineado con backend blank=True).
+    if (!formData.direccion && formData.tipo_unidad !== 'RUTA_RECOLECCION') {
+      camposFaltantes.push('Dirección');
+    }
 
     if (camposFaltantes.length > 0) {
       // Scroll al inicio del formulario para que el usuario vea los campos vacíos
@@ -337,7 +342,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   // Nota: codigo NO figura — se genera automáticamente en el backend.
   const camposFaltantes = [
     !formData.nombre && 'Nombre',
-    !formData.direccion && 'Dirección',
+    !formData.direccion && formData.tipo_unidad !== 'RUTA_RECOLECCION' && 'Dirección',
     !isTipoSedeValid && 'Tipo de Sede',
   ].filter(Boolean) as string[];
 

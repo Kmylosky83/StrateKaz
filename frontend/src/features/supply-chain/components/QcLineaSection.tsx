@@ -45,9 +45,9 @@ export default function QcLineaSection({
     const map = new Map<number, RangoCalidad[]>();
     for (const r of rangos) {
       if (!r.is_active) continue;
-      const arr = map.get(r.parametro) ?? [];
+      const arr = map.get(r.parameter) ?? [];
       arr.push(r);
-      map.set(r.parametro, arr);
+      map.set(r.parameter, arr);
     }
     for (const arr of map.values()) arr.sort((a, b) => a.order - b.order);
     return map;
@@ -91,7 +91,7 @@ export default function QcLineaSection({
             return (
               <div key={p.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2 items-end">
                 <Input
-                  label={`${p.nombre} (${p.unidad})`}
+                  label={`${p.name} (${p.unit})`}
                   type="number"
                   step="0.01"
                   placeholder="—"
@@ -103,17 +103,17 @@ export default function QcLineaSection({
                     <span
                       className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-medium"
                       style={{
-                        backgroundColor: `${rango.color}22`,
-                        color: rango.color,
-                        border: `1px solid ${rango.color}55`,
+                        backgroundColor: `${rango.color_hex}22`,
+                        color: rango.color_hex,
+                        border: `1px solid ${rango.color_hex}55`,
                       }}
-                      title={`Clasificación: ${rango.nombre}`}
+                      title={`Clasificación: ${rango.name}`}
                     >
                       <span
                         className="inline-block w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: rango.color }}
+                        style={{ backgroundColor: rango.color_hex }}
                       />
-                      {rango.nombre}
+                      {rango.name}
                     </span>
                   ) : raw !== '' ? (
                     <span className="text-xs text-gray-400 italic">Fuera de rango</span>

@@ -148,7 +148,7 @@ export default function ParametrosCalidadTab() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                            {p.nombre}
+                            {p.name}
                           </span>
                           {!p.is_active && (
                             <Badge variant="gray" size="sm">
@@ -157,7 +157,7 @@ export default function ParametrosCalidadTab() {
                           )}
                         </div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {p.codigo} · {p.unidad}
+                          {p.code} · {p.unit}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
@@ -201,11 +201,11 @@ export default function ParametrosCalidadTab() {
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                  <FlaskConical className="w-4 h-4" /> Rangos de {selectedParam?.nombre ?? '—'}
+                  <FlaskConical className="w-4 h-4" /> Rangos de {selectedParam?.name ?? '—'}
                 </h3>
-                {selectedParam?.descripcion && (
+                {selectedParam?.description && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {selectedParam.descripcion}
+                    {selectedParam.description}
                   </p>
                 )}
               </div>
@@ -281,16 +281,16 @@ export default function ParametrosCalidadTab() {
                           <td className="px-4 py-2">
                             <span
                               className="inline-block w-4 h-4 rounded"
-                              style={{ backgroundColor: r.color }}
-                              title={r.color}
+                              style={{ backgroundColor: r.color_hex }}
+                              title={r.color_hex}
                             />
                           </td>
                           <td className="px-4 py-2 font-mono text-xs text-gray-900 dark:text-white">
-                            {r.codigo}
+                            {r.code}
                           </td>
-                          <td className="px-4 py-2 text-gray-900 dark:text-white">{r.nombre}</td>
+                          <td className="px-4 py-2 text-gray-900 dark:text-white">{r.name}</td>
                           <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
-                            {formatRange(r, selectedParam.unidad)}
+                            {formatRange(r, selectedParam.unit)}
                           </td>
                           <td className="px-4 py-2 text-center">
                             <Badge variant={r.is_active ? 'success' : 'gray'} size="sm">

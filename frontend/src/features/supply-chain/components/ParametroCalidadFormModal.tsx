@@ -26,20 +26,20 @@ interface Props {
 }
 
 interface FormState {
-  codigo: string;
-  nombre: string;
-  unidad: string;
-  descripcion: string;
-  tipo_medida: string;
+  code: string;
+  name: string;
+  unit: string;
+  description: string;
+  decimals: number;
   is_active: boolean;
 }
 
 const emptyForm: FormState = {
-  codigo: '',
-  nombre: '',
-  unidad: '',
-  descripcion: '',
-  tipo_medida: 'numero',
+  code: '',
+  name: '',
+  unit: '',
+  description: '',
+  decimals: 2,
   is_active: true,
 };
 
@@ -54,11 +54,11 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
   useEffect(() => {
     if (isEditing && parametro) {
       setForm({
-        codigo: parametro.codigo || '',
-        nombre: parametro.nombre || '',
-        unidad: parametro.unidad || '',
-        descripcion: parametro.descripcion || '',
-        tipo_medida: parametro.tipo_medida || 'numero',
+        code: parametro.code || '',
+        name: parametro.name || '',
+        unit: parametro.unit || '',
+        description: parametro.description || '',
+        decimals: parametro.decimals ?? 2,
         is_active: parametro.is_active ?? true,
       });
     } else {
@@ -67,17 +67,17 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
   }, [parametro, isEditing, isOpen]);
 
   const handleSubmit = async () => {
-    if (!form.nombre.trim() || !form.unidad.trim()) {
+    if (!form.name.trim() || !form.unit.trim()) {
       const { toast } = await import('sonner');
       toast.warning('Complete los campos requeridos: Nombre y Unidad');
       return;
     }
 
     const payload = {
-      nombre: form.nombre.trim(),
-      unidad: form.unidad.trim(),
-      descripcion: form.descripcion || undefined,
-      tipo_medida: form.tipo_medida || undefined,
+      name: form.name.trim(),
+      unit: form.unit.trim(),
+      description: form.description || undefined,
+      decimals: form.decimals,
       is_active: form.is_active,
     };
 
@@ -87,7 +87,7 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
       } else {
         await createMut.mutateAsync({
           ...payload,
-          codigo: form.codigo.trim() || form.nombre.trim().toUpperCase().replace(/\s+/g, '_'),
+          code: form.code.trim() || form.name.trim().toUpperCase().replace(/\s+/g, '_'),
         });
       }
       onClose();
@@ -125,16 +125,16 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
           <Input
             label="Código"
             placeholder="ACIDEZ"
-            value={form.codigo}
-            onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))}
+            value={form.code}
+            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
             helperText={!isEditing ? 'Opcional — se genera del nombre si se deja vacío' : undefined}
           />
           <Input
             label="Nombre *"
             placeholder="Acidez"
             required
-            value={form.nombre}
-            onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </div>
 
@@ -143,14 +143,16 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
             label="Unidad *"
             placeholder="%, kg, pH..."
             required
-            value={form.unidad}
-            onChange={(e) => setForm((f) => ({ ...f, unidad: e.target.value }))}
+            value={form.unit}
+            onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
           />
           <Input
-            label="Tipo de medida"
-            placeholder="numero"
-            value={form.tipo_medida}
-            onChange={(e) => setForm((f) => ({ ...f, tipo_medida: e.target.value }))}
+            label="Decimales"
+            type="number"
+            min={0}
+            max={6}
+            value={form.decimals}
+            onChange={(e) => setForm((f) => ({ ...f, decimals: Number(e.target.value) || 0 }))}
           />
         </div>
 
@@ -158,8 +160,8 @@ export default function ParametroCalidadFormModal({ isOpen, onClose, parametro }
           label="Descripción"
           rows={3}
           placeholder="Breve descripción del parámetro y su relevancia"
-          value={form.descripcion}
-          onChange={(e) => setForm((f) => ({ ...f, descripcion: e.target.value }))}
+          value={form.description}
+          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
         />
 
         <Switch

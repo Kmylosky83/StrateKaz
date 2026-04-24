@@ -22,21 +22,21 @@ interface Props {
 }
 
 interface FormState {
-  codigo: string;
-  nombre: string;
+  code: string;
+  name: string;
   min_value: string;
   max_value: string;
-  color: string;
+  color_hex: string;
   order: number;
   is_active: boolean;
 }
 
 const emptyForm: FormState = {
-  codigo: '',
-  nombre: '',
+  code: '',
+  name: '',
   min_value: '',
   max_value: '',
-  color: '#10B981',
+  color_hex: '#10B981',
   order: 0,
   is_active: true,
 };
@@ -52,11 +52,12 @@ export default function RangoCalidadFormModal({ isOpen, onClose, parametroId, ra
   useEffect(() => {
     if (isEditing && rango) {
       setForm({
-        codigo: rango.codigo || '',
-        nombre: rango.nombre || '',
-        min_value: rango.min_value ?? '',
-        max_value: rango.max_value ?? '',
-        color: rango.color || '#10B981',
+        code: rango.code || '',
+        name: rango.name || '',
+        min_value: String(rango.min_value ?? ''),
+        max_value:
+          rango.max_value !== null && rango.max_value !== undefined ? String(rango.max_value) : '',
+        color_hex: rango.color_hex || '#10B981',
         order: rango.order ?? 0,
         is_active: rango.is_active ?? true,
       });
@@ -66,19 +67,19 @@ export default function RangoCalidadFormModal({ isOpen, onClose, parametroId, ra
   }, [rango, isEditing, isOpen]);
 
   const handleSubmit = async () => {
-    if (!form.nombre.trim() || !form.codigo.trim()) {
+    if (!form.name.trim() || !form.code.trim()) {
       const { toast } = await import('sonner');
       toast.warning('Complete Código y Nombre');
       return;
     }
 
     const payload = {
-      parametro: parametroId,
-      codigo: form.codigo.trim(),
-      nombre: form.nombre.trim(),
-      min_value: form.min_value !== '' ? Number(form.min_value) : null,
+      parameter: parametroId,
+      code: form.code.trim(),
+      name: form.name.trim(),
+      min_value: form.min_value !== '' ? Number(form.min_value) : 0,
       max_value: form.max_value !== '' ? Number(form.max_value) : null,
-      color: form.color,
+      color_hex: form.color_hex,
       order: Number(form.order) || 0,
       is_active: form.is_active,
     };
@@ -125,15 +126,15 @@ export default function RangoCalidadFormModal({ isOpen, onClose, parametroId, ra
             label="Código *"
             placeholder="A, B, C..."
             required
-            value={form.codigo}
-            onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value }))}
+            value={form.code}
+            onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
           />
           <Input
             label="Nombre *"
             placeholder="Tipo A / Premium"
             required
-            value={form.nombre}
-            onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
           />
         </div>
 
@@ -166,13 +167,13 @@ export default function RangoCalidadFormModal({ isOpen, onClose, parametroId, ra
             <div className="flex items-center gap-3">
               <input
                 type="color"
-                value={form.color}
-                onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
+                value={form.color_hex}
+                onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))}
                 className="h-10 w-14 rounded-md border border-gray-300 dark:border-gray-600 cursor-pointer"
               />
               <Input
-                value={form.color}
-                onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
+                value={form.color_hex}
+                onChange={(e) => setForm((f) => ({ ...f, color_hex: e.target.value }))}
                 placeholder="#10B981"
               />
             </div>

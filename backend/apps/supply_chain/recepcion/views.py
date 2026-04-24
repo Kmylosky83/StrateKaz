@@ -233,7 +233,10 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         created_at_local = timezone.localtime(voucher.created_at)
         emision = created_at_local.strftime('%d-%m-%Y %H:%M')
 
-        proveedor_nombre = getattr(voucher.proveedor, 'nombre_comercial', str(voucher.proveedor))
+        prov = voucher.proveedor
+        _prov_nombre = getattr(prov, 'nombre_comercial', str(prov)) if prov else '—'
+        _prov_codigo = getattr(prov, 'codigo_interno', '') if prov else ''
+        proveedor_nombre = f"{_prov_codigo} - {_prov_nombre}" if _prov_codigo else _prov_nombre
         almacen_nombre = getattr(voucher.almacen_destino, 'nombre', str(voucher.almacen_destino))
         modalidad = voucher.get_modalidad_entrega_display()
         estado = voucher.get_estado_display()
@@ -303,9 +306,13 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Voucher #{voucher.pk:04d}</title>
 <style>
+  /* Diseno profesional ticket termico 58mm:
+     - @page sin margenes (el body los define internamente con padding)
+     - body ocupa los 58mm completos con padding simetrico → el contenido
+       queda CENTRADO en el papel fisico. */
   @page {{
     size: 58mm auto;
-    margin: 2mm 3mm;
+    margin: 0;
   }}
   * {{
     box-sizing: border-box;
@@ -315,7 +322,9 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   body {{
     font-family: 'Courier New', Courier, monospace;
     font-size: 9pt;
-    width: 52mm;
+    width: 58mm;
+    padding: 4mm 5mm;
+    margin: 0 auto;
     color: #000;
     background: #fff;
   }}
@@ -329,8 +338,8 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   .obs {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
   .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
   @media print {{
-    body {{ width: 52mm; }}
-    @page {{ size: 58mm auto; margin: 2mm 3mm; }}
+    body {{ width: 58mm; padding: 4mm 5mm; margin: 0; }}
+    @page {{ size: 58mm auto; margin: 0; }}
   }}
 </style>
 </head>

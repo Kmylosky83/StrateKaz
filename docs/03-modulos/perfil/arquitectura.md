@@ -28,11 +28,12 @@ Cada sección es un `<Card>` con **edit inline atómico** (ícono ✏️ en el
 encabezado abre un modal específico que sabe a qué modelo escribir).
 
 ### 1. 📇 Identidad
-- **Modelo:** `User`
-- **Endpoint:** `PATCH /api/core/users/update_profile/`
-- **Modal:** `EditIdentidadModal`
-- **Campos:** `first_name`, `last_name`, `email`, `phone` (+ `document_type`, `document_number` solo superadmin)
-- **Foto:** click en Avatar → `AvatarUploadModal` → `POST /api/core/users/upload_photo/` (signal sincroniza a `Colaborador.foto`)
+- **Modelo:** `User` (identidad digital) + foto
+- **Lógica de edición por rol:**
+  - **Empleado con Colaborador:** sección **read-only**. Badge "🔒 Gestionado por talento humano" + mensaje "Si hay errores en tu nombre, cargo o documento, contacta a talento humano". **Solo la foto es editable** (click en avatar). Razón: CLAUDE.md establece que Colaborador es master de nombre/documento/etc., y si el empleado edita `User.first_name` directamente, el próximo save del admin en Colaborador lo sobrescribe via signal.
+  - **Superadmin:** sin Colaborador master → botón "Editar" habilitado → `EditIdentidadModal` → `PATCH /api/core/users/update_profile/` (first_name, last_name, email, phone + documento).
+- **Foto (todos los roles):** click en Avatar → `AvatarUploadModal` → `POST /api/core/users/upload_photo/`. Signal `sync_user_photo_to_colaborador` propaga a `Colaborador.foto`.
+- **Flujos legítimos de cambio de nombre/documento para empleados** (matrimonio, corrección de error admin): **NO son self-service** — son tickets a RH que dispara un workflow de aprobación. Patrón Workday/BambooHR.
 
 ### 2. 📞 Contacto personal
 - **Modelos:** `Colaborador` + `InfoPersonal`

@@ -136,7 +136,8 @@ export const PerfilPage = () => {
             <SectionHeader
               icon={User}
               label="Identidad"
-              onEdit={() => setShowIdentidadModal(true)}
+              onEdit={isSuperAdmin ? () => setShowIdentidadModal(true) : undefined}
+              readOnlyBadge={!isSuperAdmin}
             />
             <h2 className="font-heading text-2xl font-bold text-gray-900 dark:text-white truncate">
               {displayName}
@@ -162,6 +163,12 @@ export const PerfilPage = () => {
                 muted={documentoMuted}
               />
             </div>
+            {!isSuperAdmin && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+                Si hay errores en tu nombre, cargo o documento, contacta a talento humano. Puedes
+                cambiar tu foto en cualquier momento haciendo click sobre el avatar.
+              </p>
+            )}
           </div>
         </div>
       </Card>
@@ -356,10 +363,14 @@ function SectionHeader({
   icon: Icon,
   label,
   onEdit,
+  readOnlyBadge = false,
 }: {
   icon: LucideIcon;
   label: string;
-  onEdit: () => void;
+  /** Si se omite, no se renderiza el botón Editar. Usar para secciones read-only. */
+  onEdit?: () => void;
+  /** Muestra badge "Gestionado por talento humano" cuando la sección es read-only para el empleado. */
+  readOnlyBadge?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between mb-4">
@@ -369,15 +380,23 @@ function SectionHeader({
           {label}
         </h3>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onEdit}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 hover:opacity-80 p-0 h-auto"
-      >
-        <Pencil className="w-3.5 h-3.5" />
-        Editar
-      </Button>
+      {onEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 hover:opacity-80 p-0 h-auto"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Editar
+        </Button>
+      )}
+      {readOnlyBadge && !onEdit && (
+        <Badge variant="gray" size="sm">
+          <Lock className="w-3 h-3 mr-1" />
+          Gestionado por talento humano
+        </Badge>
+      )}
     </div>
   );
 }

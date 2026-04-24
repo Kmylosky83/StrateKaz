@@ -50,6 +50,18 @@ const ESTADO_VARIANT: Record<EstadoVoucher, 'success' | 'primary' | 'warning' | 
     LIQUIDADO: 'success',
   };
 
+/**
+ * Labels concisos del estado para tabla (el display del backend queda
+ * "Pendiente de control de calidad" que es verboso y redundante con la
+ * columna QC. Resumimos a una palabra).
+ */
+const ESTADO_LABEL: Record<EstadoVoucher, string> = {
+  PENDIENTE_QC: 'Pendiente',
+  APROBADO: 'Aprobado',
+  RECHAZADO: 'Rechazado',
+  LIQUIDADO: 'Liquidado',
+};
+
 const MODALIDAD_ICON: Record<string, React.ReactNode> = {
   DIRECTO: <Package className="w-4 h-4" />,
   TRANSPORTE_INTERNO: <Truck className="w-4 h-4" />,
@@ -268,41 +280,36 @@ export default function RecepcionTab() {
                     </td>
                     <td className="px-6 py-3 text-center">
                       <Badge variant={ESTADO_VARIANT[v.estado] || 'gray'} size="sm">
-                        {v.estado_display || v.estado}
+                        {ESTADO_LABEL[v.estado] ?? v.estado}
                       </Badge>
                     </td>
                     <td className="px-6 py-3 text-center">
                       {v.requiere_qc ? (
                         v.tiene_qc ? (
-                          <div className="flex flex-wrap justify-center gap-1">
+                          <div className="flex flex-col items-center gap-0.5">
                             {(v.lineas ?? [])
                               .flatMap((l) => l.measurements ?? [])
                               .map((m) => (
                                 <span
                                   key={m.id}
-                                  className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700"
-                                  style={{
-                                    backgroundColor: m.classified_range_color
-                                      ? `${m.classified_range_color}20`
-                                      : undefined,
-                                    color: m.classified_range_color ?? undefined,
-                                  }}
-                                  title={`${m.parameter_name}: ${Number(m.measured_value).toFixed(1)}${m.parameter_unit ?? ''}${m.classified_range_name ? ` — ${m.classified_range_name}` : ''}`}
+                                  className="text-xs"
+                                  style={{ color: m.classified_range_color ?? undefined }}
+                                  title={m.parameter_name ?? undefined}
                                 >
                                   <span className="font-medium">
                                     {Number(m.measured_value).toFixed(1)}
                                     {m.parameter_unit ?? ''}
                                   </span>
                                   {m.classified_range_name && (
-                                    <span className="opacity-75">· {m.classified_range_name}</span>
+                                    <span className="opacity-75"> · {m.classified_range_name}</span>
                                   )}
                                 </span>
                               ))}
                           </div>
                         ) : (
-                          <Badge variant="warning" size="sm">
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
                             Pendiente
-                          </Badge>
+                          </span>
                         )
                       ) : (
                         <span className="text-slate-400 text-xs">—</span>

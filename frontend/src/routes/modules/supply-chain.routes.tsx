@@ -50,5 +50,15 @@ export const supplyChainRoutes = (
       path="/supply-chain/rutas-recoleccion"
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'catalogos_sc')}
     />
+    {/* Fase 1 QC: parámetros de calidad y sus rangos */}
+    <Route
+      path="/supply-chain/parametros-calidad"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'catalogos_sc')}
+    />
+    {/* Fase 1 Inventario: dashboard por almacén + kardex */}
+    <Route
+      path="/supply-chain/inventario"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'almacenamiento')}
+    />
   </>
 );

@@ -5,7 +5,46 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from .models import RecepcionCalidad, VoucherLineaMP, VoucherRecepcion
+from .models import (
+    MedicionCalidad,
+    ParametroCalidad,
+    RangoCalidad,
+    RecepcionCalidad,
+    VoucherLineaMP,
+    VoucherRecepcion,
+)
+
+
+class MedicionCalidadNestedSerializer(serializers.ModelSerializer):
+    """Serializer liviano para exponer mediciones dentro de una línea."""
+    parameter_code = serializers.CharField(source='parameter.code', read_only=True)
+    parameter_name = serializers.CharField(source='parameter.name', read_only=True)
+    parameter_unit = serializers.CharField(source='parameter.unit', read_only=True)
+    classified_range_code = serializers.CharField(
+        source='classified_range.code', read_only=True, default=None,
+    )
+    classified_range_name = serializers.CharField(
+        source='classified_range.name', read_only=True, default=None,
+    )
+    classified_range_color = serializers.CharField(
+        source='classified_range.color_hex', read_only=True, default=None,
+    )
+
+    class Meta:
+        model = MedicionCalidad
+        fields = [
+            'id',
+            'parameter', 'parameter_code', 'parameter_name', 'parameter_unit',
+            'measured_value',
+            'classified_range',
+            'classified_range_code', 'classified_range_name', 'classified_range_color',
+            'measured_at', 'measured_by', 'observations',
+        ]
+        read_only_fields = [
+            'id', 'classified_range', 'measured_at',
+            'parameter_code', 'parameter_name', 'parameter_unit',
+            'classified_range_code', 'classified_range_name', 'classified_range_color',
+        ]
 
 
 class VoucherLineaMPSerializer(serializers.ModelSerializer):
@@ -13,15 +52,18 @@ class VoucherLineaMPSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
     requiere_qc = serializers.BooleanField(source='producto.requiere_qc_recepcion', read_only=True)
+    measurements = MedicionCalidadNestedSerializer(many=True, read_only=True)
 
     class Meta:
         model = VoucherLineaMP
         fields = [
             'id', 'producto', 'producto_nombre', 'producto_codigo',
             'peso_bruto_kg', 'peso_tara_kg', 'peso_neto_kg', 'requiere_qc',
+            'measurements',
         ]
         read_only_fields = [
-            'id', 'peso_neto_kg', 'producto_nombre', 'producto_codigo', 'requiere_qc',
+            'id', 'peso_neto_kg', 'producto_nombre', 'producto_codigo',
+            'requiere_qc', 'measurements',
         ]
 
 
@@ -341,3 +383,112 @@ class RegistrarQCSerializer(serializers.Serializer):
                 })
 
         return attrs
+
+
+# ══════════════════════════════════════════════════════════════════════
+# QC CONFIGURABLE (H-SC-11 Fase 1)
+# ══════════════════════════════════════════════════════════════════════
+
+
+class RangoCalidadSerializer(serializers.ModelSerializer):
+    """CRUD de rangos de clasificación por parámetro."""
+    parameter_code = serializers.CharField(source='parameter.code', read_only=True)
+    parameter_name = serializers.CharField(source='parameter.name', read_only=True)
+
+    class Meta:
+        model = RangoCalidad
+        fields = [
+            'id',
+            'parameter', 'parameter_code', 'parameter_name',
+            'code', 'name',
+            'min_value', 'max_value',
+            'color_hex', 'order', 'is_active',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'created_at', 'updated_at',
+            'parameter_code', 'parameter_name',
+        ]
+
+    def validate(self, attrs):
+        min_v = attrs.get('min_value')
+        max_v = attrs.get('max_value')
+        if min_v is not None and max_v is not None and max_v < min_v:
+            raise serializers.ValidationError({
+                'max_value': 'El valor máximo debe ser >= al mínimo.'
+            })
+        return attrs
+
+
+class ParametroCalidadSerializer(serializers.ModelSerializer):
+    """CRUD de parámetros de calidad. Incluye rangos nested (read-only)."""
+    ranges = RangoCalidadSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ParametroCalidad
+        fields = [
+            'id', 'code', 'name', 'description', 'unit', 'decimals',
+            'is_active', 'order', 'ranges',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'ranges']
+
+
+class MedicionCalidadSerializer(serializers.ModelSerializer):
+    """CRUD de mediciones individuales por línea de voucher."""
+    parameter_code = serializers.CharField(source='parameter.code', read_only=True)
+    parameter_name = serializers.CharField(source='parameter.name', read_only=True)
+    parameter_unit = serializers.CharField(source='parameter.unit', read_only=True)
+    classified_range_code = serializers.CharField(
+        source='classified_range.code', read_only=True, default=None,
+    )
+    classified_range_name = serializers.CharField(
+        source='classified_range.name', read_only=True, default=None,
+    )
+    classified_range_color = serializers.CharField(
+        source='classified_range.color_hex', read_only=True, default=None,
+    )
+    measured_by_name = serializers.CharField(
+        source='measured_by.get_full_name', read_only=True
+    )
+
+    class Meta:
+        model = MedicionCalidad
+        fields = [
+            'id',
+            'voucher_line',
+            'parameter', 'parameter_code', 'parameter_name', 'parameter_unit',
+            'measured_value',
+            'classified_range',
+            'classified_range_code', 'classified_range_name', 'classified_range_color',
+            'measured_at',
+            'measured_by', 'measured_by_name',
+            'observations',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'classified_range', 'measured_at',
+            'parameter_code', 'parameter_name', 'parameter_unit',
+            'classified_range_code', 'classified_range_name', 'classified_range_color',
+            'measured_by_name',
+            'created_at', 'updated_at',
+        ]
+
+
+class MedicionCalidadBulkItemSerializer(serializers.Serializer):
+    """Item individual del bulk create para mediciones."""
+    parameter_id = serializers.IntegerField()
+    measured_value = serializers.DecimalField(max_digits=12, decimal_places=4)
+    observations = serializers.CharField(
+        required=False, allow_blank=True, default=''
+    )
+
+
+class MedicionCalidadBulkCreateSerializer(serializers.Serializer):
+    """
+    Bulk-create de mediciones para una misma línea de voucher.
+
+    Endpoint: POST /voucher-lines/<id>/measurements/bulk/
+    Body: {"measurements": [{parameter_id, measured_value, observations?}, ...]}
+    """
+    measurements = MedicionCalidadBulkItemSerializer(many=True, allow_empty=False)

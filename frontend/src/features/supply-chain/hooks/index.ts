@@ -34,3 +34,11 @@ export * from './useAlmacenes';
 
 // ==================== RUTAS DE RECOLECCIÓN (H-SC-10) ====================
 export * from './useRutas';
+
+// ==================== QC (Fase 1 — Agent A) ====================
+export * from './useParametrosCalidad';
+export * from './useRangosCalidad';
+export * from './useMedicionesCalidad';
+
+// ==================== INVENTARIO / DASHBOARD (Fase 1 — Agent B) ====================
+export * from './useInventario';

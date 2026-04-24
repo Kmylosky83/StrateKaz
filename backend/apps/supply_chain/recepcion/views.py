@@ -2,8 +2,9 @@
 ViewSets para Recepción — Supply Chain S3
 """
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import connection
+from django.db import connection, transaction
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -11,9 +12,21 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import RecepcionCalidad, VoucherRecepcion
+from .models import (
+    MedicionCalidad,
+    ParametroCalidad,
+    RangoCalidad,
+    RecepcionCalidad,
+    VoucherLineaMP,
+    VoucherRecepcion,
+)
 from .serializers import (
+    MedicionCalidadBulkCreateSerializer,
+    MedicionCalidadSerializer,
+    ParametroCalidadSerializer,
+    RangoCalidadSerializer,
     RecepcionCalidadSerializer,
     RegistrarQCSerializer,
     VoucherRecepcionListSerializer,
@@ -325,3 +338,128 @@ class RecepcionCalidadViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# QC CONFIGURABLE (H-SC-11 Fase 1)
+# ══════════════════════════════════════════════════════════════════════
+
+
+class ParametroCalidadViewSet(viewsets.ModelViewSet):
+    """CRUD de parámetros de calidad configurables por tenant."""
+
+    queryset = ParametroCalidad.objects.prefetch_related('ranges').all()
+    serializer_class = ParametroCalidadSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['is_active']
+    search_fields = ['code', 'name']
+    ordering_fields = ['order', 'name', 'created_at']
+    ordering = ['order', 'name']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class RangoCalidadViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de rangos de clasificación por parámetro.
+
+    Filtrar por parámetro: ?parameter=<id>
+    """
+
+    queryset = RangoCalidad.objects.select_related('parameter').all()
+    serializer_class = RangoCalidadSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['parameter', 'is_active']
+    ordering_fields = ['order', 'min_value']
+    ordering = ['parameter', 'order']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class MedicionCalidadViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de mediciones por línea de voucher.
+
+    Filtrar por línea: ?voucher_line=<id>
+    Filtrar por voucher: ?voucher_line__voucher=<id>
+    """
+
+    queryset = MedicionCalidad.objects.select_related(
+        'parameter', 'classified_range', 'voucher_line', 'measured_by'
+    ).all()
+    serializer_class = MedicionCalidadSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = {
+        'voucher_line': ['exact'],
+        'voucher_line__voucher': ['exact'],
+        'parameter': ['exact'],
+        'classified_range': ['exact'],
+    }
+    ordering_fields = ['measured_at']
+    ordering = ['-measured_at']
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        # Si no se pasa measured_by, usar request.user (comportamiento sano
+        # para UI que asume "yo registro la medición ahora mismo").
+        extra = {'created_by': user, 'updated_by': user}
+        if not serializer.validated_data.get('measured_by'):
+            extra['measured_by'] = user
+        serializer.save(**extra)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class VoucherLineMeasurementsBulkView(APIView):
+    """
+    Bulk-create de mediciones sobre una línea de voucher.
+
+    Endpoint: POST /voucher-lines/<pk>/measurements/bulk/
+    Body: {"measurements": [{parameter_id, measured_value, observations?}, ...]}
+
+    Crea N mediciones atómicamente asociadas a la línea. Falla todo si
+    algún item es inválido (único por (voucher_line, parameter) activo).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk=None):
+        linea = get_object_or_404(VoucherLineaMP, pk=pk)
+
+        serializer = MedicionCalidadBulkCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        items = serializer.validated_data['measurements']
+
+        user = request.user
+        created_objs = []
+        with transaction.atomic():
+            for item in items:
+                parameter = get_object_or_404(
+                    ParametroCalidad, pk=item['parameter_id']
+                )
+                med = MedicionCalidad(
+                    voucher_line=linea,
+                    parameter=parameter,
+                    measured_value=item['measured_value'],
+                    observations=item.get('observations', ''),
+                    measured_by=user,
+                    created_by=user,
+                    updated_by=user,
+                )
+                med.save()
+                created_objs.append(med)
+
+        out = MedicionCalidadSerializer(created_objs, many=True)
+        return Response(out.data, status=status.HTTP_201_CREATED)

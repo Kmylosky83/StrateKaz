@@ -10,7 +10,7 @@
  *   3. El peso neto se calcula en tiempo real por línea
  *   4. Si algún producto tiene requiere_qc_recepcion=True, badge informativo
  */
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,6 +30,10 @@ import { useCreateVoucher } from '../hooks/useRecepcion';
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
 import { useRutas } from '../hooks/useRutas';
+import { useParametrosCalidad } from '../hooks/useParametrosCalidad';
+import { useRangosCalidad } from '../hooks/useRangosCalidad';
+import { useBulkMedicionesPorLinea } from '../hooks/useMedicionesCalidad';
+import QcLineaSection, { type QcLineaMap } from './QcLineaSection';
 import type { ModalidadEntrega } from '../types/recepcion.types';
 
 // ─── Schemas Zod ───
@@ -146,6 +150,7 @@ export default function VoucherFormModal({
   currentUserId,
 }: VoucherFormModalProps) {
   const createMut = useCreateVoucher();
+  const bulkMedicionesMut = useBulkMedicionesPorLinea();
   const { data: proveedoresRaw } = useProveedores();
   const { data: preciosMPRaw } = usePreciosMP();
   // H-SC-07: el backend filtra por sede_asignada del operador (para_recepcion=1).
@@ -154,6 +159,15 @@ export default function VoucherFormModal({
   });
   // H-SC-10: rutas activas (reemplaza el dropdown de Sedes como "UNeg transportista")
   const { data: rutas = [] } = useRutas({ is_active: true });
+  // Fase 1 QC: parámetros y rangos para clasificación client-side
+  const { data: parametrosCalidad = [] } = useParametrosCalidad({ is_active: true });
+  const { data: rangosCalidad = [] } = useRangosCalidad({ is_active: true });
+
+  /**
+   * Mediciones por línea — indexado por el índice de la línea dentro de fields[].
+   * Al guardar el voucher se envían mediante bulk por voucher_line.id.
+   */
+  const [qcByLineIndex, setQcByLineIndex] = useState<Record<number, QcLineaMap>>({});
 
   const proveedores = useMemo(
     () =>
@@ -221,11 +235,12 @@ export default function VoucherFormModal({
   useEffect(() => {
     if (!isOpen) {
       reset();
+      setQcByLineIndex({});
     }
   }, [isOpen, reset]);
 
   const handleSubmit = async (data: VoucherFormValues) => {
-    await createMut.mutateAsync({
+    const created = await createMut.mutateAsync({
       proveedor: data.proveedor,
       modalidad_entrega: data.modalidad_entrega,
       ruta_recoleccion: data.ruta_recoleccion ?? null,
@@ -239,6 +254,29 @@ export default function VoucherFormModal({
         peso_tara_kg: l.peso_tara_kg,
       })),
     });
+
+    // Bulk de mediciones por línea (si el usuario capturó algún valor).
+    // Se ejecuta best-effort: un fallo aquí no revierte el voucher ya creado.
+    try {
+      const createdLines = created?.lineas ?? [];
+      for (let idx = 0; idx < createdLines.length; idx++) {
+        const lineId = createdLines[idx]?.id;
+        const qcMap = qcByLineIndex[idx] ?? {};
+        const measurements = Object.entries(qcMap)
+          .filter(([, v]) => v !== '' && v !== undefined && v !== null)
+          .map(([pid, v]) => ({ parameter_id: Number(pid), measured_value: Number(v) }))
+          .filter((m) => !Number.isNaN(m.measured_value));
+        if (lineId && measurements.length > 0) {
+          await bulkMedicionesMut.mutateAsync({
+            voucherLineId: lineId,
+            data: { measurements },
+          });
+        }
+      }
+    } catch {
+      // Errores ya reportados por el hook; el voucher quedó creado.
+    }
+
     onClose();
   };
 
@@ -434,17 +472,34 @@ export default function VoucherFormModal({
                   {(() => {
                     const prodId = Number(watch(`lineas.${index}.producto`));
                     const prod = productosDelProveedor.find((p) => p.id === prodId);
-                    return prod?.requiere_qc_recepcion ? (
-                      <div className="mt-2 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-                        <Beaker className="w-4 h-4" />
-                        <Badge variant="warning" size="sm">
-                          Requiere QC
-                        </Badge>
-                        <span className="text-xs">
-                          Este producto exige control de calidad antes de aprobar el voucher.
-                        </span>
-                      </div>
-                    ) : null;
+                    const requiereQc = prod?.requiere_qc_recepcion ?? false;
+                    return (
+                      <>
+                        {requiereQc && (
+                          <div className="mt-2 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                            <Beaker className="w-4 h-4" />
+                            <Badge variant="warning" size="sm">
+                              Requiere QC
+                            </Badge>
+                            <span className="text-xs">
+                              Este producto exige control de calidad antes de aprobar el voucher.
+                            </span>
+                          </div>
+                        )}
+                        {parametrosCalidad.length > 0 && (
+                          <QcLineaSection
+                            value={qcByLineIndex[index] ?? {}}
+                            onChange={(next) =>
+                              setQcByLineIndex((prev) => ({ ...prev, [index]: next }))
+                            }
+                            parametros={parametrosCalidad}
+                            rangos={rangosCalidad}
+                            label={prod?.nombre}
+                            defaultExpanded={requiereQc}
+                          />
+                        )}
+                      </>
+                    );
                   })()}
                 </div>
               );

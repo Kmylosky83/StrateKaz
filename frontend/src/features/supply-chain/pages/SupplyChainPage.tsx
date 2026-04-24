@@ -18,14 +18,18 @@ import { useLocation } from 'react-router-dom';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
 import {
+  AlertTriangle,
   DollarSign,
-  ShoppingCart,
-  Package,
-  FolderOpen,
-  Scale,
   FileCheck,
+  FlaskConical,
+  FolderOpen,
+  Package,
   Route,
+  Scale,
+  ShoppingCart,
+  Warehouse,
 } from 'lucide-react';
 import {
   PreciosTab,
@@ -35,7 +39,10 @@ import {
   RecepcionTab,
   LiquidacionesTab,
   RutasRecoleccionTab,
+  ParametrosCalidadTab,
+  InventarioTab,
 } from '../components';
+import { useResumenGeneralSC } from '../hooks/useInventario';
 
 interface SectionMeta {
   title: string;
@@ -87,6 +94,18 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     icon: <Route className="w-5 h-5" />,
     component: RutasRecoleccionTab,
   },
+  'parametros-calidad': {
+    title: 'Parámetros de Calidad',
+    description: 'Parámetros medibles al recepcionar MP con sus rangos de clasificación',
+    icon: <FlaskConical className="w-5 h-5" />,
+    component: ParametrosCalidadTab,
+  },
+  inventario: {
+    title: 'Inventario',
+    description: 'Dashboard de almacenes, ocupación, kardex y alertas',
+    icon: <Warehouse className="w-5 h-5" />,
+    component: InventarioTab,
+  },
 };
 
 export default function SupplyChainPage() {
@@ -96,9 +115,44 @@ export default function SupplyChainPage() {
   const section = SECTION_MAP[activeKey] || SECTION_MAP.precios;
   const SectionComponent = section.component;
 
+  // Resumen global — solo en landing ('precios' por default). Defensivo si backend no responde.
+  const showResumen = activeKey === 'precios' || activeKey === '';
+  const { data: resumen } = useResumenGeneralSC();
+
   return (
     <div className="space-y-6">
       <PageHeader title={section.title} description={section.description} />
+
+      {showResumen && resumen && (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            label="Almacenes"
+            value={resumen.total_almacenes ?? 0}
+            icon={<Warehouse className="w-5 h-5" />}
+            color="primary"
+          />
+          <KpiCard
+            label="Productos"
+            value={resumen.total_productos ?? 0}
+            icon={<Package className="w-5 h-5" />}
+            color="info"
+          />
+          <KpiCard
+            label="Cantidad global"
+            value={(resumen.cantidad_global ?? 0).toLocaleString('es-CO', {
+              maximumFractionDigits: 2,
+            })}
+            icon={<Scale className="w-5 h-5" />}
+            color="success"
+          />
+          <KpiCard
+            label="Alertas activas"
+            value={resumen.alertas_activas ?? 0}
+            icon={<AlertTriangle className="w-5 h-5" />}
+            color={(resumen.alertas_activas ?? 0) > 0 ? 'danger' : 'gray'}
+          />
+        </KpiCardGrid>
+      )}
 
       {SectionComponent ? (
         <SectionComponent />

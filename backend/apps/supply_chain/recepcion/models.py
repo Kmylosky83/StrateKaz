@@ -15,7 +15,8 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Q
 
 from utils.models import TenantModel
 
@@ -323,3 +324,203 @@ class RecepcionCalidad(TenantModel):
 
     def __str__(self):
         return f"QC Voucher #{self.voucher_id} — {self.get_resultado_display()}"
+
+
+# ══════════════════════════════════════════════════════════════════════
+# QC CONFIGURABLE POR TENANT (H-SC-11 Fase 1)
+# ══════════════════════════════════════════════════════════════════════
+#
+# Modelos de QC configurable por línea de voucher:
+#   - ParametroCalidad: parámetro medible (Acidez, Humedad, pH, etc.)
+#   - RangoCalidad: clasificación configurable del valor medido
+#     (Tipo A, Tipo B, Tipo C según rangos numéricos).
+#   - MedicionCalidad: medición concreta en una VoucherLineaMP.
+#
+# Reemplaza conceptualmente a RecepcionCalidad (OneToOne a voucher),
+# que queda DEPRECATED pero intacto hasta que H-SC-12 migre el dominio.
+# ══════════════════════════════════════════════════════════════════════
+
+
+class ParametroCalidad(TenantModel):
+    """
+    Parámetro de calidad configurable por tenant
+    (Acidez, Humedad, pH, Temperatura, etc.).
+
+    Cada tenant define los parámetros que mide en sus recepciones, así
+    como sus rangos asociados (ver RangoCalidad).
+    """
+
+    code = models.CharField(
+        max_length=50, db_index=True, verbose_name='Código'
+    )
+    name = models.CharField(max_length=100, verbose_name='Nombre')
+    description = models.TextField(
+        blank=True, default='', verbose_name='Descripción'
+    )
+    unit = models.CharField(
+        max_length=20,
+        verbose_name='Unidad',
+        help_text='Ej: %, °C, pH, ppm, g/L',
+    )
+    decimals = models.PositiveSmallIntegerField(
+        default=2, verbose_name='Decimales'
+    )
+    is_active = models.BooleanField(default=True, db_index=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = 'supply_chain_parametro_calidad'
+        verbose_name = 'Parámetro de Calidad'
+        verbose_name_plural = 'Parámetros de Calidad'
+        ordering = ['order', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['code'],
+                condition=Q(is_deleted=False),
+                name='uq_parametro_calidad_code_active',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.unit})"
+
+
+class RangoCalidad(TenantModel):
+    """
+    Rango que clasifica mediciones de un ParametroCalidad en una
+    categoría (ej. Tipo A, Tipo B, Tipo C).
+
+    El sistema auto-clasifica la MP recibida según el valor medido caiga
+    dentro de un rango [min_value, max_value]. max_value=NULL significa
+    "sin límite superior".
+    """
+
+    parameter = models.ForeignKey(
+        ParametroCalidad,
+        on_delete=models.CASCADE,
+        related_name='ranges',
+        verbose_name='Parámetro',
+    )
+    code = models.CharField(
+        max_length=30,
+        db_index=True,
+        verbose_name='Código',
+        help_text='Ej: TIPO_A, TIPO_B, TIPO_C',
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name='Nombre',
+        help_text='Ej: Tipo A, Tipo B, Tipo B-II',
+    )
+    min_value = models.DecimalField(
+        max_digits=10, decimal_places=4, verbose_name='Valor mínimo'
+    )
+    max_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        verbose_name='Valor máximo',
+        help_text='Null = sin límite superior',
+    )
+    color_hex = models.CharField(
+        max_length=7, default='#6B7280', verbose_name='Color'
+    )
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'supply_chain_rango_calidad'
+        verbose_name = 'Rango de Calidad'
+        verbose_name_plural = 'Rangos de Calidad'
+        ordering = ['parameter', 'order']
+
+    def __str__(self):
+        top = self.max_value if self.max_value is not None else '∞'
+        return f"{self.parameter.code}:{self.code} [{self.min_value}, {top}]"
+
+
+class MedicionCalidad(TenantModel):
+    """
+    Medición de un parámetro en una línea de voucher (por producto MP).
+
+    Se clasifica automáticamente en un RangoCalidad al guardar, buscando
+    el primer rango activo del parámetro donde cae el valor medido.
+    """
+
+    voucher_line = models.ForeignKey(
+        'sc_recepcion.VoucherLineaMP',
+        on_delete=models.CASCADE,
+        related_name='measurements',
+        verbose_name='Línea del voucher',
+    )
+    parameter = models.ForeignKey(
+        ParametroCalidad,
+        on_delete=models.PROTECT,
+        related_name='measurements',
+        verbose_name='Parámetro',
+    )
+    measured_value = models.DecimalField(
+        max_digits=12, decimal_places=4, verbose_name='Valor medido'
+    )
+    classified_range = models.ForeignKey(
+        RangoCalidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='measurements',
+        verbose_name='Rango clasificado',
+        help_text='Auto-calculado al guardar',
+    )
+    measured_at = models.DateTimeField(
+        auto_now_add=True, verbose_name='Fecha medición'
+    )
+    measured_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='measurements',
+        verbose_name='Medido por',
+    )
+    observations = models.TextField(
+        blank=True, default='', verbose_name='Observaciones'
+    )
+
+    class Meta:
+        db_table = 'supply_chain_medicion_calidad'
+        verbose_name = 'Medición de Calidad'
+        verbose_name_plural = 'Mediciones de Calidad'
+        ordering = ['-measured_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['voucher_line', 'parameter'],
+                condition=Q(is_deleted=False),
+                name='uq_medicion_linea_parametro_active',
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.parameter.code}={self.measured_value} "
+            f"(línea #{self.voucher_line_id})"
+        )
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        # Auto-clasificar: buscar el rango activo del parámetro donde
+        # cae el valor medido. Los rangos se evalúan en orden ascendente
+        # y se toma el primero que contenga el valor.
+        if self.parameter_id and self.measured_value is not None:
+            ranges = self.parameter.ranges.filter(
+                is_active=True, is_deleted=False
+            ).order_by('order')
+            matched = None
+            for r in ranges:
+                in_range = self.measured_value >= r.min_value and (
+                    r.max_value is None
+                    or self.measured_value <= r.max_value
+                )
+                if in_range:
+                    matched = r
+                    break
+            self.classified_range = matched
+        super().save(*args, **kwargs)

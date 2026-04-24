@@ -15,7 +15,14 @@ export { default as AlmacenamientoTab } from './AlmacenamientoTab';
 export { default as RecepcionTab } from './RecepcionTab';
 export { default as LiquidacionesTab } from './LiquidacionesTab';
 export { default as RutasRecoleccionTab } from './RutasRecoleccionTab';
+// Fase 1 QC + Inventario
+export { default as ParametrosCalidadTab } from './ParametrosCalidadTab';
+export { default as InventarioTab } from './InventarioTab';
 
 // Modales CRUD
 export { default as RequisicionFormModal } from './RequisicionFormModal';
 export { default as MovimientoInventarioFormModal } from './MovimientoInventarioFormModal';
+export { default as ParametroCalidadFormModal } from './ParametroCalidadFormModal';
+export { default as RangoCalidadFormModal } from './RangoCalidadFormModal';
+export { default as AlmacenDashboardModal } from './AlmacenDashboardModal';
+export { default as QcLineaSection } from './QcLineaSection';

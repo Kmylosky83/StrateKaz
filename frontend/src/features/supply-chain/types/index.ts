@@ -135,6 +135,12 @@ export type {
 export * from './recepcion.types';
 export * from './liquidaciones.types';
 
+// Fase 1 QC (Agent A)
+export * from './calidad.types';
+
+// Fase 1 Inventario/Dashboard (Agent B)
+export * from './inventario.types';
+
 // ==================== ALMACENES (catálogo CT, H-SC-07) ====================
 
 export type {

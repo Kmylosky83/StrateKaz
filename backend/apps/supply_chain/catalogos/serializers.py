@@ -33,6 +33,8 @@ class AlmacenSerializer(serializers.ModelSerializer):
     sede_nombre = serializers.CharField(
         source='sede.nombre', read_only=True, allow_null=True
     )
+    # H-SC-09: codigo se auto-genera en save() si viene vacío (ALM-001...).
+    codigo = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Almacen

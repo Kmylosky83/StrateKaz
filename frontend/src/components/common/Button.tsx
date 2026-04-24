@@ -67,6 +67,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        // type="button" por defecto evita el submit accidental del form padre
+        // al clickear botones de acción (ej. ActionButtons dentro de un <form>).
+        // Los botones que necesiten ser submit deben declarar type="submit" explícito.
+        type={props.type ?? 'button'}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
         disabled={disabled || isLoading}
         {...props}

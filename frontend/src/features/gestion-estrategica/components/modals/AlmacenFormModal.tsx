@@ -39,7 +39,6 @@ interface FormData {
   direccion: string;
   tipo_almacen: string;
   capacidad_maxima: string;
-  es_principal: boolean;
   permite_recepcion: boolean;
   permite_despacho: boolean;
   is_active: boolean;
@@ -52,7 +51,6 @@ const defaultFormData: FormData = {
   direccion: '',
   tipo_almacen: '',
   capacidad_maxima: '',
-  es_principal: false,
   permite_recepcion: true,
   permite_despacho: true,
   is_active: true,
@@ -81,7 +79,6 @@ export const AlmacenFormModal = ({ sede, almacen, isOpen, onClose }: AlmacenForm
         direccion: almacen.direccion || '',
         tipo_almacen: almacen.tipo_almacen?.toString() || '',
         capacidad_maxima: almacen.capacidad_maxima?.toString() || '',
-        es_principal: almacen.es_principal ?? false,
         permite_recepcion: almacen.permite_recepcion ?? true,
         permite_despacho: almacen.permite_despacho ?? true,
         is_active: almacen.is_active ?? true,
@@ -111,7 +108,6 @@ export const AlmacenFormModal = ({ sede, almacen, isOpen, onClose }: AlmacenForm
       direccion: formData.direccion || undefined,
       tipo_almacen: formData.tipo_almacen ? parseInt(formData.tipo_almacen) : null,
       capacidad_maxima: formData.capacidad_maxima ? parseFloat(formData.capacidad_maxima) : null,
-      es_principal: formData.es_principal,
       permite_recepcion: formData.permite_recepcion,
       permite_despacho: formData.permite_despacho,
       is_active: formData.is_active,
@@ -296,21 +292,6 @@ export const AlmacenFormModal = ({ sede, almacen, isOpen, onClose }: AlmacenForm
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, permite_despacho: checked })
                 }
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Almacén principal
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Default para operaciones automáticas
-                </p>
-              </div>
-              <Switch
-                checked={formData.es_principal}
-                onCheckedChange={(checked) => setFormData({ ...formData, es_principal: checked })}
               />
             </div>
 

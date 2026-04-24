@@ -199,6 +199,8 @@ class Command(BaseCommand):
             {'codigo': 'SILO', 'nombre': 'Silo', 'descripcion': 'Silo para material a granel', 'icono': 'Container', 'orden': 3},
             {'codigo': 'PATIO', 'nombre': 'Patio de Acopio', 'descripcion': 'Área al aire libre para acopio', 'icono': 'Square', 'orden': 4},
             {'codigo': 'CONTENEDOR', 'nombre': 'Contenedor', 'descripcion': 'Contenedor cerrado trasladable', 'icono': 'Box', 'orden': 5},
+            {'codigo': 'CUARTO_FRIO', 'nombre': 'Cuarto Frío', 'descripcion': 'Cuarto frío para productos perecederos (refrigeración/congelación)', 'icono': 'Snowflake', 'orden': 6},
+            {'codigo': 'PALLET', 'nombre': 'Pallet', 'descripcion': 'Ubicación tipo pallet/estiba para producto paletizado', 'icono': 'Package', 'orden': 7},
         ]
         return self._seed_model(TipoAlmacen, data, 'Tipos de Almacén', dry_run)
 

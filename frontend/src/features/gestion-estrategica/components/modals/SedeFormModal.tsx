@@ -30,7 +30,6 @@ import {
   Plus,
   Package,
   Truck,
-  Star,
   CheckCircle2,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -69,9 +68,6 @@ const OTHER_TIPO_SEDE_VALUE = '__OTHER__';
 /** Roles que muestran la sección capacidad + switches UN/Acopio */
 const ROLES_CON_CAPACIDAD: RolOperacionalSede[] = ['PLANTA', 'CENTRO_ACOPIO', 'BODEGA', 'OTRO'];
 
-/** Roles que muestran switches UN / Centro de Acopio */
-const ROLES_CON_SWITCHES_ROL: RolOperacionalSede[] = ['PLANTA', 'CENTRO_ACOPIO'];
-
 /** Roles que habilitan la sección de Almacenes inline */
 const ROLES_CON_ALMACENES: RolOperacionalSede[] = ['PLANTA', 'CENTRO_ACOPIO', 'BODEGA'];
 
@@ -95,8 +91,6 @@ interface FormData {
   fecha_cierre: string;
   capacidad_almacenamiento: string;
   unidad_capacidad: string;
-  es_unidad_negocio: boolean;
-  es_centro_acopio: boolean;
   is_active: boolean;
 }
 
@@ -120,8 +114,6 @@ const defaultFormData: FormData = {
   fecha_cierre: '',
   capacidad_almacenamiento: '',
   unidad_capacidad: '',
-  es_unidad_negocio: true,
-  es_centro_acopio: false,
   is_active: true,
 };
 
@@ -133,7 +125,7 @@ function useTiposSedeConRol() {
   return useQuery<TipoSedeChoice[]>({
     queryKey: ['configuracion', 'tipos-sede-con-rol'],
     queryFn: async () => {
-      const response = await apiClient.get('/api/configuracion/tipos-sede/');
+      const response = await apiClient.get('/configuracion/tipos-sede/');
       const data = response.data;
       // Normaliza paginado { results: [...] } o array simple
       const list = Array.isArray(data) ? data : data?.results || [];
@@ -186,7 +178,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   }, [formData.tipo_sede, tiposSede]);
 
   const showCapacidad = !!rolOperacional && ROLES_CON_CAPACIDAD.includes(rolOperacional);
-  const showSwitchesRol = !!rolOperacional && ROLES_CON_SWITCHES_ROL.includes(rolOperacional);
   const showAlmacenes = !!rolOperacional && ROLES_CON_ALMACENES.includes(rolOperacional);
 
   // Función para obtener ubicación GPS del dispositivo
@@ -267,12 +258,10 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       fecha_cierre: sedeDetail.fecha_cierre || '',
       capacidad_almacenamiento: sedeDetail.capacidad_almacenamiento?.toString() || '',
       unidad_capacidad: sedeDetail.unidad_capacidad?.toString() || '',
-      es_unidad_negocio: sedeDetail.es_unidad_negocio ?? true,
-      es_centro_acopio: sedeDetail.es_centro_acopio ?? false,
       is_active: sedeDetail.is_active,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sedeDetail?.id]);
+  }, [sedeDetail?.id, isOpen]);
 
   // CREACIÓN: resetear a defaults cuando se abre en modo crear
   useEffect(() => {
@@ -334,9 +323,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
       telefono: formData.telefono || undefined,
       email: formData.email || undefined,
-      // Switches sólo aplican si el rol los soporta — sino, mandar defaults falsy
-      es_unidad_negocio: showSwitchesRol ? formData.es_unidad_negocio : false,
-      es_centro_acopio: showSwitchesRol ? formData.es_centro_acopio : false,
       es_sede_principal: formData.es_sede_principal,
       fecha_apertura: formData.fecha_apertura || undefined,
       fecha_cierre: formData.fecha_cierre || undefined,
@@ -382,7 +368,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const tipoSedeOptions = [
     ...tiposSede.map((t) => ({
       value: t.id.toString(),
-      label: t.nombre,
+      label: t.name,
     })),
     { value: OTHER_TIPO_SEDE_VALUE, label: 'Otro tipo...' },
   ];
@@ -459,8 +445,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       departamento_nombre: null,
       responsable: formData.responsable ? parseInt(formData.responsable) : null,
       es_sede_principal: formData.es_sede_principal,
-      es_unidad_negocio: formData.es_unidad_negocio,
-      es_centro_acopio: formData.es_centro_acopio,
       is_active: formData.is_active,
     };
   }, [currentSedeId, sede, formData, ciudadId, ciudadSeleccionada]);
@@ -771,43 +755,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
                   helperText="Unidad para la capacidad"
                 />
               </div>
-
-              {showSwitchesRol && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Unidad de Negocio
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Visible en Supply Chain
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.es_unidad_negocio}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, es_unidad_negocio: checked })
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Centro de Acopio
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Recibe materia prima
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.es_centro_acopio}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, es_centro_acopio: checked })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -885,9 +832,6 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
                                     <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                                       {almacen.nombre}
                                     </span>
-                                    {almacen.es_principal && (
-                                      <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
-                                    )}
                                   </div>
                                   <span className="text-xs text-gray-400 font-mono">
                                     {almacen.codigo}

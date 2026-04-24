@@ -416,12 +416,12 @@ def select_unidades_negocio(request):
     if not SedeEmpresa:
         return Response([])
 
-    # H-SC-10: tipo_unidad eliminado — el rol operacional vive en TipoSede.
-    # ciudad ahora es FK; traemos el nombre denormalizado.
+    # H-SC-10.2: es_unidad_negocio eliminado — filtro se deriva de rol_operacional.
+    # Son UNeg: PLANTA, CENTRO_ACOPIO, BODEGA (oficinas quedan excluidas).
     qs = SedeEmpresa.objects.filter(
         is_active=True,
         deleted_at__isnull=True,
-        es_unidad_negocio=True,
+        tipo_sede__rol_operacional__in=['PLANTA', 'CENTRO_ACOPIO', 'BODEGA'],
     ).select_related('ciudad', 'tipo_sede').order_by('nombre')[:200]
 
     return Response([

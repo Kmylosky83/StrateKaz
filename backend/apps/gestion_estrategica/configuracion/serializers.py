@@ -115,9 +115,6 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'es_sede_principal',
             'fecha_apertura',
             'fecha_cierre',
-            # Roles (H-SC-10: tipo_unidad y es_proveedor_interno eliminados)
-            'es_unidad_negocio',
-            'es_centro_acopio',
             # Capacidad - Sistema dinámico multi-industria
             'capacidad_almacenamiento',
             'unidad_capacidad',
@@ -322,8 +319,6 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
             'responsable',
             'responsable_name',
             'es_sede_principal',
-            'es_unidad_negocio',
-            'es_centro_acopio',
             'is_active',
         ]
 

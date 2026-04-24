@@ -207,3 +207,21 @@ class Almacen(TenantModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def _generate_code(cls):
+        """Genera código secuencial ALM-001, ALM-002, etc. dentro del tenant."""
+        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
+        if last and last.startswith('ALM-'):
+            try:
+                num = int(last.split('-')[1]) + 1
+            except (ValueError, IndexError):
+                num = cls.objects.count() + 1
+        else:
+            num = cls.objects.count() + 1
+        return f'ALM-{num:03d}'

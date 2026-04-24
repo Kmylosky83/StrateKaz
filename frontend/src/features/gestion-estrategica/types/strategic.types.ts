@@ -648,7 +648,10 @@ export type RolOperacionalSede = 'OFICINA' | 'PLANTA' | 'CENTRO_ACOPIO' | 'BODEG
  */
 export interface TipoSedeChoice {
   id: number;
-  nombre: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
   rol_operacional: RolOperacionalSede;
 }
 
@@ -679,9 +682,6 @@ export interface SedeEmpresa {
   responsable_name?: string | null;
   telefono?: string | null;
   email?: string | null;
-  // Roles residuales (H-SC-10: tipo_unidad y es_proveedor_interno eliminados)
-  es_unidad_negocio: boolean;
-  es_centro_acopio: boolean;
   // Control
   es_sede_principal: boolean;
   fecha_apertura?: string | null;
@@ -715,8 +715,6 @@ export interface SedeEmpresaList {
   responsable?: number | null;
   responsable_name?: string | null;
   es_sede_principal: boolean;
-  es_unidad_negocio: boolean;
-  es_centro_acopio: boolean;
   is_active: boolean;
 }
 
@@ -734,8 +732,6 @@ export interface CreateSedeEmpresaDTO {
   responsable?: number;
   telefono?: string;
   email?: string;
-  es_unidad_negocio?: boolean;
-  es_centro_acopio?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string;
   fecha_cierre?: string;
@@ -758,8 +754,6 @@ export interface UpdateSedeEmpresaDTO {
   responsable?: number | null;
   telefono?: string;
   email?: string;
-  es_unidad_negocio?: boolean;
-  es_centro_acopio?: boolean;
   es_sede_principal?: boolean;
   fecha_apertura?: string | null;
   fecha_cierre?: string | null;

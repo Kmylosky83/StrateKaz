@@ -697,16 +697,8 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
     # H-SC-10: tipo_unidad (CharField con RUTA_RECOLECCION) y es_proveedor_interno
     # fueron ELIMINADOS. El rol operativo ahora vive en TipoSede.rol_operacional.
     # El concepto de "ruta de recolección" se movió a supply_chain.catalogos.RutaRecoleccion.
-    es_unidad_negocio = models.BooleanField(
-        default=True,
-        verbose_name='Es unidad de negocio',
-        help_text='Visible para Contabilidad, Presupuesto y Supply Chain como centro de operaciones'
-    )
-    es_centro_acopio = models.BooleanField(
-        default=False,
-        verbose_name='Es centro de acopio',
-        help_text='Recibe materia prima de proveedores'
-    )
+    # H-SC-10.2: es_unidad_negocio y es_centro_acopio ELIMINADOS — redundantes
+    # con tipo_sede.rol_operacional y almacenes.permite_recepcion respectivamente.
 
     # =========================================================================
     # CAPACIDAD - SISTEMA DINÁMICO (sin hardcoding de unidades)
@@ -747,7 +739,6 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
             models.Index(fields=['is_active', 'tipo_sede']),
             models.Index(fields=['ciudad']),
             models.Index(fields=['deleted_at']),
-            models.Index(fields=['es_unidad_negocio']),
         ]
 
     def __str__(self):

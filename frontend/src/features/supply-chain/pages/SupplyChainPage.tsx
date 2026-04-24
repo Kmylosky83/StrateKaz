@@ -133,13 +133,13 @@ export default function SupplyChainPage() {
           />
           <KpiCard
             label="Productos"
-            value={resumen.total_productos ?? 0}
+            value={resumen.total_productos_stock ?? 0}
             icon={<Package className="w-5 h-5" />}
             color="info"
           />
           <KpiCard
             label="Cantidad global"
-            value={(resumen.cantidad_global ?? 0).toLocaleString('es-CO', {
+            value={Number(resumen.total_cantidad_global ?? 0).toLocaleString('es-CO', {
               maximumFractionDigits: 2,
             })}
             icon={<Scale className="w-5 h-5" />}
@@ -147,9 +147,9 @@ export default function SupplyChainPage() {
           />
           <KpiCard
             label="Alertas activas"
-            value={resumen.alertas_activas ?? 0}
+            value={resumen.alertas_pendientes ?? 0}
             icon={<AlertTriangle className="w-5 h-5" />}
-            color={(resumen.alertas_activas ?? 0) > 0 ? 'danger' : 'gray'}
+            color={(resumen.alertas_pendientes ?? 0) > 0 ? 'danger' : 'gray'}
           />
         </KpiCardGrid>
       )}

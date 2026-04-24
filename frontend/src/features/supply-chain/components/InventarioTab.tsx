@@ -98,9 +98,10 @@ interface AlmacenCardProps {
 }
 
 function AlmacenCard({ almacen, onClick }: AlmacenCardProps) {
-  const pct = almacen.ocupacion_pct;
+  const pctRaw = almacen.ocupacion_pct;
+  const pct = pctRaw === null || pctRaw === undefined ? null : Number(pctRaw);
   const pctColor =
-    pct === null || pct === undefined
+    pct === null || Number.isNaN(pct)
       ? 'bg-gray-300 dark:bg-gray-600'
       : pct >= 90
         ? 'bg-danger-500'
@@ -151,7 +152,11 @@ function AlmacenCard({ almacen, onClick }: AlmacenCardProps) {
                 />
               </div>
               <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400 flex justify-between">
-                <span>{pct !== null && pct !== undefined ? `${pct}% ocupación` : 'Sin datos'}</span>
+                <span>
+                  {pct !== null && !Number.isNaN(pct)
+                    ? `${pct.toFixed(1)}% ocupación`
+                    : 'Sin datos'}
+                </span>
                 <span>Cap. {formatNumber(almacen.capacidad_maxima)}</span>
               </div>
             </>

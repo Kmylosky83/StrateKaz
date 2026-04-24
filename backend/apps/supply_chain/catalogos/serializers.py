@@ -112,6 +112,28 @@ class ResumenGeneralTopProductoSerializer(serializers.Serializer):
     almacenes_count = serializers.IntegerField()
 
 
+class ResumenGeneralAlmacenItemSerializer(serializers.Serializer):
+    """Item de lista de almacenes en el resumen general."""
+
+    id = serializers.IntegerField()
+    codigo = serializers.CharField()
+    nombre = serializers.CharField()
+    is_active = serializers.BooleanField()
+    tipo_almacen_nombre = serializers.CharField(allow_null=True, allow_blank=True)
+    sede_nombre = serializers.CharField(allow_null=True, allow_blank=True)
+    cantidad_total = serializers.DecimalField(max_digits=15, decimal_places=3)
+    capacidad_maxima = serializers.DecimalField(
+        max_digits=14, decimal_places=2, allow_null=True,
+    )
+    ocupacion_pct = serializers.DecimalField(
+        max_digits=6, decimal_places=2, allow_null=True,
+    )
+    productos_distintos = serializers.IntegerField()
+    ultima_recepcion = serializers.DateTimeField(allow_null=True)
+    dias_desde_ultima_recepcion = serializers.IntegerField(allow_null=True)
+    alertas_activas = serializers.IntegerField()
+
+
 class ResumenGeneralSerializer(serializers.Serializer):
     total_almacenes = serializers.IntegerField()
     total_productos_stock = serializers.IntegerField()
@@ -119,6 +141,7 @@ class ResumenGeneralSerializer(serializers.Serializer):
     alertas_pendientes = serializers.IntegerField()
     ocupacion_promedio = serializers.DecimalField(max_digits=6, decimal_places=2)
     top_productos = ResumenGeneralTopProductoSerializer(many=True)
+    almacenes = ResumenGeneralAlmacenItemSerializer(many=True)
 
 
 class RutaRecoleccionSerializer(serializers.ModelSerializer):

@@ -417,10 +417,14 @@ class AlmacenViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='resumen-general')
     def resumen_general(self, request):
-        """Stats globales del tenant (todos los almacenes)."""
-        from apps.supply_chain.almacenamiento.models import AlertaStock, Inventario
+        """Stats globales del tenant (todos los almacenes) + detalle por almacén."""
+        from apps.supply_chain.almacenamiento.models import AlertaStock, Inventario, MovimientoInventario
+        from django.utils import timezone
+        from datetime import timedelta
 
-        almacenes_qs = Almacen.objects.filter(is_active=True)
+        almacenes_qs = Almacen.objects.filter(is_active=True).select_related(
+            'tipo_almacen', 'sede',
+        )
         total_almacenes = almacenes_qs.count()
 
         inv_qs = Inventario.objects.filter(almacen__in=almacenes_qs)
@@ -434,17 +438,54 @@ class AlmacenViewSet(viewsets.ModelViewSet):
             resuelta=False,
         ).count()
 
-        # Ocupación promedio: promedio simple de (stock / capacidad) × 100
-        # para almacenes con capacidad_maxima > 0.
+        # Stats por almacén (para listado FE) + ocupación promedio global
+        ahora = timezone.now()
+        hace_7d = ahora - timedelta(days=7)
         ocupaciones = []
-        for alm in almacenes_qs.only('id', 'capacidad_maxima'):
-            cap = alm.capacidad_maxima or Decimal('0')
-            if cap <= 0:
-                continue
+        almacenes_data = []
+        for alm in almacenes_qs:
             stock = inv_qs.filter(almacen=alm).aggregate(
                 total=Sum('cantidad_disponible'),
             )['total'] or Decimal('0')
-            ocupaciones.append((stock / cap) * Decimal('100'))
+            productos_count = (
+                inv_qs.filter(almacen=alm).values('producto_id').distinct().count()
+            )
+            cap = alm.capacidad_maxima or Decimal('0')
+            if cap > 0:
+                ocupacion_pct = ((stock / cap) * Decimal('100')).quantize(Decimal('0.01'))
+                ocupaciones.append(ocupacion_pct)
+            else:
+                ocupacion_pct = None
+
+            ultima_mov = (
+                MovimientoInventario.objects
+                .filter(almacen_destino=alm)
+                .order_by('-fecha_movimiento')
+                .values_list('fecha_movimiento', flat=True)
+                .first()
+            )
+            dias_desde = (ahora.date() - ultima_mov.date()).days if ultima_mov else None
+
+            alertas_alm = AlertaStock.objects.filter(
+                almacen=alm, resuelta=False,
+            ).count()
+
+            almacenes_data.append({
+                'id': alm.id,
+                'codigo': alm.codigo,
+                'nombre': alm.nombre,
+                'is_active': alm.is_active,
+                'tipo_almacen_nombre': alm.tipo_almacen.nombre if alm.tipo_almacen else None,
+                'sede_nombre': alm.sede.nombre if alm.sede else None,
+                'cantidad_total': stock,
+                'capacidad_maxima': cap if cap > 0 else None,
+                'ocupacion_pct': ocupacion_pct,
+                'productos_distintos': productos_count,
+                'ultima_recepcion': ultima_mov,
+                'dias_desde_ultima_recepcion': dias_desde,
+                'alertas_activas': alertas_alm,
+            })
+
         if ocupaciones:
             ocupacion_promedio = sum(ocupaciones, Decimal('0')) / Decimal(len(ocupaciones))
             ocupacion_promedio = ocupacion_promedio.quantize(Decimal('0.01'))
@@ -483,5 +524,6 @@ class AlmacenViewSet(viewsets.ModelViewSet):
             'alertas_pendientes': alertas_pendientes,
             'ocupacion_promedio': ocupacion_promedio,
             'top_productos': top_productos,
+            'almacenes': almacenes_data,
         }
         return Response(ResumenGeneralSerializer(data).data)

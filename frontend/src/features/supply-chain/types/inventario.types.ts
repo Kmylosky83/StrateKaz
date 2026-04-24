@@ -11,14 +11,26 @@
 
 export interface ResumenGeneralSC {
   total_almacenes: number;
-  total_productos: number;
-  cantidad_global: number;
-  /** Número de alertas activas (no resueltas). */
-  alertas_activas: number;
-  /** Movimientos de los últimos 30 días (opcional, si el backend lo expone). */
-  movimientos_30d?: number;
-  /** Almacenes agregados — ocupación, stock, última recepción. */
+  /** Productos distintos con inventario. */
+  total_productos_stock: number;
+  /** Cantidad total global sumada de todos los almacenes. */
+  total_cantidad_global: number | string;
+  /** Alertas activas no resueltas. */
+  alertas_pendientes: number;
+  /** Ocupación promedio (%) de los almacenes con capacidad definida. */
+  ocupacion_promedio?: number | string;
+  /** Top 5 productos por cantidad global. */
+  top_productos?: ResumenTopProducto[];
+  /** Almacenes agregados — ocupación, stock, última recepción, alertas. */
   almacenes?: AlmacenResumenItem[];
+}
+
+export interface ResumenTopProducto {
+  producto_id: number;
+  producto_codigo: string;
+  producto_nombre: string;
+  cantidad_total: number | string;
+  almacenes_count: number;
 }
 
 export interface AlmacenResumenItem {
@@ -28,12 +40,13 @@ export interface AlmacenResumenItem {
   is_active: boolean;
   tipo_almacen_nombre?: string | null;
   sede_nombre?: string | null;
-  cantidad_total: number;
-  capacidad_maxima?: number | null;
-  /** 0-100. Si no hay capacidad definida, backend retorna null. */
-  ocupacion_pct?: number | null;
+  /** Decimal serializado como string desde DRF. */
+  cantidad_total: number | string;
+  capacidad_maxima?: number | string | null;
+  /** 0-100 como Decimal/string. Si no hay capacidad definida, null. */
+  ocupacion_pct?: number | string | null;
   productos_distintos: number;
-  /** ISO date de la última recepción que impactó el almacén. */
+  /** ISO datetime de la última recepción que impactó el almacén. */
   ultima_recepcion?: string | null;
   /** Días transcurridos desde última recepción. */
   dias_desde_ultima_recepcion?: number | null;

@@ -27,7 +27,6 @@ import { Button } from '@/components/common';
 import { Input } from '@/components/forms/Input';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/api/auth.api';
-import type { User } from '@/types/auth.types';
 import { usersAPI } from '@/api/users.api';
 import { cn } from '@/utils/cn';
 

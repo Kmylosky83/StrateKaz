@@ -23,8 +23,9 @@ export * from './useAlmacenamiento';
 // ==================== RECEPCION (S3) ====================
 export * from './useRecepcion';
 
-// ==================== LIQUIDACIONES (S3) ====================
+// ==================== LIQUIDACIONES (S3 / H-SC-12) ====================
 export * from './useLiquidaciones';
+export * from './usePagosLiquidacion';
 
 // ==================== TIPOS ALMACÉN (S3 — catálogo silo/contenedor/pallet/piso) ====================
 export * from './useTiposAlmacen';

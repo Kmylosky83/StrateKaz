@@ -110,13 +110,13 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
 @receiver(post_save, sender=VoucherRecepcion)
 def crear_liquidacion_al_aprobar(sender, instance, **kwargs):
     """
-    Post-save handler: si el voucher está APROBADO crea una Liquidacion
-    por cada VoucherLineaMP que no tenga liquidación aún.
+    Post-save handler: si el voucher está APROBADO crea UNA Liquidacion
+    (header) con N líneas de detalle (una por cada VoucherLineaMP).
 
-    Idempotente: el filtro por linea=linea garantiza que aprobar dos
-    veces no duplique. Si el QC dio CONDICIONAL se añade una nota
-    en observaciones; el ajuste porcentual lo fija el usuario manualmente
-    desde LiquidacionesTab.
+    Idempotente: Liquidacion.desde_voucher() retorna la existente si ya
+    fue creada. Si el QC dio CONDICIONAL se añade nota en observaciones;
+    el ajuste porcentual por línea lo fija el usuario manualmente desde
+    LiquidacionesTab.
     """
     if instance.estado != VoucherRecepcion.EstadoVoucher.APROBADO:
         return
@@ -140,25 +140,20 @@ def crear_liquidacion_al_aprobar(sender, instance, **kwargs):
             'QC CONDICIONAL: revisar ajuste de precio antes de aprobar.'
         )
 
-    for linea in instance.lineas.select_related('producto', 'voucher__proveedor').all():
-        # Idempotencia por línea
-        if Liquidacion.objects.filter(linea=linea).exists():
-            continue
-
-        try:
-            with transaction.atomic():
-                liq = Liquidacion.desde_linea(
-                    linea=linea,
-                    observaciones=observaciones,
-                )
-                logger.info(
-                    'Liquidacion %s creada para VoucherLineaMP %s',
-                    liq.pk,
-                    linea.pk,
-                )
-        except Exception:
-            logger.error(
-                'No se pudo crear Liquidacion para VoucherLineaMP %s.',
-                linea.pk,
-                exc_info=True,
+    try:
+        with transaction.atomic():
+            liq = Liquidacion.desde_voucher(
+                voucher=instance,
+                observaciones=observaciones,
             )
+            logger.info(
+                'Liquidacion %s creada/obtenida para VoucherRecepcion %s',
+                liq.pk,
+                instance.pk,
+            )
+    except Exception:
+        logger.error(
+            'No se pudo crear Liquidacion para VoucherRecepcion %s.',
+            instance.pk,
+            exc_info=True,
+        )

@@ -26,3 +26,8 @@ export { default as ParametroCalidadFormModal } from './ParametroCalidadFormModa
 export { default as RangoCalidadFormModal } from './RangoCalidadFormModal';
 export { default as AlmacenDashboardModal } from './AlmacenDashboardModal';
 export { default as QcLineaSection } from './QcLineaSection';
+
+// Liquidaciones (H-SC-12)
+export { default as LiquidacionDetailModal } from './LiquidacionDetailModal';
+export { default as LiquidacionAjustesModal } from './LiquidacionAjustesModal';
+export { default as PagoLiquidacionFormModal } from './PagoLiquidacionFormModal';

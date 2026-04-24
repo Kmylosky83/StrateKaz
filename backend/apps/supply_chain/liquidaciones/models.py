@@ -1,107 +1,104 @@
 """
-Modelo de Liquidación — Supply Chain S3
+Modelo de Liquidación — Supply Chain (H-SC-12 refactor header+líneas)
 
-Sesión 3 del Roadmap Supply Chain. Ver:
-docs/03-modulos/supply-chain/ROADMAP.md
+1 Liquidación = 1 VoucherRecepcion (OneToOne) con N líneas de detalle.
+Estructura contable tipo factura: header con totales + líneas por producto.
+Incluye PagoLiquidacion para cerrar el ciclo de pago.
 
-Liquidacion es OneToOne a VoucherLineaMP: registra el cálculo
-económico final de cada línea de recepción (peso × precio × ajustes).
-El precio se toma de PrecioMateriaPrima vigente al momento de liquidar.
+Estados:
+- BORRADOR: editable, se pueden ajustar precios/ajustes
+- APROBADA: bloqueada, lista para pago
+- PAGADA: tiene PagoLiquidacion asociado
+- ANULADA: cancelada
 """
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Sum
+from django.utils import timezone
 
 from utils.models import TenantModel
 
 
+class EstadoLiquidacion(models.TextChoices):
+    BORRADOR = 'BORRADOR', 'Borrador'
+    APROBADA = 'APROBADA', 'Aprobada — lista para pago'
+    PAGADA = 'PAGADA', 'Pagada'
+    ANULADA = 'ANULADA', 'Anulada'
+
+
 class Liquidacion(TenantModel):
     """
-    Liquidación económica de una VoucherLineaMP.
-
-    OneToOne con línea: una línea aprobada genera exactamente una
-    liquidación. El cálculo congela el peso neto de la línea y el precio
-    vigente de PrecioMateriaPrima, más ajustes opcionales por resultado
-    de calidad (CONDICIONAL puede aplicar descuento porcentual).
-
-    Estados:
-    - PENDIENTE: generada, aún no aprobada por contabilidad
-    - APROBADA: lista para pago (entra a cuentas por pagar en L70)
-    - PAGADA: ejecutada por tesorería (fuera de alcance esta iteración)
+    Header de liquidación. 1 Liquidación = 1 VoucherRecepcion (OneToOne).
+    Total = suma de montos de las líneas.
     """
 
-    class EstadoLiquidacion(models.TextChoices):
-        PENDIENTE = 'PENDIENTE', 'Pendiente de aprobación'
-        APROBADA = 'APROBADA', 'Aprobada — lista para pago'
-        PAGADA = 'PAGADA', 'Pagada'
-        ANULADA = 'ANULADA', 'Anulada'
-
-    linea = models.OneToOneField(
-        'sc_recepcion.VoucherLineaMP',
+    voucher = models.OneToOneField(
+        'sc_recepcion.VoucherRecepcion',
         on_delete=models.PROTECT,
         related_name='liquidacion',
-        verbose_name='Línea de voucher de recepción',
+        verbose_name='Voucher de recepción',
+    )
+    codigo = models.CharField(
+        max_length=30,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name='Código',
+    )
+    numero = models.PositiveIntegerField(
+        editable=False,
+        help_text='Consecutivo interno LIQ-NNNN',
     )
 
-    # ─── Valores congelados al momento de liquidar ────────────────────
-    precio_kg_aplicado = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Precio por kg aplicado',
-        help_text='Copia de PrecioMateriaPrima.precio_kg al momento de crear la liquidación.',
-    )
-    peso_neto_kg = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
-        verbose_name='Peso neto (kg)',
-        help_text='Copia de VoucherLineaMP.peso_neto_kg',
-    )
+    # ─── Totales calculados ────────────────────────────────────────────
     subtotal = models.DecimalField(
         max_digits=14,
         decimal_places=2,
-        editable=False,
+        default=Decimal('0.00'),
         verbose_name='Subtotal',
-        help_text='Calculado = peso_neto_kg × precio_kg_aplicado',
+        help_text='Suma de monto_base de las líneas.',
     )
-
-    # ─── Ajustes (opcional, por QC) ────────────────────────────────────
-    ajuste_calidad_pct = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name='Ajuste por calidad (%)',
-        help_text=(
-            'Descuento porcentual si QC dio CONDICIONAL. '
-            'Ej: 5.00 = 5% de descuento sobre subtotal.'
-        ),
-    )
-    ajuste_calidad_monto = models.DecimalField(
+    ajuste_calidad_total = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         default=Decimal('0.00'),
-        editable=False,
-        verbose_name='Ajuste por calidad (monto)',
-        help_text='Calculado = subtotal × ajuste_calidad_pct / 100',
+        verbose_name='Ajuste por calidad total',
+        help_text='Suma de ajuste_calidad_monto de las líneas.',
     )
-
-    total_liquidado = models.DecimalField(
+    total = models.DecimalField(
         max_digits=14,
         decimal_places=2,
-        editable=False,
-        verbose_name='Total liquidado',
-        help_text='Calculado = subtotal − ajuste_calidad_monto',
+        default=Decimal('0.00'),
+        verbose_name='Total',
+        help_text='Suma de monto_final de las líneas.',
     )
 
     # ─── Estado ────────────────────────────────────────────────────────
     estado = models.CharField(
         max_length=20,
         choices=EstadoLiquidacion.choices,
-        default=EstadoLiquidacion.PENDIENTE,
+        default=EstadoLiquidacion.BORRADOR,
         db_index=True,
         verbose_name='Estado',
     )
 
+    # ─── Auditoría ─────────────────────────────────────────────────────
+    fecha_aprobacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de aprobación',
+    )
+    aprobado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='liquidaciones_aprobadas',
+        verbose_name='Aprobado por',
+    )
     observaciones = models.TextField(
         blank=True,
         default='',
@@ -109,78 +106,280 @@ class Liquidacion(TenantModel):
     )
 
     class Meta:
-        db_table = 'supply_chain_liquidacion_recepcion'
+        db_table = 'supply_chain_liquidacion'
         verbose_name = 'Liquidación'
         verbose_name_plural = 'Liquidaciones'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['estado', '-created_at']),
-            models.Index(fields=['linea']),
         ]
 
     def __str__(self):
-        return f"Liquidación #{self.pk} — Línea #{self.linea_id} ({self.total_liquidado})"
+        return f'{self.codigo} — {self.total}'
 
     # ─── Cálculos ──────────────────────────────────────────────────────
-    def calcular_valores(self):
-        precio = Decimal(str(self.precio_kg_aplicado or 0))
-        peso = Decimal(str(self.peso_neto_kg or 0))
-        ajuste_pct = Decimal(str(self.ajuste_calidad_pct or 0))
-
-        self.subtotal = (peso * precio).quantize(Decimal('0.01'))
-        self.ajuste_calidad_monto = (self.subtotal * ajuste_pct / Decimal('100')).quantize(
-            Decimal('0.01')
+    def recalcular_totales(self):
+        """Recalcula subtotal, ajuste_calidad_total y total desde las líneas."""
+        agg = self.lineas_liquidacion.aggregate(
+            sub=Sum('monto_base'),
+            aj=Sum('ajuste_calidad_monto'),
+            tot=Sum('monto_final'),
         )
-        self.total_liquidado = self.subtotal - self.ajuste_calidad_monto
+        self.subtotal = agg['sub'] or Decimal('0.00')
+        self.ajuste_calidad_total = agg['aj'] or Decimal('0.00')
+        self.total = agg['tot'] or Decimal('0.00')
+        self.save(
+            update_fields=[
+                'subtotal',
+                'ajuste_calidad_total',
+                'total',
+                'updated_at',
+            ]
+        )
+
+    def aprobar(self, user):
+        """Cambia estado BORRADOR → APROBADA."""
+        if self.estado != EstadoLiquidacion.BORRADOR:
+            raise ValidationError(
+                f'Solo se pueden aprobar liquidaciones en estado BORRADOR '
+                f'(actual: {self.estado}).'
+            )
+        self.estado = EstadoLiquidacion.APROBADA
+        self.fecha_aprobacion = timezone.now()
+        self.aprobado_por = user
+        self.save(
+            update_fields=[
+                'estado',
+                'fecha_aprobacion',
+                'aprobado_por',
+                'updated_at',
+            ]
+        )
+
+    # ─── Factory ───────────────────────────────────────────────────────
+    @classmethod
+    def desde_voucher(cls, voucher, observaciones=''):
+        """
+        Factory idempotente: crea una Liquidacion con N líneas de detalle
+        a partir de un VoucherRecepcion aprobado. Una línea de liquidación
+        por cada VoucherLineaMP.
+
+        Si ya existe liquidación para este voucher, la retorna sin cambios.
+        """
+        # Idempotencia: si ya existe, retornarla
+        existente = cls.objects.filter(voucher=voucher).first()
+        if existente is not None:
+            return existente
+
+        from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
+
+        with transaction.atomic():
+            liq = cls(
+                voucher=voucher,
+                observaciones=observaciones,
+                estado=EstadoLiquidacion.BORRADOR,
+            )
+            liq.numero = cls.objects.count() + 1
+            liq.codigo = f'LIQ-{liq.numero:04d}'
+            liq.save()
+
+            # Crear líneas — una por cada VoucherLineaMP
+            for voucher_linea in voucher.lineas.all():
+                try:
+                    precio_mp = PrecioMateriaPrima.objects.get(
+                        proveedor=voucher.proveedor,
+                        producto=voucher_linea.producto,
+                        is_deleted=False,
+                    )
+                    precio_kg = precio_mp.precio_kg
+                except PrecioMateriaPrima.DoesNotExist:
+                    precio_kg = Decimal('0.00')
+
+                LiquidacionLinea.objects.create(
+                    liquidacion=liq,
+                    voucher_linea=voucher_linea,
+                    cantidad=voucher_linea.peso_neto_kg,
+                    precio_unitario=precio_kg,
+                    ajuste_calidad_pct=Decimal('0.00'),
+                )
+
+            liq.recalcular_totales()
+            return liq
+
+
+class LiquidacionLinea(TenantModel):
+    """Línea de detalle de una Liquidación (una por cada VoucherLineaMP)."""
+
+    liquidacion = models.ForeignKey(
+        Liquidacion,
+        on_delete=models.CASCADE,
+        related_name='lineas_liquidacion',
+        verbose_name='Liquidación',
+    )
+    voucher_linea = models.OneToOneField(
+        'sc_recepcion.VoucherLineaMP',
+        on_delete=models.PROTECT,
+        related_name='liquidacion_linea',
+        verbose_name='Línea del voucher',
+    )
+    cantidad = models.DecimalField(
+        max_digits=14,
+        decimal_places=3,
+        verbose_name='Cantidad',
+        help_text='Peso neto de la línea del voucher (kg).',
+    )
+    precio_unitario = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        verbose_name='Precio unitario',
+        help_text='Precio por kg del producto para este proveedor.',
+    )
+    monto_base = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        editable=False,
+        default=Decimal('0.00'),
+        verbose_name='Monto base',
+        help_text='cantidad × precio_unitario',
+    )
+    ajuste_calidad_pct = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name='Ajuste por calidad (%)',
+        help_text='% positivo = premio, negativo = descuento.',
+    )
+    ajuste_calidad_monto = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        editable=False,
+        default=Decimal('0.00'),
+        verbose_name='Ajuste por calidad (monto)',
+    )
+    monto_final = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        editable=False,
+        default=Decimal('0.00'),
+        verbose_name='Monto final',
+        help_text='monto_base + ajuste_calidad_monto',
+    )
+    observaciones = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Observaciones',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_liquidacion_linea'
+        verbose_name = 'Línea de liquidación'
+        verbose_name_plural = 'Líneas de liquidación'
+        ordering = ['id']
+
+    def __str__(self):
+        return f'Línea #{self.pk} — {self.monto_final}'
+
+    def calcular_valores(self):
+        cantidad = Decimal(str(self.cantidad or 0))
+        precio = Decimal(str(self.precio_unitario or 0))
+        ajuste_pct = Decimal(str(self.ajuste_calidad_pct or 0))
+        self.monto_base = (cantidad * precio).quantize(Decimal('0.01'))
+        self.ajuste_calidad_monto = (
+            self.monto_base * ajuste_pct / Decimal('100')
+        ).quantize(Decimal('0.01'))
+        self.monto_final = self.monto_base + self.ajuste_calidad_monto
 
     def save(self, *args, **kwargs):
         self.calcular_valores()
         super().save(*args, **kwargs)
 
+
+class PagoLiquidacion(TenantModel):
+    """
+    Registro de pago de una Liquidación. Mini-tesorería — al crearse,
+    cambia automáticamente el estado de la Liquidación a PAGADA.
+    """
+
+    class MetodoPago(models.TextChoices):
+        EFECTIVO = 'EFECTIVO', 'Efectivo'
+        TRANSFERENCIA = 'TRANSFERENCIA', 'Transferencia Bancaria'
+        CHEQUE = 'CHEQUE', 'Cheque'
+        PSE = 'PSE', 'PSE'
+        OTRO = 'OTRO', 'Otro'
+
+    liquidacion = models.OneToOneField(
+        Liquidacion,
+        on_delete=models.PROTECT,
+        related_name='pago',
+        verbose_name='Liquidación',
+    )
+    fecha_pago = models.DateField(
+        verbose_name='Fecha de pago',
+    )
+    metodo = models.CharField(
+        max_length=20,
+        choices=MetodoPago.choices,
+        verbose_name='Método de pago',
+    )
+    referencia = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Referencia / N° comprobante',
+    )
+    monto_pagado = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        verbose_name='Monto pagado',
+        help_text='Debe coincidir con el total de la liquidación.',
+    )
+    observaciones = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Observaciones',
+    )
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='pagos_liquidacion_registrados',
+        verbose_name='Registrado por',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_pago_liquidacion'
+        verbose_name = 'Pago de liquidación'
+        verbose_name_plural = 'Pagos de liquidación'
+        ordering = ['-fecha_pago', '-created_at']
+
+    def __str__(self):
+        return f'Pago {self.liquidacion.codigo} — {self.monto_pagado}'
+
     def clean(self):
         super().clean()
-        if self.precio_kg_aplicado is not None and self.precio_kg_aplicado < 0:
-            raise ValidationError({'precio_kg_aplicado': 'El precio no puede ser negativo.'})
-        if self.peso_neto_kg is not None and self.peso_neto_kg <= 0:
-            raise ValidationError({'peso_neto_kg': 'El peso neto debe ser mayor a cero.'})
-        if self.ajuste_calidad_pct is not None and not (
-            Decimal('0') <= self.ajuste_calidad_pct <= Decimal('100')
-        ):
-            raise ValidationError({
-                'ajuste_calidad_pct': 'El ajuste porcentual debe estar entre 0 y 100.'
-            })
+        if self.liquidacion_id and self.monto_pagado is not None:
+            if self.monto_pagado != self.liquidacion.total:
+                raise ValidationError(
+                    {
+                        'monto_pagado': (
+                            f'El monto pagado ({self.monto_pagado}) no coincide '
+                            f'con el total de la liquidación '
+                            f'({self.liquidacion.total}).'
+                        )
+                    }
+                )
+            if self.liquidacion.estado not in (
+                EstadoLiquidacion.APROBADA,
+                EstadoLiquidacion.PAGADA,
+            ):
+                raise ValidationError(
+                    'Solo se pueden pagar liquidaciones en estado APROBADA.'
+                )
 
-    # ─── Factory ───────────────────────────────────────────────────────
-    @classmethod
-    def desde_linea(cls, linea, ajuste_calidad_pct=Decimal('0.00'), observaciones=''):
-        """
-        Factory: crea Liquidacion desde una VoucherLineaMP aprobada.
-
-        El precio se toma de PrecioMateriaPrima vigente al momento de liquidar.
-        Levanta ValidationError si no hay precio configurado para el par
-        proveedor × producto.
-        """
-        from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
-        try:
-            precio_mp = PrecioMateriaPrima.objects.get(
-                proveedor=linea.voucher.proveedor,
-                producto=linea.producto,
-                is_deleted=False,
-            )
-            precio = precio_mp.precio_kg
-        except PrecioMateriaPrima.DoesNotExist:
-            raise ValidationError(
-                f"No hay precio configurado para '{linea.producto.nombre}' "
-                f"del proveedor '{linea.voucher.proveedor.nombre_comercial}'. "
-                f"Configúrelo en Precios de Supply Chain antes de aprobar."
-            )
-        liq = cls(
-            linea=linea,
-            precio_kg_aplicado=precio,
-            peso_neto_kg=linea.peso_neto_kg,
-            ajuste_calidad_pct=ajuste_calidad_pct,
-            observaciones=observaciones,
-        )
-        liq.full_clean()
-        liq.save()
-        return liq
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            # Al crear, cambiar estado de la liquidación a PAGADA
+            if self.liquidacion.estado != EstadoLiquidacion.PAGADA:
+                self.liquidacion.estado = EstadoLiquidacion.PAGADA
+                self.liquidacion.save(update_fields=['estado', 'updated_at'])

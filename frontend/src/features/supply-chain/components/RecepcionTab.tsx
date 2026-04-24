@@ -75,6 +75,16 @@ const formatKg = (kg: string | number) => {
     : '-';
 };
 
+/**
+ * Parse de fecha ISO date (YYYY-MM-DD) como fecha local.
+ * Evita el bug de timezone: new Date('2026-04-24') se interpreta como UTC
+ * midnight y en zonas UTC-N muestra el día anterior.
+ */
+const parseLocalDate = (iso: string): Date => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+};
+
 // ==================== COMPONENT ====================
 
 export default function RecepcionTab() {
@@ -256,7 +266,7 @@ export default function RecepcionTab() {
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       {v.fecha_viaje
-                        ? format(new Date(v.fecha_viaje), 'dd MMM yyyy', { locale: es })
+                        ? format(parseLocalDate(v.fecha_viaje), 'dd MMM yyyy', { locale: es })
                         : '-'}
                     </td>
                     <td className="px-6 py-3 text-sm font-medium text-gray-900 dark:text-white">

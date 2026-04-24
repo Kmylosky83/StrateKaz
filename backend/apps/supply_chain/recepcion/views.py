@@ -245,9 +245,20 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         except AttributeError:
             qc_resultado = 'No aplica'
 
-        # ── Bloque de líneas ──────────────────────────────────────────
-        lineas = list(voucher.lineas.select_related('producto').all())
+        # ── Bloque de líneas con mediciones QC ────────────────────────
+        lineas = list(
+            voucher.lineas
+            .select_related('producto')
+            .prefetch_related('measurements__parameter', 'measurements__classified_range')
+            .all()
+        )
         peso_total = voucher.peso_neto_total
+
+        def fmt_val(value, decimals=1):
+            try:
+                return f"{float(value):.{decimals}f}"
+            except (TypeError, ValueError):
+                return '0'
 
         lineas_rows = ''
         for linea in lineas:
@@ -259,6 +270,20 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
                 f'<span class="val">N:{fmt_kg(linea.peso_neto_kg)}kg</span>'
                 f'</div>'
             )
+            # H-SC-11: mediciones QC por línea (si existen)
+            for med in linea.measurements.all():
+                param_name = getattr(med.parameter, 'name', '') if med.parameter else ''
+                unit = getattr(med.parameter, 'unit', '') if med.parameter else ''
+                rango_name = (
+                    getattr(med.classified_range, 'name', '')
+                    if med.classified_range else ''
+                )
+                rango_block = f' · {rango_name}' if rango_name else ''
+                lineas_rows += (
+                    f'<div class="indent" style="font-size:8pt;">'
+                    f'  QC {param_name}: {fmt_val(med.measured_value)}{unit}{rango_block}'
+                    f'</div>'
+                )
 
         SEP = '-' * 32
 

@@ -12,11 +12,19 @@
  * Se abre desde el icono "ojo" en RecepcionTab. Solo lectura.
  */
 import { useMemo } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Printer, Scale, Package, FlaskConical, Truck } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge, Card } from '@/components/common';
 import type { VoucherRecepcionList } from '../types/recepcion.types';
+
+/** Parse fecha ISO (YYYY-MM-DD) como local — evita offset por timezone. */
+const parseLocalDate = (iso: string): Date => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+};
 
 interface VoucherDetailModalProps {
   voucher: VoucherRecepcionList | null;
@@ -83,7 +91,9 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Fecha de viaje:{' '}
             <span className="font-medium text-gray-900 dark:text-gray-100">
-              {voucher.fecha_viaje ?? '—'}
+              {voucher.fecha_viaje
+                ? format(parseLocalDate(voucher.fecha_viaje), 'dd MMM yyyy', { locale: es })
+                : '—'}
             </span>
           </div>
         </div>
@@ -198,11 +208,11 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                                     : undefined,
                                   color: m.classified_range_color ?? undefined,
                                 }}
-                                title={`${m.parameter_name}: ${m.measured_value}${m.parameter_unit ?? ''}`}
+                                title={`${m.parameter_name}: ${Number(m.measured_value).toFixed(1)}${m.parameter_unit ?? ''}`}
                               >
                                 <FlaskConical className="w-3 h-3" />
                                 <span className="font-medium">
-                                  {m.parameter_name}: {m.measured_value}
+                                  {m.parameter_name}: {Number(m.measured_value).toFixed(1)}
                                   {m.parameter_unit ?? ''}
                                 </span>
                                 {m.classified_range_name && (

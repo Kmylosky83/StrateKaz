@@ -377,6 +377,86 @@ Reactiva. Si aparece otro caso o se decide hardening del DS.
 
 ---
 
+## H-FE-02 — Unificar formularios de Colaborador entre admin y self-service
+
+### Detectado
+2026-04-23 (sesión B — fusión `/perfil` centralizado con modales atómicos).
+
+### Severidad
+**BAJA-MEDIA** — No causa bugs, pero es deuda técnica creciente: cambios en
+validación o UX de campos compartidos deben replicarse en 2 lugares.
+
+### Síntoma
+Hay **dos sistemas paralelos** que editan los mismos campos de un empleado:
+
+**Admin (Mi Equipo > Colaboradores):**
+- `features/mi-equipo/components/colaboradores/ColaboradorFormModal.tsx` (823 LOC monolítico)
+- Wizard de 3-4 pasos: Datos Básicos, Asignación, Contratación, Acceso al sistema
+- Endpoint: `POST/PATCH /api/mi-equipo/empleados/colaboradores/`
+
+**Empleado self-service (`/perfil`):**
+- `features/perfil/components/EditIdentidadModal.tsx` (User.first_name, last_name, email, phone)
+- `features/perfil/components/EditContactoModal.tsx` (celular, email_personal, teléfono, dirección, ciudad)
+- `features/perfil/components/EditEmergenciaModal.tsx` (contacto emergencia)
+- Endpoints: `PATCH /api/core/users/update_profile/` + `PUT /api/mi-portal/mi-perfil/`
+
+**Campos superpuestos:**
+| Campo | Admin (ColaboradorFormModal) | Empleado (/perfil) |
+|---|---|---|
+| primer_nombre / last_name | ✅ | ✅ (EditIdentidadModal) |
+| email (User) | ✅ | ✅ (EditIdentidadModal) |
+| email_personal | ✅ | ✅ (EditContactoModal) |
+| telefono_movil / celular | ✅ | ✅ (EditContactoModal) |
+| tipo_documento + numero_identificacion | ✅ | ✅ (superadmin only) |
+
+Si se agrega validación (ej: regex de teléfono, longitud máx de nombre),
+hay que tocarla en 2 lugares. Si se cambia placeholder o helper text,
+también. Si cambia el flujo del email (ej: confirmación), idem.
+
+### Propuesta
+Extraer los campos compartidos en **componentes atómicos reutilizables**:
+
+```
+features/perfil/components/fields/  (nueva carpeta canónica)
+  ├─ IdentidadFields.tsx      (first_name, last_name, email, phone, documento)
+  ├─ ContactoFields.tsx       (celular, email_personal, telefono, direccion, ciudad)
+  └─ EmergenciaFields.tsx     (nombre, parentesco, telefono)
+```
+
+Cada field component:
+- Expone props `{ register, errors, disabled, adminMode? }`
+- Contiene los `<Input>`/`<Select>` con validaciones Zod + placeholders + helperText
+- `adminMode={true}` desbloquea campos admin-only (ej: documento editable sin flag superadmin)
+
+**Consumidores:**
+- `/perfil` (sesión B): los 3 `Edit*Modal` existentes importan y componen los fields
+- **Mi Equipo** (refactor objetivo): `ColaboradorFormModal` importa los mismos fields + agrega paso "Contratación" (salario, tipo_contrato, cargo) que es exclusivo de admin
+
+### Beneficio
+- **Un solo lugar** para validaciones, placeholders, helper text, iconos
+- **Tests compartidos**: un test del IdentidadFields cubre `/perfil` y Mi Equipo
+- **Consistencia UX garantizada** entre admin y empleado
+- **Reducción de LOC**: `ColaboradorFormModal` baja de 823 → ~400 LOC aprox
+
+### Trigger natural
+Se atiende cuando:
+1. Cambie alguna validación de campo compartido (empuja a refactorizar en vez de duplicar)
+2. Se active `talent_hub.nomina` y admin necesite editar más campos del empleado (momento natural para partir el monolito)
+3. O proactivamente en pasada de "consolidación de formularios"
+
+### Dependencia
+- Independiente. No bloquea nada. Los 2 flujos funcionan hoy.
+
+### Precedente
+Los 3 modales de `/perfil` (sesión B 2026-04-23) fueron diseñados con
+props simples (`{ isOpen, onClose, user | perfil }`) justo para facilitar
+este refactor futuro.
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA-MEDIA — oportunidad de consolidación. Detalle en `docs/03-modulos/perfil/arquitectura.md` sección "Reusabilidad para Mi Equipo".**
+
+---
+
 ## H2 — Sistema de auto-memory de Claude Code vive fuera del repo
 
 ### Estado: RESUELTO (2026-04-08)

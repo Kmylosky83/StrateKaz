@@ -2791,16 +2791,19 @@ Sentry `PYTHON-DJANGO-3J`. Tarea Celery `documental.procesar_retencion_documento
 
 ### Síntoma resuelto
 `FieldError: Cannot resolve keyword 'activo' into field` en
-`gestion_documental/services/documento_service.py:65`.
+`gestion_documental/services/documento_service.py:113`.
 El refactor `TenantModel` (S17) renombró `activo` → `is_deleted` pero
-`resolver_retencion()` seguía usando `.filter(activo=True)`.
+`aplicar_retencion()` seguía usando `.filter(activo=True)`.
+`SoftDeleteManager` ya excluye `is_deleted=True` por defecto, por lo que
+simplemente se eliminó la cláusula `activo=True` redundante.
 
 ### Fix aplicado
-`activo=True` → `is_deleted=False` en
-`apps/gestion_estrategica/gestion_documental/services/documento_service.py:65`.
+Eliminado `activo=True` del filtro en
+`apps/gestion_estrategica/gestion_documental/services/documento_service.py:110-114`.
+Commit: `fix(gestion-documental): eliminar activo=True obsoleto en TablaRetencionDocumental (H-PROD-05)`.
 
 ### Estado
-✅ Resuelto. Commit: pendiente de push junto al fix de motor_cumplimiento routes.
+✅ Resuelto y pusheado (2026-04-23 — auditoría Sentry automática).
 
 ---
 
@@ -2819,4 +2822,75 @@ e intentaba importar módulos no instalados → KeyError en `on_task_received`.
 Comentadas las 6 entradas de `motor_cumplimiento` en `task_routes` de `config/celery.py`.
 
 ### Estado
-✅ Resuelto. Commit: pendiente de push.
+✅ Resuelto. Pusheado en mismo commit que H-PROD-05.
+
+---
+
+## H-PROD-07 — ABIERTO — ConsecutivoConfig faltante para PRODUCTO_MP en producción
+
+### Origen
+Sentry `PYTHON-DJANGO-3K`. URL `/api/catalogo-productos/productos/`. 5 eventos, 2 días.
+
+### Síntoma
+`ConsecutivoConfig.DoesNotExist: No existe configuración de consecutivo para el código 'PRODUCTO_MP'`
+en `models_consecutivos.py:380 obtener_siguiente_consecutivo`.
+Los códigos `PRODUCTO_MP`, `PRODUCTO_INS`, `PRODUCTO_PT`, `PRODUCTO_SV` se agregaron a
+`CONSECUTIVOS_ADICIONALES` en commit `ab26877a` pero el seed no los creó en producción.
+
+### Causa probable
+El comando `deploy_seeds_all_tenants` → `seed_consecutivos_sistema` usa lógica
+create-only: si el ConsecutivoConfig ya existe, lo salta. Si nunca existió
+(nuevo código agregado al código después del último deploy con seeds), no se crea.
+El deploy que incluyó `ab26877a` puede no haber corrido seeds correctamente.
+
+### Fix requerido (VPS — operacional, no code)
+```bash
+# En el VPS, para cada tenant:
+cd /opt/stratekaz/backend
+source venv/bin/activate
+DJANGO_SETTINGS_MODULE=config.settings.production python manage.py \
+  deploy_seeds_all_tenants --only consecutivos
+```
+O directamente:
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.production python manage.py \
+  tenant_command seed_consecutivos_sistema --schema=tenant_stratekaz
+DJANGO_SETTINGS_MODULE=config.settings.production python manage.py \
+  tenant_command seed_consecutivos_sistema --schema=tenant_grasas_y_huesos_del_
+```
+
+### Estado
+🔴 ABIERTO — requiere operación en VPS. Código en repo es correcto.
+
+---
+
+## H-PROD-08 — ABIERTO — PeriodicTask zombies para apps planeacion (2,500 eventos Sentry)
+
+### Origen
+Sentry `PYTHON-DJANGO-2`. `KeyError('planeacion.check_kpi_measurements_due')`. 2,500 eventos en 30 días.
+
+### Síntoma
+Celery Beat (DatabaseScheduler) continúa disparando tareas de `planeacion.*` aunque
+el `beat_schedule` en `celery.py` está comentado. La causa es que `DatabaseScheduler`
+persiste `PeriodicTask` records en BD y no los elimina cuando se comentan entradas en `celery.py`.
+El worker recibe las tareas, no las encuentra registradas (app `planeacion` no está en
+`INSTALLED_APPS` en prod), y genera `KeyError` → el mensaje se descarta.
+
+### Fix requerido (VPS — operacional)
+```bash
+cd /opt/stratekaz/backend && source venv/bin/activate
+DJANGO_SETTINGS_MODULE=config.settings.production python manage.py shell << 'EOF'
+from django_celery_beat.models import PeriodicTask
+dormant = [
+    'planeacion.check_kpi_measurements_due',
+    'planeacion.check_objectives_overdue',
+    'planeacion.check_changes_overdue',
+    'planeacion.check_plan_expiration',
+]
+deleted, _ = PeriodicTask.objects.filter(task__in=dormant).delete()
+print(f'Eliminados: {deleted} PeriodicTask records de planeacion')
+EOF
+```
+
+### Estado
+🔴 ABIERTO — requiere operación en VPS. Es ruido continuo en Sentry (no afecta funcionalidad).

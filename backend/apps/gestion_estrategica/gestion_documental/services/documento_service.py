@@ -110,7 +110,6 @@ class DocumentoService:
             trd_obj = TablaRetencionDocumental.objects.filter(
                 tipo_documento=documento.tipo_documento,
                 proceso_id=documento.proceso_id,
-                activo=True,
             ).first()
 
         update_fields = ['trd_aplicada', 'disposicion_asignada']

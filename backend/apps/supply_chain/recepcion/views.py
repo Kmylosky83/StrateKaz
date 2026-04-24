@@ -188,41 +188,44 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         voucher = self.get_object()
 
         # ── Branding del tenant (H-SC-13) ─────────────────────────────
-        # Se muestra nombre comercial + NIT + razón social en el header.
-        # Logo opcional en formato embebido (solo si es URL accesible).
+        # El header muestra los datos del tenant (la empresa que emite el
+        # voucher), no del proveedor del software. Fuente primaria: modelo
+        # Tenant (nit, nombre_comercial, logo). Fallback: EmpresaConfig.
         tenant = getattr(connection, 'tenant', None)
         empresa = 'StrateKaz'
         nit = ''
-        razon_social = ''
         logo_url = ''
         if tenant is not None:
             empresa = (
                 getattr(tenant, 'nombre_comercial', None)
+                or getattr(tenant, 'razon_social', None)
                 or getattr(tenant, 'name', None)
                 or 'StrateKaz'
             )
+            nit = getattr(tenant, 'nit', '') or ''
             logo_field = getattr(tenant, 'logo', None)
             if logo_field and hasattr(logo_field, 'url'):
                 try:
                     logo_url = request.build_absolute_uri(logo_field.url)
                 except Exception:
                     logo_url = ''
-        # EmpresaConfig tiene NIT y razón social (validados para facturación)
-        try:
-            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-            empresa_config = EmpresaConfig.get_instance()
-            if empresa_config:
-                nit = empresa_config.nit or ''
-                razon_social = empresa_config.razon_social or ''
-        except Exception:
-            pass
+        # Fallback: EmpresaConfig (si el Tenant no trae NIT configurado)
+        if not nit:
+            try:
+                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+                empresa_config = EmpresaConfig.get_instance()
+                if empresa_config:
+                    nit = empresa_config.nit or ''
+            except Exception:
+                pass
 
         # ── Helpers de formato ────────────────────────────────────────
         def fmt_kg(value):
+            """Formato 1 decimal: 56.0kg (antes 56.000kg)."""
             try:
-                return f"{float(value):.3f}"
+                return f"{float(value):.1f}"
             except (TypeError, ValueError):
-                return '0.000'
+                return '0.0'
 
         # ── Datos del voucher ─────────────────────────────────────────
         fecha_viaje = voucher.fecha_viaje.strftime('%d-%m-%Y') if voucher.fecha_viaje else '—'
@@ -240,10 +243,13 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         except AttributeError:
             full_name = '—'
 
-        try:
-            qc_resultado = voucher.calidad.get_resultado_display()
-        except AttributeError:
-            qc_resultado = 'No aplica'
+        # QC resumen: "N/A" si el voucher no requiere QC; si lo requiere y
+        # las mediciones ya se imprimieron inline por línea, no se repite al
+        # final. Si no hay QC registrado se marca "Pendiente".
+        if voucher.requiere_qc:
+            qc_resumen = 'Registrado' if voucher.tiene_qc else 'Pendiente'
+        else:
+            qc_resumen = 'N/A'
 
         # ── Bloque de líneas con mediciones QC ────────────────────────
         lineas = list(
@@ -270,18 +276,14 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
                 f'<span class="val">N:{fmt_kg(linea.peso_neto_kg)}kg</span>'
                 f'</div>'
             )
-            # H-SC-11: mediciones QC por línea (si existen)
+            # H-SC-11: mediciones QC por línea (solo valor, sin clasificación
+            # para optimizar espacio en 58mm).
             for med in linea.measurements.all():
                 param_name = getattr(med.parameter, 'name', '') if med.parameter else ''
                 unit = getattr(med.parameter, 'unit', '') if med.parameter else ''
-                rango_name = (
-                    getattr(med.classified_range, 'name', '')
-                    if med.classified_range else ''
-                )
-                rango_block = f' · {rango_name}' if rango_name else ''
                 lineas_rows += (
                     f'<div class="indent" style="font-size:8pt;">'
-                    f'  QC {param_name}: {fmt_val(med.measured_value)}{unit}{rango_block}'
+                    f'  QC {param_name}: {fmt_val(med.measured_value)}{unit}'
                     f'</div>'
                 )
 
@@ -336,7 +338,6 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <div class="sep">{SEP}</div>
 {f'<div class="center"><img src="{logo_url}" style="max-width:40mm;max-height:15mm;" /></div>' if logo_url else ''}
 <div class="center bold">{empresa}</div>
-{f'<div class="center" style="font-size:8pt;">{razon_social}</div>' if razon_social else ''}
 {f'<div class="center" style="font-size:8pt;">NIT: {nit}</div>' if nit else ''}
 <div class="sep">{SEP}</div>
 <div class="center bold">VOUCHER RECEPCION MP</div>
@@ -357,15 +358,15 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <div class="indent">{almacen_nombre}</div>
 <div>MODALIDAD:</div>
 <div class="indent">{modalidad}</div>
-<div>OPERADOR:</div>
+<div>GENERADO POR:</div>
 <div class="indent">{full_name}</div>
 <div class="sep">{SEP}</div>
 <div class="row"><span class="label">ESTADO:</span><span class="val">{estado}</span></div>
-<div class="row"><span class="label">QC:</span><span class="val">{qc_resultado}</span></div>
+<div class="row"><span class="label">QC:</span><span class="val">{qc_resumen}</span></div>
 <div class="sep">{SEP}</div>
 {obs_block}
-<div class="footer">Powered by StrateKaz</div>
-<div class="sep">{SEP}</div>
+<div class="footer center" style="margin-top:2mm;">Powered by StrateKaz</div>
+<div class="footer center" style="font-size:7pt;">stratekaz.com | Consultoría 4.0</div>
 </body>
 <script>window.onload = function(){{ window.print(); }};</script>
 </html>"""

@@ -222,7 +222,7 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                             ))}
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400 italic">Sin mediciones</span>
+                          <span className="text-xs text-gray-400">N/A</span>
                         )}
                       </td>
                     </tr>

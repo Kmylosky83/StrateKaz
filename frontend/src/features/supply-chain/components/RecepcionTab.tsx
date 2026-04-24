@@ -146,28 +146,30 @@ export default function RecepcionTab() {
   return (
     <div className="space-y-6">
       {/* KPIs */}
-      <KpiCardGrid cols={4}>
+      <KpiCardGrid columns={4}>
         <KpiCard
-          title="Total Vouchers"
+          label="Total Vouchers"
           value={kpiData.total}
           icon={<FileText className="w-5 h-5" />}
+          color="primary"
         />
         <KpiCard
-          title="Pendientes QC"
+          label="Pendientes"
           value={kpiData.pendientes}
           icon={<Scale className="w-5 h-5" />}
-          variant="warning"
+          color="warning"
         />
         <KpiCard
-          title="Aprobados"
+          label="Aprobados"
           value={kpiData.aprobados}
           icon={<CheckCircle className="w-5 h-5" />}
-          variant="success"
+          color="success"
         />
         <KpiCard
-          title="Peso Total Recibido"
+          label="Peso Total Recibido"
           value={formatKg(kpiData.pesoTotal)}
           icon={<Package className="w-5 h-5" />}
+          color="info"
         />
       </KpiCardGrid>
 
@@ -180,7 +182,7 @@ export default function RecepcionTab() {
           className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="">Todos</option>
-          <option value="PENDIENTE_QC">Pendiente QC</option>
+          <option value="PENDIENTE_QC">Pendiente</option>
           <option value="APROBADO">Aprobado</option>
           <option value="RECHAZADO">Rechazado</option>
           <option value="LIQUIDADO">Liquidado</option>
@@ -319,7 +321,7 @@ export default function RecepcionTab() {
                           </span>
                         )
                       ) : (
-                        <span className="text-slate-400 text-xs">—</span>
+                        <span className="text-slate-400 text-xs">N/A</span>
                       )}
                     </td>
                     <td className="px-6 py-3 text-right">

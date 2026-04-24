@@ -9,7 +9,6 @@ import { es } from 'date-fns/locale';
 import {
   Beaker,
   CheckCircle,
-  Edit,
   Eye,
   FileText,
   Package,
@@ -60,7 +59,7 @@ const MODALIDAD_ICON: Record<string, React.ReactNode> = {
 const formatKg = (kg: string | number) => {
   const n = typeof kg === 'string' ? parseFloat(kg) : kg;
   return Number.isFinite(n)
-    ? `${n.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} kg`
+    ? `${n.toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`
     : '-';
 };
 
@@ -275,9 +274,31 @@ export default function RecepcionTab() {
                     <td className="px-6 py-3 text-center">
                       {v.requiere_qc ? (
                         v.tiene_qc ? (
-                          <Badge variant="success" size="sm">
-                            Registrado
-                          </Badge>
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {(v.lineas ?? [])
+                              .flatMap((l) => l.measurements ?? [])
+                              .map((m) => (
+                                <span
+                                  key={m.id}
+                                  className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700"
+                                  style={{
+                                    backgroundColor: m.classified_range_color
+                                      ? `${m.classified_range_color}20`
+                                      : undefined,
+                                    color: m.classified_range_color ?? undefined,
+                                  }}
+                                  title={`${m.parameter_name}: ${Number(m.measured_value).toFixed(1)}${m.parameter_unit ?? ''}${m.classified_range_name ? ` — ${m.classified_range_name}` : ''}`}
+                                >
+                                  <span className="font-medium">
+                                    {Number(m.measured_value).toFixed(1)}
+                                    {m.parameter_unit ?? ''}
+                                  </span>
+                                  {m.classified_range_name && (
+                                    <span className="opacity-75">· {m.classified_range_name}</span>
+                                  )}
+                                </span>
+                              ))}
+                          </div>
                         ) : (
                           <Badge variant="warning" size="sm">
                             Pendiente
@@ -297,12 +318,14 @@ export default function RecepcionTab() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {/* H-SC-03: registrar QC */}
-                        {v.estado === 'PENDIENTE_QC' && v.requiere_qc && (
+                        {/* H-SC-03/H-SC-11: registrar QC — solo si aún no se ha tomado.
+                            Si el QC ya fue registrado por línea (mediciones inline del
+                            voucher), el backend setea tiene_qc=true y el botón se oculta. */}
+                        {v.estado === 'PENDIENTE_QC' && v.requiere_qc && !v.tiene_qc && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            title={v.tiene_qc ? 'Editar QC' : 'Registrar QC'}
+                            title="Registrar QC"
                             onClick={() => setQcModalVoucher(v)}
                           >
                             <Beaker className="w-4 h-4 text-amber-600" />
@@ -334,9 +357,9 @@ export default function RecepcionTab() {
                             <Printer className="w-4 h-4 text-blue-600" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" title="Editar">
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        {/* Botón "Editar" oculto: el voucher tras creación
+                            sigue flujo QC → Aprobar → Imprimir. No se edita.
+                            Para cambios se anula y se recrea. */}
                         {canDelete && (
                           <Button
                             variant="ghost"

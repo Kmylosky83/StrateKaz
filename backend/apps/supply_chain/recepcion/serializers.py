@@ -71,6 +71,13 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
     """Serializer liviano para listados."""
     proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
     almacen_nombre = serializers.CharField(source='almacen_destino.nombre', read_only=True)
+    ruta_recoleccion_nombre = serializers.CharField(
+        source='ruta_recoleccion.nombre', read_only=True, allow_null=True,
+    )
+    operador_nombre = serializers.CharField(
+        source='operador_bascula.get_full_name', read_only=True, allow_null=True,
+    )
+    operador_cargo = serializers.SerializerMethodField()
     modalidad_entrega_display = serializers.CharField(
         source='get_modalidad_entrega_display', read_only=True
     )
@@ -78,7 +85,7 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
     lineas = VoucherLineaMPSerializer(many=True, read_only=True)
     lineas_count = serializers.SerializerMethodField()
     peso_neto_total = serializers.SerializerMethodField()
-    # H-SC-03: flags QC para UI
+    # H-SC-03/H-SC-11: flags QC para UI
     requiere_qc = serializers.BooleanField(read_only=True)
     tiene_qc = serializers.BooleanField(read_only=True)
 
@@ -88,13 +95,25 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
             'id',
             'proveedor', 'proveedor_nombre',
             'modalidad_entrega', 'modalidad_entrega_display',
+            'ruta_recoleccion', 'ruta_recoleccion_nombre',
             'fecha_viaje',
             'lineas', 'lineas_count', 'peso_neto_total',
             'almacen_destino', 'almacen_nombre',
+            'operador_bascula', 'operador_nombre', 'operador_cargo',
+            'observaciones',
             'estado', 'estado_display',
             'requiere_qc', 'tiene_qc',
             'created_at',
         ]
+
+    def get_operador_cargo(self, obj):
+        op = obj.operador_bascula
+        if not op:
+            return None
+        cargo = getattr(op, 'cargo', None)
+        if cargo is None:
+            return None
+        return getattr(cargo, 'nombre', None) or str(cargo)
 
     def get_lineas_count(self, obj):
         return obj.lineas.count()
@@ -112,6 +131,7 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
     )
     almacen_nombre = serializers.CharField(source='almacen_destino.nombre', read_only=True)
     operador_nombre = serializers.CharField(source='operador_bascula.get_full_name', read_only=True)
+    operador_cargo = serializers.SerializerMethodField()
     modalidad_entrega_display = serializers.CharField(
         source='get_modalidad_entrega_display', read_only=True
     )
@@ -140,7 +160,7 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             # Destino
             'almacen_destino', 'almacen_nombre',
             # Operador
-            'operador_bascula', 'operador_nombre',
+            'operador_bascula', 'operador_nombre', 'operador_cargo',
             # Estado
             'estado', 'estado_display',
             'observaciones',
@@ -159,6 +179,15 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
     def get_peso_neto_total(self, obj):
         total = sum((l.peso_neto_kg for l in obj.lineas.all()), Decimal('0.000'))
         return str(total)
+
+    def get_operador_cargo(self, obj):
+        op = obj.operador_bascula
+        if not op:
+            return None
+        cargo = getattr(op, 'cargo', None)
+        if cargo is None:
+            return None
+        return getattr(cargo, 'nombre', None) or str(cargo)
 
     def validate_almacen_destino(self, value):
         """

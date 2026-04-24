@@ -102,7 +102,7 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                 Almacén destino
               </p>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {voucher.almacen_destino_nombre ?? '—'}
+                {voucher.almacen_nombre ?? '—'}
               </p>
             </div>
             <div>
@@ -126,11 +126,16 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
             )}
             <div>
               <p className="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1">
-                Operador de báscula
+                Generado por
               </p>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {voucher.operador_bascula_nombre ?? '—'}
+                {voucher.operador_nombre ?? '—'}
               </p>
+              {voucher.operador_cargo && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {voucher.operador_cargo}
+                </p>
+              )}
             </div>
           </div>
         </Card>
@@ -172,13 +177,13 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                         {l.producto_nombre ?? `#${l.producto}`}
                       </td>
                       <td className="py-2 px-3 text-sm text-right tabular-nums">
-                        {Number(l.peso_bruto_kg ?? 0).toFixed(3)}
+                        {Number(l.peso_bruto_kg ?? 0).toFixed(1)}
                       </td>
                       <td className="py-2 px-3 text-sm text-right tabular-nums">
-                        {Number(l.peso_tara_kg ?? 0).toFixed(3)}
+                        {Number(l.peso_tara_kg ?? 0).toFixed(1)}
                       </td>
                       <td className="py-2 px-3 text-sm text-right tabular-nums font-semibold">
-                        {Number(l.peso_neto_kg ?? 0).toFixed(3)}
+                        {Number(l.peso_neto_kg ?? 0).toFixed(1)}
                       </td>
                       <td className="py-2 px-3">
                         {l.measurements && l.measurements.length > 0 ? (
@@ -186,7 +191,7 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                             {l.measurements.map((m) => (
                               <span
                                 key={m.id}
-                                className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700"
+                                className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-gray-200 dark:border-gray-700"
                                 style={{
                                   backgroundColor: m.classified_range_color
                                     ? `${m.classified_range_color}20`
@@ -196,8 +201,13 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                                 title={`${m.parameter_name}: ${m.measured_value}${m.parameter_unit ?? ''}`}
                               >
                                 <FlaskConical className="w-3 h-3" />
-                                {m.classified_range_name ??
-                                  `${m.measured_value}${m.parameter_unit ?? ''}`}
+                                <span className="font-medium">
+                                  {m.parameter_name}: {m.measured_value}
+                                  {m.parameter_unit ?? ''}
+                                </span>
+                                {m.classified_range_name && (
+                                  <span className="opacity-75">· {m.classified_range_name}</span>
+                                )}
                               </span>
                             ))}
                           </div>
@@ -218,7 +228,7 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                       Peso total neto:
                     </td>
                     <td className="py-2 px-3 text-sm text-right tabular-nums font-bold text-gray-900 dark:text-gray-100">
-                      {pesoTotal.toFixed(3)} kg
+                      {pesoTotal.toFixed(1)} kg
                     </td>
                     <td></td>
                   </tr>

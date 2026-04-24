@@ -494,7 +494,8 @@ export default function VoucherFormModal({
                             </span>
                           </div>
                         )}
-                        {parametrosCalidad.length > 0 && (
+                        {/* QC inline: sólo si el producto lo exige (requiere_qc_recepcion=true) */}
+                        {requiereQc && parametrosCalidad.length > 0 && (
                           <QcLineaSection
                             value={qcByLineIndex[index] ?? {}}
                             onChange={(next) =>
@@ -503,7 +504,7 @@ export default function VoucherFormModal({
                             parametros={parametrosCalidad}
                             rangos={rangosCalidad}
                             label={prod?.nombre}
-                            defaultExpanded={requiereQc}
+                            defaultExpanded
                           />
                         )}
                       </>

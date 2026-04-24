@@ -152,9 +152,26 @@ class VoucherRecepcion(TenantModel):
         return self.lineas.filter(producto__requiere_qc_recepcion=True).exists()
 
     @property
-    def tiene_qc(self) -> bool:
-        """True si ya existe un RecepcionCalidad asociado al voucher."""
+    def tiene_qc_legacy(self) -> bool:
+        """True si existe un RecepcionCalidad (OneToOne) asociado al voucher."""
         return hasattr(self, 'calidad') and self.calidad is not None
+
+    @property
+    def tiene_qc(self) -> bool:
+        """
+        True si el QC está completo para las líneas que lo requieren.
+
+        Acepta tanto el legacy RecepcionCalidad (OneToOne) como las nuevas
+        MedicionCalidad por línea (H-SC-11). Si ninguna línea requiere QC,
+        retorna True (nada que validar).
+        """
+        if self.tiene_qc_legacy:
+            return True
+        lineas_req = self.lineas.filter(producto__requiere_qc_recepcion=True)
+        if not lineas_req.exists():
+            return True
+        lineas_con_medicion = lineas_req.filter(measurements__isnull=False).distinct()
+        return lineas_con_medicion.count() == lineas_req.count()
 
     # ─── Agregados de líneas ───────────────────────────────────────────
     @property
@@ -193,8 +210,10 @@ class VoucherRecepcion(TenantModel):
                 "Este voucher tiene productos que requieren control de calidad. "
                 "Registre el RecepcionCalidad antes de aprobar el voucher."
             )
-        # H-SC-03: si hay QC con resultado RECHAZADO, no se puede aprobar
-        if self.tiene_qc and self.calidad.resultado == 'RECHAZADO':
+        # H-SC-03: si hay QC legacy con resultado RECHAZADO, no se puede aprobar
+        # (solo aplica al flujo RecepcionCalidad OneToOne; las mediciones por
+        # línea H-SC-11 no tienen estado de rechazo explícito)
+        if self.tiene_qc_legacy and self.calidad.resultado == 'RECHAZADO':
             raise ValidationError(
                 "El control de calidad fue RECHAZADO. No se puede aprobar "
                 "el voucher — use la transición rechazar() si corresponde."

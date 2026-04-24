@@ -42,23 +42,24 @@ export interface VoucherRecepcionList {
   lineas_count: number;
   almacen_destino: number;
   almacen_nombre?: string;
+  /** H-SC-10: ruta de recolección (cuando modalidad=RECOLECCION) */
+  ruta_recoleccion?: number | null;
+  ruta_recoleccion_nombre?: string | null;
+  operador_bascula?: number;
+  operador_nombre?: string | null;
+  operador_cargo?: string | null;
+  observaciones?: string;
   estado: EstadoVoucher;
   estado_display?: string;
-  /** H-SC-03: alguna línea exige QC antes de aprobar. */
+  /** H-SC-03/H-SC-11: alguna línea exige QC antes de aprobar. */
   requiere_qc?: boolean;
-  /** H-SC-03: ya existe un RecepcionCalidad registrado para este voucher. */
+  /** H-SC-03/H-SC-11: QC completo (legacy RecepcionCalidad o mediciones por línea). */
   tiene_qc?: boolean;
   created_at: string;
 }
 
 export interface VoucherRecepcion extends VoucherRecepcionList {
-  /** H-SC-10: FK a RutaRecoleccion (antes uneg_transportista → SedeEmpresa) */
-  ruta_recoleccion?: number | null;
-  ruta_recoleccion_nombre?: string;
   orden_compra?: number | null;
-  operador_bascula: number;
-  operador_nombre?: string;
-  observaciones?: string;
   updated_at: string;
 }
 

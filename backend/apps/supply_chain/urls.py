@@ -26,8 +26,14 @@ urlpatterns = [
     # Recepción (VoucherRecepcion, RecepcionCalidad)
     path('recepcion/', include('apps.supply_chain.recepcion.urls')),
 
-    # Liquidaciones
+    # QC configurable (H-SC-11) — expuesto en root del SC para consumo
+    # transversal (parametros-calidad/, rangos-calidad/, mediciones-calidad/,
+    # voucher-lines/<id>/measurements/bulk/)
+    path('', include('apps.supply_chain.recepcion.urls_qc_root')),
+
+    # Liquidaciones — header en /liquidaciones/ + pagos en /pagos-liquidacion/ (root)
     path('liquidaciones/', include('apps.supply_chain.liquidaciones.urls')),
+    path('', include('apps.supply_chain.liquidaciones.urls_pagos')),
 
     # Almacenamiento e Inventario
     path('almacenamiento/', include('apps.supply_chain.almacenamiento.urls')),

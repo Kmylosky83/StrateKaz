@@ -38,6 +38,7 @@ import { voucherRecepcionApi } from '../api/recepcionApi';
 import { useAprobarVoucher, useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
 import type { EstadoVoucher, VoucherRecepcionList } from '../types/recepcion.types';
 import RegistrarQCModal from './RegistrarQCModal';
+import { VoucherDetailModal } from './VoucherDetailModal';
 import VoucherFormModal from './VoucherFormModal';
 
 // ==================== UTILITIES ====================
@@ -73,6 +74,7 @@ export default function RecepcionTab() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVoucher | ''>('');
   const [qcModalVoucher, setQcModalVoucher] = useState<VoucherRecepcionList | null>(null);
+  const [detailVoucher, setDetailVoucher] = useState<VoucherRecepcionList | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const aprobarMut = useAprobarVoucher();
   const currentUserId = useAuthStore((s) => s.user?.id ?? 0);
@@ -287,7 +289,12 @@ export default function RecepcionTab() {
                     </td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" title="Ver detalle">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Ver detalle"
+                          onClick={() => setDetailVoucher(v)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
                         {/* H-SC-03: registrar QC */}
@@ -366,6 +373,13 @@ export default function RecepcionTab() {
         isOpen={!!qcModalVoucher}
         voucher={qcModalVoucher}
         onClose={() => setQcModalVoucher(null)}
+      />
+
+      {/* H-SC-13: Ver detalle de voucher */}
+      <VoucherDetailModal
+        isOpen={!!detailVoucher}
+        voucher={detailVoucher}
+        onClose={() => setDetailVoucher(null)}
       />
 
       {/* H-SC-03 F8: Crear voucher */}

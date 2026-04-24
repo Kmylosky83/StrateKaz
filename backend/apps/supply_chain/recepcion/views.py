@@ -187,12 +187,35 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         """
         voucher = self.get_object()
 
-        # ── Nombre de la empresa (tenant actual) ──────────────────────
+        # ── Branding del tenant (H-SC-13) ─────────────────────────────
+        # Se muestra nombre comercial + NIT + razón social en el header.
+        # Logo opcional en formato embebido (solo si es URL accesible).
         tenant = getattr(connection, 'tenant', None)
+        empresa = 'StrateKaz'
+        nit = ''
+        razon_social = ''
+        logo_url = ''
         if tenant is not None:
-            empresa = getattr(tenant, 'nombre_comercial', None) or getattr(tenant, 'name', None) or 'StrateKaz'
-        else:
-            empresa = 'StrateKaz'
+            empresa = (
+                getattr(tenant, 'nombre_comercial', None)
+                or getattr(tenant, 'name', None)
+                or 'StrateKaz'
+            )
+            logo_field = getattr(tenant, 'logo', None)
+            if logo_field and hasattr(logo_field, 'url'):
+                try:
+                    logo_url = request.build_absolute_uri(logo_field.url)
+                except Exception:
+                    logo_url = ''
+        # EmpresaConfig tiene NIT y razón social (validados para facturación)
+        try:
+            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+            empresa_config = EmpresaConfig.get_instance()
+            if empresa_config:
+                nit = empresa_config.nit or ''
+                razon_social = empresa_config.razon_social or ''
+        except Exception:
+            pass
 
         # ── Helpers de formato ────────────────────────────────────────
         def fmt_kg(value):
@@ -286,7 +309,10 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 </head>
 <body>
 <div class="sep">{SEP}</div>
+{f'<div class="center"><img src="{logo_url}" style="max-width:40mm;max-height:15mm;" /></div>' if logo_url else ''}
 <div class="center bold">{empresa}</div>
+{f'<div class="center" style="font-size:8pt;">{razon_social}</div>' if razon_social else ''}
+{f'<div class="center" style="font-size:8pt;">NIT: {nit}</div>' if nit else ''}
 <div class="sep">{SEP}</div>
 <div class="center bold">VOUCHER RECEPCION MP</div>
 <div class="sep">{SEP}</div>

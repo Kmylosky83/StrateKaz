@@ -1,16 +1,19 @@
 /**
- * EditProfileModal - Modal para editar información personal del usuario
+ * EditIdentidadModal — Editar identidad del usuario (User model).
  *
- * Permite actualizar:
- * - Nombre y apellido
- * - Email
- * - Teléfono
- * - Documento (solo superadmin — reemplaza TEMP-xxx)
+ * Sección: 📇 Identidad en /perfil
+ * Endpoint: PATCH /api/core/users/update_profile/
  *
- * Campos NO editables (gestionados por admin):
- * - Cargo
- * - Área
- * - Empresa
+ * Campos editables:
+ * - first_name, last_name, email, phone (todos los usuarios)
+ * - document_type, document_number (solo superadmin — reemplaza TEMP-xxx)
+ *
+ * Campos NO editables aquí (viven en otros modales o admin):
+ * - Cargo, área, fecha ingreso (admin en Mi Equipo)
+ * - Email personal, celular, dirección (EditContactoModal)
+ * - Contacto emergencia (EditEmergenciaModal)
+ *
+ * Reemplaza EditProfileModal (nombre legacy ambiguo).
  */
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,10 +26,6 @@ import { useAuthStore } from '@/store/authStore';
 import type { User } from '@/types/auth.types';
 import { User as UserIcon, Mail, Phone, IdCard } from 'lucide-react';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────────────────────
-
 const DOCUMENT_TYPE_CHOICES = [
   { value: 'CC', label: 'Cédula de Ciudadanía' },
   { value: 'CE', label: 'Cédula de Extranjería' },
@@ -35,11 +34,7 @@ const DOCUMENT_TYPE_CHOICES = [
   { value: 'TI', label: 'Tarjeta de Identidad' },
 ] as const;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SCHEMA
-// ─────────────────────────────────────────────────────────────────────────────
-
-const profileSchema = z.object({
+const identidadSchema = z.object({
   first_name: z.string().min(1, 'Nombre requerido').max(50, 'Máximo 50 caracteres'),
   last_name: z.string().min(1, 'Apellido requerido').max(50, 'Máximo 50 caracteres'),
   email: z.string().email('Email inválido').max(100, 'Máximo 100 caracteres'),
@@ -48,19 +43,15 @@ const profileSchema = z.object({
   document_number: z.string().max(30, 'Máximo 30 caracteres').optional(),
 });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type IdentidadFormData = z.infer<typeof identidadSchema>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTE
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface EditProfileModalProps {
+interface EditIdentidadModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
 }
 
-export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProps) => {
+export const EditIdentidadModal = ({ isOpen, onClose, user }: EditIdentidadModalProps) => {
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const isSuperAdmin = useAuthStore((s) => s.user?.is_superuser);
 
@@ -68,8 +59,8 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
     register,
     handleSubmit,
     formState: { errors, isDirty },
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
+  } = useForm<IdentidadFormData>({
+    resolver: zodResolver(identidadSchema),
     defaultValues: {
       first_name: user.first_name,
       last_name: user.last_name,
@@ -80,16 +71,13 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
     },
   });
 
-  const onSubmit = (data: ProfileFormData) => {
-    // Solo enviar campos de documento si es superadmin
+  const onSubmit = (data: IdentidadFormData) => {
     if (!isSuperAdmin) {
       delete data.document_type;
       delete data.document_number;
     }
     updateProfile(data, {
-      onSuccess: () => {
-        onClose();
-      },
+      onSuccess: () => onClose(),
     });
   };
 
@@ -97,12 +85,11 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Configuración de cuenta"
-      description="Nombre de usuario y correo de acceso al sistema"
+      title="Editar identidad"
+      description="Nombre, correo del sistema y teléfono de contacto"
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Nombre */}
         <Input
           label="Nombre"
           placeholder="Ingresa tu nombre"
@@ -112,7 +99,6 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
           disabled={isPending}
         />
 
-        {/* Apellido */}
         <Input
           label="Apellido"
           placeholder="Ingresa tu apellido"
@@ -122,9 +108,8 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
           disabled={isPending}
         />
 
-        {/* Email */}
         <Input
-          label="Correo Electrónico"
+          label="Correo del sistema"
           type="email"
           placeholder="correo@empresa.com"
           leftIcon={<Mail className="h-5 w-5 text-gray-400" />}
@@ -133,9 +118,8 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
           disabled={isPending}
         />
 
-        {/* Teléfono */}
         <Input
-          label="Teléfono de contacto"
+          label="Teléfono corporativo"
           placeholder="+57 300 123 4567"
           leftIcon={<Phone className="h-5 w-5 text-gray-400" />}
           {...register('phone')}
@@ -143,14 +127,12 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
           disabled={isPending}
         />
 
-        {/* Documento — solo superadmin */}
         {isSuperAdmin && (
           <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-4">
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Documento de identidad del administrador
             </p>
 
-            {/* Tipo de documento */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Tipo de documento
@@ -171,7 +153,6 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
               </div>
             </div>
 
-            {/* Número de documento */}
             <Input
               label="Número de documento"
               placeholder="Ej: 1.234.567.890"
@@ -183,13 +164,12 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
           </div>
         )}
 
-        {/* Footer con botones */}
         <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button variant="outline" onClick={onClose} disabled={isPending}>
             Cancelar
           </Button>
           <Button type="submit" isLoading={isPending} disabled={!isDirty || isPending}>
-            Guardar Cambios
+            Guardar cambios
           </Button>
         </div>
       </form>

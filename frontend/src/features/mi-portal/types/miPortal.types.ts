@@ -48,5 +48,6 @@ export interface InfoPersonalUpdateData {
 }
 
 // ============ PORTAL TABS (solo LIVE) ============
+// Tab "perfil" eliminado 2026-04-23 — ahora vive en /perfil (página centralizada)
 
-export type MiPortalTab = 'perfil' | 'firma' | 'lecturas' | 'encuestas' | 'documentos';
+export type MiPortalTab = 'firma' | 'lecturas' | 'encuestas' | 'documentos';

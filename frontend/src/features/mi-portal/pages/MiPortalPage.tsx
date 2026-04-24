@@ -18,14 +18,12 @@
  */
 
 import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 import {
-  User,
   FolderOpen,
   BookOpen,
-  Pencil,
   Sun,
   Sunset,
   Moon,
@@ -33,6 +31,7 @@ import {
   PenTool,
   ClipboardList,
   AtSign,
+  UserCog,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -51,8 +50,6 @@ import { useIsExterno } from '@/hooks/useIsExterno';
 import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import { useMiPerfil, useMiPortalResumen } from '../api/miPortalApi';
 import {
-  MiPerfilCard,
-  MiPerfilEditForm,
   MisDocumentos,
   MiFirmaDigital,
   JefePortalSection,
@@ -96,7 +93,6 @@ function getCurrentDateFormatted(): string {
 // ============================================================================
 
 const BASE_TABS: Array<{ id: MiPortalTab; label: string; icon: React.ReactNode }> = [
-  { id: 'perfil', label: 'Mis datos', icon: <User className="w-4 h-4" /> },
   { id: 'firma', label: 'Mi Firma', icon: <PenTool className="w-4 h-4" /> },
   { id: 'lecturas', label: 'Lecturas', icon: <BookOpen className="w-4 h-4" /> },
   { id: 'encuestas', label: 'Encuestas', icon: <ClipboardList className="w-4 h-4" /> },
@@ -134,8 +130,7 @@ function HeroSkeleton() {
 
 export default function MiPortalPage() {
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<MiPortalTab>('perfil');
-  const [showEditPerfil, setShowEditPerfil] = useState(false);
+  const [activeTab, setActiveTab] = useState<MiPortalTab>('firma');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const { user, isLoadingUser } = useAuthStore(
@@ -169,7 +164,7 @@ export default function MiPortalPage() {
     [resumen.firmas, resumen.lecturas, resumen.encuestas]
   );
 
-  const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
+  const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'firma';
 
   // Tab desde URL (?tab=X) — útil para deep links desde notificaciones
   const tabFromUrl = useMemo(() => {
@@ -280,39 +275,35 @@ export default function MiPortalPage() {
                   </div>
                 </div>
 
-                {/* Fecha + Edit (desktop) */}
+                {/* Fecha + Ver perfil (desktop) */}
                 <div className="hidden md:flex flex-col items-end gap-3 flex-shrink-0">
                   <p className="text-sm text-gray-500 dark:text-gray-400 first-letter:uppercase">
                     {currentDate}
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowEditPerfil(true)}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
+                  <Link
+                    to="/perfil"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
                     style={{ color: primaryColor }}
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Editar perfil
-                  </Button>
+                    <UserCog className="w-3.5 h-3.5" />
+                    Ver mi perfil
+                  </Link>
                 </div>
               </div>
 
-              {/* Mobile: fecha + edit */}
+              {/* Mobile: fecha + ver perfil */}
               <div className="flex items-center justify-between mt-4 md:hidden">
                 <p className="text-sm text-gray-500 dark:text-gray-400 first-letter:uppercase">
                   {currentDate}
                 </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowEditPerfil(true)}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
+                <Link
+                  to="/perfil"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
                   style={{ color: primaryColor }}
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Editar perfil
-                </Button>
+                  <UserCog className="w-3.5 h-3.5" />
+                  Ver mi perfil
+                </Link>
               </div>
             </div>
           </Card>
@@ -346,14 +337,6 @@ export default function MiPortalPage() {
             transition={{ duration: 0.15 }}
             className="mt-6"
           >
-            {safeActiveTab === 'perfil' && (
-              <MiPerfilCard
-                perfil={perfil}
-                isLoading={perfilLoading}
-                onEdit={() => setShowEditPerfil(true)}
-              />
-            )}
-
             {safeActiveTab === 'firma' && <MiFirmaDigital />}
 
             {safeActiveTab === 'encuestas' && <MisEncuestasPendientes />}
@@ -368,13 +351,8 @@ export default function MiPortalPage() {
         </div>
 
         {/* ================================================================
-            MODALES
+            MODALES (solo foto — el edit de datos personales vive en /perfil)
             ================================================================ */}
-        <MiPerfilEditForm
-          isOpen={showEditPerfil}
-          onClose={() => setShowEditPerfil(false)}
-          perfil={perfil}
-        />
         <AvatarUploadModal isOpen={showAvatarModal} onClose={() => setShowAvatarModal(false)} />
       </div>
     </AnimatedPage>

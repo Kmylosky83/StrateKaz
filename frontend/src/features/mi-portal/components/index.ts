@@ -1,5 +1,3 @@
-export { MiPerfilCard } from './MiPerfilCard';
-export { MiPerfilEditForm } from './MiPerfilEditForm';
 export { MisDocumentos } from './MisDocumentos';
 export { MiFirmaDigital } from './MiFirmaDigital';
 export { JefePortalSection } from './JefePortalSection';

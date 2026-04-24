@@ -217,11 +217,11 @@ describe('MiPortalPage', () => {
       expect(hasGreeting).toBe(true);
     });
 
-    it('debe mostrar boton Editar perfil', () => {
+    it('debe mostrar enlace Ver mi perfil (hacia /perfil)', () => {
       renderWithProviders(<MiPortalPage />);
 
-      const editButtons = screen.getAllByText('Editar perfil');
-      expect(editButtons.length).toBeGreaterThan(0);
+      const verPerfilLinks = screen.getAllByText('Ver mi perfil');
+      expect(verPerfilLinks.length).toBeGreaterThan(0);
     });
   });
 
@@ -230,10 +230,9 @@ describe('MiPortalPage', () => {
   // --------------------------------------------------------------------------
 
   describe('Tabs visibles para empleados internos', () => {
-    it('debe mostrar tabs basicos: Mis datos, Mi Firma, Lecturas, Documentos', () => {
+    it('debe mostrar tabs basicos: Mi Firma, Lecturas, Encuestas, Documentos', () => {
       renderWithProviders(<MiPortalPage />);
 
-      expect(screen.getByText('Mis datos')).toBeInTheDocument();
       expect(screen.getByText('Mi Firma')).toBeInTheDocument();
       expect(screen.getByText('Lecturas')).toBeInTheDocument();
       expect(screen.getByText('Documentos')).toBeInTheDocument();
@@ -244,6 +243,12 @@ describe('MiPortalPage', () => {
 
       expect(screen.getByText('Encuestas')).toBeInTheDocument();
     });
+
+    it('NO debe mostrar tab Mis datos (ahora vive en /perfil)', () => {
+      renderWithProviders(<MiPortalPage />);
+
+      expect(screen.queryByText('Mis datos')).not.toBeInTheDocument();
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -251,10 +256,12 @@ describe('MiPortalPage', () => {
   // --------------------------------------------------------------------------
 
   describe('Navegacion entre tabs', () => {
-    it('debe mostrar MiPerfilCard en tab Mis datos por defecto', () => {
+    it('debe mostrar tab Mi Firma por defecto (primer tab)', async () => {
       renderWithProviders(<MiPortalPage />);
 
-      expect(screen.getByTestId('perfil-card')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('firma-tab')).toBeInTheDocument();
+      });
     });
 
     it('debe cambiar al tab Mi Firma', async () => {

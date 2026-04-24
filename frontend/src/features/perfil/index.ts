@@ -18,7 +18,9 @@ export { MisNotificacionesPage } from './pages/MisNotificacionesPage';
 
 // Components
 export { ActiveSessionsCard } from './components/ActiveSessionsCard';
-export { EditProfileModal } from './components/EditProfileModal';
+export { EditIdentidadModal } from './components/EditIdentidadModal';
+export { EditContactoModal } from './components/EditContactoModal';
+export { EditEmergenciaModal } from './components/EditEmergenciaModal';
 export { ChangePasswordModal } from './components/ChangePasswordModal';
 
 // Hooks (MS-002-A)

@@ -65,6 +65,9 @@ export type { SignaturePadProps, SignaturePadRef } from './SignaturePad';
 export { MultiSelectCombobox } from './MultiSelectCombobox';
 export type { MultiSelectOption } from './MultiSelectCombobox';
 
+export { SearchableSelect } from './SearchableSelect';
+export type { SearchableOption } from './SearchableSelect';
+
 // Re-export SignatureModal from modals for convenience
 export { SignatureModal } from '../modals/SignatureModal';
 export type { SignatureModalProps, SignatureData } from '../modals/SignatureModal';

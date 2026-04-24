@@ -21,6 +21,7 @@ import { FormModal } from '@/components/modals/FormModal';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { SearchableSelect } from '@/components/forms/SearchableSelect';
 import { Textarea } from '@/components/forms/Textarea';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -290,7 +291,7 @@ export default function VoucherFormModal({
       subtitle="Registro primario de ingreso de MP (pesaje en báscula)"
       submitLabel={createMut.isPending ? 'Guardando...' : 'Guardar voucher'}
       isLoading={createMut.isPending}
-      size="xl"
+      size="4xl"
     >
       {/* ── LOGÍSTICA ── */}
       <Card variant="bordered" padding="md">
@@ -298,19 +299,26 @@ export default function VoucherFormModal({
           <Package className="w-4 h-4" /> Logística
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label="Proveedor"
-            required
-            error={formState.errors.proveedor?.message}
-            {...register('proveedor')}
-          >
-            <option value={0}>Seleccionar...</option>
-            {proveedores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nombre_comercial}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            control={form.control}
+            name="proveedor"
+            render={({ field }) => (
+              <SearchableSelect
+                label="Proveedor"
+                required
+                error={formState.errors.proveedor?.message}
+                placeholder="Buscar por código o nombre..."
+                options={proveedores.map((p) => ({
+                  value: p.id,
+                  label: p.nombre_comercial,
+                  secondary: p.codigo_interno,
+                  description: p.ciudad_nombre ?? undefined,
+                }))}
+                value={field.value || null}
+                onChange={(v) => field.onChange(v ?? 0)}
+              />
+            )}
+          />
 
           <Select
             label="Modalidad de entrega"

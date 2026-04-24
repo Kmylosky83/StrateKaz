@@ -7,7 +7,6 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
-  Beaker,
   CheckCircle,
   Eye,
   FileText,
@@ -36,7 +35,6 @@ import { useAuthStore } from '@/store/authStore';
 import { voucherRecepcionApi } from '../api/recepcionApi';
 import { useAprobarVoucher, useDeleteVoucher, useVouchers } from '../hooks/useRecepcion';
 import type { EstadoVoucher, VoucherRecepcionList } from '../types/recepcion.types';
-import RegistrarQCModal from './RegistrarQCModal';
 import { VoucherDetailModal } from './VoucherDetailModal';
 import VoucherFormModal from './VoucherFormModal';
 
@@ -94,7 +92,6 @@ export default function RecepcionTab() {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [estadoFilter, setEstadoFilter] = useState<EstadoVoucher | ''>('');
-  const [qcModalVoucher, setQcModalVoucher] = useState<VoucherRecepcionList | null>(null);
   const [detailVoucher, setDetailVoucher] = useState<VoucherRecepcionList | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const aprobarMut = useAprobarVoucher();
@@ -335,19 +332,10 @@ export default function RecepcionTab() {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {/* H-SC-03/H-SC-11: registrar QC — solo si aún no se ha tomado.
-                            Si el QC ya fue registrado por línea (mediciones inline del
-                            voucher), el backend setea tiene_qc=true y el botón se oculta. */}
-                        {v.estado === 'PENDIENTE_QC' && v.requiere_qc && !v.tiene_qc && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Registrar QC"
-                            onClick={() => setQcModalVoucher(v)}
-                          >
-                            <Beaker className="w-4 h-4 text-amber-600" />
-                          </Button>
-                        )}
+                        {/* H-SC-11: el QC se toma por linea en el flujo de creacion
+                            del voucher (QcLineaSection en VoucherFormModal). No hay
+                            boton de "Registrar QC" post-creacion — el voucher que
+                            requiere QC y no lo tiene, simplemente no puede aprobarse. */}
                         {/* H-SC-03: aprobar voucher */}
                         {v.estado === 'PENDIENTE_QC' && (
                           <Button
@@ -406,13 +394,6 @@ export default function RecepcionTab() {
         confirmText="Eliminar"
         onConfirm={handleConfirmDelete}
         onClose={() => setDeleteId(null)}
-      />
-
-      {/* H-SC-03: Registrar QC */}
-      <RegistrarQCModal
-        isOpen={!!qcModalVoucher}
-        voucher={qcModalVoucher}
-        onClose={() => setQcModalVoucher(null)}
       />
 
       {/* H-SC-13: Ver detalle de voucher */}

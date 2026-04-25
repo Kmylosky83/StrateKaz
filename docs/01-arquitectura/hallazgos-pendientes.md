@@ -2718,7 +2718,7 @@ Documentado en detalle en plan agent H-SC-01 (sesión 2026-04-22 tarde).
 
 ---
 
-## H-PROD-01 — ConsecutivoConfig 'PRODUCTO_MP' DoesNotExist (Sentry, 5 events)
+## H-PROD-01 — ✅ RESUELTO (2026-04-24) — ConsecutivoConfig 'PRODUCTO_MP' DoesNotExist (Sentry)
 
 ### Origen
 Sentry `PYTHON-DJANGO-3K`. Detectado 2026-04-23 en auditoría de issues.
@@ -2738,14 +2738,14 @@ NO llama a `ConsecutivoConfig`. Los 5 eventos son de releases `99a9909d47b27` y 
 Los eventos son artefactos de la transición (versión anterior del código aún desplegada
 en workers Gunicorn durante el rolling restart). La instancia en producción ya funciona.
 
-### Acción pendiente
-1. Verificar en VPS que `Producto.generar_codigo()` actual usa `siguiente_consecutivo_scan`
-2. Si se confirma, marcar issue en Sentry como **Resuelto**
-3. Si todavía existe alguna ruta que llame a `ConsecutivoConfig` con `PRODUCTO_MP`,
-   migrarla a `siguiente_consecutivo_scan`
+### Resolución
+Issue Sentry `PYTHON-DJANGO-3K` marcado como **Resuelto** (2026-04-24).
+Sin nuevos eventos desde 2026-04-21. El deploy con `84aabfb7` (`fix(deploy): ejecutar
+pipeline completo de seeds post-deploy`) resolvió la causa raíz: `deploy.sh` ahora
+llama `deploy_seeds_all_tenants` que incluye `seed_consecutivos_sistema`.
 
 ### Estado
-🔲 Abierto. Prioridad: **media — verificación < 15 min en VPS**.
+✅ Resuelto. Ver también H-PROD-07 (duplicado parcial).
 
 ---
 
@@ -2821,7 +2821,7 @@ Posibles mitigaciones:
 
 ---
 
-## H-PROD-04 — Chunks JS obsoletos post-deploy (stale assets en /login y /dashboard)
+## H-PROD-04 — ✅ RESUELTO (2026-04-24) — Chunks JS obsoletos post-deploy
 
 ### Origen
 Sentry `APPSTRATEKAZ-V` y `APPSTRATEKAZ-P`. Detectados 2026-04-23.
@@ -2859,8 +2859,19 @@ comparar con versión del build actual, mostrar banner "Nueva versión disponibl
 ### Restricción
 Opción B es la más simple y estándar para Vite. Requiere 1 línea en `main.tsx`.
 
+### Fix aplicado
+`window.addEventListener('vite:preloadError', () => window.location.reload())` agregado
+al inicio de `frontend/src/main.tsx`. Cuando Vite falla al cargar un chunk dinámico,
+la página se recarga automáticamente cargando el HTML + assets del nuevo build.
+Commit: `fix(frontend): vite:preloadError reload automático para chunks obsoletos (H-PROD-04)`.
+
+Adicionalmente: template nginx VPS creado en `scripts/nginx-vps-template.conf` con
+`Cache-Control: no-cache` en `index.html` (evita que el HTML viejo se cachee y siga
+referenciando chunks con hash anterior).
+
 ### Estado
-🔲 Abierto. Prioridad: **baja — UX molesta pero no bloquea; fix es trivial (Opción B)**.
+✅ Resuelto. Issues Sentry `APPSTRATEKAZ-V` y `APPSTRATEKAZ-P` quedan en Ongoing
+hasta el próximo deploy que cargue el nuevo `main.tsx` — después dejarán de ocurrir.
 
 ---
 
@@ -2906,7 +2917,7 @@ Comentadas las 6 entradas de `motor_cumplimiento` en `task_routes` de `config/ce
 
 ---
 
-## H-PROD-07 — ABIERTO — ConsecutivoConfig faltante para PRODUCTO_MP en producción
+## H-PROD-07 — ✅ RESUELTO (2026-04-24) — ConsecutivoConfig faltante para PRODUCTO_MP en producción
 
 ### Origen
 Sentry `PYTHON-DJANGO-3K`. URL `/api/catalogo-productos/productos/`. 5 eventos, 2 días.
@@ -2940,7 +2951,9 @@ DJANGO_SETTINGS_MODULE=config.settings.production python manage.py \
 ```
 
 ### Estado
-🔴 ABIERTO — requiere operación en VPS. Código en repo es correcto.
+✅ RESUELTO — commit `84aabfb7` agregó `deploy_seeds_all_tenants` al pipeline de deploy.sh.
+El próximo deploy aplica seeds automáticamente. Issue Sentry cerrado (2026-04-24).
+Sin eventos desde 2026-04-21.
 
 ---
 

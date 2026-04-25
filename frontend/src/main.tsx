@@ -7,6 +7,17 @@ import App from './App';
 import { queryClient } from './lib/queryClient';
 import './index.css';
 
+// H-PROD-04: Forzar reload cuando Vite falla al cargar un chunk dinámico.
+// Ocurre cuando el usuario tiene sesión activa durante un deploy: el HTML
+// referencia chunks del build anterior que ya no existen en el servidor.
+// vite:preloadError es el evento estándar de Vite 5.x para este escenario.
+// El SW de PWA maneja el caso "app abierta + update disponible" (ver abajo),
+// pero este handler cubre el caso donde el chunk falla ANTES de que el SW
+// detecte la actualización.
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload();
+});
+
 // PERF-1: Lazy-load Sentry so it doesn't block initial render (~150 KB)
 // Only loads in production when DSN is configured
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;

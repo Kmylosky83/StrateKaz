@@ -246,6 +246,27 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         except AttributeError:
             full_name = '—'
 
+        # Cargo del operador para mostrar bajo el nombre.
+        # Para superadmin (sin cargo) usamos el label canónico del sistema
+        # (ver CLAUDE.md → "Superadmin — Reglas de Identidad").
+        operador_cargo = ''
+        op = voucher.operador_bascula
+        if op is not None:
+            if getattr(op, 'is_superuser', False) and not op.cargo_id:
+                operador_cargo = 'Administrador del Sistema'
+            else:
+                cargo = getattr(op, 'cargo', None)
+                if cargo is not None:
+                    operador_cargo = (
+                        getattr(cargo, 'nombre', '')
+                        or getattr(cargo, 'name', '')
+                        or ''
+                    )
+                if not operador_cargo:
+                    colab = getattr(op, 'colaborador', None)
+                    if colab is not None and getattr(colab, 'cargo', None):
+                        operador_cargo = getattr(colab.cargo, 'nombre', '') or ''
+
         # Ruta de recolección (solo aplica a modalidades de recolección).
         ruta_nombre = ''
         if voucher.ruta_recoleccion_id:
@@ -372,13 +393,12 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   .pesos {{ padding-left: 3mm; font-size: 8.5pt; }}
   .qc {{ padding-left: 3mm; font-size: 8pt; font-style: italic; }}
   .obs {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
-  .firma-line {{
-    border-top: 1px dashed #000;
-    margin: 6mm 2mm 1mm;
-    padding-top: 1mm;
-    font-size: 8pt;
+  .operador-block {{
+    margin-top: 2mm;
     text-align: center;
   }}
+  .operador-block .nombre {{ font-weight: bold; font-size: 9pt; }}
+  .operador-block .cargo {{ font-size: 7.5pt; opacity: 0.85; }}
   .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
   @media print {{
     body {{ width: 58mm; padding: 3mm 4mm; margin: 0; }}
@@ -415,8 +435,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <div class="row"><span class="label">QC:</span><span class="val">{qc_resumen}</span></div>
 <div class="sep">{SEP}</div>
 {obs_block}
-<div class="firma-line">Firma operador<br/><span style="font-size:7.5pt;">{full_name}</span></div>
-<div class="firma-line">Recibe / proveedor</div>
+<div class="operador-block">
+  <div style="font-size:7.5pt; opacity:0.7;">REALIZADO POR</div>
+  <div class="nombre">{full_name}</div>
+  {f'<div class="cargo">{operador_cargo}</div>' if operador_cargo else ''}
+</div>
 <div class="footer center" style="margin-top:3mm;">Powered by StrateKaz</div>
 <div class="footer center" style="font-size:7pt;">stratekaz.com · Consultoría 4.0</div>
 </body>

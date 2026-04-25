@@ -399,6 +399,13 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   }}
   .operador-block .nombre {{ font-weight: bold; font-size: 9pt; }}
   .operador-block .cargo {{ font-size: 7.5pt; opacity: 0.85; }}
+  /* Bloque de marca (header): mismo centrado tipográfico que el footer.
+     img como display:block + margin auto evita el desfase del baseline
+     inline cuando el logo es alto. */
+  .brand {{ text-align: center; }}
+  .brand img {{ display: block; margin: 0 auto; max-width: 40mm; max-height: 15mm; }}
+  .brand .nombre {{ font-weight: bold; }}
+  .brand .nit {{ font-size: 8pt; }}
   .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
   @media print {{
     body {{ width: 58mm; padding: 3mm 4mm; margin: 0; }}
@@ -408,9 +415,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 </head>
 <body>
 <div class="sep">{SEP}</div>
-{f'<div class="center"><img src="{logo_url}" style="max-width:40mm;max-height:15mm;" /></div>' if logo_url else ''}
-<div class="center bold">{empresa}</div>
-{f'<div class="center" style="font-size:8pt;">NIT: {nit}</div>' if nit else ''}
+<div class="brand">
+  {f'<img src="{logo_url}" alt="" />' if logo_url else ''}
+  <div class="nombre">{empresa}</div>
+  {f'<div class="nit">NIT: {nit}</div>' if nit else ''}
+</div>
 <div class="sep">{SEP}</div>
 <div class="center bold">VOUCHER RECEPCION MP</div>
 <div class="center" style="font-size:8pt;">No. {voucher.pk:04d}</div>

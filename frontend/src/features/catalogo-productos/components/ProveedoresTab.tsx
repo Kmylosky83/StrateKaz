@@ -201,7 +201,7 @@ export default function ProveedoresTab() {
         title="Eliminar proveedor"
         message="¿Está seguro? El proveedor quedará marcado como inactivo."
         onConfirm={handleConfirmDelete}
-        onCancel={() => setDeletingId(null)}
+        onClose={() => setDeletingId(null)}
         confirmText="Eliminar"
         isLoading={deleteMutation.isPending}
       />

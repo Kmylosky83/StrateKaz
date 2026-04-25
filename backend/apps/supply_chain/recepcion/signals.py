@@ -36,6 +36,7 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
     from apps.supply_chain.almacenamiento.models import (
         EstadoInventario,
         Inventario,
+        Kardex,
         MovimientoInventario,
         TipoMovimientoInventario,
     )
@@ -63,7 +64,7 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
         try:
             with transaction.atomic():
                 unidad = getattr(linea.producto, 'unidad_medida', None)
-                MovimientoInventario.objects.create(
+                movimiento = MovimientoInventario.objects.create(
                     almacen_destino=instance.almacen_destino,
                     tipo_movimiento=tipo_entrada,
                     fecha_movimiento=instance.created_at,
@@ -98,6 +99,22 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
                 if not created:
                     inventario.cantidad_disponible += linea.peso_neto_kg
                     inventario.save()
+
+                # Kardex: registro histórico de la entrada (H-SC-E2E-07).
+                # saldo_cantidad = saldo del inventario DESPUÉS de este ingreso,
+                # que coincide con inventario.cantidad_disponible ya actualizado.
+                Kardex.objects.create(
+                    inventario=inventario,
+                    movimiento=movimiento,
+                    fecha=instance.created_at,
+                    cantidad_entrada=linea.peso_neto_kg,
+                    cantidad_salida=Decimal('0.000'),
+                    saldo_cantidad=inventario.cantidad_disponible,
+                    costo_entrada=Decimal('0.00'),
+                    costo_salida=Decimal('0.00'),
+                    saldo_costo=Decimal('0.00'),
+                    costo_unitario=Decimal('0.00'),
+                )
 
         except Exception:
             logger.error(

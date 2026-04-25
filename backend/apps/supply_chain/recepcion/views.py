@@ -246,6 +246,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
         except AttributeError:
             full_name = '—'
 
+        # Ruta de recolección (solo aplica a modalidades de recolección).
+        ruta_nombre = ''
+        if voucher.ruta_recoleccion_id:
+            ruta_nombre = getattr(voucher.ruta_recoleccion, 'nombre', '') or ''
+
         # QC resumen: "N/A" si el voucher no requiere QC; si lo requiere y
         # las mediciones ya se imprimieron inline por línea, no se repite al
         # final. Si no hay QC registrado se marca "Pendiente".
@@ -253,6 +258,15 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             qc_resumen = 'Registrado' if voucher.tiene_qc else 'Pendiente'
         else:
             qc_resumen = 'N/A'
+
+        # Estado compacto para ticket térmico (el display completo es largo:
+        # "Aprobado — listo para liquidar" no cabe bien en 58mm).
+        estado_compacto = {
+            'PENDIENTE_QC': 'PENDIENTE QC',
+            'APROBADO': 'APROBADO',
+            'RECHAZADO': 'RECHAZADO',
+            'LIQUIDADO': 'LIQUIDADO',
+        }.get(voucher.estado, estado)
 
         # ── Bloque de líneas con mediciones QC ────────────────────────
         lineas = list(
@@ -269,25 +283,43 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 return '0'
 
+        # Formato por línea optimizado para 58mm:
+        #   Nombre del producto (truncado si largo)
+        #     B:56.0 T:0.0 N:56.0 kg          ← pesos en una sola fila
+        #     QC Acidez 8.0% (Tipo B)          ← medición con clasificación
+        def _trunc(text, maxlen=28):
+            text = (text or '').strip()
+            return text if len(text) <= maxlen else text[:maxlen - 1] + '…'
+
         lineas_rows = ''
         for linea in lineas:
-            prod_nombre = getattr(linea.producto, 'nombre', str(linea.producto))
+            prod_nombre = _trunc(getattr(linea.producto, 'nombre', str(linea.producto)))
+            tara = float(linea.peso_tara_kg or 0)
+            # Omitir tara si es 0 para ahorrar ancho
+            if tara > 0:
+                pesos_line = (
+                    f'B:{fmt_kg(linea.peso_bruto_kg)} '
+                    f'T:{fmt_kg(linea.peso_tara_kg)} '
+                    f'<b>N:{fmt_kg(linea.peso_neto_kg)}</b>'
+                )
+            else:
+                pesos_line = (
+                    f'B:{fmt_kg(linea.peso_bruto_kg)} '
+                    f'<b>N:{fmt_kg(linea.peso_neto_kg)}</b> kg'
+                )
             lineas_rows += (
-                f'<div class="indent">{prod_nombre}</div>'
-                f'<div class="row indent">'
-                f'<span class="label">  B:{fmt_kg(linea.peso_bruto_kg)}kg</span>'
-                f'<span class="val">N:{fmt_kg(linea.peso_neto_kg)}kg</span>'
-                f'</div>'
+                f'<div class="prod">{prod_nombre}</div>'
+                f'<div class="pesos">{pesos_line}</div>'
             )
-            # H-SC-11: mediciones QC por línea (solo valor, sin clasificación
-            # para optimizar espacio en 58mm).
+            # Mediciones QC inline con clasificación (H-SC-E2E mejora):
             for med in linea.measurements.all():
                 param_name = getattr(med.parameter, 'name', '') if med.parameter else ''
                 unit = getattr(med.parameter, 'unit', '') if med.parameter else ''
+                rango = getattr(med.classified_range, 'name', '') if med.classified_range_id else ''
+                rango_txt = f' ({rango})' if rango else ''
                 lineas_rows += (
-                    f'<div class="indent" style="font-size:8pt;">'
-                    f'  QC {param_name}: {fmt_val(med.measured_value)}{unit}'
-                    f'</div>'
+                    f'<div class="qc">QC {param_name} '
+                    f'{fmt_val(med.measured_value)}{unit}{rango_txt}</div>'
                 )
 
         SEP = '-' * 32
@@ -322,23 +354,34 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   body {{
     font-family: 'Courier New', Courier, monospace;
     font-size: 9pt;
+    line-height: 1.3;
     width: 58mm;
-    padding: 4mm 5mm;
+    padding: 3mm 4mm;
     margin: 0 auto;
     color: #000;
     background: #fff;
   }}
   .center {{ text-align: center; }}
   .bold {{ font-weight: bold; }}
-  .sep {{ letter-spacing: 0; white-space: pre; }}
+  .sep {{ letter-spacing: 0; white-space: pre; line-height: 1; }}
   .row {{ display: flex; justify-content: space-between; }}
   .label {{ white-space: nowrap; }}
   .val {{ text-align: right; }}
   .indent {{ padding-left: 4mm; }}
+  .prod {{ padding-left: 3mm; font-weight: bold; margin-top: 1mm; }}
+  .pesos {{ padding-left: 3mm; font-size: 8.5pt; }}
+  .qc {{ padding-left: 3mm; font-size: 8pt; font-style: italic; }}
   .obs {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
+  .firma-line {{
+    border-top: 1px dashed #000;
+    margin: 6mm 2mm 1mm;
+    padding-top: 1mm;
+    font-size: 8pt;
+    text-align: center;
+  }}
   .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
   @media print {{
-    body {{ width: 58mm; padding: 4mm 5mm; margin: 0; }}
+    body {{ width: 58mm; padding: 3mm 4mm; margin: 0; }}
     @page {{ size: 58mm auto; margin: 0; }}
   }}
 </style>
@@ -350,32 +393,32 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 {f'<div class="center" style="font-size:8pt;">NIT: {nit}</div>' if nit else ''}
 <div class="sep">{SEP}</div>
 <div class="center bold">VOUCHER RECEPCION MP</div>
+<div class="center" style="font-size:8pt;">No. {voucher.pk:04d}</div>
 <div class="sep">{SEP}</div>
-<div># VOUCHER: {voucher.pk:04d}</div>
-<div>FECHA:    {fecha_viaje}</div>
-<div>EMISION:  {emision}</div>
+<div class="row"><span class="label">Fecha viaje:</span><span class="val">{fecha_viaje}</span></div>
+<div class="row"><span class="label">Emitido:</span><span class="val">{emision}</span></div>
 <div class="sep">{SEP}</div>
-<div>PROVEEDOR:</div>
+<div class="bold">PROVEEDOR</div>
 <div class="indent">{proveedor_nombre}</div>
+{f'<div class="bold" style="margin-top:1mm;">RUTA</div><div class="indent">{ruta_nombre}</div>' if ruta_nombre else ''}
+<div class="bold" style="margin-top:1mm;">MODALIDAD</div>
+<div class="indent">{modalidad}</div>
 <div class="sep">{SEP}</div>
-<div class="bold">LINEAS DE MP ({len(lineas)}):</div>
+<div class="bold">MATERIAS PRIMAS ({len(lineas)})</div>
 {lineas_rows}
 <div class="sep">{SEP}</div>
-<div class="row"><span class="label">TOTAL NETO:</span><span class="val">{fmt_kg(peso_total)} kg</span></div>
+<div class="row bold"><span class="label">TOTAL NETO:</span><span class="val">{fmt_kg(peso_total)} kg</span></div>
 <div class="sep">{SEP}</div>
-<div>ALMACEN:</div>
+<div class="bold">ALMACEN DESTINO</div>
 <div class="indent">{almacen_nombre}</div>
-<div>MODALIDAD:</div>
-<div class="indent">{modalidad}</div>
-<div>GENERADO POR:</div>
-<div class="indent">{full_name}</div>
-<div class="sep">{SEP}</div>
-<div class="row"><span class="label">ESTADO:</span><span class="val">{estado}</span></div>
+<div class="row" style="margin-top:1mm;"><span class="label">Estado:</span><span class="val">{estado_compacto}</span></div>
 <div class="row"><span class="label">QC:</span><span class="val">{qc_resumen}</span></div>
 <div class="sep">{SEP}</div>
 {obs_block}
-<div class="footer center" style="margin-top:2mm;">Powered by StrateKaz</div>
-<div class="footer center" style="font-size:7pt;">stratekaz.com | Consultoría 4.0</div>
+<div class="firma-line">Firma operador<br/><span style="font-size:7.5pt;">{full_name}</span></div>
+<div class="firma-line">Recibe / proveedor</div>
+<div class="footer center" style="margin-top:3mm;">Powered by StrateKaz</div>
+<div class="footer center" style="font-size:7pt;">stratekaz.com · Consultoría 4.0</div>
 </body>
 <script>window.onload = function(){{ window.print(); }};</script>
 </html>"""

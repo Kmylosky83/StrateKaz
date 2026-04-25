@@ -11,13 +11,15 @@
  *
  * Se abre desde el icono "ojo" en RecepcionTab. Solo lectura.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { Printer, Scale, Package, FlaskConical, Truck } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge, Card } from '@/components/common';
+import apiClient from '@/api/axios-config';
 import type { VoucherRecepcionList } from '../types/recepcion.types';
 
 /** Parse fecha ISO (YYYY-MM-DD) como local — evita offset por timezone. */
@@ -49,11 +51,35 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
     [lineas]
   );
 
+  const [isPrinting, setIsPrinting] = useState(false);
+
   if (!voucher) return null;
 
-  const handlePrint58mm = () => {
-    const url = `/api/supply-chain/recepcion/vouchers/${voucher.id}/print-58mm/`;
-    window.open(url, '_blank', 'width=400,height=700');
+  // Descarga el HTML del voucher con JWT (apiClient) y lo abre en un popup
+  // imprimible. No se puede usar window.open(url) directo porque el backend
+  // exige Bearer token y window.open no adjunta headers (H-SC-E2E-04).
+  const handlePrint58mm = async () => {
+    setIsPrinting(true);
+    try {
+      const { data } = await apiClient.get<string>(
+        `/supply-chain/recepcion/vouchers/${voucher.id}/print-58mm/`,
+        { responseType: 'text', headers: { Accept: 'text/html' } }
+      );
+      const blob = new Blob([data], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank', 'width=400,height=700');
+      if (!win) {
+        URL.revokeObjectURL(blobUrl);
+        toast.error('Permite popups para imprimir el voucher');
+        return;
+      }
+      // Liberar la URL tras un minuto (la ventana ya cargó el HTML).
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch {
+      toast.error('No se pudo generar el voucher 58mm');
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const estadoInfo = ESTADO_BADGE[voucher.estado] ?? {
@@ -66,9 +92,9 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
       <Button variant="outline" onClick={onClose}>
         Cerrar
       </Button>
-      <Button variant="primary" onClick={handlePrint58mm}>
+      <Button variant="primary" onClick={handlePrint58mm} disabled={isPrinting}>
         <Printer className="w-4 h-4 mr-2" />
-        Imprimir 58mm
+        {isPrinting ? 'Generando…' : 'Imprimir 58mm'}
       </Button>
     </>
   );

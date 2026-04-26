@@ -160,6 +160,42 @@ export type {
   UpdateRutaDTO,
   RutasFilterParams,
 } from './rutas.types';
+export { ModoOperacion, MODO_OPERACION_LABELS } from './rutas.types';
+
+// ==================== RUTA-PARADAS (H-SC-RUTA-02) ====================
+
+export type {
+  RutaParada,
+  CreateRutaParadaDTO,
+  UpdateRutaParadaDTO,
+  RutaParadasFilterParams,
+} from './ruta-paradas.types';
+export { FrecuenciaPago, FRECUENCIA_PAGO_LABELS } from './ruta-paradas.types';
+
+// ==================== PRECIO RUTA SEMI (H-SC-RUTA-02) ====================
+
+export type {
+  PrecioRutaSemi,
+  CreatePrecioRutaSemiDTO,
+  UpdatePrecioRutaSemiDTO,
+  PrecioRutaSemiFilterParams,
+} from './precio-ruta-semi.types';
+
+// ==================== VOUCHER RECOLECCION (H-SC-RUTA-02) ====================
+
+export type {
+  VoucherRecoleccion,
+  LineaVoucherRecoleccion,
+  CreateVoucherRecoleccionDTO,
+  UpdateVoucherRecoleccionDTO,
+  CreateLineaVoucherRecoleccionDTO,
+  UpdateLineaVoucherRecoleccionDTO,
+  VoucherRecoleccionFilterParams,
+} from './voucher-recoleccion.types';
+export {
+  EstadoVoucherRecoleccion,
+  ESTADO_VOUCHER_RECOLECCION_LABELS,
+} from './voucher-recoleccion.types';
 
 // ==================== ALMACENAMIENTO ====================
 

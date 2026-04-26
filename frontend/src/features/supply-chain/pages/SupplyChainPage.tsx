@@ -29,6 +29,7 @@ import {
   Route,
   Scale,
   ShoppingCart,
+  Truck,
   Warehouse,
 } from 'lucide-react';
 import {
@@ -41,6 +42,7 @@ import {
   RutasRecoleccionTab,
   ParametrosCalidadTab,
   InventarioTab,
+  VoucherRecoleccionTab,
 } from '../components';
 import { useResumenGeneralSC } from '../hooks/useInventario';
 
@@ -57,6 +59,13 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Precios vigentes proveedor × materia prima + historial',
     icon: <DollarSign className="w-5 h-5" />,
     component: PreciosTab,
+  },
+  recoleccion: {
+    title: 'Recolección en Ruta',
+    description:
+      'Registro de kilos por parada en cada salida de la ruta (sin precios, captura flexible en ruta o post-entrega)',
+    icon: <Truck className="w-5 h-5" />,
+    component: VoucherRecoleccionTab,
   },
   recepcion: {
     title: 'Recepción de MP',

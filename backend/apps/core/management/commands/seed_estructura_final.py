@@ -983,7 +983,7 @@ class Command(BaseCommand):
                     # módulo catalogo_productos).
                     # H-SC-13: Rutas al inicio (pre-requisito del flujo de recepción).
                     {'code': 'rutas_recoleccion', 'name': 'Rutas de Recolección', 'icon': 'Route', 'route': 'rutas-recoleccion', 'orden': 1, 'sections': [
-                        {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas internas de recolección de materia prima — crean Proveedor espejo automáticamente (H-SC-10)'},
+                        {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas con paradas (H-SC-RUTA-02). PASS_THROUGH o SEMI_AUTONOMA.'},
                     ]},
                     {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 2, 'sections': [
                         {'code': 'precios_materia_prima', 'name': 'Precios Materia Prima', 'icon': 'DollarSign', 'orden': 1, 'description': 'Control de precios por tipo de materia prima'},
@@ -991,18 +991,22 @@ class Command(BaseCommand):
                     # Tab Compras: NO expuesta en sidebar. App compras registrada en
                     # TENANT_APPS solo para integridad referencial del FK
                     # VoucherRecepcion.orden_compra. Reescritura futura.
-                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 3, 'sections': [
+                    # H-SC-RUTA-02: Recolección en ruta (antes de Recepción en planta).
+                    {'code': 'recoleccion_ruta', 'name': 'Recolección en Ruta', 'icon': 'Truck', 'route': 'recoleccion', 'orden': 3, 'sections': [
+                        {'code': 'vouchers_recoleccion', 'name': 'Vouchers de Recolección', 'icon': 'Truck', 'orden': 1, 'description': 'Registro de kilos recolectados por parada en cada salida de la ruta (H-SC-RUTA-02).'},
+                    ]},
+                    {'code': 'recepcion', 'name': 'Recepción de MP', 'icon': 'Scale', 'route': 'recepcion', 'orden': 4, 'sections': [
                         {'code': 'recepcion_mp_sc', 'name': 'Vouchers de Recepción', 'icon': 'Scale', 'orden': 1, 'description': 'Vouchers de báscula, QC opcional, ingreso a inventario'},
                     ]},
-                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 4, 'sections': [
+                    {'code': 'liquidaciones', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'route': 'liquidaciones', 'orden': 5, 'sections': [
                         {'code': 'liquidaciones_sc', 'name': 'Liquidaciones', 'icon': 'FileCheck', 'orden': 1, 'description': 'Cálculo y aprobación de pagos a proveedores por recepciones'},
                     ]},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 5, 'sections': [
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 6, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
                     # Tab Evaluaciones eliminado 2026-04-21 — modelos EvaluacionProveedor
                     # y CriterioEvaluacion eliminados (scope Admin/Compras futuro).
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 6, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 7, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

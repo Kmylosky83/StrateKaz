@@ -30,6 +30,10 @@ export const supplyChainRoutes = (
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'precios')}
     />
     <Route
+      path="/supply-chain/recoleccion"
+      element={withFullGuard(SupplyChainPage, 'supply_chain', 'vouchers_recoleccion')}
+    />
+    <Route
       path="/supply-chain/recepcion"
       element={withFullGuard(SupplyChainPage, 'supply_chain', 'recepcion')}
     />

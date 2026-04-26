@@ -15,6 +15,10 @@ export { default as AlmacenamientoTab } from './AlmacenamientoTab';
 export { default as RecepcionTab } from './RecepcionTab';
 export { default as LiquidacionesTab } from './LiquidacionesTab';
 export { default as RutasRecoleccionTab } from './RutasRecoleccionTab';
+// H-SC-RUTA-02
+export { default as VoucherRecoleccionTab } from './VoucherRecoleccionTab';
+export { default as VoucherRecoleccionFormModal } from './VoucherRecoleccionFormModal';
+export { default as RutaParadasModal } from './RutaParadasModal';
 // Fase 1 QC + Inventario
 export { default as ParametrosCalidadTab } from './ParametrosCalidadTab';
 export { default as InventarioTab } from './InventarioTab';

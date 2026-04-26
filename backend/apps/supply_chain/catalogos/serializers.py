@@ -147,12 +147,16 @@ class ResumenGeneralSerializer(serializers.Serializer):
 class RutaRecoleccionSerializer(serializers.ModelSerializer):
     # H-SC-RUTA-01: codigo se auto-genera en save() si viene vacío (RUTA-001...).
     codigo = serializers.CharField(required=False, allow_blank=True)
+    modo_operacion_display = serializers.CharField(
+        source='get_modo_operacion_display', read_only=True
+    )
 
     class Meta:
         model = RutaRecoleccion
         fields = [
             'id', 'codigo', 'nombre', 'descripcion',
-            'es_proveedor_interno', 'is_active',
+            'modo_operacion', 'modo_operacion_display',
+            'is_active',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']

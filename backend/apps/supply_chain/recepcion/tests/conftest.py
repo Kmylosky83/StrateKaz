@@ -69,14 +69,13 @@ def uneg_planta(db, empresa):
 
 @pytest.fixture
 def uneg_recolectora(db, empresa):
-    # H-SC-10: rutas de recolección migraron a supply_chain.catalogos.RutaRecoleccion.
-    # Este fixture ahora crea una RutaRecoleccion con es_proveedor_interno=True
-    # para poder ser usada como ruta_recoleccion en VoucherRecepcion.
+    # H-SC-RUTA-02: la Ruta es un recurso logístico de la empresa, NUNCA es Proveedor.
+    # Default modo_operacion=PASS_THROUGH (empresa paga directo al productor).
     from apps.supply_chain.catalogos.models import RutaRecoleccion
     return RutaRecoleccion.objects.create(
         codigo='RUTA-NORTE',
         nombre='Ruta Recolección Norte',
-        es_proveedor_interno=True,
+        modo_operacion=RutaRecoleccion.ModoOperacion.PASS_THROUGH,
     )
 
 

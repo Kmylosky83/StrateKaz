@@ -7,11 +7,11 @@ from .models import Almacen, RutaRecoleccion, TipoAlmacen
 
 @admin.register(RutaRecoleccion)
 class RutaRecoleccionAdmin(admin.ModelAdmin):
-    """Admin para Rutas de Recolección (H-SC-10)."""
+    """Admin para Rutas de Recolección (H-SC-RUTA-02)."""
     list_display = [
-        'codigo', 'nombre', 'es_proveedor_interno', 'is_active', 'is_deleted',
+        'codigo', 'nombre', 'modo_operacion', 'is_active', 'is_deleted',
     ]
-    list_filter = ['es_proveedor_interno', 'is_active', 'is_deleted']
+    list_filter = ['modo_operacion', 'is_active', 'is_deleted']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['codigo']
 

@@ -224,23 +224,21 @@ class Proveedor(TenantModel):
         verbose_name='Nombre Parte Interesada (cache)',
     )
 
-    # --- Vínculo con RutaRecoleccion (H-SC-10) ---
-    # Cuando es_proveedor_interno=True en RutaRecoleccion, un signal crea
-    # automáticamente un Proveedor espejo apuntando aquí.
-    # Una ruta solo puede tener un Proveedor espejo (unique=True + null=True).
-    # Reemplaza sede_empresa_origen (H-SC-05) al mover rutas de recolección
-    # desde configuracion a supply_chain.catalogos.
+    # --- DEPRECATED (H-SC-RUTA-02 — refactor 2026-04-25) ---
+    # Vínculo legacy al concepto de "Proveedor espejo" eliminado: la Ruta
+    # NUNCA es un Proveedor. La asociación entre Ruta y Proveedores reales
+    # se hace vía `RutaParada` (M2M con orden + frecuencia_pago).
+    # Se mantiene el FK temporalmente para no perder data de los espejos
+    # legacy mientras el usuario los reclasifica desde la UI. Drop programado
+    # en migración futura una vez verificado que no quedan referencias.
     ruta_origen = models.OneToOneField(
         'catalogos.RutaRecoleccion',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='proveedor_espejo',
-        verbose_name='Ruta de origen',
-        help_text=(
-            'Ruta interna que origina este proveedor espejo (H-SC-10). '
-            'Gestionado automáticamente por signal.'
-        ),
+        verbose_name='[DEPRECATED] Ruta de origen',
+        help_text='DEPRECATED H-SC-RUTA-02. No usar en código nuevo. Drop pendiente.',
     )
 
     # --- Estado operativo ---

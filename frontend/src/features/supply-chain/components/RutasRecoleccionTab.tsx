@@ -1,9 +1,11 @@
 /**
- * Tab Rutas de Recolección — Supply Chain (H-SC-10)
+ * Tab Rutas de Recolección — Supply Chain (H-SC-RUTA-02)
  *
- * Listado y CRUD de RutaRecoleccion (catálogo CT). Una ruta representa un
- * circuito logístico por el cual la empresa recoge MP. Si `es_proveedor_interno`
- * es true, el backend crea un Proveedor Interno espejo.
+ * Listado y CRUD de RutaRecoleccion (catálogo CT). Una ruta es un recurso
+ * logístico de la empresa (vehículo + recorrido). Tiene `modo_operacion`:
+ *   - PASS_THROUGH: empresa paga directo al productor.
+ *   - SEMI_AUTONOMA: la ruta tiene caja propia; doble precio.
+ * La Ruta NUNCA es Proveedor (los proveedores reales se asocian vía RutaParada).
  */
 import { useMemo, useState } from 'react';
 import { Edit, Plus, Route, Trash2 } from 'lucide-react';
@@ -103,7 +105,7 @@ export default function RutasRecoleccionTab() {
                     Descripción
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Tipo
+                    Modo
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Estado
@@ -126,13 +128,13 @@ export default function RutasRecoleccionTab() {
                       {r.descripcion || '-'}
                     </td>
                     <td className="px-6 py-3 text-center">
-                      {r.es_proveedor_interno ? (
+                      {r.modo_operacion === 'SEMI_AUTONOMA' ? (
                         <Badge variant="primary" size="sm">
-                          Proveedor interno
+                          Semi-autónoma
                         </Badge>
                       ) : (
                         <Badge variant="gray" size="sm">
-                          Externa
+                          Pass-through
                         </Badge>
                       )}
                     </td>

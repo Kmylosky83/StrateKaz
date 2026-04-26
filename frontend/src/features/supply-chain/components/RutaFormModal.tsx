@@ -1,20 +1,29 @@
 /**
- * Modal para crear/editar Rutas de Recolección (H-SC-10).
+ * Modal para crear/editar Rutas de Recolección.
  *
- * Cuando `es_proveedor_interno=true` la ruta se registra automáticamente
- * como Proveedor Interno en el catálogo CT de Proveedores (backend signal).
+ * Refactor 2026-04-25 (H-SC-RUTA-02):
+ *   - Eliminado el switch "es_proveedor_interno" (concepto deprecado).
+ *   - Agregado selector "modo_operacion" (PASS_THROUGH | SEMI_AUTONOMA).
+ *   - La Ruta NUNCA es Proveedor. Los proveedores se asocian vía RutaParada.
  */
 import { useEffect, useState } from 'react';
-import { Hash, Route, Settings2 } from 'lucide-react';
+import { Hash, Route, Settings2, Info } from 'lucide-react';
 
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 
 import { useCreateRuta, useUpdateRuta } from '../hooks/useRutas';
-import type { RutaRecoleccion, CreateRutaDTO, UpdateRutaDTO } from '../types/rutas.types';
+import {
+  ModoOperacion,
+  MODO_OPERACION_LABELS,
+  type RutaRecoleccion,
+  type CreateRutaDTO,
+  type UpdateRutaDTO,
+} from '../types/rutas.types';
 
 interface RutaFormModalProps {
   ruta: RutaRecoleccion | null;
@@ -26,7 +35,7 @@ interface FormData {
   codigo: string;
   nombre: string;
   descripcion: string;
-  es_proveedor_interno: boolean;
+  modo_operacion: ModoOperacion;
   is_active: boolean;
 }
 
@@ -34,7 +43,7 @@ const defaultFormData: FormData = {
   codigo: '',
   nombre: '',
   descripcion: '',
-  es_proveedor_interno: true,
+  modo_operacion: ModoOperacion.PASS_THROUGH,
   is_active: true,
 };
 
@@ -51,7 +60,7 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
         codigo: ruta.codigo || '',
         nombre: ruta.nombre || '',
         descripcion: ruta.descripcion || '',
-        es_proveedor_interno: ruta.es_proveedor_interno ?? true,
+        modo_operacion: ruta.modo_operacion ?? ModoOperacion.PASS_THROUGH,
         is_active: ruta.is_active ?? true,
       });
     } else {
@@ -71,7 +80,7 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
     const baseData = {
       nombre: formData.nombre.trim(),
       descripcion: formData.descripcion || undefined,
-      es_proveedor_interno: formData.es_proveedor_interno,
+      modo_operacion: formData.modo_operacion,
       is_active: formData.is_active,
     };
 
@@ -113,6 +122,13 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
     </>
   );
 
+  const modoOptions = Object.entries(MODO_OPERACION_LABELS).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
+  const esSemiAutonoma = formData.modo_operacion === ModoOperacion.SEMI_AUTONOMA;
+
   return (
     <BaseModal
       isOpen={isOpen}
@@ -134,7 +150,7 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Código — opcional */}
+            {/* Código — opcional, auto-genera RUTA-001 */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Código
@@ -169,7 +185,7 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
             label="Descripción"
             value={formData.descripcion}
             onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-            placeholder="Notas internas sobre esta ruta: zonas cubiertas, vehículos, etc."
+            placeholder="Notas internas: zonas cubiertas, vehículos asignados, etc."
             rows={2}
           />
         </div>
@@ -185,44 +201,41 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
             </h4>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Proveedor interno
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  La empresa recoge de una UNeg propia
-                </p>
-              </div>
-              <Switch
-                checked={formData.es_proveedor_interno}
-                onCheckedChange={(checked) =>
-                  setFormData({ ...formData, es_proveedor_interno: checked })
-                }
-              />
-            </div>
+          <Select
+            label="Modo de operación *"
+            value={formData.modo_operacion}
+            onChange={(e) =>
+              setFormData({ ...formData, modo_operacion: e.target.value as ModoOperacion })
+            }
+            options={modoOptions}
+            required
+          />
 
-            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+          {esSemiAutonoma && (
+            <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 p-3 text-sm text-purple-700 dark:text-purple-300 flex gap-2">
+              <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Desactivar para ocultar sin eliminar
-                </p>
+                <strong>Modo Semi-autónoma:</strong> esta ruta gestiona caja propia. Después de
+                crearla, configure el doble precio por proveedor en{' '}
+                <strong>Cadena de Suministro → Precios de Ruta</strong>: lo que la ruta paga al
+                productor y lo que la empresa le paga a la ruta. La diferencia cubre los gastos
+                operativos de la ruta.
               </div>
-              <Switch
-                checked={formData.is_active}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-              />
-            </div>
-          </div>
-
-          {formData.es_proveedor_interno && (
-            <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-3 text-sm text-blue-700 dark:text-blue-300">
-              Esta ruta se registrará automáticamente como <strong>Proveedor Interno</strong> en el
-              catálogo de Proveedores.
             </div>
           )}
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Activo</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Desactivar para ocultar sin eliminar
+              </p>
+            </div>
+            <Switch
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+          </div>
         </div>
       </form>
     </BaseModal>

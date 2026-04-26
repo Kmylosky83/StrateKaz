@@ -3,9 +3,9 @@
  *
  * Endpoint: /api/supply-chain/catalogos/rutas-recoleccion/
  *
- * H-SC-10: reemplaza el uso de SedeEmpresa como "UNeg transportista" en
- * VoucherRecepcion. Cuando `es_proveedor_interno=True`, la ruta se espeja
- * como Proveedor en el catálogo de Proveedores.
+ * H-SC-RUTA-02: la Ruta es un recurso logístico de la empresa (vehículo +
+ * recorrido). NUNCA es Proveedor. Tiene `modo_operacion` PASS_THROUGH o
+ * SEMI_AUTONOMA. Los proveedores reales se asocian vía RutaParada.
  */
 import apiClient from '@/api/axios-config';
 import type {

@@ -29,13 +29,13 @@ from .serializers import (
 
 
 class RutaRecoleccionViewSet(viewsets.ModelViewSet):
-    """CRUD de Rutas de Recolección (H-SC-10)."""
+    """CRUD de Rutas de Recolección (H-SC-RUTA-02)."""
 
     queryset = RutaRecoleccion.objects.all()
     serializer_class = RutaRecoleccionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['is_active', 'es_proveedor_interno']
+    filterset_fields = ['is_active', 'modo_operacion']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre', 'created_at']
     ordering = ['codigo']

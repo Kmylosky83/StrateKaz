@@ -10,18 +10,32 @@ from utils.models import TenantModel
 
 class RutaRecoleccion(TenantModel):
     """
-    Ruta de recolección de materia prima (H-SC-10).
+    Ruta de recolección de materia prima.
 
-    Representa un recorrido logístico propio de la empresa que recolecta
-    MP desde productores/proveedores externos. Conceptualmente pertenece
-    a Supply Chain (no a Fundación): es un recurso operativo, no una sede
-    física con dirección.
+    Recurso logístico propio de la empresa que recolecta MP desde productores
+    externos. **La Ruta NUNCA es un Proveedor** — es solo el vehículo +
+    recorrido. Los proveedores reales viven en `catalogo_productos.Proveedor`
+    con NIT/datos reales y se asocian a la ruta vía `RutaParada`.
 
-    Migrado desde `SedeEmpresa` con `tipo_unidad='RUTA_RECOLECCION'` (H-SC-10).
-    Las rutas típicamente actúan como proveedor interno: el signal
-    `sincronizar_proveedor_espejo_ruta` crea un `Proveedor` espejo para que
-    aparezcan como transportador en vouchers de recepción.
+    Modos de operación (H-SC-RUTA-02 — refactor 2026-04-25):
+      - PASS_THROUGH: la empresa paga directo a cada productor visitado.
+        La ruta solo recolecta; el flujo de dinero es 1-a-1 empresa↔productor.
+      - SEMI_AUTONOMA: la ruta tiene caja propia. Compra al productor con un
+        precio interno y "vende" a la empresa con otro precio mayor (la
+        diferencia financia los gastos operativos de la ruta). Doble registro
+        de precio en `PrecioRutaSemiAutonoma`.
+
+    En ambos modos los documentos legales salen a nombre de la empresa (no de
+    la ruta). La diferencia es el flujo de dinero y el control gerencial.
+
+    Histórico: el signal `sincronizar_proveedor_espejo_ruta` que creaba
+    Proveedores espejo automáticos fue eliminado en este refactor por
+    contaminar el catálogo con NITs sintéticos ('RUTA-RUTA-XXX').
     """
+
+    class ModoOperacion(models.TextChoices):
+        PASS_THROUGH = 'PASS_THROUGH', 'Pass-through (empresa paga directo)'
+        SEMI_AUTONOMA = 'SEMI_AUTONOMA', 'Semi-autónoma (ruta con caja propia)'
 
     codigo = models.CharField(
         max_length=50,
@@ -41,13 +55,15 @@ class RutaRecoleccion(TenantModel):
         default='',
         verbose_name='Descripción',
     )
-    es_proveedor_interno = models.BooleanField(
-        default=True,
-        verbose_name='Es proveedor interno',
+    modo_operacion = models.CharField(
+        max_length=20,
+        choices=ModoOperacion.choices,
+        default=ModoOperacion.PASS_THROUGH,
+        db_index=True,
+        verbose_name='Modo de operación',
         help_text=(
-            'Si es True, se crea automáticamente un Proveedor espejo en '
-            'catalogo_productos para que la ruta pueda operar como '
-            'transportador en vouchers de recepción.'
+            'PASS_THROUGH: empresa paga directo al productor. '
+            'SEMI_AUTONOMA: la ruta tiene caja propia con doble precio.'
         ),
     )
     is_active = models.BooleanField(

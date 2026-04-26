@@ -14,7 +14,7 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Almacen, RutaRecoleccion, TipoAlmacen
+from .models import Almacen, RutaRecoleccion, RutaParada, TipoAlmacen
 from .serializers import (
     AlertaDashboardSerializer,
     AlmacenDashboardHeaderSerializer,
@@ -23,6 +23,7 @@ from .serializers import (
     InventarioPorProductoSerializer,
     KardexMovimientoSerializer,
     ResumenGeneralSerializer,
+    RutaParadaSerializer,
     RutaRecoleccionSerializer,
     TipoAlmacenSerializer,
 )
@@ -39,6 +40,36 @@ class RutaRecoleccionViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre', 'created_at']
     ordering = ['codigo']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def paradas(self, request, pk=None):
+        """Lista las paradas de esta ruta ordenadas por orden de visita."""
+        ruta = self.get_object()
+        qs = ruta.paradas.select_related('proveedor').order_by('orden')
+        serializer = RutaParadaSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class RutaParadaViewSet(viewsets.ModelViewSet):
+    """CRUD de Paradas de Ruta (H-SC-RUTA-02)."""
+
+    queryset = RutaParada.objects.select_related('ruta', 'proveedor').all()
+    serializer_class = RutaParadaSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['ruta', 'proveedor', 'frecuencia_pago', 'is_active']
+    search_fields = [
+        'proveedor__nombre_comercial', 'proveedor__numero_documento',
+        'ruta__codigo', 'ruta__nombre',
+    ]
+    ordering_fields = ['ruta', 'orden', 'created_at']
+    ordering = ['ruta', 'orden']
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

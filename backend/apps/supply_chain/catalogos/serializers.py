@@ -2,7 +2,7 @@
 Serializers para catalogos - supply_chain
 """
 from rest_framework import serializers
-from .models import Almacen, RutaRecoleccion, TipoAlmacen
+from .models import Almacen, RutaRecoleccion, RutaParada, TipoAlmacen
 
 
 # ==============================================================================
@@ -150,16 +150,76 @@ class RutaRecoleccionSerializer(serializers.ModelSerializer):
     modo_operacion_display = serializers.CharField(
         source='get_modo_operacion_display', read_only=True
     )
+    paradas_count = serializers.IntegerField(
+        source='paradas.count', read_only=True
+    )
 
     class Meta:
         model = RutaRecoleccion
         fields = [
             'id', 'codigo', 'nombre', 'descripcion',
             'modo_operacion', 'modo_operacion_display',
+            'paradas_count',
             'is_active',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class RutaParadaSerializer(serializers.ModelSerializer):
+    """Parada de Ruta — vínculo Ruta ↔ Proveedor con metadata operativa."""
+
+    proveedor_nombre = serializers.CharField(
+        source='proveedor.nombre_comercial', read_only=True
+    )
+    proveedor_documento = serializers.CharField(
+        source='proveedor.numero_documento', read_only=True
+    )
+    proveedor_codigo = serializers.CharField(
+        source='proveedor.codigo_interno', read_only=True
+    )
+    ruta_codigo = serializers.CharField(source='ruta.codigo', read_only=True)
+    ruta_nombre = serializers.CharField(source='ruta.nombre', read_only=True)
+    frecuencia_pago_display = serializers.CharField(
+        source='get_frecuencia_pago_display', read_only=True
+    )
+
+    class Meta:
+        model = RutaParada
+        fields = [
+            'id',
+            'ruta', 'ruta_codigo', 'ruta_nombre',
+            'proveedor', 'proveedor_nombre', 'proveedor_documento', 'proveedor_codigo',
+            'orden',
+            'frecuencia_pago', 'frecuencia_pago_display',
+            'is_active', 'notas',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        """
+        Un proveedor solo puede ser parada de una ruta. La constraint a nivel DB
+        lo garantiza, pero damos un error legible aquí en lugar de IntegrityError.
+        """
+        proveedor = attrs.get('proveedor')
+        ruta = attrs.get('ruta')
+        if proveedor and ruta:
+            qs = RutaParada.objects.filter(
+                proveedor=proveedor, is_deleted=False
+            )
+            if self.instance is not None:
+                qs = qs.exclude(pk=self.instance.pk)
+            existente = qs.first()
+            if existente:
+                raise serializers.ValidationError({
+                    'proveedor': (
+                        f'Este proveedor ya es parada de la ruta '
+                        f'"{existente.ruta.codigo} — {existente.ruta.nombre}". '
+                        f'Un proveedor solo puede pertenecer a una ruta.'
+                    )
+                })
+        return attrs
 
 
 class TipoAlmacenSerializer(serializers.ModelSerializer):

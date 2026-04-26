@@ -2,7 +2,15 @@
 Admin para catalogos - supply_chain
 """
 from django.contrib import admin
-from .models import Almacen, RutaRecoleccion, TipoAlmacen
+from .models import Almacen, RutaRecoleccion, RutaParada, TipoAlmacen
+
+
+class RutaParadaInline(admin.TabularInline):
+    model = RutaParada
+    extra = 0
+    fields = ['orden', 'proveedor', 'frecuencia_pago', 'is_active']
+    autocomplete_fields = ['proveedor']
+    ordering = ['orden']
 
 
 @admin.register(RutaRecoleccion)
@@ -14,6 +22,22 @@ class RutaRecoleccionAdmin(admin.ModelAdmin):
     list_filter = ['modo_operacion', 'is_active', 'is_deleted']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering = ['codigo']
+    inlines = [RutaParadaInline]
+
+
+@admin.register(RutaParada)
+class RutaParadaAdmin(admin.ModelAdmin):
+    """Admin para Paradas de Ruta (H-SC-RUTA-02)."""
+    list_display = [
+        'ruta', 'orden', 'proveedor', 'frecuencia_pago', 'is_active', 'is_deleted',
+    ]
+    list_filter = ['ruta', 'frecuencia_pago', 'is_active', 'is_deleted']
+    search_fields = [
+        'ruta__codigo', 'ruta__nombre',
+        'proveedor__nombre_comercial', 'proveedor__numero_documento',
+    ]
+    autocomplete_fields = ['ruta', 'proveedor']
+    ordering = ['ruta', 'orden']
 
 
 class CatalogoBaseAdmin(admin.ModelAdmin):

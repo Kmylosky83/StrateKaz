@@ -104,6 +104,85 @@ class RutaRecoleccion(TenantModel):
         return f'RUTA-{num:03d}'
 
 
+class RutaParada(TenantModel):
+    """
+    Parada de una Ruta de Recolección — vínculo M2M Ruta ↔ Proveedor (H-SC-RUTA-02).
+
+    Una RutaParada representa la asociación entre una ruta y un proveedor que
+    esa ruta visita. Lleva metadata operativa adicional:
+      - `orden`: secuencia de visita en el recorrido (0 = primera).
+      - `frecuencia_pago`: cada cuánto se le paga al productor de esta parada
+        (PASS_THROUGH: empresa paga; SEMI_AUTONOMA: la ruta paga). Cada parada
+        puede tener su propia frecuencia (un productor mayoristas puede ser
+        SEMANAL mientras otro pequeño es MENSUAL).
+
+    Constraint: un proveedor solo puede ser parada de UNA ruta. Si dos rutas
+    visitan al mismo productor, eso debería ser excepcional y manejarse aparte
+    (re-asignación, no duplicación).
+    """
+
+    class FrecuenciaPago(models.TextChoices):
+        SEMANAL = 'SEMANAL', 'Semanal'
+        QUINCENAL = 'QUINCENAL', 'Quincenal'
+        MENSUAL = 'MENSUAL', 'Mensual'
+
+    ruta = models.ForeignKey(
+        RutaRecoleccion,
+        on_delete=models.CASCADE,
+        related_name='paradas',
+        verbose_name='Ruta',
+    )
+    proveedor = models.ForeignKey(
+        'catalogo_productos.Proveedor',
+        on_delete=models.PROTECT,
+        related_name='paradas_ruta',
+        verbose_name='Proveedor (productor visitado)',
+        help_text='Proveedor real con NIT/datos reales que la ruta visita.',
+    )
+    orden = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Orden de visita',
+        help_text='Secuencia en el recorrido (0 = primera parada).',
+    )
+    frecuencia_pago = models.CharField(
+        max_length=20,
+        choices=FrecuenciaPago.choices,
+        default=FrecuenciaPago.MENSUAL,
+        verbose_name='Frecuencia de pago al productor',
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name='Activa',
+    )
+    notas = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Notas operativas',
+        help_text='Notas internas de logística para esta parada.',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_ruta_parada'
+        verbose_name = 'Parada de Ruta'
+        verbose_name_plural = 'Paradas de Ruta'
+        ordering = ['ruta', 'orden']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['proveedor'],
+                condition=Q(is_deleted=False),
+                name='uq_ruta_parada_proveedor_unico',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['ruta', 'orden']),
+            models.Index(fields=['proveedor']),
+        ]
+
+    def __str__(self):
+        return f"{self.ruta.codigo} → {self.proveedor.nombre_comercial} (#{self.orden})"
+
+
 class TipoAlmacen(models.Model):
     """
     Tipo de almacenamiento físico (catálogo universal, no tenant).

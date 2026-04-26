@@ -27,8 +27,9 @@ class RutaRecoleccion(TenantModel):
         max_length=50,
         unique=True,
         db_index=True,
+        blank=True,
         verbose_name='Código',
-        help_text='Código único de la ruta (ej: RUTA-001)',
+        help_text='Código único de la ruta (ej: RUTA-001). Se auto-genera si viene vacío.',
     )
     nombre = models.CharField(
         max_length=200,
@@ -63,6 +64,28 @@ class RutaRecoleccion(TenantModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = self._generate_code()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def _generate_code(cls):
+        """Genera código secuencial RUTA-001, RUTA-002... dentro del tenant.
+
+        Patrón espejo de Almacen._generate_code (H-SC-09). El schema-per-tenant
+        garantiza unicidad por empresa sin necesidad de FK explícita.
+        """
+        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
+        if last and last.startswith('RUTA-'):
+            try:
+                num = int(last.split('-')[1]) + 1
+            except (ValueError, IndexError):
+                num = cls.objects.count() + 1
+        else:
+            num = cls.objects.count() + 1
+        return f'RUTA-{num:03d}'
 
 
 class TipoAlmacen(models.Model):

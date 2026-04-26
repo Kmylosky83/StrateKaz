@@ -3,7 +3,6 @@
  * List + Create/Edit/Delete (soft).
  */
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Edit, Trash2, Users } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
@@ -27,7 +26,6 @@ const TIPO_PERSONA_BADGE: Record<string, 'default' | 'success' | 'info' | 'warni
 };
 
 export default function ProveedoresTab() {
-  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Proveedor | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -41,14 +39,9 @@ export default function ProveedoresTab() {
   const { data: proveedores = [], isLoading } = useProveedores();
   const deleteMutation = useDeleteProveedor();
 
-  // Callback tras crear/actualizar — si es nuevo con MPs, redirigir a PreciosTab
-  const handleSaved = (saved: Proveedor, hasMps: boolean) => {
-    if (!editing && hasMps) {
-      setTimeout(() => {
-        navigate(`/supply-chain/precios?proveedor=${saved.id}`);
-      }, 800);
-    }
-  };
+  // H-PROV-01 (2026-04-25): NO auto-redirigir a Precios.
+  // La asignación de precios la hace otra persona (separación de roles).
+  // El toast del modal informa adónde ir; el usuario decide cuándo.
 
   const handleOpenCreate = () => {
     setEditing(null);
@@ -192,7 +185,6 @@ export default function ProveedoresTab() {
       <ProveedorFormModal
         isOpen={modalOpen}
         onClose={handleClose}
-        onSaved={handleSaved}
         proveedor={editing ?? undefined}
       />
 

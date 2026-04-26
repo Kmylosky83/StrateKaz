@@ -65,7 +65,11 @@ const proveedorSchema = z
     tipo_documento: z.number().optional().default(0),
     numero_documento: z.string().optional().default(''),
     nit: z.string().optional().default(''),
-    telefono: z.string().optional().default(''),
+    telefono: z
+      .string()
+      .regex(/^[\d\s+()-]*$/, 'Solo se permiten números, espacios y los caracteres + - ( )')
+      .optional()
+      .default(''),
     email: z.string().email('Email inválido').or(z.literal('')).optional(),
     departamento: z.number().nullable().optional(),
     ciudad: z.number().nullable().optional(),
@@ -460,8 +464,15 @@ export default function ProveedorFormModal({
           <Input
             label="Teléfono"
             type="tel"
-            {...form.register('telefono')}
+            inputMode="numeric"
+            {...form.register('telefono', {
+              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                // H-PROV-02: bloquear letras al tipear (solo dígitos y separadores comunes)
+                e.target.value = e.target.value.replace(/[^\d\s+()-]/g, '');
+              },
+            })}
             placeholder="Ej: 3001234567"
+            error={form.formState.errors.telefono?.message}
           />
           <Input
             label="Email"

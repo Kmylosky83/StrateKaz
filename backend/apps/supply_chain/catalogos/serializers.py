@@ -145,6 +145,9 @@ class ResumenGeneralSerializer(serializers.Serializer):
 
 
 class RutaRecoleccionSerializer(serializers.ModelSerializer):
+    # H-SC-RUTA-01: codigo se auto-genera en save() si viene vacío (RUTA-001...).
+    codigo = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = RutaRecoleccion
         fields = [

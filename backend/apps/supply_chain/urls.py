@@ -23,6 +23,9 @@ urlpatterns = [
     # Catálogos (Almacen, TipoAlmacen)
     path('catalogos/', include('apps.supply_chain.catalogos.urls')),
 
+    # Recolección en Ruta (VoucherRecoleccion + Líneas) — H-SC-RUTA-02
+    path('recoleccion/', include('apps.supply_chain.recoleccion.urls')),
+
     # Recepción (VoucherRecepcion, RecepcionCalidad)
     path('recepcion/', include('apps.supply_chain.recepcion.urls')),
 

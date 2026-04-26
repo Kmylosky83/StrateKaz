@@ -181,6 +181,7 @@ TENANT_APPS = [
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.supply_chain.catalogos',
     'apps.supply_chain.gestion_proveedores',
+    'apps.supply_chain.recoleccion',  # H-SC-RUTA-02 — VoucherRecoleccion (en ruta)
     'apps.supply_chain.recepcion',
     'apps.supply_chain.liquidaciones',
     'apps.supply_chain.almacenamiento',

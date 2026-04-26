@@ -8,7 +8,7 @@
  * La Ruta NUNCA es Proveedor (los proveedores reales se asocian vía RutaParada).
  */
 import { useMemo, useState } from 'react';
-import { Edit, Plus, Route, Trash2 } from 'lucide-react';
+import { Edit, MapPin, Plus, Route, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -24,6 +24,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useDeleteRuta, useRutas } from '../hooks/useRutas';
 import type { RutaRecoleccionList } from '../types/rutas.types';
 import RutaFormModal from './RutaFormModal';
+import RutaParadasModal from './RutaParadasModal';
 
 export default function RutasRecoleccionTab() {
   const { canDo } = usePermissions();
@@ -34,6 +35,7 @@ export default function RutasRecoleccionTab() {
   const [showForm, setShowForm] = useState(false);
   const [editRuta, setEditRuta] = useState<RutaRecoleccionList | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [paradasRuta, setParadasRuta] = useState<RutaRecoleccionList | null>(null);
 
   const { data, isLoading } = useRutas();
   const deleteMut = useDeleteRuta();
@@ -149,6 +151,16 @@ export default function RutasRecoleccionTab() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            title="Gestionar paradas"
+                            onClick={() => setParadasRuta(r)}
+                          >
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                          </Button>
+                        )}
+                        {canUpdate && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             title="Editar"
                             onClick={() => {
                               setEditRuta(r);
@@ -186,6 +198,14 @@ export default function RutasRecoleccionTab() {
           setEditRuta(null);
         }}
       />
+
+      {paradasRuta && (
+        <RutaParadasModal
+          ruta={paradasRuta}
+          isOpen={!!paradasRuta}
+          onClose={() => setParadasRuta(null)}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={!!deleteId}

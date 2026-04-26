@@ -14,7 +14,9 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Almacen, RutaRecoleccion, RutaParada, TipoAlmacen
+from .models import (
+    Almacen, RutaRecoleccion, RutaParada, PrecioRutaSemiAutonoma, TipoAlmacen,
+)
 from .serializers import (
     AlertaDashboardSerializer,
     AlmacenDashboardHeaderSerializer,
@@ -22,6 +24,7 @@ from .serializers import (
     AlmacenStatsSerializer,
     InventarioPorProductoSerializer,
     KardexMovimientoSerializer,
+    PrecioRutaSemiAutonomaSerializer,
     ResumenGeneralSerializer,
     RutaParadaSerializer,
     RutaRecoleccionSerializer,
@@ -70,6 +73,31 @@ class RutaParadaViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['ruta', 'orden', 'created_at']
     ordering = ['ruta', 'orden']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class PrecioRutaSemiAutonomaViewSet(viewsets.ModelViewSet):
+    """CRUD de precios internos para rutas SEMI_AUTONOMA (H-SC-RUTA-02)."""
+
+    queryset = PrecioRutaSemiAutonoma.objects.select_related(
+        'ruta', 'proveedor', 'producto'
+    ).all()
+    serializer_class = PrecioRutaSemiAutonomaSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['ruta', 'proveedor', 'producto', 'is_active']
+    search_fields = [
+        'ruta__codigo', 'ruta__nombre',
+        'proveedor__nombre_comercial', 'proveedor__numero_documento',
+        'producto__nombre', 'producto__codigo',
+    ]
+    ordering_fields = ['ruta', 'proveedor', 'producto', 'created_at']
+    ordering = ['ruta', 'proveedor']
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

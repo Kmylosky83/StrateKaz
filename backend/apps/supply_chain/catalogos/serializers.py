@@ -2,7 +2,9 @@
 Serializers para catalogos - supply_chain
 """
 from rest_framework import serializers
-from .models import Almacen, RutaRecoleccion, RutaParada, TipoAlmacen
+from .models import (
+    Almacen, RutaRecoleccion, RutaParada, PrecioRutaSemiAutonoma, TipoAlmacen,
+)
 
 
 # ==============================================================================
@@ -219,6 +221,75 @@ class RutaParadaSerializer(serializers.ModelSerializer):
                         f'Un proveedor solo puede pertenecer a una ruta.'
                     )
                 })
+        return attrs
+
+
+class PrecioRutaSemiAutonomaSerializer(serializers.ModelSerializer):
+    """Precio interno de Ruta SEMI_AUTONOMA — doble precio."""
+
+    ruta_codigo = serializers.CharField(source='ruta.codigo', read_only=True)
+    ruta_nombre = serializers.CharField(source='ruta.nombre', read_only=True)
+    proveedor_nombre = serializers.CharField(
+        source='proveedor.nombre_comercial', read_only=True
+    )
+    proveedor_codigo = serializers.CharField(
+        source='proveedor.codigo_interno', read_only=True
+    )
+    producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
+    producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
+    margen_ruta = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
+
+    class Meta:
+        model = PrecioRutaSemiAutonoma
+        fields = [
+            'id',
+            'ruta', 'ruta_codigo', 'ruta_nombre',
+            'proveedor', 'proveedor_codigo', 'proveedor_nombre',
+            'producto', 'producto_codigo', 'producto_nombre',
+            'precio_ruta_paga_proveedor', 'precio_empresa_paga_ruta',
+            'margen_ruta',
+            'is_active', 'notas',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'margen_ruta']
+
+    def validate(self, attrs):
+        """
+        Validaciones de negocio replicadas del modelo (clean) para dar errores
+        legibles vía DRF en lugar de IntegrityError/ValidationError genérico.
+        """
+        precio_ruta = attrs.get('precio_ruta_paga_proveedor')
+        precio_empresa = attrs.get('precio_empresa_paga_ruta')
+        ruta = attrs.get('ruta')
+
+        if precio_ruta is not None and precio_ruta < 0:
+            raise serializers.ValidationError({
+                'precio_ruta_paga_proveedor': 'El precio no puede ser negativo.',
+            })
+        if precio_empresa is not None and precio_empresa < 0:
+            raise serializers.ValidationError({
+                'precio_empresa_paga_ruta': 'El precio no puede ser negativo.',
+            })
+        if (
+            precio_ruta is not None and precio_empresa is not None
+            and precio_empresa < precio_ruta
+        ):
+            raise serializers.ValidationError({
+                'precio_empresa_paga_ruta': (
+                    'Debe ser >= al precio que la ruta paga al productor '
+                    '(la diferencia es el ingreso operativo de la ruta).'
+                ),
+            })
+        if ruta and ruta.modo_operacion != RutaRecoleccion.ModoOperacion.SEMI_AUTONOMA:
+            raise serializers.ValidationError({
+                'ruta': (
+                    f'Esta tabla solo aplica a rutas SEMI_AUTONOMA. '
+                    f'La ruta "{ruta.codigo}" está en modo '
+                    f'{ruta.get_modo_operacion_display()}.'
+                ),
+            })
         return attrs
 
 

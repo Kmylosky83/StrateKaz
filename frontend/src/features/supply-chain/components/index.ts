@@ -23,6 +23,10 @@ export { default as RutaParadasModal } from './RutaParadasModal';
 export { default as ParametrosCalidadTab } from './ParametrosCalidadTab';
 export { default as InventarioTab } from './InventarioTab';
 
+// Almacenes (CRUD global, H-SC-E2E-01)
+export { default as AlmacenesTab } from './AlmacenesTab';
+export { default as AlmacenFormModal } from './AlmacenFormModal';
+
 // Modales CRUD
 export { default as RequisicionFormModal } from './RequisicionFormModal';
 export { default as MovimientoInventarioFormModal } from './MovimientoInventarioFormModal';

@@ -36,6 +36,7 @@ import {
   PreciosTab,
   ComprasTab,
   AlmacenamientoTab,
+  AlmacenesTab,
   CatalogosTab,
   RecepcionTab,
   LiquidacionesTab,
@@ -84,6 +85,12 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Control de inventario, movimientos, kardex y alertas de stock',
     icon: <Package className="w-5 h-5" />,
     component: AlmacenamientoTab,
+  },
+  almacenes: {
+    title: 'Almacenes',
+    description: 'Gestión CRUD de almacenes físicos del tenant (silos, bodegas, tanques, pallets)',
+    icon: <Warehouse className="w-5 h-5" />,
+    component: AlmacenesTab,
   },
   compras: {
     title: 'Compras',

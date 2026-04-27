@@ -465,6 +465,17 @@ class Documento(TenantModel):
         verbose_name='Archivo PDF',
         help_text='Versión PDF del documento'
     )
+    archivo_hash_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        db_index=True,
+        verbose_name='Hash SHA-256 del archivo original',
+        help_text=(
+            'SHA-256 del PDF subido al ingestar/adoptar. Permite detectar '
+            'duplicados antes de crear el Documento.'
+        ),
+    )
     archivos_anexos = models.JSONField(
         default=list,
         blank=True,

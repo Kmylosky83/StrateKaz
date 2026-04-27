@@ -46,6 +46,49 @@ from .services import DocumentoService
 
 
 # =============================================================================
+# HELPERS — Detección de duplicados (H-GD-A5)
+# =============================================================================
+
+def _calcular_hash_archivo(archivo):
+    """Calcula SHA-256 de un UploadedFile leyendo en chunks (sin agotar memoria).
+
+    Restaura el puntero del archivo a 0 para que el upload posterior funcione.
+    """
+    import hashlib
+
+    sha256 = hashlib.sha256()
+    archivo.seek(0)
+    for chunk in archivo.chunks():
+        sha256.update(chunk)
+    archivo.seek(0)
+    return sha256.hexdigest()
+
+
+def _buscar_duplicado_por_hash(hash_sha256):
+    """Busca un Documento del tenant actual que tenga el mismo hash.
+
+    Retorna el primer match o None. Ignora documentos eliminados (soft delete
+    via SoftDeleteManager).
+    """
+    if not hash_sha256:
+        return None
+    return Documento.objects.filter(archivo_hash_sha256=hash_sha256).first()
+
+
+def _serializar_duplicado(documento):
+    """Construye el payload 409 con datos esenciales del documento existente."""
+    return {
+        'id': documento.id,
+        'codigo': documento.codigo,
+        'titulo': documento.titulo,
+        'fecha_creacion': (
+            documento.fecha_creacion.isoformat()
+            if documento.fecha_creacion else None
+        ),
+    }
+
+
+# =============================================================================
 # HELPERS — Distribución RBAC
 # =============================================================================
 
@@ -1004,6 +1047,22 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # H-GD-A5: detectar duplicados por SHA-256 ANTES de crear el documento.
+        archivo_hash = _calcular_hash_archivo(archivo)
+        duplicado = _buscar_duplicado_por_hash(archivo_hash)
+        if duplicado:
+            return Response(
+                {
+                    'error': (
+                        'Ya existe un documento con el mismo contenido en este '
+                        'tenant. Use el documento existente o adóptelo desde su '
+                        'historial.'
+                    ),
+                    'documento_existente': _serializar_duplicado(duplicado),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         empresa = get_tenant_empresa()
 
         # Generar código automático
@@ -1019,6 +1078,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             clasificacion=clasificacion,
             elaborado_por=request.user,
             archivo_original=archivo,
+            archivo_hash_sha256=archivo_hash,
             es_externo=True,
             ocr_estado='PENDIENTE',
         )
@@ -1112,6 +1172,21 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # H-GD-A5: detectar duplicados por SHA-256 ANTES de crear el documento.
+        archivo_hash = _calcular_hash_archivo(archivo)
+        duplicado = _buscar_duplicado_por_hash(archivo_hash)
+        if duplicado:
+            return Response(
+                {
+                    'error': (
+                        'Ya existe un documento con el mismo contenido en este '
+                        'tenant. Revise el existente antes de volver a adoptarlo.'
+                    ),
+                    'documento_existente': _serializar_duplicado(duplicado),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         empresa = get_tenant_empresa()
         tipo_doc = TipoDocumento.objects.get(id=tipo_documento_id)
 
@@ -1142,6 +1217,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             clasificacion=clasificacion,
             elaborado_por=request.user,
             archivo_original=archivo,
+            archivo_hash_sha256=archivo_hash,
             es_externo=True,
             codigo_legacy=codigo_legacy,
             ocr_estado='PENDIENTE',

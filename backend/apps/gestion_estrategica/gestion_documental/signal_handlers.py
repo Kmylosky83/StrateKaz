@@ -4,14 +4,21 @@ Signal handlers para Gestión Documental.
 1. BPM auto-generación (Fase 4): workflow_completado → genera documentos.
 2. Auto-distribución lectura obligatoria: nuevo User con cargo → asigna
    lectura de documentos PUBLICADOS que tengan lectura_obligatoria=True.
+3. Cierre de FORMULARIO con FIRMA_WORKFLOW (H-GD-A4): cuando todas las
+   FirmaDigital de un Documento.tipo_documento.categoria='FORMULARIO'
+   están en estado FIRMADO, se genera el PDF con firmas embebidas y
+   el documento avanza a APROBADO/PUBLICADO según `requiere_aprobacion`.
 """
 
 import logging
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 logger = logging.getLogger('gestion_documental')
 
@@ -151,3 +158,125 @@ def _register_workflow_signal():
 
         except Exception as e:
             logger.error(f'[BPM→Doc] Error en signal handler: {e}')
+
+
+# ─── H-GD-A4: cierre de FORMULARIO con FIRMA_WORKFLOW ──────────────────────
+
+@receiver(post_save, sender='firma_digital.FirmaDigital')
+def cerrar_formulario_con_pdf_al_firmar_ultimo(sender, instance, created, **kwargs):
+    """Genera PDF del FORMULARIO y avanza el estado al firmar la última firma.
+
+    Trigger:
+      - FirmaDigital se actualiza a estado=FIRMADO.
+      - El objeto firmado es un Documento del módulo gestion_documental.
+      - El TipoDocumento tiene categoria='FORMULARIO'.
+      - Todas las FirmaDigital del documento están en FIRMADO (sin pendientes).
+
+    Acciones:
+      - Renderizar PDF con WeasyPrint vía DocumentoPDFGenerator (las firmas
+        manuscritas se incrustan desde FirmaDigital.firma_imagen).
+      - Guardar el PDF en `documento.archivo_pdf`.
+      - Pasar el documento a APROBADO o PUBLICADO según
+        `tipo_documento.requiere_aprobacion`.
+      - Idempotente: si `archivo_pdf` ya está poblado, no regenera.
+    """
+    if created or instance.estado != 'FIRMADO':
+        return
+
+    try:
+        from django.apps import apps as django_apps
+
+        if not django_apps.is_installed('apps.gestion_estrategica.gestion_documental'):
+            return
+
+        Documento = django_apps.get_model('gestion_documental', 'Documento')
+        documento_ct = ContentType.objects.get_for_model(Documento)
+
+        # Filtrado por content_type evita procesar firmas de otros modelos
+        # que también usen FirmaDigital (Acta, Procedimiento, etc.).
+        if instance.content_type_id != documento_ct.id:
+            return
+
+        try:
+            documento = Documento.objects.get(pk=int(instance.object_id))
+        except (Documento.DoesNotExist, ValueError, TypeError):
+            return
+
+        # Solo aplica a FORMULARIOs
+        tipo_doc = documento.tipo_documento
+        if not tipo_doc or tipo_doc.categoria != 'FORMULARIO':
+            return
+
+        # Idempotencia: si ya se generó el PDF, no rehacer.
+        if documento.archivo_pdf and documento.archivo_pdf.name:
+            return
+
+        FirmaDigital = django_apps.get_model('firma_digital', 'FirmaDigital')
+        firmas_qs = FirmaDigital.objects.filter(
+            content_type=documento_ct,
+            object_id=str(documento.pk),
+        )
+
+        if not firmas_qs.exists():
+            return
+
+        # Si queda alguna firma sin estado FIRMADO, no cerrar todavía.
+        if firmas_qs.exclude(estado='FIRMADO').exists():
+            return
+
+        _generar_pdf_y_avanzar_estado(documento)
+
+    except Exception as exc:  # noqa: BLE001 — el signal nunca debe romper la firma
+        logger.error(
+            'Error al cerrar FORMULARIO con FIRMA_WORKFLOW (firma=%s): %s',
+            instance.pk, exc, exc_info=True,
+        )
+
+
+def _generar_pdf_y_avanzar_estado(documento):
+    """Renderiza el PDF del FORMULARIO con firmas embebidas y avanza el estado.
+
+    Invocado desde el signal `cerrar_formulario_con_pdf_al_firmar_ultimo`.
+    Idempotente: si `archivo_pdf` ya está poblado, no hace nada.
+    """
+    if documento.archivo_pdf and documento.archivo_pdf.name:
+        return
+
+    from .exporters.pdf_generator import DocumentoPDFGenerator
+
+    empresa = None
+    try:
+        from apps.core.base_models.mixins import get_tenant_empresa
+        empresa = get_tenant_empresa()
+    except Exception:  # noqa: BLE001
+        empresa = None
+
+    generator = DocumentoPDFGenerator(empresa=empresa)
+    pdf_buffer = generator.generate_documento_pdf(documento, usuario=None)
+
+    nombre_archivo = f'{documento.codigo or "FORMULARIO"}_v{documento.version_actual or "1.0"}.pdf'
+    documento.archivo_pdf.save(
+        nombre_archivo,
+        ContentFile(pdf_buffer.getvalue()),
+        save=False,
+    )
+
+    tipo_doc = documento.tipo_documento
+    requiere_aprobacion = bool(getattr(tipo_doc, 'requiere_aprobacion', True))
+    update_fields = ['archivo_pdf']
+
+    if requiere_aprobacion:
+        documento.estado = 'APROBADO'
+        documento.fecha_aprobacion = timezone.localdate()
+        update_fields.extend(['estado', 'fecha_aprobacion'])
+    else:
+        documento.estado = 'PUBLICADO'
+        documento.fecha_publicacion = timezone.localdate()
+        update_fields.extend(['estado', 'fecha_publicacion'])
+
+    documento.save(update_fields=update_fields)
+
+    logger.info(
+        'FORMULARIO %s cerrado con PDF generado tras última firma (estado=%s)',
+        documento.codigo, documento.estado,
+    )

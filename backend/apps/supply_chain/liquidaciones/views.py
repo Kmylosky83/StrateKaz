@@ -95,10 +95,14 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
         """
         Aprobar liquidación (BORRADOR → APROBADA).
 
-        H-SC-RUTA-02 D-2: si la recepción de esta liquidación viene de un
-        voucher de recolección en estado BORRADOR, se BLOQUEA. El voucher
-        de recolección debe completarse antes (registro de TODOS los PVs
-        recolectados) para garantizar la trazabilidad del periodo.
+        H-SC-RUTA-02 D-2 (refactor 2): si la recepción de esta liquidación
+        tiene N vouchers de recolección asociados (M2M), TODOS deben estar
+        en COMPLETADO. Si CUALQUIERA está en BORRADOR → bloquea con
+        mensaje listando los pendientes.
+
+        Razón operativa: hasta que todos los PVs recolectados estén
+        registrados como COMPLETADO, no se puede liquidar al periodo
+        sin perder trazabilidad de pago a algún productor.
         """
         liquidacion = self.get_object()
         if liquidacion.estado != EstadoLiquidacion.BORRADOR:
@@ -112,26 +116,30 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # D-2: validar voucher de recolección (si la recepción viene de ruta)
+        # D-2 refactor 2: validar M2M vouchers_recoleccion (si la recepción
+        # tiene asociados, todos deben estar COMPLETADOS).
         voucher = liquidacion.voucher
-        recoleccion = getattr(voucher, 'voucher_recoleccion_origen', None)
-        if recoleccion is not None:
-            from apps.supply_chain.recoleccion.models import VoucherRecoleccion
-            if recoleccion.estado == VoucherRecoleccion.Estado.BORRADOR:
-                return Response(
-                    {
-                        'detail': (
-                            f'No se puede aprobar la liquidación: el voucher de '
-                            f'recolección {recoleccion.codigo} aún está en BORRADOR. '
-                            f'Complete el registro de todos los proveedores '
-                            f'recolectados (ir a Supply Chain → Recolección en Ruta) '
-                            f'antes de liquidar.'
-                        ),
-                        'voucher_recoleccion_id': recoleccion.id,
-                        'voucher_recoleccion_codigo': recoleccion.codigo,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        from apps.supply_chain.recoleccion.models import VoucherRecoleccion
+        borradores = list(
+            voucher.vouchers_recoleccion.filter(
+                estado=VoucherRecoleccion.Estado.BORRADOR,
+            ).values('id', 'codigo', 'proveedor__nombre_comercial')
+        )
+        if borradores:
+            codigos = ', '.join(b['codigo'] for b in borradores)
+            return Response(
+                {
+                    'detail': (
+                        f'No se puede aprobar la liquidación: hay '
+                        f'{len(borradores)} voucher(s) de recolección '
+                        f'asociado(s) en BORRADOR ({codigos}). Complete cada '
+                        f'parada (Supply Chain → Recolección en Ruta) antes '
+                        f'de liquidar.'
+                    ),
+                    'vouchers_borrador': borradores,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         liquidacion.aprobar(request.user)
         return Response(LiquidacionSerializer(liquidacion).data)

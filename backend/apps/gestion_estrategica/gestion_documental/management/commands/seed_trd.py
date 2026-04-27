@@ -85,7 +85,8 @@ class Command(BaseCommand):
             return
 
         # Cachear lookups
-        tipos_map = {t.codigo: t for t in TipoDocumento.objects.filter(is_active=True)}
+        # TipoDocumento usa SoftDeleteManager que filtra is_deleted automáticamente
+        tipos_map = {t.codigo: t for t in TipoDocumento.objects.all()}
         areas_map = {a.code: a for a in Area.objects.filter(is_active=True)}
 
         creadas = 0

@@ -141,7 +141,8 @@ class Command(BaseCommand):
         from apps.core.models import User
 
         # 1. Verificar TipoDocumento POL
-        tipo_pol = TipoDocumento.objects.filter(codigo='POL', is_active=True).first()
+        # TipoDocumento usa SoftDeleteManager que filtra is_deleted automáticamente
+        tipo_pol = TipoDocumento.objects.filter(codigo='POL').first()
         if not tipo_pol:
             self.stderr.write(self.style.ERROR(
                 'No existe TipoDocumento con código POL. Ejecute seed_tipos_documento_sgi primero.'

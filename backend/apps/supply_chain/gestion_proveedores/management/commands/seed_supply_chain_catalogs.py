@@ -149,15 +149,11 @@ class Command(BaseCommand):
                 'tipos_productos_permitidos': ['PRODUCTO_TERMINADO', 'INSUMO', 'SERVICIO'],
                 'orden': 2,
             },
-            {
-                'codigo': 'UNIDAD_NEGOCIO',
-                'nombre': 'Unidad de Negocio',
-                'descripcion': 'Proveedor que es una unidad de negocio propia o filial',
-                'requiere_materia_prima': True,
-                'requiere_modalidad_logistica': True,
-                'tipos_productos_permitidos': ['MATERIA_PRIMA', 'PRODUCTO_TERMINADO'],
-                'orden': 3,
-            },
+            # NOTA (H-SC-CAT-TIPO-PROV, 2026-04-27): UNIDAD_NEGOCIO eliminado.
+            # El "tipo de proveedor" clasifica QUE provee (no si es interno/externo).
+            # Las unidades internas (centros de acopio propios, plantas) se
+            # clasifican como MATERIA_PRIMA o PRODUCTOS_SERVICIOS según el caso.
+            # Lo "interno" se modela vía SedeEmpresa + RutaRecoleccion (no aquí).
             {
                 'codigo': 'TRANSPORTISTA',
                 'nombre': 'Transportista',
@@ -165,7 +161,7 @@ class Command(BaseCommand):
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': True,
                 'tipos_productos_permitidos': ['SERVICIO'],
-                'orden': 4,
+                'orden': 3,
             },
             {
                 'codigo': 'CONSULTOR',
@@ -174,7 +170,7 @@ class Command(BaseCommand):
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': False,
                 'tipos_productos_permitidos': ['SERVICIO'],
-                'orden': 5,
+                'orden': 4,
             },
             {
                 'codigo': 'CONTRATISTA',
@@ -183,7 +179,7 @@ class Command(BaseCommand):
                 'requiere_materia_prima': False,
                 'requiere_modalidad_logistica': False,
                 'tipos_productos_permitidos': ['SERVICIO'],
-                'orden': 6,
+                'orden': 5,
             },
         ]
         return self._seed_model(TipoProveedor, data, 'Tipos de Proveedor', dry_run)
@@ -206,11 +202,13 @@ class Command(BaseCommand):
 
     def _seed_modalidad_logistica(self, dry_run):
         from apps.supply_chain.gestion_proveedores.models import ModalidadLogistica
+        # NOTA (H-SC-CAT-MODALIDAD, 2026-04-27): catálogo reducido a las 2
+        # modalidades reales del flujo de compra. TRANSPORTE_PROPIO,
+        # TRANSPORTE_TERCERO y ENVIO_NACIONAL se eliminaron porque describen
+        # "cómo se mueve" (concepto de transporte) y no "dónde ocurre la
+        # compra" (concepto de modalidad). Se reabren si Logística entra LIVE.
         data = [
             {'codigo': 'ENTREGA_PLANTA', 'nombre': 'Entrega en Planta', 'descripcion': 'El proveedor entrega en las instalaciones de la empresa', 'orden': 1},
             {'codigo': 'COMPRA_PUNTO', 'nombre': 'Compra en Punto', 'descripcion': 'La empresa recoge en el punto del proveedor', 'orden': 2},
-            {'codigo': 'TRANSPORTE_PROPIO', 'nombre': 'Transporte Propio', 'descripcion': 'Transporte con vehículos propios de la empresa', 'orden': 3},
-            {'codigo': 'TRANSPORTE_TERCERO', 'nombre': 'Transporte Tercero', 'descripcion': 'Transporte mediante transportista contratado', 'orden': 4},
-            {'codigo': 'ENVIO_NACIONAL', 'nombre': 'Envío Nacional', 'descripcion': 'Despacho por empresa de mensajería o carga', 'orden': 5},
         ]
         return self._seed_model(ModalidadLogistica, data, 'Modalidades Logísticas', dry_run)

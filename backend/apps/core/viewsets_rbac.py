@@ -27,11 +27,14 @@ class CatalogoPagination(PageNumberPagination):
     max_page_size = 200
 
 
+import logging
+
 from django.apps import apps
-from django.db import transaction
 from django.db import transaction
 from django.db.models import Count, Q
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 from .utils.audit_logging import (
     log_permissions_assigned, log_section_access_changed, log_role_assigned,
@@ -440,8 +443,10 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                     vacante.is_active = False
                     vacante.motivo_cierre = 'Cargo eliminado del sistema'
                     vacante.save(update_fields=['estado', 'is_active', 'motivo_cierre'])
+        except LookupError:
+            pass  # seleccion_contratacion no instalado
         except Exception:
-            pass
+            logger.warning('Error al cancelar vacantes del cargo pk=%s', instance.pk, exc_info=True)
 
         # Hard delete — borra permanentemente de la BD.
         # CargoSectionAccess y demas FKs cascadean segun on_delete del modelo.

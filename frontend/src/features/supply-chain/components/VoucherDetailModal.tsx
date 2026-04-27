@@ -12,14 +12,18 @@
  * Se abre desde el icono "ojo" en RecepcionTab. Solo lectura.
  */
 import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Printer, Scale, Package, FlaskConical, Truck } from 'lucide-react';
+import { Link2, Printer, Scale, Package, FlaskConical, Truck, Unlink } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge, Card } from '@/components/common';
+import { Select } from '@/components/forms/Select';
 import apiClient from '@/api/axios-config';
+import { voucherRecepcionApi } from '../api/recepcionApi';
+import { useVouchersRecoleccion } from '../hooks/useVoucherRecoleccion';
 import type { VoucherRecepcionList } from '../types/recepcion.types';
 
 /** Parse fecha ISO (YYYY-MM-DD) como local — evita offset por timezone. */
@@ -45,6 +49,7 @@ const ESTADO_BADGE: Record<
 };
 
 export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailModalProps) => {
+  const qc = useQueryClient();
   const lineas = useMemo(() => voucher?.lineas ?? [], [voucher]);
   const pesoTotal = useMemo(
     () => lineas.reduce((acc, l) => acc + Number(l.peso_neto_kg ?? 0), 0),
@@ -52,6 +57,54 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
   );
 
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // ── H-SC-RUTA-02 D-1: vínculo con voucher de recolección ──────────
+  const [selectedRecoleccion, setSelectedRecoleccion] = useState<number | ''>('');
+  const [linking, setLinking] = useState(false);
+
+  // Listar vouchers de recolección disponibles (BORRADOR o COMPLETADO).
+  const { data: vouchersRecoleccion = [] } = useVouchersRecoleccion();
+  const recoleccionesDisponibles = useMemo(
+    () =>
+      vouchersRecoleccion
+        .filter((v) => v.estado !== 'CONSOLIDADO')
+        // Si la recepción tiene ruta, priorizar las de la misma ruta
+        .filter((v) => (voucher?.ruta_recoleccion ? v.ruta === voucher.ruta_recoleccion : true)),
+    [vouchersRecoleccion, voucher]
+  );
+
+  const linkedId = voucher?.voucher_recoleccion_origen ?? null;
+  const linkedCodigo = voucher?.voucher_recoleccion_codigo ?? null;
+  const linkedEstado = voucher?.voucher_recoleccion_estado ?? null;
+
+  const handleAsociar = async () => {
+    if (!voucher || !selectedRecoleccion) return;
+    setLinking(true);
+    try {
+      await voucherRecepcionApi.asociarRecoleccion(voucher.id, Number(selectedRecoleccion));
+      toast.success('Voucher de recolección asociado.');
+      qc.invalidateQueries();
+      setSelectedRecoleccion('');
+    } catch {
+      toast.error('No se pudo asociar el voucher de recolección.');
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleDesasociar = async () => {
+    if (!voucher) return;
+    setLinking(true);
+    try {
+      await voucherRecepcionApi.asociarRecoleccion(voucher.id, null);
+      toast.success('Vínculo eliminado.');
+      qc.invalidateQueries();
+    } catch {
+      toast.error('No se pudo desasociar.');
+    } finally {
+      setLinking(false);
+    }
+  };
 
   if (!voucher) return null;
 
@@ -174,6 +227,84 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
                 </p>
               )}
             </div>
+          </div>
+        </Card>
+
+        {/* H-SC-RUTA-02 D-1: vínculo con voucher de recolección */}
+        <Card>
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                Voucher de Recolección origen (opcional)
+              </h4>
+            </div>
+            {linkedId ? (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-mono font-semibold text-blue-700 dark:text-blue-400">
+                    {linkedCodigo}
+                  </p>
+                  <Badge variant={linkedEstado === 'COMPLETADO' ? 'success' : 'warning'} size="sm">
+                    {linkedEstado === 'BORRADOR'
+                      ? 'BORRADOR — completar antes de liquidar'
+                      : linkedEstado === 'COMPLETADO'
+                        ? 'COMPLETADO ✓'
+                        : (linkedEstado ?? '')}
+                  </Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDesasociar}
+                  disabled={linking || voucher.estado === 'LIQUIDADO'}
+                >
+                  <Unlink className="w-4 h-4 mr-1" />
+                  Desasociar
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Si esta recepción viene de una salida de ruta, asóciela al voucher de recolección
+                  (líneas por proveedor visitado). El inventario YA entró con esta recepción — el
+                  vínculo solo es para liquidar a cada productor por separado.
+                </p>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Select
+                      value={selectedRecoleccion}
+                      onChange={(e) =>
+                        setSelectedRecoleccion(e.target.value ? Number(e.target.value) : '')
+                      }
+                      options={[
+                        { value: '', label: 'Seleccionar voucher de recolección...' },
+                        ...recoleccionesDisponibles.map((r) => ({
+                          value: r.id,
+                          label: `${r.codigo} · ${r.ruta_codigo} · ${r.fecha_recoleccion} · ${r.total_lineas} líneas (${r.estado})`,
+                        })),
+                      ]}
+                    />
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAsociar}
+                    disabled={!selectedRecoleccion || linking}
+                    isLoading={linking}
+                  >
+                    <Link2 className="w-4 h-4 mr-1" />
+                    Asociar
+                  </Button>
+                </div>
+                {recoleccionesDisponibles.length === 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    No hay vouchers de recolección disponibles. Crea uno en Supply Chain →
+                    Recolección en Ruta.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </Card>
 

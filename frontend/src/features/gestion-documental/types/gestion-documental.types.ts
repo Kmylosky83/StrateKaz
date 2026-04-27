@@ -744,6 +744,12 @@ export interface AceptacionDocumental {
   documento_codigo: string;
   documento_titulo: string;
   documento_contenido?: string;
+  /**
+   * URL absoluta al PDF original del documento (cuando es ingestado externo).
+   * Resuelta por el backend via export_documento_pdf — JWT-aware y con
+   * verificacion de acceso por clasificacion. null si no aplica.
+   */
+  documento_archivo_original_url?: string | null;
   version_documento: string;
   usuario: number;
   usuario_nombre: string;

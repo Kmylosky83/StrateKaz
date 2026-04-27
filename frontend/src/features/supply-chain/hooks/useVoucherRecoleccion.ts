@@ -1,19 +1,17 @@
 /**
- * Hooks React Query — VoucherRecoleccion + Líneas.
- * H-SC-RUTA-02.
+ * Hooks React Query — VoucherRecoleccion (1 = 1 parada).
+ * H-SC-RUTA-02 refactor 2.
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
-import { voucherRecoleccionApi, lineaVoucherRecoleccionApi } from '../api/voucher-recoleccion';
+import { voucherRecoleccionApi } from '../api/voucher-recoleccion';
 import { getApiErrorMessage } from '@/utils/errorUtils';
 import type { ApiError } from '@/types';
 import type {
   CreateVoucherRecoleccionDTO,
   UpdateVoucherRecoleccionDTO,
-  CreateLineaVoucherRecoleccionDTO,
-  UpdateLineaVoucherRecoleccionDTO,
   VoucherRecoleccionFilterParams,
 } from '../types/voucher-recoleccion.types';
 
@@ -48,8 +46,8 @@ export function useCreateVoucherRecoleccion() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateVoucherRecoleccionDTO) => voucherRecoleccionApi.create(data),
-    onSuccess: () => {
-      toast.success('Voucher de recolección creado.');
+    onSuccess: (created) => {
+      toast.success(`Voucher ${created.codigo} creado.`);
       qc.invalidateQueries({ queryKey: voucherRecoleccionKeys.all });
     },
     onError: (error: AxiosError<ApiError>) => {
@@ -95,54 +93,6 @@ export function useDeleteVoucherRecoleccion() {
     mutationFn: (id: number) => voucherRecoleccionApi.delete(id),
     onSuccess: () => {
       toast.success('Voucher eliminado.');
-      qc.invalidateQueries({ queryKey: voucherRecoleccionKeys.all });
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error));
-    },
-  });
-}
-
-// ─── Líneas ────────────────────────────────────────────────────────────────
-
-export function useCreateLineaVoucherRecoleccion() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateLineaVoucherRecoleccionDTO) => lineaVoucherRecoleccionApi.create(data),
-    onSuccess: (created) => {
-      qc.invalidateQueries({ queryKey: voucherRecoleccionKeys.all });
-      qc.invalidateQueries({
-        queryKey: voucherRecoleccionKeys.detail(created.voucher),
-      });
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error));
-    },
-  });
-}
-
-export function useUpdateLineaVoucherRecoleccion() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateLineaVoucherRecoleccionDTO }) =>
-      lineaVoucherRecoleccionApi.update(id, data),
-    onSuccess: (updated) => {
-      qc.invalidateQueries({ queryKey: voucherRecoleccionKeys.all });
-      qc.invalidateQueries({
-        queryKey: voucherRecoleccionKeys.detail(updated.voucher),
-      });
-    },
-    onError: (error: AxiosError<ApiError>) => {
-      toast.error(getApiErrorMessage(error));
-    },
-  });
-}
-
-export function useDeleteLineaVoucherRecoleccion() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => lineaVoucherRecoleccionApi.delete(id),
-    onSuccess: () => {
       qc.invalidateQueries({ queryKey: voucherRecoleccionKeys.all });
     },
     onError: (error: AxiosError<ApiError>) => {

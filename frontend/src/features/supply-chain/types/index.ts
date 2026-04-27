@@ -184,11 +184,8 @@ export type {
 
 export type {
   VoucherRecoleccion,
-  LineaVoucherRecoleccion,
   CreateVoucherRecoleccionDTO,
   UpdateVoucherRecoleccionDTO,
-  CreateLineaVoucherRecoleccionDTO,
-  UpdateLineaVoucherRecoleccionDTO,
   VoucherRecoleccionFilterParams,
 } from './voucher-recoleccion.types';
 export {

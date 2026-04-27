@@ -1,5 +1,5 @@
 """
-Views para Recolección en Ruta — H-SC-RUTA-02.
+Views para Recolección en Ruta — H-SC-RUTA-02 refactor 2.
 """
 from django.db import connection
 from django.http import HttpResponse
@@ -11,24 +11,25 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import VoucherRecoleccion, LineaVoucherRecoleccion
-from .serializers import (
-    VoucherRecoleccionSerializer,
-    LineaVoucherRecoleccionSerializer,
-)
+from .models import VoucherRecoleccion
+from .serializers import VoucherRecoleccionSerializer
 
 
 class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
-    """CRUD de Vouchers de Recolección en Ruta (H-SC-RUTA-02)."""
+    """CRUD de Vouchers de Recolección — 1 voucher = 1 parada (H-SC-RUTA-02)."""
 
     queryset = VoucherRecoleccion.objects.select_related(
-        'ruta', 'operador'
-    ).prefetch_related('lineas__proveedor', 'lineas__producto')
+        'ruta', 'proveedor', 'producto', 'operador',
+    )
     serializer_class = VoucherRecoleccionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['ruta', 'estado', 'fecha_recoleccion', 'operador']
-    search_fields = ['codigo', 'notas', 'ruta__codigo', 'ruta__nombre']
+    filterset_fields = ['ruta', 'proveedor', 'producto', 'estado', 'fecha_recoleccion', 'operador']
+    search_fields = [
+        'codigo', 'notas',
+        'proveedor__nombre_comercial', 'proveedor__codigo_interno',
+        'ruta__codigo', 'ruta__nombre',
+    ]
     ordering_fields = ['fecha_recoleccion', 'codigo', 'created_at']
     ordering = ['-fecha_recoleccion', '-created_at']
 
@@ -41,18 +42,28 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
+    @action(detail=True, methods=['post'])
+    def completar(self, request, pk=None):
+        """Marca el voucher como COMPLETADO (cierra captura)."""
+        voucher = self.get_object()
+        if voucher.estado != VoucherRecoleccion.Estado.BORRADOR:
+            return Response(
+                {'detail': f'Solo vouchers en BORRADOR pueden completarse '
+                           f'(actual: {voucher.get_estado_display()}).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        voucher.estado = VoucherRecoleccion.Estado.COMPLETADO
+        voucher.updated_by = request.user
+        voucher.save(update_fields=['estado', 'updated_by', 'updated_at'])
+        return Response(self.get_serializer(voucher).data)
+
     # ─── Impresión térmica 58mm (entregar al productor en ruta) ──────
     @action(detail=True, methods=['get'], url_path='print-58mm')
     def print_58mm(self, request, pk=None):
-        """
-        HTML optimizado para impresora térmica 58mm — voucher de recolección
-        que se entrega al productor en cada parada (sin precios, solo cantidad).
-
-        Auto-print al cargar (window.onload).
-        """
+        """HTML 58mm para entregar al productor. Sin precios."""
         voucher = self.get_object()
 
-        # ── Branding del tenant ───────────────────────────────────────
+        # Branding del tenant
         tenant = getattr(connection, 'tenant', None)
         empresa = 'StrateKaz'
         nit = ''
@@ -80,21 +91,24 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
             except Exception:
                 pass
 
-        # ── Datos del voucher ─────────────────────────────────────────
-        fecha_recoleccion = (
+        # Datos
+        fecha_str = (
             voucher.fecha_recoleccion.strftime('%d-%m-%Y')
             if voucher.fecha_recoleccion else '—'
         )
         emision = timezone.localtime(voucher.created_at).strftime('%d-%m-%Y %H:%M')
-        ruta = voucher.ruta
-        ruta_nombre = f"{ruta.codigo} — {ruta.nombre}" if ruta else '—'
+        ruta_str = f"{voucher.ruta.codigo} — {voucher.ruta.nombre}" if voucher.ruta else '—'
+        prov_str = (
+            f"{voucher.proveedor.codigo_interno} — {voucher.proveedor.nombre_comercial}"
+            if voucher.proveedor else '—'
+        )
+        prov_doc = getattr(voucher.proveedor, 'numero_documento', '') if voucher.proveedor else ''
+        prod_str = getattr(voucher.producto, 'nombre', '—') if voucher.producto else '—'
         estado = voucher.get_estado_display()
 
-        # Operador (cargo + nombre)
+        # Operador
         try:
-            operador_nombre = (
-                voucher.operador.get_full_name() or str(voucher.operador)
-            )
+            operador_nombre = voucher.operador.get_full_name() or str(voucher.operador)
         except AttributeError:
             operador_nombre = '—'
         operador_cargo = ''
@@ -119,34 +133,12 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 return '0.00'
 
-        def _trunc(text, maxlen=28):
-            text = (text or '').strip()
-            return text if len(text) <= maxlen else text[:maxlen - 1] + '…'
-
-        # ── Líneas (parada por parada) ───────────────────────────────
-        lineas = list(
-            voucher.lineas.select_related('proveedor', 'producto').all()
-        )
-        lineas_rows = ''
-        for linea in lineas:
-            prov_nombre = _trunc(getattr(linea.proveedor, 'nombre_comercial', ''))
-            prod_nombre = _trunc(getattr(linea.producto, 'nombre', ''))
-            lineas_rows += (
-                f'<div class="prov">{prov_nombre}</div>'
-                f'<div class="prod">{prod_nombre}</div>'
-                f'<div class="kilos"><b>{fmt_kg(linea.cantidad)} kg</b></div>'
-            )
-
         SEP = '-' * 32
-        total_kg = voucher.total_kilos
 
         notas_block = ''
         if voucher.notas and voucher.notas.strip():
             notas_text = voucher.notas.strip().replace('<', '&lt;').replace('>', '&gt;')
-            notas_block = (
-                f'<div class="notas">{notas_text}</div>'
-                f'<div class="sep">{SEP}</div>'
-            )
+            notas_block = f'<div class="notas">{notas_text}</div><div class="sep">{SEP}</div>'
 
         html = f"""<!DOCTYPE html>
 <html lang="es">
@@ -155,7 +147,7 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{voucher.codigo}</title>
 <style>
-  /* Voucher de RECOLECCIÓN en ruta — formato 58mm. SIN precios. */
+  /* Voucher de RECOLECCIÓN en ruta — formato 58mm. SIN precios. 1 = 1 parada. */
   @page {{ size: 58mm auto; margin: 0; }}
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -175,9 +167,8 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
   .label {{ white-space: nowrap; }}
   .val {{ text-align: right; }}
   .indent {{ padding-left: 3mm; }}
-  .prov {{ padding-left: 2mm; font-weight: bold; margin-top: 1.5mm; }}
-  .prod {{ padding-left: 4mm; font-size: 8.5pt; }}
-  .kilos {{ padding-left: 4mm; font-size: 9.5pt; margin-bottom: 0.5mm; }}
+  .producto {{ padding-left: 3mm; font-weight: bold; margin-top: 2mm; }}
+  .kilos {{ padding-left: 3mm; font-size: 14pt; font-weight: bold; margin-top: 1mm; text-align: center; }}
   .notas {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
   .operador-block {{ margin-top: 2mm; text-align: center; }}
   .operador-block .nombre {{ font-weight: bold; font-size: 9pt; }}
@@ -204,16 +195,18 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
 <div class="center bold">VOUCHER DE RECOLECCIÓN</div>
 <div class="center" style="font-size:8pt;">{voucher.codigo}</div>
 <div class="sep">{SEP}</div>
-<div class="row"><span class="label">Fecha:</span><span class="val">{fecha_recoleccion}</span></div>
+<div class="row"><span class="label">Fecha:</span><span class="val">{fecha_str}</span></div>
 <div class="row"><span class="label">Emitido:</span><span class="val">{emision}</span></div>
 <div class="sep">{SEP}</div>
 <div class="bold">RUTA</div>
-<div class="indent">{ruta_nombre}</div>
+<div class="indent">{ruta_str}</div>
 <div class="sep">{SEP}</div>
-<div class="bold">RECOLECCIONES ({len(lineas)})</div>
-{lineas_rows or '<div class="indent" style="font-size:8pt;">— Sin líneas registradas —</div>'}
+<div class="bold">PROVEEDOR</div>
+<div class="indent">{prov_str}</div>
+{f'<div class="indent" style="font-size:8pt;">Doc: {prov_doc}</div>' if prov_doc else ''}
 <div class="sep">{SEP}</div>
-<div class="row bold"><span class="label">TOTAL:</span><span class="val">{fmt_kg(total_kg)} kg</span></div>
+<div class="producto">{prod_str}</div>
+<div class="kilos">{fmt_kg(voucher.cantidad)} kg</div>
 <div class="sep">{SEP}</div>
 <div class="row" style="margin-top:1mm;"><span class="label">Estado:</span><span class="val">{estado}</span></div>
 <div class="sep">{SEP}</div>
@@ -230,43 +223,3 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
 </html>"""
 
         return HttpResponse(html, content_type='text/html; charset=utf-8')
-
-    @action(detail=True, methods=['post'])
-    def completar(self, request, pk=None):
-        """Marca el voucher como COMPLETADO (cierra captura). No reversible vía API."""
-        voucher = self.get_object()
-        if voucher.estado != VoucherRecoleccion.Estado.BORRADOR:
-            return Response(
-                {'detail': f'Solo vouchers en BORRADOR pueden completarse '
-                           f'(actual: {voucher.get_estado_display()}).'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not voucher.lineas.exists():
-            return Response(
-                {'detail': 'No se puede completar un voucher sin líneas.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        voucher.estado = VoucherRecoleccion.Estado.COMPLETADO
-        voucher.updated_by = request.user
-        voucher.save(update_fields=['estado', 'updated_by', 'updated_at'])
-        return Response(self.get_serializer(voucher).data)
-
-
-class LineaVoucherRecoleccionViewSet(viewsets.ModelViewSet):
-    """CRUD de Líneas de Voucher de Recolección."""
-
-    queryset = LineaVoucherRecoleccion.objects.select_related(
-        'voucher', 'proveedor', 'producto'
-    )
-    serializer_class = LineaVoucherRecoleccionSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['voucher', 'proveedor', 'producto']
-    ordering_fields = ['voucher', 'created_at']
-    ordering = ['voucher', 'id']
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)

@@ -127,6 +127,16 @@ class VoucherRecepcion(TenantModel):
         verbose_name='Observaciones',
     )
 
+    # ─── H-SC-GD-ARCHIVE: archivado en Gestión Documental al aprobar ───
+    # IntegerField (no FK) para evitar dependencia circular CT→C2.
+    documento_archivado_id = models.IntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Documento archivado en GD',
+        help_text='ID del Documento generado en Gestión Documental al aprobar.',
+    )
+
     # ─── Conexión con VoucherRecoleccion (H-SC-RUTA-02 — D-1 / refactor 2) ──
     # Cuando este voucher de recepción viene de una salida de ruta, se
     # vinculan los N VoucherRecoleccion (uno por cada parada visitada).

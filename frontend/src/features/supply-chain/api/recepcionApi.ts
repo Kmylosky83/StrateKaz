@@ -31,15 +31,31 @@ export const voucherRecepcionApi = {
   registrarQC: (id: number, data: RegistrarQCDTO) =>
     apiClient.post<RecepcionCalidad>(`${BASE}/vouchers/${id}/registrar-qc/`, data),
   /**
-   * H-SC-RUTA-02 (2026-04-26): VoucherRecepcion pasó de 58mm a 80mm para
-   * mejor legibilidad. Mismo contenido. El voucher de RECOLECCIÓN (en
-   * ruta) sí se mantiene en 58mm (endpoint propio).
+   * H-SC-RUTA-02 + Refactor 2026-04-27: ahora devuelve PDF (no HTML).
+   * Se centraliza el render via VoucherPDFService — el browser usa su
+   * pipeline nativo de impresión PDF. El frontend abre el blob PDF en
+   * un popup que dispara print() automáticamente.
    */
   getPrint80mm: (id: number) =>
-    apiClient.get<string>(`${BASE}/vouchers/${id}/print-80mm/`, { responseType: 'text' }),
+    apiClient.get<Blob>(`${BASE}/vouchers/${id}/print-80mm/`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
+    }),
+  /**
+   * PDF carta del voucher (Letter, formal). Usado para descarga manual
+   * y también consumido internamente por H-SC-GD-ARCHIVE.
+   */
+  getPdfCarta: (id: number) =>
+    apiClient.get<Blob>(`${BASE}/vouchers/${id}/pdf-carta/`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
+    }),
   /** @deprecated Usar getPrint80mm. Alias de retro-compat (apunta al mismo). */
   getPrint58mm: (id: number) =>
-    apiClient.get<string>(`${BASE}/vouchers/${id}/print-80mm/`, { responseType: 'text' }),
+    apiClient.get<Blob>(`${BASE}/vouchers/${id}/print-80mm/`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
+    }),
   /**
    * H-SC-RUTA-02 (refactor 2): asocia/desasocia N VoucherRecoleccion (M2M).
    * Pasa lista vacía para desasociar todos.

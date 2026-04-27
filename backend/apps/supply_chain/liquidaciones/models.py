@@ -1,21 +1,24 @@
 """
-Modelo de Liquidación — Supply Chain (H-SC-12 refactor header+líneas)
+Modelo de Liquidación — Supply Chain (H-SC-12 refactor header+líneas + H-SC-02 estados).
 
 1 Liquidación = 1 VoucherRecepcion (OneToOne) con N líneas de detalle.
 Estructura contable tipo factura: header con totales + líneas por producto.
 Incluye PagoLiquidacion para cerrar el ciclo de pago.
 
-Estados:
-- BORRADOR: editable, se pueden ajustar precios/ajustes
-- APROBADA: bloqueada, lista para pago
-- PAGADA: tiene PagoLiquidacion asociado
-- ANULADA: cancelada
+Estados (H-SC-02):
+- SUGERIDA   : auto-creada al aprobar voucher (precio snapshot inmutable).
+- AJUSTADA   : usuario modificó precio/calidad de alguna línea.
+- CONFIRMADA : responsable validó la liquidación, se archiva en GD.
+- PAGADA     : tiene PagoLiquidacion asociado.
+- ANULADA    : cancelada.
+- BORRADOR / APROBADA : DEPRECATED, mantenidos solo para backward-compat
+  durante la migración de datos. NO usar en código nuevo.
 """
 from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import IntegrityError, models, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
@@ -23,10 +26,23 @@ from utils.models import TenantModel
 
 
 class EstadoLiquidacion(models.TextChoices):
-    BORRADOR = 'BORRADOR', 'Borrador'
-    APROBADA = 'APROBADA', 'Aprobada — lista para pago'
+    SUGERIDA = 'SUGERIDA', 'Sugerida (auto-creada)'
+    AJUSTADA = 'AJUSTADA', 'Ajustada (precio modificado)'
+    CONFIRMADA = 'CONFIRMADA', 'Confirmada por responsable'
     PAGADA = 'PAGADA', 'Pagada'
     ANULADA = 'ANULADA', 'Anulada'
+    # DEPRECATED — solo backward-compat para datos previos a H-SC-02.
+    BORRADOR = 'BORRADOR', '[deprecated] Borrador'
+    APROBADA = 'APROBADA', '[deprecated] Aprobada'
+
+
+# Estados que aceptan ajustes de línea o transición a CONFIRMADA.
+ESTADOS_EDITABLES = {
+    EstadoLiquidacion.SUGERIDA,
+    EstadoLiquidacion.AJUSTADA,
+    # BORRADOR es legacy pero sigue siendo "editable" hasta migración.
+    EstadoLiquidacion.BORRADOR,
+}
 
 
 class Liquidacion(TenantModel):
@@ -80,7 +96,7 @@ class Liquidacion(TenantModel):
     estado = models.CharField(
         max_length=20,
         choices=EstadoLiquidacion.choices,
-        default=EstadoLiquidacion.BORRADOR,
+        default=EstadoLiquidacion.SUGERIDA,
         db_index=True,
         verbose_name='Estado',
     )
@@ -89,7 +105,7 @@ class Liquidacion(TenantModel):
     fecha_aprobacion = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de aprobación',
+        verbose_name='Fecha de aprobación / confirmación',
     )
     aprobado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -97,12 +113,24 @@ class Liquidacion(TenantModel):
         null=True,
         blank=True,
         related_name='liquidaciones_aprobadas',
-        verbose_name='Aprobado por',
+        verbose_name='Aprobado / confirmado por',
     )
     observaciones = models.TextField(
         blank=True,
         default='',
         verbose_name='Observaciones',
+    )
+
+    # ─── Archivado en Gestión Documental (H-SC-GD-ARCHIVE) ─────────────
+    documento_archivado_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Documento archivado en GD',
+        help_text=(
+            'ID del Documento de Gestión Documental generado al confirmar '
+            'la liquidación. Se llena vía servicio (cross-app, sin FK).'
+        ),
     )
 
     class Meta:
@@ -137,14 +165,24 @@ class Liquidacion(TenantModel):
             ]
         )
 
-    def aprobar(self, user):
-        """Cambia estado BORRADOR → APROBADA."""
-        if self.estado != EstadoLiquidacion.BORRADOR:
+    # ─── Transiciones de estado (H-SC-02) ──────────────────────────────
+    def confirmar(self, user):
+        """
+        Transiciona SUGERIDA / AJUSTADA → CONFIRMADA y archiva PDF en GD.
+
+        Acepta también BORRADOR (legacy) por backward-compat. Cualquier
+        otro estado lanza ValidationError.
+
+        El archivado en GD se hace en best-effort: si falla, la transición
+        de estado igual prospera y se loguea warning. Esto es deliberado:
+        la confirmación contable no debe quedar bloqueada por GD.
+        """
+        if self.estado not in ESTADOS_EDITABLES:
             raise ValidationError(
-                f'Solo se pueden aprobar liquidaciones en estado BORRADOR '
-                f'(actual: {self.estado}).'
+                f'Solo se pueden confirmar liquidaciones en estado '
+                f'{", ".join(ESTADOS_EDITABLES)} (actual: {self.estado}).'
             )
-        self.estado = EstadoLiquidacion.APROBADA
+        self.estado = EstadoLiquidacion.CONFIRMADA
         self.fecha_aprobacion = timezone.now()
         self.aprobado_por = user
         self.save(
@@ -155,6 +193,156 @@ class Liquidacion(TenantModel):
                 'updated_at',
             ]
         )
+        # Archivado GD best-effort (no rompe la transición).
+        self._archivar_en_gd(user)
+
+    def aprobar(self, user):
+        """Alias backward-compat → confirmar()."""
+        return self.confirmar(user)
+
+    # ─── Archivado en Gestión Documental ───────────────────────────────
+    def _archivar_en_gd(self, user):
+        """
+        Genera PDF de la liquidación y archiva en GD bajo TipoDocumento
+        LIQUIDACION_SC. Best-effort: log warning si falla.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+        try:
+            from apps.gestion_estrategica.gestion_documental.models import (
+                TipoDocumento,
+            )
+            from apps.gestion_estrategica.gestion_documental.services import (
+                DocumentoService,
+            )
+            from django.core.files.base import ContentFile
+
+            from .services import LiquidacionPDFService
+
+            # Resolver TipoDocumento — si no existe, abortar silenciosamente.
+            tipo = TipoDocumento.objects.filter(codigo='LIQUIDACION_SC').first()
+            if tipo is None:
+                logger.warning(
+                    'No se archivó liquidacion %s: TipoDocumento '
+                    'LIQUIDACION_SC no existe en este tenant.',
+                    self.pk,
+                )
+                return
+
+            # Resolver proceso (Area). Tomar el primero disponible — el
+            # call site real puede inyectar uno específico via param.
+            proceso = self._resolver_proceso_archivado()
+            if proceso is None:
+                logger.warning(
+                    'No se archivó liquidacion %s: no hay procesos (Area) '
+                    'definidos en este tenant.',
+                    self.pk,
+                )
+                return
+
+            pdf_bytes = LiquidacionPDFService.generar_pdf(self)
+            pdf_file = ContentFile(pdf_bytes, name=f'{self.codigo}.pdf')
+
+            doc = DocumentoService.archivar_registro(
+                pdf_file=pdf_file,
+                tipo_codigo='LIQUIDACION_SC',
+                proceso=proceso,
+                usuario=user,
+                modulo_origen='supply_chain',
+                referencia=self,
+                titulo=f'Liquidación {self.codigo}',
+                resumen=(
+                    f'Liquidación {self.codigo} confirmada por '
+                    f'{user.get_full_name() if hasattr(user, "get_full_name") else user}.'
+                ),
+            )
+            self.documento_archivado_id = doc.id
+            self.save(update_fields=['documento_archivado_id', 'updated_at'])
+        except Exception as exc:
+            logger.warning(
+                'No se pudo archivar liquidacion %s en GD: %s',
+                self.pk,
+                exc,
+                exc_info=True,
+            )
+
+    @staticmethod
+    def _resolver_proceso_archivado():
+        """
+        Busca un proceso (Area) razonable para archivar la liquidación.
+        Heurística: primer Area con código que contenga 'SC' o 'COMPRA',
+        o fallback al primer Area existente.
+        """
+        try:
+            from django.apps import apps as django_apps
+
+            Area = django_apps.get_model('organizacion', 'Area')
+            preferida = (
+                Area.objects.filter(
+                    models.Q(code__icontains='SC')
+                    | models.Q(code__icontains='COMPRA')
+                )
+                .first()
+            )
+            if preferida is not None:
+                return preferida
+            return Area.objects.first()
+        except Exception:
+            return None
+
+    # ─── Detalle por productor (H-SC-RUTA-03) ──────────────────────────
+    @property
+    def detalle_por_productor(self):
+        """
+        Para modalidad RECOLECCION agrupa kg por productor desde la M2M
+        voucher.vouchers_recoleccion.
+
+        Retorna None si la recepción no tiene vouchers de recolección
+        (modalidades DIRECTO / TRANSPORTE_INTERNO).
+
+        Estructura de salida:
+            [
+                {
+                    'proveedor_id': int,
+                    'proveedor_nombre': str,
+                    'kg': Decimal,
+                    'voucher_recoleccion_ids': [int, ...],
+                },
+                ...
+            ]
+        """
+        from collections import defaultdict
+
+        voucher = self.voucher
+        if voucher is None:
+            return None
+        # Lazy: solo entra si hay vouchers de recolección asociados.
+        if not voucher.vouchers_recoleccion.exists():
+            return None
+
+        agg = defaultdict(
+            lambda: {
+                'kg': Decimal('0'),
+                'voucher_recoleccion_ids': [],
+                'proveedor_nombre': '',
+            }
+        )
+        qs = voucher.vouchers_recoleccion.select_related('proveedor').all()
+        for vrc in qs:
+            entry = agg[vrc.proveedor_id]
+            entry['kg'] += getattr(vrc, 'cantidad', None) or Decimal('0')
+            entry['voucher_recoleccion_ids'].append(vrc.id)
+            if vrc.proveedor is not None:
+                entry['proveedor_nombre'] = (
+                    getattr(vrc.proveedor, 'razon_social', '')
+                    or getattr(vrc.proveedor, 'nombre_comercial', '')
+                    or ''
+                )
+
+        return [
+            {'proveedor_id': pid, **data} for pid, data in agg.items()
+        ]
 
     # ─── Factory ───────────────────────────────────────────────────────
     @classmethod
@@ -164,26 +352,29 @@ class Liquidacion(TenantModel):
         a partir de un VoucherRecepcion aprobado. Una línea de liquidación
         por cada VoucherLineaMP.
 
+        Se crea en estado SUGERIDA (H-SC-02). Cada línea guarda el
+        precio vigente como `precio_kg_sugerido` (snapshot inmutable).
+
         Si ya existe liquidación para este voucher, la retorna sin cambios.
         """
-        # Idempotencia: si ya existe, retornarla
         existente = cls.objects.filter(voucher=voucher).first()
         if existente is not None:
             return existente
 
-        from apps.supply_chain.gestion_proveedores.models import PrecioMateriaPrima
+        from apps.supply_chain.gestion_proveedores.models import (
+            PrecioMateriaPrima,
+        )
 
         with transaction.atomic():
             liq = cls(
                 voucher=voucher,
                 observaciones=observaciones,
-                estado=EstadoLiquidacion.BORRADOR,
+                estado=EstadoLiquidacion.SUGERIDA,
             )
             liq.numero = cls.objects.count() + 1
             liq.codigo = f'LIQ-{liq.numero:04d}'
             liq.save()
 
-            # Crear líneas — una por cada VoucherLineaMP
             for voucher_linea in voucher.lineas.all():
                 try:
                     precio_mp = PrecioMateriaPrima.objects.get(
@@ -200,6 +391,7 @@ class Liquidacion(TenantModel):
                     voucher_linea=voucher_linea,
                     cantidad=voucher_linea.peso_neto_kg,
                     precio_unitario=precio_kg,
+                    precio_kg_sugerido=precio_kg,
                     ajuste_calidad_pct=Decimal('0.00'),
                 )
 
@@ -233,6 +425,14 @@ class LiquidacionLinea(TenantModel):
         decimal_places=2,
         verbose_name='Precio unitario',
         help_text='Precio por kg del producto para este proveedor.',
+    )
+    precio_kg_sugerido = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Precio kg sugerido (snapshot)',
+        help_text='Snapshot del precio vigente al crear. Inmutable.',
     )
     monto_base = models.DecimalField(
         max_digits=14,
@@ -292,6 +492,108 @@ class LiquidacionLinea(TenantModel):
     def save(self, *args, **kwargs):
         self.calcular_valores()
         super().save(*args, **kwargs)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# Historial de ajustes (H-SC-02) — append-only.
+# ══════════════════════════════════════════════════════════════════════
+
+
+class HistorialAjusteLiquidacion(TenantModel):
+    """
+    Registro append-only de cualquier ajuste hecho a una Liquidación o
+    una de sus líneas (precio, calidad, cantidad). Garantiza trazabilidad
+    auditable: por qué cambió el monto final desde el snapshot SUGERIDA.
+
+    Reglas:
+    - Update bloqueado a nivel modelo (raise IntegrityError).
+    - Delete bloqueado a nivel modelo (raise IntegrityError).
+    - Soft delete del TenantModel sigue funcionando para tooling de admin
+      pero `delete()` directo está bloqueado.
+    """
+
+    class TipoAjuste(models.TextChoices):
+        PRECIO = 'PRECIO', 'Precio'
+        CALIDAD = 'CALIDAD', 'Ajuste de calidad'
+        CANTIDAD = 'CANTIDAD', 'Cantidad'
+
+    class Origen(models.TextChoices):
+        QC = 'QC', 'Control de calidad'
+        MANUAL = 'MANUAL', 'Manual'
+        CORRECCION = 'CORRECCION', 'Corrección de error'
+
+    liquidacion = models.ForeignKey(
+        Liquidacion,
+        on_delete=models.PROTECT,
+        related_name='historial_ajustes',
+        verbose_name='Liquidación',
+    )
+    linea = models.ForeignKey(
+        LiquidacionLinea,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='historial_ajustes',
+        verbose_name='Línea',
+    )
+    tipo_ajuste = models.CharField(
+        max_length=20,
+        choices=TipoAjuste.choices,
+        verbose_name='Tipo de ajuste',
+    )
+    valor_anterior = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        verbose_name='Valor anterior',
+    )
+    valor_nuevo = models.DecimalField(
+        max_digits=14,
+        decimal_places=4,
+        verbose_name='Valor nuevo',
+    )
+    motivo = models.TextField(verbose_name='Motivo')
+    origen = models.CharField(
+        max_length=20,
+        choices=Origen.choices,
+        default=Origen.MANUAL,
+        verbose_name='Origen',
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='ajustes_liquidacion',
+        verbose_name='Modificado por',
+    )
+
+    class Meta:
+        db_table = 'supply_chain_liquidacion_historial_ajuste'
+        verbose_name = 'Historial de ajuste de liquidación'
+        verbose_name_plural = 'Historial de ajustes de liquidación'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['liquidacion', '-created_at']),
+            models.Index(fields=['linea', '-created_at']),
+        ]
+
+    def __str__(self):
+        return (
+            f'{self.get_tipo_ajuste_display()} en liquidación '
+            f'{self.liquidacion_id}: {self.valor_anterior} → {self.valor_nuevo}'
+        )
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise IntegrityError(
+                'HistorialAjusteLiquidacion es append-only: no se puede '
+                'actualizar un registro existente.'
+            )
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise IntegrityError(
+            'HistorialAjusteLiquidacion es append-only: no se puede '
+            'eliminar un registro.'
+        )
 
 
 class PagoLiquidacion(TenantModel):
@@ -367,27 +669,29 @@ class PagoLiquidacion(TenantModel):
                         )
                     }
                 )
-            if self.liquidacion.estado not in (
-                EstadoLiquidacion.APROBADA,
+            estados_pagables = {
+                EstadoLiquidacion.CONFIRMADA,
                 EstadoLiquidacion.PAGADA,
-            ):
+                # Backward-compat
+                EstadoLiquidacion.APROBADA,
+            }
+            if self.liquidacion.estado not in estados_pagables:
                 raise ValidationError(
-                    'Solo se pueden pagar liquidaciones en estado APROBADA.'
+                    'Solo se pueden pagar liquidaciones CONFIRMADAS.'
                 )
 
     def save(self, *args, **kwargs):
         self.full_clean()
         with transaction.atomic():
             super().save(*args, **kwargs)
-            # Al crear, cambiar estado de la liquidación a PAGADA
             if self.liquidacion.estado != EstadoLiquidacion.PAGADA:
                 self.liquidacion.estado = EstadoLiquidacion.PAGADA
                 self.liquidacion.save(update_fields=['estado', 'updated_at'])
 
 
-# ==============================================================================
-# H-SC-06 — Liquidación periódica por proveedor
-# ==============================================================================
+# ══════════════════════════════════════════════════════════════════════
+# H-SC-06 — Liquidación periódica por proveedor (upstream, preservado).
+# ══════════════════════════════════════════════════════════════════════
 
 
 class LiquidacionPeriodica(TenantModel):
@@ -397,11 +701,6 @@ class LiquidacionPeriodica(TenantModel):
     QUINCENAL o MENSUAL acumulan N Liquidaciones APROBADAS del período.
     Una task Celery (lunes 06:00) crea/actualiza el agregado en estado
     BORRADOR para revisión humana antes de pagar.
-
-    Estados:
-    - BORRADOR: agregado generado, ajustable.
-    - CONFIRMADA: aprobado por usuario, listo para pagar.
-    - PAGADA: pago registrado.
     """
 
     class Estado(models.TextChoices):

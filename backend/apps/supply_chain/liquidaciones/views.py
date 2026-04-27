@@ -1,8 +1,9 @@
 """
-ViewSets para Liquidaciones — Supply Chain (H-SC-12 header+líneas)
+ViewSets para Liquidaciones — Supply Chain (H-SC-12 header+líneas + H-SC-02).
 """
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,14 +13,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import (
+    ESTADOS_EDITABLES,
     EstadoLiquidacion,
+    HistorialAjusteLiquidacion,
     Liquidacion,
     LiquidacionLinea,
     LiquidacionPeriodica,
     PagoLiquidacion,
 )
 from .serializers import (
-    LiquidacionLineaSerializer,
     LiquidacionListSerializer,
     LiquidacionPeriodicaSerializer,
     LiquidacionSerializer,
@@ -28,13 +30,18 @@ from .serializers import (
 
 
 class LiquidacionViewSet(viewsets.ModelViewSet):
-    queryset = Liquidacion.objects.select_related(
-        'voucher',
-        'voucher__proveedor',
-        'aprobado_por',
-    ).prefetch_related(
-        'lineas_liquidacion__voucher_linea__producto',
-    ).all()
+    queryset = (
+        Liquidacion.objects.select_related(
+            'voucher',
+            'voucher__proveedor',
+            'aprobado_por',
+        )
+        .prefetch_related(
+            'lineas_liquidacion__voucher_linea__producto',
+            'historial_ajustes',
+        )
+        .all()
+    )
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['estado', 'voucher']
@@ -52,6 +59,7 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
+    # ─── Ajuste de línea con historial (H-SC-02) ───────────────────────
     @action(
         detail=True,
         methods=['patch'],
@@ -60,16 +68,28 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
     def ajustar_linea(self, request, pk=None, linea_id=None):
         """
         PATCH /liquidaciones/<id>/lineas/<linea_id>/ajuste/
-        Actualiza ajuste_calidad_pct y/o observaciones de una línea y
-        recalcula los totales del header. Solo en estado BORRADOR.
+
+        Body:
+        {
+          "ajuste_calidad_pct": "10.00",       # opcional
+          "precio_unitario": "3500.00",        # opcional
+          "observaciones": "...",              # opcional
+          "motivo": "Ajuste por humedad alta"  # OBLIGATORIO si hay cambio
+        }
+
+        - Solo en estados editables (SUGERIDA / AJUSTADA / BORRADOR legacy).
+        - Motivo OBLIGATORIO cuando se modifica precio o calidad.
+        - Crea HistorialAjusteLiquidacion (append-only) por cada cambio.
+        - Si la liquidación estaba SUGERIDA, transiciona a AJUSTADA.
         """
         liquidacion = self.get_object()
-        if liquidacion.estado != EstadoLiquidacion.BORRADOR:
+        if liquidacion.estado not in ESTADOS_EDITABLES:
             return Response(
                 {
                     'detail': (
                         f'Solo se pueden ajustar líneas en liquidaciones '
-                        f'BORRADOR (actual: {liquidacion.estado}).'
+                        f'editables (SUGERIDA / AJUSTADA). Estado actual: '
+                        f'{liquidacion.estado}.'
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -81,85 +101,171 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
             liquidacion=liquidacion,
         )
 
-        ajuste = request.data.get('ajuste_calidad_pct')
-        if ajuste is not None:
+        # Parsear cambios
+        cambios = []  # list[(tipo_ajuste, anterior, nuevo)]
+        nuevo_ajuste = request.data.get('ajuste_calidad_pct', None)
+        nuevo_precio = request.data.get('precio_unitario', None)
+        nueva_observacion = request.data.get('observaciones', None)
+        motivo = (request.data.get('motivo') or '').strip()
+
+        if nuevo_ajuste is not None:
             try:
-                linea.ajuste_calidad_pct = Decimal(str(ajuste))
-            except Exception:
+                nuevo_ajuste_dec = Decimal(str(nuevo_ajuste))
+            except (InvalidOperation, ValueError):
                 return Response(
                     {'ajuste_calidad_pct': 'Valor inválido.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        if 'observaciones' in request.data:
-            linea.observaciones = request.data.get('observaciones') or ''
-        linea.updated_by = request.user
-        linea.save()
-        liquidacion.recalcular_totales()
-        liquidacion.refresh_from_db()
-        return Response(LiquidacionSerializer(liquidacion).data)
+            anterior = linea.ajuste_calidad_pct or Decimal('0.00')
+            if nuevo_ajuste_dec != anterior:
+                cambios.append(
+                    (
+                        HistorialAjusteLiquidacion.TipoAjuste.CALIDAD,
+                        anterior,
+                        nuevo_ajuste_dec,
+                    )
+                )
+                linea.ajuste_calidad_pct = nuevo_ajuste_dec
 
-    @action(detail=True, methods=['post'])
-    def aprobar(self, request, pk=None):
-        """
-        Aprobar liquidación (BORRADOR → APROBADA).
+        if nuevo_precio is not None:
+            try:
+                nuevo_precio_dec = Decimal(str(nuevo_precio))
+            except (InvalidOperation, ValueError):
+                return Response(
+                    {'precio_unitario': 'Valor inválido.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            anterior = linea.precio_unitario or Decimal('0.00')
+            if nuevo_precio_dec != anterior:
+                cambios.append(
+                    (
+                        HistorialAjusteLiquidacion.TipoAjuste.PRECIO,
+                        anterior,
+                        nuevo_precio_dec,
+                    )
+                )
+                linea.precio_unitario = nuevo_precio_dec
 
-        H-SC-RUTA-02 D-2 (refactor 2): si la recepción de esta liquidación
-        tiene N vouchers de recolección asociados (M2M), TODOS deben estar
-        en COMPLETADO. Si CUALQUIERA está en BORRADOR → bloquea con
-        mensaje listando los pendientes.
-
-        Razón operativa: hasta que todos los PVs recolectados estén
-        registrados como COMPLETADO, no se puede liquidar al periodo
-        sin perder trazabilidad de pago a algún productor.
-        """
-        liquidacion = self.get_object()
-        if liquidacion.estado != EstadoLiquidacion.BORRADOR:
+        # Motivo es obligatorio cuando hay cambios contables (precio/calidad).
+        if cambios and not motivo:
             return Response(
                 {
-                    'detail': (
-                        f'Solo se pueden aprobar liquidaciones en BORRADOR '
-                        f'(actual: {liquidacion.estado}).'
+                    'motivo': (
+                        'El motivo es obligatorio para ajustar precio o '
+                        'porcentaje de calidad.'
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # D-2 refactor 2: validar M2M vouchers_recoleccion (si la recepción
-        # tiene asociados, todos deben estar COMPLETADOS).
-        voucher = liquidacion.voucher
-        from apps.supply_chain.recoleccion.models import VoucherRecoleccion
-        borradores = list(
-            voucher.vouchers_recoleccion.filter(
-                estado=VoucherRecoleccion.Estado.BORRADOR,
-            ).values('id', 'codigo', 'proveedor__nombre_comercial')
-        )
-        if borradores:
-            codigos = ', '.join(b['codigo'] for b in borradores)
+        if nueva_observacion is not None:
+            linea.observaciones = nueva_observacion or ''
+
+        with transaction.atomic():
+            linea.updated_by = request.user
+            linea.save()
+
+            for tipo_ajuste, anterior, nuevo in cambios:
+                HistorialAjusteLiquidacion.objects.create(
+                    liquidacion=liquidacion,
+                    linea=linea,
+                    tipo_ajuste=tipo_ajuste,
+                    valor_anterior=anterior,
+                    valor_nuevo=nuevo,
+                    motivo=motivo,
+                    origen=HistorialAjusteLiquidacion.Origen.MANUAL,
+                    modificado_por=request.user,
+                    created_by=request.user,
+                )
+
+            liquidacion.recalcular_totales()
+
+            # Transición SUGERIDA → AJUSTADA si hubo cambios contables.
+            if cambios and liquidacion.estado == EstadoLiquidacion.SUGERIDA:
+                liquidacion.estado = EstadoLiquidacion.AJUSTADA
+                liquidacion.save(update_fields=['estado', 'updated_at'])
+
+        liquidacion.refresh_from_db()
+        return Response(LiquidacionSerializer(liquidacion).data)
+
+    # ─── Confirmar (CONFIRMADA + archivado GD) ─────────────────────────
+    @action(detail=True, methods=['post'])
+    def confirmar(self, request, pk=None):
+        """
+        Transiciona la liquidación a CONFIRMADA y la archiva en GD.
+
+        Solo se permite desde SUGERIDA / AJUSTADA / BORRADOR (legacy).
+
+        H-SC-RUTA-02 D-2: si la recepción tiene N vouchers de recolección
+        asociados (M2M), TODOS deben estar en COMPLETADO.
+        """
+        liquidacion = self.get_object()
+        if liquidacion.estado not in ESTADOS_EDITABLES:
             return Response(
                 {
                     'detail': (
-                        f'No se puede aprobar la liquidación: hay '
-                        f'{len(borradores)} voucher(s) de recolección '
-                        f'asociado(s) en BORRADOR ({codigos}). Complete cada '
-                        f'parada (Supply Chain → Recolección en Ruta) antes '
-                        f'de liquidar.'
-                    ),
-                    'vouchers_borrador': borradores,
+                        f'Solo se pueden confirmar liquidaciones editables '
+                        f'(SUGERIDA / AJUSTADA). Estado actual: '
+                        f'{liquidacion.estado}.'
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        liquidacion.aprobar(request.user)
+        # D-2: validar vouchers de recolección asociados.
+        voucher = liquidacion.voucher
+        if voucher is not None:
+            try:
+                from apps.supply_chain.recoleccion.models import (
+                    VoucherRecoleccion,
+                )
+
+                borradores = list(
+                    voucher.vouchers_recoleccion.filter(
+                        estado=VoucherRecoleccion.Estado.BORRADOR,
+                    ).values('id', 'codigo', 'proveedor__nombre_comercial')
+                )
+            except Exception:
+                borradores = []
+            if borradores:
+                codigos = ', '.join(b['codigo'] for b in borradores)
+                return Response(
+                    {
+                        'detail': (
+                            f'No se puede confirmar la liquidación: hay '
+                            f'{len(borradores)} voucher(s) de recolección '
+                            f'asociado(s) en BORRADOR ({codigos}). Complete '
+                            f'cada parada antes de confirmar.'
+                        ),
+                        'vouchers_borrador': borradores,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        liquidacion.confirmar(request.user)
         return Response(LiquidacionSerializer(liquidacion).data)
+
+    # ─── Backward-compat: aprobar() = confirmar() ──────────────────────
+    @action(detail=True, methods=['post'])
+    def aprobar(self, request, pk=None):
+        """
+        Alias de `confirmar` por compatibilidad con clientes existentes.
+
+        Misma validación D-2 (vouchers de recolección). Se mantendrá hasta
+        que el FE migre a `confirmar`.
+        """
+        return self.confirmar(request, pk=pk)
 
 
 class PagoLiquidacionViewSet(viewsets.ModelViewSet):
-    queryset = PagoLiquidacion.objects.select_related(
-        'liquidacion',
-        'liquidacion__voucher',
-        'liquidacion__voucher__proveedor',
-        'registrado_por',
-    ).all()
+    queryset = (
+        PagoLiquidacion.objects.select_related(
+            'liquidacion',
+            'liquidacion__voucher',
+            'liquidacion__voucher__proveedor',
+            'registrado_por',
+        ).all()
+    )
     serializer_class = PagoLiquidacionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -179,7 +285,7 @@ class PagoLiquidacionViewSet(viewsets.ModelViewSet):
 
 class LiquidacionPeriodicaViewSet(viewsets.ModelViewSet):
     """
-    ViewSet del agregado periódico H-SC-06.
+    ViewSet del agregado periódico H-SC-06 (preservado de upstream).
 
     Endpoints:
     - GET/POST /liquidaciones-periodicas/
@@ -189,7 +295,9 @@ class LiquidacionPeriodicaViewSet(viewsets.ModelViewSet):
     """
 
     queryset = (
-        LiquidacionPeriodica.objects.select_related('proveedor', 'aprobado_por')
+        LiquidacionPeriodica.objects.select_related(
+            'proveedor', 'aprobado_por'
+        )
         .prefetch_related('liquidaciones')
         .all()
     )
@@ -240,3 +348,11 @@ class LiquidacionPeriodicaViewSet(viewsets.ModelViewSet):
         instance.estado = LiquidacionPeriodica.Estado.PAGADA
         instance.save(update_fields=['estado', 'updated_at'])
         return Response(LiquidacionPeriodicaSerializer(instance).data)
+
+
+# Re-export para imports relativos en tests u otros módulos.
+__all__ = [
+    'LiquidacionViewSet',
+    'PagoLiquidacionViewSet',
+    'LiquidacionPeriodicaViewSet',
+]

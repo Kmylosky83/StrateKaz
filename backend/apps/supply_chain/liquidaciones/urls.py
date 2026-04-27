@@ -1,5 +1,5 @@
 """
-URLs para Liquidaciones — Supply Chain (H-SC-12 header+líneas)
+URLs para Liquidaciones — Supply Chain (H-SC-12 header+líneas + H-SC-06).
 """
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter

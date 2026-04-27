@@ -174,3 +174,31 @@ def crear_liquidacion_al_aprobar(sender, instance, **kwargs):
             instance.pk,
             exc_info=True,
         )
+
+
+
+@receiver(post_save, sender=VoucherRecepcion)
+def archivar_voucher_en_gd(sender, instance, **kwargs):
+    """
+    H-SC-GD-ARCHIVE: archiva el voucher en Gestión Documental al aprobar.
+
+    Idempotente: VoucherRecepcion.archivar_en_gd() chequea si ya existe
+    documento archivado. Errores se loggean como warning (no rompen
+    aprobación).
+
+    Usa operador_bascula como usuario actor del archivado (es quien
+    operó el voucher); en flujos donde se requiera el aprobador real
+    se puede invocar manualmente desde el endpoint de aprobación.
+    """
+    if instance.estado != VoucherRecepcion.EstadoVoucher.APROBADO:
+        return
+    if instance.documento_archivado_id:
+        return  # ya archivado — idempotencia
+    try:
+        instance.archivar_en_gd(usuario=instance.operador_bascula)
+    except Exception:
+        logger.error(
+            'Error inesperado archivando voucher %s en GD.',
+            instance.pk,
+            exc_info=True,
+        )

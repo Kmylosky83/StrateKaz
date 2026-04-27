@@ -1,9 +1,10 @@
 """
-Serializers para Liquidaciones — Supply Chain (H-SC-12 header+líneas)
+Serializers para Liquidaciones — Supply Chain (H-SC-12 header+líneas + H-SC-02).
 """
 from rest_framework import serializers
 
 from .models import (
+    HistorialAjusteLiquidacion,
     Liquidacion,
     LiquidacionLinea,
     LiquidacionPeriodica,
@@ -33,6 +34,7 @@ class LiquidacionLineaSerializer(serializers.ModelSerializer):
             'voucher_linea_peso',
             'cantidad',
             'precio_unitario',
+            'precio_kg_sugerido',
             'monto_base',
             'ajuste_calidad_pct',
             'ajuste_calidad_monto',
@@ -46,12 +48,55 @@ class LiquidacionLineaSerializer(serializers.ModelSerializer):
             'voucher_linea',
             'cantidad',
             'precio_unitario',
+            'precio_kg_sugerido',
             'monto_base',
             'ajuste_calidad_monto',
             'monto_final',
             'created_at',
             'updated_at',
         ]
+
+
+class HistorialAjusteLiquidacionSerializer(serializers.ModelSerializer):
+    tipo_ajuste_display = serializers.CharField(
+        source='get_tipo_ajuste_display',
+        read_only=True,
+    )
+    origen_display = serializers.CharField(
+        source='get_origen_display',
+        read_only=True,
+    )
+    modificado_por_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = HistorialAjusteLiquidacion
+        fields = [
+            'id',
+            'liquidacion',
+            'linea',
+            'tipo_ajuste',
+            'tipo_ajuste_display',
+            'valor_anterior',
+            'valor_nuevo',
+            'motivo',
+            'origen',
+            'origen_display',
+            'modificado_por',
+            'modificado_por_nombre',
+            'created_at',
+        ]
+        read_only_fields = fields
+
+    def get_modificado_por_nombre(self, obj):
+        user = obj.modificado_por
+        if user is None:
+            return ''
+        get_full_name = getattr(user, 'get_full_name', None)
+        if callable(get_full_name):
+            nombre = get_full_name()
+            if nombre:
+                return nombre
+        return getattr(user, 'username', '') or getattr(user, 'email', '') or ''
 
 
 class LiquidacionListSerializer(serializers.ModelSerializer):
@@ -67,6 +112,11 @@ class LiquidacionListSerializer(serializers.ModelSerializer):
     )
     estado_display = serializers.CharField(
         source='get_estado_display',
+        read_only=True,
+    )
+    # H-SC-E2E-05: conteo de líneas para badge en listado.
+    lineas_count = serializers.IntegerField(
+        source='lineas_liquidacion.count',
         read_only=True,
     )
 
@@ -85,6 +135,8 @@ class LiquidacionListSerializer(serializers.ModelSerializer):
             'estado',
             'estado_display',
             'fecha_aprobacion',
+            'documento_archivado_id',
+            'lineas_count',
             'created_at',
         ]
 
@@ -105,6 +157,16 @@ class LiquidacionSerializer(serializers.ModelSerializer):
         source='get_estado_display',
         read_only=True,
     )
+    lineas_count = serializers.IntegerField(
+        source='lineas_liquidacion.count',
+        read_only=True,
+    )
+    # H-SC-RUTA-03: detalle agrupado por productor en modalidad RECOLECCION.
+    detalle_por_productor = serializers.SerializerMethodField()
+    historial_ajustes = HistorialAjusteLiquidacionSerializer(
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = Liquidacion
@@ -123,7 +185,11 @@ class LiquidacionSerializer(serializers.ModelSerializer):
             'fecha_aprobacion',
             'aprobado_por',
             'observaciones',
+            'documento_archivado_id',
+            'lineas_count',
             'lineas_liquidacion',
+            'historial_ajustes',
+            'detalle_por_productor',
             'created_at',
             'updated_at',
         ]
@@ -136,9 +202,13 @@ class LiquidacionSerializer(serializers.ModelSerializer):
             'total',
             'fecha_aprobacion',
             'aprobado_por',
+            'documento_archivado_id',
             'created_at',
             'updated_at',
         ]
+
+    def get_detalle_por_productor(self, obj):
+        return obj.detalle_por_productor
 
 
 class PagoLiquidacionSerializer(serializers.ModelSerializer):
@@ -175,28 +245,28 @@ class PagoLiquidacionSerializer(serializers.ModelSerializer):
 
 
 class LiquidacionPeriodicaSerializer(serializers.ModelSerializer):
-    """Serializer del agregado periodico H-SC-06."""
+    """Serializer del agregado periódico H-SC-06 (preservado de upstream)."""
 
     proveedor_nombre = serializers.CharField(
-        source="proveedor.razon_social", read_only=True
+        source='proveedor.razon_social', read_only=True
     )
     estado_display = serializers.CharField(
-        source="get_estado_display", read_only=True
+        source='get_estado_display', read_only=True
     )
     liquidaciones_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Liquidacion.objects.all(),
-        source="liquidaciones",
+        source='liquidaciones',
         required=False,
     )
 
     class Meta:
         model = LiquidacionPeriodica
-        fields = "__all__"
+        fields = '__all__'
         read_only_fields = [
-            "subtotal",
-            "ajuste_calidad_total",
-            "total",
-            "fecha_aprobacion",
-            "aprobado_por",
+            'subtotal',
+            'ajuste_calidad_total',
+            'total',
+            'fecha_aprobacion',
+            'aprobado_por',
         ]

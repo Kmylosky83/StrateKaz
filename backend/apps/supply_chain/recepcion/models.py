@@ -65,7 +65,7 @@ class VoucherRecepcion(TenantModel):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='vouchers_recoleccion',
+        related_name='vouchers_recepcion',
         verbose_name='Ruta de recolección',
         help_text=(
             'Ruta de recolección usada para traer la materia prima. '
@@ -118,6 +118,28 @@ class VoucherRecepcion(TenantModel):
         verbose_name='Observaciones',
     )
 
+    # ─── Conexión con VoucherRecoleccion (H-SC-RUTA-02 — D-1) ──────────
+    # Cuando este voucher de recepción viene de una salida de ruta, se
+    # vincula al VoucherRecoleccion del que salió (con N líneas detalle
+    # por proveedor visitado). El inventario YA ENTRÓ con esta recepción —
+    # el voucher de recolección queda como evidencia/detalle para liquidar
+    # cada productor por separado.
+    #
+    # Validación de bloqueo: la liquidación NO debe correr si el voucher
+    # de recolección asociado está en BORRADOR (ver liquidaciones).
+    voucher_recoleccion_origen = models.ForeignKey(
+        'sc_recoleccion.VoucherRecoleccion',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='recepciones_consolidadas',
+        verbose_name='Voucher de recolección origen',
+        help_text=(
+            'Si la mercancía proviene de una salida de ruta, se vincula al '
+            'VoucherRecoleccion del que salió (líneas por productor visitado).'
+        ),
+    )
+
     class Meta:
         db_table = 'supply_chain_voucher_recepcion'
         verbose_name = 'Voucher de Recepción'
@@ -128,6 +150,7 @@ class VoucherRecepcion(TenantModel):
             models.Index(fields=['estado', '-created_at']),
             models.Index(fields=['fecha_viaje']),
             models.Index(fields=['almacen_destino']),
+            models.Index(fields=['voucher_recoleccion_origen']),
         ]
 
     def __str__(self):

@@ -143,6 +143,14 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
     requiere_qc = serializers.BooleanField(read_only=True)
     tiene_qc = serializers.BooleanField(read_only=True)
 
+    # H-SC-RUTA-02 (D-1): vínculo opcional con voucher de recolección origen.
+    voucher_recoleccion_codigo = serializers.CharField(
+        source='voucher_recoleccion_origen.codigo', read_only=True, allow_null=True,
+    )
+    voucher_recoleccion_estado = serializers.CharField(
+        source='voucher_recoleccion_origen.estado', read_only=True, allow_null=True,
+    )
+
     class Meta:
         model = VoucherRecepcion
         fields = [
@@ -166,11 +174,16 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             'observaciones',
             # H-SC-03: flags QC
             'requiere_qc', 'tiene_qc',
+            # H-SC-RUTA-02 D-1: vínculo con voucher de recolección
+            'voucher_recoleccion_origen',
+            'voucher_recoleccion_codigo',
+            'voucher_recoleccion_estado',
             # Auditoría
             'created_at', 'updated_at',
         ]
         read_only_fields = [
             'created_at', 'updated_at',
+            'voucher_recoleccion_codigo', 'voucher_recoleccion_estado',
         ]
 
     def get_lineas_count(self, obj):

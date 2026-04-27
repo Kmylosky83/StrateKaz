@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
                 ),
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                related_name='vouchers_recoleccion',
+                related_name='vouchers_recepcion',
                 to='catalogos.rutarecoleccion',
                 verbose_name='Ruta de recolección',
             ),

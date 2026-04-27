@@ -73,6 +73,44 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
+    # ─── Vínculo con voucher de recolección (H-SC-RUTA-02 — D-1) ──────
+    @action(detail=True, methods=['post'], url_path='asociar-recoleccion')
+    def asociar_recoleccion(self, request, pk=None):
+        """
+        Asocia esta recepción con un VoucherRecoleccion de origen.
+
+        Body: {"voucher_recoleccion": <id>} o {"voucher_recoleccion": null}
+        para desasociar.
+
+        El inventario YA ENTRÓ con esta recepción — el voucher de recolección
+        es solo evidencia/detalle para luego liquidar a cada productor por
+        separado. Se permite asociar/desasociar mientras la recepción no esté
+        LIQUIDADA.
+        """
+        voucher = self.get_object()
+        if voucher.estado == voucher.EstadoVoucher.LIQUIDADO:
+            raise ValidationError({
+                'detail': 'No se puede modificar el vínculo: la recepción ya fue liquidada.',
+            })
+
+        rec_id = request.data.get('voucher_recoleccion')
+        if rec_id is None or rec_id == '':
+            voucher.voucher_recoleccion_origen = None
+        else:
+            try:
+                from apps.supply_chain.recoleccion.models import VoucherRecoleccion
+                rec = VoucherRecoleccion.objects.get(pk=rec_id)
+            except VoucherRecoleccion.DoesNotExist:
+                raise ValidationError({
+                    'voucher_recoleccion': f'No existe el voucher de recolección con id={rec_id}.',
+                })
+            voucher.voucher_recoleccion_origen = rec
+        voucher.updated_by = request.user
+        voucher.save(update_fields=['voucher_recoleccion_origen', 'updated_by', 'updated_at'])
+
+        serializer = VoucherRecepcionSerializer(voucher, context={'request': request})
+        return Response(serializer.data)
+
     # ─── Transiciones de estado (H-SC-03) ─────────────────────────────
     @action(detail=True, methods=['post'], url_path='aprobar')
     def aprobar(self, request, pk=None):

@@ -1759,7 +1759,11 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
             invalidada=False,
         ).order_by('fecha_limite', '-fecha_asignacion')
 
-        return Response(AceptacionDocumentalListSerializer(qs, many=True).data)
+        return Response(
+            AceptacionDocumentalListSerializer(
+                qs, many=True, context={'request': request}
+            ).data
+        )
 
     @action(detail=False, methods=['post'], url_path='asignar')
     def asignar(self, request):
@@ -1887,7 +1891,17 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='aceptar')
     def aceptar(self, request, pk=None):
-        """Acepta el documento tras lectura verificada (requiere >= 90%)."""
+        """Acepta el documento tras lectura verificada (requiere >= 90%).
+
+        Validaciones (en orden):
+          1. usuario == request.user
+          2. estado != ACEPTADO/RECHAZADO
+          3. fecha_limite no vencida (si vencida, marca VENCIDO + 400)
+          4. Si documento.archivo_original existe (PDF externo):
+                scroll_data['total_paginas'] y scroll_data['paginas_vistas']
+                deben existir y paginas_vistas/total_paginas >= 0.9
+          5. porcentaje_lectura >= 90 (fallback para HTML / PDFs ya validados)
+        """
         aceptacion = self.get_object()
 
         if aceptacion.usuario != request.user:
@@ -1902,9 +1916,95 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # H-GD-M1 — Validar fecha_limite ANTES de aceptar (evita race con Celery)
+        if aceptacion.fecha_limite:
+            hoy = timezone.now().date()
+            if aceptacion.fecha_limite < hoy and aceptacion.estado in (
+                'PENDIENTE', 'EN_PROGRESO'
+            ):
+                aceptacion.estado = 'VENCIDO'
+                aceptacion.save(update_fields=['estado', 'updated_at'])
+                fecha_str = aceptacion.fecha_limite.strftime('%d/%m/%Y')
+                return Response(
+                    {
+                        'error': (
+                            f'El plazo de lectura venció el {fecha_str}. '
+                            'No es posible aceptar este documento.'
+                        ),
+                        'estado': aceptacion.estado,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # H-GD-C1/C2 — Validar tracking real para PDFs externos
+        documento = aceptacion.documento
+        tiene_pdf_externo = bool(
+            getattr(documento, 'archivo_original', None)
+            and documento.archivo_original.name
+        )
+        if tiene_pdf_externo:
+            scroll_data = aceptacion.scroll_data or {}
+            total_paginas = scroll_data.get('total_paginas')
+            paginas_vistas = scroll_data.get('paginas_vistas')
+
+            if total_paginas is None or paginas_vistas is None:
+                return Response(
+                    {
+                        'error': (
+                            'Este documento es un PDF externo. Debe abrirlo y '
+                            'recorrer al menos el 90% de sus páginas antes de '
+                            'aceptar (tracking de páginas no registrado).'
+                        ),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                total_int = int(total_paginas)
+                vistas_int = int(paginas_vistas)
+            except (TypeError, ValueError):
+                return Response(
+                    {
+                        'error': (
+                            'Datos de progreso del PDF inválidos. '
+                            'Vuelva a abrir el documento y reintente.'
+                        ),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if total_int <= 0:
+                return Response(
+                    {
+                        'error': (
+                            'No fue posible determinar el número de páginas '
+                            'del PDF. Vuelva a abrir el documento y reintente.'
+                        ),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ratio = vistas_int / total_int
+            if ratio < 0.9:
+                pct = round(ratio * 100)
+                return Response(
+                    {
+                        'error': (
+                            f'Debe recorrer al menos el 90% de las páginas del '
+                            f'PDF (actual: {vistas_int}/{total_int} = {pct}%).'
+                        ),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         if aceptacion.porcentaje_lectura < 90:
             return Response(
-                {'error': f'Debe leer al menos el 90% del documento (actual: {aceptacion.porcentaje_lectura}%)'},
+                {
+                    'error': (
+                        f'Debe leer al menos el 90% del documento '
+                        f'(actual: {aceptacion.porcentaje_lectura}%)'
+                    ),
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -1922,7 +2022,11 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
         ])
 
         from .serializers import AceptacionDocumentalDetailSerializer
-        return Response(AceptacionDocumentalDetailSerializer(aceptacion).data)
+        return Response(
+            AceptacionDocumentalDetailSerializer(
+                aceptacion, context={'request': request}
+            ).data
+        )
 
     @action(detail=True, methods=['post'], url_path='rechazar')
     def rechazar(self, request, pk=None):

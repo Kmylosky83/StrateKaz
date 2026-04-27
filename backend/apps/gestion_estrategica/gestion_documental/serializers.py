@@ -6,7 +6,9 @@ NOTA: FirmaDocumentoSerializer ha sido eliminado.
 Las firmas digitales usan FirmaDigitalSerializer de workflow_engine.firma_digital
 """
 from django.apps import apps
+from django.urls import reverse
 from rest_framework import serializers
+from .mixins import check_acceso_documento
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
@@ -17,6 +19,43 @@ from .models import (
     AceptacionDocumental,
     TablaRetencionDocumental,
 )
+
+
+# =============================================================================
+# Helpers Aceptacion Documental
+# =============================================================================
+def _resolve_documento_archivo_original_url(obj, request):
+    """
+    Construye URL absoluta al archivo original del documento (PDF externo)
+    usando el endpoint de export — JWT-aware y con verificacion de acceso.
+
+    Devuelve None si:
+      - el documento no tiene archivo_original
+      - el usuario no tiene acceso por clasificacion (Confidencial/Restringido)
+      - no hay request en context (caso de serializacion fuera de DRF)
+    """
+    documento = getattr(obj, 'documento', None)
+    if documento is None:
+        return None
+
+    archivo = getattr(documento, 'archivo_original', None)
+    if not archivo or not getattr(archivo, 'name', ''):
+        return None
+
+    if request is None:
+        return None
+
+    user = getattr(request, 'user', None)
+    if user is None or not user.is_authenticated:
+        return None
+
+    if not check_acceso_documento(user, documento):
+        return None
+
+    relative = reverse(
+        'gestion_documental:export-documento-pdf', kwargs={'pk': documento.pk}
+    )
+    return request.build_absolute_uri(relative)
 
 
 # =============================================================================
@@ -413,6 +452,7 @@ class AceptacionDocumentalListSerializer(serializers.ModelSerializer):
     documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
     documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
     documento_contenido = serializers.CharField(source='documento.contenido', read_only=True)
+    documento_archivo_original_url = serializers.SerializerMethodField()
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
     asignado_por_nombre = serializers.CharField(
         source='asignado_por.get_full_name', read_only=True, allow_null=True
@@ -424,7 +464,7 @@ class AceptacionDocumentalListSerializer(serializers.ModelSerializer):
         model = AceptacionDocumental
         fields = [
             'id', 'documento', 'documento_codigo', 'documento_titulo',
-            'documento_contenido',
+            'documento_contenido', 'documento_archivo_original_url',
             'version_documento', 'usuario', 'usuario_nombre',
             'asignado_por', 'asignado_por_nombre',
             'estado', 'estado_display',
@@ -440,12 +480,18 @@ class AceptacionDocumentalListSerializer(serializers.ModelSerializer):
         delta = obj.fecha_limite - timezone.now().date()
         return delta.days
 
+    def get_documento_archivo_original_url(self, obj):
+        return _resolve_documento_archivo_original_url(
+            obj, self.context.get('request')
+        )
+
 
 class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalle de aceptación documental"""
     documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
     documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
     documento_contenido = serializers.CharField(source='documento.contenido', read_only=True)
+    documento_archivo_original_url = serializers.SerializerMethodField()
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
     asignado_por_nombre = serializers.CharField(
         source='asignado_por.get_full_name', read_only=True, allow_null=True
@@ -456,7 +502,7 @@ class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
         model = AceptacionDocumental
         fields = [
             'id', 'documento', 'documento_codigo', 'documento_titulo',
-            'documento_contenido',
+            'documento_contenido', 'documento_archivo_original_url',
             'version_documento', 'usuario', 'usuario_nombre',
             'control_documental', 'asignado_por', 'asignado_por_nombre',
             'estado', 'estado_display',
@@ -474,6 +520,11 @@ class AceptacionDocumentalDetailSerializer(serializers.ModelSerializer):
             'fecha_asignacion', 'fecha_aceptacion', 'fecha_rechazo',
             'ip_address', 'user_agent',
         ]
+
+    def get_documento_archivo_original_url(self, obj):
+        return _resolve_documento_archivo_original_url(
+            obj, self.context.get('request')
+        )
 
 
 class AsignarLecturaSerializer(serializers.Serializer):

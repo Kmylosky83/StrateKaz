@@ -1,0 +1,117 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Voucher #{{ voucher.pk|stringformat:"04d" }}</title>
+<style>
+  /* CSS embebido para asegurar render en WeasyPrint cuando el static
+     externo no este disponible (tests, primer arranque). NO usar flex
+     ni grid: WeasyPrint 60.x no los soporta. Usar float / inline-block
+     / table-cell. */
+  @page { size: 80mm auto; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10pt;
+    line-height: 1.35;
+    width: 80mm;
+    padding: 4mm 5mm;
+    color: #000;
+    background: #fff;
+  }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .sep { white-space: pre; line-height: 1; }
+  .row { width: 100%; display: table; }
+  .row .label { display: table-cell; text-align: left; }
+  .row .val { display: table-cell; text-align: right; }
+  .indent { padding-left: 5mm; }
+  .prod { padding-left: 4mm; font-weight: bold; margin-top: 1.2mm; }
+  .pesos { padding-left: 4mm; font-size: 9.5pt; }
+  .qc { padding-left: 4mm; font-size: 9pt; font-style: italic; }
+  .obs { font-size: 9pt; word-wrap: break-word; }
+  .brand { text-align: center; }
+  .brand .nombre { font-weight: bold; font-size: 11pt; }
+  .brand .nit { font-size: 9pt; }
+  .operador-block { margin-top: 2.5mm; text-align: center; }
+  .operador-block .nombre { font-weight: bold; font-size: 10pt; }
+  .operador-block .cargo { font-size: 8.5pt; }
+  .footer { text-align: center; font-size: 8.5pt; margin-top: 1.5mm; }
+</style>
+</head>
+<body>
+<div class="sep">------------------------------------------</div>
+<div class="brand">
+  <div class="nombre">{{ tenant_nombre }}</div>
+  {% if tenant_nit %}<div class="nit">NIT: {{ tenant_nit }}</div>{% endif %}
+</div>
+<div class="sep">------------------------------------------</div>
+<div class="center bold" style="font-size:11pt;">VOUCHER DE RECEPCION MP</div>
+<div class="center" style="font-size:9pt;">No. {{ voucher.pk|stringformat:"04d" }}</div>
+<div class="sep">------------------------------------------</div>
+
+<div class="row">
+  <span class="label">Fecha viaje:</span>
+  <span class="val">{{ voucher.fecha_viaje|date:"d-m-Y"|default:"—" }}</span>
+</div>
+<div class="row">
+  <span class="label">Emitido:</span>
+  <span class="val">{{ voucher.created_at|date:"d-m-Y H:i" }}</span>
+</div>
+<div class="sep">------------------------------------------</div>
+
+<div class="bold">PROVEEDOR</div>
+<div class="indent">{{ proveedor_nombre }}</div>
+
+{% if ruta_nombre %}
+<div class="bold" style="margin-top:1mm;">RUTA</div>
+<div class="indent">{{ ruta_nombre }}</div>
+{% endif %}
+
+<div class="bold" style="margin-top:1mm;">MODALIDAD</div>
+<div class="indent">{{ modalidad_display }}</div>
+<div class="sep">------------------------------------------</div>
+
+<div class="bold">MATERIAS PRIMAS ({{ lineas|length }})</div>
+{% for linea in lineas %}
+  <div class="prod">{{ linea.producto.nombre|default:linea.producto }}</div>
+  <div class="pesos">
+    B:{{ linea.peso_bruto_kg|floatformat:1 }}
+    {% if linea.peso_tara_kg %}T:{{ linea.peso_tara_kg|floatformat:1 }}{% endif %}
+    <b>N:{{ linea.peso_neto_kg|floatformat:1 }}</b> kg
+  </div>
+  {% for med in linea.measurements.all %}
+    <div class="qc">QC {{ med.parameter.name }} {{ med.measured_value|floatformat:1 }}{{ med.parameter.unit }}{% if med.classified_range %} ({{ med.classified_range.name }}){% endif %}</div>
+  {% endfor %}
+{% endfor %}
+<div class="sep">------------------------------------------</div>
+
+<div class="row bold">
+  <span class="label">TOTAL NETO:</span>
+  <span class="val">{{ peso_total|floatformat:1 }} kg</span>
+</div>
+<div class="sep">------------------------------------------</div>
+
+<div class="bold">ALMACEN DESTINO</div>
+<div class="indent">{{ almacen_nombre }}</div>
+<div class="row" style="margin-top:1mm;">
+  <span class="label">Estado:</span>
+  <span class="val">{{ estado_display }}</span>
+</div>
+<div class="sep">------------------------------------------</div>
+
+{% if voucher.observaciones %}
+<div class="obs">{{ voucher.observaciones }}</div>
+<div class="sep">------------------------------------------</div>
+{% endif %}
+
+<div class="operador-block">
+  <div style="font-size:7.5pt;">REALIZADO POR</div>
+  <div class="nombre">{{ operador_nombre }}</div>
+  {% if operador_cargo %}<div class="cargo">{{ operador_cargo }}</div>{% endif %}
+</div>
+
+<div class="footer">Powered by StrateKaz</div>
+<div class="footer" style="font-size:7pt;">stratekaz.com - Consultoria 4.0</div>
+</body>
+</html>

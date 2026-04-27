@@ -127,6 +127,7 @@ TENANT_APPS = [
 
     # CT-layer: catálogo maestro de productos (transversal, consumido por Supply Chain, Almacenamiento, etc.)
     'apps.catalogo_productos',
+    'apps.catalogo_productos.impresoras',
 
     # ═══════════════════════════════════════════════════════════════════════════
     # GAMIFICACIÓN — Módulo independiente (Juego SST)

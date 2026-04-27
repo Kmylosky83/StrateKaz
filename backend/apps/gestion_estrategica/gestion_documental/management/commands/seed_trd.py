@@ -77,15 +77,9 @@ class Command(BaseCommand):
             TipoDocumento,
         )
         from apps.gestion_estrategica.organizacion.models import Area
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
 
-        empresa = EmpresaConfig.objects.first()
-        if not empresa:
-            self.stderr.write(self.style.ERROR('No hay EmpresaConfig en este tenant.'))
-            return
-
-        # Cachear lookups
-        # TipoDocumento usa SoftDeleteManager que filtra is_deleted automáticamente
+        # Aislamiento por schema django-tenants — sin empresa_id explícito.
+        # Cachear lookups; TipoDocumento usa SoftDeleteManager que filtra is_deleted.
         tipos_map = {t.codigo: t for t in TipoDocumento.objects.all()}
         areas_map = {a.code: a for a in Area.objects.filter(is_active=True)}
 
@@ -125,7 +119,6 @@ class Command(BaseCommand):
             _, created = TablaRetencionDocumental.objects.get_or_create(
                 tipo_documento=tipo,
                 proceso=proceso,
-                empresa_id=empresa.id,
                 defaults={
                     'serie_documental': serie,
                     'tiempo_gestion_anos': gestion,

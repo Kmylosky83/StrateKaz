@@ -9,15 +9,36 @@ import logging
 import os
 import time
 
+from django.conf import settings
+
 logger = logging.getLogger('gestion_documental')
+
+
+def _get_max_pages() -> int:
+    """
+    H-GD-M3: número máximo de páginas a procesar por documento.
+    Configurable vía ``settings.OCR_MAX_PAGES``. Default: 200.
+
+    Se evalúa en tiempo de ejecución (no en import) para que los tests
+    puedan sobre-escribir el setting con ``override_settings``.
+    """
+    return int(getattr(settings, 'OCR_MAX_PAGES', 200))
 
 
 class OcrService:
     """Servicio de extracción de texto de PDFs con fallback a OCR."""
 
-    MAX_PAGES = 100
+    # Default histórico expuesto como atributo de clase para retrocompat.
+    # Las llamadas internas usan ``cls._max_pages()`` para respetar el
+    # setting actual (override_settings, env var, etc.).
+    MAX_PAGES = 200
     MIN_TEXT_PER_PAGE = 50  # chars promedio/página para considerar "digital"
     TESSERACT_LANG = 'spa'  # Español
+
+    @classmethod
+    def _max_pages(cls) -> int:
+        """Resuelve el límite de páginas desde settings cada vez."""
+        return _get_max_pages()
 
     @classmethod
     def extraer_texto_pdf(cls, file_path: str) -> dict:
@@ -142,7 +163,7 @@ class OcrService:
         try:
             with pdfplumber.open(file_path) as pdf:
                 total_paginas = len(pdf.pages)
-                paginas_a_procesar = min(total_paginas, cls.MAX_PAGES)
+                paginas_a_procesar = min(total_paginas, cls._max_pages())
 
                 for i in range(paginas_a_procesar):
                     page = pdf.pages[i]
@@ -167,11 +188,11 @@ class OcrService:
         import pytesseract
         from pdf2image import convert_from_path
 
-        # Convertir PDF a imágenes (limitar a MAX_PAGES)
+        # Convertir PDF a imágenes (limitar a MAX_PAGES desde settings)
         images = convert_from_path(
             file_path,
             dpi=300,
-            last_page=cls.MAX_PAGES,
+            last_page=cls._max_pages(),
         )
         total_paginas = len(images)
 

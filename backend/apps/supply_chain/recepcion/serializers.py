@@ -151,6 +151,20 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
     # Lista compacta de los IDs + info denormalizada para mostrar en UI.
     vouchers_recoleccion_info = serializers.SerializerMethodField()
 
+    # H-SC-04: Cálculo de merma kg/% en recolección
+    peso_total_recolectado = serializers.DecimalField(
+        max_digits=12, decimal_places=3, read_only=True, allow_null=True,
+    )
+    peso_total_recibido = serializers.DecimalField(
+        max_digits=12, decimal_places=3, read_only=True,
+    )
+    merma_kg = serializers.DecimalField(
+        max_digits=12, decimal_places=3, read_only=True, allow_null=True,
+    )
+    merma_porcentaje = serializers.DecimalField(
+        max_digits=5, decimal_places=2, read_only=True, allow_null=True,
+    )
+
     class Meta:
         model = VoucherRecepcion
         fields = [
@@ -177,6 +191,9 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             # H-SC-RUTA-02 (refactor 2): M2M con N vouchers de recolección
             'vouchers_recoleccion',
             'vouchers_recoleccion_info',
+            # H-SC-04: merma calculada
+            'peso_total_recolectado', 'peso_total_recibido',
+            'merma_kg', 'merma_porcentaje',
             # Auditoría
             'created_at', 'updated_at',
         ]

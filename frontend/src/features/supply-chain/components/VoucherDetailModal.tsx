@@ -69,7 +69,10 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
     [vouchersRecoleccion, voucher]
   );
 
-  const linkedInfo = voucher?.vouchers_recoleccion_info ?? [];
+  const linkedInfo = useMemo(
+    () => voucher?.vouchers_recoleccion_info ?? [],
+    [voucher?.vouchers_recoleccion_info]
+  );
   const linkedIds = useMemo(() => new Set(linkedInfo.map((v) => v.id)), [linkedInfo]);
 
   const handleToggle = async (recId: number) => {

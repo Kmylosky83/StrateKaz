@@ -73,6 +73,44 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
+    # ─── Resumen de merma por ruta + fecha (H-SC-04) ──────────────────
+    @action(detail=False, methods=['get'], url_path='merma-resumen')
+    def merma_resumen(self, request):
+        """Resumen agregado de merma por ruta + fecha."""
+        ruta_id = request.query_params.get('ruta_id')
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+
+        qs = self.get_queryset().filter(
+            modalidad_entrega='RECOLECCION', estado='APROBADO',
+        )
+        if ruta_id:
+            qs = qs.filter(ruta_recoleccion_id=ruta_id)
+        if fecha_desde:
+            qs = qs.filter(fecha_viaje__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(fecha_viaje__lte=fecha_hasta)
+
+        resultado = []
+        for v in qs.select_related('ruta_recoleccion').prefetch_related(
+            'vouchers_recoleccion', 'lineas',
+        ):
+            if v.merma_kg is None:
+                continue
+            resultado.append({
+                'voucher_id': v.id,
+                'fecha_viaje': v.fecha_viaje,
+                'ruta_id': v.ruta_recoleccion_id,
+                'ruta_codigo': (
+                    v.ruta_recoleccion.codigo if v.ruta_recoleccion else None
+                ),
+                'peso_recolectado': v.peso_total_recolectado,
+                'peso_recibido': v.peso_total_recibido,
+                'merma_kg': v.merma_kg,
+                'merma_porcentaje': v.merma_porcentaje,
+            })
+        return Response(resultado)
+
     # ─── Vínculo M2M con vouchers de recolección (H-SC-RUTA-02 refactor 2) ──
     @action(detail=True, methods=['post'], url_path='asociar-recolecciones')
     def asociar_recolecciones(self, request, pk=None):
@@ -145,6 +183,91 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 
         serializer = VoucherRecepcionSerializer(voucher, context={'request': request})
         return Response(serializer.data)
+
+    # H-SC-TALONARIO: Asociar talonario manual desde planta
+    # Transcribe vouchers de recoleccion post-hoc + asocia al M2M.
+    # Delega creacion al endpoint canonico de recoleccion.
+    @action(detail=True, methods=['post'], url_path='asociar-talonario-planta')
+    def asociar_talonario_planta(self, request, pk=None):
+        """
+        Transcribe un talonario manual y asocia los vouchers creados a esta
+        recepcion. Body equivalente a /recoleccion/vouchers/transcribir-talonario/
+        pero ruta_id se infiere de voucher.ruta_recoleccion.
+        """
+        from apps.supply_chain.recoleccion.models import VoucherRecoleccion
+        from apps.supply_chain.recoleccion.serializers import (
+            TranscribirTalonarioSerializer,
+            VoucherRecoleccionSerializer,
+        )
+
+        voucher = self.get_object()
+
+        if voucher.estado == voucher.EstadoVoucher.LIQUIDADO:
+            raise ValidationError({
+                'detail': 'No se puede modificar una recepción ya liquidada.',
+            })
+        if voucher.modalidad_entrega != VoucherRecepcion.ModalidadEntrega.RECOLECCION:
+            raise ValidationError({
+                'detail': (
+                    'Solo recepciones de modalidad RECOLECCION admiten '
+                    'transcripción de talonario manual.'
+                ),
+            })
+        if not voucher.ruta_recoleccion_id:
+            raise ValidationError({
+                'detail': (
+                    'La recepción no tiene ruta asignada. Asigne la ruta '
+                    'antes de transcribir el talonario.'
+                ),
+            })
+
+        payload = dict(request.data)
+        payload['ruta_id'] = voucher.ruta_recoleccion_id
+
+        serializer = TranscribirTalonarioSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        operador_id = data.get('operador_id')
+        ruta_id = data['ruta_id']
+        fecha = data['fecha_recoleccion']
+        user = request.user
+
+        creados = []
+        with transaction.atomic():
+            for parada in data['paradas']:
+                vrc = VoucherRecoleccion(
+                    ruta_id=ruta_id,
+                    fecha_recoleccion=fecha,
+                    proveedor_id=parada['proveedor_id'],
+                    producto_id=parada['producto_id'],
+                    cantidad=parada['cantidad_kg'],
+                    operador_id=operador_id,
+                    origen_registro=VoucherRecoleccion.OrigenRegistro.TRANSCRIPCION_PLANTA,
+                    numero_talonario=parada.get('numero_talonario', ''),
+                    registrado_por_planta=user,
+                    estado=VoucherRecoleccion.Estado.COMPLETADO,
+                    notas=parada.get('notas', ''),
+                    created_by=user,
+                    updated_by=user,
+                )
+                vrc.full_clean()
+                vrc.save()
+                creados.append(vrc)
+
+            voucher.vouchers_recoleccion.add(*creados)
+            voucher.updated_by = user
+            voucher.save(update_fields=['updated_by', 'updated_at'])
+
+        out = VoucherRecoleccionSerializer(creados, many=True)
+        return Response(
+            {
+                'creados': out.data,
+                'total': len(creados),
+                'voucher_recepcion_id': voucher.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=True, methods=['post'], url_path='rechazar')
     def rechazar(self, request, pk=None):

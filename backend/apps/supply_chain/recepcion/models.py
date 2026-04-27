@@ -223,6 +223,40 @@ class VoucherRecepcion(TenantModel):
         """Suma de peso_neto_kg de todas las líneas."""
         return sum((l.peso_neto_kg for l in self.lineas.all()), Decimal('0.000'))
 
+    # ─── Cálculo de merma (H-SC-04) ────────────────────────────────────
+    @property
+    def peso_total_recolectado(self):
+        """Suma kg de vouchers de recolección asociados (modalidad RECOLECCION)."""
+        if not self.vouchers_recoleccion.exists():
+            return None
+        return sum(
+            (v.cantidad or Decimal('0')) for v in self.vouchers_recoleccion.all()
+        )
+
+    @property
+    def peso_total_recibido(self):
+        """Suma peso_neto de las líneas del voucher."""
+        return sum(
+            (l.peso_neto_kg or Decimal('0')) for l in self.lineas.all()
+        )
+
+    @property
+    def merma_kg(self):
+        """Diferencia entre kg recolectados y kg recibidos. None si no aplica."""
+        pt = self.peso_total_recolectado
+        if pt is None or pt == 0:
+            return None
+        return pt - self.peso_total_recibido
+
+    @property
+    def merma_porcentaje(self):
+        """% de merma sobre el total recolectado."""
+        pt = self.peso_total_recolectado
+        if pt is None or pt == 0:
+            return None
+        merma = self.merma_kg
+        return (merma / pt * Decimal('100')).quantize(Decimal('0.01'))
+
     # ─── Transiciones de estado ────────────────────────────────────────
     def aprobar(self):
         """

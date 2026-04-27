@@ -275,11 +275,14 @@ class TipoSede(TimestampedModel, SoftDeleteModel):
     )
 
     # H-SC-10: rol operacional (fusión con ex-tipo_unidad de SedeEmpresa).
+    # H-SC-05: PROVEEDOR_INTERNO marca sedes que abastecen a otras sedes
+    # como unidades propias y se sincronizan a un Proveedor en CT.
     ROL_OPERACIONAL_CHOICES = [
         ('OFICINA', 'Oficina Administrativa'),
         ('PLANTA', 'Planta'),
         ('CENTRO_ACOPIO', 'Centro de Acopio'),
         ('BODEGA', 'Bodega'),
+        ('PROVEEDOR_INTERNO', 'Proveedor interno (unidad propia que abastece a otras sedes)'),
         ('OTRO', 'Otro'),
     ]
     rol_operacional = models.CharField(

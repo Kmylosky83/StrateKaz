@@ -134,6 +134,18 @@ class ProveedorCreateUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def validate(self, attrs):
+        # H-SC-05: campos sincronizados desde Fundación son read-only en API.
+        if self.instance and getattr(self.instance, 'sede_empresa_origen_id', None):
+            protected = ['razon_social', 'nombre_comercial', 'direccion']
+            for field in protected:
+                if field in attrs and attrs[field] != getattr(self.instance, field):
+                    raise serializers.ValidationError({
+                        field: (
+                            'Este proveedor se sincroniza desde Fundación. '
+                            'Edite la sede para modificar este campo.'
+                        ),
+                    })
+
         # Unicidad de numero_documento entre no-eliminados.
         numero_doc = attrs.get('numero_documento')
         if numero_doc:

@@ -112,6 +112,12 @@ class Proveedor(TenantModel):
         NATURAL = 'natural', 'Persona Natural'
         EMPRESA = 'empresa', 'Empresa'
 
+    class FrecuenciaPago(models.TextChoices):
+        INMEDIATA = 'INMEDIATA', 'Inmediata (por entrega)'
+        SEMANAL = 'SEMANAL', 'Semanal'
+        QUINCENAL = 'QUINCENAL', 'Quincenal'
+        MENSUAL = 'MENSUAL', 'Mensual'
+
     # --- Identificación ---
     codigo_interno = models.CharField(
         max_length=50,
@@ -257,6 +263,13 @@ class Proveedor(TenantModel):
         related_name='proveedor_espejo',
         verbose_name='[DEPRECATED] Ruta de origen',
         help_text='DEPRECATED H-SC-RUTA-02. No usar en código nuevo. Drop pendiente.',
+    )
+
+    frecuencia_pago = models.CharField(
+        max_length=20,
+        choices=FrecuenciaPago.choices,
+        default=FrecuenciaPago.INMEDIATA,
+        help_text='Frecuencia con la que se acumulan entregas para liquidación.',
     )
 
     # --- Estado operativo ---

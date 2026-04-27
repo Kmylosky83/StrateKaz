@@ -1,10 +1,13 @@
 """
 Views para catalogos - supply_chain
 """
+import logging
 from datetime import timedelta
 from decimal import Decimal
 
 from django.apps import apps as django_apps
+
+logger = logging.getLogger(__name__)
 from django.db.models import Count, F, Max, Q, Sum
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -66,7 +69,7 @@ class RutaParadaViewSet(viewsets.ModelViewSet):
     serializer_class = RutaParadaSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['ruta', 'proveedor', 'frecuencia_pago', 'is_active']
+    filterset_fields = ['ruta', 'proveedor', 'is_active']
     search_fields = [
         'proveedor__nombre_comercial', 'proveedor__numero_documento',
         'ruta__codigo', 'ruta__nombre',
@@ -202,6 +205,7 @@ def _calcular_calidad_promedio_por_producto(almacen_id: int) -> dict[int, list[d
         )
         rows = list(qs)
     except Exception:
+        logger.warning('Error al calcular calidad promedio para almacen_id=%s', almacen_id, exc_info=True)
         return {}
 
     resultado: dict[int, list[dict]] = {}

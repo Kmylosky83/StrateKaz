@@ -10,7 +10,7 @@ from .models import (
 class RutaParadaInline(admin.TabularInline):
     model = RutaParada
     extra = 0
-    fields = ['orden', 'proveedor', 'frecuencia_pago', 'is_active']
+    fields = ['orden', 'proveedor', 'is_active']
     autocomplete_fields = ['proveedor']
     ordering = ['orden']
 
@@ -31,9 +31,9 @@ class RutaRecoleccionAdmin(admin.ModelAdmin):
 class RutaParadaAdmin(admin.ModelAdmin):
     """Admin para Paradas de Ruta (H-SC-RUTA-02)."""
     list_display = [
-        'ruta', 'orden', 'proveedor', 'frecuencia_pago', 'is_active', 'is_deleted',
+        'ruta', 'orden', 'proveedor', 'is_active', 'is_deleted',
     ]
-    list_filter = ['ruta', 'frecuencia_pago', 'is_active', 'is_deleted']
+    list_filter = ['ruta', 'is_active', 'is_deleted']
     search_fields = [
         'ruta__codigo', 'ruta__nombre',
         'proveedor__nombre_comercial', 'proveedor__numero_documento',

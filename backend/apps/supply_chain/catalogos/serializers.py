@@ -169,7 +169,7 @@ class RutaRecoleccionSerializer(serializers.ModelSerializer):
 
 
 class RutaParadaSerializer(serializers.ModelSerializer):
-    """Parada de Ruta — vínculo Ruta ↔ Proveedor con metadata operativa."""
+    """Parada de Ruta — vínculo Ruta ↔ Proveedor con orden sugerido."""
 
     proveedor_nombre = serializers.CharField(
         source='proveedor.nombre_comercial', read_only=True
@@ -182,9 +182,6 @@ class RutaParadaSerializer(serializers.ModelSerializer):
     )
     ruta_codigo = serializers.CharField(source='ruta.codigo', read_only=True)
     ruta_nombre = serializers.CharField(source='ruta.nombre', read_only=True)
-    frecuencia_pago_display = serializers.CharField(
-        source='get_frecuencia_pago_display', read_only=True
-    )
 
     class Meta:
         model = RutaParada
@@ -193,7 +190,6 @@ class RutaParadaSerializer(serializers.ModelSerializer):
             'ruta', 'ruta_codigo', 'ruta_nombre',
             'proveedor', 'proveedor_nombre', 'proveedor_documento', 'proveedor_codigo',
             'orden',
-            'frecuencia_pago', 'frecuencia_pago_display',
             'is_active', 'notas',
             'created_at', 'updated_at',
         ]

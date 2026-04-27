@@ -34,7 +34,9 @@ class RutaRecoleccion(TenantModel):
     """
 
     class ModoOperacion(models.TextChoices):
-        PASS_THROUGH = 'PASS_THROUGH', 'Pass-through (empresa paga directo)'
+        # Códigos en inglés se mantienen por estabilidad (migrados en 0007).
+        # Labels en español (es-co).
+        PASS_THROUGH = 'PASS_THROUGH', 'Directa (empresa paga al productor)'
         SEMI_AUTONOMA = 'SEMI_AUTONOMA', 'Semi-autónoma (ruta con caja propia)'
 
     codigo = models.CharField(
@@ -109,22 +111,17 @@ class RutaParada(TenantModel):
     Parada de una Ruta de Recolección — vínculo M2M Ruta ↔ Proveedor (H-SC-RUTA-02).
 
     Una RutaParada representa la asociación entre una ruta y un proveedor que
-    esa ruta visita. Lleva metadata operativa adicional:
-      - `orden`: secuencia de visita en el recorrido (0 = primera).
-      - `frecuencia_pago`: cada cuánto se le paga al productor de esta parada
-        (PASS_THROUGH: empresa paga; SEMI_AUTONOMA: la ruta paga). Cada parada
-        puede tener su propia frecuencia (un productor mayoristas puede ser
-        SEMANAL mientras otro pequeño es MENSUAL).
+    esa ruta visita. Lleva un `orden` sugerido (no restrictivo) en el recorrido.
+
+    NOTA (refactor 2026-04-26): el campo `frecuencia_pago` fue eliminado.
+    La frecuencia de pago es decisión del momento de la liquidación
+    (acumulativa, semanal/quincenal/mensual decidida por el liquidador), no
+    una camisa de fuerza por parada.
 
     Constraint: un proveedor solo puede ser parada de UNA ruta. Si dos rutas
     visitan al mismo productor, eso debería ser excepcional y manejarse aparte
     (re-asignación, no duplicación).
     """
-
-    class FrecuenciaPago(models.TextChoices):
-        SEMANAL = 'SEMANAL', 'Semanal'
-        QUINCENAL = 'QUINCENAL', 'Quincenal'
-        MENSUAL = 'MENSUAL', 'Mensual'
 
     ruta = models.ForeignKey(
         RutaRecoleccion,
@@ -141,14 +138,8 @@ class RutaParada(TenantModel):
     )
     orden = models.PositiveIntegerField(
         default=0,
-        verbose_name='Orden de visita',
-        help_text='Secuencia en el recorrido (0 = primera parada).',
-    )
-    frecuencia_pago = models.CharField(
-        max_length=20,
-        choices=FrecuenciaPago.choices,
-        default=FrecuenciaPago.MENSUAL,
-        verbose_name='Frecuencia de pago al productor',
+        verbose_name='Orden de visita (sugerido)',
+        help_text='Secuencia sugerida en el recorrido (0 = primera). No restrictivo.',
     )
     is_active = models.BooleanField(
         default=True,

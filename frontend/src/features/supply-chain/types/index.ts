@@ -170,7 +170,6 @@ export type {
   UpdateRutaParadaDTO,
   RutaParadasFilterParams,
 } from './ruta-paradas.types';
-export { FrecuenciaPago, FRECUENCIA_PAGO_LABELS } from './ruta-paradas.types';
 
 // ==================== PRECIO RUTA SEMI (H-SC-RUTA-02) ====================
 

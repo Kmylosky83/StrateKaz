@@ -136,7 +136,7 @@ export default function RutasRecoleccionTab() {
                         </Badge>
                       ) : (
                         <Badge variant="gray" size="sm">
-                          Pass-through
+                          Directa
                         </Badge>
                       )}
                     </td>

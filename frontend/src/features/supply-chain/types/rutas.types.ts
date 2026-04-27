@@ -24,7 +24,7 @@ export const ModoOperacion = {
 export type ModoOperacion = (typeof ModoOperacion)[keyof typeof ModoOperacion];
 
 export const MODO_OPERACION_LABELS: Record<ModoOperacion, string> = {
-  PASS_THROUGH: 'Pass-through (empresa paga directo)',
+  PASS_THROUGH: 'Directa (empresa paga al productor)',
   SEMI_AUTONOMA: 'Semi-autónoma (ruta con caja propia)',
 };
 

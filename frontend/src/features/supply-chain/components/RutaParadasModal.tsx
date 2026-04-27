@@ -1,11 +1,16 @@
 /**
  * Modal para gestionar las paradas de una Ruta de Recolección (H-SC-RUTA-02).
  *
- * Vincula M2M Ruta ↔ Proveedor con metadata operativa (orden, frecuencia_pago).
+ * Vincula M2M Ruta ↔ Proveedor con orden sugerido (no restrictivo).
  * Constraint: un proveedor solo puede ser parada de UNA ruta.
+ *
+ * Refactor 2026-04-26:
+ *   - Eliminado `frecuencia_pago` (decisión de liquidación, no de parada).
+ *   - Filtro: solo proveedores con modalidad logística "Compra en Punto"
+ *     (código COMPRA_PUNTO) — los que la ruta puede recoger.
  */
-import { useState } from 'react';
-import { Plus, Route, Trash2, Edit, Save, X, GripVertical } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Route, Trash2, Edit, Save, X, GripVertical, Info } from 'lucide-react';
 
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -14,21 +19,17 @@ import { Input } from '@/components/forms/Input';
 import { Card } from '@/components/common/Card';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useModalidadesLogistica } from '../hooks/usePrecios';
 import {
   useRutaParadasByRuta,
   useCreateRutaParada,
   useUpdateRutaParada,
   useDeleteRutaParada,
 } from '../hooks/useRutaParadas';
-import {
-  FrecuenciaPago,
-  FRECUENCIA_PAGO_LABELS,
-  type RutaParada,
-} from '../types/ruta-paradas.types';
+import type { RutaParada } from '../types/ruta-paradas.types';
 import type { RutaRecoleccion } from '../types/rutas.types';
 
 interface RutaParadasModalProps {
@@ -37,33 +38,47 @@ interface RutaParadasModalProps {
   onClose: () => void;
 }
 
+const MODALIDAD_RECOLECCION_CODE = 'COMPRA_PUNTO';
+
 export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasModalProps) {
   const { data: paradas = [], isLoading } = useRutaParadasByRuta(ruta.id);
   const { data: proveedores = [] } = useProveedores();
+  const { data: modalidades = [] } = useModalidadesLogistica();
   const createMutation = useCreateRutaParada();
   const updateMutation = useUpdateRutaParada();
   const deleteMutation = useDeleteRutaParada();
 
   // Estado del formulario "agregar parada"
   const [newProveedor, setNewProveedor] = useState<number | ''>('');
-  const [newFrecuencia, setNewFrecuencia] = useState<FrecuenciaPago>(FrecuenciaPago.MENSUAL);
 
   // Edición inline
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editFrecuencia, setEditFrecuencia] = useState<FrecuenciaPago>(FrecuenciaPago.MENSUAL);
   const [editOrden, setEditOrden] = useState<number>(0);
 
   // Eliminación
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Proveedores disponibles = los que NO son ya parada (de cualquier ruta)
-  const idsParada = new Set(paradas.map((p) => p.proveedor));
-  const proveedoresDisponibles = proveedores.filter((p) => !idsParada.has(p.id) && p.is_active);
+  // ID de la modalidad "Compra en Punto" (lookup por código, robusto a renames del nombre).
+  const modalidadCompraPuntoId = useMemo(() => {
+    const m = modalidades.find((x) => x.codigo === MODALIDAD_RECOLECCION_CODE);
+    return m?.id ?? null;
+  }, [modalidades]);
 
-  const frecuenciaOptions = Object.entries(FRECUENCIA_PAGO_LABELS).map(([v, l]) => ({
-    value: v,
-    label: l,
-  }));
+  // Proveedores disponibles para esta ruta:
+  //   1. Activos.
+  //   2. Con modalidad logística = "Compra en Punto" (la ruta los recoge).
+  //   3. NO sean ya parada de ESTA u otra ruta.
+  const idsParada = new Set(paradas.map((p) => p.proveedor));
+  const proveedoresDisponibles = proveedores.filter((p) => {
+    if (!p.is_active) return false;
+    if (idsParada.has(p.id)) return false;
+    // Si todavía no hay catálogo cargado, NO filtramos por modalidad (degrada
+    // grácil para no bloquear UI mientras carga el catálogo).
+    if (modalidadCompraPuntoId !== null && p.modalidad_logistica !== modalidadCompraPuntoId) {
+      return false;
+    }
+    return true;
+  });
 
   const handleAdd = async () => {
     if (!newProveedor) return;
@@ -72,10 +87,8 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
         ruta: ruta.id,
         proveedor: Number(newProveedor),
         orden: paradas.length,
-        frecuencia_pago: newFrecuencia,
       });
       setNewProveedor('');
-      setNewFrecuencia(FrecuenciaPago.MENSUAL);
     } catch {
       /* toast del hook */
     }
@@ -83,7 +96,6 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
 
   const startEdit = (parada: RutaParada) => {
     setEditingId(parada.id);
-    setEditFrecuencia(parada.frecuencia_pago);
     setEditOrden(parada.orden);
   };
 
@@ -95,7 +107,7 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
     try {
       await updateMutation.mutateAsync({
         id,
-        data: { frecuencia_pago: editFrecuencia, orden: editOrden },
+        data: { orden: editOrden },
       });
       setEditingId(null);
     } catch {
@@ -115,6 +127,11 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
     </Button>
   );
 
+  const helperFiltro =
+    proveedoresDisponibles.length === 0 && modalidadCompraPuntoId !== null
+      ? 'No hay proveedores disponibles. Solo se muestran los que tienen modalidad logística "Compra en Punto" y aún no son parada de otra ruta. Crea uno desde Catálogo de Productos → Proveedores.'
+      : undefined;
+
   return (
     <>
       <BaseModal
@@ -125,6 +142,15 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
         footer={footer}
       >
         <div className="space-y-5">
+          {/* Info: orden sugerido */}
+          <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-3 text-xs text-blue-700 dark:text-blue-300 flex gap-2">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              El orden es <strong>sugerido</strong>, no restrictivo. La frecuencia de pago se decide
+              al momento de liquidar (acumulativa), no aquí.
+            </div>
+          </div>
+
           {/* Sección: Agregar parada */}
           <Card variant="bordered" padding="md">
             <div className="flex items-center gap-2 mb-3">
@@ -134,9 +160,9 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
               </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-              <div className="md:col-span-7">
+              <div className="md:col-span-9">
                 <Select
-                  label="Proveedor"
+                  label="Proveedor (con modalidad Compra en Punto)"
                   value={newProveedor}
                   onChange={(e) => setNewProveedor(e.target.value ? Number(e.target.value) : '')}
                   options={[
@@ -146,22 +172,10 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                       label: `${p.codigo_interno} — ${p.nombre_comercial}`,
                     })),
                   ]}
-                  helperText={
-                    proveedoresDisponibles.length === 0
-                      ? 'Todos los proveedores activos ya están asignados a una ruta. Crea uno nuevo en Catálogo de Productos.'
-                      : undefined
-                  }
+                  helperText={helperFiltro}
                 />
               </div>
               <div className="md:col-span-3">
-                <Select
-                  label="Frecuencia de pago"
-                  value={newFrecuencia}
-                  onChange={(e) => setNewFrecuencia(e.target.value as FrecuenciaPago)}
-                  options={frecuenciaOptions}
-                />
-              </div>
-              <div className="md:col-span-2">
                 <Button
                   type="button"
                   variant="primary"
@@ -202,7 +216,7 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                   <table className="w-full">
                     <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">
                           Orden
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -210,9 +224,6 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                         </th>
                         <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Documento
-                        </th>
-                        <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                          Frecuencia
                         </th>
                         <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                           Acciones
@@ -234,7 +245,7 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                                   value={editOrden}
                                   onChange={(e) => setEditOrden(Number(e.target.value))}
                                   min={0}
-                                  className="w-16"
+                                  className="w-20"
                                 />
                               ) : (
                                 <div className="flex items-center gap-1 text-sm font-mono text-gray-700 dark:text-gray-300">
@@ -251,22 +262,6 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                             </td>
                             <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">
                               {parada.proveedor_documento}
-                            </td>
-                            <td className="px-4 py-2 text-center">
-                              {isEditing ? (
-                                <Select
-                                  value={editFrecuencia}
-                                  onChange={(e) =>
-                                    setEditFrecuencia(e.target.value as FrecuenciaPago)
-                                  }
-                                  options={frecuenciaOptions}
-                                />
-                              ) : (
-                                <Badge variant="default" size="sm">
-                                  {parada.frecuencia_pago_display ??
-                                    FRECUENCIA_PAGO_LABELS[parada.frecuencia_pago]}
-                                </Badge>
-                              )}
                             </td>
                             <td className="px-4 py-2 text-right">
                               <div className="flex items-center justify-end gap-1">
@@ -295,7 +290,7 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      title="Editar"
+                                      title="Editar orden"
                                       onClick={() => startEdit(parada)}
                                     >
                                       <Edit className="w-4 h-4" />

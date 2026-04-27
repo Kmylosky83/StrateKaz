@@ -137,7 +137,6 @@ class Command(BaseCommand):
             PlantillaDocumento,
             TipoDocumento,
         )
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
         from apps.core.models import User
 
         # 1. Verificar TipoDocumento POL
@@ -149,15 +148,7 @@ class Command(BaseCommand):
             ))
             return
 
-        # 2. EmpresaConfig: solo se usa para el empresa_id (FK requerida)
-        empresa = EmpresaConfig.objects.first()
-        if not empresa:
-            self.stderr.write(self.style.ERROR(
-                'No hay EmpresaConfig. Ejecute el seed de Fundación primero.'
-            ))
-            return
-
-        # 3. Buscar usuario admin como creador
+        # 2. Buscar usuario admin como creador
         creador = User.objects.filter(
             is_superuser=True, is_active=True,
         ).first() or User.objects.filter(is_active=True).first()
@@ -205,7 +196,6 @@ class Command(BaseCommand):
             estado='ACTIVA',
             es_por_defecto=True,
             firmantes_por_defecto=[],
-            empresa_id=empresa.id,
             created_by=creador,
         )
 

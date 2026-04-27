@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from apps.core.mixins import ExportMixin
 from apps.core.base_models.mixins import get_tenant_empresa
 from apps.audit_system.services import AuditSystemService
-from .mixins import verificar_acceso_documento
+from .mixins import check_acceso_documento, verificar_acceso_documento
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
@@ -488,6 +488,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         Las firmas están en workflow_engine.firma_digital via GenericForeignKey.
         """
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
         firmas = documento.get_firmas_digitales()
         return Response(FirmaDigitalSerializer(firmas, many=True).data)
@@ -528,6 +529,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         """Retorna estado de firmas digitales del documento."""
         from .services import DocumentoService
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         estado = DocumentoService.obtener_estado_firmas(documento)
         return Response(estado)
 
@@ -769,6 +771,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def incrementar_descarga(self, request, pk=None):
         """Incrementa contador de descargas"""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         documento.numero_descargas += 1
         documento.save(update_fields=['numero_descargas'])
         return Response({'descargas': documento.numero_descargas})
@@ -777,6 +780,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def incrementar_impresion(self, request, pk=None):
         """Incrementa contador de impresiones"""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         documento.numero_impresiones += 1
         documento.save(update_fields=['numero_impresiones'])
         return Response({'impresiones': documento.numero_impresiones})
@@ -1339,6 +1343,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def reprocesar_ocr(self, request, pk=None):
         """Re-dispara OCR para un documento (útil si falló antes)."""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
 
         archivo = documento.archivo_original or documento.archivo_pdf
         if not archivo:
@@ -1452,6 +1457,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def sellar_pdf(self, request, pk=None):
         """Inicia sellado PDF con firma digital X.509 via Celery."""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
 
         if documento.estado != 'PUBLICADO':
             return Response(
@@ -1509,6 +1515,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     def exportar_drive(self, request, pk=None):
         """Exporta un documento individual a Google Drive."""
         documento = self.get_object()
+        verificar_acceso_documento(request.user, documento)
         folder_id = request.data.get('folder_id')
 
         from django.apps import apps as django_apps
@@ -1786,21 +1793,35 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='mis-pendientes')
     def mis_pendientes(self, request):
-        """Documentos pendientes de lectura del usuario autenticado."""
+        """
+        Documentos pendientes de lectura del usuario autenticado.
+
+        Filtra defensivamente: si una AceptacionDocumental quedó asignada a un
+        documento CONFIDENCIAL/RESTRINGIDO al cual el usuario ya no tiene
+        acceso (por reasignación de cargos_distribucion, p. ej.), no se incluye
+        en la lista. Esto evita que la auto-distribución legacy filtre
+        documentos sensibles a usuarios que no deberían verlos.
+        """
         from .models import AceptacionDocumental
         from .serializers import AceptacionDocumentalListSerializer
 
         qs = AceptacionDocumental.objects.select_related(
             'documento', 'asignado_por'
+        ).prefetch_related(
+            'documento__usuarios_autorizados',
+            'documento__cargos_distribucion',
         ).filter(
             usuario=request.user,
             estado__in=['PENDIENTE', 'EN_PROGRESO'],
             invalidada=False,
         ).order_by('fecha_limite', '-fecha_asignacion')
 
+        # Filtrar fuera asignaciones a docs confidenciales sin acceso vigente (H-GD-C3).
+        visibles = [a for a in qs if check_acceso_documento(request.user, a.documento)]
+
         return Response(
             AceptacionDocumentalListSerializer(
-                qs, many=True, context={'request': request}
+                visibles, many=True, context={'request': request}
             ).data
         )
 

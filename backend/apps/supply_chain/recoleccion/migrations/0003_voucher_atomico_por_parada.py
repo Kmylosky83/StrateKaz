@@ -31,6 +31,12 @@ def reverse_noop(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    # PostgreSQL: no podemos correr DELETE de rows con FK + ALTER TABLE en la
+    # misma transacción atómica (genera "pending trigger events" → falla en
+    # tenants con datos). Marcamos atomic=False para que cada operación corra
+    # en su propia transacción (DELETE commitea, luego ALTER corre limpio).
+    atomic = False
+
     dependencies = [
         # Encadenado después del rename de índices auto-generado (commit 888b9b56)
         # para evitar conflicto de leaf nodes en el grafo de migraciones.

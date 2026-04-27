@@ -3,7 +3,12 @@ Serializers para Liquidaciones — Supply Chain (H-SC-12 header+líneas)
 """
 from rest_framework import serializers
 
-from .models import Liquidacion, LiquidacionLinea, PagoLiquidacion
+from .models import (
+    Liquidacion,
+    LiquidacionLinea,
+    LiquidacionPeriodica,
+    PagoLiquidacion,
+)
 
 
 class LiquidacionLineaSerializer(serializers.ModelSerializer):
@@ -166,4 +171,32 @@ class PagoLiquidacionSerializer(serializers.ModelSerializer):
             'registrado_por',
             'created_at',
             'updated_at',
+        ]
+
+
+class LiquidacionPeriodicaSerializer(serializers.ModelSerializer):
+    """Serializer del agregado periodico H-SC-06."""
+
+    proveedor_nombre = serializers.CharField(
+        source="proveedor.razon_social", read_only=True
+    )
+    estado_display = serializers.CharField(
+        source="get_estado_display", read_only=True
+    )
+    liquidaciones_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Liquidacion.objects.all(),
+        source="liquidaciones",
+        required=False,
+    )
+
+    class Meta:
+        model = LiquidacionPeriodica
+        fields = "__all__"
+        read_only_fields = [
+            "subtotal",
+            "ajuste_calidad_total",
+            "total",
+            "fecha_aprobacion",
+            "aprobado_por",
         ]

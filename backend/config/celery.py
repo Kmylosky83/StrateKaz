@@ -437,6 +437,17 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=8, minute=30),
         'options': {'queue': 'notifications'},
     },
+
+    # ═══════════════════════════════════════════════════
+    # SUPPLY CHAIN - LIQUIDACIONES PERIÓDICAS (H-SC-06)
+    # ═══════════════════════════════════════════════════
+
+    # Generar borradores LiquidacionPeriodica - Lunes 06:00 AM
+    'supply_chain_liquidaciones_periodicas': {
+        'task': 'supply_chain.generar_liquidaciones_periodicas_borrador',
+        'schedule': crontab(hour=6, minute=0, day_of_week=1),
+        'options': {'queue': 'default'},
+    },
 }
 
 # Configuración de colas (routing)

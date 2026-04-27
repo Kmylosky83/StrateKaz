@@ -4,16 +4,24 @@ ViewSets para Liquidaciones — Supply Chain (H-SC-12 header+líneas)
 from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import EstadoLiquidacion, Liquidacion, LiquidacionLinea, PagoLiquidacion
+from .models import (
+    EstadoLiquidacion,
+    Liquidacion,
+    LiquidacionLinea,
+    LiquidacionPeriodica,
+    PagoLiquidacion,
+)
 from .serializers import (
     LiquidacionLineaSerializer,
     LiquidacionListSerializer,
+    LiquidacionPeriodicaSerializer,
     LiquidacionSerializer,
     PagoLiquidacionSerializer,
 )
@@ -167,3 +175,68 @@ class PagoLiquidacionViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
+
+
+class LiquidacionPeriodicaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet del agregado periódico H-SC-06.
+
+    Endpoints:
+    - GET/POST /liquidaciones-periodicas/
+    - GET/PATCH/DELETE /liquidaciones-periodicas/<pk>/
+    - POST /liquidaciones-periodicas/<pk>/confirmar/
+    - POST /liquidaciones-periodicas/<pk>/marcar_pagada/
+    """
+
+    queryset = (
+        LiquidacionPeriodica.objects.select_related('proveedor', 'aprobado_por')
+        .prefetch_related('liquidaciones')
+        .all()
+    )
+    serializer_class = LiquidacionPeriodicaSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['estado', 'proveedor', 'frecuencia']
+    ordering_fields = ['periodo_fin', 'created_at', 'total']
+    ordering = ['-periodo_fin']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def confirmar(self, request, pk=None):
+        """BORRADOR -> CONFIRMADA. Snapshot del aprobador + timestamp."""
+        instance = self.get_object()
+        if instance.estado != LiquidacionPeriodica.Estado.BORRADOR:
+            return Response(
+                {'error': 'Solo se confirma en estado BORRADOR'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        instance.estado = LiquidacionPeriodica.Estado.CONFIRMADA
+        instance.aprobado_por = request.user
+        instance.fecha_aprobacion = timezone.now()
+        instance.save(
+            update_fields=[
+                'estado',
+                'aprobado_por',
+                'fecha_aprobacion',
+                'updated_at',
+            ]
+        )
+        return Response(LiquidacionPeriodicaSerializer(instance).data)
+
+    @action(detail=True, methods=['post'])
+    def marcar_pagada(self, request, pk=None):
+        """CONFIRMADA -> PAGADA. Cierre del ciclo."""
+        instance = self.get_object()
+        if instance.estado != LiquidacionPeriodica.Estado.CONFIRMADA:
+            return Response(
+                {'error': 'Solo se marca pagada si está CONFIRMADA'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        instance.estado = LiquidacionPeriodica.Estado.PAGADA
+        instance.save(update_fields=['estado', 'updated_at'])
+        return Response(LiquidacionPeriodicaSerializer(instance).data)

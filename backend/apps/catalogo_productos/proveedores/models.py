@@ -224,6 +224,24 @@ class Proveedor(TenantModel):
         verbose_name='Nombre Parte Interesada (cache)',
     )
 
+    # --- Vínculo con SedeEmpresa origen (C1 — Fundación) — H-SC-05 ---
+    # Si está seteado, este proveedor representa una unidad interna (sede
+    # con tipo_sede.rol_operacional=PROVEEDOR_INTERNO). Los datos básicos
+    # (razón social, dirección) se sincronizan desde la sede vía signal.
+    sede_empresa_origen = models.ForeignKey(
+        'configuracion.SedeEmpresa',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='proveedores_internos',
+        verbose_name='Sede empresa origen',
+        help_text=(
+            'Si está seteado, este proveedor representa una unidad interna '
+            '(sede con tipo_sede.rol_operacional=PROVEEDOR_INTERNO). Datos '
+            'básicos sincronizados desde la sede.'
+        ),
+    )
+
     # --- DEPRECATED (H-SC-RUTA-02 — refactor 2026-04-25) ---
     # Vínculo legacy al concepto de "Proveedor espejo" eliminado: la Ruta
     # NUNCA es un Proveedor. La asociación entre Ruta y Proveedores reales

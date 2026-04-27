@@ -383,3 +383,104 @@ class PagoLiquidacion(TenantModel):
             if self.liquidacion.estado != EstadoLiquidacion.PAGADA:
                 self.liquidacion.estado = EstadoLiquidacion.PAGADA
                 self.liquidacion.save(update_fields=['estado', 'updated_at'])
+
+
+# ==============================================================================
+# H-SC-06 — Liquidación periódica por proveedor
+# ==============================================================================
+
+
+class LiquidacionPeriodica(TenantModel):
+    """Agrupa liquidaciones individuales por período + proveedor.
+
+    Caso de uso (H-SC-06): proveedores con `frecuencia_pago` SEMANAL,
+    QUINCENAL o MENSUAL acumulan N Liquidaciones APROBADAS del período.
+    Una task Celery (lunes 06:00) crea/actualiza el agregado en estado
+    BORRADOR para revisión humana antes de pagar.
+
+    Estados:
+    - BORRADOR: agregado generado, ajustable.
+    - CONFIRMADA: aprobado por usuario, listo para pagar.
+    - PAGADA: pago registrado.
+    """
+
+    class Estado(models.TextChoices):
+        BORRADOR = 'BORRADOR', 'Borrador'
+        CONFIRMADA = 'CONFIRMADA', 'Confirmada'
+        PAGADA = 'PAGADA', 'Pagada'
+
+    proveedor = models.ForeignKey(
+        'catalogo_productos.Proveedor',
+        on_delete=models.PROTECT,
+        related_name='liquidaciones_periodicas',
+    )
+    periodo_inicio = models.DateField()
+    periodo_fin = models.DateField()
+    frecuencia = models.CharField(
+        max_length=20,
+        help_text='Snapshot de Proveedor.frecuencia_pago al generar.',
+    )
+    subtotal = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal('0.00')
+    )
+    ajuste_calidad_total = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal('0.00')
+    )
+    total = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal('0.00')
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.BORRADOR,
+        db_index=True,
+    )
+    aprobado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='liquidaciones_periodicas_aprobadas',
+    )
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    liquidaciones = models.ManyToManyField(
+        'Liquidacion',
+        related_name='periodicas',
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'Liquidación periódica'
+        verbose_name_plural = 'Liquidaciones periódicas'
+        ordering = ['-periodo_fin']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['proveedor', 'periodo_inicio', 'periodo_fin'],
+                name='uq_liq_periodica_proveedor_periodo',
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f'LIP-{self.id}: {self.proveedor} '
+            f'({self.periodo_inicio} → {self.periodo_fin})'
+        )
+
+    def recalcular_totales(self):
+        """Recalcula subtotal/ajuste/total desde las liquidaciones M2M."""
+        agg = self.liquidaciones.aggregate(
+            sub=Sum('subtotal'),
+            ajuste=Sum('ajuste_calidad_total'),
+            total=Sum('total'),
+        )
+        self.subtotal = agg['sub'] or Decimal('0.00')
+        self.ajuste_calidad_total = agg['ajuste'] or Decimal('0.00')
+        self.total = agg['total'] or Decimal('0.00')
+        self.save(
+            update_fields=[
+                'subtotal',
+                'ajuste_calidad_total',
+                'total',
+                'updated_at',
+            ]
+        )

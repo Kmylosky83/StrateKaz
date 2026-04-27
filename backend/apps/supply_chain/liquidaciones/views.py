@@ -92,7 +92,14 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
-        """Aprobar liquidación (BORRADOR → APROBADA)."""
+        """
+        Aprobar liquidación (BORRADOR → APROBADA).
+
+        H-SC-RUTA-02 D-2: si la recepción de esta liquidación viene de un
+        voucher de recolección en estado BORRADOR, se BLOQUEA. El voucher
+        de recolección debe completarse antes (registro de TODOS los PVs
+        recolectados) para garantizar la trazabilidad del periodo.
+        """
         liquidacion = self.get_object()
         if liquidacion.estado != EstadoLiquidacion.BORRADOR:
             return Response(
@@ -104,6 +111,28 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # D-2: validar voucher de recolección (si la recepción viene de ruta)
+        voucher = liquidacion.voucher
+        recoleccion = getattr(voucher, 'voucher_recoleccion_origen', None)
+        if recoleccion is not None:
+            from apps.supply_chain.recoleccion.models import VoucherRecoleccion
+            if recoleccion.estado == VoucherRecoleccion.Estado.BORRADOR:
+                return Response(
+                    {
+                        'detail': (
+                            f'No se puede aprobar la liquidación: el voucher de '
+                            f'recolección {recoleccion.codigo} aún está en BORRADOR. '
+                            f'Complete el registro de todos los proveedores '
+                            f'recolectados (ir a Supply Chain → Recolección en Ruta) '
+                            f'antes de liquidar.'
+                        ),
+                        'voucher_recoleccion_id': recoleccion.id,
+                        'voucher_recoleccion_codigo': recoleccion.codigo,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         liquidacion.aprobar(request.user)
         return Response(LiquidacionSerializer(liquidacion).data)
 

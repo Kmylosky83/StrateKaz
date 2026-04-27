@@ -65,20 +65,21 @@ class PDFSealingService:
             ValueError: si falta archivo PDF Y contenido HTML.
             RuntimeError: si falla el proceso de firma.
         """
-        from pyhanko.sign import signers, fields as sig_fields
-        from pyhanko.sign.general import load_cert_list_from_pemder
-        from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
-        from pyhanko_certvalidator import CertificateValidator
-        from cryptography.hazmat.primitives.serialization import load_pem_private_key
-        from cryptography.x509 import load_pem_x509_certificate
-
         cert_path, key_path = cls._get_cert_paths()
 
         if not os.path.exists(cert_path) or not os.path.exists(key_path):
             # Fallback graceful (H-GD-A3): NO crashear el flujo de
             # publicación. El documento queda PUBLICADO; sólo el
             # sellado se marca como ERROR para reintento posterior.
+            # Imports diferidos para permitir el fallback aun si pyhanko
+            # no está instalado o cambió su API.
             return cls._fallback_cert_missing(documento)
+
+        # Imports tardíos: solo se cargan si hay cert (path feliz).
+        from pyhanko.sign import signers, fields as sig_fields
+        from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        from cryptography.x509 import load_pem_x509_certificate
 
         # Obtener PDF base junto con la fuente (auditoría H-GD-A1)
         pdf_buffer, fuente_pdf = cls._obtener_pdf_base(documento)

@@ -26,18 +26,21 @@ def reverse_noop(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("sc_recepcion", "0008_proveedor_nullable_recoleccion"),
-        ("sc_recoleccion", "0002_voucher_atomico_por_parada"),
+        # Encadenado después del proveedor_nullable (que ya depende del rename).
+        ("sc_recepcion", "0009_proveedor_nullable_recoleccion"),
+        # El refactor del voucher de recolección (atómico) es prerequisito
+        # para soportar el M2M (1 parada = 1 voucher).
+        ("sc_recoleccion", "0003_voucher_atomico_por_parada"),
     ]
 
     operations = [
         # 1. Limpiar FK legacy (defensivo)
         migrations.RunPython(borrar_vinculos_legacy, reverse_code=reverse_noop),
 
-        # 2. Drop FK simple (índice asociado se va con él)
+        # 2. Drop FK simple (índice ya fue renombrado por 0008_rename_*)
         migrations.RemoveIndex(
             model_name="voucherrecepcion",
-            name="sc_vr_voucher_rec_orig_idx",
+            name="supply_chai_voucher_a8d8dc_idx",
         ),
         migrations.RemoveField(
             model_name="voucherrecepcion",

@@ -32,7 +32,9 @@ def reverse_noop(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("sc_recoleccion", "0001_initial"),
+        # Encadenado después del rename de índices auto-generado (commit 888b9b56)
+        # para evitar conflicto de leaf nodes en el grafo de migraciones.
+        ("sc_recoleccion", "0002_rename_sc_vrc_lin_v_p_idx_supply_chai_voucher_b10258_idx_and_more"),
         ("sc_recepcion", "0007_voucher_recoleccion_origen"),
         ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
     ]

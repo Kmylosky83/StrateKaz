@@ -29,6 +29,7 @@ import {
   Route,
   Scale,
   ShoppingCart,
+  TrendingDown,
   Truck,
   Warehouse,
 } from 'lucide-react';
@@ -36,7 +37,6 @@ import {
   PreciosTab,
   ComprasTab,
   AlmacenamientoTab,
-  AlmacenesTab,
   CatalogosTab,
   RecepcionTab,
   LiquidacionesTab,
@@ -44,6 +44,7 @@ import {
   ParametrosCalidadTab,
   InventarioTab,
   VoucherRecoleccionTab,
+  MermaDashboard,
 } from '../components';
 import { useResumenGeneralSC } from '../hooks/useInventario';
 
@@ -86,12 +87,6 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     icon: <Package className="w-5 h-5" />,
     component: AlmacenamientoTab,
   },
-  almacenes: {
-    title: 'Almacenes',
-    description: 'Gestión CRUD de almacenes físicos del tenant (silos, bodegas, tanques, pallets)',
-    icon: <Warehouse className="w-5 h-5" />,
-    component: AlmacenesTab,
-  },
   compras: {
     title: 'Compras',
     description: 'Requisiciones, cotizaciones, órdenes de compra y contratos',
@@ -121,6 +116,12 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description: 'Dashboard de almacenes, ocupación, kardex y alertas',
     icon: <Warehouse className="w-5 h-5" />,
     component: InventarioTab,
+  },
+  'merma-dashboard': {
+    title: 'Dashboard Merma',
+    description: 'Comparativa recolectado vs recibido por voucher (H-SC-RUTA-04)',
+    icon: <TrendingDown className="w-5 h-5" />,
+    component: MermaDashboard,
   },
 };
 

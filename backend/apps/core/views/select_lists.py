@@ -416,8 +416,19 @@ def select_unidades_negocio(request):
     if not SedeEmpresa:
         return Response([])
 
-    # H-SC-10.2: es_unidad_negocio eliminado — filtro se deriva de rol_operacional.
-    # Son UNeg: PLANTA, CENTRO_ACOPIO, BODEGA (oficinas quedan excluidas).
+    # H-SC-10.2: `es_unidad_negocio` eliminado — el filtro se deriva de
+    # `tipo_sede.rol_operacional`. Son UNeg los roles operacionales propios:
+    # PLANTA, CENTRO_ACOPIO, BODEGA (oficinas quedan excluidas).
+    #
+    # NOTA (H-SC-05): el rol PROVEEDOR_INTERNO se EXCLUYE intencionalmente
+    # de este endpoint. Una sede `PROVEEDOR_INTERNO` representa una unidad
+    # de negocio que actúa como proveedor del tenant (su materia prima
+    # entra al inventario vía VoucherRecepcion), pero NO es destino de
+    # recepción ni centro de costo de operación. Al exponerla aquí
+    # aparecería como UNeg de recepción y permitiría seleccionarla como
+    # destino de un voucher, lo que rompería la conciliación contable.
+    # Si en el futuro se requiere un dropdown de "sedes que actúan como
+    # proveedor interno", crear un endpoint dedicado (`select_proveedores_internos`).
     qs = SedeEmpresa.objects.filter(
         is_active=True,
         deleted_at__isnull=True,

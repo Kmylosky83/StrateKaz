@@ -1004,9 +1004,15 @@ class Command(BaseCommand):
                     {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'route': 'almacenamiento', 'orden': 6, 'sections': [
                         {'code': 'inventario', 'name': 'Inventario', 'icon': 'Warehouse', 'orden': 1, 'description': 'Control de inventario y almacén'},
                     ]},
+                    # H-SC-E2E-01: tab dedicado a la gestión maestra de Almacenes
+                    # (CRUD de bodegas físicas) separado de la operación diaria
+                    # (almacenamiento → inventario / movimientos / kardex).
+                    {'code': 'almacenes', 'name': 'Almacenes', 'icon': 'Warehouse', 'route': 'almacenes', 'orden': 7, 'sections': [
+                        {'code': 'almacenes_sc', 'name': 'Almacenes', 'icon': 'Warehouse', 'orden': 1, 'description': 'Gestión maestra de almacenes/bodegas físicas (capacidad, ubicación, permite_recepcion).'},
+                    ]},
                     # Tab Evaluaciones eliminado 2026-04-21 — modelos EvaluacionProveedor
                     # y CriterioEvaluacion eliminados (scope Admin/Compras futuro).
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 7, 'sections': [
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 8, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
                     ]},
                 ]

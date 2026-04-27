@@ -22,11 +22,21 @@ logger = logging.getLogger('gestion_documental')
 def auto_asignar_lecturas_obligatorias(sender, instance, created, **kwargs):
     """
     Cuando se crea un User nuevo con cargo, asigna automáticamente la lectura
-    de todos los documentos PUBLICADOS que tengan lectura_obligatoria=True.
+    de los documentos PUBLICADOS que aplican al usuario según su cargo.
 
-    Esto garantiza que la Política de Habeas Data (y cualquier otra política
-    de lectura obligatoria) se distribuya a cada nuevo usuario sin intervención
-    manual.
+    Reglas de audiencia (alineadas con `_distribuir_lectura_obligatoria`):
+      A. aplica_a_todos=True
+         → asigna sin importar el cargo del usuario.
+      B. cargos_distribucion contiene el cargo del usuario
+         → asigna solo si el documento explicita el cargo del usuario.
+      C. lectura_obligatoria=True SIN aplica_a_todos NI cargos_distribucion
+         → política universal (p. ej. Habeas Data): asigna a cualquier usuario
+           con cargo.
+
+    Un documento con lectura_obligatoria=True que ADEMÁS define
+    cargos_distribucion solo se asigna a usuarios cuyo cargo esté en esa
+    lista — no a todos. Esto cierra H-GD-M4: nuevos usuarios solo reciben
+    lecturas dirigidas a su cargo, respetando el filtro de audiencia.
 
     Evidencia legal: crea AceptacionDocumental con estado PENDIENTE,
     registrando fecha de asignación y documento versionado.
@@ -50,15 +60,24 @@ def auto_asignar_lecturas_obligatorias(sender, instance, created, **kwargs):
         AceptacionDocumental = django_apps.get_model('gestion_documental', 'AceptacionDocumental')
 
         # Documentos publicados que aplican al nuevo usuario:
-        #   1. lectura_obligatoria=True — aplica a cualquier nuevo usuario
-        #   2. aplica_a_todos=True      — aplica a cualquier nuevo usuario
-        #   3. cargos_distribucion contiene el cargo del usuario
+        #   A. aplica_a_todos=True               → cualquier usuario.
+        #   B. cargos_distribucion incluye su cargo → asignación dirigida.
+        #   C. lectura_obligatoria=True SIN A ni cargos_distribucion definidos
+        #      → política universal heredada (Habeas Data, etc.).
+        # OJO: lectura_obligatoria=True + cargos_distribucion poblado NO
+        # entra al usuario salvo que su cargo esté en la lista (B). Antes
+        # caía en la condición Q(lectura_obligatoria=True) y se asignaba
+        # incorrectamente a TODOS los usuarios nuevos.
         documentos_obligatorios = Documento.objects.filter(
             estado='PUBLICADO',
         ).filter(
-            Q(lectura_obligatoria=True)
-            | Q(aplica_a_todos=True)
+            Q(aplica_a_todos=True)
             | Q(cargos_distribucion=user.cargo)
+            | Q(
+                lectura_obligatoria=True,
+                aplica_a_todos=False,
+                cargos_distribucion__isnull=True,
+            )
         ).distinct()
 
         if not documentos_obligatorios.exists():

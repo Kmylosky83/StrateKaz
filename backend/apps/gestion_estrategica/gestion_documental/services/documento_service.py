@@ -1019,19 +1019,39 @@ class DocumentoService:
     def _distribuir_lectura_obligatoria(cls, documento, publicado_por):
         """
         Al publicar un documento con lectura_obligatoria=True, crea
-        AceptacionDocumental PENDIENTE para TODOS los usuarios activos
-        con cargo (empleados). Notifica a cada uno.
+        AceptacionDocumental PENDIENTE según la audiencia configurada:
+
+          1. Si aplica_a_todos=True             → todos los usuarios con cargo.
+          2. Si cargos_distribucion.exists()    → solo usuarios con esos cargos.
+          3. En cualquier otro caso (solo lectura_obligatoria=True sin filtros)
+             → todos los usuarios con cargo (comportamiento heredado para
+             políticas universales como Habeas Data).
 
         Idempotente: usa get_or_create para no duplicar si ya existe.
+        Notifica a cada usuario al que se le crea una nueva asignación.
         """
         from ..models import AceptacionDocumental
 
         User = apps.get_model('core', 'User')
-        usuarios = User.objects.filter(
+        base_qs = User.objects.filter(
             is_active=True,
             deleted_at__isnull=True,
             cargo__isnull=False,
         ).exclude(id=publicado_por.id if publicado_por else 0)
+
+        cargos_dist_ids = list(
+            documento.cargos_distribucion.values_list('id', flat=True)
+        )
+
+        if documento.aplica_a_todos:
+            # Audiencia explícita: todos los usuarios con cargo.
+            usuarios = base_qs
+        elif cargos_dist_ids:
+            # Audiencia restringida por cargos.
+            usuarios = base_qs.filter(cargo_id__in=cargos_dist_ids)
+        else:
+            # Sin filtros adicionales: política universal — todos con cargo.
+            usuarios = base_qs
 
         creados = 0
         for user in usuarios.iterator():

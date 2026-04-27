@@ -53,6 +53,15 @@ export const voucherRecoleccionApi = {
     const response = await apiClient.post(`${BASE_VOUCHERS}/${id}/completar/`);
     return response.data;
   },
+
+  /** HTML del voucher 58mm (entregar al productor en ruta). Sin precios. */
+  getPrint58mm: async (id: number): Promise<string> => {
+    const response = await apiClient.get(`${BASE_VOUCHERS}/${id}/print-58mm/`, {
+      responseType: 'text',
+      headers: { Accept: 'text/html' },
+    });
+    return response.data as string;
+  },
 };
 
 export const lineaVoucherRecoleccionApi = {

@@ -5,8 +5,9 @@
  * tiene N líneas (1 por parada visitada), sin precios ni firmas.
  */
 import { useState } from 'react';
-import { Edit, Eye, Plus, Trash2, Truck } from 'lucide-react';
+import { Edit, Eye, Plus, Printer, Trash2, Truck } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -23,6 +24,7 @@ import {
   useVouchersRecoleccion,
   useDeleteVoucherRecoleccion,
 } from '../hooks/useVoucherRecoleccion';
+import { voucherRecoleccionApi } from '../api/voucher-recoleccion';
 import {
   EstadoVoucherRecoleccion,
   ESTADO_VOUCHER_RECOLECCION_LABELS,
@@ -54,6 +56,28 @@ export default function VoucherRecoleccionTab() {
       await deleteMut.mutateAsync(deleteId);
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  /**
+   * Imprimir voucher de recolección 58mm — descarga HTML con JWT (apiClient)
+   * y abre popup imprimible. window.open directo no funciona porque el
+   * backend exige Bearer token (mismo patrón que voucher de recepción).
+   */
+  const handlePrint58mm = async (id: number) => {
+    try {
+      const html = await voucherRecoleccionApi.getPrint58mm(id);
+      const blob = new Blob([html], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank', 'width=400,height=700');
+      if (!win) {
+        URL.revokeObjectURL(blobUrl);
+        toast.error('Permite popups para imprimir el voucher');
+        return;
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch {
+      toast.error('No se pudo generar el voucher 58mm');
     }
   };
 
@@ -165,6 +189,14 @@ export default function VoucherRecoleccionTab() {
                             ) : (
                               <Eye className="w-4 h-4" />
                             )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Imprimir 58mm"
+                            onClick={() => handlePrint58mm(v.id)}
+                          >
+                            <Printer className="w-4 h-4 text-blue-600" />
                           </Button>
                           {canDelete && isBorrador && (
                             <Button

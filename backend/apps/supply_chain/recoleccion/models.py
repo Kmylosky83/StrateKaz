@@ -54,9 +54,8 @@ class VoucherRecoleccion(TenantModel):
     ruta = models.ForeignKey(
         'catalogos.RutaRecoleccion',
         on_delete=models.PROTECT,
-        # `vouchers_recoleccion` ya está tomado por VoucherRecepcion.ruta_recoleccion
-        # (nombrado así desde H-SC-10 cuando el flujo era único). Evitamos clash
-        # usando `salidas_recoleccion` para el voucher de recolección en ruta.
+        # VoucherRecepcion.ruta_recoleccion usa `vouchers_recepcion`; este FK
+        # usa `salidas_recoleccion` para no colisionar en el mismo target.
         related_name='salidas_recoleccion',
         verbose_name='Ruta',
     )

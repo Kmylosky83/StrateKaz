@@ -42,6 +42,13 @@ class PDFSealingService:
             pass
         return 'StrateKaz SGI'
 
+    # Marker en sellado_metadatos para distinguir un fallback graceful
+    # (cert ausente) de un error real durante la firma.
+    FALLBACK_CERT_MISSING_ERROR = (
+        'Certificado X.509 no disponible. '
+        'Ejecute: python manage.py generar_certificado_x509'
+    )
+
     @classmethod
     def sellar_documento(cls, documento):
         """
@@ -51,11 +58,12 @@ class PDFSealingService:
             documento: Instancia de Documento (debe tener archivo_pdf o contenido HTML)
 
         Returns:
-            dict con: archivo_path, hash_sha256, metadatos
+            dict con: hash_sha256, metadatos
+            En modo fallback (cert ausente): {'fallback': True, 'metadatos': {...}}
 
         Raises:
-            ValueError: si falta certificado o archivo PDF
-            RuntimeError: si falla el proceso de firma
+            ValueError: si falta archivo PDF Y contenido HTML.
+            RuntimeError: si falla el proceso de firma.
         """
         from pyhanko.sign import signers, fields as sig_fields
         from pyhanko.sign.general import load_cert_list_from_pemder
@@ -67,10 +75,10 @@ class PDFSealingService:
         cert_path, key_path = cls._get_cert_paths()
 
         if not os.path.exists(cert_path) or not os.path.exists(key_path):
-            raise ValueError(
-                'No se encontró certificado X.509 para este tenant. '
-                'Ejecute: python manage.py generar_certificado_x509'
-            )
+            # Fallback graceful (H-GD-A3): NO crashear el flujo de
+            # publicación. El documento queda PUBLICADO; sólo el
+            # sellado se marca como ERROR para reintento posterior.
+            return cls._fallback_cert_missing(documento)
 
         # Obtener PDF base
         pdf_buffer = cls._obtener_pdf_base(documento)
@@ -185,6 +193,43 @@ class PDFSealingService:
         return {
             'hash_sha256': hash_sha256,
             'metadatos': documento.sellado_metadatos,
+        }
+
+    @classmethod
+    def _fallback_cert_missing(cls, documento):
+        """
+        H-GD-A3: cuando no existe certificado X.509 para el tenant.
+
+        En vez de levantar `ValueError` y romper la publicación, el sellado
+        se marca como ERROR con un fallback descriptivo. El documento
+        permanece PUBLICADO; el operador puede generar el cert y reintentar
+        el sellado.
+
+        Returns:
+            dict con flag `fallback=True` y `metadatos` actualizados.
+        """
+        ahora = timezone.now()
+        fallback_metadatos = {
+            'error': cls.FALLBACK_CERT_MISSING_ERROR,
+            'fallback': True,
+            'fecha_intento': ahora.isoformat(),
+        }
+
+        documento.sellado_estado = 'ERROR'
+        documento.sellado_metadatos = fallback_metadatos
+        documento.save(update_fields=['sellado_estado', 'sellado_metadatos'])
+
+        logger.warning(
+            '[SELLADO] Documento %s: certificado X.509 no disponible para '
+            'el tenant — se marca sellado como ERROR (fallback graceful). '
+            'Documento sigue PUBLICADO.',
+            documento.codigo,
+        )
+
+        return {
+            'hash_sha256': None,
+            'metadatos': fallback_metadatos,
+            'fallback': True,
         }
 
     @classmethod

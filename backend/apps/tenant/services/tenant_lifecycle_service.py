@@ -86,7 +86,18 @@ _CRITICAL_SEEDS = (
     "seed_permisos_rbac",
 )
 
+# Seeds no-críticos. Cualquier fallo se loguea como warning pero el tenant
+# queda como `ready`. Orden importa porque algunos dependen de otros:
+#   - seed_tipos_documento_sgi: 12 TipoDocumento base SGI (ISO 9001/14001/45001)
+#   - seed_plantillas_sgi: distribuye plantillas maestras → requiere tipos
+#   - seed_trd: 33 reglas TRD → requiere tipos + Areas (de seed_estructura_final)
+#   - seed_politica_habeas_data: plantilla POL → requiere tipos
+#   - seed_config_identidad: identidad corporativa (último, es independiente)
 _NON_CRITICAL_SEEDS = (
+    "seed_tipos_documento_sgi",
+    "seed_plantillas_sgi",
+    "seed_trd",
+    "seed_politica_habeas_data",
     "seed_config_identidad",
 )
 
@@ -405,6 +416,35 @@ class TenantLifecycleService:
                             schema_name,
                             str(seed_err)[:200],
                         )
+
+                # B3.5 — Bootstrap del certificado X.509 (H-GD-A3)
+                # No-crítico: si falla, el tenant queda ready pero el
+                # primer sellado de PDF caerá al fallback graceful y
+                # el operador podrá generar el cert manualmente.
+                _progress(96, "generating_x509", "Generando certificado X.509")
+                try:
+                    from apps.gestion_estrategica.gestion_documental.services import (
+                        CertificateService,
+                    )
+
+                    cert_result = CertificateService.ensure_certificate_for_current_tenant()
+                    logger.info(
+                        "TenantLifecycle: action=ensure_x509 schema=%s "
+                        "result=%s",
+                        schema_name,
+                        "generated" if cert_result.created else "already_exists",
+                    )
+                except Exception as cert_err:
+                    warning_msg = (
+                        f"x509 cert bootstrap failed: {str(cert_err)[:500]}"
+                    )
+                    non_critical_warnings.append(warning_msg)
+                    logger.warning(
+                        "TenantLifecycle: action=ensure_x509 schema=%s "
+                        "result=warning error=%s",
+                        schema_name,
+                        str(cert_err)[:200],
+                    )
 
             # B4. Post-validación
             _progress(98, "finalizing", "Finalizando")

@@ -707,6 +707,23 @@ def sellar_pdf_pyhanko(self, documento_id: int, tenant_schema: str,
         try:
             resultado = PDFSealingService.sellar_documento(documento)
 
+            # H-GD-A3: si el certificado no está disponible, el servicio
+            # devuelve un fallback graceful en vez de levantar ValueError.
+            # En ese caso NO notificamos éxito ni reintentamos — el sellado
+            # quedó marcado como ERROR y el documento sigue PUBLICADO.
+            if resultado.get('fallback'):
+                logger.warning(
+                    '[SELLADO] %s: Documento %s sellado en modo fallback '
+                    '(cert ausente). Sin reintento.',
+                    tenant_schema,
+                    documento.codigo,
+                )
+                return {
+                    'status': 'fallback',
+                    'documento_id': documento_id,
+                    'reason': resultado['metadatos'].get('error'),
+                }
+
             # Notificar al usuario que solicitó el sellado
             if usuario_id:
                 from django.contrib.auth import get_user_model

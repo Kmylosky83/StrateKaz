@@ -54,7 +54,10 @@ class VoucherRecoleccion(TenantModel):
     ruta = models.ForeignKey(
         'catalogos.RutaRecoleccion',
         on_delete=models.PROTECT,
-        related_name='vouchers_recoleccion',
+        # `vouchers_recoleccion` ya está tomado por VoucherRecepcion.ruta_recoleccion
+        # (nombrado así desde H-SC-10 cuando el flujo era único). Evitamos clash
+        # usando `salidas_recoleccion` para el voucher de recolección en ruta.
+        related_name='salidas_recoleccion',
         verbose_name='Ruta',
     )
     fecha_recoleccion = models.DateField(

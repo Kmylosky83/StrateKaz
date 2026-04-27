@@ -136,7 +136,7 @@ class Migration(migrations.Migration):
                     "ruta",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="vouchers_recoleccion",
+                        related_name="salidas_recoleccion",
                         to="catalogos.rutarecoleccion",
                         verbose_name="Ruta",
                     ),

@@ -80,8 +80,8 @@ class PDFSealingService:
             # sellado se marca como ERROR para reintento posterior.
             return cls._fallback_cert_missing(documento)
 
-        # Obtener PDF base
-        pdf_buffer = cls._obtener_pdf_base(documento)
+        # Obtener PDF base junto con la fuente (auditoría H-GD-A1)
+        pdf_buffer, fuente_pdf = cls._obtener_pdf_base(documento)
 
         # Cargar certificado y clave
         with open(cert_path, 'rb') as f:
@@ -179,6 +179,7 @@ class PDFSealingService:
             'valido_hasta': cert.not_valid_after_utc.isoformat(),
             'tamano_bytes': len(pdf_sellado_bytes),
             'fecha_sellado': ahora.isoformat(),
+            'fuente_pdf': fuente_pdf,
         }
         documento.save(update_fields=[
             'pdf_sellado', 'hash_pdf_sellado', 'fecha_sellado',
@@ -235,17 +236,47 @@ class PDFSealingService:
     @classmethod
     def _obtener_pdf_base(cls, documento):
         """
-        Obtiene el PDF base del documento.
-        Prioridad: archivo_pdf existente > generar desde contenido HTML.
+        Obtiene el PDF base del documento (H-GD-A1).
+
+        Prioridad correcta para evitar sellar el archivo equivocado en
+        documentos adoptados:
+
+        1. Si ``documento.es_externo`` y existe ``archivo_original`` →
+           usar el PDF subido por el usuario (fuente: ``archivo_original``).
+        2. Si NO es externo y existe ``archivo_pdf`` (PDF preview generado) →
+           usar ese (fuente: ``archivo_pdf``).
+        3. Como último recurso, generar el PDF desde el contenido HTML
+           (fuente: ``generado_html``).
+
+        Returns:
+            tuple (BytesIO, str) — buffer del PDF y etiqueta de la fuente
+            usada (``"archivo_original" | "archivo_pdf" | "generado_html"``).
         """
-        if documento.archivo_pdf and documento.archivo_pdf.name:
+        # Caso 1: documento adoptado externamente — el original es la verdad
+        if (
+            documento.es_externo
+            and documento.archivo_original
+            and documento.archivo_original.name
+        ):
+            file_path = documento.archivo_original.path
+            if os.path.exists(file_path):
+                with open(file_path, 'rb') as f:
+                    buffer = BytesIO(f.read())
+                return buffer, 'archivo_original'
+
+        # Caso 2: documento normal con PDF previamente generado
+        if (
+            not documento.es_externo
+            and documento.archivo_pdf
+            and documento.archivo_pdf.name
+        ):
             file_path = documento.archivo_pdf.path
             if os.path.exists(file_path):
                 with open(file_path, 'rb') as f:
                     buffer = BytesIO(f.read())
-                return buffer
+                return buffer, 'archivo_pdf'
 
-        # Generar PDF desde contenido HTML
+        # Caso 3: generar desde HTML
         if documento.contenido:
             from ..exporters.pdf_generator import DocumentoPDFGenerator
 
@@ -257,7 +288,7 @@ class PDFSealingService:
                 pass
 
             generator = DocumentoPDFGenerator(empresa=empresa)
-            return generator.generate_documento_pdf(documento)
+            return generator.generate_documento_pdf(documento), 'generado_html'
 
         raise ValueError(
             f'El documento {documento.codigo} no tiene archivo PDF ni contenido HTML '

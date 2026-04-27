@@ -357,10 +357,28 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(clasificacion=clasificacion)
 
         # Búsqueda full-text (Sprint 6.2 — PostgreSQL tsvector)
+        # H-GD-A2: incluye texto_extraido (peso D) sólo si la confianza OCR
+        # es ≥ 0.7. Documentos con OCR pobre se buscan vía LIKE/icontains
+        # y por los demás campos del SearchVector, pero NO contaminan el
+        # ranking tsvector con texto ruidoso.
         buscar = self.request.query_params.get('buscar')
         if buscar:
             if len(buscar) >= 3:
-                from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+                from django.contrib.postgres.search import (
+                    SearchQuery,
+                    SearchRank,
+                    SearchVector,
+                )
+                from django.db.models import (
+                    Case,
+                    F,
+                    TextField,
+                    Value,
+                    When,
+                )
+                from django.db.models.functions import Coalesce
+
+                # Vector base — siempre presente
                 vector = (
                     SearchVector('codigo', weight='A', config='spanish') +
                     SearchVector('codigo_legacy', weight='A', config='spanish') +
@@ -369,6 +387,27 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
                     SearchVector('proceso__name', weight='C', config='spanish') +
                     SearchVector('tipo_documento__nombre', weight='C', config='spanish')
                 )
+
+                # texto_extraido condicional — sólo se indexa si la
+                # confianza OCR es buena (>= 0.7). Para documentos con
+                # OCR malo (o sin metadatos), anotamos cadena vacía para
+                # que el SearchVector no genere ruido en el ranking.
+                # Usamos Q directo sobre ocr_metadatos__confianza__gte
+                # (lookup nativo de JSONField) para evitar Cast manual.
+                queryset = queryset.annotate(
+                    _texto_indexable=Case(
+                        When(
+                            ocr_metadatos__confianza__gte=0.7,
+                            then=Coalesce(F('texto_extraido'), Value('')),
+                        ),
+                        default=Value(''),
+                        output_field=TextField(),
+                    ),
+                )
+                vector = vector + SearchVector(
+                    '_texto_indexable', weight='D', config='spanish'
+                )
+
                 query = SearchQuery(buscar, config='spanish')
                 queryset = (
                     queryset

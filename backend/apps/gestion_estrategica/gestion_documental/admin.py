@@ -8,7 +8,8 @@ from .models import (
     Documento,
     VersionDocumento,
     CampoFormulario,
-    ControlDocumental
+    ControlDocumental,
+    EventoDocumental,
 )
 
 
@@ -59,3 +60,30 @@ class ControlDocumentalAdmin(admin.ModelAdmin):
     list_filter = ['tipo_control', 'medio_distribucion']
     search_fields = ['documento__codigo', 'observaciones']
     ordering = ['-fecha_distribucion']
+
+
+@admin.register(EventoDocumental)
+class EventoDocumentalAdmin(admin.ModelAdmin):
+    """Log granular de accesos a documentos (ISO 27001 §A.8.10) — read-only."""
+    list_display = [
+        'created_at', 'tipo_evento', 'documento', 'usuario',
+        'version_documento', 'ip_address',
+    ]
+    list_filter = ['tipo_evento', 'created_at']
+    search_fields = [
+        'documento__codigo', 'documento__titulo',
+        'usuario__email', 'usuario__username', 'ip_address',
+    ]
+    readonly_fields = [
+        'documento', 'usuario', 'tipo_evento', 'version_documento',
+        'ip_address', 'user_agent', 'metadatos',
+        'created_at', 'updated_at', 'created_by', 'updated_by',
+    ]
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+
+    def has_add_permission(self, request):  # pragma: no cover - admin
+        return False
+
+    def has_change_permission(self, request, obj=None):  # pragma: no cover - admin
+        return False

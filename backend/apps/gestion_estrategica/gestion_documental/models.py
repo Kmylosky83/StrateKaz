@@ -1540,3 +1540,88 @@ class TablaRetencionDocumental(TenantModel):
     @property
     def tiempo_total_anos(self):
         return self.tiempo_gestion_anos + self.tiempo_central_anos
+
+
+class EventoDocumental(TenantModel):
+    """
+    Log granular de eventos sobre documentos (ISO 27001 §A.8.10).
+
+    Cada acción material sobre un documento — visualización, descarga,
+    impresión, export externo, intento de acceso denegado — se registra
+    como un EventoDocumental con snapshot de versión, IP y user-agent.
+    Los contadores `numero_descargas` y `numero_impresiones` del
+    Documento se mantienen por compatibilidad y se actualizan vía signal
+    post_save desde este modelo.
+
+    Cumple: ISO 27001 §A.8.10 (Use of cryptography & event logging),
+    Decreto 1074/2015 (auditoría de tratamiento de datos).
+    """
+
+    TIPO_EVENTO_CHOICES = [
+        ('VISTA', 'Vista de detalle'),
+        ('DESCARGA_PDF', 'Descarga PDF'),
+        ('DESCARGA_DOCX', 'Descarga DOCX'),
+        ('IMPRESION', 'Impresión'),
+        ('EXPORT_DRIVE', 'Export a Drive'),
+        ('ACCESO_DENEGADO', 'Acceso denegado'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='eventos',
+        verbose_name='Documento',
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='eventos_documentales',
+        verbose_name='Usuario',
+        help_text='Usuario que ejecutó la acción (null si fue sistema)',
+    )
+    tipo_evento = models.CharField(
+        max_length=20,
+        choices=TIPO_EVENTO_CHOICES,
+        db_index=True,
+        verbose_name='Tipo de Evento',
+    )
+    version_documento = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Versión del Documento',
+        help_text='Snapshot de la versión al momento del evento',
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP',
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name='User Agent',
+    )
+    metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos',
+        help_text='Contexto adicional: motivo, ruta, formato, etc.',
+    )
+
+    class Meta:
+        db_table = 'documental_evento'
+        verbose_name = 'Evento Documental'
+        verbose_name_plural = 'Eventos Documentales'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['documento', 'tipo_evento']),
+            models.Index(fields=['usuario', '-created_at']),
+            models.Index(fields=['tipo_evento', '-created_at']),
+        ]
+
+    def __str__(self):
+        usuario_repr = self.usuario.email if self.usuario else 'anónimo'
+        return f"{self.get_tipo_evento_display()} — {self.documento.codigo} · {usuario_repr}"

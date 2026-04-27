@@ -8,6 +8,8 @@ Signal handlers para Gestión Documental.
    FirmaDigital de un Documento.tipo_documento.categoria='FORMULARIO'
    están en estado FIRMADO, se genera el PDF con firmas embebidas y
    el documento avanza a APROBADO/PUBLICADO según `requiere_aprobacion`.
+4. Sincronización contadores Documento.numero_descargas/numero_impresiones
+   desde EventoDocumental (compatibilidad con UI existente).
 """
 
 import logging
@@ -15,12 +17,43 @@ import logging
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 logger = logging.getLogger('gestion_documental')
+
+
+# ─── Sincronización contadores de Documento desde EventoDocumental ────────
+
+@receiver(post_save, sender='gestion_documental.EventoDocumental')
+def sync_contadores_documento(sender, instance, created, **kwargs):
+    """
+    Mantiene `Documento.numero_descargas` y `Documento.numero_impresiones`
+    sincronizados con el log granular de eventos. Se ejecuta solo en la
+    creación inicial del evento (no en updates).
+
+    Mapeo:
+        DESCARGA_PDF, DESCARGA_DOCX, EXPORT_DRIVE → numero_descargas++
+        IMPRESION                                  → numero_impresiones++
+
+    El resto de tipos (VISTA, ACCESO_DENEGADO) no incrementa contadores.
+    """
+    if not created:
+        return
+
+    from .models import Documento
+
+    tipo = instance.tipo_evento
+    if tipo in ('DESCARGA_PDF', 'DESCARGA_DOCX', 'EXPORT_DRIVE'):
+        Documento.objects.filter(pk=instance.documento_id).update(
+            numero_descargas=F('numero_descargas') + 1,
+        )
+    elif tipo == 'IMPRESION':
+        Documento.objects.filter(pk=instance.documento_id).update(
+            numero_impresiones=F('numero_impresiones') + 1,
+        )
 
 
 # ─── Auto-distribución lectura obligatoria ────────────────────────

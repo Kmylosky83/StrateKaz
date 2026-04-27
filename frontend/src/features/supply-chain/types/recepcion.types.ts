@@ -56,10 +56,17 @@ export interface VoucherRecepcionList {
   requiere_qc?: boolean;
   /** H-SC-03/H-SC-11: QC completo (legacy RecepcionCalidad o mediciones por línea). */
   tiene_qc?: boolean;
-  /** H-SC-RUTA-02 D-1: voucher de recolección origen (si viene de ruta). */
-  voucher_recoleccion_origen?: number | null;
-  voucher_recoleccion_codigo?: string | null;
-  voucher_recoleccion_estado?: string | null;
+  /** H-SC-RUTA-02 (refactor 2): N vouchers de recolección asociados (M2M). */
+  vouchers_recoleccion?: number[];
+  vouchers_recoleccion_info?: Array<{
+    id: number;
+    codigo: string;
+    estado: 'BORRADOR' | 'COMPLETADO';
+    proveedor_nombre: string | null;
+    producto_nombre: string | null;
+    cantidad: string;
+    fecha_recoleccion: string;
+  }>;
   created_at: string;
 }
 

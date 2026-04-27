@@ -73,19 +73,22 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
-    # ─── Vínculo con voucher de recolección (H-SC-RUTA-02 — D-1) ──────
-    @action(detail=True, methods=['post'], url_path='asociar-recoleccion')
-    def asociar_recoleccion(self, request, pk=None):
+    # ─── Vínculo M2M con vouchers de recolección (H-SC-RUTA-02 refactor 2) ──
+    @action(detail=True, methods=['post'], url_path='asociar-recolecciones')
+    def asociar_recolecciones(self, request, pk=None):
         """
-        Asocia esta recepción con un VoucherRecoleccion de origen.
+        Asocia/desasocia N VoucherRecoleccion con esta recepción consolidada.
 
-        Body: {"voucher_recoleccion": <id>} o {"voucher_recoleccion": null}
-        para desasociar.
+        Body: {"vouchers_recoleccion": [<id>, <id>, ...]}
+        Lista vacía = desasociar todos.
 
-        El inventario YA ENTRÓ con esta recepción — el voucher de recolección
-        es solo evidencia/detalle para luego liquidar a cada productor por
-        separado. Se permite asociar/desasociar mientras la recepción no esté
-        LIQUIDADA.
+        El inventario YA ENTRÓ con esta recepción — los vouchers de recolección
+        son evidencia/detalle para liquidar cada productor por separado. Se
+        permite reasociar mientras la recepción no esté LIQUIDADA.
+
+        Validación: todos los IDs deben ser vouchers existentes. Si alguno
+        está en BORRADOR, queda registrado el vínculo pero la liquidación
+        del periodo se bloqueará (ver D-2 en LiquidacionViewSet).
         """
         voucher = self.get_object()
         if voucher.estado == voucher.EstadoVoucher.LIQUIDADO:
@@ -93,20 +96,29 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
                 'detail': 'No se puede modificar el vínculo: la recepción ya fue liquidada.',
             })
 
-        rec_id = request.data.get('voucher_recoleccion')
-        if rec_id is None or rec_id == '':
-            voucher.voucher_recoleccion_origen = None
-        else:
-            try:
-                from apps.supply_chain.recoleccion.models import VoucherRecoleccion
-                rec = VoucherRecoleccion.objects.get(pk=rec_id)
-            except VoucherRecoleccion.DoesNotExist:
+        ids = request.data.get('vouchers_recoleccion', [])
+        if not isinstance(ids, list):
+            raise ValidationError({
+                'vouchers_recoleccion': 'Se esperaba una lista de IDs.',
+            })
+
+        from apps.supply_chain.recoleccion.models import VoucherRecoleccion
+        if ids:
+            existentes = VoucherRecoleccion.objects.filter(pk__in=ids)
+            ids_existentes = set(existentes.values_list('id', flat=True))
+            ids_faltantes = set(int(i) for i in ids) - ids_existentes
+            if ids_faltantes:
                 raise ValidationError({
-                    'voucher_recoleccion': f'No existe el voucher de recolección con id={rec_id}.',
+                    'vouchers_recoleccion': (
+                        f'No existen los vouchers de recolección con IDs: {sorted(ids_faltantes)}.'
+                    ),
                 })
-            voucher.voucher_recoleccion_origen = rec
+            voucher.vouchers_recoleccion.set(existentes)
+        else:
+            voucher.vouchers_recoleccion.clear()
+
         voucher.updated_by = request.user
-        voucher.save(update_fields=['voucher_recoleccion_origen', 'updated_by', 'updated_at'])
+        voucher.save(update_fields=['updated_by', 'updated_at'])
 
         serializer = VoucherRecepcionSerializer(voucher, context={'request': request})
         return Response(serializer.data)

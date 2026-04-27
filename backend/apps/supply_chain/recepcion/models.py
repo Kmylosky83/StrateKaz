@@ -127,25 +127,26 @@ class VoucherRecepcion(TenantModel):
         verbose_name='Observaciones',
     )
 
-    # ─── Conexión con VoucherRecoleccion (H-SC-RUTA-02 — D-1) ──────────
+    # ─── Conexión con VoucherRecoleccion (H-SC-RUTA-02 — D-1 / refactor 2) ──
     # Cuando este voucher de recepción viene de una salida de ruta, se
-    # vincula al VoucherRecoleccion del que salió (con N líneas detalle
-    # por proveedor visitado). El inventario YA ENTRÓ con esta recepción —
-    # el voucher de recolección queda como evidencia/detalle para liquidar
-    # cada productor por separado.
+    # vinculan los N VoucherRecoleccion (uno por cada parada visitada).
+    # El inventario YA ENTRÓ con esta recepción — los vouchers de recolección
+    # son evidencia/detalle para liquidar cada productor por separado.
     #
-    # Validación de bloqueo: la liquidación NO debe correr si el voucher
-    # de recolección asociado está en BORRADOR (ver liquidaciones).
-    voucher_recoleccion_origen = models.ForeignKey(
+    # Cambió de FK simple a M2M en refactor 2 (1 voucher = 1 parada). La
+    # asociación es N:1 en el otro sentido: 1 recepción consolidada ↔ N
+    # vouchers de recolección.
+    #
+    # D-2 (Commit 17): la liquidación NO debe correr si CUALQUIER voucher
+    # asociado está en BORRADOR.
+    vouchers_recoleccion = models.ManyToManyField(
         'sc_recoleccion.VoucherRecoleccion',
-        on_delete=models.PROTECT,
-        null=True,
         blank=True,
         related_name='recepciones_consolidadas',
-        verbose_name='Voucher de recolección origen',
+        verbose_name='Vouchers de recolección asociados',
         help_text=(
-            'Si la mercancía proviene de una salida de ruta, se vincula al '
-            'VoucherRecoleccion del que salió (líneas por productor visitado).'
+            'N vouchers de recolección (uno por parada visitada) que se '
+            'consolidaron en esta recepción.'
         ),
     )
 
@@ -159,7 +160,6 @@ class VoucherRecepcion(TenantModel):
             models.Index(fields=['estado', '-created_at']),
             models.Index(fields=['fecha_viaje']),
             models.Index(fields=['almacen_destino']),
-            models.Index(fields=['voucher_recoleccion_origen']),
         ]
 
     def __str__(self):

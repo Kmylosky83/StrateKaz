@@ -41,12 +41,12 @@ export const voucherRecepcionApi = {
   getPrint58mm: (id: number) =>
     apiClient.get<string>(`${BASE}/vouchers/${id}/print-80mm/`, { responseType: 'text' }),
   /**
-   * H-SC-RUTA-02 D-1: asocia / desasocia un VoucherRecoleccion con esta
-   * recepción. Pasa null para desvincular.
+   * H-SC-RUTA-02 (refactor 2): asocia/desasocia N VoucherRecoleccion (M2M).
+   * Pasa lista vacía para desasociar todos.
    */
-  asociarRecoleccion: (id: number, voucherRecoleccionId: number | null) =>
-    apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/asociar-recoleccion/`, {
-      voucher_recoleccion: voucherRecoleccionId,
+  asociarRecolecciones: (id: number, vouchersRecoleccionIds: number[]) =>
+    apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/asociar-recolecciones/`, {
+      vouchers_recoleccion: vouchersRecoleccionIds,
     }),
 };
 

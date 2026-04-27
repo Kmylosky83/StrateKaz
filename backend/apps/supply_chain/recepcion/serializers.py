@@ -147,13 +147,9 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
     requiere_qc = serializers.BooleanField(read_only=True)
     tiene_qc = serializers.BooleanField(read_only=True)
 
-    # H-SC-RUTA-02 (D-1): vínculo opcional con voucher de recolección origen.
-    voucher_recoleccion_codigo = serializers.CharField(
-        source='voucher_recoleccion_origen.codigo', read_only=True, allow_null=True,
-    )
-    voucher_recoleccion_estado = serializers.CharField(
-        source='voucher_recoleccion_origen.estado', read_only=True, allow_null=True,
-    )
+    # H-SC-RUTA-02 (refactor 2): N vouchers de recolección asociados (M2M).
+    # Lista compacta de los IDs + info denormalizada para mostrar en UI.
+    vouchers_recoleccion_info = serializers.SerializerMethodField()
 
     class Meta:
         model = VoucherRecepcion
@@ -178,16 +174,30 @@ class VoucherRecepcionSerializer(serializers.ModelSerializer):
             'observaciones',
             # H-SC-03: flags QC
             'requiere_qc', 'tiene_qc',
-            # H-SC-RUTA-02 D-1: vínculo con voucher de recolección
-            'voucher_recoleccion_origen',
-            'voucher_recoleccion_codigo',
-            'voucher_recoleccion_estado',
+            # H-SC-RUTA-02 (refactor 2): M2M con N vouchers de recolección
+            'vouchers_recoleccion',
+            'vouchers_recoleccion_info',
             # Auditoría
             'created_at', 'updated_at',
         ]
         read_only_fields = [
             'created_at', 'updated_at',
-            'voucher_recoleccion_codigo', 'voucher_recoleccion_estado',
+            'vouchers_recoleccion_info',
+        ]
+
+    def get_vouchers_recoleccion_info(self, obj):
+        """Info compacta de los vouchers M2M para mostrar en UI."""
+        return [
+            {
+                'id': v.id,
+                'codigo': v.codigo,
+                'estado': v.estado,
+                'proveedor_nombre': getattr(v.proveedor, 'nombre_comercial', None),
+                'producto_nombre': getattr(v.producto, 'nombre', None),
+                'cantidad': str(v.cantidad),
+                'fecha_recoleccion': str(v.fecha_recoleccion),
+            }
+            for v in obj.vouchers_recoleccion.select_related('proveedor', 'producto').all()
         ]
 
     def get_lineas_count(self, obj):

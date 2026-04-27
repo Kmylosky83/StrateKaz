@@ -392,9 +392,36 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         return queryset.order_by('-created_at', '-fecha_publicacion', 'codigo')
 
     def retrieve(self, request, *args, **kwargs):
-        """Verifica acceso a documentos CONFIDENCIAL/RESTRINGIDO antes de retornar detalle."""
+        """Verifica acceso a documentos CONFIDENCIAL/RESTRINGIDO y registra VISTA / ACCESO_DENEGADO."""
+        from .mixins import check_acceso_documento
+        from .services import EventoDocumentalService
+        from rest_framework.exceptions import PermissionDenied
+
         instance = self.get_object()
-        verificar_acceso_documento(request.user, instance)
+        if not check_acceso_documento(request.user, instance):
+            EventoDocumentalService.registrar(
+                documento=instance,
+                usuario=request.user,
+                tipo='ACCESO_DENEGADO',
+                request=request,
+                metadatos={
+                    'origen': 'documento_retrieve',
+                    'clasificacion': instance.clasificacion,
+                },
+            )
+            raise PermissionDenied(
+                'No tiene permiso para acceder a este documento. '
+                'Los documentos con clasificación Confidencial o Restringido '
+                'requieren autorización explícita.'
+            )
+
+        EventoDocumentalService.registrar(
+            documento=instance,
+            usuario=request.user,
+            tipo='VISTA',
+            request=request,
+            metadatos={'origen': 'documento_retrieve'},
+        )
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -728,18 +755,34 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='incrementar-descarga')
     def incrementar_descarga(self, request, pk=None):
-        """Incrementa contador de descargas"""
+        """Registra evento de descarga (el signal incrementa el contador)."""
+        from .services import EventoDocumentalService
+
         documento = self.get_object()
-        documento.numero_descargas += 1
-        documento.save(update_fields=['numero_descargas'])
+        EventoDocumentalService.registrar(
+            documento=documento,
+            usuario=request.user,
+            tipo='DESCARGA_PDF',
+            request=request,
+            metadatos={'origen': 'incrementar_descarga'},
+        )
+        documento.refresh_from_db(fields=['numero_descargas'])
         return Response({'descargas': documento.numero_descargas})
 
     @action(detail=True, methods=['post'], url_path='incrementar-impresion')
     def incrementar_impresion(self, request, pk=None):
-        """Incrementa contador de impresiones"""
+        """Registra evento de impresión (el signal incrementa el contador)."""
+        from .services import EventoDocumentalService
+
         documento = self.get_object()
-        documento.numero_impresiones += 1
-        documento.save(update_fields=['numero_impresiones'])
+        EventoDocumentalService.registrar(
+            documento=documento,
+            usuario=request.user,
+            tipo='IMPRESION',
+            request=request,
+            metadatos={'origen': 'incrementar_impresion'},
+        )
+        documento.refresh_from_db(fields=['numero_impresiones'])
         return Response({'impresiones': documento.numero_impresiones})
 
     @action(detail=False, methods=['get'])
@@ -1718,6 +1761,12 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
         'aceptar',              # POST marca como leído (cumplimiento ISO)
     })
 
+    # Acciones que requieren rol administrativo (can_edit en repositorio).
+    # exportar-evidencia produce evidencia ISO firmada — solo admin SGI.
+    granular_action_map = {
+        'exportar_evidencia': 'can_edit',
+    }
+
     def get_permissions(self):
         if self.action in self.SELF_SERVICE_ACTIONS:
             return [IsAuthenticated()]
@@ -1977,6 +2026,279 @@ class AceptacionDocumentalViewSet(viewsets.ModelViewSet):
             promedio_porcentaje=Avg('porcentaje_lectura'),
         )
         return Response(stats)
+
+    @action(detail=False, methods=['get'], url_path='exportar-evidencia')
+    def exportar_evidencia(self, request):
+        """
+        Exporta el log de aceptaciones documentales como evidencia ISO firmada
+        con hash SHA-256.
+
+        Query params:
+            documento (int, opcional)  — filtrar por documento.
+            desde (YYYY-MM-DD, opcional) — fecha mínima de fecha_asignacion.
+            hasta (YYYY-MM-DD, opcional) — fecha máxima de fecha_asignacion.
+            formato (xlsx|pdf, default xlsx) — formato de salida.
+
+        Solo accesible a usuarios con can_edit en sección 'repositorio'
+        (admin SGI). El export incluye el hash SHA-256 del cuerpo de datos
+        en el footer / metadata para verificación de integridad.
+        """
+        import hashlib
+        from datetime import datetime, time
+
+        from django.utils.dateparse import parse_date
+        from .models import AceptacionDocumental
+
+        # Filtrado del queryset
+        qs = AceptacionDocumental.objects.select_related(
+            'documento', 'documento__tipo_documento', 'usuario',
+        ).order_by('documento__codigo', 'fecha_asignacion')
+
+        documento_id = request.query_params.get('documento')
+        if documento_id:
+            qs = qs.filter(documento_id=documento_id)
+
+        desde_raw = request.query_params.get('desde')
+        if desde_raw:
+            desde = parse_date(desde_raw)
+            if desde:
+                qs = qs.filter(fecha_asignacion__gte=datetime.combine(desde, time.min))
+
+        hasta_raw = request.query_params.get('hasta')
+        if hasta_raw:
+            hasta = parse_date(hasta_raw)
+            if hasta:
+                qs = qs.filter(fecha_asignacion__lte=datetime.combine(hasta, time.max))
+
+        formato = (request.query_params.get('formato') or 'xlsx').lower()
+        if formato not in ('xlsx', 'pdf'):
+            return Response(
+                {'error': 'Formato inválido. Use xlsx o pdf.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Construir filas — orden estable para que el hash sea reproducible
+        filas = []
+        for ac in qs.iterator(chunk_size=200):
+            filas.append({
+                'usuario': ac.usuario.get_full_name() if ac.usuario else '',
+                'usuario_email': ac.usuario.email if ac.usuario else '',
+                'documento_codigo': ac.documento.codigo,
+                'documento_titulo': ac.documento.titulo,
+                'version': ac.version_documento or '',
+                'fecha_asignacion': ac.fecha_asignacion.isoformat() if ac.fecha_asignacion else '',
+                'fecha_aceptacion': ac.fecha_aceptacion.isoformat() if ac.fecha_aceptacion else '',
+                'porcentaje_lectura': ac.porcentaje_lectura,
+                'tiempo_lectura_seg': ac.tiempo_lectura_seg,
+                'ip_address': ac.ip_address or '',
+                'user_agent': ac.user_agent or '',
+                'estado': ac.estado,
+                'motivo_rechazo': ac.motivo_rechazo or '',
+            })
+
+        # Hash SHA-256 sobre la representación canónica de las filas
+        canonical = '\n'.join(
+            '|'.join(str(row[k]) for k in (
+                'usuario', 'usuario_email', 'documento_codigo', 'version',
+                'fecha_asignacion', 'fecha_aceptacion', 'porcentaje_lectura',
+                'tiempo_lectura_seg', 'ip_address', 'estado', 'motivo_rechazo',
+            ))
+            for row in filas
+        )
+        sha256 = hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+        generado_en = timezone.now()
+        filtros = {
+            'documento': documento_id or '—',
+            'desde': desde_raw or '—',
+            'hasta': hasta_raw or '—',
+            'total_registros': len(filas),
+            'generado_por': request.user.get_full_name() or request.user.email,
+            'generado_en': generado_en.isoformat(),
+            'sha256': sha256,
+        }
+
+        if formato == 'xlsx':
+            return _build_evidencia_xlsx(filas, filtros)
+        return _build_evidencia_pdf(filas, filtros)
+
+
+def _build_evidencia_xlsx(filas, filtros):
+    """Construye un XLSX con las filas + metadata de integridad."""
+    from io import BytesIO
+    from django.http import HttpResponse
+
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+    except ImportError:  # pragma: no cover
+        return Response(
+            {'error': 'openpyxl no disponible en el servidor.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    wb = Workbook()
+
+    # Hoja 1: metadata + hash de integridad
+    meta = wb.active
+    meta.title = 'Evidencia ISO'
+    bold = Font(bold=True)
+    header_fill = PatternFill(start_color='1F2937', end_color='1F2937', fill_type='solid')
+    white_bold = Font(bold=True, color='FFFFFF')
+
+    meta['A1'] = 'Evidencia de Aceptación Documental — ISO 7.3 / Decreto 1072'
+    meta['A1'].font = Font(bold=True, size=14)
+    meta.merge_cells('A1:B1')
+
+    meta_rows = [
+        ('Documento', filtros['documento']),
+        ('Período desde', filtros['desde']),
+        ('Período hasta', filtros['hasta']),
+        ('Total registros', filtros['total_registros']),
+        ('Generado por', filtros['generado_por']),
+        ('Generado en', filtros['generado_en']),
+        ('Hash SHA-256', filtros['sha256']),
+    ]
+    for idx, (k, v) in enumerate(meta_rows, start=3):
+        meta[f'A{idx}'] = k
+        meta[f'A{idx}'].font = bold
+        meta[f'B{idx}'] = v
+    meta.column_dimensions['A'].width = 22
+    meta.column_dimensions['B'].width = 80
+
+    # Hoja 2: detalle
+    ws = wb.create_sheet('Aceptaciones')
+    headers = [
+        'Usuario', 'Email', 'Código', 'Título', 'Versión',
+        'Fecha asignación', 'Fecha aceptación',
+        '% Lectura', 'Tiempo (seg)',
+        'IP', 'User Agent', 'Estado', 'Motivo rechazo',
+    ]
+    ws.append(headers)
+    for col_idx, _ in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = white_bold
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    for fila in filas:
+        ws.append([
+            fila['usuario'], fila['usuario_email'],
+            fila['documento_codigo'], fila['documento_titulo'], fila['version'],
+            fila['fecha_asignacion'], fila['fecha_aceptacion'],
+            fila['porcentaje_lectura'], fila['tiempo_lectura_seg'],
+            fila['ip_address'], fila['user_agent'],
+            fila['estado'], fila['motivo_rechazo'],
+        ])
+
+    widths = [22, 28, 16, 36, 10, 22, 22, 10, 12, 16, 40, 14, 30]
+    for idx, width in enumerate(widths, start=1):
+        ws.column_dimensions[chr(64 + idx)].width = width
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    response = HttpResponse(
+        buf.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = (
+        f'attachment; filename="evidencia-aceptaciones-{filtros["sha256"][:8]}.xlsx"'
+    )
+    response['X-Evidencia-SHA256'] = filtros['sha256']
+    return response
+
+
+def _build_evidencia_pdf(filas, filtros):
+    """Construye un PDF con WeasyPrint con metadata + tabla + footer firmado."""
+    from io import BytesIO
+    from django.http import HttpResponse
+
+    try:
+        from weasyprint import HTML
+    except ImportError:  # pragma: no cover
+        return Response(
+            {'error': 'WeasyPrint no disponible en el servidor.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    rows_html = ''.join(
+        f"<tr>"
+        f"<td>{(f['usuario'] or '').replace('<', '&lt;')}</td>"
+        f"<td>{(f['usuario_email'] or '').replace('<', '&lt;')}</td>"
+        f"<td>{f['documento_codigo']}</td>"
+        f"<td>{f['version']}</td>"
+        f"<td>{f['fecha_asignacion'][:19]}</td>"
+        f"<td>{f['fecha_aceptacion'][:19]}</td>"
+        f"<td>{f['porcentaje_lectura']}%</td>"
+        f"<td>{f['tiempo_lectura_seg']}s</td>"
+        f"<td>{f['ip_address']}</td>"
+        f"<td>{f['estado']}</td>"
+        f"</tr>"
+        for f in filas
+    )
+
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Evidencia ISO — Aceptaciones</title>
+      <style>
+        @page {{ size: A4 landscape; margin: 1.5cm; @bottom-center {{
+            content: "Hash SHA-256: {filtros['sha256']} · Página " counter(page) " de " counter(pages);
+            font-size: 8pt; color: #555;
+        }} }}
+        body {{ font-family: 'Helvetica', sans-serif; color: #1f2937; font-size: 9pt; }}
+        h1 {{ font-size: 16pt; margin: 0 0 8px 0; color: #111; }}
+        .meta {{ background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 9pt; }}
+        .meta dl {{ display: grid; grid-template-columns: 160px 1fr; gap: 4px 12px; margin: 0; }}
+        .meta dt {{ font-weight: bold; }}
+        table {{ width: 100%; border-collapse: collapse; font-size: 8pt; }}
+        thead {{ background: #1f2937; color: white; }}
+        th, td {{ border: 1px solid #d1d5db; padding: 4px 6px; text-align: left; vertical-align: top; }}
+        tbody tr:nth-child(even) {{ background: #f9fafb; }}
+        .hash-footer {{ margin-top: 18px; padding: 10px; border: 1px dashed #6b7280; font-family: monospace; font-size: 8pt; word-break: break-all; }}
+      </style>
+    </head>
+    <body>
+      <h1>Evidencia de Aceptación Documental</h1>
+      <div class="meta">
+        <dl>
+          <dt>Documento</dt><dd>{filtros['documento']}</dd>
+          <dt>Período desde</dt><dd>{filtros['desde']}</dd>
+          <dt>Período hasta</dt><dd>{filtros['hasta']}</dd>
+          <dt>Total registros</dt><dd>{filtros['total_registros']}</dd>
+          <dt>Generado por</dt><dd>{filtros['generado_por']}</dd>
+          <dt>Generado en</dt><dd>{filtros['generado_en']}</dd>
+        </dl>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Usuario</th><th>Email</th><th>Código</th><th>Versión</th>
+          <th>Asignación</th><th>Aceptación</th><th>% Lec.</th><th>Tiempo</th>
+          <th>IP</th><th>Estado</th>
+        </tr></thead>
+        <tbody>{rows_html or '<tr><td colspan="10" style="text-align:center;color:#6b7280;">Sin registros</td></tr>'}</tbody>
+      </table>
+      <div class="hash-footer">
+        <strong>Hash SHA-256 (integridad):</strong><br />
+        {filtros['sha256']}
+      </div>
+    </body>
+    </html>
+    """
+
+    buf = BytesIO()
+    HTML(string=html).write_pdf(buf)
+    buf.seek(0)
+
+    response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="evidencia-aceptaciones-{filtros["sha256"][:8]}.pdf"'
+    )
+    response['X-Evidencia-SHA256'] = filtros['sha256']
+    return response
 
 
 class TablaRetencionDocumentalViewSet(viewsets.ModelViewSet):

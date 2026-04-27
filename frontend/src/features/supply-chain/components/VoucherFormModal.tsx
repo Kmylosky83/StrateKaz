@@ -52,7 +52,9 @@ const lineaSchema = z
 
 const voucherSchema = z
   .object({
-    proveedor: z.coerce.number().int().min(1, 'Selecciona un proveedor'),
+    // H-SC-RUTA-02: proveedor opcional cuando modalidad=RECOLECCION (la
+    // fuente es la ruta + N vouchers de recolección).
+    proveedor: z.coerce.number().int().nullable().optional(),
     modalidad_entrega: z.enum(['DIRECTO', 'TRANSPORTE_INTERNO', 'RECOLECCION']),
     ruta_recoleccion: z.coerce.number().int().nullable().optional(),
     fecha_viaje: z.string().min(1, 'La fecha es obligatoria'),
@@ -62,12 +64,24 @@ const voucherSchema = z
     lineas: z.array(lineaSchema).min(1, 'Agrega al menos un producto'),
   })
   .superRefine((data, ctx) => {
-    if (data.modalidad_entrega === 'RECOLECCION' && !data.ruta_recoleccion) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['ruta_recoleccion'],
-        message: 'RECOLECCION requiere ruta de recolección',
-      });
+    if (data.modalidad_entrega === 'RECOLECCION') {
+      if (!data.ruta_recoleccion) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['ruta_recoleccion'],
+          message: 'RECOLECCION requiere ruta',
+        });
+      }
+      // proveedor opcional en RECOLECCION
+    } else {
+      // DIRECTO o TRANSPORTE_INTERNO requieren proveedor
+      if (!data.proveedor || data.proveedor < 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['proveedor'],
+          message: 'Esta modalidad requiere proveedor',
+        });
+      }
     }
   });
 
@@ -189,7 +203,7 @@ export default function VoucherFormModal({
   const form = useForm<VoucherFormValues>({
     resolver: zodResolver(voucherSchema),
     defaultValues: {
-      proveedor: 0,
+      proveedor: null,
       modalidad_entrega: 'DIRECTO',
       ruta_recoleccion: null,
       fecha_viaje: new Date().toISOString().slice(0, 10),
@@ -210,8 +224,26 @@ export default function VoucherFormModal({
   const proveedorSel = watch('proveedor');
   const modalidadSel = watch('modalidad_entrega');
 
-  // Productos disponibles del proveedor (deduplicados desde PrecioMP)
+  // Productos disponibles:
+  //   - DIRECTO/TRANSPORTE_INTERNO: solo los que tienen PrecioMP del proveedor.
+  //   - RECOLECCION: TODOS los MP del catálogo (la empresa recibe lo que traiga
+  //     la ruta, sin importar PrecioMP por proveedor — los precios viven en
+  //     los vouchers de recolección asociados, no aquí).
   const productosDelProveedor = useMemo((): ProductoMini[] => {
+    if (modalidadSel === 'RECOLECCION') {
+      // Lista única de productos MP de TODOS los precios (proxy de "MP del catálogo")
+      const map = new Map<number, ProductoMini>();
+      for (const p of precios) {
+        if (!map.has(p.producto)) {
+          map.set(p.producto, {
+            id: p.producto,
+            codigo: p.producto_codigo,
+            nombre: p.producto_nombre,
+          });
+        }
+      }
+      return Array.from(map.values());
+    }
     if (!proveedorSel || Number(proveedorSel) === 0) return [];
     const map = new Map<number, ProductoMini>();
     for (const p of precios) {
@@ -220,12 +252,11 @@ export default function VoucherFormModal({
           id: p.producto,
           codigo: p.producto_codigo,
           nombre: p.producto_nombre,
-          // requiere_qc_recepcion no viene en PrecioMP — se omite aquí
         });
       }
     }
     return Array.from(map.values());
-  }, [proveedorSel, precios]);
+  }, [proveedorSel, modalidadSel, precios]);
 
   // Limpiar líneas cuando cambia el proveedor
   useEffect(() => {
@@ -242,7 +273,8 @@ export default function VoucherFormModal({
 
   const handleSubmit = async (data: VoucherFormValues) => {
     const created = await createMut.mutateAsync({
-      proveedor: data.proveedor,
+      // H-SC-RUTA-02: en RECOLECCION proveedor puede ser null.
+      proveedor: data.proveedor ?? null,
       modalidad_entrega: data.modalidad_entrega,
       ruta_recoleccion: data.ruta_recoleccion ?? null,
       fecha_viaje: data.fecha_viaje,
@@ -304,10 +336,18 @@ export default function VoucherFormModal({
             name="proveedor"
             render={({ field }) => (
               <SearchableSelect
-                label="Proveedor"
-                required
+                label={
+                  modalidadSel === 'RECOLECCION'
+                    ? 'Proveedor (opcional — la fuente es la ruta)'
+                    : 'Proveedor'
+                }
+                required={modalidadSel !== 'RECOLECCION'}
                 error={formState.errors.proveedor?.message}
-                placeholder="Buscar por código o nombre..."
+                placeholder={
+                  modalidadSel === 'RECOLECCION'
+                    ? 'Sin proveedor (recibe de la ruta)'
+                    : 'Buscar por código o nombre...'
+                }
                 options={proveedores.map((p) => ({
                   value: p.id,
                   label: p.nombre_comercial,
@@ -315,7 +355,7 @@ export default function VoucherFormModal({
                   description: p.ciudad_nombre ?? undefined,
                 }))}
                 value={field.value || null}
-                onChange={(v) => field.onChange(v ?? 0)}
+                onChange={(v) => field.onChange(v ?? null)}
               />
             )}
           />

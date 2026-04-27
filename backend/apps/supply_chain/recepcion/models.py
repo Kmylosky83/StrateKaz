@@ -46,12 +46,21 @@ class VoucherRecepcion(TenantModel):
         LIQUIDADO = 'LIQUIDADO', 'Liquidado'
 
     # ─── Partes ────────────────────────────────────────────────────────
+    # H-SC-RUTA-02 (2026-04-26): proveedor es OPCIONAL cuando la modalidad
+    # es RECOLECCION (la mercancía viene de la RUTA, no de un proveedor
+    # único). En modalidades DIRECTO o TRANSPORTE_INTERNO sigue siendo
+    # obligatorio. Validación condicional en clean().
     proveedor = models.ForeignKey(
         'catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='vouchers_recepcion',
         verbose_name='Proveedor',
-        help_text='Proveedor que recibe la liquidación',
+        help_text=(
+            'Proveedor que entrega. OPCIONAL en modalidad RECOLECCION '
+            '(la fuente es la ruta + sus vouchers de recolección).'
+        ),
     )
 
     # ─── Logística entrega ─────────────────────────────────────────────
@@ -154,19 +163,31 @@ class VoucherRecepcion(TenantModel):
         ]
 
     def __str__(self):
-        return f"Voucher #{self.pk} — {self.proveedor} ({self.peso_neto_total} kg)"
+        origen = (
+            self.proveedor and self.proveedor.nombre_comercial
+        ) or (self.ruta_recoleccion and f"Ruta {self.ruta_recoleccion.codigo}") or '—'
+        return f"Voucher #{self.pk} — {origen} ({self.peso_neto_total} kg)"
 
     def clean(self):
         super().clean()
-        if (
-            self.modalidad_entrega == self.ModalidadEntrega.RECOLECCION
-            and not self.ruta_recoleccion
-        ):
-            raise ValidationError({
-                'ruta_recoleccion': (
-                    'Modalidad RECOLECCION requiere especificar una ruta de recolección.'
-                )
-            })
+        if self.modalidad_entrega == self.ModalidadEntrega.RECOLECCION:
+            # En modalidad RECOLECCION, ruta es obligatoria; proveedor es opcional
+            # (la fuente es la ruta + sus N vouchers de recolección).
+            if not self.ruta_recoleccion:
+                raise ValidationError({
+                    'ruta_recoleccion': (
+                        'Modalidad RECOLECCION requiere especificar una ruta.'
+                    )
+                })
+        else:
+            # En modalidades DIRECTO o TRANSPORTE_INTERNO, proveedor es obligatorio.
+            if not self.proveedor_id:
+                raise ValidationError({
+                    'proveedor': (
+                        f'Modalidad {self.get_modalidad_entrega_display()} '
+                        'requiere especificar un proveedor.'
+                    )
+                })
 
     # ─── Properties QC (H-SC-03) ───────────────────────────────────────
     @property

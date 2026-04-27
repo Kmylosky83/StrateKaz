@@ -69,7 +69,9 @@ class VoucherLineaMPSerializer(serializers.ModelSerializer):
 
 class VoucherRecepcionListSerializer(serializers.ModelSerializer):
     """Serializer liviano para listados."""
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
+    proveedor_nombre = serializers.CharField(
+        source='proveedor.nombre_comercial', read_only=True, allow_null=True,
+    )
     almacen_nombre = serializers.CharField(source='almacen_destino.nombre', read_only=True)
     ruta_recoleccion_nombre = serializers.CharField(
         source='ruta_recoleccion.nombre', read_only=True, allow_null=True,
@@ -125,7 +127,9 @@ class VoucherRecepcionListSerializer(serializers.ModelSerializer):
 
 class VoucherRecepcionSerializer(serializers.ModelSerializer):
     """Serializer completo para detalle / create / update."""
-    proveedor_nombre = serializers.CharField(source='proveedor.nombre_comercial', read_only=True)
+    proveedor_nombre = serializers.CharField(
+        source='proveedor.nombre_comercial', read_only=True, allow_null=True,
+    )
     ruta_recoleccion_nombre = serializers.CharField(
         source='ruta_recoleccion.nombre', read_only=True
     )

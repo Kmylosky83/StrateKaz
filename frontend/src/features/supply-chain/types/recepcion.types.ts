@@ -31,8 +31,9 @@ export interface CreateVoucherLineaMPDTO {
 
 export interface VoucherRecepcionList {
   id: number;
-  proveedor: number;
-  proveedor_nombre?: string;
+  /** H-SC-RUTA-02: nullable en modalidad RECOLECCION (la fuente es la ruta). */
+  proveedor: number | null;
+  proveedor_nombre?: string | null;
   modalidad_entrega: ModalidadEntrega;
   modalidad_entrega_display?: string;
   fecha_viaje: string;
@@ -68,7 +69,8 @@ export interface VoucherRecepcion extends VoucherRecepcionList {
 }
 
 export interface CreateVoucherRecepcionDTO {
-  proveedor: number;
+  /** H-SC-RUTA-02: opcional en modalidad RECOLECCION (la fuente es la ruta). */
+  proveedor?: number | null;
   modalidad_entrega: ModalidadEntrega;
   /** H-SC-10: FK a RutaRecoleccion (requerido cuando modalidad=RECOLECCION) */
   ruta_recoleccion?: number | null;

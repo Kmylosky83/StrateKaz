@@ -24,6 +24,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
 import { useModalidadesLogistica } from '../hooks/usePrecios';
 import {
+  useRutaParadas,
   useRutaParadasByRuta,
   useCreateRutaParada,
   useUpdateRutaParada,
@@ -42,6 +43,9 @@ const MODALIDAD_RECOLECCION_CODE = 'COMPRA_PUNTO';
 
 export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasModalProps) {
   const { data: paradas = [], isLoading } = useRutaParadasByRuta(ruta.id);
+  // Todas las paradas del tenant: necesario para excluir proveedores que ya
+  // sean parada de OTRA ruta (constraint backend: 1 proveedor → 1 ruta).
+  const { data: todasLasParadas = [] } = useRutaParadas();
   const { data: proveedores = [] } = useProveedores();
   const { data: modalidades = [] } = useModalidadesLogistica();
   const createMutation = useCreateRutaParada();
@@ -67,11 +71,16 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
   // Proveedores disponibles para esta ruta:
   //   1. Activos.
   //   2. Con modalidad logística = "Compra en Punto" (la ruta los recoge).
-  //   3. NO sean ya parada de ESTA u otra ruta.
-  const idsParada = new Set(paradas.map((p) => p.proveedor));
+  //   3. NO sean parada de NINGUNA ruta (no solo de esta — global).
+  // Backend tiene constraint UniqueConstraint(proveedor) que rechaza si se
+  // intenta duplicar, pero el FE no debe mostrarlo en el dropdown.
+  const idsParadaGlobal = useMemo(
+    () => new Set(todasLasParadas.map((p) => p.proveedor)),
+    [todasLasParadas]
+  );
   const proveedoresDisponibles = proveedores.filter((p) => {
     if (!p.is_active) return false;
-    if (idsParada.has(p.id)) return false;
+    if (idsParadaGlobal.has(p.id)) return false;
     // Si todavía no hay catálogo cargado, NO filtramos por modalidad (degrada
     // grácil para no bloquear UI mientras carga el catálogo).
     if (modalidadCompraPuntoId !== null && p.modalidad_logistica !== modalidadCompraPuntoId) {
@@ -129,7 +138,7 @@ export default function RutaParadasModal({ ruta, isOpen, onClose }: RutaParadasM
 
   const helperFiltro =
     proveedoresDisponibles.length === 0 && modalidadCompraPuntoId !== null
-      ? 'No hay proveedores disponibles. Solo se muestran los que tienen modalidad logística "Compra en Punto" y aún no son parada de otra ruta. Crea uno desde Catálogo de Productos → Proveedores.'
+      ? 'No hay proveedores disponibles. Solo se muestran los que tienen modalidad "Compra en Punto" y NO sean ya parada de otra ruta. Crea uno desde Catálogo de Productos → Proveedores, o libera uno desde la ruta donde esté asignado.'
       : undefined;
 
   return (

@@ -119,11 +119,12 @@ export default function RecepcionTab() {
     return { total, pendientes, aprobados, pesoTotal };
   }, [vouchers]);
 
+  // 2026-04-26: voucher de RECEPCIÓN pasa a 80mm (mejor legibilidad).
   const handlePrint = async (id: number) => {
     try {
-      const response = await voucherRecepcionApi.getPrint58mm(id);
+      const response = await voucherRecepcionApi.getPrint80mm(id);
       const html = response.data as unknown as string;
-      const win = window.open('', '_blank', 'width=420,height=650,scrollbars=yes');
+      const win = window.open('', '_blank', 'width=480,height=700,scrollbars=yes');
       if (win) {
         win.document.write(html);
         win.document.close();
@@ -358,7 +359,7 @@ export default function RecepcionTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            title="Imprimir voucher (58mm)"
+                            title="Imprimir voucher (80mm)"
                             onClick={() => handlePrint(v.id)}
                           >
                             <Printer className="w-4 h-4 text-blue-600" />

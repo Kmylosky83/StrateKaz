@@ -30,8 +30,16 @@ export const voucherRecepcionApi = {
     apiClient.post<VoucherRecepcion>(`${BASE}/vouchers/${id}/rechazar/`, { motivo }),
   registrarQC: (id: number, data: RegistrarQCDTO) =>
     apiClient.post<RecepcionCalidad>(`${BASE}/vouchers/${id}/registrar-qc/`, data),
+  /**
+   * H-SC-RUTA-02 (2026-04-26): VoucherRecepcion pasó de 58mm a 80mm para
+   * mejor legibilidad. Mismo contenido. El voucher de RECOLECCIÓN (en
+   * ruta) sí se mantiene en 58mm (endpoint propio).
+   */
+  getPrint80mm: (id: number) =>
+    apiClient.get<string>(`${BASE}/vouchers/${id}/print-80mm/`, { responseType: 'text' }),
+  /** @deprecated Usar getPrint80mm. Alias de retro-compat (apunta al mismo). */
   getPrint58mm: (id: number) =>
-    apiClient.get<string>(`${BASE}/vouchers/${id}/print-58mm/`, { responseType: 'text' }),
+    apiClient.get<string>(`${BASE}/vouchers/${id}/print-80mm/`, { responseType: 'text' }),
 };
 
 export const recepcionCalidadApi = {

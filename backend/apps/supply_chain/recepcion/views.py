@@ -214,11 +214,18 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
-    # ─── Impresión térmica 58mm (H-SC-03) ─────────────────────────────
-    @action(detail=True, methods=['get'], url_path='print-58mm')
-    def print_58mm(self, request, pk=None):
+    # ─── Impresión térmica 80mm (H-SC-RUTA-02 — antes 58mm) ───────────
+    @action(detail=True, methods=['get'], url_path='print-80mm')
+    def print_80mm(self, request, pk=None):
         """
-        Retorna HTML optimizado para impresora térmica de 58mm.
+        Retorna HTML optimizado para impresora térmica de 80mm.
+
+        Cambio 2026-04-26: el voucher de RECEPCIÓN en planta pasó de 58mm
+        a 80mm para mejor legibilidad y firma de la planta. El voucher de
+        RECOLECCIÓN (en ruta) se mantiene en 58mm (separate endpoint).
+
+        Mismo contenido que la versión 58mm, ajustes solo de layout
+        (ancho + padding + tamaño fuente).
 
         El HTML incluye auto-print via window.onload para facilitar
         la impresión directa desde el navegador.
@@ -342,11 +349,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 return '0'
 
-        # Formato por línea optimizado para 58mm:
+        # Formato por línea optimizado para 80mm:
         #   Nombre del producto (truncado si largo)
         #     B:56.0 T:0.0 N:56.0 kg          ← pesos en una sola fila
         #     QC Acidez 8.0% (Tipo B)          ← medición con clasificación
-        def _trunc(text, maxlen=28):
+        def _trunc(text, maxlen=40):
             text = (text or '').strip()
             return text if len(text) <= maxlen else text[:maxlen - 1] + '…'
 
@@ -381,7 +388,7 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
                     f'{fmt_val(med.measured_value)}{unit}{rango_txt}</div>'
                 )
 
-        SEP = '-' * 32
+        SEP = '-' * 42  # 80mm da espacio para más caracteres por línea
 
         # ── Bloque de observaciones (condicional) ─────────────────────
         obs_block = ''
@@ -397,12 +404,11 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Voucher #{voucher.pk:04d}</title>
 <style>
-  /* Diseno profesional ticket termico 58mm:
-     - @page sin margenes (el body los define internamente con padding)
-     - body ocupa los 58mm completos con padding simetrico → el contenido
-       queda CENTRADO en el papel fisico. */
+  /* Diseño profesional ticket térmico 80mm (H-SC-RUTA-02):
+     - @page sin márgenes; body define padding interno simétrico.
+     - 80mm da más espacio para nombre del proveedor, productos y QC. */
   @page {{
-    size: 58mm auto;
+    size: 80mm auto;
     margin: 0;
   }}
   * {{
@@ -412,10 +418,10 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   }}
   body {{
     font-family: 'Courier New', Courier, monospace;
-    font-size: 9pt;
-    line-height: 1.3;
-    width: 58mm;
-    padding: 3mm 4mm;
+    font-size: 10pt;
+    line-height: 1.35;
+    width: 80mm;
+    padding: 4mm 5mm;
     margin: 0 auto;
     color: #000;
     background: #fff;
@@ -426,28 +432,26 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   .row {{ display: flex; justify-content: space-between; }}
   .label {{ white-space: nowrap; }}
   .val {{ text-align: right; }}
-  .indent {{ padding-left: 4mm; }}
-  .prod {{ padding-left: 3mm; font-weight: bold; margin-top: 1mm; }}
-  .pesos {{ padding-left: 3mm; font-size: 8.5pt; }}
-  .qc {{ padding-left: 3mm; font-size: 8pt; font-style: italic; }}
-  .obs {{ font-size: 8pt; white-space: pre-wrap; word-break: break-word; }}
+  .indent {{ padding-left: 5mm; }}
+  .prod {{ padding-left: 4mm; font-weight: bold; margin-top: 1.2mm; }}
+  .pesos {{ padding-left: 4mm; font-size: 9.5pt; }}
+  .qc {{ padding-left: 4mm; font-size: 9pt; font-style: italic; }}
+  .obs {{ font-size: 9pt; white-space: pre-wrap; word-break: break-word; }}
   .operador-block {{
-    margin-top: 2mm;
+    margin-top: 2.5mm;
     text-align: center;
   }}
-  .operador-block .nombre {{ font-weight: bold; font-size: 9pt; }}
-  .operador-block .cargo {{ font-size: 7.5pt; opacity: 0.85; }}
-  /* Bloque de marca (header): mismo centrado tipográfico que el footer.
-     img como display:block + margin auto evita el desfase del baseline
-     inline cuando el logo es alto. */
+  .operador-block .nombre {{ font-weight: bold; font-size: 10pt; }}
+  .operador-block .cargo {{ font-size: 8.5pt; opacity: 0.85; }}
+  /* Bloque de marca (header): mismo centrado tipográfico que el footer. */
   .brand {{ text-align: center; }}
-  .brand img {{ display: block; margin: 0 auto; max-width: 40mm; max-height: 15mm; }}
-  .brand .nombre {{ font-weight: bold; }}
-  .brand .nit {{ font-size: 8pt; }}
-  .footer {{ text-align: center; font-size: 8pt; margin-top: 1mm; }}
+  .brand img {{ display: block; margin: 0 auto; max-width: 55mm; max-height: 20mm; }}
+  .brand .nombre {{ font-weight: bold; font-size: 11pt; }}
+  .brand .nit {{ font-size: 9pt; }}
+  .footer {{ text-align: center; font-size: 8.5pt; margin-top: 1.5mm; }}
   @media print {{
-    body {{ width: 58mm; padding: 3mm 4mm; margin: 0; }}
-    @page {{ size: 58mm auto; margin: 0; }}
+    body {{ width: 80mm; padding: 4mm 5mm; margin: 0; }}
+    @page {{ size: 80mm auto; margin: 0; }}
   }}
 </style>
 </head>
@@ -459,8 +463,8 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
   {f'<div class="nit">NIT: {nit}</div>' if nit else ''}
 </div>
 <div class="sep">{SEP}</div>
-<div class="center bold">VOUCHER RECEPCION MP</div>
-<div class="center" style="font-size:8pt;">No. {voucher.pk:04d}</div>
+<div class="center bold" style="font-size:11pt;">VOUCHER DE RECEPCIÓN MP</div>
+<div class="center" style="font-size:9pt;">No. {voucher.pk:04d}</div>
 <div class="sep">{SEP}</div>
 <div class="row"><span class="label">Fecha viaje:</span><span class="val">{fecha_viaje}</span></div>
 <div class="row"><span class="label">Emitido:</span><span class="val">{emision}</span></div>

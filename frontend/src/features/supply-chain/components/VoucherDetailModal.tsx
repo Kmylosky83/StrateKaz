@@ -58,16 +58,17 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
   // Descarga el HTML del voucher con JWT (apiClient) y lo abre en un popup
   // imprimible. No se puede usar window.open(url) directo porque el backend
   // exige Bearer token y window.open no adjunta headers (H-SC-E2E-04).
-  const handlePrint58mm = async () => {
+  // 2026-04-26: cambiado de 58mm a 80mm (voucher de RECEPCIÓN en planta).
+  const handlePrint80mm = async () => {
     setIsPrinting(true);
     try {
       const { data } = await apiClient.get<string>(
-        `/supply-chain/recepcion/vouchers/${voucher.id}/print-58mm/`,
+        `/supply-chain/recepcion/vouchers/${voucher.id}/print-80mm/`,
         { responseType: 'text', headers: { Accept: 'text/html' } }
       );
       const blob = new Blob([data], { type: 'text/html' });
       const blobUrl = URL.createObjectURL(blob);
-      const win = window.open(blobUrl, '_blank', 'width=400,height=700');
+      const win = window.open(blobUrl, '_blank', 'width=480,height=700');
       if (!win) {
         URL.revokeObjectURL(blobUrl);
         toast.error('Permite popups para imprimir el voucher');
@@ -76,7 +77,7 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
       // Liberar la URL tras un minuto (la ventana ya cargó el HTML).
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     } catch {
-      toast.error('No se pudo generar el voucher 58mm');
+      toast.error('No se pudo generar el voucher 80mm');
     } finally {
       setIsPrinting(false);
     }
@@ -92,9 +93,9 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
       <Button variant="outline" onClick={onClose}>
         Cerrar
       </Button>
-      <Button variant="primary" onClick={handlePrint58mm} disabled={isPrinting}>
+      <Button variant="primary" onClick={handlePrint80mm} disabled={isPrinting}>
         <Printer className="w-4 h-4 mr-2" />
-        {isPrinting ? 'Generando…' : 'Imprimir 58mm'}
+        {isPrinting ? 'Generando…' : 'Imprimir 80mm'}
       </Button>
     </>
   );

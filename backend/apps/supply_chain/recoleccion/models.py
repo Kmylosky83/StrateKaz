@@ -10,6 +10,17 @@ H-SC-RUTA-02 (refactor 2 — 2026-04-26):
   porque conceptualmente no encajaba con el flujo del recolector (que opera
   parada por parada, no recorrido completo). Datos legacy fueron borrados.
 
+H-SC-TALONARIO (2026-04-27):
+  Cuando una ruta sale a campo SIN tablet/celular, los operadores anotan en
+  talonarios físicos (papel). Al regresar a planta, se transcriben los
+  talonarios al sistema antes de poder liquidar la ruta. Para soportarlo:
+    - `origen_registro` distingue captura en ruta vs transcripción post-hoc.
+    - `numero_talonario` referencia el recibo físico para auditoría.
+    - `registrado_por_planta` registra quién transcribió (no es el operador
+      original, que en estos casos puede ser el mismo recolector que entregó
+      el talonario sin estar en la app).
+    - `operador` queda nullable cuando origen=TRANSCRIPCION_PLANTA.
+
 Sin precio — los precios viven en gestion_proveedores.PrecioMateriaPrima
 y se aplican al liquidar al productor por sus vouchers del periodo.
 
@@ -33,11 +44,29 @@ class VoucherRecoleccion(TenantModel):
         del periodo si quedan vouchers en BORRADOR (bloquea liquidación).
       - COMPLETADO: cerrado/firmado. No editable. Se puede usar para liquidar
         al productor.
+
+    Origen de registro (H-SC-TALONARIO):
+      - EN_RUTA: capturado por el operador en campo (default histórico).
+      - TRANSCRIPCION_PLANTA: el operador llegó a planta con un talonario
+        físico (papel) y alguien lo transcribió al sistema. `operador` puede
+        ser NULL en este caso; lo que cuenta para audit es
+        `registrado_por_planta`.
+      - TALONARIO_MANUAL: registrado directamente desde planta sin pasar por
+        el operador de ruta (caso edge: la ruta no llevó talonario y planta
+        registra desde otro insumo).
     """
 
     class Estado(models.TextChoices):
         BORRADOR = 'BORRADOR', 'Borrador'
         COMPLETADO = 'COMPLETADO', 'Completado'
+
+    class OrigenRegistro(models.TextChoices):
+        EN_RUTA = 'EN_RUTA', 'Capturado en ruta (app/tablet)'
+        TRANSCRIPCION_PLANTA = (
+            'TRANSCRIPCION_PLANTA',
+            'Transcripción de talonario en planta',
+        )
+        TALONARIO_MANUAL = 'TALONARIO_MANUAL', 'Registro manual desde planta'
 
     codigo = models.CharField(
         max_length=50,
@@ -79,8 +108,44 @@ class VoucherRecoleccion(TenantModel):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='vouchers_recoleccion_operados',
+        null=True,
+        blank=True,
         verbose_name='Operador',
-        help_text='Usuario que registró este voucher (en ruta o post-entrega).',
+        help_text=(
+            'Usuario que registró este voucher en ruta. Obligatorio cuando '
+            'origen=EN_RUTA. Puede quedar vacío en transcripciones de talonario.'
+        ),
+    )
+    # ─── H-SC-TALONARIO ──────────────────────────────────────────────────
+    origen_registro = models.CharField(
+        max_length=30,
+        choices=OrigenRegistro.choices,
+        default=OrigenRegistro.EN_RUTA,
+        db_index=True,
+        verbose_name='Origen del registro',
+        help_text=(
+            'Indica si el voucher fue capturado en ruta o transcrito '
+            'post-hoc desde planta a partir de un talonario físico.'
+        ),
+    )
+    numero_talonario = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name='Número de talonario',
+        help_text='Referencia al recibo físico (papel) cuando aplica.',
+    )
+    registrado_por_planta = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vouchers_recoleccion_transcritos',
+        verbose_name='Registrado por (planta)',
+        help_text=(
+            'Usuario de planta que transcribió el talonario. Obligatorio '
+            'cuando origen=TRANSCRIPCION_PLANTA o TALONARIO_MANUAL.'
+        ),
     )
     estado = models.CharField(
         max_length=20,
@@ -106,6 +171,7 @@ class VoucherRecoleccion(TenantModel):
             models.Index(fields=['proveedor', '-fecha_recoleccion']),
             models.Index(fields=['estado', '-fecha_recoleccion']),
             models.Index(fields=['fecha_recoleccion']),
+            models.Index(fields=['origen_registro', '-fecha_recoleccion']),
         ]
 
     def __str__(self):
@@ -133,3 +199,25 @@ class VoucherRecoleccion(TenantModel):
         super().clean()
         if self.cantidad is not None and self.cantidad <= 0:
             raise ValidationError({'cantidad': 'La cantidad debe ser mayor a cero.'})
+
+        # H-SC-TALONARIO: defensa en profundidad por origen.
+        if self.origen_registro == self.OrigenRegistro.EN_RUTA:
+            if self.operador_id is None:
+                raise ValidationError({
+                    'operador': (
+                        'El operador es obligatorio cuando el origen del '
+                        'registro es EN_RUTA.'
+                    ),
+                })
+        elif self.origen_registro in (
+            self.OrigenRegistro.TRANSCRIPCION_PLANTA,
+            self.OrigenRegistro.TALONARIO_MANUAL,
+        ):
+            if self.registrado_por_planta_id is None:
+                raise ValidationError({
+                    'registrado_por_planta': (
+                        'Cuando el origen es TRANSCRIPCION_PLANTA o '
+                        'TALONARIO_MANUAL debe registrarse el usuario de planta '
+                        'que transcribió el voucher.'
+                    ),
+                })

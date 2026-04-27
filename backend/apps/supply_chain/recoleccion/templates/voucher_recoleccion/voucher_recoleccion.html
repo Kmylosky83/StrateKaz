@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Voucher Recoleccion {{ voucher.codigo }}</title>
+  <style>
+    body { font-family: sans-serif; margin: 2cm; color: #111; }
+    h1 { font-size: 18pt; margin-bottom: 8pt; }
+    .subtitle { font-size: 10pt; color: #666; margin-bottom: 16pt; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8pt; }
+    table td { border: 1px solid #999; padding: 6px 8px; vertical-align: top; }
+    table td.label { width: 30%; background: #f3f4f6; font-weight: bold; }
+    .footer { margin-top: 2cm; font-size: 9pt; color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Voucher de Recoleccion {{ voucher.codigo }}</h1>
+  <div class="subtitle">Supply Chain &mdash; Recoleccion en ruta</div>
+  <table>
+    <tr>
+      <td class="label">Fecha</td>
+      <td>{{ voucher.fecha_recoleccion|date:"Y-m-d" }}</td>
+    </tr>
+    <tr>
+      <td class="label">Ruta</td>
+      <td>{{ voucher.ruta.codigo }} &mdash; {{ voucher.ruta.nombre }}</td>
+    </tr>
+    <tr>
+      <td class="label">Proveedor</td>
+      <td>
+        {{ voucher.proveedor.codigo_interno }} &mdash;
+        {{ voucher.proveedor.nombre_comercial }}
+      </td>
+    </tr>
+    <tr>
+      <td class="label">Producto</td>
+      <td>{{ voucher.producto.nombre }}</td>
+    </tr>
+    <tr>
+      <td class="label">Cantidad</td>
+      <td>{{ voucher.cantidad }} kg</td>
+    </tr>
+    <tr>
+      <td class="label">Estado</td>
+      <td>{{ voucher.get_estado_display }}</td>
+    </tr>
+    <tr>
+      <td class="label">Operador</td>
+      <td>{{ voucher.operador.get_full_name|default:voucher.operador }}</td>
+    </tr>
+    {% if voucher.notas %}
+    <tr>
+      <td class="label">Notas</td>
+      <td>{{ voucher.notas|linebreaksbr }}</td>
+    </tr>
+    {% endif %}
+  </table>
+  <p class="footer">
+    Generado: {{ voucher.created_at|date:"Y-m-d H:i" }} &mdash; StrateKaz Supply Chain
+  </p>
+</body>
+</html>

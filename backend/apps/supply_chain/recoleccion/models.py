@@ -161,6 +161,14 @@ class VoucherRecoleccion(TenantModel):
         help_text='Observaciones de la parada (clima, novedades, etc.).',
     )
 
+    # H-SC-GD-ARCHIVE: referencia idempotente al Documento creado en GD al completar
+    documento_archivado_id = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='ID documento GD',
+        help_text='ID del Documento archivado en Gestion Documental al completar.',
+    )
+
     class Meta:
         db_table = 'supply_chain_voucher_recoleccion'
         verbose_name = 'Voucher de Recolección'

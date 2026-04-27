@@ -65,6 +65,12 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
         voucher.estado = VoucherRecoleccion.Estado.COMPLETADO
         voucher.updated_by = request.user
         voucher.save(update_fields=['estado', 'updated_by', 'updated_at'])
+
+        # H-SC-GD-ARCHIVE: archivado idempotente al completar (falla silencioso)
+        from .services import archivar_voucher_en_gd
+        archivar_voucher_en_gd(voucher, request.user)
+        voucher.refresh_from_db()
+
         return Response(self.get_serializer(voucher).data)
 
     # ─── H-SC-TALONARIO: transcripción post-hoc desde planta ─────────

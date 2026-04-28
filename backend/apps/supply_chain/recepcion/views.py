@@ -14,6 +14,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import RequireCRUDPermission
+
 from .models import (
     MedicionCalidad,
     ParametroCalidad,
@@ -48,7 +50,18 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
     ).prefetch_related(
         'lineas__producto',
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
+    # Acciones de transición de estado (aprobar/rechazar/QC) y vínculos = update.
+    # Acciones de impresión = view (lectura del recurso).
+    permission_action_map = {
+        'asociar_recolecciones': 'update',
+        'aprobar': 'update',
+        'rechazar': 'update',
+        'registrar_qc': 'update',
+        'print_80mm': 'view',
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         'proveedor', 'almacen_destino',
@@ -72,44 +85,6 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
-
-    # ─── Resumen de merma por ruta + fecha (H-SC-04) ──────────────────
-    @action(detail=False, methods=['get'], url_path='merma-resumen')
-    def merma_resumen(self, request):
-        """Resumen agregado de merma por ruta + fecha."""
-        ruta_id = request.query_params.get('ruta_id')
-        fecha_desde = request.query_params.get('fecha_desde')
-        fecha_hasta = request.query_params.get('fecha_hasta')
-
-        qs = self.get_queryset().filter(
-            modalidad_entrega='RECOLECCION', estado='APROBADO',
-        )
-        if ruta_id:
-            qs = qs.filter(ruta_recoleccion_id=ruta_id)
-        if fecha_desde:
-            qs = qs.filter(fecha_viaje__gte=fecha_desde)
-        if fecha_hasta:
-            qs = qs.filter(fecha_viaje__lte=fecha_hasta)
-
-        resultado = []
-        for v in qs.select_related('ruta_recoleccion').prefetch_related(
-            'vouchers_recoleccion', 'lineas',
-        ):
-            if v.merma_kg is None:
-                continue
-            resultado.append({
-                'voucher_id': v.id,
-                'fecha_viaje': v.fecha_viaje,
-                'ruta_id': v.ruta_recoleccion_id,
-                'ruta_codigo': (
-                    v.ruta_recoleccion.codigo if v.ruta_recoleccion else None
-                ),
-                'peso_recolectado': v.peso_total_recolectado,
-                'peso_recibido': v.peso_total_recibido,
-                'merma_kg': v.merma_kg,
-                'merma_porcentaje': v.merma_porcentaje,
-            })
-        return Response(resultado)
 
     # ─── Vínculo M2M con vouchers de recolección (H-SC-RUTA-02 refactor 2) ──
     @action(detail=True, methods=['post'], url_path='asociar-recolecciones')
@@ -183,91 +158,6 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
 
         serializer = VoucherRecepcionSerializer(voucher, context={'request': request})
         return Response(serializer.data)
-
-    # H-SC-TALONARIO: Asociar talonario manual desde planta
-    # Transcribe vouchers de recoleccion post-hoc + asocia al M2M.
-    # Delega creacion al endpoint canonico de recoleccion.
-    @action(detail=True, methods=['post'], url_path='asociar-talonario-planta')
-    def asociar_talonario_planta(self, request, pk=None):
-        """
-        Transcribe un talonario manual y asocia los vouchers creados a esta
-        recepcion. Body equivalente a /recoleccion/vouchers/transcribir-talonario/
-        pero ruta_id se infiere de voucher.ruta_recoleccion.
-        """
-        from apps.supply_chain.recoleccion.models import VoucherRecoleccion
-        from apps.supply_chain.recoleccion.serializers import (
-            TranscribirTalonarioSerializer,
-            VoucherRecoleccionSerializer,
-        )
-
-        voucher = self.get_object()
-
-        if voucher.estado == voucher.EstadoVoucher.LIQUIDADO:
-            raise ValidationError({
-                'detail': 'No se puede modificar una recepción ya liquidada.',
-            })
-        if voucher.modalidad_entrega != VoucherRecepcion.ModalidadEntrega.RECOLECCION:
-            raise ValidationError({
-                'detail': (
-                    'Solo recepciones de modalidad RECOLECCION admiten '
-                    'transcripción de talonario manual.'
-                ),
-            })
-        if not voucher.ruta_recoleccion_id:
-            raise ValidationError({
-                'detail': (
-                    'La recepción no tiene ruta asignada. Asigne la ruta '
-                    'antes de transcribir el talonario.'
-                ),
-            })
-
-        payload = dict(request.data)
-        payload['ruta_id'] = voucher.ruta_recoleccion_id
-
-        serializer = TranscribirTalonarioSerializer(data=payload)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        operador_id = data.get('operador_id')
-        ruta_id = data['ruta_id']
-        fecha = data['fecha_recoleccion']
-        user = request.user
-
-        creados = []
-        with transaction.atomic():
-            for parada in data['paradas']:
-                vrc = VoucherRecoleccion(
-                    ruta_id=ruta_id,
-                    fecha_recoleccion=fecha,
-                    proveedor_id=parada['proveedor_id'],
-                    producto_id=parada['producto_id'],
-                    cantidad=parada['cantidad_kg'],
-                    operador_id=operador_id,
-                    origen_registro=VoucherRecoleccion.OrigenRegistro.TRANSCRIPCION_PLANTA,
-                    numero_talonario=parada.get('numero_talonario', ''),
-                    registrado_por_planta=user,
-                    estado=VoucherRecoleccion.Estado.COMPLETADO,
-                    notas=parada.get('notas', ''),
-                    created_by=user,
-                    updated_by=user,
-                )
-                vrc.full_clean()
-                vrc.save()
-                creados.append(vrc)
-
-            voucher.vouchers_recoleccion.add(*creados)
-            voucher.updated_by = user
-            voucher.save(update_fields=['updated_by', 'updated_at'])
-
-        out = VoucherRecoleccionSerializer(creados, many=True)
-        return Response(
-            {
-                'creados': out.data,
-                'total': len(creados),
-                'voucher_recepcion_id': voucher.id,
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
     @action(detail=True, methods=['post'], url_path='rechazar')
     def rechazar(self, request, pk=None):
@@ -349,33 +239,290 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
-    # ─── Impresión térmica 80mm (PDF via VoucherPDFService) ──────────
+    # ─── Impresión térmica 80mm (H-SC-RUTA-02 — antes 58mm) ───────────
     @action(detail=True, methods=['get'], url_path='print-80mm')
     def print_80mm(self, request, pk=None):
-        """Devuelve PDF 80mm imprimible del voucher (H-SC-01 refactor)."""
-        from .services import VoucherPDFService
+        """
+        Retorna HTML optimizado para impresora térmica de 80mm.
 
+        Cambio 2026-04-26: el voucher de RECEPCIÓN en planta pasó de 58mm
+        a 80mm para mejor legibilidad y firma de la planta. El voucher de
+        RECOLECCIÓN (en ruta) se mantiene en 58mm (separate endpoint).
+
+        Mismo contenido que la versión 58mm, ajustes solo de layout
+        (ancho + padding + tamaño fuente).
+
+        El HTML incluye auto-print via window.onload para facilitar
+        la impresión directa desde el navegador.
+        """
         voucher = self.get_object()
-        pdf_bytes = VoucherPDFService.generar_pdf_80mm(voucher)
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = (
-            f'inline; filename="voucher-{voucher.id}-80mm.pdf"'
+
+        # ── Branding del tenant (H-SC-13) ─────────────────────────────
+        # El header muestra los datos del tenant (la empresa que emite el
+        # voucher), no del proveedor del software. Fuente primaria: modelo
+        # Tenant (nit, nombre_comercial, logo). Fallback: EmpresaConfig.
+        tenant = getattr(connection, 'tenant', None)
+        empresa = 'StrateKaz'
+        nit = ''
+        logo_url = ''
+        if tenant is not None:
+            empresa = (
+                getattr(tenant, 'nombre_comercial', None)
+                or getattr(tenant, 'razon_social', None)
+                or getattr(tenant, 'name', None)
+                or 'StrateKaz'
+            )
+            nit = getattr(tenant, 'nit', '') or ''
+            logo_field = getattr(tenant, 'logo', None)
+            if logo_field and hasattr(logo_field, 'url'):
+                try:
+                    logo_url = request.build_absolute_uri(logo_field.url)
+                except Exception:
+                    logo_url = ''
+        # Fallback: EmpresaConfig (si el Tenant no trae NIT configurado)
+        if not nit:
+            try:
+                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+                empresa_config = EmpresaConfig.get_instance()
+                if empresa_config:
+                    nit = empresa_config.nit or ''
+            except Exception:
+                pass
+
+        # ── Helpers de formato ────────────────────────────────────────
+        def fmt_kg(value):
+            """Formato 1 decimal: 56.0kg (antes 56.000kg)."""
+            try:
+                return f"{float(value):.1f}"
+            except (TypeError, ValueError):
+                return '0.0'
+
+        # ── Datos del voucher ─────────────────────────────────────────
+        fecha_viaje = voucher.fecha_viaje.strftime('%d-%m-%Y') if voucher.fecha_viaje else '—'
+
+        created_at_local = timezone.localtime(voucher.created_at)
+        emision = created_at_local.strftime('%d-%m-%Y %H:%M')
+
+        prov = voucher.proveedor
+        _prov_nombre = getattr(prov, 'nombre_comercial', str(prov)) if prov else '—'
+        _prov_codigo = getattr(prov, 'codigo_interno', '') if prov else ''
+        proveedor_nombre = f"{_prov_codigo} - {_prov_nombre}" if _prov_codigo else _prov_nombre
+        almacen_nombre = getattr(voucher.almacen_destino, 'nombre', str(voucher.almacen_destino))
+        modalidad = voucher.get_modalidad_entrega_display()
+        estado = voucher.get_estado_display()
+
+        try:
+            full_name = voucher.operador_bascula.get_full_name() or str(voucher.operador_bascula)
+        except AttributeError:
+            full_name = '—'
+
+        # Cargo del operador para mostrar bajo el nombre.
+        # Para superadmin (sin cargo) usamos el label canónico del sistema
+        # (ver CLAUDE.md → "Superadmin — Reglas de Identidad").
+        operador_cargo = ''
+        op = voucher.operador_bascula
+        if op is not None:
+            if getattr(op, 'is_superuser', False) and not op.cargo_id:
+                operador_cargo = 'Administrador del Sistema'
+            else:
+                cargo = getattr(op, 'cargo', None)
+                if cargo is not None:
+                    operador_cargo = (
+                        getattr(cargo, 'nombre', '')
+                        or getattr(cargo, 'name', '')
+                        or ''
+                    )
+                if not operador_cargo:
+                    colab = getattr(op, 'colaborador', None)
+                    if colab is not None and getattr(colab, 'cargo', None):
+                        operador_cargo = getattr(colab.cargo, 'nombre', '') or ''
+
+        # Ruta de recolección (solo aplica a modalidades de recolección).
+        ruta_nombre = ''
+        if voucher.ruta_recoleccion_id:
+            ruta_nombre = getattr(voucher.ruta_recoleccion, 'nombre', '') or ''
+
+        # QC resumen: "N/A" si el voucher no requiere QC; si lo requiere y
+        # las mediciones ya se imprimieron inline por línea, no se repite al
+        # final. Si no hay QC registrado se marca "Pendiente".
+        if voucher.requiere_qc:
+            qc_resumen = 'Registrado' if voucher.tiene_qc else 'Pendiente'
+        else:
+            qc_resumen = 'N/A'
+
+        # Estado compacto para ticket térmico (el display completo es largo:
+        # "Aprobado — listo para liquidar" no cabe bien en 58mm).
+        estado_compacto = {
+            'PENDIENTE_QC': 'PENDIENTE QC',
+            'APROBADO': 'APROBADO',
+            'RECHAZADO': 'RECHAZADO',
+            'LIQUIDADO': 'LIQUIDADO',
+        }.get(voucher.estado, estado)
+
+        # ── Bloque de líneas con mediciones QC ────────────────────────
+        lineas = list(
+            voucher.lineas
+            .select_related('producto')
+            .prefetch_related('measurements__parameter', 'measurements__classified_range')
+            .all()
         )
-        return response
+        peso_total = voucher.peso_neto_total
 
-    @action(detail=True, methods=['get'], url_path='pdf-carta')
-    def pdf_carta(self, request, pk=None):
-        """PDF carta del voucher para archivo / consulta formal (H-SC-01)."""
-        from .services import VoucherPDFService
+        def fmt_val(value, decimals=1):
+            try:
+                return f"{float(value):.{decimals}f}"
+            except (TypeError, ValueError):
+                return '0'
 
-        voucher = self.get_object()
-        pdf_bytes = VoucherPDFService.generar_pdf_carta(voucher)
-        response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        response['Content-Disposition'] = (
-            f'attachment; filename="voucher-{voucher.id}.pdf"'
-        )
-        return response
+        # Formato por línea optimizado para 80mm:
+        #   Nombre del producto (truncado si largo)
+        #     B:56.0 T:0.0 N:56.0 kg          ← pesos en una sola fila
+        #     QC Acidez 8.0% (Tipo B)          ← medición con clasificación
+        def _trunc(text, maxlen=40):
+            text = (text or '').strip()
+            return text if len(text) <= maxlen else text[:maxlen - 1] + '…'
 
+        lineas_rows = ''
+        for linea in lineas:
+            prod_nombre = _trunc(getattr(linea.producto, 'nombre', str(linea.producto)))
+            tara = float(linea.peso_tara_kg or 0)
+            # Omitir tara si es 0 para ahorrar ancho
+            if tara > 0:
+                pesos_line = (
+                    f'B:{fmt_kg(linea.peso_bruto_kg)} '
+                    f'T:{fmt_kg(linea.peso_tara_kg)} '
+                    f'<b>N:{fmt_kg(linea.peso_neto_kg)}</b>'
+                )
+            else:
+                pesos_line = (
+                    f'B:{fmt_kg(linea.peso_bruto_kg)} '
+                    f'<b>N:{fmt_kg(linea.peso_neto_kg)}</b> kg'
+                )
+            lineas_rows += (
+                f'<div class="prod">{prod_nombre}</div>'
+                f'<div class="pesos">{pesos_line}</div>'
+            )
+            # Mediciones QC inline con clasificación (H-SC-E2E mejora):
+            for med in linea.measurements.all():
+                param_name = getattr(med.parameter, 'name', '') if med.parameter else ''
+                unit = getattr(med.parameter, 'unit', '') if med.parameter else ''
+                rango = getattr(med.classified_range, 'name', '') if med.classified_range_id else ''
+                rango_txt = f' ({rango})' if rango else ''
+                lineas_rows += (
+                    f'<div class="qc">QC {param_name} '
+                    f'{fmt_val(med.measured_value)}{unit}{rango_txt}</div>'
+                )
+
+        SEP = '-' * 42  # 80mm da espacio para más caracteres por línea
+
+        # ── Bloque de observaciones (condicional) ─────────────────────
+        obs_block = ''
+        if voucher.observaciones and voucher.observaciones.strip():
+            obs_text = voucher.observaciones.strip().replace('<', '&lt;').replace('>', '&gt;')
+            obs_block = f'<div class="obs">{obs_text}</div><div class="sep">{SEP}</div>'
+
+        # ── HTML ──────────────────────────────────────────────────────
+        html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voucher #{voucher.pk:04d}</title>
+<style>
+  /* Diseño profesional ticket térmico 80mm (H-SC-RUTA-02):
+     - @page sin márgenes; body define padding interno simétrico.
+     - 80mm da más espacio para nombre del proveedor, productos y QC. */
+  @page {{
+    size: 80mm auto;
+    margin: 0;
+  }}
+  * {{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }}
+  body {{
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 10pt;
+    line-height: 1.35;
+    width: 80mm;
+    padding: 4mm 5mm;
+    margin: 0 auto;
+    color: #000;
+    background: #fff;
+  }}
+  .center {{ text-align: center; }}
+  .bold {{ font-weight: bold; }}
+  .sep {{ letter-spacing: 0; white-space: pre; line-height: 1; }}
+  .row {{ display: flex; justify-content: space-between; }}
+  .label {{ white-space: nowrap; }}
+  .val {{ text-align: right; }}
+  .indent {{ padding-left: 5mm; }}
+  .prod {{ padding-left: 4mm; font-weight: bold; margin-top: 1.2mm; }}
+  .pesos {{ padding-left: 4mm; font-size: 9.5pt; }}
+  .qc {{ padding-left: 4mm; font-size: 9pt; font-style: italic; }}
+  .obs {{ font-size: 9pt; white-space: pre-wrap; word-break: break-word; }}
+  .operador-block {{
+    margin-top: 2.5mm;
+    text-align: center;
+  }}
+  .operador-block .nombre {{ font-weight: bold; font-size: 10pt; }}
+  .operador-block .cargo {{ font-size: 8.5pt; opacity: 0.85; }}
+  /* Bloque de marca (header): mismo centrado tipográfico que el footer. */
+  .brand {{ text-align: center; }}
+  .brand img {{ display: block; margin: 0 auto; max-width: 55mm; max-height: 20mm; }}
+  .brand .nombre {{ font-weight: bold; font-size: 11pt; }}
+  .brand .nit {{ font-size: 9pt; }}
+  .footer {{ text-align: center; font-size: 8.5pt; margin-top: 1.5mm; }}
+  @media print {{
+    body {{ width: 80mm; padding: 4mm 5mm; margin: 0; }}
+    @page {{ size: 80mm auto; margin: 0; }}
+  }}
+</style>
+</head>
+<body>
+<div class="sep">{SEP}</div>
+<div class="brand">
+  {f'<img src="{logo_url}" alt="" />' if logo_url else ''}
+  <div class="nombre">{empresa}</div>
+  {f'<div class="nit">NIT: {nit}</div>' if nit else ''}
+</div>
+<div class="sep">{SEP}</div>
+<div class="center bold" style="font-size:11pt;">VOUCHER DE RECEPCIÓN MP</div>
+<div class="center" style="font-size:9pt;">No. {voucher.pk:04d}</div>
+<div class="sep">{SEP}</div>
+<div class="row"><span class="label">Fecha viaje:</span><span class="val">{fecha_viaje}</span></div>
+<div class="row"><span class="label">Emitido:</span><span class="val">{emision}</span></div>
+<div class="sep">{SEP}</div>
+<div class="bold">PROVEEDOR</div>
+<div class="indent">{proveedor_nombre}</div>
+{f'<div class="bold" style="margin-top:1mm;">RUTA</div><div class="indent">{ruta_nombre}</div>' if ruta_nombre else ''}
+<div class="bold" style="margin-top:1mm;">MODALIDAD</div>
+<div class="indent">{modalidad}</div>
+<div class="sep">{SEP}</div>
+<div class="bold">MATERIAS PRIMAS ({len(lineas)})</div>
+{lineas_rows}
+<div class="sep">{SEP}</div>
+<div class="row bold"><span class="label">TOTAL NETO:</span><span class="val">{fmt_kg(peso_total)} kg</span></div>
+<div class="sep">{SEP}</div>
+<div class="bold">ALMACEN DESTINO</div>
+<div class="indent">{almacen_nombre}</div>
+<div class="row" style="margin-top:1mm;"><span class="label">Estado:</span><span class="val">{estado_compacto}</span></div>
+<div class="row"><span class="label">QC:</span><span class="val">{qc_resumen}</span></div>
+<div class="sep">{SEP}</div>
+{obs_block}
+<div class="operador-block">
+  <div style="font-size:7.5pt; opacity:0.7;">REALIZADO POR</div>
+  <div class="nombre">{full_name}</div>
+  {f'<div class="cargo">{operador_cargo}</div>' if operador_cargo else ''}
+</div>
+<div class="footer center" style="margin-top:3mm;">Powered by StrateKaz</div>
+<div class="footer center" style="font-size:7pt;">stratekaz.com · Consultoría 4.0</div>
+</body>
+<script>window.onload = function(){{ window.print(); }};</script>
+</html>"""
+
+        return HttpResponse(html, content_type='text/html; charset=utf-8')
 
 
 class RecepcionCalidadViewSet(viewsets.ModelViewSet):
@@ -383,7 +530,9 @@ class RecepcionCalidadViewSet(viewsets.ModelViewSet):
 
     queryset = RecepcionCalidad.objects.select_related('voucher', 'analista').all()
     serializer_class = RecepcionCalidadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['voucher', 'resultado', 'analista']
     ordering_fields = ['fecha_analisis', 'created_at']
@@ -406,7 +555,10 @@ class ParametroCalidadViewSet(viewsets.ModelViewSet):
 
     queryset = ParametroCalidad.objects.prefetch_related('ranges').all()
     serializer_class = ParametroCalidadSerializer
-    permission_classes = [IsAuthenticated]
+    # Catálogo de QC = parte del módulo recepción.
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['code', 'name']
@@ -429,7 +581,9 @@ class RangoCalidadViewSet(viewsets.ModelViewSet):
 
     queryset = RangoCalidad.objects.select_related('parameter').all()
     serializer_class = RangoCalidadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['parameter', 'is_active']
     ordering_fields = ['order', 'min_value']
@@ -454,7 +608,9 @@ class MedicionCalidadViewSet(viewsets.ModelViewSet):
         'parameter', 'classified_range', 'voucher_line', 'measured_by'
     ).all()
     serializer_class = MedicionCalidadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = {
         'voucher_line': ['exact'],
@@ -489,7 +645,9 @@ class VoucherLineMeasurementsBulkView(APIView):
     algún item es inválido (único por (voucher_line, parameter) activo).
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
 
     def post(self, request, pk=None):
         linea = get_object_or_404(VoucherLineaMP, pk=pk)

@@ -17,6 +17,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.permissions import RequireCRUDPermission
+
 from .models import (
     Almacen, RutaRecoleccion, RutaParada, PrecioRutaSemiAutonoma, TipoAlmacen,
 )
@@ -40,7 +42,9 @@ class RutaRecoleccionViewSet(viewsets.ModelViewSet):
 
     queryset = RutaRecoleccion.objects.all()
     serializer_class = RutaRecoleccionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'modo_operacion']
     search_fields = ['codigo', 'nombre', 'descripcion']
@@ -67,7 +71,9 @@ class RutaParadaViewSet(viewsets.ModelViewSet):
 
     queryset = RutaParada.objects.select_related('ruta', 'proveedor').all()
     serializer_class = RutaParadaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['ruta', 'proveedor', 'is_active']
     search_fields = [
@@ -91,7 +97,9 @@ class PrecioRutaSemiAutonomaViewSet(viewsets.ModelViewSet):
         'ruta', 'proveedor', 'producto'
     ).all()
     serializer_class = PrecioRutaSemiAutonomaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['ruta', 'proveedor', 'producto', 'is_active']
     search_fields = [
@@ -113,7 +121,9 @@ class TipoAlmacenViewSet(viewsets.ModelViewSet):
     """CRUD para Tipos de Almacén (silo / contenedor / pallet / piso)."""
     queryset = TipoAlmacen.objects.filter(is_active=True)
     serializer_class = TipoAlmacenSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'catalogos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active']
     search_fields = ['codigo', 'nombre']
@@ -243,7 +253,9 @@ class AlmacenViewSet(viewsets.ModelViewSet):
     """
     queryset = Almacen.objects.all()
     serializer_class = AlmacenSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
         'es_principal', 'permite_despacho', 'permite_recepcion',

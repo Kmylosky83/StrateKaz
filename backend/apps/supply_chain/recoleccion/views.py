@@ -1,42 +1,42 @@
 """
 Views para Recolección en Ruta — H-SC-RUTA-02 refactor 2.
-
-H-SC-TALONARIO (2026-04-27): nuevo endpoint POST /transcribir-talonario/ que
-permite registrar N vouchers post-hoc desde planta cuando la ruta salió a
-campo sin tablet/celular y trajo talonarios físicos.
 """
-from django.db import connection, transaction
+from django.db import connection
 from django.http import HttpResponse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.core.permissions import RequireCRUDPermission
+
 from .models import VoucherRecoleccion
-from .serializers import (
-    TranscribirTalonarioSerializer,
-    VoucherRecoleccionSerializer,
-)
+from .serializers import VoucherRecoleccionSerializer
 
 
 class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
     """CRUD de Vouchers de Recolección — 1 voucher = 1 parada (H-SC-RUTA-02)."""
 
     queryset = VoucherRecoleccion.objects.select_related(
-        'ruta', 'proveedor', 'producto', 'operador', 'registrado_por_planta',
+        'ruta', 'proveedor', 'producto', 'operador',
     )
     serializer_class = VoucherRecoleccionSerializer
-    permission_classes = [IsAuthenticated]
+    # No hay capability 'recoleccion' seedada — uso 'recepcion' (subdominio).
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'recepcion'
+    # Acción 'completar' = update; 'print_58mm' = view (lectura del recurso).
+    permission_action_map = {
+        'completar': 'update',
+        'print_58mm': 'view',
+    }
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = [
-        'ruta', 'proveedor', 'producto', 'estado', 'fecha_recoleccion',
-        'operador', 'origen_registro', 'registrado_por_planta',
-    ]
+    filterset_fields = ['ruta', 'proveedor', 'producto', 'estado', 'fecha_recoleccion', 'operador']
     search_fields = [
-        'codigo', 'notas', 'numero_talonario',
+        'codigo', 'notas',
         'proveedor__nombre_comercial', 'proveedor__codigo_interno',
         'ruta__codigo', 'ruta__nombre',
     ]
@@ -65,89 +65,7 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
         voucher.estado = VoucherRecoleccion.Estado.COMPLETADO
         voucher.updated_by = request.user
         voucher.save(update_fields=['estado', 'updated_by', 'updated_at'])
-
-        # H-SC-GD-ARCHIVE: archivado idempotente al completar (falla silencioso)
-        from .services import archivar_voucher_en_gd
-        archivar_voucher_en_gd(voucher, request.user)
-        voucher.refresh_from_db()
-
         return Response(self.get_serializer(voucher).data)
-
-    # ─── H-SC-TALONARIO: transcripción post-hoc desde planta ─────────
-    @action(
-        detail=False,
-        methods=['post'],
-        url_path='transcribir-talonario',
-    )
-    def transcribir_talonario(self, request):
-        """
-        Registra N vouchers atómicamente a partir de un talonario físico.
-
-        Body:
-            {
-              "ruta_id": <int>,
-              "fecha_recoleccion": "YYYY-MM-DD",
-              "operador_id": <int|null>,    # opcional
-              "paradas": [
-                {
-                  "proveedor_id": <int>,
-                  "producto_id": <int>,
-                  "cantidad_kg": "150.000",
-                  "numero_talonario": "TAL-001",
-                  "notas": "..."
-                },
-                ...
-              ]
-            }
-
-        - Cada voucher creado queda en estado COMPLETADO (talonario ya cerrado).
-        - origen_registro=TRANSCRIPCION_PLANTA.
-        - registrado_por_planta=request.user.
-        - Atomic: o se crean todos o ninguno.
-        - Validación: cada proveedor_id debe ser parada activa de la ruta.
-        """
-        serializer = TranscribirTalonarioSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        operador_id = data.get('operador_id')
-        ruta_id = data['ruta_id']
-        fecha = data['fecha_recoleccion']
-        user = request.user
-
-        creados = []
-        with transaction.atomic():
-            for parada in data['paradas']:
-                voucher = VoucherRecoleccion(
-                    ruta_id=ruta_id,
-                    fecha_recoleccion=fecha,
-                    proveedor_id=parada['proveedor_id'],
-                    producto_id=parada['producto_id'],
-                    cantidad=parada['cantidad_kg'],
-                    operador_id=operador_id,
-                    origen_registro=(
-                        VoucherRecoleccion.OrigenRegistro.TRANSCRIPCION_PLANTA
-                    ),
-                    numero_talonario=parada.get('numero_talonario', ''),
-                    registrado_por_planta=user,
-                    estado=VoucherRecoleccion.Estado.COMPLETADO,
-                    notas=parada.get('notas', ''),
-                    created_by=user,
-                    updated_by=user,
-                )
-                # Defensa en profundidad: clean() valida origen vs operador.
-                voucher.full_clean()
-                voucher.save()
-                creados.append(voucher)
-
-        out = VoucherRecoleccionSerializer(creados, many=True)
-        return Response(
-            {
-                'creados': out.data,
-                'total': len(creados),
-            },
-            status=status.HTTP_201_CREATED,
-        )
 
     # ─── Impresión térmica 58mm (entregar al productor en ruta) ──────
     @action(detail=True, methods=['get'], url_path='print-58mm')
@@ -198,15 +116,14 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
         prod_str = getattr(voucher.producto, 'nombre', '—') if voucher.producto else '—'
         estado = voucher.get_estado_display()
 
-        # Operador (puede ser None en vouchers transcritos sin operador identificado).
-        operador_nombre = '—'
+        # Operador
+        try:
+            operador_nombre = voucher.operador.get_full_name() or str(voucher.operador)
+        except AttributeError:
+            operador_nombre = '—'
         operador_cargo = ''
         op = voucher.operador
         if op is not None:
-            try:
-                operador_nombre = op.get_full_name() or str(op)
-            except AttributeError:
-                operador_nombre = '—'
             if getattr(op, 'is_superuser', False) and not op.cargo_id:
                 operador_cargo = 'Administrador del Sistema'
             else:
@@ -219,15 +136,6 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
                     colab = getattr(op, 'colaborador', None)
                     if colab is not None and getattr(colab, 'cargo', None):
                         operador_cargo = getattr(colab.cargo, 'nombre', '') or ''
-        elif voucher.registrado_por_planta_id is not None:
-            try:
-                operador_nombre = (
-                    voucher.registrado_por_planta.get_full_name()
-                    or str(voucher.registrado_por_planta)
-                )
-            except AttributeError:
-                operador_nombre = '—'
-            operador_cargo = 'Transcrito en planta'
 
         def fmt_kg(value):
             try:
@@ -241,19 +149,6 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
         if voucher.notas and voucher.notas.strip():
             notas_text = voucher.notas.strip().replace('<', '&lt;').replace('>', '&gt;')
             notas_block = f'<div class="notas">{notas_text}</div><div class="sep">{SEP}</div>'
-
-        # Bloque informativo si el voucher viene de talonario manual
-        # (queda explícito en el ticket impreso para auditoría).
-        origen_block = ''
-        if voucher.origen_registro != VoucherRecoleccion.OrigenRegistro.EN_RUTA:
-            origen_label = voucher.get_origen_registro_display()
-            tal = voucher.numero_talonario or ''
-            tal_line = f' (Talonario: {tal})' if tal else ''
-            origen_block = (
-                f'<div class="center" style="font-size:7.5pt; '
-                f'opacity:0.85; margin-top:1mm;">'
-                f'{origen_label}{tal_line}</div>'
-            )
 
         html = f"""<!DOCTYPE html>
 <html lang="es">
@@ -309,7 +204,6 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
 <div class="sep">{SEP}</div>
 <div class="center bold">VOUCHER DE RECOLECCIÓN</div>
 <div class="center" style="font-size:8pt;">{voucher.codigo}</div>
-{origen_block}
 <div class="sep">{SEP}</div>
 <div class="row"><span class="label">Fecha:</span><span class="val">{fecha_str}</span></div>
 <div class="row"><span class="label">Emitido:</span><span class="val">{emision}</span></div>

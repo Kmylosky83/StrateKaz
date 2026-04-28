@@ -10,6 +10,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+
+from apps.core.permissions import RequireCRUDPermission
 from rest_framework.response import Response
 
 from .models import (
@@ -42,7 +44,14 @@ class LiquidacionViewSet(viewsets.ModelViewSet):
         )
         .all()
     )
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'liquidaciones'
+    permission_action_map = {
+        'ajustar_linea': 'update',
+        'aprobar': 'update',
+        'confirmar': 'update',
+    }
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['estado', 'voucher']
     ordering_fields = ['created_at', 'total', 'numero']
@@ -267,7 +276,9 @@ class PagoLiquidacionViewSet(viewsets.ModelViewSet):
         ).all()
     )
     serializer_class = PagoLiquidacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'liquidaciones'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['metodo', 'liquidacion']
     ordering_fields = ['fecha_pago', 'created_at']
@@ -302,7 +313,13 @@ class LiquidacionPeriodicaViewSet(viewsets.ModelViewSet):
         .all()
     )
     serializer_class = LiquidacionPeriodicaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'liquidaciones'
+    permission_action_map = {
+        'confirmar': 'update',
+        'marcar_pagada': 'update',
+    }
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['estado', 'proveedor', 'frecuencia']
     ordering_fields = ['periodo_fin', 'created_at', 'total']

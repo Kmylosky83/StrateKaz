@@ -11,6 +11,8 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.utils import timezone
 from decimal import Decimal
 
+from apps.core.permissions import RequireCRUDPermission
+
 from .models import (
     EstadoRequisicion, EstadoCotizacion, EstadoOrdenCompra,
     TipoContrato, PrioridadRequisicion, Moneda, EstadoContrato,
@@ -40,7 +42,9 @@ class EstadoRequisicionViewSet(viewsets.ModelViewSet):
     """ViewSet para estados de requisición"""
     queryset = EstadoRequisicion.objects.all()
     serializer_class = EstadoRequisicionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -51,7 +55,9 @@ class EstadoCotizacionViewSet(viewsets.ModelViewSet):
     """ViewSet para estados de cotización"""
     queryset = EstadoCotizacion.objects.all()
     serializer_class = EstadoCotizacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -62,7 +68,9 @@ class EstadoOrdenCompraViewSet(viewsets.ModelViewSet):
     """ViewSet para estados de orden de compra"""
     queryset = EstadoOrdenCompra.objects.all()
     serializer_class = EstadoOrdenCompraSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -73,7 +81,9 @@ class TipoContratoViewSet(viewsets.ModelViewSet):
     """ViewSet para tipos de contrato"""
     queryset = TipoContrato.objects.all()
     serializer_class = TipoContratoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -84,7 +94,9 @@ class PrioridadRequisicionViewSet(viewsets.ModelViewSet):
     """ViewSet para prioridades de requisición"""
     queryset = PrioridadRequisicion.objects.all()
     serializer_class = PrioridadRequisicionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['nivel', 'nombre']
@@ -95,7 +107,9 @@ class MonedaViewSet(viewsets.ModelViewSet):
     """ViewSet para monedas"""
     queryset = Moneda.objects.all()
     serializer_class = MonedaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'codigo']
@@ -106,7 +120,9 @@ class EstadoContratoViewSet(viewsets.ModelViewSet):
     """ViewSet para estados de contrato"""
     queryset = EstadoContrato.objects.all()
     serializer_class = EstadoContratoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -117,7 +133,9 @@ class EstadoMaterialViewSet(viewsets.ModelViewSet):
     """ViewSet para estados de material"""
     queryset = EstadoMaterial.objects.all()
     serializer_class = EstadoMaterialSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['codigo', 'nombre']
     ordering_fields = ['orden', 'nombre']
@@ -141,7 +159,9 @@ class RequisicionViewSet(viewsets.ModelViewSet):
         'aprobado_por', 'created_by'
     ).prefetch_related('detalles').filter(deleted_at__isnull=True)
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'prioridad', 'solicitante', 'sede']
     search_fields = ['codigo', 'area_solicitante', 'justificacion']
@@ -228,7 +248,9 @@ class CotizacionViewSet(viewsets.ModelViewSet):
         'proveedor', 'requisicion', 'estado', 'moneda', 'created_by'
     ).filter(deleted_at__isnull=True)
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'proveedor', 'requisicion', 'moneda']
     search_fields = ['numero_cotizacion', 'proveedor__nombre_comercial']
@@ -306,7 +328,9 @@ class EvaluacionCotizacionViewSet(viewsets.ModelViewSet):
         'cotizacion', 'evaluado_por'
     )
     serializer_class = EvaluacionCotizacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['cotizacion', 'evaluado_por']
     search_fields = ['cotizacion__numero_cotizacion', 'recomendacion']
@@ -327,7 +351,9 @@ class OrdenCompraViewSet(viewsets.ModelViewSet):
         'requisicion', 'cotizacion', 'creado_por', 'aprobado_por'
     ).prefetch_related('detalles').filter(deleted_at__isnull=True)
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['estado', 'proveedor', 'sede', 'moneda']
     search_fields = ['numero_orden', 'proveedor__nombre_comercial']
@@ -377,7 +403,9 @@ class ContratoViewSet(viewsets.ModelViewSet):
         'estado', 'responsable', 'created_by'
     ).filter(deleted_at__isnull=True)
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'compras'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['proveedor', 'tipo_contrato', 'estado']
     search_fields = ['numero_contrato', 'objeto', 'proveedor__nombre_comercial']

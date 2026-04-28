@@ -19,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.catalogo_productos.models import UnidadMedida
+from apps.core.permissions import RequireCRUDPermission
 
 from .models import (
     AlertaStock,
@@ -61,7 +62,9 @@ from .serializers import (
 
 class TipoMovimientoInventarioViewSet(viewsets.ModelViewSet):
     queryset = TipoMovimientoInventario.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['codigo', 'nombre', 'descripcion']
     filterset_fields = ['afecta_stock', 'is_active']
@@ -82,7 +85,9 @@ class TipoMovimientoInventarioViewSet(viewsets.ModelViewSet):
 
 class EstadoInventarioViewSet(viewsets.ModelViewSet):
     queryset = EstadoInventario.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['codigo', 'nombre', 'descripcion']
     filterset_fields = ['permite_uso', 'is_active']
@@ -103,7 +108,9 @@ class EstadoInventarioViewSet(viewsets.ModelViewSet):
 
 class TipoAlertaViewSet(viewsets.ModelViewSet):
     queryset = TipoAlerta.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['codigo', 'nombre', 'descripcion']
     filterset_fields = ['prioridad', 'is_active']
@@ -133,7 +140,9 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
     /catalogo-productos/unidades-medida/ y eliminar este wrapper.
     """
     queryset = UnidadMedida.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['nombre', 'abreviatura']
     filterset_fields = ['tipo', 'es_base']
@@ -154,7 +163,9 @@ class InventarioViewSet(viewsets.ModelViewSet):
     queryset = Inventario.objects.select_related(
         'almacen', 'producto', 'unidad_medida', 'estado',
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['producto__codigo', 'producto__nombre', 'lote']
     filterset_fields = ['almacen', 'producto', 'estado', 'lote', 'fecha_vencimiento']
@@ -337,7 +348,9 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
         'almacen_origen', 'almacen_destino',
         'tipo_movimiento', 'producto', 'unidad_medida', 'registrado_por',
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
         'codigo', 'producto__codigo', 'producto__nombre', 'documento_referencia',
@@ -559,7 +572,9 @@ class KardexViewSet(viewsets.ReadOnlyModelViewSet):
         'movimiento', 'movimiento__tipo_movimiento',
     ).all()
     serializer_class = KardexSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['inventario', 'movimiento']
     ordering_fields = ['fecha']
@@ -592,7 +607,9 @@ class AlertaStockViewSet(viewsets.ModelViewSet):
         'almacen', 'inventario', 'inventario__producto',
         'tipo_alerta', 'resuelta_por',
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['mensaje', 'inventario__producto__nombre']
     filterset_fields = ['tipo_alerta', 'almacen', 'criticidad', 'leida', 'resuelta']
@@ -632,7 +649,9 @@ class AlertaStockViewSet(viewsets.ModelViewSet):
 
 class ConfiguracionStockViewSet(viewsets.ModelViewSet):
     queryset = ConfiguracionStock.objects.select_related('almacen', 'producto').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['producto__codigo', 'producto__nombre']
     filterset_fields = ['almacen', 'producto', 'activo']
@@ -717,7 +736,9 @@ class ConfiguracionStockViewSet(viewsets.ModelViewSet):
 # ==============================================================================
 
 class DashboardInventarioViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'almacenamiento'
 
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):

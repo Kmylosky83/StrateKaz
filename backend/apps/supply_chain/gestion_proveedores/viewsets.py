@@ -18,7 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.core.permissions import GranularActionPermission
+from apps.core.permissions import RequireCRUDPermission
 
 from .filters import HistorialPrecioFilter
 from .models import ModalidadLogistica, PrecioMateriaPrima, HistorialPrecioProveedor
@@ -34,8 +34,12 @@ class ModalidadLogisticaViewSet(viewsets.ModelViewSet):
 
     queryset = ModalidadLogistica.objects.all()
     serializer_class = ModalidadLogisticaSerializer
-    permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios_materia_prima'
+    # Migrado de GranularActionPermission(section_code='precios_materia_prima')
+    # al patrón canónico RequireCRUDPermission con capabilities seedadas en
+    # seed_permisos_rbac.py. H-SC-RBAC sweep 2026-04-27.
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'gestion_proveedores'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active']
@@ -48,11 +52,12 @@ class PrecioMateriaPrimaViewSet(viewsets.ModelViewSet):
     """Precios vigentes Proveedor × Producto (MP)."""
 
     serializer_class = PrecioMateriaPrimaSerializer
-    permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios_materia_prima'
-    granular_action_map = {
-        'batch_por_proveedor': 'can_edit',
-        'por_proveedor': 'can_view',
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'gestion_proveedores'
+    permission_action_map = {
+        'batch_por_proveedor': 'update',
+        'por_proveedor': 'view',
     }
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -285,8 +290,9 @@ class HistorialPrecioViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = HistorialPrecioProveedor.objects.all()
     serializer_class = HistorialPrecioSerializer
-    permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'precios_materia_prima'
+    permission_classes = [IsAuthenticated, RequireCRUDPermission]
+    permission_module = 'supply_chain'
+    permission_resource = 'gestion_proveedores'
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = HistorialPrecioFilter

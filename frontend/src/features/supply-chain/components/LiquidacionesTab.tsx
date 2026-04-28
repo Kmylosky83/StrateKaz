@@ -53,10 +53,14 @@ const ESTADO_VARIANT: Record<
   EstadoLiquidacion,
   'success' | 'primary' | 'warning' | 'danger' | 'gray'
 > = {
-  BORRADOR: 'gray',
-  APROBADA: 'primary',
+  SUGERIDA: 'warning',
+  AJUSTADA: 'warning',
+  CONFIRMADA: 'primary',
   PAGADA: 'success',
   ANULADA: 'danger',
+  // Legacy
+  BORRADOR: 'gray',
+  APROBADA: 'primary',
 };
 
 const toNumber = (v: number | string | undefined | null) => {
@@ -285,7 +289,7 @@ export default function LiquidacionesTab() {
                           : '-'}
                     </td>
                     <td className="px-6 py-3 text-center text-sm text-gray-700 dark:text-gray-300">
-                      {l.lineas_liquidacion?.length ?? 0}
+                      {l.lineas_count ?? l.lineas_liquidacion?.length ?? 0}
                     </td>
                     <td className="px-6 py-3 text-sm text-right font-semibold text-gray-900 dark:text-white">
                       {formatCOP(l.total)}
@@ -306,7 +310,7 @@ export default function LiquidacionesTab() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
-                        {l.estado === 'BORRADOR' && canEdit && (
+                        {['SUGERIDA', 'AJUSTADA', 'BORRADOR'].includes(l.estado) && canEdit && (
                           <>
                             <Button
                               variant="ghost"
@@ -319,7 +323,7 @@ export default function LiquidacionesTab() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              title="Aprobar liquidación"
+                              title="Confirmar liquidación"
                               onClick={() => setAprobarId(l.id)}
                             >
                               <CheckCircle2 className="w-4 h-4 text-success-600" />
@@ -335,7 +339,7 @@ export default function LiquidacionesTab() {
                           </>
                         )}
 
-                        {l.estado === 'APROBADA' && canEdit && (
+                        {['CONFIRMADA', 'APROBADA'].includes(l.estado) && canEdit && (
                           <>
                             <Button
                               variant="ghost"

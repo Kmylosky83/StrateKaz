@@ -6,7 +6,15 @@
  * mini-tesorería.
  */
 
-export type EstadoLiquidacion = 'BORRADOR' | 'APROBADA' | 'PAGADA' | 'ANULADA';
+export type EstadoLiquidacion =
+  | 'SUGERIDA'
+  | 'AJUSTADA'
+  | 'CONFIRMADA'
+  | 'PAGADA'
+  | 'ANULADA'
+  // Legacy (deprecated tras H-SC-02). Mantenidos para datos pre-refactor.
+  | 'BORRADOR'
+  | 'APROBADA';
 
 export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'CHEQUE' | 'PSE' | 'OTRO';
 
@@ -45,9 +53,13 @@ export interface Liquidacion {
   aprobado_por?: number | null;
   aprobado_por_nombre?: string | null;
   observaciones?: string;
-  lineas_liquidacion: LiquidacionLinea[];
+  /** Solo en detail. En list usar `lineas_count`. */
+  lineas_liquidacion?: LiquidacionLinea[];
+  /** Solo en list (LiquidacionListSerializer). Para detail usar lineas_liquidacion.length. */
+  lineas_count?: number;
   /** Pagos registrados (cuando estado=PAGADA) */
   pagos?: PagoLiquidacion[];
+  documento_archivado_id?: number | null;
   created_at: string;
   updated_at: string;
 }

@@ -24,10 +24,14 @@ const ESTADO_VARIANT: Record<
   EstadoLiquidacion,
   'success' | 'primary' | 'warning' | 'danger' | 'gray'
 > = {
-  BORRADOR: 'gray',
-  APROBADA: 'primary',
+  SUGERIDA: 'warning',
+  AJUSTADA: 'warning',
+  CONFIRMADA: 'primary',
   PAGADA: 'success',
   ANULADA: 'danger',
+  // Legacy
+  BORRADOR: 'gray',
+  APROBADA: 'primary',
 };
 
 const toNumber = (v: number | string | undefined | null) => {
@@ -115,23 +119,32 @@ export default function LiquidacionDetailModal({
             <Printer className="w-4 h-4 mr-1" />
             Imprimir
           </Button>
-          {liquidacion && liquidacion.estado === 'BORRADOR' && canEdit && onEditarAjustes && (
-            <Button variant="secondary" onClick={() => onEditarAjustes(liquidacion.id)}>
-              Editar ajustes
-            </Button>
-          )}
-          {liquidacion && liquidacion.estado === 'BORRADOR' && canEdit && onAprobar && (
-            <Button variant="primary" onClick={() => onAprobar(liquidacion.id)}>
-              <CheckCircle2 className="w-4 h-4 mr-1" />
-              Aprobar
-            </Button>
-          )}
-          {liquidacion && liquidacion.estado === 'APROBADA' && canEdit && onRegistrarPago && (
-            <Button variant="primary" onClick={() => onRegistrarPago(liquidacion.id)}>
-              <CreditCard className="w-4 h-4 mr-1" />
-              Registrar pago
-            </Button>
-          )}
+          {liquidacion &&
+            ['SUGERIDA', 'AJUSTADA', 'BORRADOR'].includes(liquidacion.estado) &&
+            canEdit &&
+            onEditarAjustes && (
+              <Button variant="secondary" onClick={() => onEditarAjustes(liquidacion.id)}>
+                Editar ajustes
+              </Button>
+            )}
+          {liquidacion &&
+            ['SUGERIDA', 'AJUSTADA', 'BORRADOR'].includes(liquidacion.estado) &&
+            canEdit &&
+            onAprobar && (
+              <Button variant="primary" onClick={() => onAprobar(liquidacion.id)}>
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                Confirmar
+              </Button>
+            )}
+          {liquidacion &&
+            ['CONFIRMADA', 'APROBADA'].includes(liquidacion.estado) &&
+            canEdit &&
+            onRegistrarPago && (
+              <Button variant="primary" onClick={() => onRegistrarPago(liquidacion.id)}>
+                <CreditCard className="w-4 h-4 mr-1" />
+                Registrar pago
+              </Button>
+            )}
           <Button variant="secondary" onClick={onClose}>
             Cerrar
           </Button>

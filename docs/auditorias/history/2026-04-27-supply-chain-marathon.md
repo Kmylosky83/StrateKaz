@@ -208,3 +208,50 @@ warning porque cada render crea una array nueva. Wrap en useMemo.
 
 Tests integrales del resto NO ejecutados localmente (requieren ~15min
 para setup de schema django-tenants completo). Validación delegada a CI.
+
+---
+
+## Estado al cierre de sesión
+
+### Push y CI
+- **Pusheado a origin/main**: `eed835f2` (17 commits SC) + `b0aaa6de` (docs)
+- **CodeQL Security**: ✅ success
+- **CI - Continuous Integration**: ❌ **failure** en `Backend - Django Tests` →
+  step `Run LIVE pytest suite (BLOQUEANTE, 9 rutas verdes)`
+- **Frontend - Build & Type Check**: ✅ success
+
+### Investigación pendiente CI rojo
+
+Los 9 paths LIVE del CI son: `apps/core`, `apps/gestion_estrategica/gestion_documental`,
+`apps/workflow_engine/disenador_flujos`, `apps/workflow_engine/ejecucion`,
+`apps/audit_system/{logs_sistema,config_alertas,centro_notificaciones,tareas_recordatorios}`,
+`apps/ia`. Ninguno toca Supply Chain directamente.
+
+Hipótesis para la próxima sesión:
+1. El nuevo signal `sync_sede_to_proveedor_interno` (B6) interactúa con tests
+   de `core` o `gestion_documental` que crean SedeEmpresa
+2. El RBAC sweep (E1) cambió `permission_classes` en muchos viewsets — algún
+   test legacy LIVE podría asumir el viejo `[IsAuthenticated]` solo
+3. La nueva migración `sede_empresa_origen` podría romper algún seed asumido
+   por tests LIVE
+
+**No se hizo deploy** — política mantenida (CI verde requerido para deploy VPS).
+
+### Estado en local
+
+Migraciones aplicadas en todos los schemas (35 tenants), seeds aplicados
+(`deploy_seeds_all_tenants` exitoso, sidebar ya muestra todas las nuevas
+secciones SC). Backend funcional para browseo manual.
+
+### Nuevo hallazgo agregado tras browseo
+
+- **H-SC-RUTA-RBAC-INSTANCIA** — Object-level RBAC (asignación cargo→ruta).
+  Hoy RBAC es por sección, no por instancia. Solicitado por el usuario
+  durante validación local. Recomendada Opción 1 (M2M Cargo). Sin trigger
+  inmediato — esperar disparador multi-zona.
+
+### Próximo paso claro
+
+**Sesión siguiente debe arrancar con**: investigar log del CI rojo en
+GitHub Actions → identificar cuál ruta LIVE falla → fix mínimo → re-push
+→ CI verde → deploy VPS.

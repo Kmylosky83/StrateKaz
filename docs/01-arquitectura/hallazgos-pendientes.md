@@ -3037,3 +3037,66 @@ Sesión maratónica de consolidación. Detalle completo en
   `VOUCHER_RECOLECCION_SC`, `LIQUIDACION_SC`.
 - **RBAC unificación transversal** — documentar política y deprecar
   `GranularActionPermission` o consolidar uso.
+
+---
+
+## H-SC-RUTA-RBAC-INSTANCIA — Object-level RBAC por ruta (asignación cargo→ruta)
+
+### Estado: 🔲 ABIERTO (anotado 2026-04-27)
+
+### Problema
+
+RBAC actual es a nivel de **sección** (ej: `supply_chain.rutas_recoleccion.view`
+permite ver TODAS las rutas). El usuario solicita que un cargo/rol específico
+pueda ver/operar **solo las rutas que tiene asignadas** ("ruta X solo la ve
+cargo Y").
+
+Esto es **row-level security** o **object-level permissions** — no existe
+hoy en el sistema.
+
+### Casos de uso
+
+- Operador de ruta `RUTA-NORTE` no debería ver `RUTA-SUR`
+- Supervisor de zona X solo gestiona rutas de zona X
+- Auditoría: trazabilidad de qué cargos pueden tocar qué ruta
+
+### Opciones de implementación
+
+**Opción 1 — M2M cargos asignados** (recomendada)
+- Agregar `RutaRecoleccion.cargos_asignados = M2M(Cargo)`
+- En `get_queryset()` del ViewSet filtrar `qs.filter(cargos_asignados=user.cargo)`
+- Bypass para superuser y cargos con flag `puede_ver_todas_las_rutas=True`
+- UI: pestaña "Permisos" en RutaParadasModal o nuevo modal "Asignar cargos"
+- Estimado: 3-4h backend + 2h FE
+
+**Opción 2 — Ownership simple por user**
+- Campo `RutaRecoleccion.responsable = FK(User)` único
+- Más simple, menos flexible (no soporta supervisores compartidos)
+- Estimado: 2h total
+
+**Opción 3 — django-guardian completo**
+- Sistema de permisos por instancia genérico para todo el modelo
+- Mucho más potente pero overhead de configuración
+- Estimado: 1 día + extender a otros modelos críticos
+
+### Decisión sugerida
+
+**Opción 1 (M2M cargos asignados)**. Calza con el modelo de Cargo existente
+sin introducir nueva dependencia. Si después se necesita escalar a más
+modelos (Almacenes, Liquidaciones), considerar django-guardian.
+
+### Trigger
+
+Cuando se promueva a producción multi-zona donde varios operadores manejan
+rutas distintas y se quiera evitar visibilidad cruzada. Antes de eso, el
+RBAC por sección actual es suficiente.
+
+### Aplicabilidad transversal
+
+Si se acepta el patrón M2M para Ruta, considerar replicar para:
+- `Almacen.cargos_asignados` (operadores por bodega)
+- `Proveedor.cargos_asignados` (compradores asignados)
+- `LiquidacionPeriodica.aprobadores` (control financiero)
+
+### Estado
+🔲 ABIERTO — esperar disparador de negocio (multi-zona o segregación operativa).

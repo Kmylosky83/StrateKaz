@@ -50,12 +50,12 @@ export const voucherRecoleccionApi = {
     return response.data;
   },
 
-  /** HTML 58mm (entregar al productor). */
-  getPrint58mm: async (id: number): Promise<string> => {
-    const response = await apiClient.get(`${BASE}/${id}/print-58mm/`, {
-      responseType: 'text',
-      headers: { Accept: 'text/html' },
+  /** PDF 58mm on-demand (entregar al productor). */
+  getPrint58mm: async (id: number): Promise<Blob> => {
+    const response = await apiClient.get<Blob>(`${BASE}/${id}/print-58mm/`, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' },
     });
-    return response.data as string;
+    return response.data;
   },
 };

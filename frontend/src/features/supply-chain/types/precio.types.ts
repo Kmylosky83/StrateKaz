@@ -13,6 +13,8 @@ export interface PrecioMP {
   producto: number;
   producto_nombre: string;
   producto_codigo: string;
+  /** True si el producto requiere QC en recepción (mostrar QcLineaSection). */
+  producto_requiere_qc_recepcion?: boolean;
   unidad_medida: string;
   precio_kg: string;
   modalidad_logistica: number | null;

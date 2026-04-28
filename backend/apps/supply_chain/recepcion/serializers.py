@@ -52,6 +52,9 @@ class VoucherLineaMPSerializer(serializers.ModelSerializer):
     producto_nombre = serializers.CharField(source='producto.nombre', read_only=True)
     producto_codigo = serializers.CharField(source='producto.codigo', read_only=True)
     requiere_qc = serializers.BooleanField(source='producto.requiere_qc_recepcion', read_only=True)
+    almacen_destino_nombre = serializers.CharField(
+        source='almacen_destino.nombre', read_only=True, default=None,
+    )
     measurements = MedicionCalidadNestedSerializer(many=True, read_only=True)
 
     class Meta:
@@ -59,11 +62,12 @@ class VoucherLineaMPSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'producto', 'producto_nombre', 'producto_codigo',
             'peso_bruto_kg', 'peso_tara_kg', 'peso_neto_kg', 'requiere_qc',
+            'almacen_destino', 'almacen_destino_nombre',
             'measurements',
         ]
         read_only_fields = [
             'id', 'peso_neto_kg', 'producto_nombre', 'producto_codigo',
-            'requiere_qc', 'measurements',
+            'requiere_qc', 'almacen_destino_nombre', 'measurements',
         ]
 
 

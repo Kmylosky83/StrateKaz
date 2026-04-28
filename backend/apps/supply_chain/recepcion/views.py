@@ -11,6 +11,26 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer, StaticHTMLRenderer
+
+
+class PDFRenderer(BaseRenderer):
+    """Renderer mínimo para que DRF acepte 'Accept: application/pdf'.
+
+    El view retorna ``HttpResponse(pdf_bytes, content_type='application/pdf')``
+    directamente, así que este renderer solo existe para que DRF NO rechace
+    la request en content negotiation (406 Not Acceptable).
+    """
+
+    media_type = 'application/pdf'
+    format = 'pdf'
+    charset = None
+    render_style = 'binary'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        # No se invoca: el view retorna HttpResponse directo. Devolvemos
+        # los bytes tal cual por defensa.
+        return data if isinstance(data, (bytes, bytearray)) else b''
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -239,22 +259,56 @@ class VoucherRecepcionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
 
-    # ─── Impresión térmica 80mm (H-SC-RUTA-02 — antes 58mm) ───────────
-    @action(detail=True, methods=['get'], url_path='print-80mm')
+    # ─── Impresión térmica 80mm — PDF via VoucherPDFService ──────────
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='print-80mm',
+        renderer_classes=[PDFRenderer],
+    )
     def print_80mm(self, request, pk=None):
         """
-        Retorna HTML optimizado para impresora térmica de 80mm.
+        Retorna PDF 80mm para impresora térmica.
 
-        Cambio 2026-04-26: el voucher de RECEPCIÓN en planta pasó de 58mm
-        a 80mm para mejor legibilidad y firma de la planta. El voucher de
-        RECOLECCIÓN (en ruta) se mantiene en 58mm (separate endpoint).
+        Refactor 2026-04-28: delega en VoucherPDFService.generar_pdf_80mm
+        (mismo template usado por GD-Archive). Antes el endpoint tenía
+        ~280 líneas de HTML inline duplicado.
 
-        Mismo contenido que la versión 58mm, ajustes solo de layout
-        (ancho + padding + tamaño fuente).
-
-        El HTML incluye auto-print via window.onload para facilitar
-        la impresión directa desde el navegador.
+        El FE espera ``Accept: application/pdf`` (ver recepcionApi.ts) y
+        abre el blob en un popup que dispara print() automáticamente.
         """
+        from .services import VoucherPDFService
+
+        voucher = self.get_object()
+        pdf_bytes = VoucherPDFService.generar_pdf_80mm(voucher)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'inline; filename="voucher-{voucher.pk:04d}-80mm.pdf"'
+        )
+        return response
+
+    # ─── PDF carta (formato archivo) ────────────────────────────────
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='pdf-carta',
+        renderer_classes=[PDFRenderer],
+    )
+    def pdf_carta(self, request, pk=None):
+        """PDF formato carta del voucher (descarga manual)."""
+        from .services import VoucherPDFService
+
+        voucher = self.get_object()
+        pdf_bytes = VoucherPDFService.generar_pdf_carta(voucher)
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'inline; filename="voucher-{voucher.pk:04d}-carta.pdf"'
+        )
+        return response
+
+    # ─── Legacy HTML inline (deprecated, mantenido por backward compat) ─
+    def _print_80mm_html_legacy(self, request, pk=None):
+        """[DEPRECATED] HTML manual 80mm — reemplazado por print_80mm/PDF."""
         voucher = self.get_object()
 
         # ── Branding del tenant (H-SC-13) ─────────────────────────────

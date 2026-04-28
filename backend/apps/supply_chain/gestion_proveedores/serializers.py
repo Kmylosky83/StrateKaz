@@ -32,6 +32,10 @@ class PrecioMateriaPrimaSerializer(serializers.ModelSerializer):
     producto_codigo = serializers.CharField(
         source='producto.codigo', read_only=True,
     )
+    # Flag del producto para que la UI sepa si mostrar la sección QC inline.
+    producto_requiere_qc_recepcion = serializers.BooleanField(
+        source='producto.requiere_qc_recepcion', read_only=True, default=False,
+    )
     unidad_medida = serializers.CharField(
         source='producto.unidad_medida.abreviatura', read_only=True, default='',
     )
@@ -46,7 +50,9 @@ class PrecioMateriaPrimaSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'proveedor', 'proveedor_nombre', 'proveedor_codigo',
-            'producto', 'producto_nombre', 'producto_codigo', 'unidad_medida',
+            'producto', 'producto_nombre', 'producto_codigo',
+            'producto_requiere_qc_recepcion',
+            'unidad_medida',
             'precio_kg',
             'modalidad_logistica', 'modalidad_logistica_nombre',
             'tipo_proveedor_requiere_modalidad',

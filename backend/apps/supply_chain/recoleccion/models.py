@@ -192,15 +192,25 @@ class VoucherRecoleccion(TenantModel):
 
     @classmethod
     def _generate_code(cls):
-        """Código secuencial VRC-001, VRC-002... dentro del tenant."""
-        last = cls.objects.order_by('-id').values_list('codigo', flat=True).first()
+        """Código secuencial VRC-001, VRC-002... dentro del tenant.
+
+        Usa ``_base_manager`` (incluye soft-deleted) para evitar colisiones
+        con códigos de vouchers eliminados — la unique constraint en DB
+        sí los considera.
+        """
+        last = (
+            cls._base_manager
+            .order_by('-id')
+            .values_list('codigo', flat=True)
+            .first()
+        )
         if last and last.startswith('VRC-'):
             try:
                 num = int(last.split('-')[1]) + 1
             except (ValueError, IndexError):
-                num = cls.objects.count() + 1
+                num = cls._base_manager.count() + 1
         else:
-            num = cls.objects.count() + 1
+            num = cls._base_manager.count() + 1
         return f'VRC-{num:03d}'
 
     def clean(self):

@@ -119,19 +119,23 @@ export default function RecepcionTab() {
     return { total, pendientes, aprobados, pesoTotal };
   }, [vouchers]);
 
-  // 2026-04-26: voucher de RECEPCIÓN pasa a 80mm (mejor legibilidad).
+  // 2026-04-28: el endpoint retorna PDF (no HTML). Abrir como blob URL.
   const handlePrint = async (id: number) => {
     try {
       const response = await voucherRecepcionApi.getPrint80mm(id);
-      const html = response.data as unknown as string;
-      const win = window.open('', '_blank', 'width=480,height=700,scrollbars=yes');
-      if (win) {
-        win.document.write(html);
-        win.document.close();
-        win.focus();
+      const blobUrl = URL.createObjectURL(response.data);
+      const win = window.open(blobUrl, '_blank', 'width=480,height=700');
+      if (!win) {
+        URL.revokeObjectURL(blobUrl);
+        const { toast } = await import('sonner');
+        toast.error('Permite popups para imprimir el voucher');
+        return;
       }
+      // Liberar la URL tras un minuto (la ventana ya cargó el PDF).
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
     } catch {
-      // silencioso: el usuario verá que no pasó nada
+      const { toast } = await import('sonner');
+      toast.error('No se pudo generar el voucher 80mm');
     }
   };
 

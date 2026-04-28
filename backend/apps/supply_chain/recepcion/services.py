@@ -66,6 +66,7 @@ class VoucherPDFService:
         tenant = getattr(connection, 'tenant', None)
         tenant_nombre = ''
         tenant_nit = ''
+        tenant_logo_url = ''
         if tenant is not None:
             tenant_nombre = (
                 getattr(tenant, 'nombre_comercial', None)
@@ -74,6 +75,13 @@ class VoucherPDFService:
                 or ''
             )
             tenant_nit = getattr(tenant, 'nit', '') or ''
+            logo_field = getattr(tenant, 'logo', None)
+            if logo_field and hasattr(logo_field, 'path'):
+                # Para WeasyPrint usar path absoluto del filesystem (no URL).
+                try:
+                    tenant_logo_url = f'file://{logo_field.path}'
+                except Exception:
+                    tenant_logo_url = ''
 
         lineas = list(
             voucher.lineas
@@ -109,10 +117,36 @@ class VoucherPDFService:
                 if cargo is not None:
                     operador_cargo = getattr(cargo, 'nombre', '') or getattr(cargo, 'name', '') or ''
 
+        # QC resumen: 'N/A' si ninguna línea requiere QC; 'Pendiente' si lo
+        # requiere y no tiene mediciones; 'Registrado' si está completo.
+        try:
+            requiere_qc = bool(getattr(voucher, 'requiere_qc', False))
+            tiene_qc = bool(getattr(voucher, 'tiene_qc', False))
+        except Exception:
+            requiere_qc = False
+            tiene_qc = False
+        if not requiere_qc:
+            qc_resumen = 'N/A'
+        else:
+            qc_resumen = 'Registrado' if tiene_qc else 'Pendiente'
+
+        # Estado compacto para ticket térmico ('Aprobado — listo para liquidar'
+        # se desborda en 80mm).
+        estado_full = (
+            voucher.get_estado_display() if hasattr(voucher, 'get_estado_display') else ''
+        )
+        estado_compacto = {
+            'PENDIENTE_QC': 'PENDIENTE QC',
+            'APROBADO': 'APROBADO',
+            'RECHAZADO': 'RECHAZADO',
+            'LIQUIDADO': 'LIQUIDADO',
+        }.get(getattr(voucher, 'estado', ''), estado_full)
+
         return {
             'voucher': voucher,
             'tenant_nombre': tenant_nombre or 'StrateKaz',
             'tenant_nit': tenant_nit,
+            'tenant_logo_url': tenant_logo_url,
             'tenant_branding': tenant_branding,
             'lineas': lineas,
             'proveedor_nombre': proveedor_nombre or '—',
@@ -121,6 +155,8 @@ class VoucherPDFService:
             'operador_nombre': operador_nombre or '—',
             'operador_cargo': operador_cargo,
             'modalidad_display': voucher.get_modalidad_entrega_display() if hasattr(voucher, 'get_modalidad_entrega_display') else '',
-            'estado_display': voucher.get_estado_display() if hasattr(voucher, 'get_estado_display') else '',
+            'estado_display': estado_full,
+            'estado_compacto': estado_compacto,
+            'qc_resumen': qc_resumen,
             'peso_total': getattr(voucher, 'peso_neto_total', 0) or 0,
         }

@@ -16,7 +16,7 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 
-import { useCreateRuta, useUpdateRuta } from '../hooks/useRutas';
+import { useCreateRuta, useUpdateRuta, useRuta } from '../hooks/useRutas';
 import { useUsers } from '@/features/users/hooks/useUsers';
 import {
   ModoOperacion,
@@ -60,21 +60,27 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
   const createMutation = useCreateRuta();
   const updateMutation = useUpdateRuta();
 
+  // H-SC-RUTA-RBAC-INSTANCIA: en edit pedimos el detalle fresco para que los
+  // conductores asignados estén siempre al día (la lista cacheada puede venir
+  // de antes del PATCH si se edita el mismo registro varias veces seguidas).
+  const { data: rutaDetail } = useRuta(isEditing && isOpen ? (ruta?.id ?? null) : null);
+  const hydratedRuta = rutaDetail ?? ruta;
+
   useEffect(() => {
-    if (isEditing && ruta) {
+    if (isEditing && hydratedRuta) {
       setFormData({
-        codigo: ruta.codigo || '',
-        nombre: ruta.nombre || '',
-        descripcion: ruta.descripcion || '',
-        modo_operacion: ruta.modo_operacion ?? ModoOperacion.PASS_THROUGH,
-        is_active: ruta.is_active ?? true,
-        conductor_principal: ruta.conductor_principal ?? '',
-        conductores_adicionales: ruta.conductores_adicionales ?? [],
+        codigo: hydratedRuta.codigo || '',
+        nombre: hydratedRuta.nombre || '',
+        descripcion: hydratedRuta.descripcion || '',
+        modo_operacion: hydratedRuta.modo_operacion ?? ModoOperacion.PASS_THROUGH,
+        is_active: hydratedRuta.is_active ?? true,
+        conductor_principal: hydratedRuta.conductor_principal ?? '',
+        conductores_adicionales: hydratedRuta.conductores_adicionales ?? [],
       });
     } else {
       setFormData({ ...defaultFormData });
     }
-  }, [isEditing, ruta, isOpen]);
+  }, [isEditing, hydratedRuta, isOpen]);
 
   // H-SC-RUTA-RBAC-INSTANCIA: lista de usuarios para asignar como conductores.
   const { data: usersResponse } = useUsers({ is_active: true });

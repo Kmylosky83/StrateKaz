@@ -203,8 +203,9 @@ class Liquidacion(TenantModel):
     # ─── Archivado en Gestión Documental ───────────────────────────────
     def _archivar_en_gd(self, user):
         """
-        Genera PDF de la liquidación y archiva en GD bajo TipoDocumento
-        LIQUIDACION_SC. Best-effort: log warning si falla.
+        Registra la liquidación en GD como documento-vivo (sin PDF físico).
+        El PDF se regenera on-demand desde ``LiquidacionPDFService`` cuando
+        el usuario lo solicita. Best-effort: log warning si falla.
         """
         import logging
 
@@ -216,9 +217,6 @@ class Liquidacion(TenantModel):
             from apps.gestion_estrategica.gestion_documental.services import (
                 DocumentoService,
             )
-            from django.core.files.base import ContentFile
-
-            from .services import LiquidacionPDFService
 
             # Resolver TipoDocumento — si no existe, abortar silenciosamente.
             tipo = TipoDocumento.objects.filter(codigo='LIQUIDACION_SC').first()
@@ -241,11 +239,8 @@ class Liquidacion(TenantModel):
                 )
                 return
 
-            pdf_bytes = LiquidacionPDFService.generar_pdf(self)
-            pdf_file = ContentFile(pdf_bytes, name=f'{self.codigo}.pdf')
-
             doc = DocumentoService.archivar_registro(
-                pdf_file=pdf_file,
+                pdf_file=None,  # documento-vivo: PDF on-demand
                 tipo_codigo='LIQUIDACION_SC',
                 proceso=proceso,
                 usuario=user,

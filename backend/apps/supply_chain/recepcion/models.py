@@ -97,11 +97,22 @@ class VoucherRecepcion(TenantModel):
     )
 
     # ─── Destino inventario ────────────────────────────────────────────
+    # DEPRECATED como dato principal: el almacén ahora se asigna por línea
+    # (``VoucherLineaMP.almacen_destino``). Este campo se conserva nullable
+    # como fallback histórico (vouchers pre-refactor 2026-04-28) y default
+    # legacy del FE. El signal de aprobación usa
+    # ``linea.almacen_destino or instance.almacen_destino``.
     almacen_destino = models.ForeignKey(
         'catalogos.Almacen',
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='vouchers_recepcion',
-        verbose_name='Almacén destino',
+        verbose_name='Almacén destino (legacy / fallback)',
+        help_text=(
+            'Legacy. El almacén se asigna por cada línea (VoucherLineaMP). '
+            'Este campo solo se conserva por backward-compat con datos viejos.'
+        ),
     )
 
     # ─── Operación ─────────────────────────────────────────────────────
@@ -267,6 +278,91 @@ class VoucherRecepcion(TenantModel):
         merma = self.merma_kg
         return (merma / pt * Decimal('100')).quantize(Decimal('0.01'))
 
+    # ─── H-SC-GD-ARCHIVE: registro de trazabilidad en Gestión Documental ─
+    def archivar_en_gd(self, usuario):
+        """
+        Crea un ``Documento`` en GD que referencia este voucher (sin PDF
+        físico — el PDF se regenera on-demand desde
+        ``VoucherPDFService`` cuando el usuario lo solicita).
+
+        Patrón documento-vivo: GD guarda metadata + GenericFK al voucher;
+        el "ver" en GD redirige al detalle del voucher en SC. Esto evita
+        duplicar storage y mantiene el voucher como única fuente de verdad
+        (consistente con la doctrina: estados terminales ``APROBADO`` /
+        ``LIQUIDADO`` ya garantizan inmutabilidad de los datos).
+
+        Idempotente: si ``documento_archivado_id`` ya está, retorna None.
+        Graceful: si falta TipoDocumento o Area, log warning y retorna None
+        (no rompe la aprobación).
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        if self.documento_archivado_id:
+            return None
+
+        try:
+            from apps.gestion_estrategica.gestion_documental.models import (
+                TipoDocumento,
+            )
+            from apps.gestion_estrategica.gestion_documental.services.documento_service import (
+                DocumentoService,
+            )
+
+            tipo = TipoDocumento.objects.filter(codigo='VOUCHER_RECEPCION_SC').first()
+            if tipo is None:
+                logger.warning(
+                    'No se archivó voucher %s: TipoDocumento '
+                    'VOUCHER_RECEPCION_SC no existe en este tenant.',
+                    self.pk,
+                )
+                return None
+
+            try:
+                from apps.gestion_estrategica.organizacion.models import Area
+            except Exception:
+                Area = None
+
+            proceso = None
+            if Area is not None:
+                proceso = (
+                    Area.objects.filter(is_active=True, tipo='MISIONAL').first()
+                    or Area.objects.filter(is_active=True).first()
+                )
+            if proceso is None:
+                logger.warning(
+                    'No se archivó voucher %s: no hay procesos (Area) '
+                    'definidos en este tenant.',
+                    self.pk,
+                )
+                return None
+
+            documento = DocumentoService.archivar_registro(
+                pdf_file=None,  # documento-vivo: PDF on-demand desde el voucher
+                tipo_codigo='VOUCHER_RECEPCION_SC',
+                proceso=proceso,
+                usuario=usuario,
+                modulo_origen='supply_chain.recepcion',
+                referencia=self,
+                titulo=f'Voucher Recepción #{self.pk:04d}',
+                resumen=(
+                    f'Voucher de recepción de MP en planta '
+                    f'(estado: {self.get_estado_display()}).'
+                ),
+            )
+            self.documento_archivado_id = documento.id
+            self.save(update_fields=['documento_archivado_id', 'updated_at'])
+            return documento
+        except Exception as exc:  # noqa: BLE001 — falla silencioso por diseño
+            logger.warning(
+                'No se pudo archivar voucher %s en GD: %s',
+                self.pk,
+                exc,
+                exc_info=True,
+            )
+            return None
+
     # ─── Transiciones de estado ────────────────────────────────────────
     def aprobar(self):
         """
@@ -337,6 +433,21 @@ class VoucherLineaMP(TenantModel):
     peso_neto_kg = models.DecimalField(
         max_digits=12, decimal_places=1, editable=False,
         verbose_name='Peso neto (kg)',
+    )
+    # Almacén destino por línea (opcional). Si null, hereda de
+    # ``voucher.almacen_destino``. Permite distribuir un mismo viaje del
+    # proveedor entre N almacenes sin duplicar voucher/liquidación.
+    almacen_destino = models.ForeignKey(
+        'catalogos.Almacen',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='lineas_voucher_destino',
+        verbose_name='Almacén destino (override)',
+        help_text=(
+            'Opcional. Si se deja vacío, la línea va al almacén destino del '
+            'voucher (header).'
+        ),
     )
 
     class Meta:

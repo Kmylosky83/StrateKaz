@@ -20,6 +20,9 @@ export interface VoucherLineaMP {
   peso_bruto_kg: string;
   peso_tara_kg: string;
   peso_neto_kg: string;
+  /** Almacén destino override por línea. Null = hereda del header. */
+  almacen_destino?: number | null;
+  almacen_destino_nombre?: string | null;
 }
 
 /** DTO para crear una línea de MP al crear un voucher */
@@ -27,6 +30,8 @@ export interface CreateVoucherLineaMPDTO {
   producto: number;
   peso_bruto_kg: number;
   peso_tara_kg: number;
+  /** Override opcional. Si no se envía, hereda almacén del voucher. */
+  almacen_destino?: number | null;
 }
 
 export interface VoucherRecepcionList {
@@ -83,7 +88,11 @@ export interface CreateVoucherRecepcionDTO {
   ruta_recoleccion?: number | null;
   fecha_viaje: string;
   orden_compra?: number | null;
-  almacen_destino: number;
+  /**
+   * Legacy / fallback. El almacén real se asigna por línea. El BE tolera
+   * null; el FE lo rellena con el almacén de la primera línea para tracking.
+   */
+  almacen_destino?: number | null;
   operador_bascula: number;
   observaciones?: string;
   /** Mínimo 1 línea de MP */

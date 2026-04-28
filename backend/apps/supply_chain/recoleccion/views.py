@@ -10,6 +10,19 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer
+
+
+class PDFRenderer(BaseRenderer):
+    """Renderer minimal para que DRF acepte 'Accept: application/pdf'."""
+
+    media_type = 'application/pdf'
+    format = 'pdf'
+    charset = None
+    render_style = 'binary'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data if isinstance(data, (bytes, bytearray)) else b''
 from rest_framework.response import Response
 
 from apps.core.permissions import RequireCRUDPermission
@@ -98,7 +111,12 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(voucher).data)
 
     # ─── Impresión térmica 58mm (entregar al productor en ruta) ──────
-    @action(detail=True, methods=['get'], url_path='print-58mm')
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='print-58mm',
+        renderer_classes=[PDFRenderer],
+    )
     def print_58mm(self, request, pk=None):
         """HTML 58mm para entregar al productor. Sin precios."""
         voucher = self.get_object()
@@ -259,7 +277,16 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
 <div class="footer center" style="margin-top:3mm;">Este documento NO incluye precios.</div>
 <div class="footer center" style="font-size:7pt; margin-top:2mm;">Powered by StrateKaz</div>
 </body>
-<script>window.onload = function(){{ window.print(); }};</script>
 </html>"""
 
-        return HttpResponse(html, content_type='text/html; charset=utf-8')
+        # Refactor 2026-04-28: el endpoint retorna PDF on-demand (no HTML).
+        # El FE espera Accept: application/pdf y abre el blob en popup
+        # con auto-print del navegador.
+        from weasyprint import HTML as WeasyHTML
+
+        pdf_bytes = WeasyHTML(string=html).write_pdf()
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'inline; filename="voucher-recoleccion-{voucher.codigo}-58mm.pdf"'
+        )
+        return response

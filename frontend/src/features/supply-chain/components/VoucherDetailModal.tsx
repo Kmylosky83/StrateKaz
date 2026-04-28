@@ -263,91 +263,95 @@ export const VoucherDetailModal = ({ voucher, isOpen, onClose }: VoucherDetailMo
             </div>
           </Card>
 
-          {/* H-SC-RUTA-02 (refactor 2): M2M con N vouchers de recolección */}
-          <Card>
-            <div className="p-4">
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                  <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                    Vouchers de Recolección asociados ({linkedInfo.length})
-                  </h4>
+          {/* H-SC-RUTA-02 (refactor 2): M2M con N vouchers de recolección.
+              Sólo aplica a modalidad RECOLECCION (entrega DIRECTO o
+              TRANSPORTE_INTERNO no usan vouchers de ruta). */}
+          {voucher.modalidad_entrega === 'RECOLECCION' && (
+            <Card>
+              <div className="p-4">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                      Vouchers de Recolección asociados ({linkedInfo.length})
+                    </h4>
+                  </div>
+                  {linkedInfo.length > 0 && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      Total recolectado:{' '}
+                      <strong className="font-mono">{totalKgRecolectados.toFixed(3)} kg</strong>
+                    </div>
+                  )}
                 </div>
-                {linkedInfo.length > 0 && (
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    Total recolectado:{' '}
-                    <strong className="font-mono">{totalKgRecolectados.toFixed(3)} kg</strong>
+
+                {canTranscribirTalonario && (
+                  <div className="mb-3">
+                    <Button variant="secondary" onClick={() => setShowTalonarioModal(true)}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Transcribir talonario manual
+                    </Button>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  Marca los vouchers de recolección que se consolidaron en esta recepción. El
+                  inventario YA entró — los vouchers asocian para liquidar a cada productor por
+                  separado.
+                </p>
+
+                {recoleccionesDisponibles.length === 0 ? (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    No hay vouchers de recolección disponibles. Crea uno en Supply Chain →
+                    Recolección en Ruta.
+                  </p>
+                ) : (
+                  <div className="space-y-1 max-h-72 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+                    {recoleccionesDisponibles.map((v) => {
+                      const checked = linkedIds.has(v.id);
+                      return (
+                        <label
+                          key={v.id}
+                          className={`flex items-start gap-3 p-2 rounded-md cursor-pointer text-sm ${
+                            checked
+                              ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handleToggle(v.id)}
+                            disabled={linking || voucher.estado === 'LIQUIDADO'}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-semibold text-blue-700 dark:text-blue-400">
+                                {v.codigo}
+                              </span>
+                              <Badge
+                                variant={v.estado === 'COMPLETADO' ? 'success' : 'warning'}
+                                size="sm"
+                              >
+                                {v.estado === 'BORRADOR'
+                                  ? 'BORRADOR — bloquea liquidación'
+                                  : 'COMPLETADO ✓'}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                              {v.proveedor_nombre} · {v.producto_nombre} ·{' '}
+                              <strong>{Number(v.cantidad).toFixed(3)} kg</strong> ·{' '}
+                              {v.fecha_recoleccion}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-
-              {canTranscribirTalonario && (
-                <div className="mb-3">
-                  <Button variant="secondary" onClick={() => setShowTalonarioModal(true)}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Transcribir talonario manual
-                  </Button>
-                </div>
-              )}
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Marca los vouchers de recolección que se consolidaron en esta recepción. El
-                inventario YA entró — los vouchers asocian para liquidar a cada productor por
-                separado.
-              </p>
-
-              {recoleccionesDisponibles.length === 0 ? (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  No hay vouchers de recolección disponibles. Crea uno en Supply Chain → Recolección
-                  en Ruta.
-                </p>
-              ) : (
-                <div className="space-y-1 max-h-72 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                  {recoleccionesDisponibles.map((v) => {
-                    const checked = linkedIds.has(v.id);
-                    return (
-                      <label
-                        key={v.id}
-                        className={`flex items-start gap-3 p-2 rounded-md cursor-pointer text-sm ${
-                          checked
-                            ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => handleToggle(v.id)}
-                          disabled={linking || voucher.estado === 'LIQUIDADO'}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-semibold text-blue-700 dark:text-blue-400">
-                              {v.codigo}
-                            </span>
-                            <Badge
-                              variant={v.estado === 'COMPLETADO' ? 'success' : 'warning'}
-                              size="sm"
-                            >
-                              {v.estado === 'BORRADOR'
-                                ? 'BORRADOR — bloquea liquidación'
-                                : 'COMPLETADO ✓'}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                            {v.proveedor_nombre} · {v.producto_nombre} ·{' '}
-                            <strong>{Number(v.cantidad).toFixed(3)} kg</strong> ·{' '}
-                            {v.fecha_recoleccion}
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </Card>
+            </Card>
+          )}
 
           {/* Tabla de líneas */}
           <div>

@@ -81,9 +81,8 @@ export default function VoucherRecoleccionTab() {
 
   const handlePrint58mm = async (id: number) => {
     try {
-      const html = await voucherRecoleccionApi.getPrint58mm(id);
-      const blob = new Blob([html], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
+      const pdfBlob = await voucherRecoleccionApi.getPrint58mm(id);
+      const blobUrl = URL.createObjectURL(pdfBlob);
       const win = window.open(blobUrl, '_blank', 'width=400,height=700');
       if (!win) {
         URL.revokeObjectURL(blobUrl);

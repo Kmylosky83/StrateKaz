@@ -1,17 +1,19 @@
 """Servicios de Recoleccion — Supply Chain.
 
 Incluye:
-  - VoucherRecoleccionPDFService.generar_pdf(voucher) -> bytes (WeasyPrint).
-  - archivar_voucher_en_gd(voucher, user) -> idempotente, falla silencioso.
+  - VoucherRecoleccionPDFService.generar_pdf(voucher) -> bytes (WeasyPrint),
+    on-demand para impresion/descarga.
+  - archivar_voucher_en_gd(voucher, user) -> registra trazabilidad en GD
+    sin almacenar PDF (documento-vivo).
 
-H-SC-GD-ARCHIVE: cuando un VoucherRecoleccion pasa a COMPLETADO se archiva
-en Gestion Documental como registro inmutable (TipoDocumento.codigo =
-'VOUCHER_RECOLEC_SC'). El ID del Documento creado se guarda en
-voucher.documento_archivado_id para garantizar idempotencia.
+H-SC-GD-ARCHIVE (refactor 2026-04-28 — patrón documento-vivo):
+GD guarda solo metadata + GenericFK al voucher. El PDF se regenera
+on-demand cuando el usuario lo solicita desde el endpoint print/pdf.
+Esto evita duplicar storage; el voucher es la fuente de verdad y los
+estados terminales (COMPLETADO) ya garantizan inmutabilidad.
 """
 import logging
 
-from django.core.files.base import ContentFile
 from django.template.loader import render_to_string
 from weasyprint import HTML
 
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class VoucherRecoleccionPDFService:
-    """Genera el PDF (A4 simple) del voucher de recoleccion para archivar en GD."""
+    """Genera el PDF (A4 simple) del voucher on-demand."""
 
     @staticmethod
     def generar_pdf(voucher) -> bytes:
@@ -48,7 +50,7 @@ def _resolver_proceso_default():
 
 
 def archivar_voucher_en_gd(voucher, user):
-    """Archiva el voucher como Documento en Gestion Documental.
+    """Registra el voucher en GD como documento-vivo (sin PDF físico).
 
     Idempotente: si voucher.documento_archivado_id ya esta seteado, no hace nada.
     Falla silencioso: cualquier excepcion se loguea como warning y NO rompe
@@ -70,11 +72,8 @@ def archivar_voucher_en_gd(voucher, user):
             )
             return None
 
-        pdf_bytes = VoucherRecoleccionPDFService.generar_pdf(voucher)
-        pdf_file = ContentFile(pdf_bytes, name=f'{voucher.codigo}.pdf')
-
         documento = DocumentoService.archivar_registro(
-            pdf_file=pdf_file,
+            pdf_file=None,  # documento-vivo: PDF on-demand desde el voucher
             tipo_codigo='VOUCHER_RECOLEC_SC',
             proceso=proceso,
             usuario=user,
@@ -89,7 +88,7 @@ def archivar_voucher_en_gd(voucher, user):
         voucher.documento_archivado_id = documento.id
         voucher.save(update_fields=['documento_archivado_id'])
         logger.info(
-            'archivar_voucher_en_gd: voucher %s archivado como documento %s',
+            'archivar_voucher_en_gd: voucher %s registrado en GD como documento %s (sin PDF)',
             voucher.id, documento.id,
         )
         return documento

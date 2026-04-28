@@ -53,7 +53,9 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
         )
         return
 
-    for linea in instance.lineas.select_related('producto__unidad_medida').all():
+    for linea in instance.lineas.select_related(
+        'producto__unidad_medida', 'almacen_destino'
+    ).all():
         # Idempotencia por línea
         if MovimientoInventario.objects.filter(
             origen_tipo='VoucherLineaMP',
@@ -61,11 +63,14 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
         ).exists():
             continue
 
+        # Override por línea (opcional). Si null, usa el del header.
+        almacen_linea = linea.almacen_destino or instance.almacen_destino
+
         try:
             with transaction.atomic():
                 unidad = getattr(linea.producto, 'unidad_medida', None)
                 movimiento = MovimientoInventario.objects.create(
-                    almacen_destino=instance.almacen_destino,
+                    almacen_destino=almacen_linea,
                     tipo_movimiento=tipo_entrada,
                     fecha_movimiento=instance.created_at,
                     producto=linea.producto,
@@ -84,7 +89,7 @@ def crear_movimiento_inventario_al_aprobar(sender, instance, **kwargs):
                 )
 
                 inventario, created = Inventario.objects.get_or_create(
-                    almacen=instance.almacen_destino,
+                    almacen=almacen_linea,
                     producto=linea.producto,
                     lote=str(instance.pk),
                     estado=estado_disponible,

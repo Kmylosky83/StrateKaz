@@ -44,6 +44,9 @@ const lineaSchema = z
     producto: z.coerce.number().int().min(1, 'Selecciona un producto'),
     peso_bruto_kg: z.coerce.number().positive('El bruto debe ser mayor a cero'),
     peso_tara_kg: z.coerce.number().min(0, 'La tara no puede ser negativa'),
+    // Almacén destino: obligatorio por línea (cada MP puede ir a almacén distinto).
+    // El FE auto-rellena con el almacén de la línea 0 al agregar nuevas líneas.
+    almacen_destino: z.coerce.number().int().min(1, 'Selecciona el almacén destino'),
   })
   .refine((d) => d.peso_tara_kg <= d.peso_bruto_kg, {
     message: 'La tara no puede ser mayor que el bruto',
@@ -58,7 +61,6 @@ const voucherSchema = z
     modalidad_entrega: z.enum(['DIRECTO', 'TRANSPORTE_INTERNO', 'RECOLECCION']),
     ruta_recoleccion: z.coerce.number().int().nullable().optional(),
     fecha_viaje: z.string().min(1, 'La fecha es obligatoria'),
-    almacen_destino: z.coerce.number().int().min(1, 'Selecciona un almacén'),
     operador_bascula: z.coerce.number().int().positive(),
     observaciones: z.string().optional(),
     lineas: z.array(lineaSchema).min(1, 'Agrega al menos un producto'),
@@ -95,7 +97,12 @@ const MODALIDAD_OPTIONS: { value: ModalidadEntrega; label: string }[] = [
   { value: 'RECOLECCION', label: 'Recolección por la empresa' },
 ];
 
-const LINEA_VACIA = { producto: 0, peso_bruto_kg: 0, peso_tara_kg: 0 } as const;
+const LINEA_VACIA = {
+  producto: 0,
+  peso_bruto_kg: 0,
+  peso_tara_kg: 0,
+  almacen_destino: 0,
+} as const;
 
 // ─── Interfaces auxiliares ───
 
@@ -207,7 +214,6 @@ export default function VoucherFormModal({
       modalidad_entrega: 'DIRECTO',
       ruta_recoleccion: null,
       fecha_viaje: new Date().toISOString().slice(0, 10),
-      almacen_destino: 0,
       operador_bascula: currentUserId,
       observaciones: '',
       lineas: [{ ...LINEA_VACIA }],
@@ -239,6 +245,7 @@ export default function VoucherFormModal({
             id: p.producto,
             codigo: p.producto_codigo,
             nombre: p.producto_nombre,
+            requiere_qc_recepcion: p.producto_requiere_qc_recepcion ?? false,
           });
         }
       }
@@ -252,6 +259,7 @@ export default function VoucherFormModal({
           id: p.producto,
           codigo: p.producto_codigo,
           nombre: p.producto_nombre,
+          requiere_qc_recepcion: p.producto_requiere_qc_recepcion ?? false,
         });
       }
     }
@@ -275,19 +283,24 @@ export default function VoucherFormModal({
   }, [isOpen, reset]);
 
   const handleSubmit = async (data: VoucherFormValues) => {
+    // El almacén ahora vive a nivel de línea. Pasamos el de la primera
+    // línea como ``voucher.almacen_destino`` para preservar tracking
+    // legacy/dashboard sin obligar al operador a elegirlo dos veces.
+    const almacenHeader = data.lineas[0]?.almacen_destino || null;
     const created = await createMut.mutateAsync({
       // H-SC-RUTA-02: en RECOLECCION proveedor puede ser null.
       proveedor: data.proveedor ?? null,
       modalidad_entrega: data.modalidad_entrega,
       ruta_recoleccion: data.ruta_recoleccion ?? null,
       fecha_viaje: data.fecha_viaje,
-      almacen_destino: data.almacen_destino,
+      almacen_destino: almacenHeader,
       operador_bascula: data.operador_bascula,
       observaciones: data.observaciones || '',
       lineas: data.lineas.map((l) => ({
         producto: l.producto,
         peso_bruto_kg: l.peso_bruto_kg,
         peso_tara_kg: l.peso_tara_kg,
+        almacen_destino: l.almacen_destino,
       })),
     });
 
@@ -419,7 +432,16 @@ export default function VoucherFormModal({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => append({ ...LINEA_VACIA })}
+            onClick={() => {
+              // Auto-fill: nuevas líneas heredan el almacén de la primera
+              // (el operador típicamente recibe todo en el mismo almacén;
+              // solo cambia las líneas que vayan a otro lugar).
+              const primerAlmacen = Number(watch('lineas.0.almacen_destino') ?? 0);
+              append({
+                ...LINEA_VACIA,
+                almacen_destino: primerAlmacen > 0 ? primerAlmacen : 0,
+              });
+            }}
             disabled={
               modalidadSel !== 'RECOLECCION' && (!proveedorSel || Number(proveedorSel) === 0)
             }
@@ -523,6 +545,26 @@ export default function VoucherFormModal({
                     </div>
                   </div>
 
+                  {/* Almacén destino por línea (obligatorio). Cada MP puede
+                      ir a un almacén distinto. Las líneas nuevas heredan
+                      el almacén de la primera línea. */}
+                  <div className="mt-3">
+                    <Select
+                      label="Almacén destino *"
+                      required
+                      error={formState.errors.lineas?.[index]?.almacen_destino?.message}
+                      {...register(`lineas.${index}.almacen_destino`)}
+                    >
+                      <option value={0}>Seleccionar...</option>
+                      {almacenes.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.codigo} — {a.nombre}
+                          {a.sede_nombre ? ` (${a.sede_nombre})` : ''}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
                   {/* Badge QC informativo (cuando el producto lo requiera) */}
                   {(() => {
                     const prodId = Number(watch(`lineas.${index}.producto`));
@@ -564,37 +606,16 @@ export default function VoucherFormModal({
         )}
       </Card>
 
-      {/* ── DESTINO ── */}
-      <Card variant="bordered" padding="md">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <Warehouse className="w-4 h-4" /> Destino
-        </h3>
-        <Select
-          label="Almacén destino"
-          required
-          error={formState.errors.almacen_destino?.message}
-          {...register('almacen_destino')}
-        >
-          <option value={0}>Seleccionar...</option>
-          {almacenes.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.codigo} — {a.nombre}
-              {a.sede_nombre ? ` (${a.sede_nombre})` : ''}
-            </option>
-          ))}
-        </Select>
-        {/* H-SC-07: feedback sobre filtro por sede asignada */}
-        {!almacenesLoading && almacenes.length === 0 ? (
-          <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+      {/* H-SC-07: feedback sobre disponibilidad de almacenes */}
+      {!almacenesLoading && almacenes.length === 0 && (
+        <Card variant="bordered" padding="md">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            <Warehouse className="w-4 h-4 inline mr-1" />
             No hay almacenes disponibles para recepción. Verifica que tu usuario tenga una sede
             asignada y que la sede tenga almacenes configurados.
           </p>
-        ) : (
-          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Mostrando almacenes de tu sede asignada
-          </p>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <Textarea
         label="Observaciones"

@@ -67,7 +67,7 @@ const PARADA_VACIA = {
 
 // ─── Componente ────────────────────────────────────────────────────
 
-export default function TranscribirTalonarioModal({
+export function TranscribirTalonarioModal({
   isOpen,
   onClose,
   voucherRecepcionId,

@@ -2987,3 +2987,53 @@ EOF
 
 ### Estado
 🔴 ABIERTO — requiere operación en VPS. Es ruido continuo en Sentry (no afecta funcionalidad).
+
+---
+
+## 🎯 SUPPLY CHAIN MARATHON 2026-04-27 — 16 hallazgos cerrados
+
+Sesión maratónica de consolidación. Detalle completo en
+`docs/auditorias/history/2026-04-27-supply-chain-marathon.md`.
+
+### Resueltos en esta sesión
+
+| Hallazgo | Estado | Commit |
+|---|---|---|
+| H-SC-01 (PDF service + impresoras app, sin BT) | ✅ PARCIAL | `2109d749` + `f5350f9e` |
+| H-SC-02 (estados liquidación + historial append-only) | ✅ RESUELTO | `f5350f9e` |
+| H-SC-04 (cálculo de merma kg/%) | ✅ RESUELTO | `da37a5c4` |
+| H-SC-05 (sync Fundación Ruta A) | ✅ RESUELTO | `28b56980` |
+| H-SC-06 (LiquidacionPeriodica + Celery) | ✅ RESUELTO | `223b2f9e` |
+| H-SC-12 (cleanup tests rotos QC + liquidaciones) | ✅ RESUELTO | `a80968dc` |
+| H-SC-CAT-MODALIDAD (5→2 modalidades) | ✅ RESUELTO | `1a17c2c2` |
+| H-SC-CAT-TIPO-PROV (drop UNIDAD_NEGOCIO) | ✅ RESUELTO | `1a17c2c2` |
+| H-SC-E2E-01 (UI CRUD Almacenes) | ✅ RESUELTO | `f8660348` |
+| H-SC-E2E-05 (LÍNEAS=0 en serializer list) | ✅ RESUELTO | `f5350f9e` |
+| H-SC-GD-ARCHIVE (recepción + recolección + liquidaciones) | ✅ RESUELTO | `da37a5c4` + `6025ef11` + `f5350f9e` |
+| H-SC-RBAC (40 viewsets enforced + unifica RBAC paralelo) | ✅ RESUELTO | `27fe03b8` |
+| H-SC-RUTA-03 (lectura M2M directa, no FK OneToOne) | ✅ RESUELTO | `f5350f9e` |
+| H-SC-RUTA-04 (Dashboard merma FE) | ✅ RESUELTO | `1c088d78` |
+| H-SC-TALONARIO (registro manual post-hoc BE+FE) | ✅ RESUELTO | `7b9607fa` + `da37a5c4` + `2109d749` |
+| H-PROV-DROP (drop FK legacy `Proveedor.ruta_origen`) | ✅ RESUELTO | `736b6980` |
+
+### Followups generados (pendientes nuevos)
+
+- **H-SC-05-followup** — `select_lists.py` UNeg filter, comentario migración
+  0008 configuracion, test E2E manual tenant demo, UniqueConstraint DB en
+  `sede_empresa_origen`.
+- **H-SC-01-followup** — Web Bluetooth API completa para impresión térmica
+  (~30h adicionales).
+- **H-SC-RUTA-04-followup** — Gráfico ECharts tendencia temporal +
+  ExportButton CSV/PDF en MermaDashboard.
+- **H-SC-E2E-01-followup** — Correr `seed_estructura_final` post-deploy
+  por tenant para que tab Almacenes aparezca en sidebar.
+- **H-SC-GD-ARCHIVE-AREA** — `Almacen.proceso_default` FK para asignación
+  determinística del Area en archivado GD (hoy fallback al primer Area
+  activa).
+- **H-SC-PDF-LOGO-URL** — branding usa `tenant.logo.url` relativo;
+  WeasyPrint puede fallar en producción si no resuelve absoluto.
+- **TipoDocumento seed post-deploy** — correr `seed_tipos_documento_sc` en
+  cada tenant para crear `VOUCHER_RECEPCION_SC`,
+  `VOUCHER_RECOLECCION_SC`, `LIQUIDACION_SC`.
+- **RBAC unificación transversal** — documentar política y deprecar
+  `GranularActionPermission` o consolidar uso.

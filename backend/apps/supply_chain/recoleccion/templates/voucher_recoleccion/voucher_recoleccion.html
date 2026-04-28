@@ -10,7 +10,7 @@
     table { width: 100%; border-collapse: collapse; margin-top: 8pt; }
     table td { border: 1px solid #999; padding: 6px 8px; vertical-align: top; }
     table td.label { width: 30%; background: #f3f4f6; font-weight: bold; }
-    .footer { margin-top: 2cm; font-size: 9pt; color: #666; }
+    .footer { margin-top: 12mm; text-align: center; font-size: 8pt; color: #6b7280; border-top: 1pt solid #e5e7eb; padding-top: 2mm; }
   </style>
 </head>
 <body>
@@ -55,8 +55,8 @@
     </tr>
     {% endif %}
   </table>
-  <p class="footer">
-    Generado: {{ voucher.created_at|date:"Y-m-d H:i" }} &mdash; StrateKaz Supply Chain
-  </p>
+  <div class="footer">
+    Documento generado por StrateKaz - stratekaz.com - Consultoria 4.0
+  </div>
 </body>
 </html>

@@ -2,6 +2,7 @@
 Views para Recolección en Ruta — H-SC-RUTA-02 refactor 2.
 """
 from django.db import connection
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -42,6 +43,35 @@ class VoucherRecoleccionViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['fecha_recoleccion', 'codigo', 'created_at']
     ordering = ['-fecha_recoleccion', '-created_at']
+
+    def get_queryset(self):
+        """
+        H-SC-RUTA-RBAC-INSTANCIA: solo vouchers de rutas asignadas al usuario.
+
+        Superuser/staff y cargos elevados ven todos. El resto solo ve los
+        vouchers cuya ruta los tenga asignados como conductor_principal o
+        en conductores_adicionales.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_superuser or user.is_staff:
+            return qs
+
+        if hasattr(user, 'has_section_permission'):
+            try:
+                if user.has_section_permission(
+                    section_code='recepcion_mp_sc',
+                    permission='can_admin',
+                ):
+                    return qs
+            except Exception:
+                pass
+
+        return qs.filter(
+            Q(ruta__conductor_principal=user)
+            | Q(ruta__conductores_adicionales=user)
+        ).distinct()
 
     def perform_create(self, serializer):
         serializer.save(

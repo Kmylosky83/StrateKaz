@@ -231,7 +231,7 @@ class VoucherRecepcion(TenantModel):
     @property
     def peso_neto_total(self):
         """Suma de peso_neto_kg de todas las líneas."""
-        return sum((l.peso_neto_kg for l in self.lineas.all()), Decimal('0.000'))
+        return sum((l.peso_neto_kg for l in self.lineas.all()), Decimal('0.0'))
 
     # ─── Cálculo de merma (H-SC-04) ────────────────────────────────────
     @property
@@ -328,14 +328,14 @@ class VoucherLineaMP(TenantModel):
         verbose_name='Producto',
     )
     peso_bruto_kg = models.DecimalField(
-        max_digits=12, decimal_places=3, verbose_name='Peso bruto (kg)'
+        max_digits=12, decimal_places=1, verbose_name='Peso bruto (kg)'
     )
     peso_tara_kg = models.DecimalField(
-        max_digits=12, decimal_places=3, default=Decimal('0.000'),
+        max_digits=12, decimal_places=1, default=Decimal('0.0'),
         verbose_name='Peso tara (kg)'
     )
     peso_neto_kg = models.DecimalField(
-        max_digits=12, decimal_places=3, editable=False,
+        max_digits=12, decimal_places=1, editable=False,
         verbose_name='Peso neto (kg)',
     )
 

@@ -40,6 +40,9 @@ class Command(BaseCommand):
         ('geografia', 'seed_geografia_colombia', [], 'Geografía Colombia DIVIPOLA (33 deptos + 1,104 municipios oficiales DANE)'),
         ('catalogo_productos', 'seed_catalogo_productos_base', [], 'Catálogo de Productos base (12 unidades + 4 categorías raíz)'),
         ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, modalidad, almacén)'),
+        # H-SC-GD-ARCHIVE: TipoDocumento para que vouchers/liquidaciones SC se
+        # archiven en Gestion Documental sin caer al except silencioso.
+        ('tipos_documento_sc', 'seed_tipos_documento_sc', [], 'Tipos Documento Supply Chain (VOUCHER_RECEPCION_SC / VOUCHER_RECOLEC_SC / LIQUIDACION_SC)'),
         ('grupos_pi', 'seed_grupos_partes_interesadas', [], 'Grupos de Partes Interesadas (catálogo base ISO 9001 §4.2)'),
         ('tipos_pi', 'seed_tipos_parte_interesada', [], 'Tipos de Partes Interesadas (ejemplos opcionales por grupo)'),
         ('procesos', 'seed_procesos_base', [], 'Catálogo base de procesos organizacionales (17 procesos ISO)'),

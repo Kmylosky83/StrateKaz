@@ -38,7 +38,7 @@ from .serializers import (
 
 
 class RutaRecoleccionViewSet(viewsets.ModelViewSet):
-    """CRUD de Rutas de Recolección (H-SC-RUTA-02)."""
+    """CRUD de Rutas de Recolección (H-SC-RUTA-02 + RBAC instancia)."""
 
     queryset = RutaRecoleccion.objects.all()
     serializer_class = RutaRecoleccionSerializer
@@ -50,6 +50,38 @@ class RutaRecoleccionViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['codigo', 'nombre', 'created_at']
     ordering = ['codigo']
+
+    def get_queryset(self):
+        """
+        H-SC-RUTA-RBAC-INSTANCIA: object-level filter.
+
+        - Superuser y staff: ven todas las rutas (control gerencial).
+        - Usuarios con permiso 'admin' sobre catalogos (cargo elevado): todas.
+        - Resto: solo rutas donde son conductor_principal o están en
+          conductores_adicionales. La capa de RBAC por sección
+          (RequireCRUDPermission) sigue activa como primera barrera.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_superuser or user.is_staff:
+            return qs
+
+        # Usuarios con permiso admin sobre el módulo (cargo elevado: gerentes,
+        # supervisores) ven todas las rutas independientemente de asignación.
+        if hasattr(user, 'has_section_permission'):
+            try:
+                if user.has_section_permission(
+                    section_code='catalogos',
+                    permission='can_admin',
+                ):
+                    return qs
+            except Exception:
+                pass
+
+        return qs.filter(
+            Q(conductor_principal=user) | Q(conductores_adicionales=user)
+        ).distinct()
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

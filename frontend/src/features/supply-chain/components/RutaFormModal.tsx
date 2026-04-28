@@ -6,8 +6,8 @@
  *   - Agregado selector "modo_operacion" (PASS_THROUGH | SEMI_AUTONOMA).
  *   - La Ruta NUNCA es Proveedor. Los proveedores se asocian vía RutaParada.
  */
-import { useEffect, useState } from 'react';
-import { Hash, Route, Settings2, Info } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Hash, Route, Settings2, Info, UserCheck } from 'lucide-react';
 
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -17,6 +17,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 
 import { useCreateRuta, useUpdateRuta } from '../hooks/useRutas';
+import { useUsers } from '@/features/users/hooks/useUsers';
 import {
   ModoOperacion,
   MODO_OPERACION_LABELS,
@@ -37,6 +38,9 @@ interface FormData {
   descripcion: string;
   modo_operacion: ModoOperacion;
   is_active: boolean;
+  /** H-SC-RUTA-RBAC-INSTANCIA: object-level RBAC */
+  conductor_principal: number | '';
+  conductores_adicionales: number[];
 }
 
 const defaultFormData: FormData = {
@@ -45,6 +49,8 @@ const defaultFormData: FormData = {
   descripcion: '',
   modo_operacion: ModoOperacion.PASS_THROUGH,
   is_active: true,
+  conductor_principal: '',
+  conductores_adicionales: [],
 };
 
 export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalProps) {
@@ -62,11 +68,35 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
         descripcion: ruta.descripcion || '',
         modo_operacion: ruta.modo_operacion ?? ModoOperacion.PASS_THROUGH,
         is_active: ruta.is_active ?? true,
+        conductor_principal: ruta.conductor_principal ?? '',
+        conductores_adicionales: ruta.conductores_adicionales ?? [],
       });
     } else {
       setFormData({ ...defaultFormData });
     }
   }, [isEditing, ruta, isOpen]);
+
+  // H-SC-RUTA-RBAC-INSTANCIA: lista de usuarios para asignar como conductores.
+  const { data: usersResponse } = useUsers({ is_active: true });
+  const users = useMemo(() => {
+    if (!usersResponse) return [];
+    if (Array.isArray(usersResponse)) return usersResponse;
+    const data = usersResponse as { results?: unknown[] };
+    return Array.isArray(data.results) ? data.results : [];
+  }, [usersResponse]) as Array<{
+    id: number;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    cargo_nombre?: string | null;
+  }>;
+
+  const userLabel = (u: (typeof users)[number]) => {
+    const full = (u.full_name || `${u.first_name ?? ''} ${u.last_name ?? ''}`).trim();
+    const base = full || u.email || `Usuario #${u.id}`;
+    return u.cargo_nombre ? `${base} · ${u.cargo_nombre}` : base;
+  };
 
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault();
@@ -82,6 +112,9 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
       descripcion: formData.descripcion || undefined,
       modo_operacion: formData.modo_operacion,
       is_active: formData.is_active,
+      conductor_principal:
+        formData.conductor_principal === '' ? null : formData.conductor_principal,
+      conductores_adicionales: formData.conductores_adicionales,
     };
 
     try {
@@ -235,6 +268,82 @@ export default function RutaFormModal({ ruta, isOpen, onClose }: RutaFormModalPr
               checked={formData.is_active}
               onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
             />
+          </div>
+        </div>
+
+        {/* Sección: Conductores asignados (H-SC-RUTA-RBAC-INSTANCIA) */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-sky-100 dark:bg-sky-900/30 rounded-lg">
+              <UserCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Conductores asignados
+            </h4>
+          </div>
+
+          <div className="rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-900/20 p-3 text-xs text-sky-700 dark:text-sky-300 flex gap-2">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <strong>Acceso restringido:</strong> Solo el conductor principal y los adicionales ven
+              y gestionan esta ruta. Administradores y supervisores con permiso elevado siempre la
+              ven.
+            </div>
+          </div>
+
+          <Select
+            label="Conductor principal"
+            value={formData.conductor_principal === '' ? '' : String(formData.conductor_principal)}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                conductor_principal: e.target.value ? Number(e.target.value) : '',
+              })
+            }
+            options={[
+              { value: '', label: 'Sin asignar (visible solo para admin)' },
+              ...users.map((u) => ({ value: String(u.id), label: userLabel(u) })),
+            ]}
+            helperText="Operador habitual de la ruta. Si lo dejas vacío, solo administradores la ven."
+          />
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Conductores adicionales (backup, supervisores)
+            </label>
+            <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 p-2 space-y-1">
+              {users
+                .filter((u) => u.id !== formData.conductor_principal)
+                .map((u) => {
+                  const checked = formData.conductores_adicionales.includes(u.id);
+                  return (
+                    <label
+                      key={u.id}
+                      className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...formData.conductores_adicionales, u.id]
+                            : formData.conductores_adicionales.filter((x) => x !== u.id);
+                          setFormData({ ...formData, conductores_adicionales: next });
+                        }}
+                      />
+                      <span className="text-gray-700 dark:text-gray-300">{userLabel(u)}</span>
+                    </label>
+                  );
+                })}
+              {users.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 py-2">
+                  No hay usuarios disponibles.
+                </p>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Usuarios que también pueden ver y operar esta ruta (sin ser principales).
+            </p>
           </div>
         </div>
       </form>

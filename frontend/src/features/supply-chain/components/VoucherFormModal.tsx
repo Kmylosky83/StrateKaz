@@ -258,10 +258,13 @@ export default function VoucherFormModal({
     return Array.from(map.values());
   }, [proveedorSel, modalidadSel, precios]);
 
-  // Limpiar líneas cuando cambia el proveedor
+  // Limpiar líneas cuando cambia el proveedor (solo modalidades que dependen
+  // de proveedor — en RECOLECCION los productos vienen de todo el catálogo MP).
   useEffect(() => {
-    form.setValue('lineas', [{ ...LINEA_VACIA }]);
-  }, [proveedorSel, form]);
+    if (modalidadSel !== 'RECOLECCION') {
+      form.setValue('lineas', [{ ...LINEA_VACIA }]);
+    }
+  }, [proveedorSel, modalidadSel, form]);
 
   // Reset al cerrar modal
   useEffect(() => {
@@ -417,7 +420,9 @@ export default function VoucherFormModal({
             variant="outline"
             size="sm"
             onClick={() => append({ ...LINEA_VACIA })}
-            disabled={!proveedorSel || Number(proveedorSel) === 0}
+            disabled={
+              modalidadSel !== 'RECOLECCION' && (!proveedorSel || Number(proveedorSel) === 0)
+            }
           >
             <Plus className="w-4 h-4 mr-1" /> Agregar producto
           </Button>
@@ -431,9 +436,11 @@ export default function VoucherFormModal({
           <p className="text-xs text-danger-600 mb-2">{formState.errors.lineas.message}</p>
         )}
 
-        {fields.length === 0 || Number(proveedorSel) === 0 ? (
+        {fields.length === 0 || (modalidadSel !== 'RECOLECCION' && Number(proveedorSel) === 0) ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-            Selecciona un proveedor y agrega al menos un producto.
+            {modalidadSel === 'RECOLECCION'
+              ? 'Agrega al menos un producto del consolidado entregado por la ruta.'
+              : 'Selecciona un proveedor y agrega al menos un producto.'}
           </p>
         ) : (
           <div className="space-y-2">
@@ -486,7 +493,7 @@ export default function VoucherFormModal({
                     <Input
                       label="Bruto (kg)"
                       type="number"
-                      step="0.001"
+                      step="0.1"
                       required
                       error={formState.errors.lineas?.[index]?.peso_bruto_kg?.message}
                       {...register(`lineas.${index}.peso_bruto_kg`)}
@@ -496,7 +503,7 @@ export default function VoucherFormModal({
                     <Input
                       label="Tara (kg)"
                       type="number"
-                      step="0.001"
+                      step="0.1"
                       error={formState.errors.lineas?.[index]?.peso_tara_kg?.message}
                       {...register(`lineas.${index}.peso_tara_kg`)}
                     />
@@ -508,8 +515,8 @@ export default function VoucherFormModal({
                       </label>
                       <div className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-sm">
                         {pesoNeto.toLocaleString('es-CO', {
-                          minimumFractionDigits: 3,
-                          maximumFractionDigits: 3,
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
                         })}{' '}
                         kg
                       </div>

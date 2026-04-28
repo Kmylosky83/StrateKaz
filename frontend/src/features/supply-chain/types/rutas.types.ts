@@ -38,6 +38,11 @@ export interface RutaRecoleccion {
   modo_operacion: ModoOperacion;
   modo_operacion_display?: string;
   is_active: boolean;
+  /** H-SC-RUTA-RBAC-INSTANCIA: object-level RBAC */
+  conductor_principal?: number | null;
+  conductor_principal_nombre?: string | null;
+  conductores_adicionales?: number[];
+  conductores_adicionales_info?: Array<{ id: number; nombre: string }>;
   created_at?: string;
   updated_at?: string;
 }
@@ -53,6 +58,9 @@ export interface CreateRutaDTO {
   descripcion?: string;
   modo_operacion?: ModoOperacion;
   is_active?: boolean;
+  /** H-SC-RUTA-RBAC-INSTANCIA */
+  conductor_principal?: number | null;
+  conductores_adicionales?: number[];
 }
 
 export type UpdateRutaDTO = Partial<CreateRutaDTO>;

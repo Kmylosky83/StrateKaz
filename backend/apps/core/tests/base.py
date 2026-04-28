@@ -45,6 +45,30 @@ class BaseTenantTestCase(FastTenantTestCase):
         return 'tenant.test.com'
 
     @classmethod
+    def use_existing_tenant(cls):
+        """
+        Override: cuando FastTenantTestCase reutiliza un tenant pre-existente
+        (--keepdb), asegurar que tiene un Domain con is_primary=True. Sin
+        esto, TenantClient revienta con AttributeError 'NoneType.domain' al
+        llamar tenant.get_primary_domain().domain (django-tenants
+        FastTenantTestCase no setea is_primary por default).
+
+        Se ejecuta en setUpClass cuando el tenant ya existe en test_db.
+        """
+        DomainModel = get_tenant_domain_model()
+        tenant_domain = cls.get_test_tenant_domain()
+        domain, _ = DomainModel.objects.get_or_create(
+            tenant=cls.tenant,
+            domain=tenant_domain,
+            defaults={'is_primary': True},
+        )
+        if not domain.is_primary:
+            DomainModel.objects.filter(tenant=cls.tenant).update(is_primary=False)
+            domain.is_primary = True
+            domain.save(update_fields=['is_primary'])
+        cls.domain = domain
+
+    @classmethod
     def setup_test_tenant_and_domain(cls):
         """
         Override necesario porque nuestro modelo Tenant tiene
@@ -75,14 +99,21 @@ class BaseTenantTestCase(FastTenantTestCase):
             verbosity=0,
         )
 
-        # Dominio de test
+        # Dominio de test — idempotente con is_primary=True garantizado.
+        # FastTenantTestCase reusa el schema entre runs (--keepdb), así que
+        # un Domain creado por un setup anterior con is_primary=False (bug
+        # legacy) debe ser corregido aquí para que TenantClient pueda
+        # resolver tenant.get_primary_domain().domain.
         tenant_domain = cls.get_test_tenant_domain()
-        cls.domain = DomainModel(
+        cls.domain, _ = DomainModel.objects.get_or_create(
             tenant=cls.tenant,
             domain=tenant_domain,
+            defaults={'is_primary': True},
         )
+        if not cls.domain.is_primary:
+            cls.domain.is_primary = True
+            cls.domain.save(update_fields=['is_primary'])
         cls.setup_domain(cls.domain)
-        cls.domain.save()
 
         cls.use_new_tenant()
 

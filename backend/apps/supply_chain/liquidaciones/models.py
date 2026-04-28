@@ -416,9 +416,9 @@ class LiquidacionLinea(TenantModel):
     )
     cantidad = models.DecimalField(
         max_digits=14,
-        decimal_places=3,
+        decimal_places=1,
         verbose_name='Cantidad',
-        help_text='Peso neto de la línea del voucher (kg).',
+        help_text='Peso neto de la línea del voucher (kg, 1 decimal).',
     )
     precio_unitario = models.DecimalField(
         max_digits=14,

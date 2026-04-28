@@ -2,6 +2,7 @@
 Modelos para catálogos de Supply Chain
 Sistema de Gestión StrateKaz
 """
+from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
@@ -72,6 +73,35 @@ class RutaRecoleccion(TenantModel):
         default=True,
         db_index=True,
         verbose_name='Activo',
+    )
+
+    # ─── H-SC-RUTA-RBAC-INSTANCIA — object-level RBAC ─────────────────
+    # Object-level access: solo los conductores asignados ven y operan
+    # esta ruta (vouchers de recolección, paradas, liquidaciones derivadas).
+    # Superusuarios y cargos con permiso elevado ven todas las rutas
+    # (filtro en queryset, no en modelo). El RBAC por sección sigue activo
+    # como primera capa; esta es la segunda capa (por instancia).
+    conductor_principal = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rutas_principales',
+        verbose_name='Conductor principal',
+        help_text=(
+            'Usuario responsable de la ruta (operador habitual). '
+            'Solo él y los conductores adicionales ven la ruta.'
+        ),
+    )
+    conductores_adicionales = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='rutas_adicionales',
+        verbose_name='Conductores adicionales',
+        help_text=(
+            'Otros usuarios autorizados a ver y gestionar esta ruta '
+            '(ej: backup, supervisor de ruta).'
+        ),
     )
 
     class Meta:

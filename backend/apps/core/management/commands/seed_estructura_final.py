@@ -981,12 +981,13 @@ class Command(BaseCommand):
                     # Tab Proveedores eliminado 2026-04-21 — modelo movido a CT.
                     # Ver /catalogo-productos/proveedores (tab 'proveedores' en
                     # módulo catalogo_productos).
-                    # H-SC-13: Rutas al inicio (pre-requisito del flujo de recepción).
-                    {'code': 'rutas_recoleccion', 'name': 'Rutas de Recolección', 'icon': 'Route', 'route': 'rutas-recoleccion', 'orden': 1, 'sections': [
-                        {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas con paradas (H-SC-RUTA-02). PASS_THROUGH o SEMI_AUTONOMA.'},
-                    ]},
-                    {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 2, 'sections': [
+                    # Orden de narrativa: primero define qué pago (Precios), luego cómo
+                    # lo recolecto (Rutas), luego ejecución (Recolección/Recepción).
+                    {'code': 'precios', 'name': 'Precios', 'icon': 'DollarSign', 'route': 'precios', 'orden': 1, 'sections': [
                         {'code': 'precios_materia_prima', 'name': 'Precios Materia Prima', 'icon': 'DollarSign', 'orden': 1, 'description': 'Control de precios por tipo de materia prima'},
+                    ]},
+                    {'code': 'rutas_recoleccion', 'name': 'Rutas de Recolección', 'icon': 'Route', 'route': 'rutas-recoleccion', 'orden': 2, 'sections': [
+                        {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas con paradas (H-SC-RUTA-02). PASS_THROUGH o SEMI_AUTONOMA.'},
                     ]},
                     # Tab Compras: NO expuesta en sidebar. App compras registrada en
                     # TENANT_APPS solo para integridad referencial del FK

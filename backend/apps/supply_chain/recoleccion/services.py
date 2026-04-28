@@ -6,7 +6,7 @@ Incluye:
 
 H-SC-GD-ARCHIVE: cuando un VoucherRecoleccion pasa a COMPLETADO se archiva
 en Gestion Documental como registro inmutable (TipoDocumento.codigo =
-'VOUCHER_RECOLECCION_SC'). El ID del Documento creado se guarda en
+'VOUCHER_RECOLEC_SC'). El ID del Documento creado se guarda en
 voucher.documento_archivado_id para garantizar idempotencia.
 """
 import logging
@@ -75,7 +75,7 @@ def archivar_voucher_en_gd(voucher, user):
 
         documento = DocumentoService.archivar_registro(
             pdf_file=pdf_file,
-            tipo_codigo='VOUCHER_RECOLECCION_SC',
+            tipo_codigo='VOUCHER_RECOLEC_SC',
             proceso=proceso,
             usuario=user,
             modulo_origen='supply_chain.recoleccion',

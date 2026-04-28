@@ -3042,7 +3042,21 @@ Sesión maratónica de consolidación. Detalle completo en
 
 ## H-SC-RUTA-RBAC-INSTANCIA — Object-level RBAC por ruta (asignación cargo→ruta)
 
-### Estado: 🔲 ABIERTO (anotado 2026-04-27)
+### Estado: ✅ RESUELTO (2026-04-28) — variante Opción 2
+
+**Implementación:**
+- `RutaRecoleccion.conductor_principal`: FK(User), nullable, SET_NULL on delete.
+- `RutaRecoleccion.conductores_adicionales`: M2M(User), backup/supervisores.
+- `RutaRecoleccionViewSet.get_queryset()`: filtro `Q(conductor_principal=user) | Q(conductores_adicionales=user)` con bypass para `is_superuser`, `is_staff`, y cargos con `can_admin` sobre sección catalogos.
+- `VoucherRecoleccionViewSet.get_queryset()`: mismo filtro vía `ruta__conductor_principal` / `ruta__conductores_adicionales`.
+- Migración `catalogos.0012_rutarecoleccion_conductor_principal_and_more`.
+- Serializer expone `conductor_principal_nombre` y `conductores_adicionales_info` para la UI.
+
+**Decisión:** se eligió ownership por User en lugar de por Cargo (Opción 1) porque:
+- En SC los operadores/conductores se identifican por User (no por Cargo) — coherente con `operador`, `registrado_por_planta`, `aprobado_por` que ya usan `AUTH_USER_MODEL`.
+- Para escalar a otros modelos (Almacen, Proveedor, LiquidacionPeriodica) considerar el patrón principal+adicionales como base reutilizable, o promover a `django-guardian` si crecen los casos.
+
+### Estado original: 🔲 ABIERTO (anotado 2026-04-27)
 
 ### Problema
 
@@ -3100,3 +3114,91 @@ Si se acepta el patrón M2M para Ruta, considerar replicar para:
 
 ### Estado
 🔲 ABIERTO — esperar disparador de negocio (multi-zona o segregación operativa).
+
+---
+
+## H-SC-RUTA-CERTIFICADOS-PV — Certificados a productores en rutas semi-autónomas
+
+### Estado: 🔲 ABIERTO (anotado 2026-04-28)
+
+### Problema
+
+En el flujo Ruta Semi-Autónoma la **ruta** paga directo al productor (con su
+caja propia) y la **empresa** le paga después a la ruta a precio mayor. Hoy
+no hay un mecanismo para que el productor reciba un **certificado de entrega
++ pago** de la ruta (documento legal/fiscal del productor).
+
+### Casos de uso
+
+- Productor necesita certificado de venta (para impuestos, contabilidad propia).
+- Inspector/auditor de la empresa puede pedir trazabilidad de pago al productor.
+- Ruta semi-autónoma debe poder generar PDFs por productor con totales del
+  período.
+
+### Diseño preliminar (no implementar hasta disparador)
+
+- Modelo `CertificadoProductor` (ruta + productor + período + total + items
+  + estado FIRMADO/EMITIDO).
+- Generación batch al cierre de período (semanal/mensual según frecuencia).
+- PDF con branding de la **ruta** (no de la empresa) o ambos según política.
+- Archivado en GD bajo `CERTIFICADO_PROD_SC` o similar.
+
+### Trigger
+
+- Que un cliente real con ruta semi-autónoma lo solicite.
+- Que regulación tributaria local lo exija (DIAN, retenciones, etc.).
+
+Por ahora la liquidación a la ruta + voucher de recolección al productor son
+suficientes evidencia operativa.
+
+### Estado
+🔲 ABIERTO — sin trigger inmediato. Documentado para no perder el contexto
+de la conversación con el usuario el 2026-04-28.
+
+---
+
+## H-SC-RUTA-LIQ-PRODUCTORES — Liquidación a productores en modalidad RECOLECCION
+
+### Estado: 🔲 ABIERTO (anotado 2026-04-28)
+
+### Problema
+
+En el factory `Liquidacion.desde_voucher(voucher)` el flujo de precio es:
+```python
+PrecioMateriaPrima.objects.get(
+    proveedor=voucher.proveedor,
+    producto=voucher_linea.producto,
+)
+```
+
+Pero en modalidad **RECOLECCION**, `voucher.proveedor` es **NULL** (la fuente
+es la ruta + N vouchers de recolección por productor). Resultado actual:
+todas las líneas de la liquidación quedan en `precio_kg=0.00`.
+
+### Lo que se debería hacer
+
+En modalidad RECOLECCION, la liquidación debe generarse **por productor**
+(uno por cada VoucherRecoleccion COMPLETADO asociado a la recepción), no
+sobre las líneas del voucher consolidado:
+- 1 VoucherRecepcion (RECOLECCION) → N Liquidaciones (una por
+  voucher_recoleccion.proveedor + producto + período)
+- Precio resuelto: `PrecioRutaSemiAutonoma` para SEMI_AUTONOMA, o
+  `PrecioMateriaPrima` para PASS_THROUGH
+- LiquidacionPeriodica (H-SC-06) puede agrupar después esas N por proveedor
+  según frecuencia de pago
+
+### Trigger
+
+- Producción real con rutas activas y reportes de "todas las liquidaciones
+  vienen en $0".
+- Que el usuario solicite explícitamente liquidar a productores
+  individuales desde una ruta.
+
+### Workaround temporal
+
+Hoy se puede ajustar precio manualmente en cada `LiquidacionLinea` antes de
+confirmar (`/liquidaciones/<id>/lineas/<id>/ajuste/` con motivo
+"Precio inicial recolección"). Es funcional pero no escalable.
+
+### Estado
+🔲 ABIERTO — sin trigger inmediato. Workaround documentado.

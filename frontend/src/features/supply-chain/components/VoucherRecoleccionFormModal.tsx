@@ -102,7 +102,7 @@ export default function VoucherRecoleccionFormModal({
     return null;
   };
 
-  const handleGuardar = async () => {
+  const handleGuardar = async (keepOpen = false) => {
     const err = validar();
     if (err) {
       toast.warning(err);
@@ -131,7 +131,17 @@ export default function VoucherRecoleccionFormModal({
           notas,
         });
       }
-      onClose();
+      if (keepOpen && !isEditing) {
+        // UX: si en una parada hay N productos, permitir crear el siguiente
+        // sin reabrir el modal — preserva ruta+fecha+proveedor, limpia
+        // producto+cantidad+notas.
+        toast.success('Voucher guardado. Agrega el siguiente producto del proveedor.');
+        setProducto('');
+        setCantidad('');
+        setNotas('');
+      } else {
+        onClose();
+      }
     } catch {
       /* toast ya */
     }
@@ -163,11 +173,23 @@ export default function VoucherRecoleccionFormModal({
         <Button type="button" variant="outline" onClick={onClose}>
           Cerrar
         </Button>
+        {!isEditing && !readonly && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleGuardar(true)}
+            disabled={isLoading}
+            isLoading={isLoading}
+            title="Guarda este voucher y deja el modal abierto para registrar otro producto del mismo proveedor"
+          >
+            Guardar y agregar otro
+          </Button>
+        )}
         {!readonly && (
           <Button
             type="button"
             variant="primary"
-            onClick={handleGuardar}
+            onClick={() => handleGuardar(false)}
             disabled={isLoading}
             isLoading={isLoading}
           >
@@ -305,11 +327,11 @@ export default function VoucherRecoleccionFormModal({
                 <Input
                   label="Kilos *"
                   type="number"
-                  step="0.001"
+                  step="0.1"
                   min="0"
                   value={cantidad}
                   onChange={(e) => setCantidad(e.target.value)}
-                  placeholder="0.000"
+                  placeholder="0.0"
                   disabled={readonly}
                   required
                 />

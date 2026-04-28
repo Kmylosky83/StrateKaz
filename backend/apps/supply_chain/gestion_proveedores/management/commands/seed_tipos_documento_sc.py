@@ -4,7 +4,7 @@ Crea (idempotente, get_or_create por codigo) los tipos de documento usados
 por Supply Chain para archivar registros operativos en Gestion Documental:
 
   - VOUCHER_RECEPCION_SC      Vouchers de recepcion en planta.
-  - VOUCHER_RECOLECCION_SC    Vouchers de recoleccion en ruta.
+  - VOUCHER_RECOLEC_SC    Vouchers de recoleccion en ruta.
   - LIQUIDACION_SC            Liquidaciones a productores/proveedores.
 
 Categoria FORMULARIO (registros operativos, no documentos normativos del SGI).
@@ -31,7 +31,7 @@ TIPOS_SC = [
         'nivel_seguridad_firma': 1,
     },
     {
-        'codigo': 'VOUCHER_RECOLECCION_SC',
+        'codigo': 'VOUCHER_RECOLEC_SC',
         'nombre': 'Voucher de Recoleccion (SC)',
         'descripcion': (
             'Voucher emitido al recolectar materia prima al productor en ruta. '

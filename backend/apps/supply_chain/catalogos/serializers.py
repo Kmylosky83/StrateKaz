@@ -155,6 +155,10 @@ class RutaRecoleccionSerializer(serializers.ModelSerializer):
     paradas_count = serializers.IntegerField(
         source='paradas.count', read_only=True
     )
+    # H-SC-RUTA-RBAC-INSTANCIA: nombres legibles de los conductores asignados
+    # para que la UI no necesite un endpoint adicional.
+    conductor_principal_nombre = serializers.SerializerMethodField()
+    conductores_adicionales_info = serializers.SerializerMethodField()
 
     class Meta:
         model = RutaRecoleccion
@@ -162,10 +166,28 @@ class RutaRecoleccionSerializer(serializers.ModelSerializer):
             'id', 'codigo', 'nombre', 'descripcion',
             'modo_operacion', 'modo_operacion_display',
             'paradas_count',
+            'conductor_principal', 'conductor_principal_nombre',
+            'conductores_adicionales', 'conductores_adicionales_info',
             'is_active',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    @staticmethod
+    def _user_label(user):
+        if user is None:
+            return None
+        full = user.get_full_name() if hasattr(user, 'get_full_name') else ''
+        return (full or '').strip() or getattr(user, 'username', '') or str(user)
+
+    def get_conductor_principal_nombre(self, obj):
+        return self._user_label(obj.conductor_principal)
+
+    def get_conductores_adicionales_info(self, obj):
+        return [
+            {'id': u.id, 'nombre': self._user_label(u)}
+            for u in obj.conductores_adicionales.all()
+        ]
 
 
 class RutaParadaSerializer(serializers.ModelSerializer):

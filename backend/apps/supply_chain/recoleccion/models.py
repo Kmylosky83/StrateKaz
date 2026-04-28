@@ -100,9 +100,9 @@ class VoucherRecoleccion(TenantModel):
     )
     cantidad = models.DecimalField(
         max_digits=12,
-        decimal_places=3,
+        decimal_places=1,
         verbose_name='Cantidad (kilos)',
-        help_text='Kilos entregados por el productor en esta parada.',
+        help_text='Kilos entregados por el productor en esta parada (1 decimal — báscula industrial).',
     )
     operador = models.ForeignKey(
         settings.AUTH_USER_MODEL,

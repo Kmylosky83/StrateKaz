@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
+        ("infra_catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
         ("sc_recepcion", "0001_initial"),
     ]
 
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 help_text="Proveedor que recibe la liquidación",
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recepcion",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),

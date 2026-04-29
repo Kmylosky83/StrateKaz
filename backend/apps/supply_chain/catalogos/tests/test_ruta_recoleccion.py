@@ -59,7 +59,7 @@ class TestRutaRecoleccionNoCreaProveedorEspejo(BaseTenantTestCase):
     """H-SC-RUTA-02: el signal espejo fue eliminado."""
 
     def test_crear_ruta_no_genera_proveedor_espejo(self):
-        from apps.catalogo_productos.proveedores.models import Proveedor
+        from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
         proveedores_antes = Proveedor.objects.count()
         RutaRecoleccion.objects.create(nombre='Sin Espejo')
         proveedores_despues = Proveedor.objects.count()

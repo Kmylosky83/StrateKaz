@@ -631,7 +631,7 @@ class OnboardingService:
         gestión documental. Acceso C2 via apps.get_model().
         """
         try:
-            Documento = apps.get_model('gestion_documental', 'Documento')
+            Documento = apps.get_model('infra_gestion_documental', 'Documento')
             return Documento.objects.filter(elaborado_por=user).exists()
         except LookupError:
             logger.debug('Modelo Documento no disponible para onboarding')

@@ -22,7 +22,7 @@ def _crear_proveedor(numero, nombre='Productor GD'):
         codigo='CC',
         defaults={'nombre': 'Cédula de Ciudadanía', 'orden': 1, 'is_active': True},
     )
-    from apps.catalogo_productos.proveedores.models import Proveedor
+    from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
     return Proveedor.objects.create(
         razon_social=nombre,
         nombre_comercial=nombre,
@@ -36,7 +36,7 @@ def _crear_voucher_borrador(test_case, codigo_doc='CC1', codigo_prod='PROD-GD'):
     user = test_case.create_user('op-gd')
     ruta = RutaRecoleccion.objects.create(nombre='Ruta GD')
     prov = _crear_proveedor(codigo_doc)
-    from apps.catalogo_productos.models import Producto
+    from apps.infraestructura.catalogo_productos.models import Producto
     prod = Producto.objects.create(
         codigo=codigo_prod, nombre='Leche cruda GD', tipo='MATERIA_PRIMA',
     )
@@ -57,7 +57,7 @@ class TestVoucherCompletadoIntentaArchivarEnGd(BaseTenantTestCase):
         # de proceso/Area/PDF reales.
         fake_doc = type('FakeDoc', (), {'id': 9999})()
         target = (
-            'apps.gestion_estrategica.gestion_documental.services.'
+            'apps.infraestructura.gestion_documental.services.'
             'documento_service.DocumentoService.archivar_registro'
         )
         with patch(target, return_value=fake_doc) as mock_archivar:
@@ -94,7 +94,7 @@ class TestVoucherDobleCompletarNoDuplica(BaseTenantTestCase):
         voucher.save(update_fields=['documento_archivado_id'])
 
         target = (
-            'apps.gestion_estrategica.gestion_documental.services.'
+            'apps.infraestructura.gestion_documental.services.'
             'documento_service.DocumentoService.archivar_registro'
         )
         with patch(target) as mock_archivar:
@@ -113,7 +113,7 @@ class TestArchivadoFallaSilenciosoNoRompeCompletar(BaseTenantTestCase):
         headers = self.authenticate_as(user)
 
         target = (
-            'apps.gestion_estrategica.gestion_documental.services.'
+            'apps.infraestructura.gestion_documental.services.'
             'documento_service.DocumentoService.archivar_registro'
         )
         with patch(target, side_effect=RuntimeError('GD caido')):

@@ -257,7 +257,7 @@ class RecepcionDetailSerializer(serializers.ModelSerializer):
             return None
         try:
             from django.apps import apps
-            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+            Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
             proveedor = Proveedor.objects.filter(id=obj.proveedor_id).first()
             if proveedor:
                 return {
@@ -612,7 +612,7 @@ class PruebaAcidezCreateSerializer(serializers.ModelSerializer):
     def validate_proveedor_id(self, value):
         from django.apps import apps
         try:
-            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+            Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
             proveedor = Proveedor.objects.get(id=value)
         except Exception:
             raise serializers.ValidationError('Proveedor no encontrado')
@@ -670,7 +670,7 @@ class SimularPruebaAcidezSerializer(serializers.Serializer):
     def validate_proveedor_id(self, value):
         from django.apps import apps
         try:
-            Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+            Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
             proveedor = Proveedor.objects.get(id=value)
             TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
             tipos_sebo = TipoMateriaPrima.objects.filter(

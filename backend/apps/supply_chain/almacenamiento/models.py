@@ -14,7 +14,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from apps.catalogo_productos.models import UnidadMedida
+from apps.infraestructura.catalogo_productos.models import UnidadMedida
 from utils.models import TenantModel
 
 
@@ -127,7 +127,7 @@ class Inventario(TenantModel):
         verbose_name='Almacén',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='inventarios',
         verbose_name='Producto',
@@ -303,7 +303,7 @@ class MovimientoInventario(TenantModel):
     fecha_movimiento = models.DateTimeField(default=timezone.now, verbose_name='Fecha de movimiento')
 
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='movimientos_inventario',
         verbose_name='Producto',
@@ -568,7 +568,7 @@ class ConfiguracionStock(TenantModel):
         verbose_name='Almacén',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='configuraciones_stock',
         verbose_name='Producto',

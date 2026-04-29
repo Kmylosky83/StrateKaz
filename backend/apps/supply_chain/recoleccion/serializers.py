@@ -161,7 +161,7 @@ class TranscribirTalonarioSerializer(serializers.Serializer):
             )
 
         # Validar que los productos existen.
-        from apps.catalogo_productos.models import Producto
+        from apps.infraestructura.catalogo_productos.models import Producto
 
         producto_ids_pedidos = {p['producto_id'] for p in attrs['paradas']}
         producto_ids_existentes = set(

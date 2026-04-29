@@ -504,7 +504,7 @@ class ContratacionService:
         proveedor_id = datos_contrato.get('proveedor_origen_id')
         if proveedor_id:
             try:
-                Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+                Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
                 proveedor_origen = Proveedor.objects.get(pk=proveedor_id)
             except Exception:
                 logger.warning(f"Proveedor #{proveedor_id} no encontrado, se omite")

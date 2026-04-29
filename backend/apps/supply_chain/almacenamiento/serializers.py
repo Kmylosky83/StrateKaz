@@ -10,7 +10,7 @@ from decimal import Decimal
 from django.db.models import Sum
 from rest_framework import serializers
 
-from apps.catalogo_productos.models import Producto, UnidadMedida
+from apps.infraestructura.catalogo_productos.models import Producto, UnidadMedida
 
 from .models import (
     AlertaStock,

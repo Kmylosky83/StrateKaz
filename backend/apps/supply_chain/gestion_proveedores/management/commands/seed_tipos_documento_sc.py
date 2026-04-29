@@ -70,10 +70,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         try:
-            TipoDocumento = django_apps.get_model('gestion_documental', 'TipoDocumento')
+            TipoDocumento = django_apps.get_model('infra_gestion_documental', 'TipoDocumento')
         except LookupError:
             self.stdout.write(self.style.ERROR(
-                'App gestion_documental no instalada en este tenant. Skip.'
+                'App infra_gestion_documental no instalada en este tenant. Skip.'
             ))
             return
 

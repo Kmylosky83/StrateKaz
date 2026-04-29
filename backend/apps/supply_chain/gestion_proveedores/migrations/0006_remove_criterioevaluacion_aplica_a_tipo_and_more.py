@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
+        ("infra_catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
         ("gestion_proveedores", "0005_precio_producto_not_null"),
     ]
 
@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="precios_materia_prima",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),
@@ -108,7 +108,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="historial_precios",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),

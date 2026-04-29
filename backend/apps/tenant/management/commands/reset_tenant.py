@@ -40,7 +40,7 @@ KEEP_APPS = {
     # C1 opcional
     'planeacion', 'contexto', 'encuestas',
     'gestion_proyectos', 'revision_direccion',
-    'gestion_documental', 'planificacion_sistema',
+    'infra_gestion_documental', 'planificacion_sistema',
 }
 
 

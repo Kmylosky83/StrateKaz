@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0006_migrar_unidades_desde_legacy"),
+        ("infra_catalogo_productos", "0006_migrar_unidades_desde_legacy"),
         ("gestion_proveedores", "0001_initial"),
     ]
 
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 help_text="Productos del catálogo maestro que el proveedor suministra",
                 related_name="proveedores",
-                to="catalogo_productos.producto",
+                to="infra_catalogo_productos.producto",
                 verbose_name="Productos que suministra",
             ),
         ),

@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0006_migrar_unidades_desde_legacy"),
+        ("infra_catalogo_productos", "0006_migrar_unidades_desde_legacy"),
         ("gestion_proveedores", "0003_migrar_tipos_materia_prima_a_productos"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="precios_proveedor",
-                to="catalogo_productos.producto",
+                to="infra_catalogo_productos.producto",
                 verbose_name="Producto del catálogo",
             ),
         ),

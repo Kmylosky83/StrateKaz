@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         (
-            "catalogo_productos",
+            "infra_catalogo_productos",
             "0004_alter_producto_precio_referencia_alter_producto_sku",
         ),
         ("catalogos", "0001_initial"),
@@ -194,7 +194,7 @@ class Migration(migrations.Migration):
                         help_text="Materia prima recibida (catálogo maestro)",
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="vouchers_recepcion",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto",
                     ),
                 ),

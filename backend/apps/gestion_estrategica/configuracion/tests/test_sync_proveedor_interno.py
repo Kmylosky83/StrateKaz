@@ -60,7 +60,7 @@ class TestSincronizacionSedeProveedor(BaseTenantTestCase):
     # 1. Sede con rol PROVEEDOR_INTERNO crea Proveedor.
     # ------------------------------------------------------------------
     def test_sede_con_tipo_proveedor_interno_crea_proveedor(self):
-        from apps.catalogo_productos.proveedores.models import Proveedor
+        from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
 
         tipo = self._crear_tipo_sede(
             f'tipo_int_{self._next_id()}',
@@ -79,7 +79,7 @@ class TestSincronizacionSedeProveedor(BaseTenantTestCase):
     # 2. Update no duplica el proveedor.
     # ------------------------------------------------------------------
     def test_sede_actualiza_no_duplica_proveedor(self):
-        from apps.catalogo_productos.proveedores.models import Proveedor
+        from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
 
         tipo = self._crear_tipo_sede(
             f'tipo_int_{self._next_id()}',
@@ -100,7 +100,7 @@ class TestSincronizacionSedeProveedor(BaseTenantTestCase):
     # 3. Sede con rol OFICINA NO crea proveedor.
     # ------------------------------------------------------------------
     def test_sede_tipo_oficina_no_crea_proveedor(self):
-        from apps.catalogo_productos.proveedores.models import Proveedor
+        from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
 
         tipo = self._crear_tipo_sede(
             f'tipo_ofc_{self._next_id()}',
@@ -116,8 +116,8 @@ class TestSincronizacionSedeProveedor(BaseTenantTestCase):
     # 4. Serializer protege razón social / nombre comercial / dirección.
     # ------------------------------------------------------------------
     def test_serializer_protege_campos_sincronizados(self):
-        from apps.catalogo_productos.proveedores.models import Proveedor
-        from apps.catalogo_productos.proveedores.serializers import (
+        from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
+        from apps.infraestructura.catalogo_productos.proveedores.serializers import (
             ProveedorCreateUpdateSerializer,
         )
 

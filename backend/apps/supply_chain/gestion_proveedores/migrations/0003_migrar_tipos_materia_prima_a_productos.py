@@ -42,9 +42,9 @@ def migrar_tipos_a_productos(apps, schema_editor):
         return
 
     # Modelos canonicos
-    CategoriaProducto = apps.get_model('catalogo_productos', 'CategoriaProducto')
-    Producto = apps.get_model('catalogo_productos', 'Producto')
-    UnidadMedida = apps.get_model('catalogo_productos', 'UnidadMedida')
+    CategoriaProducto = apps.get_model('infra_catalogo_productos', 'CategoriaProducto')
+    Producto = apps.get_model('infra_catalogo_productos', 'Producto')
+    UnidadMedida = apps.get_model('infra_catalogo_productos', 'UnidadMedida')
 
     # Unidad default para productos migrados (kg es estandar para MP)
     unidad_default = UnidadMedida.objects.filter(
@@ -169,7 +169,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('gestion_proveedores', '0002_proveedor_productos_suministrados_and_more'),
-        ('catalogo_productos', '0006_migrar_unidades_desde_legacy'),
+        ('infra_catalogo_productos', '0006_migrar_unidades_desde_legacy'),
     ]
 
     operations = [

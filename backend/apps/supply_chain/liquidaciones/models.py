@@ -211,10 +211,10 @@ class Liquidacion(TenantModel):
 
         logger = logging.getLogger(__name__)
         try:
-            from apps.gestion_estrategica.gestion_documental.models import (
+            from apps.infraestructura.gestion_documental.models import (
                 TipoDocumento,
             )
-            from apps.gestion_estrategica.gestion_documental.services import (
+            from apps.infraestructura.gestion_documental.services import (
                 DocumentoService,
             )
 
@@ -704,7 +704,7 @@ class LiquidacionPeriodica(TenantModel):
         PAGADA = 'PAGADA', 'Pagada'
 
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='liquidaciones_periodicas',
     )

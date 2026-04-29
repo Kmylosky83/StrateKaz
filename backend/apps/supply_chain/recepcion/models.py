@@ -51,7 +51,7 @@ class VoucherRecepcion(TenantModel):
     # único). En modalidades DIRECTO o TRANSPORTE_INTERNO sigue siendo
     # obligatorio. Validación condicional en clean().
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -303,10 +303,10 @@ class VoucherRecepcion(TenantModel):
             return None
 
         try:
-            from apps.gestion_estrategica.gestion_documental.models import (
+            from apps.infraestructura.gestion_documental.models import (
                 TipoDocumento,
             )
-            from apps.gestion_estrategica.gestion_documental.services.documento_service import (
+            from apps.infraestructura.gestion_documental.services.documento_service import (
                 DocumentoService,
             )
 
@@ -418,7 +418,7 @@ class VoucherLineaMP(TenantModel):
         verbose_name='Voucher de recepción',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='lineas_voucher',
         verbose_name='Producto',

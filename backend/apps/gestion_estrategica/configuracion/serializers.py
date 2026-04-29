@@ -23,7 +23,7 @@ from .models import (
     ICON_CATEGORY_CHOICES,
 )
 # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-from apps.catalogo_productos.models import UnidadMedida
+from apps.infraestructura.catalogo_productos.models import UnidadMedida
 
 
 # ==============================================================================

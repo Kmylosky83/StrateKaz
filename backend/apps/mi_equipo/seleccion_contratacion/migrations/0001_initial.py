@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             "core",
             "0005_rename_core_email__user_id_purpose_idx_core_email__user_id_5f5ad3_idx_and_more",
         ),
-        ("gestion_documental", "0005_aceptacion_documental_lectura_verificada"),
+        ("infra_gestion_documental", "0005_aceptacion_documental_lectura_verificada"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -895,7 +895,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="contratos_laborales",
-                        to="gestion_documental.documento",
+                        to="infra_gestion_documental.documento",
                         verbose_name="Documento del Contrato",
                     ),
                 ),

@@ -60,7 +60,7 @@ def archivar_voucher_en_gd(voucher, user):
         return None
 
     try:
-        from apps.gestion_estrategica.gestion_documental.services.documento_service import (
+        from apps.infraestructura.gestion_documental.services.documento_service import (
             DocumentoService,
         )
 

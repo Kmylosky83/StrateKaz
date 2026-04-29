@@ -50,8 +50,8 @@ urlpatterns = [
     path('contexto/', include('apps.gestion_estrategica.contexto.urls')),
 
     # CASCADA LEVEL 15: GESTIÓN DOCUMENTAL (guard condicional)
-    *([path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls'))]
-      if django_apps.is_installed('apps.gestion_estrategica.gestion_documental') else []),
+    *([path('gestion-documental/', include('apps.infraestructura.gestion_documental.urls'))]
+      if django_apps.is_installed('apps.infraestructura.gestion_documental') else []),
 
     # CASCADA LEVEL 20+ (descomentar al activar cada nivel)
     # path('planeacion/', include('apps.gestion_estrategica.planeacion.urls')),

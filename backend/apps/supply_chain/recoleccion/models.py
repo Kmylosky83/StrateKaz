@@ -87,13 +87,13 @@ class VoucherRecoleccion(TenantModel):
         help_text='Día en que se recogió a este productor.',
     )
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='vouchers_recoleccion',
         verbose_name='Proveedor (productor)',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='vouchers_recoleccion',
         verbose_name='Producto (MP)',

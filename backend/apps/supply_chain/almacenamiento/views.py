@@ -18,7 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from apps.catalogo_productos.models import UnidadMedida
+from apps.infraestructura.catalogo_productos.models import UnidadMedida
 from apps.core.permissions import RequireCRUDPermission
 
 from .models import (

@@ -40,7 +40,7 @@ def formatear_capacidad(
         '1.200 m³'
     """
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
 
     if valor is None:
         return ''
@@ -85,7 +85,7 @@ def formatear_capacidad_auto(
         '0.5 kg'
     """
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
 
     if valor is None:
         return ''
@@ -170,7 +170,7 @@ def convertir_capacidad(
         Decimal('1')
     """
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
 
     unidad_origen = UnidadMedida.obtener_por_codigo(unidad_origen_codigo)
     unidad_destino = UnidadMedida.obtener_por_codigo(unidad_destino_codigo)
@@ -222,7 +222,7 @@ def obtener_unidad_capacidad_default():
 
     # Fallback: intentar obtener KG
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
     return UnidadMedida.obtener_por_codigo('KG')
 
 
@@ -270,7 +270,7 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
             }
     """
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
     from decimal import Decimal
     from collections import defaultdict
 

@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         (
-            "catalogo_productos",
+            "infra_catalogo_productos",
             "0004_alter_producto_precio_referencia_alter_producto_sku",
         ),
         ("core", "0011_add_orden_to_cargo"),
@@ -733,7 +733,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="precios_proveedor",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto del catálogo",
                     ),
                 ),
@@ -838,7 +838,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
                         related_name="historial_precios_proveedor",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto del catálogo",
                     ),
                 ),

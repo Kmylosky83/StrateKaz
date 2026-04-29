@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("catalogos", "0007_rutarecoleccion_modo_operacion"),
-        ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
+        ("infra_catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -137,7 +137,7 @@ class Migration(migrations.Migration):
                         help_text="Proveedor real con NIT/datos reales que la ruta visita.",
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="paradas_ruta",
-                        to="catalogo_productos.proveedor",
+                        to="infra_catalogo_productos.proveedor",
                         verbose_name="Proveedor (productor visitado)",
                     ),
                 ),

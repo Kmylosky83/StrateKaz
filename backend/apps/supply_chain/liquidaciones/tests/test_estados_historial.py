@@ -18,7 +18,7 @@ class LiquidacionEstadosBaseSetup(BaseTenantTestCase):
     def setUp(self):
         super().setUp()
 
-        from apps.catalogo_productos.models import (
+        from apps.infraestructura.catalogo_productos.models import (
             CategoriaProducto,
             Producto,
             Proveedor,

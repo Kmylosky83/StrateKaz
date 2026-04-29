@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('configuracion', '0003_unify_sede_unidadnegocio'),
-        ('catalogo_productos', '0006_migrar_unidades_desde_legacy'),
+        ('infra_catalogo_productos', '0006_migrar_unidades_desde_legacy'),
     ]
 
     operations = [
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=models.deletion.PROTECT,
                 related_name='sedes_capacidad',
-                to='catalogo_productos.unidadmedida',
+                to='infra_catalogo_productos.unidadmedida',
                 verbose_name='Unidad de Capacidad',
             ),
         ),

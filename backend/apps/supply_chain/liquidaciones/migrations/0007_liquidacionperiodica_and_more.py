@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0022_proveedor_frecuencia_pago"),
+        ("infra_catalogo_productos", "0022_proveedor_frecuencia_pago"),
         (
             "liquidaciones",
             "0006_rename_sc_liquida_estado_idx_supply_chai_estado_fcfe27_idx_and_more",
@@ -142,7 +142,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="liquidaciones_periodicas",
-                        to="catalogo_productos.proveedor",
+                        to="infra_catalogo_productos.proveedor",
                     ),
                 ),
                 (

@@ -1699,7 +1699,7 @@ class HistorialContrato(BaseCompanyModel):
 
     # Integración Gestor Documental (Sprint 20)
     contrato_documento = models.ForeignKey(
-        'gestion_documental.Documento',
+        'infra_gestion_documental.Documento',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

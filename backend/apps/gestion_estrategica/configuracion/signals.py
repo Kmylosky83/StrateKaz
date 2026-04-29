@@ -42,7 +42,7 @@ def sync_sede_to_proveedor_interno(sender, instance, created, **kwargs):
         return
 
     try:
-        Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+        Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
         TipoDocumentoIdentidad = apps.get_model(
             'core', 'TipoDocumentoIdentidad'
         )

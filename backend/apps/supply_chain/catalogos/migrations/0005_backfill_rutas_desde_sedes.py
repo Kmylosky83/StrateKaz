@@ -22,7 +22,7 @@ from django.db import migrations
 def backfill_rutas(apps, schema_editor):
     SedeEmpresa = apps.get_model('configuracion', 'SedeEmpresa')
     RutaRecoleccion = apps.get_model('catalogos', 'RutaRecoleccion')
-    Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+    Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
 
     sedes_ruta = SedeEmpresa.objects.filter(tipo_unidad='RUTA_RECOLECCION')
     creadas = 0
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('catalogos', '0004_rutarecoleccion'),
-        ('catalogo_productos', '0019_proveedor_ruta_origen'),
+        ('infra_catalogo_productos', '0019_proveedor_ruta_origen'),
         ('configuracion', '0006_tiposede_rol_operacional'),
     ]
 

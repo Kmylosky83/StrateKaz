@@ -1061,7 +1061,7 @@ class PruebaAcidez(models.Model):
         if self.proveedor_id and not self.proveedor_nombre:
             from django.apps import apps
             try:
-                Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+                Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
                 prov = Proveedor.objects.filter(id=self.proveedor_id).values_list('nombre_comercial', flat=True).first()
                 if prov:
                     self.proveedor_nombre = prov

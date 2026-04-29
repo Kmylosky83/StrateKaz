@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 # Fase 0.3.4: Usar el sistema universal de workflow_engine
-from apps.workflow_engine.firma_digital.models import (
+from apps.infraestructura.workflow_engine.firma_digital.models import (
     ConfiguracionFlujoFirma as ConfiguracionWorkflowFirma,
 )
 # Roles de firma disponibles

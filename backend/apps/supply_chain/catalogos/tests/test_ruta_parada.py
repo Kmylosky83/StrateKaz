@@ -11,7 +11,7 @@ Verifica:
 from apps.core.tests.base import BaseTenantTestCase
 from apps.core.models import TipoDocumentoIdentidad
 from apps.supply_chain.catalogos.models import RutaRecoleccion, RutaParada
-from apps.catalogo_productos.proveedores.models import Proveedor
+from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
 
 
 def _crear_proveedor(numero_documento, nombre='Proveedor Test'):

@@ -18,7 +18,7 @@ OFFICIAL_MODULES = [
     'gestion_estrategica',      # 10
     'motor_cumplimiento',       # 20
     'motor_riesgos',            # 21
-    'workflow_engine',          # 22
+    'infra_workflow_engine',    # 22
     'hseq_management',          # 30
     'supply_chain',             # 40
     'production_ops',           # 41

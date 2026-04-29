@@ -27,7 +27,7 @@ logger = logging.getLogger('gestion_documental')
 
 # ─── Sincronización contadores de Documento desde EventoDocumental ────────
 
-@receiver(post_save, sender='gestion_documental.EventoDocumental')
+@receiver(post_save, sender='infra_gestion_documental.EventoDocumental')
 def sync_contadores_documento(sender, instance, created, **kwargs):
     """
     Mantiene `Documento.numero_descargas` y `Documento.numero_impresiones`
@@ -214,7 +214,7 @@ def _register_workflow_signal():
 
 # ─── H-GD-A4: cierre de FORMULARIO con FIRMA_WORKFLOW ──────────────────────
 
-@receiver(post_save, sender='firma_digital.FirmaDigital')
+@receiver(post_save, sender='infra_firma_digital.FirmaDigital')
 def cerrar_formulario_con_pdf_al_firmar_ultimo(sender, instance, created, **kwargs):
     """Genera PDF del FORMULARIO y avanza el estado al firmar la última firma.
 

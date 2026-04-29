@@ -28,7 +28,7 @@ class ProductoEspecCalidad(TenantModel):
     # String reference evita import circular con models.py que registra
     # esta extensión al final. Patrón Django estándar para cross-module FKs.
     producto = models.OneToOneField(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.CASCADE,
         related_name='espec_calidad',
         verbose_name='Producto',

@@ -225,7 +225,7 @@ class Command(BaseCommand):
 
         # Crear módulo padre
         module_data = {
-            'code': 'workflow_engine',
+            'code': 'infra_workflow_engine',
             'name': 'Workflow Engine',
             'description': 'Motor de flujos de trabajo automatizados. Diseño, ejecución y monitoreo de procesos organizacionales.',
             'category': 'INTEGRAL',
@@ -333,7 +333,7 @@ class Command(BaseCommand):
         self.stdout.write('=' * 70)
 
         modules = SystemModule.objects.filter(
-            code__in=['motor_cumplimiento', 'motor_riesgos', 'workflow_engine']
+            code__in=['motor_cumplimiento', 'motor_riesgos', 'infra_workflow_engine']
         ).order_by('order')
 
         for module in modules:

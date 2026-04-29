@@ -81,8 +81,9 @@ def tenant_test_schema(django_db_setup, django_db_blocker):
 
             _LIVE_MODULES = [
                 ("fundacion", "Fundación", "STRATEGIC"),
-                ("sistema_gestion", "Gestión Documental", "INFRASTRUCTURE"),
-                ("workflow_engine", "Flujos de Trabajo", "INFRASTRUCTURE"),
+                ("infra_gestion_documental", "Gestión Documental", "INFRASTRUCTURE"),
+                ("infra_catalogo_productos", "Catálogos Maestros", "INFRASTRUCTURE"),
+                ("infra_workflow_engine", "Flujos de Trabajo", "INFRASTRUCTURE"),
                 ("audit_system", "Centro de Control", "INTELLIGENCE"),
                 ("mi_equipo", "Gestión de Personas", "OPERATIONAL"),
                 ("analytics", "Analítica", "INTELLIGENCE"),

@@ -37,7 +37,7 @@ class ProductoEspecCalidadParametro(TenantModel):
     """
 
     espec_calidad = models.ForeignKey(
-        'catalogo_productos.ProductoEspecCalidad',
+        'infra_catalogo_productos.ProductoEspecCalidad',
         on_delete=models.CASCADE,
         related_name='parametros',
         verbose_name='Especificación de calidad',

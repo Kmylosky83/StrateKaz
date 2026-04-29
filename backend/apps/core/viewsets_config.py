@@ -78,7 +78,7 @@ SIDEBAR_LAYERS = [
         'icon': 'FileText',
         'color': '#6366F1',
         'phase': 'PLANEAR',
-        'module_codes': ['gestion_documental'],
+        'module_codes': ['infra_gestion_documental'],
     },
     {
         # Datos maestros transversales (productos, unidades, proveedores)
@@ -87,7 +87,7 @@ SIDEBAR_LAYERS = [
         'icon': 'Package',
         'color': '#6366F1',
         'phase': 'PLANEAR',
-        'module_codes': ['catalogo_productos'],
+        'module_codes': ['infra_catalogo_productos'],
     },
     {
         # Motor de flujos + Firma Digital (tab interna del módulo)
@@ -96,7 +96,7 @@ SIDEBAR_LAYERS = [
         'icon': 'Workflow',
         'color': '#0891B2',
         'phase': 'TRANSVERSAL',
-        'module_codes': ['workflow_engine'],
+        'module_codes': ['infra_workflow_engine'],
     },
     # ═══════════════════════════════════════════════════════════════
     # C2 — NARRATIVA DEL EMPRESARIO

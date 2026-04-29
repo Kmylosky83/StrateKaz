@@ -38,7 +38,7 @@ URL_TO_MODULE_CODE: dict[str, str | list[str]] = {
     # C2 — Otros módulos
     'api/cumplimiento/': 'motor_cumplimiento',
     'api/riesgos/': 'motor_riesgos',
-    'api/workflows/': 'workflow_engine',
+    'api/workflows/': 'infra_workflow_engine',
     'api/hseq/': 'hseq_management',
     'api/supply-chain/': 'supply_chain',
     'api/production-ops/': 'production_ops',
@@ -52,7 +52,7 @@ URL_TO_MODULE_CODE: dict[str, str | list[str]] = {
     'api/analytics/': 'analytics',
     'api/audit/': 'audit_system',
     # Gestión Documental
-    'api/gestion-documental/': 'sistema_gestion',
+    'api/gestion-documental/': 'infra_gestion_documental',
 }
 
 # Prefijos que NUNCA se bloquean (infraestructura + portales transversales)

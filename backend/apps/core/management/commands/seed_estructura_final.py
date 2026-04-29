@@ -292,9 +292,9 @@ class Command(BaseCommand):
         self.stdout.write('  Migrando sistema_gestion...')
 
         TAB_MIGRATION = {
-            'gestion_documental': 'gestion_documental',
+            'gestion_documental': 'infra_gestion_documental',
             'planificacion_sistema': 'planificacion_operativa',
-            'auditorias_internas': 'gestion_documental',  # queda con documental temporalmente
+            'auditorias_internas': 'infra_gestion_documental',  # queda con documental temporalmente
             'acciones_mejora': 'acciones_mejora',
         }
 
@@ -470,7 +470,7 @@ class Command(BaseCommand):
         # Mapeo V1 → V2 (un código V1 se expande a N códigos V2)
         V1_TO_V2 = {
             'gestion_estrategica': ['fundacion', 'planeacion_estrategica', 'revision_direccion'],
-            'sistema_gestion': ['gestion_documental', 'planificacion_operativa', 'acciones_mejora'],
+            'sistema_gestion': ['infra_gestion_documental', 'planificacion_operativa', 'acciones_mejora'],
             'motor_cumplimiento': ['proteccion_cumplimiento'],
             'motor_riesgos': ['proteccion_cumplimiento'],
             'hseq_management': ['gestion_integral'],
@@ -481,7 +481,7 @@ class Command(BaseCommand):
         # Módulos que siempre deben estar en enabled_modules si la lista está poblada
         # (módulos transversales de infraestructura que todo tenant necesita)
         ALWAYS_ENABLED = [
-            'workflow_engine',
+            'infra_workflow_engine',
             'configuracion_plataforma',
             'audit_system',
         ]
@@ -643,7 +643,7 @@ class Command(BaseCommand):
 
             # ─── Nivel 2: GESTIÓN DOCUMENTAL ─────────────────────────────
             {
-                'code': 'gestion_documental',
+                'code': 'infra_gestion_documental',
                 'name': 'Gestión Documental',
                 'description': 'Crear, aprobar, versionar y asignar documentos a cargos',
                 'category': 'STRATEGIC',
@@ -680,7 +680,7 @@ class Command(BaseCommand):
             # y Flujos de Trabajo. Contiene Productos, Categorías, Unidades de Medida
             # y Proveedores (refactor Opción A 2026-04-21).
             {
-                'code': 'catalogo_productos',
+                'code': 'infra_catalogo_productos',
                 'name': 'Catálogos Maestros',
                 'description': 'Datos maestros transversales: productos, categorías, unidades de medida y proveedores',
                 'category': 'INFRASTRUCTURE',
@@ -720,7 +720,7 @@ class Command(BaseCommand):
 
             # ─── Nivel 3: WORKFLOWS ──────────────────────────────────────
             {
-                'code': 'workflow_engine',
+                'code': 'infra_workflow_engine',
                 'name': 'Flujos de Trabajo',
                 'description': 'Motor transversal de flujos de aprobación y automatización',
                 'category': 'TRANSVERSAL',

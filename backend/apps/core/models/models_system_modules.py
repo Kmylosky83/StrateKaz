@@ -156,12 +156,12 @@ class SystemModule(models.Model):
     # Estas dependencias NO están en M2M dependencies pero sí existen a nivel de BD
     IMPLICIT_DEPENDENCY_CHAIN = {
         'talent_hub': ['hseq_management'],  # Colaborador FK en medicina_laboral, accidentalidad
-        'workflow_engine': [],  # firma_digital afecta identidad, pero solo es warning
+        'infra_workflow_engine': [],  # firma_digital afecta identidad, pero solo es warning
     }
 
     # Módulos que requieren advertencia (no bloqueo) al desactivar
     DISABLE_WARNINGS = {
-        'workflow_engine': 'Desactivar este módulo afectará las firmas digitales en políticas de Identidad Corporativa.',
+        'infra_workflow_engine': 'Desactivar este módulo afectará las firmas digitales en políticas de Identidad Corporativa.',
     }
 
     def can_disable(self):

@@ -26,7 +26,7 @@ import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import { TwoFactorSuggestionBanner } from '@/components/common/TwoFactorSuggestionBanner';
 const SmartOnboardingChecklist = lazy(() => import('@/components/common/SmartOnboardingChecklist'));
 import { useOnboarding, useReopenOnboarding } from '@/hooks/useOnboarding';
-import { useHabeasDataStatus } from '@/features/gestion-documental/hooks/useAceptacionDocumental';
+import { useHabeasDataStatus } from '@/features/infraestructura/gestion-documental/hooks/useAceptacionDocumental';
 
 import {
   moduleCardHoverVariants,

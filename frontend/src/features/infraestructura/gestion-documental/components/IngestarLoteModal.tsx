@@ -14,15 +14,7 @@ import { Select } from '@/components/forms';
 import { apiClient } from '@/lib/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import {
-  Upload,
-  FileText,
-  X,
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  XCircle,
-} from 'lucide-react';
+import { Upload, FileText, X, AlertTriangle, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useTiposDocumento } from '../hooks/useGestionDocumental';
 import { gestionDocumentalKeys } from '../hooks/useGestionDocumental';
 import type { ClasificacionDocumento } from '../types/gestion-documental.types';
@@ -95,9 +87,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
           return;
         }
         if (
-          items.some(
-            (existing) => existing.file.name === f.name && existing.file.size === f.size
-          )
+          items.some((existing) => existing.file.name === f.name && existing.file.size === f.size)
         ) {
           errors.push(`${f.name}: Archivo duplicado`);
           return;
@@ -136,9 +126,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
   };
 
   const updateItem = (index: number, patch: Partial<FileItem>) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, ...patch } : item))
-    );
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
 
   const handleSubmit = async () => {
@@ -210,9 +198,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
     } else if (successCount === 0) {
       toast.error(`No se pudo ingresar ningún archivo (${errorCount} con error)`);
     } else {
-      toast.warning(
-        `${successCount} documento(s) ingresado(s), ${errorCount} con error`
-      );
+      toast.warning(`${successCount} documento(s) ingresado(s), ${errorCount} con error`);
     }
   };
 
@@ -247,14 +233,11 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
             {formatFileSize(totalSize)}
             {(successCount > 0 || errorCount > 0) && (
               <>
-                {' '}&middot;{' '}
-                {successCount > 0 && (
-                  <span className="text-emerald-600">{successCount} OK</span>
-                )}
+                {' '}
+                &middot;{' '}
+                {successCount > 0 && <span className="text-emerald-600">{successCount} OK</span>}
                 {successCount > 0 && errorCount > 0 && ', '}
-                {errorCount > 0 && (
-                  <span className="text-red-600">{errorCount} con error</span>
-                )}
+                {errorCount > 0 && <span className="text-red-600">{errorCount} con error</span>}
               </>
             )}
           </span>
@@ -264,12 +247,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={
-                items.length === 0 ||
-                !tipoDocumento ||
-                isUploading ||
-                pendingCount === 0
-              }
+              disabled={items.length === 0 || !tipoDocumento || isUploading || pendingCount === 0}
             >
               {isUploading ? (
                 <>
@@ -333,10 +311,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
         {fileErrors.length > 0 && (
           <div className="space-y-1 rounded-lg bg-red-50 p-3 dark:bg-red-900/10">
             {fileErrors.map((err, i) => (
-              <p
-                key={i}
-                className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400"
-              >
+              <p key={i} className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
                 <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                 {err}
               </p>
@@ -379,9 +354,7 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
                     {item.status === 'success' && (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     )}
-                    {item.status === 'error' && (
-                      <XCircle className="h-5 w-5 text-red-500" />
-                    )}
+                    {item.status === 'error' && <XCircle className="h-5 w-5 text-red-500" />}
                   </div>
 
                   {!isUploading && item.status !== 'success' && (
@@ -445,9 +418,8 @@ export default function IngestarLoteModal({ isOpen, onClose }: IngestarLoteModal
         </div>
 
         <p className="text-xs text-gray-500">
-          Cada PDF se sube de forma secuencial y se crea como documento individual
-          en BORRADOR. El OCR se ejecutará en segundo plano y recibirás
-          notificaciones cuando finalice.
+          Cada PDF se sube de forma secuencial y se crea como documento individual en BORRADOR. El
+          OCR se ejecutará en segundo plano y recibirás notificaciones cuando finalice.
         </p>
       </div>
     </BaseModal>

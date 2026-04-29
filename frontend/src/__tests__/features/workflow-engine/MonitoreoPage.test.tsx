@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import MonitoreoPage from '@/features/workflows/pages/MonitoreoPage';
+import MonitoreoPage from '@/features/infraestructura/workflow-engine/pages/MonitoreoPage';
 import { render } from '@/__tests__/utils/test-utils';
 
 // ==================== MOCKS ====================
@@ -27,7 +27,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock workflow hooks
-vi.mock('@/features/workflows/hooks/useWorkflows', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/hooks/useWorkflows', () => ({
   useMonitoreoDashboard: vi.fn(() => ({
     data: {},
     isLoading: false,
@@ -77,7 +77,7 @@ import {
   useMonitoreoDashboard,
   useEstadisticasTareas,
   useEstadisticasInstancias,
-} from '@/features/workflows/hooks/useWorkflows';
+} from '@/features/infraestructura/workflow-engine/hooks/useWorkflows';
 
 describe('MonitoreoPage', () => {
   beforeEach(() => {

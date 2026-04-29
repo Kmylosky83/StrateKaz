@@ -14,7 +14,7 @@ import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const GestionDocumentalPage = lazy(
-  () => import('@/features/gestion-documental/pages/GestionDocumentalPage')
+  () => import('@/features/infraestructura/gestion-documental/pages/GestionDocumentalPage')
 );
 
 export const gestionDocumentalRoutes = (

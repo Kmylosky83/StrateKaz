@@ -52,7 +52,7 @@ export function useTiposMateriaPrima(_params?: { categoria?: number; is_active?:
     queryKey: ['catalogo-productos', 'productos', 'materia-prima'],
     queryFn: async () => {
       const { productoApi } =
-        await import('@/features/catalogo-productos/api/catalogoProductos.api');
+        await import('@/features/infraestructura/catalogo-productos/api/catalogoProductos.api');
       const response = await productoApi.getAll({ page_size: 1000 });
       // Filter tipo=MATERIA_PRIMA client-side (backend aun no tiene filter server-side)
       const all = Array.isArray(response) ? response : (response?.results ?? []);

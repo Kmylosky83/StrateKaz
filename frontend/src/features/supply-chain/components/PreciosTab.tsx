@@ -22,7 +22,7 @@ import { Input } from '@/components/forms';
 import { useSectionPermissions } from '@/components/common/ProtectedAction';
 import { Modules, Sections } from '@/constants/permissions';
 
-import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useProveedores } from '@/features/infraestructura/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
 import PreciosProveedorModal from './PreciosProveedorModal';
 

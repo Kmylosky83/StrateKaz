@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { GestionDocumentalPage } from '@/features/gestion-documental/pages/GestionDocumentalPage';
+import { GestionDocumentalPage } from '@/features/infraestructura/gestion-documental/pages/GestionDocumentalPage';
 import { render } from '@/__tests__/utils/test-utils';
 
 // ==================== MOCKS ====================
@@ -76,7 +76,7 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock child components — simplificados
-vi.mock('@/features/gestion-documental/components/GestionDocumentalTab', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/GestionDocumentalTab', () => ({
   GestionDocumentalTab: ({
     activeSection,
     onCreateTipo,
@@ -98,22 +98,22 @@ vi.mock('@/features/gestion-documental/components/GestionDocumentalTab', () => (
   ),
 }));
 
-vi.mock('@/features/gestion-documental/components/TipoDocumentoFormModal', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/TipoDocumentoFormModal', () => ({
   TipoDocumentoFormModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="tipo-form-modal">TipoDocumentoFormModal</div> : null,
 }));
 
-vi.mock('@/features/gestion-documental/components/PlantillaFormModal', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/PlantillaFormModal', () => ({
   PlantillaFormModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="plantilla-form-modal">PlantillaFormModal</div> : null,
 }));
 
-vi.mock('@/features/gestion-documental/components/DocumentoFormModal', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/DocumentoFormModal', () => ({
   DocumentoFormModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="documento-form-modal">DocumentoFormModal</div> : null,
 }));
 
-vi.mock('@/features/gestion-documental/components/DocumentoDetailModal', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/DocumentoDetailModal', () => ({
   DocumentoDetailModal: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="documento-detail-modal">DocumentoDetailModal</div> : null,
 }));

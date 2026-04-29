@@ -7,16 +7,18 @@ import { Route, Navigate } from 'react-router-dom';
 import { withFullGuard } from '../helpers';
 
 const DisenadorFlujosPage = lazy(() =>
-  import('@/features/workflows').then((m) => ({ default: m.DisenadorFlujosPage }))
+  import('@/features/infraestructura/workflow-engine').then((m) => ({
+    default: m.DisenadorFlujosPage,
+  }))
 );
 const EjecucionPage = lazy(() =>
-  import('@/features/workflows').then((m) => ({ default: m.EjecucionPage }))
+  import('@/features/infraestructura/workflow-engine').then((m) => ({ default: m.EjecucionPage }))
 );
 const MonitoreoPage = lazy(() =>
-  import('@/features/workflows').then((m) => ({ default: m.MonitoreoPage }))
+  import('@/features/infraestructura/workflow-engine').then((m) => ({ default: m.MonitoreoPage }))
 );
 
-export const workflowsRoutes = (
+export const workflowEngineRoutes = (
   <>
     <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
     <Route

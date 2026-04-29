@@ -9,7 +9,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import WorkflowsPage from '@/features/workflows/pages/WorkflowsPage';
+import WorkflowsPage from '@/features/infraestructura/workflow-engine/pages/WorkflowsPage';
 import { render } from '@/__tests__/utils/test-utils';
 
 // Mock PageHeader

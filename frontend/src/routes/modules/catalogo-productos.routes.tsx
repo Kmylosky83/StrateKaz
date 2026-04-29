@@ -7,7 +7,9 @@ import { Route, Navigate } from 'react-router-dom';
 import { withFullGuard } from '../helpers';
 
 const CatalogoProductosPage = lazy(() =>
-  import('@/features/catalogo-productos').then((m) => ({ default: m.CatalogoProductosPage }))
+  import('@/features/infraestructura/catalogo-productos').then((m) => ({
+    default: m.CatalogoProductosPage,
+  }))
 );
 
 export const catalogoProductosRoutes = (

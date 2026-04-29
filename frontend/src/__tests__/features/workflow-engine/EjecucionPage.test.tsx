@@ -12,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import EjecucionPage from '@/features/workflows/pages/EjecucionPage';
+import EjecucionPage from '@/features/infraestructura/workflow-engine/pages/EjecucionPage';
 import { render } from '@/__tests__/utils/test-utils';
 
 // ==================== MOCKS ====================
@@ -27,7 +27,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock workflow hooks
-vi.mock('@/features/workflows/hooks/useWorkflows', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/hooks/useWorkflows', () => ({
   useMisTareas: vi.fn(() => ({
     data: { tareas: [] },
     isLoading: false,
@@ -57,14 +57,14 @@ vi.mock('@/features/workflows/hooks/useWorkflows', () => ({
 }));
 
 // Mock TareaFormModal
-vi.mock('@/features/workflows/components/TareaFormModal', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/TareaFormModal', () => ({
   __esModule: true,
   default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="tarea-modal">TareaFormModal</div> : null,
 }));
 
 // Mock IniciarFlujoModal
-vi.mock('@/features/workflows/components/IniciarFlujoModal', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/IniciarFlujoModal', () => ({
   __esModule: true,
   default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="iniciar-flujo-modal">IniciarFlujoModal</div> : null,
@@ -83,7 +83,7 @@ vi.mock('sonner', () => ({
 import {
   useEstadisticasTareas,
   useEstadisticasInstancias,
-} from '@/features/workflows/hooks/useWorkflows';
+} from '@/features/infraestructura/workflow-engine/hooks/useWorkflows';
 
 describe('EjecucionPage', () => {
   beforeEach(() => {

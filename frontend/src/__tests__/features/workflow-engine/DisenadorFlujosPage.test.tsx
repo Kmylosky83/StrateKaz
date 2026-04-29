@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import DisenadorFlujosPage from '@/features/workflows/pages/DisenadorFlujosPage';
+import DisenadorFlujosPage from '@/features/infraestructura/workflow-engine/pages/DisenadorFlujosPage';
 import { render } from '@/__tests__/utils/test-utils';
 
 // ==================== MOCKS ====================
@@ -53,7 +53,7 @@ const mockUsePlantillas = vi.fn();
 const mockUsePlantilla = vi.fn();
 const mockUseCategorias = vi.fn();
 
-vi.mock('@/features/workflows/hooks/useWorkflows', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/hooks/useWorkflows', () => ({
   usePlantillas: (...args: unknown[]) => mockUsePlantillas(...args),
   usePlantilla: (...args: unknown[]) => mockUsePlantilla(...args),
   useCategorias: () => mockUseCategorias(),
@@ -72,7 +72,7 @@ vi.mock('@/features/workflows/hooks/useWorkflows', () => ({
 }));
 
 // Mock BpmnNodes
-vi.mock('@/features/workflows/components/nodes/BpmnNodes', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/nodes/BpmnNodes', () => ({
   NODE_CONFIG: {
     INICIO: { icon: () => null, bgColor: '', borderColor: '', textColor: '' },
     TAREA: { icon: () => null, bgColor: '', borderColor: '', textColor: '' },
@@ -84,19 +84,19 @@ vi.mock('@/features/workflows/components/nodes/BpmnNodes', () => ({
 }));
 
 // Mock WorkflowDesignerCanvas
-vi.mock('@/features/workflows/components/WorkflowDesignerCanvas', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/WorkflowDesignerCanvas', () => ({
   WorkflowDesignerCanvas: () => <div data-testid="workflow-canvas">Canvas</div>,
 }));
 
 // Mock PlantillaFormModal
-vi.mock('@/features/workflows/components/PlantillaFormModal', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/PlantillaFormModal', () => ({
   __esModule: true,
   default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="plantilla-modal">PlantillaFormModal</div> : null,
 }));
 
 // Mock CategoriaFormModal
-vi.mock('@/features/workflows/components/CategoriaFormModal', () => ({
+vi.mock('@/features/infraestructura/workflow-engine/components/CategoriaFormModal', () => ({
   __esModule: true,
   default: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="categoria-modal">CategoriaFormModal</div> : null,

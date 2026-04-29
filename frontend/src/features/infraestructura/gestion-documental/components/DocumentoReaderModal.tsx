@@ -76,8 +76,7 @@ export default function DocumentoReaderModal({
 
   // ─── Estado HTML (modo legacy) ─────────────────────────────────────────
   const [seccionesVistas, setSeccionesVistas] = useState<Set<number>>(new Set());
-  const [totalSeccionesDisplay, setTotalSeccionesDisplay] =
-    useState(TOTAL_SECCIONES_HTML);
+  const [totalSeccionesDisplay, setTotalSeccionesDisplay] = useState(TOTAL_SECCIONES_HTML);
 
   // ─── Estado PDF ─────────────────────────────────────────────────────────
   const [paginasVistas, setPaginasVistas] = useState<Set<number>>(new Set());
@@ -113,17 +112,11 @@ export default function DocumentoReaderModal({
   const porcentaje = useMemo(() => {
     if (mode === 'pdf') {
       if (numPages === 0) return 0;
-      return Math.min(
-        100,
-        Math.round((paginasVistas.size / numPages) * 100)
-      );
+      return Math.min(100, Math.round((paginasVistas.size / numPages) * 100));
     }
     if (mode === 'html') {
       if (totalSeccionesDisplay === 0) return 100;
-      return Math.min(
-        100,
-        Math.round((seccionesVistas.size / totalSeccionesDisplay) * 100)
-      );
+      return Math.min(100, Math.round((seccionesVistas.size / totalSeccionesDisplay) * 100));
     }
     // empty: nada para leer => 100
     return 100;
@@ -146,9 +139,7 @@ export default function DocumentoReaderModal({
     const seccionesPrev = Array.isArray(sd.secciones_vistas)
       ? (sd.secciones_vistas as number[])
       : [];
-    const paginasPrev = Array.isArray(sd.paginas_vistas)
-      ? (sd.paginas_vistas as number[])
-      : [];
+    const paginasPrev = Array.isArray(sd.paginas_vistas) ? (sd.paginas_vistas as number[]) : [];
 
     setSeccionesVistas(new Set(seccionesPrev));
     setPaginasVistas(new Set(paginasPrev));
@@ -444,10 +435,7 @@ export default function DocumentoReaderModal({
       return `<div data-section="0">${clean}</div>`;
     }
 
-    const bloquesPorSeccion = Math.max(
-      1,
-      Math.ceil(children.length / TOTAL_SECCIONES_HTML)
-    );
+    const bloquesPorSeccion = Math.max(1, Math.ceil(children.length / TOTAL_SECCIONES_HTML));
     let html = '';
     let seccion = 0;
 
@@ -466,13 +454,10 @@ export default function DocumentoReaderModal({
 
   if (!aceptacion) return null;
 
-  const yaFinalizado =
-    aceptacion.estado === 'ACEPTADO' || aceptacion.estado === 'RECHAZADO';
+  const yaFinalizado = aceptacion.estado === 'ACEPTADO' || aceptacion.estado === 'RECHAZADO';
 
   // PDF dimensions: ancho responsive
-  const pdfPageWidth = typeof window !== 'undefined'
-    ? Math.min(window.innerWidth - 80, 800)
-    : 800;
+  const pdfPageWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - 80, 800) : 800;
 
   return (
     <>
@@ -495,9 +480,7 @@ export default function DocumentoReaderModal({
                   {aceptacion.documento_titulo}
                 </h3>
                 <Badge variant="secondary">{aceptacion.documento_codigo}</Badge>
-                {mode === 'pdf' && (
-                  <Badge variant="info">PDF</Badge>
-                )}
+                {mode === 'pdf' && <Badge variant="info">PDF</Badge>}
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-500">
                 <span>v{aceptacion.version_documento}</span>
@@ -512,12 +495,10 @@ export default function DocumentoReaderModal({
                 )}
                 {aceptacion.fecha_limite && (
                   <span className="flex items-center gap-1">
-                    {aceptacion.dias_restantes != null &&
-                    aceptacion.dias_restantes < 0 ? (
+                    {aceptacion.dias_restantes != null && aceptacion.dias_restantes < 0 ? (
                       <AlertTriangle className="w-3 h-3 text-red-500" />
                     ) : null}
-                    Límite:{' '}
-                    {new Date(aceptacion.fecha_limite).toLocaleDateString('es-CO')}
+                    Límite: {new Date(aceptacion.fecha_limite).toLocaleDateString('es-CO')}
                   </span>
                 )}
               </div>
@@ -527,9 +508,7 @@ export default function DocumentoReaderModal({
           {/* Barra de progreso */}
           <div>
             <div className="flex items-center justify-between text-sm mb-1">
-              <span className="text-gray-600 dark:text-gray-400">
-                Progreso de lectura
-              </span>
+              <span className="text-gray-600 dark:text-gray-400">Progreso de lectura</span>
               <span className="font-medium">{porcentaje}%</span>
             </div>
             <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -569,9 +548,7 @@ export default function DocumentoReaderModal({
                 {pdfData && !pdfLoading && !pdfError && (
                   <Document
                     file={pdfData}
-                    onLoadSuccess={(info: { numPages: number }) =>
-                      setNumPages(info.numPages)
-                    }
+                    onLoadSuccess={(info: { numPages: number }) => setNumPages(info.numPages)}
                     onLoadError={(err: Error) =>
                       setPdfError(err.message || 'Error al renderizar el PDF')
                     }
@@ -581,22 +558,20 @@ export default function DocumentoReaderModal({
                       </div>
                     }
                   >
-                    {Array.from({ length: numPages }, (_, idx) => idx + 1).map(
-                      (pageNumber) => (
-                        <div
-                          key={`pdf-page-${pageNumber}`}
-                          data-pdf-page={pageNumber}
-                          className="mb-4 flex justify-center"
-                        >
-                          <Page
-                            pageNumber={pageNumber}
-                            width={pdfPageWidth}
-                            renderAnnotationLayer={false}
-                            renderTextLayer={true}
-                          />
-                        </div>
-                      )
-                    )}
+                    {Array.from({ length: numPages }, (_, idx) => idx + 1).map((pageNumber) => (
+                      <div
+                        key={`pdf-page-${pageNumber}`}
+                        data-pdf-page={pageNumber}
+                        className="mb-4 flex justify-center"
+                      >
+                        <Page
+                          pageNumber={pageNumber}
+                          width={pdfPageWidth}
+                          renderAnnotationLayer={false}
+                          renderTextLayer={true}
+                        />
+                      </div>
+                    ))}
                   </Document>
                 )}
               </>
@@ -637,19 +612,15 @@ export default function DocumentoReaderModal({
                   He leído y comprendido el contenido de este documento.
                   {porcentaje < PORCENTAJE_MINIMO && (
                     <span className="block text-xs text-gray-400 mt-0.5">
-                      (Debe leer al menos el {PORCENTAJE_MINIMO}% del documento
-                      para habilitar esta opción)
+                      (Debe leer al menos el {PORCENTAJE_MINIMO}% del documento para habilitar esta
+                      opción)
                     </span>
                   )}
                 </span>
               </label>
 
               <div className="flex items-center justify-end gap-3 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowRechazar(true)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setShowRechazar(true)}>
                   Rechazar
                 </Button>
                 <Button
@@ -676,9 +647,7 @@ export default function DocumentoReaderModal({
               {aceptacion.estado === 'ACEPTADO'
                 ? `Aceptado el ${
                     aceptacion.fecha_aceptacion
-                      ? new Date(aceptacion.fecha_aceptacion).toLocaleDateString(
-                          'es-CO'
-                        )
+                      ? new Date(aceptacion.fecha_aceptacion).toLocaleDateString('es-CO')
                       : ''
                   }`
                 : `Rechazado: ${aceptacion.motivo_rechazo || ''}`}

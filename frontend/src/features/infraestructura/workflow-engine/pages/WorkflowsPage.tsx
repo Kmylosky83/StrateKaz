@@ -18,8 +18,8 @@ export default function WorkflowsPage() {
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2">Motor de Automatización</h2>
           <p className="text-purple-100 max-w-2xl">
-            Diseña, ejecuta y monitorea flujos de trabajo personalizados para automatizar
-            procesos de negocio. Seleccione un módulo para comenzar.
+            Diseña, ejecuta y monitorea flujos de trabajo personalizados para automatizar procesos
+            de negocio. Seleccione un módulo para comenzar.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
@@ -79,9 +79,10 @@ export default function WorkflowsPage() {
               Motor de Automatización de Procesos
             </h3>
             <p className="text-purple-800 dark:text-purple-300 text-sm leading-relaxed">
-              El Workflow Engine permite diseñar, ejecutar y monitorear flujos de trabajo personalizados
-              para automatizar procesos de negocio. Incluye diseñador visual drag & drop, gestión de
-              tareas, notificaciones automáticas, y análisis de rendimiento con métricas de SLA.
+              El Workflow Engine permite diseñar, ejecutar y monitorear flujos de trabajo
+              personalizados para automatizar procesos de negocio. Incluye diseñador visual drag &
+              drop, gestión de tareas, notificaciones automáticas, y análisis de rendimiento con
+              métricas de SLA.
             </p>
           </div>
         </div>

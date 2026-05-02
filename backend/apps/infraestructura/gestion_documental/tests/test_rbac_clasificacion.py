@@ -77,9 +77,9 @@ class _GestionDocumentalRBACMixin:
         return doc
 
     def _grant_repositorio(self, cargo):
-        """Otorga acceso RBAC a la sección repositorio (módulo gestion_documental)."""
+        """Otorga acceso RBAC a la sección repositorio (módulo infra_gestion_documental)."""
         _, _, section = self.create_module_with_section(
-            module_code='gestion_documental',
+            module_code='infra_gestion_documental',
             section_code='repositorio',
         )
         return self.grant_section_access(

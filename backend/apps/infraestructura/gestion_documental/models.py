@@ -1155,9 +1155,9 @@ class CampoFormulario(TenantModel):
 
 
 # NOTA: FirmaDocumento ha sido ELIMINADO
-# Las firmas digitales se manejan con el modelo FirmaDigital de workflow_engine.firma_digital
+# Las firmas digitales se manejan con el modelo FirmaDigital de infraestructura.workflow_engine.firma_digital
 # que usa GenericForeignKey para vincular firmas a cualquier modelo.
-# Ver: apps.workflow_engine.firma_digital.models.FirmaDigital
+# Ver: apps.infraestructura.workflow_engine.firma_digital.models.FirmaDigital
 
 
 class ControlDocumental(TenantModel):

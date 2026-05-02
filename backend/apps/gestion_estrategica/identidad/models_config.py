@@ -195,7 +195,7 @@ class TipoPolitica(TimestampedModel, OrderedModel):
     # Fase 0.3.4: flujo_firma_default eliminado
     # Cuando workflow_engine.firma_digital tenga migraciones, agregar:
     # flujo_firma_default = models.ForeignKey(
-    #     'firma_digital.ConfiguracionFlujoFirma',
+    #     'infra_firma_digital.ConfiguracionFlujoFirma',
     #     on_delete=models.SET_NULL,
     #     null=True,
     #     blank=True,

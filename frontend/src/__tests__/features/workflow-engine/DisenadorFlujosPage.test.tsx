@@ -42,7 +42,7 @@ vi.mock('@/constants/permissions', async () => {
     ...actual,
     Modules: {
       ...((actual as Record<string, unknown>).Modules || {}),
-      WORKFLOW_ENGINE: 'workflow_engine',
+      WORKFLOW_ENGINE: 'infra_workflow_engine',
     },
     Sections: { ...((actual as Record<string, unknown>).Sections || {}), FLUJOS: 'flujos' },
   };

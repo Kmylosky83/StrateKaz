@@ -166,10 +166,10 @@ def _register_workflow_signal():
     """
     from django.apps import apps as django_apps
 
-    if not django_apps.is_installed('apps.workflow_engine.ejecucion'):
+    if not django_apps.is_installed('apps.infraestructura.workflow_engine.ejecucion'):
         return
 
-    from apps.workflow_engine.ejecucion.signals import workflow_completado
+    from apps.infraestructura.workflow_engine.ejecucion.signals import workflow_completado
 
     @receiver(workflow_completado)
     def handle_workflow_completado_autogen(sender, instancia, usuario, **kwargs):
@@ -179,7 +179,7 @@ def _register_workflow_signal():
         """
         try:
             PlantillaFlujo = django_apps.get_model(
-                'disenador_flujos', 'PlantillaFlujo'
+                'infra_disenador_flujos', 'PlantillaFlujo'
             )
             plantilla_flujo = PlantillaFlujo.objects.filter(
                 id=instancia.plantilla_id

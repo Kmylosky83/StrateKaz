@@ -35,7 +35,7 @@ import { Textarea } from '@/components/forms';
 import { GestionDocumentalTab } from '../components/GestionDocumentalTab';
 import { GDSearchModal } from '../components/GDSearchModal';
 
-const MODULE_CODE = 'gestion_documental';
+const MODULE_CODE = 'infra_gestion_documental';
 const TAB_CODE = 'gestion_documental';
 
 export const GestionDocumentalPage = () => {
@@ -50,7 +50,7 @@ export const GestionDocumentalPage = () => {
     tabCode: TAB_CODE,
   });
 
-  const { color: moduleColor } = useModuleColor('gestion_documental');
+  const { color: moduleColor } = useModuleColor('infra_gestion_documental');
   const user = useAuthStore((s) => s.user);
 
   // Sub-tab para navegación desde Dashboard (ej: "en_proceso:borradores")

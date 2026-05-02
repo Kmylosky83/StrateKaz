@@ -112,7 +112,7 @@ export function TiposPlantillasSection({
   const { data: trdReglas } = useTRD();
 
   const [activeTab, setActiveTab] = useState<ConfigTab>('tipos');
-  const { color: moduleColor } = useModuleColor('gestion_documental');
+  const { color: moduleColor } = useModuleColor('infra_gestion_documental');
   const [viewMode, setViewMode] = useState<ViewMode>(
     () => (localStorage.getItem('gd_tipos_view') as ViewMode) || 'list'
   );

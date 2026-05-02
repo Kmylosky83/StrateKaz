@@ -74,7 +74,7 @@ class _BaseGDTestCase(BaseTenantTestCase):
         return Documento.objects.create(**defaults)
 
     def _crear_firma(self, documento, user, cargo, *, rol_firma, orden, estado):
-        from apps.workflow_engine.firma_digital.models import FirmaDigital
+        from apps.infraestructura.workflow_engine.firma_digital.models import FirmaDigital
 
         ct = ContentType.objects.get_for_model(documento.__class__)
         return FirmaDigital.objects.create(

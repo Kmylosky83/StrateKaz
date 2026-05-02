@@ -54,7 +54,7 @@ export function EnProcesoSection({
   onRechazar,
 }: EnProcesoSectionProps) {
   const [activeTab, setActiveTab] = useState<ProcesoTab>(initialTab || 'firmas');
-  const { color: moduleColor } = useModuleColor('gestion_documental');
+  const { color: moduleColor } = useModuleColor('infra_gestion_documental');
 
   // Sincronizar tab cuando se navega desde Dashboard con sub-tab específico
   useEffect(() => {

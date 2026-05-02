@@ -23,15 +23,15 @@ export const workflowEngineRoutes = (
     <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
     <Route
       path="/workflows/disenador"
-      element={withFullGuard(DisenadorFlujosPage, 'workflow_engine', 'disenador_flujos')}
+      element={withFullGuard(DisenadorFlujosPage, 'infra_workflow_engine', 'disenador_flujos')}
     />
     <Route
       path="/workflows/ejecucion"
-      element={withFullGuard(EjecucionPage, 'workflow_engine', 'ejecucion')}
+      element={withFullGuard(EjecucionPage, 'infra_workflow_engine', 'ejecucion')}
     />
     <Route
       path="/workflows/monitoreo"
-      element={withFullGuard(MonitoreoPage, 'workflow_engine', 'monitoreo')}
+      element={withFullGuard(MonitoreoPage, 'infra_workflow_engine', 'monitoreo')}
     />
   </>
 );

@@ -465,7 +465,7 @@ export function useDocumentoFirmas(contentType: number, objectId: number) {
  */
 export function useMisFirmasPendientes(soloMiTurno = true) {
   const { canDo, isSuperAdmin } = usePermissions();
-  const hasFirmaAccess = isSuperAdmin || canDo('workflow_engine', 'firma_digital', 'view');
+  const hasFirmaAccess = isSuperAdmin || canDo('infra_workflow_engine', 'firma_digital', 'view');
 
   const { useFirmasPendientes, firmarDocumento, isFirmando } = useWorkflowFirmas();
   const { data: firmasPendientes, isLoading } = useFirmasPendientes(soloMiTurno, {

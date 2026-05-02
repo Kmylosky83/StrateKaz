@@ -32,8 +32,8 @@ export function DashboardDocumentalSection({
   const navigate = useNavigate();
   const { canDo } = usePermissions();
   // Revelación progresiva: métricas globales y cobertura solo para roles con acceso al archivo
-  const canViewArchivo = canDo('gestion_documental', 'archivo', 'view');
-  const canViewRepositorio = canDo('gestion_documental', 'repositorio', 'view');
+  const canViewArchivo = canDo('infra_gestion_documental', 'archivo', 'view');
+  const canViewRepositorio = canDo('infra_gestion_documental', 'repositorio', 'view');
 
   const { data: documentos, isLoading: isLoadingDocs } = useDocumentos();
   const { data: estadisticas } = useEstadisticasDocumentales();

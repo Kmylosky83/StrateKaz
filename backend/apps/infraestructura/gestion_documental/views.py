@@ -559,7 +559,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         """
         documento = self.get_object()
         verificar_acceso_documento(request.user, documento)
-        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
+        from apps.infraestructura.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
         firmas = documento.get_firmas_digitales()
         return Response(FirmaDigitalSerializer(firmas, many=True).data)
 

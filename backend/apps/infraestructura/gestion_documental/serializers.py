@@ -343,7 +343,7 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
 
     def get_firmas_digitales(self, obj):
         """Obtiene firmas usando FirmaDigital de workflow_engine"""
-        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
+        from apps.infraestructura.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
         firmas = obj.get_firmas_digitales()
         return FirmaDigitalSerializer(firmas, many=True).data
 

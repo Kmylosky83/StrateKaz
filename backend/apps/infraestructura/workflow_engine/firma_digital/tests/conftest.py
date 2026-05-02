@@ -231,7 +231,7 @@ def client_admin_fd(api_client, admin_fd):
 def content_type_documento(db):
     """ContentType para Documento de gestion_documental."""
     from django.contrib.contenttypes.models import ContentType
-    from apps.gestion_estrategica.gestion_documental.models import Documento
+    from apps.infraestructura.gestion_documental.models import Documento
 
     return ContentType.objects.get_for_model(Documento)
 
@@ -239,7 +239,7 @@ def content_type_documento(db):
 @pytest.fixture
 def documento_borrador(db, fd_empresa, user_elaborador):
     """Documento en estado BORRADOR — listo para iniciar revisión."""
-    from apps.gestion_estrategica.gestion_documental.models import (
+    from apps.infraestructura.gestion_documental.models import (
         TipoDocumento,
         Documento,
     )
@@ -268,7 +268,7 @@ def documento_borrador(db, fd_empresa, user_elaborador):
 @pytest.fixture
 def documento_publicado(db, fd_empresa, user_elaborador):
     """Documento en estado PUBLICADO — listo para renovar."""
-    from apps.gestion_estrategica.gestion_documental.models import (
+    from apps.infraestructura.gestion_documental.models import (
         TipoDocumento,
         Documento,
     )

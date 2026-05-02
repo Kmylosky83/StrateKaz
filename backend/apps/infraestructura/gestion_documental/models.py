@@ -816,7 +816,7 @@ class Documento(TenantModel):
         Usa ContentType para buscar firmas asociadas a este documento.
         """
         from django.contrib.contenttypes.models import ContentType
-        from apps.workflow_engine.firma_digital.models import FirmaDigital
+        from apps.infraestructura.workflow_engine.firma_digital.models import FirmaDigital
 
         content_type = ContentType.objects.get_for_model(self.__class__)
         return FirmaDigital.objects.filter(

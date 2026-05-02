@@ -71,7 +71,7 @@ interface ArchivoSectionProps {
 export function ArchivoSection({ onViewDocumento }: ArchivoSectionProps) {
   const [activeTab, setActiveTab] = useState<SubTab>('vigentes');
   const [showLoteModal, setShowLoteModal] = useState(false);
-  const { color: moduleColor } = useModuleColor('gestion_documental');
+  const { color: moduleColor } = useModuleColor('infra_gestion_documental');
   const isSuperAdmin = useIsSuperAdmin();
   const { data: estadisticas, isLoading: isLoadingStats } = useEstadisticasDocumentales();
 

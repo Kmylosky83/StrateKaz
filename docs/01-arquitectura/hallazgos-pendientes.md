@@ -1213,8 +1213,36 @@ migration del `label` Django no necesaria si se mantiene mismo `label=catalogo_p
 Antes de activar el siguiente CT comentado (hoy ninguno está previsto).
 Alternativa: aprovechar Sprint S10+ cuando toque activar motor_cumplimiento/motor_riesgos.
 
-### Estado
-🔲 Abierto. Prioridad: decidir al activar el primer CT comentado.
+### Estado: ✅ RESUELTO (2026-05-02)
+Cerrado en sprint dedicado de 4 días (29 abr → 2 may). Refactor masivo en 7 fases
+con paralelización por agentes. **Estrategia Opción B+** aplicada: rename `app_label`
+con prefijo `infra_*` + preservar `Meta.db_table` con valor histórico (cero `ALTER TABLE`
+en N tenants).
+
+**Estructura final ejecutada:**
+```
+apps/infraestructura/
+├── catalogo_productos/      (label: infra_catalogo_productos)
+│   ├── proveedores/         (sub-paquete fusionado, app_label = infra_catalogo_productos)
+│   └── impresoras/          (label: infra_impresoras)
+├── gestion_documental/      (label: infra_gestion_documental)
+└── workflow_engine/
+    ├── disenador_flujos/    (label: infra_disenador_flujos)
+    ├── ejecucion/           (label: infra_workflow_ejecucion — explícito ahora)
+    ├── monitoreo/           (label: infra_workflow_monitoreo — explícito ahora)
+    └── firma_digital/       (label: infra_firma_digital)
+```
+
+**Volumen del refactor:** 199 archivos backend movidos con `git mv` (history preservada),
+82 consumidores actualizados, 3 features frontend movidos a `features/infraestructura/`,
+14 migraciones nuevas RunSQL reversibles, doble auditoría estructural+funcional convergente.
+
+**Mergeado a `main`** en commit `6db6c874` (push origin verde, 10 commits).
+
+**Procedimiento crítico para deploy VPS** (documentado en commit `50876af5`): aplicar
+SQL manual en cada schema antes de `migrate` para evitar `InconsistentMigrationHistory`.
+
+Detalle: `docs/auditorias/history/2026-05-02-ct-unification-cierre-completo.md`.
 
 ---
 
@@ -1325,7 +1353,7 @@ C2 (no C2 heredando mixin de C2).
 | 16 | **H-S5-pwa-branding-unificado** | 🔲 PENDIENTE | Sin workaround por política. Scheduled para sprint Branding v2 post-S6 Supply Chain. |
 | 17 | **H-S8-sidebar-db-driven** | 🔲 PENDIENTE | Escalabilidad: SIDEBAR_LAYERS hardcoded en Python no escala. Trigger: antes de activar primer C2 post-supply_chain. |
 | 18 | **H-S8-catalogos-financieros-a-configuracion** | 🔲 PENDIENTE | Mover FormaPago + TipoCuentaBancaria a C1 cuando se active primer consumidor adicional (sales_crm/accounting/tesoreria). |
-| 19 | **H-S8-ct-disperso** | 🔲 PENDIENTE | Capa CT fragmentada en 3 ubicaciones. Decidir paraguas único `apps/infraestructura/` al activar el siguiente CT. |
+| 19 | **H-S8-ct-disperso** | ✅ RESUELTO (2026-05-02) | Cerrado en sprint dedicado 4 días. 3 paquetes movidos a `apps/infraestructura/` con app_label `infra_*` (Opción B+). 199 archivos BE + 82 consumidores + 3 features FE + 14 migraciones reversibles. Mergeado a main commit `6db6c874`. Pendiente deploy VPS con SQL manual previo. |
 | 20 | **H-S8-proveedores-ubicacion-incorrecta** | 🔲 PENDIENTE | gestion_proveedores conceptualmente es CT, vive en C2 por pragmatismo. Mudanza S10-S12 al activar segundo consumidor. |
 | 21 | **H-S7-supply-chain-tabla-unidad-medida-huerfana** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 con migración `catalogos.0002_drop_unidad_medida_huerfana`. |
 | 22 | **H-S8-revision-direccion-coupling-eliminado** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 commit `e51f8b56`. Sin acoplamiento LIVE → NO-LIVE. |

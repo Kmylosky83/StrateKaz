@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
         # para evitar conflicto de leaf nodes en el grafo de migraciones.
         ("sc_recoleccion", "0002_rename_sc_vrc_lin_v_p_idx_supply_chai_voucher_b10258_idx_and_more"),
         ("sc_recepcion", "0007_voucher_recoleccion_origen"),
-        ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
+        ("infra_catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
     ]
 
     operations = [
@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recoleccion",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor (productor)",
                 # Default temporal para satisfacer NOT NULL en backfill (no aplica
                 # porque borramos todos los rows arriba).
@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recoleccion",
-                to="catalogo_productos.producto",
+                to="infra_catalogo_productos.producto",
                 verbose_name="Producto (MP)",
                 null=True,
             ),
@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recoleccion",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor (productor)",
             ),
         ),
@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recoleccion",
-                to="catalogo_productos.producto",
+                to="infra_catalogo_productos.producto",
                 verbose_name="Producto (MP)",
             ),
         ),

@@ -17,8 +17,8 @@ export const Modules = {
 
   // ── PLANEAR ──
   FUNDACION: 'fundacion',
-  GESTION_DOCUMENTAL: 'gestion_documental',
-  WORKFLOW_ENGINE: 'workflow_engine',
+  GESTION_DOCUMENTAL: 'infra_gestion_documental',
+  WORKFLOW_ENGINE: 'infra_workflow_engine',
   MI_EQUIPO: 'mi_equipo',
   PLANIFICACION_OPERATIVA: 'planificacion_operativa',
   PLANEACION_ESTRATEGICA: 'planeacion_estrategica',
@@ -42,7 +42,7 @@ export const Modules = {
 
   // ── INFRAESTRUCTURA ──
   CONFIGURACION_PLATAFORMA: 'configuracion_plataforma',
-  CATALOGO_PRODUCTOS: 'catalogo_productos',
+  CATALOGO_PRODUCTOS: 'infra_catalogo_productos',
 
   // ── Legacy aliases (V1 → V2, para compatibilidad durante migración) ──
   /** @deprecated Use GESTION_INTEGRAL */
@@ -52,7 +52,7 @@ export const Modules = {
   /** @deprecated Use PROTECCION_CUMPLIMIENTO */
   MOTOR_RIESGOS: 'proteccion_cumplimiento',
   /** @deprecated Use GESTION_DOCUMENTAL */
-  SISTEMA_GESTION: 'gestion_documental',
+  SISTEMA_GESTION: 'infra_gestion_documental',
 } as const;
 
 export const Sections = {

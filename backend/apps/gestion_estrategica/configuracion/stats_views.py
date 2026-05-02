@@ -582,7 +582,7 @@ def _calculate_fundacion_steps():
 def calculate_unidades_medida_stats():
     """Calcula estadisticas de la seccion Unidades de Medida"""
     # Source-of-truth: catalogo_productos (CT-layer). Post-consolidacion S7.
-    from apps.catalogo_productos.models import UnidadMedida
+    from apps.infraestructura.catalogo_productos.models import UnidadMedida
 
     stats = []
     unidades = UnidadMedida.objects.filter(is_deleted=False)

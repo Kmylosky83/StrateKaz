@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('sc_recepcion', '0002_alter_voucherrecepcion_proveedor'),
-        ('catalogo_productos', '0018_proveedor_sede_empresa_origen'),
+        ('infra_catalogo_productos', '0018_proveedor_sede_empresa_origen'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -81,7 +81,7 @@ class Migration(migrations.Migration):
                 ('producto', models.ForeignKey(
                     on_delete=django.db.models.deletion.PROTECT,
                     related_name='lineas_voucher',
-                    to='catalogo_productos.producto',
+                    to='infra_catalogo_productos.producto',
                     verbose_name='Producto',
                 )),
                 ('peso_bruto_kg', models.DecimalField(decimal_places=3, max_digits=12, verbose_name='Peso bruto (kg)')),

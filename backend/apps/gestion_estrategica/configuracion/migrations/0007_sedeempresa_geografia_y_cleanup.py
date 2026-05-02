@@ -110,7 +110,7 @@ class Migration(migrations.Migration):
         # sede_empresa_origen — así los choices tipo_unidad y
         # es_proveedor_interno se pueden eliminar sin referencias activas.
         ('sc_recepcion', '0004_voucher_ruta_recoleccion'),
-        ('catalogo_productos', '0020_proveedor_drop_sede_empresa_origen'),
+        ('infra_catalogo_productos', '0020_proveedor_drop_sede_empresa_origen'),
     ]
 
     operations = [

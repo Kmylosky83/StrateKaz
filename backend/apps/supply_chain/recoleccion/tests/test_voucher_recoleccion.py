@@ -17,7 +17,7 @@ def _crear_proveedor(numero, nombre='Productor Test'):
         codigo='CC',
         defaults={'nombre': 'Cédula de Ciudadanía', 'orden': 1, 'is_active': True},
     )
-    from apps.catalogo_productos.proveedores.models import Proveedor
+    from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
     return Proveedor.objects.create(
         razon_social=nombre,
         nombre_comercial=nombre,
@@ -33,7 +33,7 @@ class TestVoucherRecoleccionAutoCodigo(BaseTenantTestCase):
         ruta = RutaRecoleccion.objects.create(nombre='Norte')
         prov = _crear_proveedor('111111')
         # Crear producto
-        from apps.catalogo_productos.models import Producto
+        from apps.infraestructura.catalogo_productos.models import Producto
         prod = Producto.objects.create(
             codigo='LECHE', nombre='Leche cruda', tipo='MATERIA_PRIMA',
         )
@@ -58,7 +58,7 @@ class TestVoucherRecoleccionValidaciones(BaseTenantTestCase):
         user = self.create_user('op2')
         ruta = RutaRecoleccion.objects.create(nombre='Sur')
         prov = _crear_proveedor('333333')
-        from apps.catalogo_productos.models import Producto
+        from apps.infraestructura.catalogo_productos.models import Producto
         prod = Producto.objects.create(
             codigo='LECHE2', nombre='Leche', tipo='MATERIA_PRIMA',
         )
@@ -74,7 +74,7 @@ class TestVoucherRecoleccionValidaciones(BaseTenantTestCase):
         user = self.create_user('op3')
         ruta = RutaRecoleccion.objects.create(nombre='Sur2')
         prov = _crear_proveedor('444444')
-        from apps.catalogo_productos.models import Producto
+        from apps.infraestructura.catalogo_productos.models import Producto
         prod = Producto.objects.create(
             codigo='LECHE3', nombre='Leche', tipo='MATERIA_PRIMA',
         )

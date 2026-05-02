@@ -776,7 +776,7 @@ class ConsumoMateriaPrima(models.Model):
 
     # Producto consumido (catalogo_productos canonico post-S7)
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='consumos_procesamiento',
         verbose_name='Producto consumido',

@@ -14,7 +14,7 @@ import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const GestionDocumentalPage = lazy(
-  () => import('@/features/gestion-documental/pages/GestionDocumentalPage')
+  () => import('@/features/infraestructura/gestion-documental/pages/GestionDocumentalPage')
 );
 
 export const gestionDocumentalRoutes = (
@@ -22,7 +22,7 @@ export const gestionDocumentalRoutes = (
     {/* Ruta principal — preserva ?section= para deep-links de notificaciones */}
     <Route
       path="/gestion-documental"
-      element={withModuleGuard(GestionDocumentalPage, 'gestion_documental')}
+      element={withModuleGuard(GestionDocumentalPage, 'infra_gestion_documental')}
     />
     {/* Backward compat: paths legacy redirigen preservando query params */}
     <Route

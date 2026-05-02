@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from apps.catalogo_productos.models import (
+from apps.infraestructura.catalogo_productos.models import (
     CategoriaProducto,
     Producto,
     Proveedor,

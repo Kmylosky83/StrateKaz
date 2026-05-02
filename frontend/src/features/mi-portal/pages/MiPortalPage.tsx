@@ -61,7 +61,7 @@ import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
 const LecturasPendientesTab = lazy(
-  () => import('@/features/gestion-documental/components/LecturasPendientesTab')
+  () => import('@/features/infraestructura/gestion-documental/components/LecturasPendientesTab')
 );
 
 // ============================================================================

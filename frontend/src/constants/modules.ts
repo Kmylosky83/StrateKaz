@@ -41,9 +41,9 @@ export interface SystemModule {
 export const DEPLOYED_MODULES: readonly string[] = [
   // CT-layer y core (always-on)
   'fundacion',
-  'gestion_documental',
-  'catalogo_productos',
-  'workflow_engine',
+  'infra_gestion_documental',
+  'infra_catalogo_productos',
+  'infra_workflow_engine',
   'audit_system',
   'configuracion_plataforma',
   // L20 — Mi Equipo
@@ -108,7 +108,7 @@ export const AVAILABLE_MODULES: SystemModule[] = [
 
   // NIVEL_INFRAESTRUCTURA — Gestión Documental (CT-layer transversal)
   {
-    code: 'gestion_documental',
+    code: 'infra_gestion_documental',
     name: 'Gestión Documental',
     category: 'NIVEL_INFRAESTRUCTURA',
     deployLevel: 15,
@@ -116,7 +116,7 @@ export const AVAILABLE_MODULES: SystemModule[] = [
 
   // NIVEL_CATALOGOS_MAESTROS — Datos maestros transversales (CT-layer)
   {
-    code: 'catalogo_productos',
+    code: 'infra_catalogo_productos',
     name: 'Catálogos Maestros',
     category: 'NIVEL_CATALOGOS_MAESTROS',
     deployLevel: 16,
@@ -211,7 +211,7 @@ export const AVAILABLE_MODULES: SystemModule[] = [
 
   // NIVEL_WORKFLOWS — Motor de ejecución transversal
   {
-    code: 'workflow_engine',
+    code: 'infra_workflow_engine',
     name: 'Flujos de Trabajo',
     category: 'NIVEL_WORKFLOWS',
     deployLevel: 12,
@@ -229,7 +229,7 @@ export const AVAILABLE_MODULES: SystemModule[] = [
 /** Módulos habilitados por defecto para nuevos tenants */
 export const DEFAULT_ENABLED_MODULES = [
   'fundacion',
-  'gestion_documental',
+  'infra_gestion_documental',
   'planeacion_estrategica',
   'proteccion_cumplimiento',
   'gestion_integral',

@@ -187,12 +187,12 @@ if is_app_installed('apps.motor_cumplimiento.matriz_legal'):
 if is_app_installed('apps.motor_riesgos.riesgos_procesos'):
     urlpatterns.append(path('api/riesgos/', include('apps.motor_riesgos.urls')))
 
-if is_app_installed('apps.workflow_engine.disenador_flujos'):
-    urlpatterns.append(path('api/workflows/', include('apps.workflow_engine.urls')))
+if is_app_installed('apps.infraestructura.workflow_engine.disenador_flujos'):
+    urlpatterns.append(path('api/workflows/', include('apps.infraestructura.workflow_engine.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 3: TORRE DE CONTROL - HSEQ Management
-# NOTA: sistema_documental migrado a N1 (gestion_estrategica.gestion_documental)
+# NOTA: sistema_documental migrado a infraestructura.gestion_documental (CT)
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.hseq_management.calidad'):
     urlpatterns.append(path('api/hseq/', include('apps.hseq_management.urls')))
@@ -200,8 +200,8 @@ if is_app_installed('apps.hseq_management.calidad'):
 # ═══════════════════════════════════════════════════════════════════════════
 # CT-LAYER: CATÁLOGO DE PRODUCTOS (transversal, consumido por Cadena de Valor)
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.catalogo_productos'):
-    urlpatterns.append(path('api/catalogo-productos/', include('apps.catalogo_productos.urls')))
+if is_app_installed('apps.infraestructura.catalogo_productos'):
+    urlpatterns.append(path('api/catalogo-productos/', include('apps.infraestructura.catalogo_productos.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales

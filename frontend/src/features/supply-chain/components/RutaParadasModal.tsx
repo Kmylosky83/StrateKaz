@@ -21,7 +21,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 
-import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useProveedores } from '@/features/infraestructura/catalogo-productos/hooks/useProveedores';
 import { useModalidadesLogistica } from '../hooks/usePrecios';
 import {
   useRutaParadas,

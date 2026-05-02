@@ -109,10 +109,10 @@ TENANT_APPS = [
     # Workflows: diseñador BPMN, ejecución, monitoreo, firma digital
     # Audit System: logs, alertas, notificaciones, tareas/recordatorios
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.workflow_engine.disenador_flujos',
-    'apps.workflow_engine.ejecucion',
-    'apps.workflow_engine.monitoreo',
-    'apps.workflow_engine.firma_digital',
+    'apps.infraestructura.workflow_engine.disenador_flujos',
+    'apps.infraestructura.workflow_engine.ejecucion',
+    'apps.infraestructura.workflow_engine.monitoreo',
+    'apps.infraestructura.workflow_engine.firma_digital',
 
     'apps.audit_system.logs_sistema',
     'apps.audit_system.config_alertas',
@@ -123,11 +123,11 @@ TENANT_APPS = [
     # CASCADA LEVEL 15: GESTIÓN DOCUMENTAL (Infraestructura transversal)
     # Todos los módulos C2 generan documentos — debe activarse antes de C2
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.gestion_estrategica.gestion_documental',
+    'apps.infraestructura.gestion_documental',
 
     # CT-layer: catálogo maestro de productos (transversal, consumido por Supply Chain, Almacenamiento, etc.)
-    'apps.catalogo_productos',
-    'apps.catalogo_productos.impresoras',
+    'apps.infraestructura.catalogo_productos',
+    'apps.infraestructura.catalogo_productos.impresoras',
 
     # ═══════════════════════════════════════════════════════════════════════════
     # GAMIFICACIÓN — Módulo independiente (Juego SST)

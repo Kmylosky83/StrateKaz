@@ -203,14 +203,14 @@ app.conf.beat_schedule = {
 
     # Verificar tareas vencidas (SLA) cada 5 minutos
     'workflow-check-overdue-tasks': {
-        'task': 'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas',
+        'task': 'apps.infraestructura.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas',
         'schedule': crontab(minute='*/5'),
         'options': {'queue': 'workflow'},
     },
 
     # Actualizar métricas de flujos diariamente a la 1 AM
     'workflow-update-metrics-daily': {
-        'task': 'apps.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo',
+        'task': 'apps.infraestructura.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo',
         'schedule': crontab(hour=1, minute=0),
         'options': {'queue': 'reports'},
     },
@@ -285,7 +285,7 @@ app.conf.beat_schedule = {
 
     # Verificar documentos con revisión programada vencida - Diario a las 7:15 AM
     'documental-check-revision-programada': {
-        'task': 'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada',
+        'task': 'apps.infraestructura.gestion_documental.tasks.verificar_documentos_revision_programada',
         'schedule': crontab(hour=7, minute=15),
         'options': {'queue': 'compliance'},
     },
@@ -485,10 +485,10 @@ app.conf.task_routes = {
     # 'control_tiempo.recordar_marcaje_pendiente': {'queue': 'notifications'},
 
     # Workflow Engine tasks
-    'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas': {'queue': 'workflow'},
-    'apps.workflow_engine.ejecucion.tasks.enviar_notificacion_workflow': {'queue': 'emails'},
-    'apps.workflow_engine.ejecucion.tasks.ejecutar_evento_temporizador': {'queue': 'workflow'},
-    'apps.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo': {'queue': 'reports'},
+    'apps.infraestructura.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas': {'queue': 'workflow'},
+    'apps.infraestructura.workflow_engine.ejecucion.tasks.enviar_notificacion_workflow': {'queue': 'emails'},
+    'apps.infraestructura.workflow_engine.ejecucion.tasks.ejecutar_evento_temporizador': {'queue': 'workflow'},
+    'apps.infraestructura.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo': {'queue': 'reports'},
 
     # Analytics tasks (CASCADA L50 — deshabilitadas)
     # 'apps.analytics.tasks.calcular_kpis_automaticos': {'queue': 'reports'},
@@ -511,7 +511,7 @@ app.conf.task_routes = {
     # 'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas': {'queue': 'compliance'},
 
     # Gestion Documental tasks
-    'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},
+    'apps.infraestructura.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},
     'documental.notificar_documentos_por_vencer': {'queue': 'notifications'},
     'documental.procesar_ocr_documento': {'queue': 'files'},
     'documental.procesar_ocr_pendientes': {'queue': 'files'},

@@ -74,13 +74,13 @@ class PrecioMateriaPrima(TenantModel):
     FK a Proveedor repuntada a `catalogo_productos.Proveedor` (2026-04-21).
     """
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.CASCADE,
         related_name='precios_materia_prima',
         verbose_name='Proveedor',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='precios_proveedor',
         verbose_name='Producto del catálogo',
@@ -141,13 +141,13 @@ class HistorialPrecioProveedor(TimeStampedModel):
     FK a Proveedor repuntada a `catalogo_productos.Proveedor` (2026-04-21).
     """
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.CASCADE,
         related_name='historial_precios',
         verbose_name='Proveedor',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

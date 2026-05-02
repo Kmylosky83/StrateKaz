@@ -110,7 +110,7 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock lazy-loaded and complex sub-components
-vi.mock('@/features/gestion-documental/components/LecturasPendientesTab', () => ({
+vi.mock('@/features/infraestructura/gestion-documental/components/LecturasPendientesTab', () => ({
   default: () => <div data-testid="lecturas-tab">Lecturas Pendientes Content</div>,
 }));
 

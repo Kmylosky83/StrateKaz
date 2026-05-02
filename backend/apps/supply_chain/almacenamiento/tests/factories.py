@@ -13,7 +13,7 @@ Construye la cadena de dependencias requerida:
 from datetime import date
 from decimal import Decimal
 
-from apps.catalogo_productos.models import CategoriaProducto, Producto, UnidadMedida
+from apps.infraestructura.catalogo_productos.models import CategoriaProducto, Producto, UnidadMedida
 from apps.core.models import TipoDocumentoIdentidad
 from apps.gestion_estrategica.configuracion.models import EmpresaConfig
 from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
@@ -22,7 +22,7 @@ from apps.supply_chain.almacenamiento.models import (
     TipoMovimientoInventario,
 )
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
-from apps.catalogo_productos.models import Proveedor, TipoProveedor
+from apps.infraestructura.catalogo_productos.models import Proveedor, TipoProveedor
 from apps.supply_chain.recepcion.models import VoucherLineaMP, VoucherRecepcion
 
 

@@ -9,14 +9,14 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 
-from apps.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad
-from apps.catalogo_productos.extensiones.espec_calidad_parametro import (
+from apps.infraestructura.catalogo_productos.extensiones.espec_calidad import ProductoEspecCalidad
+from apps.infraestructura.catalogo_productos.extensiones.espec_calidad_parametro import (
     ProductoEspecCalidadParametro,
 )
-from apps.catalogo_productos.models import CategoriaProducto, Producto, UnidadMedida
+from apps.infraestructura.catalogo_productos.models import CategoriaProducto, Producto, UnidadMedida
 from apps.core.models import TipoDocumentoIdentidad
 from apps.core.tests.base import BaseTenantTestCase
-from apps.catalogo_productos.models import Proveedor, TipoProveedor
+from apps.infraestructura.catalogo_productos.models import Proveedor, TipoProveedor
 from apps.supply_chain.catalogos.models import Almacen, TipoAlmacen
 from apps.supply_chain.recepcion.models import RecepcionCalidad, VoucherLineaMP, VoucherRecepcion
 

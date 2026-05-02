@@ -28,7 +28,7 @@ import { Button } from '@/components/common/Button';
 import apiClient from '@/api/axios-config';
 
 import { useCreateVoucher } from '../hooks/useRecepcion';
-import { useProveedores } from '@/features/catalogo-productos/hooks/useProveedores';
+import { useProveedores } from '@/features/infraestructura/catalogo-productos/hooks/useProveedores';
 import { usePreciosMP } from '../hooks/usePrecios';
 import { useRutas } from '../hooks/useRutas';
 import { useParametrosCalidad } from '../hooks/useParametrosCalidad';

@@ -4,7 +4,7 @@
  * Post refactor 2026-04-21 (Proveedor → CT):
  *   ELIMINADOS: ProveedoresTab/Table/Form, ImportProveedoresModal,
  *   EvaluacionesTab, EvaluacionProveedorForm.
- *   Proveedores ahora vive en @/features/catalogo-productos/components/.
+ *   Proveedores ahora vive en @/features/infraestructura/catalogo-productos/components/.
  */
 
 // Tabs LIVE

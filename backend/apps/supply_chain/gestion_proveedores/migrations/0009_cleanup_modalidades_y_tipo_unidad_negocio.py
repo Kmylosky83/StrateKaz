@@ -39,7 +39,7 @@ MODALIDAD_REMAP = {
 
 def cleanup_modalidades(apps, schema_editor):
     ModalidadLogistica = apps.get_model('gestion_proveedores', 'ModalidadLogistica')
-    Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+    Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
     PrecioMateriaPrima = apps.get_model('gestion_proveedores', 'PrecioMateriaPrima')
 
     # Index por código
@@ -121,8 +121,8 @@ def restore_modalidades(apps, schema_editor):
 
 
 def cleanup_tipo_unidad_negocio(apps, schema_editor):
-    TipoProveedor = apps.get_model('catalogo_productos', 'TipoProveedor')
-    Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+    TipoProveedor = apps.get_model('infra_catalogo_productos', 'TipoProveedor')
+    Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
 
     origen = TipoProveedor.objects.filter(codigo='UNIDAD_NEGOCIO').first()
     if origen is None:
@@ -157,7 +157,7 @@ def cleanup_tipo_unidad_negocio(apps, schema_editor):
 def restore_tipo_unidad_negocio(apps, schema_editor):
     """Reverso parcial: re-crea la fila si fue eliminada. No restaura el
     mapeo de proveedores."""
-    TipoProveedor = apps.get_model('catalogo_productos', 'TipoProveedor')
+    TipoProveedor = apps.get_model('infra_catalogo_productos', 'TipoProveedor')
     TipoProveedor.objects.update_or_create(
         codigo='UNIDAD_NEGOCIO',
         defaults={
@@ -176,7 +176,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('gestion_proveedores', '0008_preciomateriaprima_modalidad_logistica'),
-        ('catalogo_productos', '0021_alter_proveedor_ruta_origen'),
+        ('infra_catalogo_productos', '0021_alter_proveedor_ruta_origen'),
     ]
 
     operations = [

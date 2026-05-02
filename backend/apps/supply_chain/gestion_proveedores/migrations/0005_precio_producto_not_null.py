@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 help_text="Producto maestro del catalogo_productos (tipo=MATERIA_PRIMA)",
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="precios_proveedor",
-                to="catalogo_productos.producto",
+                to="infra_catalogo_productos.producto",
                 verbose_name="Producto del catálogo",
             ),
         ),

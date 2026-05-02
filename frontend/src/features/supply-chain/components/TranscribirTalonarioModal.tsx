@@ -27,7 +27,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { DatePicker } from '@/components/forms/DatePicker';
 
 import { useRutaParadasByRuta } from '../hooks/useRutaParadas';
-import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
+import { useProductos } from '@/features/infraestructura/catalogo-productos/hooks/useProductos';
 import { useTranscribirTalonario } from '../hooks/useTranscribirTalonario';
 
 interface TranscribirTalonarioModalProps {

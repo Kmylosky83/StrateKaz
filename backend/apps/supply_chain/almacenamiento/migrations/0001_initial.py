@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         (
-            "catalogo_productos",
+            "infra_catalogo_productos",
             "0004_alter_producto_precio_referencia_alter_producto_sku",
         ),
         ("catalogos", "0001_initial"),
@@ -330,7 +330,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="inventarios",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto",
                     ),
                 ),
@@ -339,7 +339,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="inventarios",
-                        to="catalogo_productos.unidadmedida",
+                        to="infra_catalogo_productos.unidadmedida",
                         verbose_name="Unidad de medida",
                     ),
                 ),
@@ -534,7 +534,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="movimientos_inventario",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto",
                     ),
                 ),
@@ -552,7 +552,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="movimientos",
-                        to="catalogo_productos.unidadmedida",
+                        to="infra_catalogo_productos.unidadmedida",
                         verbose_name="Unidad de medida",
                     ),
                 ),
@@ -1298,7 +1298,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="configuraciones_stock",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto",
                     ),
                 ),

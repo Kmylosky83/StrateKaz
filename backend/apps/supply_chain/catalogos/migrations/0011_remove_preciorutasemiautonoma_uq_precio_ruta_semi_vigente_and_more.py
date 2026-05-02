@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0021_alter_proveedor_ruta_origen"),
+        ("infra_catalogo_productos", "0021_alter_proveedor_ruta_origen"),
         ("catalogos", "0010_modo_directa_y_quitar_frecuencia"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

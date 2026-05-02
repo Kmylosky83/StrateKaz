@@ -44,12 +44,12 @@ class ActaFirmaService:
     @staticmethod
     def _get_firma_digital_model():
         """Obtiene el modelo FirmaDigital via apps.get_model (cross-module safe)."""
-        return apps.get_model('firma_digital', 'FirmaDigital')
+        return apps.get_model('infra_firma_digital', 'FirmaDigital')
 
     @staticmethod
     def _get_historial_firma_model():
         """Obtiene el modelo HistorialFirma via apps.get_model (cross-module safe)."""
-        return apps.get_model('firma_digital', 'HistorialFirma')
+        return apps.get_model('infra_firma_digital', 'HistorialFirma')
 
     @staticmethod
     def _generate_acta_hash(acta) -> str:

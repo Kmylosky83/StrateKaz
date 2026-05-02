@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.catalogo_productos.models import (
+from apps.infraestructura.catalogo_productos.models import (
     CategoriaProducto,
     Producto,
     Proveedor,

@@ -44,7 +44,7 @@ import { accionesMejoraRoutes } from './modules/acciones-mejora.routes';
 import { talentHubRoutes } from './modules/talent-hub.routes';
 import { cumplimientoRoutes } from './modules/cumplimiento.routes';
 import { riesgosRoutes } from './modules/riesgos.routes';
-import { workflowsRoutes } from './modules/workflows.routes';
+import { workflowEngineRoutes } from './modules/workflow-engine.routes';
 import { gestionIntegralRoutes } from './modules/gestion-integral.routes';
 import { hseqRoutes } from './modules/hseq.routes';
 import { catalogoProductosRoutes } from './modules/catalogo-productos.routes';
@@ -116,7 +116,7 @@ export const AppRoutes = () => {
           {/* C2 — Modulos de Negocio (independientes) */}
           {planeacionEstrategicaRoutes}
           {proteccionCumplimientoRoutes}
-          {workflowsRoutes}
+          {workflowEngineRoutes}
           {gestionIntegralRoutes}
 
           {/* Cadena de Valor (HACER) */}

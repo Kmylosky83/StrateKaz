@@ -9,7 +9,7 @@ Patrón obligatorio: BaseTenantTestCase con schema real (CLAUDE.md §Testing).
 from datetime import date
 from decimal import Decimal
 
-from apps.catalogo_productos.models import (
+from apps.infraestructura.catalogo_productos.models import (
     CategoriaProducto,
     Producto,
     Proveedor,

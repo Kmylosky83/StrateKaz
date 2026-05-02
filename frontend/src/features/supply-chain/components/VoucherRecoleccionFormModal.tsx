@@ -20,7 +20,7 @@ import { Badge } from '@/components/common/Badge';
 
 import { useRutas } from '../hooks/useRutas';
 import { useRutaParadasByRuta } from '../hooks/useRutaParadas';
-import { useProductos } from '@/features/catalogo-productos/hooks/useProductos';
+import { useProductos } from '@/features/infraestructura/catalogo-productos/hooks/useProductos';
 import {
   useCreateVoucherRecoleccion,
   useUpdateVoucherRecoleccion,
@@ -28,7 +28,7 @@ import {
   useCompletarVoucherRecoleccion,
 } from '../hooks/useVoucherRecoleccion';
 
-import ProveedorFormModal from '@/features/catalogo-productos/components/ProveedorFormModal';
+import ProveedorFormModal from '@/features/infraestructura/catalogo-productos/components/ProveedorFormModal';
 
 import { EstadoVoucherRecoleccion } from '../types/voucher-recoleccion.types';
 

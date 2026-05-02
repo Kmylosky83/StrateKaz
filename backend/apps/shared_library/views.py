@@ -58,8 +58,8 @@ class BibliotecaPlantillaViewSet(viewsets.ReadOnlyModelViewSet):
         biblioteca = self.get_object()
 
         # Obtener modelos del tenant (C2 isolation: apps.get_model)
-        TipoDocumento = apps.get_model('gestion_documental', 'TipoDocumento')
-        PlantillaDocumento = apps.get_model('gestion_documental', 'PlantillaDocumento')
+        TipoDocumento = apps.get_model('infra_gestion_documental', 'TipoDocumento')
+        PlantillaDocumento = apps.get_model('infra_gestion_documental', 'PlantillaDocumento')
 
         from apps.core.base_models.mixins import get_tenant_empresa
         empresa = get_tenant_empresa()
@@ -109,7 +109,7 @@ class BibliotecaPlantillaViewSet(viewsets.ReadOnlyModelViewSet):
             created_by=request.user,
         )
 
-        from apps.gestion_estrategica.gestion_documental.serializers import (
+        from apps.infraestructura.gestion_documental.serializers import (
             PlantillaDocumentoDetailSerializer,
         )
         serializer = PlantillaDocumentoDetailSerializer(plantilla)

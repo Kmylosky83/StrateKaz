@@ -1,0 +1,1627 @@
+"""
+Modelos para Gestión Documental - Gestión Estratégica (N1)
+Sistema de gestión documental transversal con control de versiones y flujos de aprobación.
+
+Migrado desde: apps.hseq_management.sistema_documental
+Razón: El gestor documental es transversal a toda la organización, no específico de HSEQ.
+
+NOTA: Las firmas digitales se manejan con FirmaDigital de workflow_engine.firma_digital
+usando GenericForeignKey para vincular firmas a cualquier modelo.
+"""
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+from utils.models import TenantModel
+from utils.storage import (
+    tenant_media_path,
+    tenant_upload_documentos_pdf,
+    tenant_upload_documentos_originales,
+    tenant_upload_documentos_sellados,
+    tenant_upload_documentos_versiones,
+    tenant_upload_documentos_actas_destruccion,
+)
+
+
+class TipoDocumento(TenantModel):
+    """
+    Catálogo de tipos de documentos configurables
+    Ejemplos: Procedimiento, Instructivo, Formato, Manual, Política, etc.
+    """
+    NIVEL_DOCUMENTO_CHOICES = [
+        ('ESTRATEGICO', 'Estratégico'),
+        ('TACTICO', 'Táctico'),
+        ('OPERATIVO', 'Operativo'),
+        ('SOPORTE', 'Soporte'),
+    ]
+
+    NIVEL_SEGURIDAD_FIRMA_CHOICES = [
+        (1, 'Estándar — Solo firma manuscrita'),
+        (2, 'Reforzado — Firma + código TOTP'),
+        (3, 'Máximo — Firma + TOTP + OTP email'),
+    ]
+
+    CATEGORIA_CHOICES = [
+        ('DOCUMENTO', 'Documento Normativo'),
+        ('FORMULARIO', 'Formulario / Registro'),
+    ]
+
+    codigo = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name='Código',
+        help_text='Código único del tipo (ej: PR, IN, FT, MA)'
+    )
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del Tipo'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    nivel_documento = models.CharField(
+        max_length=20,
+        choices=NIVEL_DOCUMENTO_CHOICES,
+        default='OPERATIVO',
+        verbose_name='Nivel del Documento'
+    )
+    prefijo_codigo = models.CharField(
+        max_length=10,
+        verbose_name='Prefijo para Códigos',
+        help_text='Prefijo para generar códigos automáticos (ej: PR-, IN-)'
+    )
+    requiere_aprobacion = models.BooleanField(
+        default=True,
+        verbose_name='Requiere Aprobación'
+    )
+    requiere_firma = models.BooleanField(
+        default=True,
+        verbose_name='Requiere Firma Digital'
+    )
+    tiempo_retencion_años = models.IntegerField(
+        default=5,
+        validators=[MinValueValidator(1)],
+        verbose_name='Tiempo de Retención (años)',
+        help_text='Años que debe conservarse el documento'
+    )
+    plantilla_por_defecto = models.TextField(
+        blank=True,
+        verbose_name='Plantilla HTML por Defecto',
+        help_text='Template HTML base para este tipo de documento'
+    )
+    campos_obligatorios = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Campos Obligatorios',
+        help_text='Lista de campos que son obligatorios para este tipo'
+    )
+    color_identificacion = models.CharField(
+        max_length=7,
+        default='#3498db',
+        verbose_name='Color de Identificación',
+        help_text='Color HEX para identificar visualmente el tipo'
+    )
+    nivel_seguridad_firma = models.IntegerField(
+        choices=NIVEL_SEGURIDAD_FIRMA_CHOICES,
+        default=1,
+        verbose_name='Nivel de Seguridad para Firma',
+        help_text=(
+            'Define qué verificación se pide al firmar documentos de este tipo. '
+            'Nivel 1: firma manuscrita. Nivel 2: firma + TOTP. Nivel 3: firma + TOTP + OTP email.'
+        ),
+    )
+    categoria = models.CharField(
+        max_length=20,
+        choices=CATEGORIA_CHOICES,
+        default='DOCUMENTO',
+        verbose_name='Categoría',
+        help_text='DOCUMENTO: flujo de firma normativo. FORMULARIO: constructor de formularios operacionales.'
+    )
+    orden = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de visualización'
+    )
+
+    class Meta:
+        db_table = 'documental_tipo_documento'
+        verbose_name = 'Tipo de Documento'
+        verbose_name_plural = 'Tipos de Documentos'
+        ordering = ['orden', 'codigo']
+        unique_together = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'TIPO_DOCUMENTO')
+        super().save(*args, **kwargs)
+
+
+class PlantillaDocumento(TenantModel):
+    """
+    Plantillas base con estructura predefinida para generación de documentos
+    """
+    TIPO_PLANTILLA_CHOICES = [
+        ('HTML', 'HTML'),
+        ('MARKDOWN', 'Markdown'),
+        ('FORMULARIO', 'Formulario Dinámico'),
+    ]
+
+    ESTADO_CHOICES = [
+        ('BORRADOR', 'Borrador'),
+        ('ACTIVA', 'Activa'),
+        ('OBSOLETA', 'Obsoleta'),
+    ]
+
+    codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código de Plantilla'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Plantilla'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción'
+    )
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
+        on_delete=models.PROTECT,
+        related_name='plantillas',
+        verbose_name='Tipo de Documento'
+    )
+    tipo_plantilla = models.CharField(
+        max_length=20,
+        choices=TIPO_PLANTILLA_CHOICES,
+        default='HTML',
+        verbose_name='Tipo de Plantilla'
+    )
+    contenido_plantilla = models.TextField(
+        verbose_name='Contenido de la Plantilla',
+        help_text='HTML, Markdown o JSON con estructura del formulario'
+    )
+    variables_disponibles = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Variables Disponibles',
+        help_text='Variables que se pueden usar en la plantilla {{variable}}'
+    )
+    estilos_css = models.TextField(
+        blank=True,
+        verbose_name='Estilos CSS',
+        help_text='CSS personalizado para la plantilla'
+    )
+    encabezado = models.TextField(
+        blank=True,
+        verbose_name='Encabezado',
+        help_text='HTML para encabezado del documento'
+    )
+    pie_pagina = models.TextField(
+        blank=True,
+        verbose_name='Pie de Página',
+        help_text='HTML para pie de página del documento'
+    )
+    version = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name='Versión de la Plantilla'
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='BORRADOR',
+        verbose_name='Estado'
+    )
+    es_por_defecto = models.BooleanField(
+        default=False,
+        verbose_name='¿Es Plantilla por Defecto?'
+    )
+
+    # Biblioteca Maestra (Fase 8)
+    plantilla_maestra_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_index=True,
+        verbose_name='Código Plantilla Maestra',
+        help_text='Referencia a BibliotecaPlantilla en schema public'
+    )
+    es_personalizada = models.BooleanField(
+        default=True,
+        verbose_name='Personalizada',
+        help_text='False si es copia exacta de plantilla maestra'
+    )
+    firmantes_por_defecto = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Firmantes por Defecto',
+        help_text=(
+            'JSON: [{"rol_firma": "ELABORO", "cargo_code": "COORD_HSEQ", '
+            '"orden": 1, "es_requerido": true}]. '
+            'Al crear documento, auto-crea FirmaDigital para cada firmante.'
+        ),
+    )
+
+    class Meta:
+        db_table = 'documental_plantilla_documento'
+        verbose_name = 'Plantilla de Documento'
+        verbose_name_plural = 'Plantillas de Documentos'
+        ordering = ['-es_por_defecto', 'nombre']
+        unique_together = ['codigo']
+
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre} (v{self.version})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PLANTILLA_DOCUMENTO')
+        super().save(*args, **kwargs)
+
+
+class Documento(TenantModel):
+    """
+    Documentos del sistema con control de versiones completo.
+
+    Las firmas digitales se obtienen via GenericRelation a FirmaDigital
+    del módulo workflow_engine.firma_digital.
+    """
+    ESTADO_CHOICES = [
+        ('BORRADOR', 'Borrador'),
+        ('EN_REVISION', 'En Revisión'),
+        ('APROBADO', 'Aprobado'),
+        ('PUBLICADO', 'Publicado'),
+        ('OBSOLETO', 'Obsoleto'),
+        ('ARCHIVADO', 'Archivado'),
+        ('ELIMINADO', 'Eliminado'),
+    ]
+
+    DISPOSICION_CHOICES = [
+        ('ELIMINAR', 'Eliminar'),
+        ('CONSERVAR_PERMANENTE', 'Conservar permanentemente'),
+        ('SELECCIONAR', 'Seleccionar'),
+        ('DIGITALIZAR', 'Digitalizar'),
+    ]
+
+    CLASIFICACION_CHOICES = [
+        ('PUBLICO', 'Público'),
+        ('INTERNO', 'Interno'),
+        ('CONFIDENCIAL', 'Confidencial'),
+        ('RESTRINGIDO', 'Restringido'),
+    ]
+
+    # Identificación
+    codigo = models.CharField(
+        max_length=50,
+        verbose_name='Código del Documento',
+        help_text='Código único generado automáticamente'
+    )
+    titulo = models.CharField(
+        max_length=255,
+        verbose_name='Título del Documento'
+    )
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
+        on_delete=models.PROTECT,
+        related_name='documentos',
+        verbose_name='Tipo de Documento'
+    )
+    plantilla = models.ForeignKey(
+        PlantillaDocumento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_generados',
+        verbose_name='Plantilla Usada'
+    )
+
+    # Contenido
+    resumen = models.TextField(
+        blank=True,
+        verbose_name='Resumen',
+        help_text='Resumen ejecutivo del documento'
+    )
+    contenido = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Contenido del Documento',
+        help_text='Contenido completo en HTML o Markdown'
+    )
+    datos_formulario = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Datos del Formulario',
+        help_text='Datos capturados si es un formulario dinámico'
+    )
+    palabras_clave = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Palabras Clave',
+        help_text='Tags para búsqueda'
+    )
+
+    # Versionamiento
+    version_actual = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name='Versión Actual'
+    )
+    numero_revision = models.IntegerField(
+        default=0,
+        verbose_name='Número de Revisión',
+        help_text='Contador de revisiones/modificaciones'
+    )
+
+    # Estado y flujo
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='BORRADOR',
+        verbose_name='Estado',
+        db_index=True
+    )
+    clasificacion = models.CharField(
+        max_length=20,
+        choices=CLASIFICACION_CHOICES,
+        default='INTERNO',
+        verbose_name='Clasificación de Seguridad'
+    )
+
+    # Fechas importantes
+    # NOTA: Se usa default=timezone.localdate (no auto_now_add) para respetar
+    # TIME_ZONE='America/Bogota'. auto_now_add usa datetime.date.today() que
+    # toma el timezone del OS (UTC en VPS), causando desfase de ±1 día entre
+    # las 19:00-23:59 hora colombiana.
+    fecha_creacion = models.DateField(
+        default=timezone.localdate,
+        editable=False,
+        verbose_name='Fecha de Creación'
+    )
+    fecha_aprobacion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aprobación'
+    )
+    fecha_publicacion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Publicación'
+    )
+    fecha_vigencia = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Vigencia',
+        help_text='Fecha desde la cual el documento está vigente'
+    )
+    fecha_revision_programada = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Revisión Programada'
+    )
+    fecha_obsolescencia = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Obsolescencia'
+    )
+
+    # Responsables
+    elaborado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='gestion_documentos_elaborados',
+        verbose_name='Elaborado por'
+    )
+    revisado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gestion_documentos_revisados',
+        verbose_name='Revisado por'
+    )
+    aprobado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gestion_documentos_aprobados',
+        verbose_name='Aprobado por'
+    )
+
+    # Control de distribución
+    areas_aplicacion = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Áreas de Aplicación',
+        help_text='Áreas de la empresa donde aplica el documento'
+    )
+    puestos_aplicacion = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Puestos de Aplicación',
+        help_text='Puestos de trabajo que deben conocer este documento'
+    )
+    usuarios_autorizados = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='gestion_documentos_autorizados',
+        verbose_name='Usuarios Autorizados',
+        help_text='Usuarios con acceso a documentos confidenciales/restringidos'
+    )
+
+    # Archivos adjuntos
+    archivo_pdf = models.FileField(
+        upload_to=tenant_upload_documentos_pdf,
+        blank=True,
+        null=True,
+        verbose_name='Archivo PDF',
+        help_text='Versión PDF del documento'
+    )
+    archivo_hash_sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        db_index=True,
+        verbose_name='Hash SHA-256 del archivo original',
+        help_text=(
+            'SHA-256 del PDF subido al ingestar/adoptar. Permite detectar '
+            'duplicados antes de crear el Documento.'
+        ),
+    )
+    archivos_anexos = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Archivos Anexos',
+        help_text='Lista de archivos anexos al documento'
+    )
+
+    # Relaciones
+    documento_padre = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_relacionados',
+        verbose_name='Documento Padre'
+    )
+    documentos_referenciados = models.ManyToManyField(
+        'self',
+        blank=True,
+        symmetrical=False,
+        related_name='referenciado_por',
+        verbose_name='Documentos Referenciados'
+    )
+
+    # Estadísticas
+    numero_descargas = models.IntegerField(
+        default=0,
+        verbose_name='Número de Descargas'
+    )
+    numero_impresiones = models.IntegerField(
+        default=0,
+        verbose_name='Número de Impresiones'
+    )
+
+    # Observaciones
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name='Observaciones'
+    )
+    motivo_cambio_version = models.TextField(
+        blank=True,
+        verbose_name='Motivo del Cambio de Versión'
+    )
+
+    # Campos de Política (cuando tipo_documento.codigo == 'POL')
+    norma_iso = models.ForeignKey(
+        'configuracion.NormaISO',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos',
+        verbose_name='Norma ISO',
+        help_text='Norma/Sistema de gestión asociado (solo para políticas)'
+    )
+    responsable_cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_responsable',
+        verbose_name='Cargo Responsable',
+        help_text='Cargo responsable del documento'
+    )
+    # Proceso para codificación TIPO-PROCESO-NNN (Sprint 2 — Arquitectura GD v5 §7)
+    proceso = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='documentos_gd',
+        verbose_name='Proceso',
+        help_text='Proceso SGI principal. Define el código: TIPO-PROCESO-NNN (ej: PR-SST-001)',
+    )
+
+    fecha_expiracion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración',
+        help_text='Fecha en que el documento expira'
+    )
+    motivo_cambio = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Motivo del Cambio',
+        help_text='Razón del cambio de versión'
+    )
+    es_politica_integral = models.BooleanField(
+        default=False,
+        verbose_name='Es Política Integral',
+        help_text='Indica si es una política integral del sistema de gestión'
+    )
+    lectura_obligatoria = models.BooleanField(
+        default=False,
+        verbose_name='Lectura Obligatoria',
+        help_text='Si True, se asigna automáticamente a cada nuevo usuario del tenant',
+    )
+
+    # ── Distribución RBAC (S2 — el control es por RBAC) ──────────────────────
+    # Estos campos definen el AUDIENCIA del documento al publicar:
+    #   aplica_a_todos=True         → distribuir a TODOS los usuarios activos
+    #   cargos_distribucion=[...]   → distribuir a usuarios con esos cargos
+    # Si ninguno está activo, la distribución es solo manual vía AsignarLecturaModal.
+    # La auto-distribución también aplica a nuevos usuarios que se unan al tenant
+    # si su cargo está en cargos_distribucion o si aplica_a_todos es True.
+    aplica_a_todos = models.BooleanField(
+        default=False,
+        verbose_name='Aplica a Todos',
+        help_text=(
+            'Si True, al publicar se distribuye automáticamente a todos los '
+            'usuarios activos del tenant. También aplica a nuevos usuarios.'
+        ),
+    )
+    cargos_distribucion = models.ManyToManyField(
+        'core.Cargo',
+        blank=True,
+        related_name='documentos_distribucion',
+        verbose_name='Cargos Objetivo',
+        help_text=(
+            'Al publicar, se distribuye a usuarios que tengan alguno de estos cargos. '
+            'También aplica a nuevos usuarios que se vinculen con estos cargos.'
+        ),
+    )
+
+    # Integración BPM (preparación para auto-generación — Fase 4 spec)
+    # C2→C2: IntegerField (no FK directo a workflow_engine)
+    workflow_asociado_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Workflow Asociado ID',
+        help_text='ID del flujo BPM que genera/actualiza este documento'
+    )
+    workflow_asociado_nombre = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name='Workflow Asociado',
+        help_text='Nombre cache del flujo BPM asociado'
+    )
+    es_auto_generado = models.BooleanField(
+        default=False,
+        verbose_name='Auto-generado desde BPM',
+        help_text='True si el documento se genera automáticamente desde un flujo BPM'
+    )
+
+    # Trazabilidad inversa a módulos C2 (Sprint 3 — Arquitectura GD v5 §6.2)
+    # GenericForeignKey para saber qué objeto del módulo origen generó este documento.
+    modulo_origen = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name='Módulo Origen',
+        help_text="Módulo C2 que generó este registro: 'hseq', 'talento_humano', 'pesv', etc.",
+    )
+    referencia_origen_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_originados',
+        verbose_name='Tipo de Referencia Origen',
+    )
+    referencia_origen_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='ID Referencia Origen',
+    )
+    referencia_origen = GenericForeignKey('referencia_origen_type', 'referencia_origen_id')
+
+    # Scoring heurístico (Fase 6)
+    score_cumplimiento = models.IntegerField(
+        default=0,
+        db_index=True,
+        verbose_name='Score de Cumplimiento',
+        help_text='Puntuación 0-100 basada en completitud del documento'
+    )
+    score_detalle = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Detalle del Score'
+    )
+    score_actualizado_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Score Actualizado'
+    )
+
+    # Google Drive (Fase 7)
+    drive_file_id = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Google Drive File ID'
+    )
+    drive_exportado_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Exportado a Drive'
+    )
+
+    # OCR / Extracción de texto (Fase 5)
+    texto_extraido = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Texto Extraído',
+        help_text='Texto completo extraído del PDF (pdfplumber o Tesseract OCR)'
+    )
+    OCR_ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente'),
+        ('PROCESANDO', 'Procesando'),
+        ('COMPLETADO', 'Completado'),
+        ('ERROR', 'Error'),
+        ('NO_APLICA', 'No Aplica'),
+    ]
+    ocr_estado = models.CharField(
+        max_length=20,
+        choices=OCR_ESTADO_CHOICES,
+        default='NO_APLICA',
+        db_index=True,
+        verbose_name='Estado OCR'
+    )
+    ocr_metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos OCR',
+        help_text='{"metodo": "pdfplumber|tesseract", "confianza": 0.95, "paginas": 10, "duracion_seg": 5.2}'
+    )
+    es_externo = models.BooleanField(
+        default=False,
+        verbose_name='Documento Externo',
+        help_text='True si fue ingresado por upload de PDF externo'
+    )
+    archivo_original = models.FileField(
+        upload_to=tenant_upload_documentos_originales,
+        blank=True,
+        null=True,
+        verbose_name='Archivo Original',
+        help_text='PDF original subido externamente para OCR'
+    )
+    codigo_legacy = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Código original de la empresa',
+        help_text='Código del documento antes de ingresar al sistema StrateKaz'
+    )
+
+    # TRD — Tabla de Retención Documental (Sprint 10)
+    trd_aplicada = models.ForeignKey(
+        'TablaRetencionDocumental',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Regla TRD aplicada',
+    )
+    fecha_fin_gestion = models.DateField(
+        null=True, blank=True,
+        verbose_name='Fecha fin archivo de gestión',
+    )
+    fecha_fin_central = models.DateField(
+        null=True, blank=True,
+        verbose_name='Fecha fin archivo central',
+    )
+    disposicion_asignada = models.CharField(
+        max_length=25,
+        choices=DISPOSICION_CHOICES,
+        null=True, blank=True,
+        verbose_name='Disposición final asignada',
+    )
+    acta_eliminacion = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='documentos_eliminados',
+        verbose_name='Acta de eliminación',
+    )
+
+    # Sellado PDF (Mejora 2 — ISO 27001)
+    pdf_sellado = models.FileField(
+        upload_to=tenant_upload_documentos_sellados,
+        blank=True,
+        null=True,
+        verbose_name='PDF Sellado',
+        help_text='PDF sellado con X.509 y firmas visuales'
+    )
+    hash_pdf_sellado = models.CharField(
+        max_length=64,
+        blank=True,
+        default='',
+        verbose_name='Hash PDF Sellado',
+        help_text='SHA-256 del PDF sellado'
+    )
+    fecha_sellado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Sellado'
+    )
+    SELLADO_ESTADO_CHOICES = [
+        ('NO_APLICA', 'No Aplica'),
+        ('PENDIENTE', 'Pendiente'),
+        ('PROCESANDO', 'Procesando'),
+        ('COMPLETADO', 'Completado'),
+        ('ERROR', 'Error'),
+    ]
+    sellado_estado = models.CharField(
+        max_length=20,
+        choices=SELLADO_ESTADO_CHOICES,
+        default='NO_APLICA',
+        db_index=True,
+        verbose_name='Estado Sellado'
+    )
+    sellado_metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos Sellado',
+        help_text='{"certificado_serial": "...", "algoritmo": "sha256WithRSA", "error": "..."}'
+    )
+
+    class Meta:
+        db_table = 'documental_documento'
+        verbose_name = 'Documento'
+        verbose_name_plural = 'Documentos'
+        ordering = ['-fecha_publicacion', 'codigo']
+        unique_together = ['codigo']
+        indexes = [
+            models.Index(fields=['fecha_revision_programada']),
+            models.Index(fields=['codigo']),
+            models.Index(fields=['workflow_asociado_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.codigo} - {self.titulo} (v{self.version_actual})"
+
+    def get_firmas_digitales(self):
+        """
+        Obtiene las firmas digitales del documento via FirmaDigital de workflow_engine.
+        Usa ContentType para buscar firmas asociadas a este documento.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.infraestructura.workflow_engine.firma_digital.models import FirmaDigital
+
+        content_type = ContentType.objects.get_for_model(self.__class__)
+        return FirmaDigital.objects.filter(
+            content_type=content_type,
+            object_id=self.pk,
+        )
+
+
+class VersionDocumento(TenantModel):
+    """
+    Historial de versiones de documentos con control de cambios completo
+    """
+    TIPO_CAMBIO_CHOICES = [
+        ('CREACION', 'Creación'),
+        ('REVISION_MENOR', 'Revisión Menor'),
+        ('REVISION_MAYOR', 'Revisión Mayor'),
+        ('CORRECCION', 'Corrección'),
+        ('ACTUALIZACION', 'Actualización'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='versiones',
+        verbose_name='Documento'
+    )
+    numero_version = models.CharField(
+        max_length=20,
+        verbose_name='Número de Versión'
+    )
+    tipo_cambio = models.CharField(
+        max_length=20,
+        choices=TIPO_CAMBIO_CHOICES,
+        default='REVISION_MENOR',
+        verbose_name='Tipo de Cambio'
+    )
+
+    # Snapshot del contenido
+    contenido_snapshot = models.TextField(
+        verbose_name='Snapshot del Contenido',
+        help_text='Copia completa del contenido en esta versión'
+    )
+    datos_formulario_snapshot = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Snapshot de Datos del Formulario'
+    )
+
+    # Detalles del cambio
+    descripcion_cambios = models.TextField(
+        verbose_name='Descripción de Cambios',
+        help_text='Detalle de qué se modificó en esta versión'
+    )
+    cambios_detectados = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Cambios Detectados',
+        help_text='Lista automática de diferencias con versión anterior'
+    )
+
+    # Información de versión
+    fecha_version = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de la Versión'
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='gestion_versiones_documento_creadas',
+        verbose_name='Creado por'
+    )
+    aprobado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gestion_versiones_documento_aprobadas',
+        verbose_name='Aprobado por'
+    )
+    fecha_aprobacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aprobación'
+    )
+
+    # Archivos
+    archivo_pdf_version = models.FileField(
+        upload_to=tenant_upload_documentos_versiones,
+        blank=True,
+        null=True,
+        verbose_name='Archivo PDF de la Versión'
+    )
+
+    # Estado
+    is_version_actual = models.BooleanField(
+        default=False,
+        verbose_name='¿Es Versión Actual?'
+    )
+
+    # Checksum para integridad
+    checksum = models.CharField(
+        max_length=64,
+        blank=True,
+        verbose_name='Checksum SHA-256',
+        help_text='Hash para verificar integridad del contenido'
+    )
+
+    class Meta:
+        db_table = 'documental_version_documento'
+        verbose_name = 'Versión de Documento'
+        verbose_name_plural = 'Versiones de Documentos'
+        ordering = ['-fecha_version']
+        unique_together = ['documento', 'numero_version']
+        indexes = [
+            models.Index(fields=['fecha_version']),
+        ]
+
+    def __str__(self):
+        return f"{self.documento.codigo} - Versión {self.numero_version}"
+
+
+class CampoFormulario(TenantModel):
+    """
+    Campos dinámicos configurables para Form Builder
+    """
+    TIPO_CAMPO_CHOICES = [
+        ('TEXT', 'Texto Corto'),
+        ('TEXTAREA', 'Texto Largo'),
+        ('NUMBER', 'Número'),
+        ('DATE', 'Fecha'),
+        ('DATETIME', 'Fecha y Hora'),
+        ('SELECT', 'Lista Desplegable'),
+        ('MULTISELECT', 'Selección Múltiple'),
+        ('RADIO', 'Opción Única'),
+        ('CHECKBOX', 'Casillas de Verificación'),
+        ('FILE', 'Archivo'),
+        ('EMAIL', 'Email'),
+        ('PHONE', 'Teléfono'),
+        ('URL', 'URL'),
+        ('SIGNATURE', 'Firma'),
+        ('TABLA', 'Tabla Dinámica'),
+        ('SECCION', 'Sección/Separador'),
+        ('FIRMA_WORKFLOW', 'Firma con Workflow'),
+    ]
+
+    MODO_FIRMA_CHOICES = [
+        ('SECUENCIAL', 'Secuencial'),
+        ('PARALELO', 'Paralelo'),
+        ('MIXTO', 'Mixto'),
+    ]
+
+    plantilla = models.ForeignKey(
+        PlantillaDocumento,
+        on_delete=models.CASCADE,
+        related_name='campos_formulario',
+        verbose_name='Plantilla',
+        null=True,
+        blank=True,
+        help_text='Plantilla a la que pertenece (si aplica)'
+    )
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='campos_personalizados',
+        verbose_name='Tipo de Documento'
+    )
+
+    # Identificación
+    nombre_campo = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del Campo',
+        help_text='Nombre interno del campo (sin espacios)'
+    )
+    etiqueta = models.CharField(
+        max_length=200,
+        verbose_name='Etiqueta',
+        help_text='Texto que se muestra al usuario'
+    )
+    tipo_campo = models.CharField(
+        max_length=20,
+        choices=TIPO_CAMPO_CHOICES,
+        verbose_name='Tipo de Campo'
+    )
+
+    # Configuración
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción/Ayuda',
+        help_text='Texto de ayuda para el usuario'
+    )
+    placeholder = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Placeholder',
+        help_text='Texto de ejemplo en el campo'
+    )
+    valor_por_defecto = models.TextField(
+        blank=True,
+        verbose_name='Valor por Defecto'
+    )
+
+    # Opciones (para SELECT, RADIO, etc.)
+    opciones = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Opciones',
+        help_text='Lista de opciones para campos de selección'
+    )
+
+    # Validaciones
+    es_obligatorio = models.BooleanField(
+        default=False,
+        verbose_name='¿Es Obligatorio?'
+    )
+    validacion_regex = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Expresión Regular de Validación'
+    )
+    mensaje_validacion = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Mensaje de Error de Validación'
+    )
+    valor_minimo = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor Mínimo',
+        help_text='Para campos numéricos o de fecha'
+    )
+    valor_maximo = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Valor Máximo'
+    )
+    longitud_minima = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Longitud Mínima',
+        help_text='Para campos de texto'
+    )
+    longitud_maxima = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Longitud Máxima'
+    )
+
+    # Configuración de tabla dinámica
+    columnas_tabla = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Columnas de Tabla',
+        help_text='Definición de columnas si tipo_campo es TABLA'
+    )
+
+    # Configuración FIRMA_WORKFLOW (tipo #17)
+    config_firmantes = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Configuración de Firmantes',
+        help_text=(
+            'Lista ordenada de firmantes para FIRMA_WORKFLOW. '
+            'Ejemplo: [{"orden": 1, "cargo_id": 5, "etiqueta": "Solicitante"}, ...]'
+        )
+    )
+    modo_firma = models.CharField(
+        max_length=20,
+        choices=MODO_FIRMA_CHOICES,
+        default='SECUENCIAL',
+        blank=True,
+        verbose_name='Modo de Firma',
+        help_text='Aplica solo cuando tipo_campo=FIRMA_WORKFLOW'
+    )
+    nivel_seguridad_firma = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Nivel de Seguridad de Firma',
+        help_text=(
+            '1=Manuscrita, 2=TOTP, 3=TOTP+Email. '
+            'Si null hereda del TipoDocumento. Aplica solo a FIRMA_WORKFLOW.'
+        )
+    )
+
+    # Diseño
+    orden = models.IntegerField(
+        default=0,
+        verbose_name='Orden',
+        help_text='Orden de aparición en el formulario'
+    )
+    ancho_columna = models.IntegerField(
+        default=12,
+        validators=[MinValueValidator(1)],
+        verbose_name='Ancho de Columna',
+        help_text='Ancho en sistema de 12 columnas (1-12)'
+    )
+    clase_css = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Clase CSS Personalizada'
+    )
+
+    # Visibilidad condicional
+    condicion_visible = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Condición de Visibilidad',
+        help_text='Regla JSON para mostrar/ocultar campo condicionalmente'
+    )
+
+    # Fórmula de cálculo automático (Sprint 4)
+    formula_calculo = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Fórmula de Cálculo',
+        help_text=(
+            'Fórmula para campos calculados. Ejemplo: '
+            '{"expresion": "precio * cantidad", "campos": ["precio", "cantidad"], "auto": true}. '
+            'Funciones para tablas: SUM(tabla.columna), COUNT(tabla), MIN(...), MAX(...)'
+        )
+    )
+
+    class Meta:
+        db_table = 'documental_campo_formulario'
+        verbose_name = 'Campo de Formulario'
+        verbose_name_plural = 'Campos de Formulario'
+        ordering = ['orden', 'nombre_campo']
+
+    def __str__(self):
+        return f"{self.etiqueta} ({self.tipo_campo})"
+
+
+# NOTA: FirmaDocumento ha sido ELIMINADO
+# Las firmas digitales se manejan con el modelo FirmaDigital de infraestructura.workflow_engine.firma_digital
+# que usa GenericForeignKey para vincular firmas a cualquier modelo.
+# Ver: apps.infraestructura.workflow_engine.firma_digital.models.FirmaDigital
+
+
+class ControlDocumental(TenantModel):
+    """
+    Control de distribución, obsolescencia y trazabilidad de documentos
+    """
+    TIPO_CONTROL_CHOICES = [
+        ('DISTRIBUCION', 'Control de Distribución'),
+        ('ACTUALIZACION', 'Actualización de Versión'),
+        ('RETIRO', 'Retiro/Obsolescencia'),
+        ('DESTRUCCION', 'Destrucción'),
+        ('ARCHIVO', 'Archivo'),
+    ]
+
+    MEDIO_DISTRIBUCION_CHOICES = [
+        ('DIGITAL', 'Digital'),
+        ('IMPRESO', 'Impreso'),
+        ('MIXTO', 'Mixto'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='controles',
+        verbose_name='Documento'
+    )
+    version_documento = models.ForeignKey(
+        VersionDocumento,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='controles',
+        verbose_name='Versión del Documento'
+    )
+
+    # Tipo de control
+    tipo_control = models.CharField(
+        max_length=20,
+        choices=TIPO_CONTROL_CHOICES,
+        verbose_name='Tipo de Control'
+    )
+
+    # Distribución
+    fecha_distribucion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Distribución'
+    )
+    medio_distribucion = models.CharField(
+        max_length=20,
+        choices=MEDIO_DISTRIBUCION_CHOICES,
+        default='DIGITAL',
+        verbose_name='Medio de Distribución'
+    )
+    areas_distribucion = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Áreas de Distribución',
+        help_text='Áreas que recibieron el documento'
+    )
+    usuarios_distribucion = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name='gestion_documentos_recibidos',
+        verbose_name='Usuarios que Recibieron el Documento'
+    )
+    numero_copias_impresas = models.IntegerField(
+        default=0,
+        verbose_name='Número de Copias Impresas'
+    )
+    numero_copias_controladas = models.IntegerField(
+        default=0,
+        verbose_name='Número de Copias Controladas',
+        help_text='Copias con número de serie'
+    )
+
+    # Control de obsolescencia
+    fecha_retiro = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Retiro'
+    )
+    motivo_retiro = models.TextField(
+        blank=True,
+        verbose_name='Motivo de Retiro/Obsolescencia'
+    )
+    documento_sustituto = models.ForeignKey(
+        Documento,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_sustituidos',
+        verbose_name='Documento Sustituto'
+    )
+
+    # Confirmaciones de recepción
+    confirmaciones_recepcion = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Confirmaciones de Recepción',
+        help_text='Lista de usuarios que confirmaron recepción'
+    )
+
+    # Destrucción
+    fecha_destruccion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Destrucción'
+    )
+    metodo_destruccion = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Método de Destrucción',
+        help_text='Cómo se destruyó el documento físico/digital'
+    )
+    responsable_destruccion = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gestion_destrucciones_documentos',
+        verbose_name='Responsable de Destrucción'
+    )
+    acta_destruccion = models.FileField(
+        upload_to=tenant_upload_documentos_actas_destruccion,
+        blank=True,
+        null=True,
+        verbose_name='Acta de Destrucción'
+    )
+
+    # Observaciones
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name='Observaciones'
+    )
+
+    class Meta:
+        db_table = 'documental_control_documental'
+        verbose_name = 'Control Documental'
+        verbose_name_plural = 'Controles Documentales'
+        ordering = ['-fecha_distribucion']
+        indexes = [
+            models.Index(fields=['fecha_distribucion']),
+            models.Index(fields=['fecha_retiro']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_tipo_control_display()} - {self.documento.codigo} - {self.fecha_distribucion}"
+
+
+class AceptacionDocumental(TenantModel):
+    """
+    Registro de lectura verificada de documentos (ISO 7.3 Toma de Conciencia).
+    Cada registro = 1 usuario + 1 documento + evidencia de lectura con scroll tracking.
+
+    Cumple: ISO 9001/14001/45001/27001 §7.3, Decreto 1072 Art. 2.2.4.6.10/12,
+    Resolución 0312 Estándar 1.1.1 (difusión de política SST).
+    """
+    ESTADO_CHOICES = [
+        ('PENDIENTE', 'Pendiente de Lectura'),
+        ('EN_PROGRESO', 'Leyendo'),
+        ('ACEPTADO', 'Leído y Aceptado'),
+        ('RECHAZADO', 'Rechazado'),
+        ('VENCIDO', 'Plazo Vencido'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='aceptaciones',
+        verbose_name='Documento'
+    )
+    version_documento = models.CharField(
+        max_length=20,
+        verbose_name='Versión del Documento',
+        help_text='Snapshot de la versión al momento de asignación'
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='aceptaciones_documentales',
+        verbose_name='Usuario Asignado'
+    )
+    control_documental = models.ForeignKey(
+        ControlDocumental,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='aceptaciones',
+        verbose_name='Control Documental',
+        help_text='Registro de distribución que originó esta asignación'
+    )
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='aceptaciones_asignadas',
+        verbose_name='Asignado por'
+    )
+
+    # Estado y fechas
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='PENDIENTE',
+        db_index=True,
+        verbose_name='Estado'
+    )
+    fecha_asignacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Asignación'
+    )
+    fecha_limite = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha Límite',
+        help_text='Plazo máximo para completar la lectura'
+    )
+    fecha_inicio_lectura = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Inicio de Lectura',
+        help_text='Momento en que el usuario abrió el documento por primera vez'
+    )
+    fecha_aceptacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aceptación'
+    )
+    fecha_rechazo = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Rechazo'
+    )
+
+    # Scroll tracking (evidencia auditoría)
+    porcentaje_lectura = models.IntegerField(
+        default=0,
+        verbose_name='Porcentaje de Lectura',
+        help_text='0-100, basado en secciones visibles del documento'
+    )
+    tiempo_lectura_seg = models.IntegerField(
+        default=0,
+        verbose_name='Tiempo de Lectura (seg)',
+        help_text='Segundos totales con el documento visible'
+    )
+    scroll_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Datos de Scroll',
+        help_text='{"secciones_vistas": [0,1,2], "total_secciones": 5, "timestamps": [...]}'
+    )
+
+    # Aceptación explícita
+    texto_aceptacion = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Texto de Aceptación',
+        help_text='Declaración firmada por el usuario al aceptar'
+    )
+    motivo_rechazo = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Motivo de Rechazo'
+    )
+
+    # Auditoría forense
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name='User Agent',
+        help_text='Navegador y dispositivo del usuario'
+    )
+
+    # Invalidación por nueva versión (Sprint 1 — Arquitectura GD v5 §5.4)
+    invalidada = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name='Invalidada',
+        help_text=(
+            'True cuando se publica una nueva versión del documento. '
+            'Las aceptaciones invalidadas no aparecen en mis-pendientes.'
+        ),
+    )
+
+    class Meta:
+        db_table = 'documental_aceptacion_documental'
+        verbose_name = 'Aceptación Documental'
+        verbose_name_plural = 'Aceptaciones Documentales'
+        ordering = ['-fecha_asignacion']
+        unique_together = ['documento', 'version_documento', 'usuario']
+        indexes = [
+            models.Index(fields=['fecha_limite']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['invalidada']),
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} — {self.documento.codigo} ({self.estado})"
+
+
+class TablaRetencionDocumental(TenantModel):
+    """
+    Tabla de Retención Documental (TRD) — Sprint 2, Arquitectura GD v5 §9.
+
+    Define tiempos de retención por combinación tipo+proceso, alineado con
+    la normativa del Archivo General de la Nación (AGN) de Colombia.
+
+    unique_together: (tipo_documento, proceso, empresa_id) — una regla por combinación por tenant.
+    """
+    DISPOSICION_CHOICES = [
+        ('ELIMINAR', 'Eliminar'),
+        ('CONSERVAR_PERMANENTE', 'Conservar permanentemente'),
+        ('SELECCIONAR', 'Seleccionar (muestreo)'),
+        ('DIGITALIZAR', 'Digitalizar y eliminar físico'),
+    ]
+
+    tipo_documento = models.ForeignKey(
+        TipoDocumento,
+        on_delete=models.PROTECT,
+        related_name='trd_reglas',
+        verbose_name='Tipo Documental',
+    )
+    proceso = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.PROTECT,
+        related_name='trd_reglas',
+        verbose_name='Proceso',
+    )
+    serie_documental = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name='Serie Documental',
+        help_text='Serie según normativa AGN (ej: Actas de COPASST, Historias Laborales)',
+    )
+    tiempo_gestion_anos = models.PositiveIntegerField(
+        default=2,
+        verbose_name='Archivo de Gestión (años)',
+        help_text='Años en archivo de gestión (acceso frecuente)',
+    )
+    tiempo_central_anos = models.PositiveIntegerField(
+        default=5,
+        verbose_name='Archivo Central (años)',
+        help_text='Años en archivo central (consulta esporádica)',
+    )
+    disposicion_final = models.CharField(
+        max_length=30,
+        choices=DISPOSICION_CHOICES,
+        default='ELIMINAR',
+        verbose_name='Disposición Final',
+    )
+    soporte_legal = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Soporte Legal',
+        help_text='Normativa que justifica la retención (ej: Decreto 1072/2015, Ley 594/2000)',
+    )
+    requiere_acta_destruccion = models.BooleanField(
+        default=False,
+        verbose_name='Requiere Acta de Destrucción',
+    )
+
+    class Meta:
+        db_table = 'documental_tabla_retencion'
+        verbose_name = 'Regla de Retención Documental'
+        verbose_name_plural = 'Tabla de Retención Documental'
+        ordering = ['tipo_documento__codigo', 'proceso__code']
+        unique_together = ['tipo_documento', 'proceso']
+
+    def __str__(self):
+        return f"{self.tipo_documento.codigo}-{self.proceso.code}: {self.tiempo_gestion_anos}+{self.tiempo_central_anos} años → {self.disposicion_final}"
+
+    @property
+    def tiempo_total_anos(self):
+        return self.tiempo_gestion_anos + self.tiempo_central_anos
+
+
+class EventoDocumental(TenantModel):
+    """
+    Log granular de eventos sobre documentos (ISO 27001 §A.8.10).
+
+    Cada acción material sobre un documento — visualización, descarga,
+    impresión, export externo, intento de acceso denegado — se registra
+    como un EventoDocumental con snapshot de versión, IP y user-agent.
+    Los contadores `numero_descargas` y `numero_impresiones` del
+    Documento se mantienen por compatibilidad y se actualizan vía signal
+    post_save desde este modelo.
+
+    Cumple: ISO 27001 §A.8.10 (Use of cryptography & event logging),
+    Decreto 1074/2015 (auditoría de tratamiento de datos).
+    """
+
+    TIPO_EVENTO_CHOICES = [
+        ('VISTA', 'Vista de detalle'),
+        ('DESCARGA_PDF', 'Descarga PDF'),
+        ('DESCARGA_DOCX', 'Descarga DOCX'),
+        ('IMPRESION', 'Impresión'),
+        ('EXPORT_DRIVE', 'Export a Drive'),
+        ('ACCESO_DENEGADO', 'Acceso denegado'),
+    ]
+
+    documento = models.ForeignKey(
+        Documento,
+        on_delete=models.CASCADE,
+        related_name='eventos',
+        verbose_name='Documento',
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='eventos_documentales',
+        verbose_name='Usuario',
+        help_text='Usuario que ejecutó la acción (null si fue sistema)',
+    )
+    tipo_evento = models.CharField(
+        max_length=20,
+        choices=TIPO_EVENTO_CHOICES,
+        db_index=True,
+        verbose_name='Tipo de Evento',
+    )
+    version_documento = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Versión del Documento',
+        help_text='Snapshot de la versión al momento del evento',
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP',
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name='User Agent',
+    )
+    metadatos = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Metadatos',
+        help_text='Contexto adicional: motivo, ruta, formato, etc.',
+    )
+
+    class Meta:
+        db_table = 'documental_evento'
+        verbose_name = 'Evento Documental'
+        verbose_name_plural = 'Eventos Documentales'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['documento', 'tipo_evento']),
+            models.Index(fields=['usuario', '-created_at']),
+            models.Index(fields=['tipo_evento', '-created_at']),
+        ]
+
+    def __str__(self):
+        usuario_repr = self.usuario.email if self.usuario else 'anónimo'
+        return f"{self.get_tipo_evento_display()} — {self.documento.codigo} · {usuario_repr}"

@@ -19,7 +19,7 @@ from django.db import migrations, models
 
 def cleanup_proveedores_espejo(apps, schema_editor):
     """Marca espejos legacy como inactivos + agrega prefijo visual."""
-    Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+    Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
     espejos = Proveedor.objects.filter(
         ruta_origen__isnull=False,
         numero_documento__startswith='RUTA-',
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("catalogos", "0006_rutarecoleccion_codigo_blank"),
-        ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
+        ("infra_catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
     ]
 
     operations = [

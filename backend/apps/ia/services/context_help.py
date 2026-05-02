@@ -129,8 +129,8 @@ MODULE_HELP = {
         },
     },
 
-    # C2 — Workflows
-    'workflow_engine': {
+    # CT — Workflows
+    'infra_workflow_engine': {
         'name': 'Flujos de Trabajo',
         'description': 'Motor BPM para automatización de procesos organizacionales.',
         'tabs': {

@@ -423,7 +423,7 @@ class TenantLifecycleService:
                 # el operador podrá generar el cert manualmente.
                 _progress(96, "generating_x509", "Generando certificado X.509")
                 try:
-                    from apps.gestion_estrategica.gestion_documental.services import (
+                    from apps.infraestructura.gestion_documental.services import (
                         CertificateService,
                     )
 

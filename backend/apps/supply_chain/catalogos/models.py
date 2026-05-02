@@ -160,7 +160,7 @@ class RutaParada(TenantModel):
         verbose_name='Ruta',
     )
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='paradas_ruta',
         verbose_name='Proveedor (productor visitado)',
@@ -230,13 +230,13 @@ class PrecioRutaSemiAutonoma(TenantModel):
         verbose_name='Ruta',
     )
     proveedor = models.ForeignKey(
-        'catalogo_productos.Proveedor',
+        'infra_catalogo_productos.Proveedor',
         on_delete=models.PROTECT,
         related_name='precios_ruta_semi',
         verbose_name='Proveedor (productor)',
     )
     producto = models.ForeignKey(
-        'catalogo_productos.Producto',
+        'infra_catalogo_productos.Producto',
         on_delete=models.PROTECT,
         related_name='precios_ruta_semi',
         verbose_name='Producto (MP)',

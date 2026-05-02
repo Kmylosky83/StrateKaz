@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
+        ("infra_catalogo_productos", "0008_copy_proveedor_data_from_supply_chain"),
         ("compras", "0002_initial"),
     ]
 
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="contratos",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="cotizaciones_compras",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="ordenes_compra",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
             ),
         ),

@@ -129,7 +129,7 @@ class Command(BaseCommand):
         return self._seed_model(TipoDocumentoIdentidad, data, 'Tipos de Documento de Identidad', dry_run)
 
     def _seed_tipo_proveedor(self, dry_run):
-        from apps.catalogo_productos.models import TipoProveedor
+        from apps.infraestructura.catalogo_productos.models import TipoProveedor
         data = [
             {
                 'codigo': 'MATERIA_PRIMA',

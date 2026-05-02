@@ -93,6 +93,7 @@ tmp/
 *.zip
 backend-deploy.tar.gz
 StrateKaz_Frontend.tar
+backups/
 
 # Agent/Analysis scripts (temporary)
 .agent/

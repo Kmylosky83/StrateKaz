@@ -24,7 +24,7 @@ def _crear_proveedor(numero, nombre='Productor Test'):
         codigo='CC',
         defaults={'nombre': 'Cédula de Ciudadanía', 'orden': 1, 'is_active': True},
     )
-    from apps.catalogo_productos.proveedores.models import Proveedor
+    from apps.infraestructura.catalogo_productos.proveedores.models import Proveedor
     return Proveedor.objects.create(
         razon_social=nombre,
         nombre_comercial=nombre,
@@ -35,7 +35,7 @@ def _crear_proveedor(numero, nombre='Productor Test'):
 
 
 def _crear_producto(codigo='LECHE', nombre='Leche cruda'):
-    from apps.catalogo_productos.models import Producto
+    from apps.infraestructura.catalogo_productos.models import Producto
     return Producto.objects.create(codigo=codigo, nombre=nombre, tipo='MATERIA_PRIMA')
 
 

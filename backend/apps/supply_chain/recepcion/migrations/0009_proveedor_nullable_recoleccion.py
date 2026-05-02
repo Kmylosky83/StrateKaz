@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
     dependencies = [
         # Encadenado después del rename de índices auto-generado (commit 888b9b56).
         ("sc_recepcion", "0008_rename_sc_vr_voucher_rec_orig_idx_supply_chai_voucher_a8d8dc_idx"),
-        ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
+        ("infra_catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
     ]
 
     operations = [
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="vouchers_recepcion",
-                to="catalogo_productos.proveedor",
+                to="infra_catalogo_productos.proveedor",
                 verbose_name="Proveedor",
                 help_text=(
                     "Proveedor que entrega. OPCIONAL en modalidad RECOLECCION "

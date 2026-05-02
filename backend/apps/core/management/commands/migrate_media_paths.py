@@ -49,11 +49,11 @@ class Command(BaseCommand):
     # Solo modelos en schemas TENANT (no public).
     TENANT_FILE_MODELS: dict[str, list[str]] = {
         # Gestión Documental
-        'gestion_documental.Documento': [
+        'infra_gestion_documental.Documento': [
             'archivo_pdf', 'archivo_original', 'pdf_sellado',
         ],
-        'gestion_documental.VersionDocumento': ['archivo_pdf_version'],
-        'gestion_documental.ControlDocumental': ['acta_destruccion'],
+        'infra_gestion_documental.VersionDocumento': ['archivo_pdf_version'],
+        'infra_gestion_documental.ControlDocumental': ['acta_destruccion'],
         # Core
         'core.User': ['photo'],
         # Mi Equipo
@@ -67,7 +67,7 @@ class Command(BaseCommand):
         'medicina_laboral.ExamenMedico': ['archivo_resultado'],
         'gestion_ambiental.GestionResiduos': ['certificado_disposicion'],
         # Workflow
-        'ejecucion.ArchivoProceso': ['archivo'],
+        'infra_workflow_ejecucion.ArchivoProceso': ['archivo'],
         # Motor cumplimiento
         'evidencias.Evidencia': ['archivo'],
         # Analytics

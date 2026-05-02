@@ -110,7 +110,7 @@ class PrecioMateriaPrimaViewSet(viewsets.ModelViewSet):
           ]
         """
         # Lazy import — Proveedor vive en CT (evita ciclo)
-        from apps.catalogo_productos.models import Proveedor
+        from apps.infraestructura.catalogo_productos.models import Proveedor
 
         try:
             proveedor = Proveedor.objects.get(pk=proveedor_id, is_deleted=False)
@@ -192,7 +192,7 @@ class PrecioMateriaPrimaViewSet(viewsets.ModelViewSet):
 
         Si precio_kg es null/vacío, se omite la fila (permite dejar pendientes).
         """
-        from apps.catalogo_productos.models import Proveedor
+        from apps.infraestructura.catalogo_productos.models import Proveedor
 
         proveedor_id = request.data.get('proveedor')
         precios_data = request.data.get('precios', [])

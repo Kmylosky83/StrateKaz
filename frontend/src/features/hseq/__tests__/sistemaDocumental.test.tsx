@@ -3,7 +3,7 @@
  * Pruebas para APIs y hooks de gestión documental
  *
  * NOTA: Módulo migrado de HSEQ a gestion-estrategica
- * Los hooks ahora están en @/features/gestion-documental/hooks/useGestionDocumental
+ * Los hooks ahora están en @/features/infraestructura/gestion-documental/hooks/useGestionDocumental
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
@@ -14,7 +14,7 @@ import {
   useDocumentos,
   useListadoMaestro,
   useAprobarDocumento,
-} from '@/features/gestion-documental/hooks/useGestionDocumental';
+} from '@/features/infraestructura/gestion-documental/hooks/useGestionDocumental';
 import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import { apiClient } from '@/lib/api-client';
 

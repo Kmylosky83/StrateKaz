@@ -46,9 +46,9 @@ class ContratoDocumentoService:
         Returns:
             Documento instance (estado=BORRADOR, clasificacion=CONFIDENCIAL)
         """
-        Documento = apps.get_model('gestion_documental', 'Documento')
-        TipoDocumento = apps.get_model('gestion_documental', 'TipoDocumento')
-        PlantillaDocumento = apps.get_model('gestion_documental', 'PlantillaDocumento')
+        Documento = apps.get_model('infra_gestion_documental', 'Documento')
+        TipoDocumento = apps.get_model('infra_gestion_documental', 'TipoDocumento')
+        PlantillaDocumento = apps.get_model('infra_gestion_documental', 'PlantillaDocumento')
 
         # 1. Obtener o crear TipoDocumento
         tipo_doc = cls._get_or_create_tipo_documento(empresa)
@@ -115,7 +115,7 @@ class ContratoDocumentoService:
     @classmethod
     def _get_or_create_tipo_documento(cls, empresa):
         """Obtiene o crea el TipoDocumento para contratos laborales."""
-        TipoDocumento = apps.get_model('gestion_documental', 'TipoDocumento')
+        TipoDocumento = apps.get_model('infra_gestion_documental', 'TipoDocumento')
 
         tipo_doc, created = TipoDocumento.objects.get_or_create(
             empresa_id=empresa.id,
@@ -150,7 +150,7 @@ class ContratoDocumentoService:
         2. Plantilla por defecto del tipo de documento
         3. None (sin plantilla - usa contenido generado)
         """
-        PlantillaDocumento = apps.get_model('gestion_documental', 'PlantillaDocumento')
+        PlantillaDocumento = apps.get_model('infra_gestion_documental', 'PlantillaDocumento')
 
         if plantilla_id:
             try:
@@ -245,7 +245,7 @@ class ContratoDocumentoService:
         empresa_id es legacy (pre-django-tenants). Multi-tenant hoy se
         maneja via `schema_context`; el queryset filtra por schema activo.
         """
-        Documento = apps.get_model('gestion_documental', 'Documento')
+        Documento = apps.get_model('infra_gestion_documental', 'Documento')
         prefijo = tipo_doc.prefijo_codigo or f'{tipo_doc.codigo}-'
         # Normalizar separator: el prefijo del tipo ya incluye '-', así que
         # pasamos separator='' y un prefix terminado en '-' para preservarlo.

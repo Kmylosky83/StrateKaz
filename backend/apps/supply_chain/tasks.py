@@ -32,7 +32,7 @@ def generar_liquidaciones_periodicas_borrador():
         LiquidacionPeriodica,
     )
 
-    Proveedor = apps.get_model('catalogo_productos', 'Proveedor')
+    Proveedor = apps.get_model('infra_catalogo_productos', 'Proveedor')
 
     hoy = date.today()
     proveedores = Proveedor.objects.exclude(frecuencia_pago='INMEDIATA').filter(

@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("catalogos", "0008_rutaparada"),
-        ("catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
+        ("infra_catalogo_productos", "0020_proveedor_drop_sede_empresa_origen"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -126,7 +126,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="precios_ruta_semi",
-                        to="catalogo_productos.proveedor",
+                        to="infra_catalogo_productos.proveedor",
                         verbose_name="Proveedor (productor)",
                     ),
                 ),
@@ -135,7 +135,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="precios_ruta_semi",
-                        to="catalogo_productos.producto",
+                        to="infra_catalogo_productos.producto",
                         verbose_name="Producto (MP)",
                     ),
                 ),

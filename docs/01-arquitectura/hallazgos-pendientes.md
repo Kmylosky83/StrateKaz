@@ -1358,7 +1358,7 @@ C2 (no C2 heredando mixin de C2).
 | 21 | **H-S7-supply-chain-tabla-unidad-medida-huerfana** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 con migración `catalogos.0002_drop_unidad_medida_huerfana`. |
 | 22 | **H-S8-revision-direccion-coupling-eliminado** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 commit `e51f8b56`. Sin acoplamiento LIVE → NO-LIVE. |
 | 23 | **H-S8-rbac-botones-sin-check** | 🔲 PENDIENTE | **CRÍTICA — BLOQUEANTE PRE-DEPLOY**. Frontend renderiza botones sin consultar permisos. S8.5 sesión dedicada. |
-| 24 | **H-S8-modal-proveedor-ux-rota** | 🔲 PENDIENTE | **ALTA — BLOQUEANTE PRE-DEPLOY**. 5 problemas UX + bug funcional de submit. S8.6 sesión dedicada. |
+| 24 | **H-S8-modal-proveedor-ux-rota** | ✅ RESUELTO (2026-05-03) | Verificación browseo: submit funciona, UX 1-4 absorbidos por sprints posteriores. Único bug residual (button anidado en MultiSelectCombobox) arreglado en sesión Paso 2. |
 | 25 | **H-S8-dependabot-vulns** | 🔲 PENDIENTE | **ALTA POST-DEPLOY**. 58 vulns acumuladas a 2026-05-02 (1 crítica Django CVE-2025-64459, +13 desde 2026-04-20). Triage antes de S10. |
 
 **Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones), H-S8-sidebar-db-driven (2-4 días), H-S8-catalogos-financieros (2 días).
@@ -1510,8 +1510,31 @@ Sesión dedicada (S8.6):
 ### Trigger
 **BLOQUEANTE pre-deploy MP.** Sesión dedicada (S8.6), después de S8.5 RBAC.
 
-### Estado
-🔲 Abierto
+### Estado: ✅ RESUELTO (2026-05-03)
+
+Verificación funcional con browseo en `tenant_demo`:
+- ✅ **Submit funcional**: usuario confirma "proveedor creado satisfactoriamente"
+  vía browseo manual. Bug arreglado incidentalmente por sprints posteriores
+  (Marathon SC 2026-04-27 con RBAC sweep + Opción A 2026-04-21 que reescribió
+  el modelo Proveedor + payload).
+- ✅ **Items 1-4 (UX)** todos resueltos por trabajo posterior:
+  - #1 Combobox + chips: `MultiSelectCombobox` con búsqueda + chips
+  - #2 Catálogo refresh: `staleTime: 0` + `refetchOnMount: 'always'` aplicado
+  - #3 Multi-select visible: chips visibles en trigger + footer "X de Y seleccionados"
+  - #4 Dinámico por tipo: `tiposPermitidos` filtra productos según
+    `tipo_proveedor.tipos_productos_permitidos`. Sección 3 muestra mensaje
+    "Selecciona primero el tipo de proveedor" si vacío.
+
+**Único bug residual encontrado en re-validación 2026-05-03 (sesión Paso 2):**
+React DOM warning `<button> cannot appear as a descendant of <button>` en
+`MultiSelectCombobox.tsx`: el trigger del combobox era `<button>` y los chips
+tenían `<button>` X removible adentro. Refactor del trigger a
+`<div role="combobox" tabIndex={0}>` con keyboard handling (Enter/Space/ArrowDown)
+preservando a11y. Cero warnings restantes en consola.
+
+**Conclusión:** El hallazgo se mantiene como referencia histórica del
+diagnóstico original 2026-04-20. No requiere sesión S8.6 dedicada —
+absorbido por sprints intermedios + fix puntual del DOM nesting esta sesión.
 
 ---
 

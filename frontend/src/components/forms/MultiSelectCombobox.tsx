@@ -143,14 +143,27 @@ export function MultiSelectCombobox({
         </label>
       )}
 
-      {/* Trigger */}
-      <button
-        type="button"
+      {/* Trigger — div role=combobox para evitar <button> anidado en chips */}
+      <div
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+        aria-disabled={disabled}
+        tabIndex={disabled ? -1 : 0}
         onClick={() => !disabled && setIsOpen((v) => !v)}
-        disabled={disabled}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen((v) => !v);
+          } else if (e.key === 'ArrowDown' && !isOpen) {
+            e.preventDefault();
+            setIsOpen(true);
+          }
+        }}
         className={`w-full min-h-[2.5rem] px-3 py-1.5 rounded-lg border text-left flex items-center gap-2 flex-wrap transition-colors
           ${error ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}
-          ${disabled ? 'bg-gray-50 dark:bg-gray-900 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-800 hover:border-primary-400'}
+          ${disabled ? 'bg-gray-50 dark:bg-gray-900 cursor-not-allowed opacity-60' : 'bg-white dark:bg-gray-800 hover:border-primary-400 cursor-pointer'}
           focus:outline-none focus:ring-2 focus:ring-primary-500`}
       >
         {selectedOptions.length === 0 ? (
@@ -185,7 +198,7 @@ export function MultiSelectCombobox({
         <ChevronDown
           className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
-      </button>
+      </div>
 
       {/* Dropdown */}
       {isOpen && (

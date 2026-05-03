@@ -151,6 +151,13 @@ export function useDocumentos(filters?: {
   /** Búsqueda full-text — pasa como ?buscar= al backend (≥3 chars usa tsvector) */
   buscar?: string;
   ordering?: string;
+  /**
+   * Discriminator Repositorio vs Archivo (ISO 9001 §7.5.2 vs §7.5.3).
+   * - 'repositorio' → solo es_auto_generado=False (SGI vivo)
+   * - 'archivo'     → solo es_auto_generado=True (registros C2 auto-archivados)
+   * - undefined     → todos (compat)
+   */
+  seccion?: 'repositorio' | 'archivo';
 }) {
   // Default ordering: newest first (unless overridden or search is active)
   const params = { ordering: '-created_at', ...filters };

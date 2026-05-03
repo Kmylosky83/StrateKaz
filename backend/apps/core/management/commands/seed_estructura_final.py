@@ -654,18 +654,35 @@ class Command(BaseCommand):
                 'is_enabled': True,  # CASCADE L15 — ACTIVO
                 'orden': 15,
                 'tabs': [
+                    # Tab 1: REPOSITORIO — documentos vivos del SGI (políticas,
+                    # procedimientos, manuales, formatos vigentes). ISO 9001 §7.5.2
+                    # "Documentación". Filtro backend: es_auto_generado=False.
                     {
                         'code': 'gestion_documental',
-                        'name': 'Documentos',
+                        'name': 'Repositorio',
                         'icon': 'FileText',
                         'route': 'documentos',
                         'orden': 1,
                         'sections': [
                             {'code': 'dashboard', 'name': 'Dashboard', 'icon': 'LayoutDashboard', 'orden': 1, 'description': 'Centro de control documental: mis borradores, firmas pendientes, próximas revisiones y cobertura'},
-                            {'code': 'repositorio', 'name': 'Repositorio', 'icon': 'Files', 'orden': 2, 'description': 'Todos los documentos del sistema. Búsqueda full-text OCR, filtros por estado, tipo y área'},
+                            {'code': 'repositorio', 'name': 'Documentos vivos', 'icon': 'Files', 'orden': 2, 'description': 'Documentos vigentes del SGI: políticas, procedimientos, manuales y formatos. Búsqueda full-text OCR, filtros por estado, tipo y área'},
                             {'code': 'en_proceso', 'name': 'En Proceso', 'icon': 'GitPullRequest', 'orden': 3, 'description': 'Documentos activos en flujo: borradores, en revisión y pendientes de firma'},
-                            {'code': 'archivo', 'name': 'Archivo', 'icon': 'Archive', 'orden': 4, 'description': 'Documentos vigentes, historial de versiones, control de retención y documentos archivados'},
-                            {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings2', 'orden': 5, 'description': 'Tipos de documento, plantillas SGI y biblioteca maestra'},
+                            {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings2', 'orden': 4, 'description': 'Tipos de documento, plantillas SGI y biblioteca maestra'},
+                        ]
+                    },
+                    # Tab 2: ARCHIVO — registros operativos auto-archivados desde
+                    # módulos C2 (vouchers SC, liquidaciones, evidencias HSEQ
+                    # cuando se active). ISO 9001 §7.5.3 "Control de información
+                    # documentada" / Registros. Filtro backend: es_auto_generado=True.
+                    # Patrón Anti-Corruption Layer: GD recibe pero no importa C2.
+                    {
+                        'code': 'archivo',
+                        'name': 'Archivo',
+                        'icon': 'Archive',
+                        'route': 'archivo',
+                        'orden': 2,
+                        'sections': [
+                            {'code': 'archivo_registros', 'name': 'Registros Archivados', 'icon': 'Archive', 'orden': 1, 'description': 'Registros operativos auto-archivados desde módulos del sistema (vouchers, liquidaciones, evidencias). Trazabilidad por módulo origen, control de retención TRD, búsqueda full-text'},
                         ]
                     },
                     # NOTA: Auditorías Internas removido de gestion_documental.

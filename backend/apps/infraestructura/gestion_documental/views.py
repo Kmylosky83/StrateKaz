@@ -382,6 +382,25 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
             'revisado_por', 'aprobado_por', 'documento_padre'
         ).prefetch_related('versiones')
 
+        # ─────────────────────────────────────────────────────────────────
+        # Filtro de SECCIÓN — separa Repositorio (SGI vivo) de Archivo
+        # (registros auto-archivados desde C2). Ver Tab Archivo top-level
+        # introducido en sesión 2026-05-03 (cierre H-GD-archivo-vs-repositorio).
+        #
+        # ISO 9001 §7.5.2 vs §7.5.3:
+        #   - 'repositorio' → Documentos vivos del SGI (política, procedimiento,
+        #     manual, formato vigente). Discriminator: es_auto_generado=False
+        #   - 'archivo'     → Registros operativos auto-archivados desde C2
+        #     (vouchers SC, liquidaciones, evidencias HSEQ futuro).
+        #     Discriminator: es_auto_generado=True
+        #   - sin parámetro → todos (compat con consumidores legacy)
+        # ─────────────────────────────────────────────────────────────────
+        seccion = self.request.query_params.get('seccion')
+        if seccion == 'archivo':
+            queryset = queryset.filter(es_auto_generado=True)
+        elif seccion == 'repositorio':
+            queryset = queryset.filter(es_auto_generado=False)
+
         # Filtros
         tipo_documento = self.request.query_params.get('tipo_documento')
         if tipo_documento:

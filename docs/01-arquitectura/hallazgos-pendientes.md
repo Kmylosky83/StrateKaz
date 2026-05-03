@@ -3592,7 +3592,11 @@ construyendo encima:
   con xfail aplicado)
 
 ### Mitigaciones aplicadas (no son fix, son contención)
-- Sesión 2026-05-02: `xfail` aplicado a 23 tests para desbloquear CI
+- Sesión 2026-05-02: `xfail strict=False` aplicado a 23 tests para desbloquear CI
 - Tests siguen corriendo y contando como xfailed/xpassed (no skip silencioso)
-- Cuando el bug raíz se arregle, los xfail strict=True forzarán quitar markers
+- strict=False porque ambiente CI difiere de local: si un test pasa
+  inesperadamente, no rompe CI (se reporta como xpassed). **Riesgo**: la
+  limpieza de markers requiere acción manual cuando el hallazgo se cierre,
+  no es automática. Compensación: este hallazgo paraguas funciona como
+  recordatorio explícito en hallazgos-pendientes.md
 

@@ -186,9 +186,11 @@ TENANT_APPS = [
     'apps.supply_chain.recepcion',
     'apps.supply_chain.liquidaciones',
     'apps.supply_chain.almacenamiento',
-    # compras: registrada para integridad referencial del FK
-    # VoucherRecepcion.orden_compra → compras.OrdenCompra. URLs NO montadas,
-    # sidebar NO expone. Funcionalidad dormida hasta reescritura futura.
+    # compras: Requisiciones / Cotizaciones / Órdenes de Compra / Contratos.
+    # Activado 2026-05-03 sesión Paso 4 (H-SC-COMPRAS-ACTIVATION MVP).
+    # Backend completo (16 modelos + ViewSets + serializers + admin + URLs
+    # montadas en apps/supply_chain/urls.py:46). Sidebar agregado en
+    # seed_estructura_final.py. Frontend pages pendientes para sesión dedicada.
     'apps.supply_chain.compras',
     # Eliminada en S6: 'apps.supply_chain.programacion_abastecimiento'
 

@@ -1006,9 +1006,6 @@ class Command(BaseCommand):
                     {'code': 'rutas_recoleccion', 'name': 'Rutas de Recolección', 'icon': 'Route', 'route': 'rutas-recoleccion', 'orden': 2, 'sections': [
                         {'code': 'rutas_recoleccion_sc', 'name': 'Rutas de Recolección', 'icon': 'Route', 'orden': 1, 'description': 'Rutas con paradas (H-SC-RUTA-02). PASS_THROUGH o SEMI_AUTONOMA.'},
                     ]},
-                    # Tab Compras: NO expuesta en sidebar. App compras registrada en
-                    # TENANT_APPS solo para integridad referencial del FK
-                    # VoucherRecepcion.orden_compra. Reescritura futura.
                     # H-SC-RUTA-02: Recolección en ruta (antes de Recepción en planta).
                     {'code': 'recoleccion_ruta', 'name': 'Recolección en Ruta', 'icon': 'Truck', 'route': 'recoleccion', 'orden': 3, 'sections': [
                         {'code': 'vouchers_recoleccion', 'name': 'Vouchers de Recolección', 'icon': 'Truck', 'orden': 1, 'description': 'Registro de kilos recolectados por parada en cada salida de la ruta (H-SC-RUTA-02).'},
@@ -1032,6 +1029,18 @@ class Command(BaseCommand):
                     # y CriterioEvaluacion eliminados (scope Admin/Compras futuro).
                     {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'FolderOpen', 'route': 'catalogos', 'orden': 8, 'sections': [
                         {'code': 'catalogos_sc', 'name': 'Catálogos', 'icon': 'FolderOpen', 'orden': 1, 'description': 'Catálogos dinámicos de la cadena de suministro'},
+                    ]},
+                    # Tab Compras — Activado 2026-05-03 sesión Paso 4
+                    # (H-SC-COMPRAS-ACTIVATION MVP). Backend completo:
+                    # 16 modelos + ViewSets + serializers + URLs montadas.
+                    # Frontend pages pendientes para sesión dedicada.
+                    # 4 sub-secciones cubren el flujo P2P (Procure-to-Pay):
+                    # Requisición → Cotización → Orden de Compra → Contrato.
+                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'route': 'compras', 'orden': 9, 'sections': [
+                        {'code': 'requisiciones', 'name': 'Requisiciones', 'icon': 'ClipboardList', 'orden': 1, 'description': 'Solicitudes internas de compra. Punto de entrada del flujo Procure-to-Pay (P2P).'},
+                        {'code': 'cotizaciones', 'name': 'Cotizaciones', 'icon': 'FileSearch', 'orden': 2, 'description': 'Cotizaciones recibidas de proveedores con evaluación comparativa.'},
+                        {'code': 'ordenes_compra', 'name': 'Órdenes de Compra', 'icon': 'FileText', 'orden': 3, 'description': 'Órdenes de compra emitidas a proveedores. Conecta con Recepción de MP.'},
+                        {'code': 'contratos_compra', 'name': 'Contratos', 'icon': 'FileSignature', 'orden': 4, 'description': 'Contratos marco con proveedores estratégicos.'},
                     ]},
                 ]
             },

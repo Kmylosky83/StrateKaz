@@ -7,9 +7,9 @@ Agrega las URLs de sub-apps LIVE del módulo Supply Chain:
 - recepcion: VoucherRecepcion, RecepcionCalidad
 - liquidaciones: Liquidacion
 - almacenamiento: Inventarios, movimientos, kardex, alertas
+- compras: Requisiciones/Cotizaciones/OC/Contratos — activado 2026-05-03
 
 Out-of-scope (no LIVE):
-- compras: Requisiciones/cotizaciones/OC/contratos — deuda futura (S7+).
 - programacion_abastecimiento: eliminada en S6 (2026-04-19 PM). Se recrea
   cuando el negocio la necesite con el modelo canónico (catalogo_productos).
 """
@@ -40,4 +40,10 @@ urlpatterns = [
 
     # Almacenamiento e Inventario
     path('almacenamiento/', include('apps.supply_chain.almacenamiento.urls')),
+
+    # Compras — Requisiciones, Cotizaciones, Órdenes de Compra, Contratos.
+    # Activado 2026-05-03 (sesión Paso 4 — H-SC-COMPRAS-ACTIVATION MVP).
+    # Backend ViewSets + serializers + admin completos. Frontend pages
+    # pendientes para sesión dedicada.
+    path('compras/', include('apps.supply_chain.compras.urls')),
 ]

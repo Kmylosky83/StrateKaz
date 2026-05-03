@@ -50,8 +50,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        UnidadMedida = apps.get_model('catalogo_productos', 'UnidadMedida')
-        CategoriaProducto = apps.get_model('catalogo_productos', 'CategoriaProducto')
+        UnidadMedida = apps.get_model('infra_catalogo_productos', 'UnidadMedida')
+        CategoriaProducto = apps.get_model('infra_catalogo_productos', 'CategoriaProducto')
 
         # Cleanup defensivo: borrar categorías raíz del seed legacy si están vacías
         legacy_vacias = CategoriaProducto.objects.filter(

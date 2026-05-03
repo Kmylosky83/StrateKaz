@@ -489,8 +489,8 @@ def generar_documento_desde_workflow(
         from .models import Documento, TipoDocumento, PlantillaDocumento
         from .services import DocumentoService
 
-        # Obtener InstanciaFlujo (C2→C2: apps.get_model)
-        InstanciaFlujo = apps.get_model('ejecucion', 'InstanciaFlujo')
+        # Obtener InstanciaFlujo (CT→CT: apps.get_model)
+        InstanciaFlujo = apps.get_model('infra_workflow_ejecucion', 'InstanciaFlujo')
         try:
             instancia = InstanciaFlujo.objects.get(id=instancia_id)
         except InstanciaFlujo.DoesNotExist:

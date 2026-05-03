@@ -280,7 +280,7 @@ class DocumentoService:
         if firmantes_config and tipo_documento.requiere_firma:
             ct = ContentType.objects.get_for_model(Documento)
             try:
-                FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
+                FirmaDigital = apps.get_model('infra_firma_digital', 'FirmaDigital')
                 Cargo = apps.get_model('core', 'Cargo')
                 User = apps.get_model('core', 'User')
 
@@ -472,7 +472,7 @@ class DocumentoService:
                 )
 
             # Sprint 10: Solo APROBÓ dispara publicación
-            FirmaDigital = apps.get_model('firma_digital', 'FirmaDigital')
+            FirmaDigital = apps.get_model('infra_firma_digital', 'FirmaDigital')
             from django.contrib.contenttypes.models import ContentType
             ct = ContentType.objects.get_for_model(doc)
             tiene_aprobacion = FirmaDigital.objects.filter(
@@ -886,7 +886,7 @@ class DocumentoService:
 
         # Obtener nodos ejecutados del workflow
         try:
-            NodoInstancia = django_apps.get_model('ejecucion', 'NodoInstancia')
+            NodoInstancia = django_apps.get_model('infra_workflow_ejecucion', 'NodoInstancia')
             nodos = NodoInstancia.objects.filter(
                 instancia=instancia,
             ).select_related('nodo_plantilla').order_by('orden', 'created_at')

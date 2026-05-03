@@ -1340,7 +1340,7 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
         from django.contrib.contenttypes.models import ContentType
         from django.apps import apps as dj_apps
 
-        FirmaDigital = dj_apps.get_model('firma_digital', 'FirmaDigital')
+        FirmaDigital = dj_apps.get_model('infra_firma_digital', 'FirmaDigital')
         User = dj_apps.get_model('core', 'User')
         ct = ContentType.objects.get_for_model(documento)
 

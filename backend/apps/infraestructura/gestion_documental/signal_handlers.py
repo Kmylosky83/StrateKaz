@@ -263,7 +263,7 @@ def cerrar_formulario_con_pdf_al_firmar_ultimo(sender, instance, created, **kwar
         if documento.archivo_pdf and documento.archivo_pdf.name:
             return
 
-        FirmaDigital = django_apps.get_model('firma_digital', 'FirmaDigital')
+        FirmaDigital = django_apps.get_model('infra_firma_digital', 'FirmaDigital')
         firmas_qs = FirmaDigital.objects.filter(
             content_type=documento_ct,
             object_id=str(documento.pk),

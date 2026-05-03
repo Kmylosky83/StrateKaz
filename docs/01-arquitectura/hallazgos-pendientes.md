@@ -1359,7 +1359,7 @@ C2 (no C2 heredando mixin de C2).
 | 22 | **H-S8-revision-direccion-coupling-eliminado** | ✅ RESUELTO (2026-04-20) | Cerrado en S8 commit `e51f8b56`. Sin acoplamiento LIVE → NO-LIVE. |
 | 23 | **H-S8-rbac-botones-sin-check** | 🔲 PENDIENTE | **CRÍTICA — BLOQUEANTE PRE-DEPLOY**. Frontend renderiza botones sin consultar permisos. S8.5 sesión dedicada. |
 | 24 | **H-S8-modal-proveedor-ux-rota** | 🔲 PENDIENTE | **ALTA — BLOQUEANTE PRE-DEPLOY**. 5 problemas UX + bug funcional de submit. S8.6 sesión dedicada. |
-| 25 | **H-S8-dependabot-45-vulns** | 🔲 PENDIENTE | **ALTA POST-DEPLOY**. 45 vulns acumuladas (1 crítica Django CVE-2025-64459). Triage antes de S10. |
+| 25 | **H-S8-dependabot-vulns** | 🔲 PENDIENTE | **ALTA POST-DEPLOY**. 58 vulns acumuladas a 2026-05-02 (1 crítica Django CVE-2025-64459, +13 desde 2026-04-20). Triage antes de S10. |
 
 **Sesiones estimadas:** H3 (1 sesión), H1 (1-2 sesiones), H11 (30 min), H13 (15 min), H23 (15 min), H-S5-pwa-branding (1-2 sesiones), H-S8-sidebar-db-driven (2-4 días), H-S8-catalogos-financieros (2 días).
 
@@ -1515,26 +1515,27 @@ Sesión dedicada (S8.6):
 
 ---
 
-## H-S8-dependabot-45-vulns — 45 vulnerabilidades acumuladas, 1 crítica
+## H-S8-dependabot-vulns — Vulnerabilidades acumuladas (creció 45 → 58)
 
 ### Detectado
-2026-04-20, push de S8 a GitHub.
+2026-04-20, push de S8 a GitHub. **Reverificado 2026-05-02** (push CT
+unification): 45 → 58 vulns (+13).
 
 ### Módulo
 Dependencias globales del repo (pip + npm).
 
 ### Severidad
 **ALTA** — Deuda de seguridad. No bloquea funcionalidad LIVE pero expone
-superficie de ataque.
+superficie de ataque. Crecimiento sin triage = empeora cada sprint.
 
-### Breakdown
-| Severidad | Cantidad |
-|-----------|----------|
-| Critical  | 1 |
-| High      | 14 |
-| Moderate  | 26 |
-| Low       | 4 |
-| **Total** | **45** |
+### Breakdown (snapshot 2026-05-02)
+| Severidad | 2026-04-20 | 2026-05-02 | Δ |
+|-----------|------------|------------|-----|
+| Critical  | 1 | 1 | 0 |
+| High      | 14 | 21 | +7 |
+| Moderate  | 26 | 32 | +6 |
+| Low       | 4 | 4 | 0 |
+| **Total** | **45** | **58** | **+13** |
 
 ### Vulnerabilidad crítica identificada
 
@@ -3230,3 +3231,280 @@ confirmar (`/liquidaciones/<id>/lineas/<id>/ajuste/` con motivo
 
 ### Estado
 🔲 ABIERTO — sin trigger inmediato. Workaround documentado.
+
+---
+
+## 🎯 CT UNIFICATION 2026-05-02 — 7 hallazgos nuevos detectados durante browseo
+
+Sesión maratónica de 4 días (29 abr → 2 may) cerró H-S8-ct-disperso. Durante
+el browseo manual post-refactor en tenant_demo se detectaron 7 hallazgos
+nuevos. Detalle completo en
+`docs/auditorias/history/2026-05-02-ct-unification-cierre-completo.md`.
+
+---
+
+## H-WORKFLOW-auditoria-funcional — workflow_engine FE inconsistente con BE
+
+### Detectado
+2026-05-02, browseo manual Fase 6.2 post-CT-unification.
+
+### Módulo
+`apps/infraestructura/workflow_engine/*` (BE) ↔ `frontend/src/features/infraestructura/workflow-engine/*` (FE).
+
+### Severidad
+**ALTA** — sugiere que el módulo está dormido funcionalmente y nunca se terminó.
+Bloquea cualquier intento de activarlo "tal cual está" para producción.
+
+### Síntomas
+- FE manda paths con underscore (`mis_tareas`) cuando BE espera guion (`mis-tareas`)
+- Endpoint `tareas/estadisticas` invocado por FE apunta al ViewSet equivocado
+- Inconsistencias múltiples en routing FE↔BE — no enumeradas exhaustivamente
+
+### Impacto
+- Sidebar items que existen pero no funcionan al hacer click
+- Imposible declarar `workflow_engine` LIVE sin auditoría completa primero
+- Decisión arquitectónica pendiente: ¿se completa o se elimina?
+
+### Propuesta de fix
+**Antes de tocar código**, auditoría funcional completa:
+1. Inventariar endpoints reales del BE vs los que FE invoca
+2. Identificar features funcionales vs fantasma
+3. Decisión usuario: completar el módulo o eliminarlo de LIVE
+4. Si se mantiene: rewrite FE/BE para alinear contratos
+5. Si se elimina: marcar como NO-LIVE en sidebar, comentar en `base.py`
+
+### Trigger
+Antes del próximo intento de activar `workflow_engine` en producción real.
+
+### Estado
+🔲 Abierto. Prioridad: **ALTA — sesión dedicada**, requiere decisión arquitectónica del usuario.
+
+---
+
+## H-GD-archivo-vs-repositorio — Separar Repositorio (vivo) de Archivo (TRD) en GD
+
+### Detectado
+2026-05-02, browseo manual + aporte conceptual del usuario en sesión.
+
+### Módulo
+`apps/infraestructura/gestion_documental/`.
+
+### Severidad
+**MEDIA-ALTA** — viola distinción ISO 9001 §7.5.3 entre "Documentos" (vivos,
+controlados, vigentes) y "Registros" (evidencia operativa archivada con TRD).
+
+### Síntoma
+Hoy `gestion_documental` mezcla dos conceptos distintos en el mismo modelo
+`Documento`:
+1. **Repositorio** — documentos del SGI vivos: políticas, procedimientos,
+   manuales, formatos vigentes. Se versionan, se aprueban, se vencen.
+2. **Archivo** — registros operativos auto-archivados desde C2 (vouchers SC,
+   liquidaciones, evidencias HSEQ). Se generan dinámicamente, se retienen
+   por TRD, se purgan al vencer la retención.
+
+Sin esta distinción, el filtrado/búsqueda mezcla los dos universos y la TRD
+no puede aplicar políticas distintas a cada uno.
+
+### Impacto
+- Búsqueda en `/gestion-documental/documentos` retorna registros operativos
+  (ruido que no es "documento del SGI")
+- TRD no puede diferenciar plazos de retención por tipo
+- Auditoría ISO 9001 puede señalar la mezcla como hallazgo de cumplimiento
+- Cuando se active `motor_cumplimiento.evidencias`, se duplica la confusión
+
+### Propuesta de fix
+Diseño arquitectónico (sesión dedicada):
+1. Decidir si separar en dos modelos (`Documento` + `Registro`) o usar
+   discriminator/categoría (`Documento.tipo='SGI'|'REGISTRO'`)
+2. Migrar registros existentes al nuevo esquema
+3. UI: tab/módulo separado para Repositorio vs Archivo
+4. TRD: políticas diferenciadas por tipo
+5. Auto-archivado desde C2 escribe explícitamente como REGISTRO, no como
+   DOCUMENTO
+
+### Trigger
+Antes de activar `motor_cumplimiento.evidencias` (que mezclaría aún más),
+o antes de la próxima auditoría ISO 9001 externa.
+
+### Estado
+🔲 Abierto. Prioridad: **MEDIA-ALTA — decisión arquitectónica con usuario primero**.
+
+---
+
+## H-CT-evidencias-content-type-label — FE manda label viejo a motor_cumplimiento
+
+### Detectado
+2026-05-02, browseo manual post-CT-unification.
+
+### Módulo
+`frontend/src/features/infraestructura/gestion-documental/*` ↔
+`apps/motor_cumplimiento/evidencias/` (NO-LIVE).
+
+### Severidad
+**MEDIA** — bug latente. No falla hoy porque el módulo está dormido.
+
+### Síntoma
+FE invoca queries a `motor_cumplimiento.evidencias` con
+`entity_type=gestion_documental.documento` (label viejo, pre-CT-unification).
+Tras el rename a `infra_gestion_documental.documento`, esa query no resolverá
+el ContentType correcto cuando el módulo se reactive.
+
+### Impacto
+- Cuando se active `motor_cumplimiento.evidencias`, las queries fallarán
+  silenciosamente (retornarán empty results) o lanzarán LookupError
+- Difícil de detectar — solo se ve cuando alguien intenta usar evidencias
+
+### Propuesta de fix
+Find/replace en FE:
+- `gestion_documental.documento` → `infra_gestion_documental.documento`
+- Validar otros usos de content_type strings con prefijos viejos
+
+### Trigger
+Antes de activar `motor_cumplimiento.evidencias`. Mientras tanto, deuda
+documentada.
+
+### Estado
+🔲 Abierto. Prioridad: **MEDIA — preventiva, antes de activar evidencias**.
+
+---
+
+## H-WORKFLOW-firma-digital-route-missing — Sidebar item sin route registrada
+
+### Detectado
+2026-05-02, browseo manual post-CT-unification.
+
+### Módulo
+`frontend/src/features/infraestructura/workflow-engine/firma-digital/`.
+
+### Severidad
+**MEDIA** — UX rota: el item es visible pero al click no hace nada útil.
+
+### Síntoma
+El sidebar muestra "Firma Digital" como item dentro de Workflows. La ruta
+`/workflows/firma-digital` NO está registrada en
+`frontend/src/routes/modules/workflow-engine.routes.tsx`. Click → 404 silencioso
+o redirect a fallback.
+
+### Propuesta de fix
+1. Registrar route `/workflows/firma-digital` con componente lazy-loaded
+2. Verificar que el componente FirmaDigitalPage exista y renderice
+3. Si no existe componente: o crear placeholder con TODO, o quitar del sidebar
+
+### Trigger
+Junto con H-WORKFLOW-auditoria-funcional (probablemente sale en la misma
+sesión).
+
+### Estado
+🔲 Abierto. Prioridad: **MEDIA — quick win UX**.
+
+---
+
+## H-MI-EQUIPO-talent-hub-services-coupling — Lazy import de talent_hub dormido
+
+### Detectado
+2026-05-02, browseo manual post-CT-unification.
+
+### Módulo
+`apps/mi_equipo/seleccion_contratacion/views.py` ↔ `apps/talent_hub/services/`.
+
+### Severidad
+**MEDIA** — viola la regla "no acoplamiento C2→C2" implícitamente: `mi_equipo`
+LIVE depende lazy de `talent_hub` dormido.
+
+### Síntoma
+`mi_equipo.seleccion_contratacion.views` importa lazy 2 services de
+`talent_hub.services/`:
+- (services específicos a inventariar — el cierre no los nombra exhaustivamente)
+
+`talent_hub` está marcado como dormido en `base.py`. Pero el import lazy lo
+hace **LIVE de facto** (corre cuando seleccion_contratacion se usa).
+
+### Impacto
+- Confusión sobre qué está LIVE realmente
+- Si `talent_hub.services` se elimina o cambia API, `mi_equipo` revienta
+- Tests de `mi_equipo` requieren `talent_hub` instalado para no fallar
+
+### Propuesta de fix
+Opción A: Mover los 2 services específicos de `talent_hub.services/` →
+`mi_equipo/services/` (los hace explícitamente LIVE).
+Opción B: Si los services son genuinamente compartidos talent_hub↔mi_equipo,
+promover a `apps/shared_library/talent_services/` (CT-equivalente).
+Opción C: Activar formalmente `talent_hub.services` en `base.py` con la
+deuda asumida.
+
+### Trigger
+Antes de declarar mi_equipo "Basico bien hecho" (criterio CLAUDE.md).
+
+### Estado
+🔲 Abierto. Prioridad: **MEDIA — bloquea declaración Core 1.0 de mi_equipo**.
+
+---
+
+## H-CT-PROVEEDORES-orden-default — Default sort por nombre, debería ser por código
+
+### Detectado
+2026-05-02, browseo manual post-CT-unification.
+
+### Módulo
+`apps/infraestructura/catalogo_productos/proveedores/` (BE serializer/viewset).
+
+### Severidad
+**BAJA** — ergonomía. No bloquea nada.
+
+### Síntoma
+Listado de proveedores ordena por `nombre` por defecto. Usuario espera orden
+por `codigo` (más útil para búsqueda visual rápida en operación).
+
+### Propuesta de fix
+Cambiar default ordering en `ProveedorViewSet`:
+```python
+def get_queryset(self):
+    return Proveedor.objects.all().order_by('codigo')
+```
+O Meta del modelo:
+```python
+class Meta:
+    ordering = ['codigo']
+```
+
+### Trigger
+Quick win — siguiente sesión que toque proveedores.
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA — quick win ~5 min**.
+
+---
+
+## H-SC-RENAME-PRECIOS-SC — Renombrar `gestion_proveedores` a `precios_proveedor`
+
+### Detectado
+2026-05-02 (decisión sprint CT unification — Opción A 2026-04-21 dejó nombre engañoso).
+
+### Módulo
+`apps/supply_chain/gestion_proveedores/` (contiene PrecioMateriaPrima,
+ModalidadLogistica, HistorialPrecioProveedor — NO Proveedor, que se mudó a CT).
+
+### Severidad
+**BAJA** — semántico. No hay bug funcional.
+
+### Síntoma
+El paquete se llama `gestion_proveedores` pero ya NO gestiona Proveedor (eso
+es CT desde Opción A 2026-04-21). Solo contiene 3 modelos de precios y
+modalidades logísticas — específicos de Supply Chain.
+
+### Propuesta de fix
+Refactor de rename del paquete completo (similar a CT unification mini):
+- `apps/supply_chain/gestion_proveedores/` → `apps/supply_chain/precios_proveedor/`
+- `app_label` mantiene `gestion_proveedores` o se renombra (decisión)
+- Migración de rename `app_label` si se cambia
+- Actualizar imports de consumidores (~10 archivos)
+- Actualizar `SIDEBAR_LAYERS`, `urls.py`, `INSTALLED_APPS`
+
+Si se decide preservar `app_label='gestion_proveedores'` el cambio es solo
+físico (sin data migration), reduciendo blast radius.
+
+### Trigger
+Sesión dedicada propia (similar pattern a CT unification mini). NO urgente.
+
+### Estado
+🔲 Abierto. Prioridad: **BAJA — semántico, deferible indefinidamente**.
